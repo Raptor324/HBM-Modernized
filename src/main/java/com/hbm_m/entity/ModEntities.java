@@ -12,7 +12,7 @@ import com.hbm_m.entity.mob.EntityCreeperPhosgene;
 import com.hbm_m.entity.mob.EntityCreeperTainted;
 import com.hbm_m.entity.mob.EntityCreeperVolatile;
 import com.hbm_m.entity.mob.NoloEntity;
-import com.hbm_m.entity.missile.MissileABMEntity;
+import com.hbm_m.entity.missile.MissileAntiBallisticEntity;
 import com.hbm_m.entity.missile.MissileBaseEntity;
 import com.hbm_m.entity.missile.MissileTestEntity;
 import com.hbm_m.entity.missile.MissileShuttleEntity;
@@ -48,8 +48,8 @@ public class ModEntities {
             () -> EntityType.Builder.<com.hbm_m.entity.rbmk.RBMKDebrisEntity>of(
                         com.hbm_m.entity.rbmk.RBMKDebrisEntity::new, MobCategory.MISC)
                 .sized(1f, 1f)
-                .clientTrackingRange(63)
-                .updateInterval(1).build("rbmk_debris"));
+                .clientTrackingRange(8)
+                .build("rbmk_debris"));
 
     public static final RegistrySupplier<EntityType<TurretBulletEntity>> TURRET_BULLET =
         ENTITY_TYPES.register("turret_bullet",
@@ -86,6 +86,14 @@ public class ModEntities {
                     () -> EntityType.Builder.<AirstrikeNukeEntity>of(AirstrikeNukeEntity::new, MobCategory.MISC)
                             .sized(2.0F, 1.0F)
                             .build("airstrikenuke"));
+
+    // Both heavy and agent used to be constructed with AIRSTRIKE_ENTITY: after a reload the game
+    // rebuilt them through that type's factory, so a heavy bomber came back as a plain one.
+    public static final RegistrySupplier<EntityType<AirstrikeHeavyEntity>> AIRSTRIKE_HEAVY_ENTITY =
+            ENTITY_TYPES.register("airstrikeheavy",
+                    () -> EntityType.Builder.<AirstrikeHeavyEntity>of(AirstrikeHeavyEntity::new, MobCategory.MISC)
+                            .sized(2.0F, 1.0F)
+                            .build("airstrikeheavy"));
 
     public static final RegistrySupplier<EntityType<AirstrikeAgentEntity>> AIRSTRIKE_AGENT_ENTITY =
             ENTITY_TYPES.register("airstrikeagent",
@@ -167,13 +175,13 @@ public class ModEntities {
                             .updateInterval(1)
                             .build("missile_test"));
 
-    public static final RegistrySupplier<EntityType<MissileABMEntity>> MISSILE_ABM =
-            ENTITY_TYPES.register("missile_abm",
-                    () -> EntityType.Builder.<MissileABMEntity>of(MissileABMEntity::new, MobCategory.MISC)
-                            .sized(1.5F, 1.5F)
+    public static final RegistrySupplier<EntityType<MissileAntiBallisticEntity>> MISSILE_ANTI_BALLISTIC =
+            ENTITY_TYPES.register("missile_anti_ballistic",
+                    () -> EntityType.Builder.<MissileAntiBallisticEntity>of(MissileAntiBallisticEntity::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
                             .clientTrackingRange(256)
-                            .updateInterval(1)
-                            .build("missile_abm"));
+                            .updateInterval(3)
+                            .build("missile_anti_ballistic"));
 
     // Soyuz Launcher: flight entity + cargo-mode descent capsule (see SoyuzLauncherBlockEntity)
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.missile.SoyuzEntity>> SOYUZ =
@@ -386,9 +394,7 @@ public class ModEntities {
             ENTITY_TYPES.register("entity_grenade_universal",
                     () -> EntityType.Builder.<com.hbm_m.entity.grenade.EntityGrenadeUniversal>of(com.hbm_m.entity.grenade.EntityGrenadeUniversal::new, MobCategory.MISC)
                             .sized(0.25F, 0.25F).clientTrackingRange(16).updateInterval(1)
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_grenade_universal"));
 
     /** Original {@code entity_fire_lingering} (EntityMappings, Tracking 250). */
@@ -396,9 +402,7 @@ public class ModEntities {
             ENTITY_TYPES.register("entity_fire_lingering",
                     () -> EntityType.Builder.<com.hbm_m.entity.effect.EntityFireLingering>of(com.hbm_m.entity.effect.EntityFireLingering::new, MobCategory.MISC)
                             .sized(0.1F, 0.1F).clientTrackingRange(16).updateInterval(1)
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_fire_lingering"));
 
     /** SEDNA: Original entity_bullet_mk4 / entity_bullet_mk4_cl / entity_beam_mk4 / entity_coin (EntityMappings). */
@@ -406,25 +410,19 @@ public class ModEntities {
             ENTITY_TYPES.register("entity_bullet_mk4",
                     () -> EntityType.Builder.<com.hbm_m.entity.projectile.EntityBulletBaseMK4>of(com.hbm_m.entity.projectile.EntityBulletBaseMK4::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F).clientTrackingRange(16).updateInterval(1).fireImmune()
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_bullet_mk4"));
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.EntityBulletBaseMK4CL>> BULLET_MK4_CL =
             ENTITY_TYPES.register("entity_bullet_mk4_cl",
                     () -> EntityType.Builder.<com.hbm_m.entity.projectile.EntityBulletBaseMK4CL>of(com.hbm_m.entity.projectile.EntityBulletBaseMK4CL::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F).clientTrackingRange(16).updateInterval(1).fireImmune()
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_bullet_mk4_cl"));
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.EntityBulletBeamBase>> BULLET_BEAM =
             ENTITY_TYPES.register("entity_beam_mk4",
                     () -> EntityType.Builder.<com.hbm_m.entity.projectile.EntityBulletBeamBase>of(com.hbm_m.entity.projectile.EntityBulletBeamBase::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F).clientTrackingRange(16).updateInterval(1).fireImmune()
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_beam_mk4"));
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.EntityCoin>> COIN =
             ENTITY_TYPES.register("entity_coin",
@@ -542,9 +540,7 @@ public class ModEntities {
                                     com.hbm_m.entity.item.EntityBoatRubber::new, MobCategory.MISC)
                             .sized(1.5F, 0.6F).clientTrackingRange(16)
                             .updateInterval(1)
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("boat_rubber"));
     /** Original EntityMeteor (entity_meteor, Reichweite 250). */
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.EntityMeteor>> METEOR =
@@ -678,9 +674,7 @@ public class ModEntities {
                                     com.hbm_m.entity.cart.EntityMinecartCrate::new, MobCategory.MISC)
                             .sized(0.98F, 0.7F).clientTrackingRange(16)
                             .updateInterval(1)
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_ntm_cart_crate"));
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.cart.EntityMinecartDestroyer>> CART_DESTROYER =
             ENTITY_TYPES.register("entity_ntm_cart_destroyer",
@@ -688,9 +682,7 @@ public class ModEntities {
                                     com.hbm_m.entity.cart.EntityMinecartDestroyer::new, MobCategory.MISC)
                             .sized(0.98F, 0.7F).clientTrackingRange(16)
                             .updateInterval(1)
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_ntm_cart_destroyer"));
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.cart.EntityMinecartOre>> CART_ORE =
             ENTITY_TYPES.register("entity_ntm_cart_ore",
@@ -698,9 +690,7 @@ public class ModEntities {
                                     com.hbm_m.entity.cart.EntityMinecartOre::new, MobCategory.MISC)
                             .sized(0.98F, 0.7F).clientTrackingRange(16)
                             .updateInterval(1)
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_ntm_cart_ore"));
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.cart.EntityMinecartPowder>> CART_POWDER =
             ENTITY_TYPES.register("entity_ntm_cart_powder",
@@ -708,9 +698,7 @@ public class ModEntities {
                                     com.hbm_m.entity.cart.EntityMinecartPowder::new, MobCategory.MISC)
                             .sized(0.98F, 0.7F).clientTrackingRange(16)
                             .updateInterval(1)
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_ntm_cart_powder"));
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.cart.EntityMinecartSemtex>> CART_SEMTEX =
             ENTITY_TYPES.register("entity_ntm_cart_semtex",
@@ -718,9 +706,7 @@ public class ModEntities {
                                     com.hbm_m.entity.cart.EntityMinecartSemtex::new, MobCategory.MISC)
                             .sized(0.98F, 0.7F).clientTrackingRange(16)
                             .updateInterval(1)
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_ntm_cart_semtex"));
     /** Original EntityMinecartTest (entity_minecart_test, Reichweite 1000). */
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.cart.EntityMinecartTest>> MINECART_TEST =
@@ -735,36 +721,28 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.train.SeatDummyEntity>of(
                                     com.hbm_m.entity.train.SeatDummyEntity::new, MobCategory.MISC)
                             .sized(0.5F, 0.1F).clientTrackingRange(16).updateInterval(1).noSummon()
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_ntm_seat_dummy"));
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.train.BoundingBoxDummyEntity>> TRAIN_BOUNDING_DUMMY =
             ENTITY_TYPES.register("entity_ntm_bounding_dummy",
                     () -> EntityType.Builder.<com.hbm_m.entity.train.BoundingBoxDummyEntity>of(
                                     com.hbm_m.entity.train.BoundingBoxDummyEntity::new, MobCategory.MISC)
                             .sized(1F, 1F).clientTrackingRange(16).updateInterval(1).noSummon()
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_ntm_bounding_dummy"));
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.train.TrainCargoTram>> TRAIN_CARGO_TRAM =
             ENTITY_TYPES.register("entity_ntm_cargo_tram",
                     () -> EntityType.Builder.<com.hbm_m.entity.train.TrainCargoTram>of(
                                     com.hbm_m.entity.train.TrainCargoTram::new, MobCategory.MISC)
                             .sized(5F, 2F).clientTrackingRange(16).updateInterval(1)
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_ntm_cargo_tram"));
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.train.TrainCargoTramTrailer>> TRAIN_CARGO_TRAM_TRAILER =
             ENTITY_TYPES.register("entity_ntm_cargo_tram_trailer",
                     () -> EntityType.Builder.<com.hbm_m.entity.train.TrainCargoTramTrailer>of(
                                     com.hbm_m.entity.train.TrainCargoTramTrailer::new, MobCategory.MISC)
                             .sized(5F, 2F).clientTrackingRange(16).updateInterval(1)
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_ntm_cargo_tram_trailer"));
     /** Original EntityCloudTom (entity_moonstone_blast). */
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.effect.EntityCloudTom>> CLOUD_TOM =
@@ -800,9 +778,7 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.projectile.EntityBulletBaseNT>of(
                                     com.hbm_m.entity.projectile.EntityBulletBaseNT::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F).clientTrackingRange(16).updateInterval(1)
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_bullet_mk3"));
     /** Original EntityB92Beam (entity_beam_bomb, Reichweite 1000). */
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.EntityB92Beam>> B92_BEAM =
@@ -987,7 +963,7 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.logic.EntityBomber>of(
                                     com.hbm_m.entity.logic.EntityBomber::new, MobCategory.MISC)
                             .sized(8.0F, 4.0F)
-                            
+                            .fireImmune()
                             .clientTrackingRange(256)
                             .updateInterval(1)
                             .build("bomber"));
@@ -1020,7 +996,7 @@ public class ModEntities {
                                     com.hbm_m.entity.mob.botprime.EntityBOTPrimeHead::new, MobCategory.MONSTER)
                             .sized(3.0F, 3.0F)
                             .fireImmune()
-                            .clientTrackingRange(63)
+                            .clientTrackingRange(32)
                             .updateInterval(1)
                             .build("bot_prime_head"));
 
@@ -1032,7 +1008,7 @@ public class ModEntities {
                             .sized(2.0F, 2.0F)
                             .fireImmune()
                             .noSummon()
-                            .clientTrackingRange(63)
+                            .clientTrackingRange(32)
                             .updateInterval(1)
                             .build("bot_prime_body"));
 
@@ -1113,9 +1089,7 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.logic.EntityWaypoint>of(com.hbm_m.entity.logic.EntityWaypoint::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F).fireImmune().noSummon()
                             .clientTrackingRange(16).updateInterval(1)
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("waypoint"));
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.EntityAcidBomb>> ACID_BOMB =
             ENTITY_TYPES.register("acid_bomb",
@@ -1182,9 +1156,7 @@ public class ModEntities {
                             
                             .clientTrackingRange(64)
                             .updateInterval(1)
-                            //? if forge || neoforge {
                             .setShouldReceiveVelocityUpdates(false)
-                            //?}
                             .build("entity_mist"));
 
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.conveyor.MovingConveyorItemEntity>> MOVING_CONVEYOR_ITEM =
@@ -1192,7 +1164,7 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.conveyor.MovingConveyorItemEntity>of(
                                     com.hbm_m.entity.conveyor.MovingConveyorItemEntity::new, MobCategory.MISC)
                             .sized(0.375F, 0.375F)
-                            .clientTrackingRange(63)
+                            .clientTrackingRange(64)
                             .updateInterval(1)
                             .build("moving_conveyor_item"));
 
@@ -1201,7 +1173,7 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.conveyor.MovingConveyorPackageEntity>of(
                                     com.hbm_m.entity.conveyor.MovingConveyorPackageEntity::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
-                            .clientTrackingRange(63)
+                            .clientTrackingRange(64)
                             .updateInterval(1)
                             .build("moving_conveyor_package"));
 
@@ -1210,11 +1182,8 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.drone.EntityDeliveryDrone>of(
                                     com.hbm_m.entity.drone.EntityDeliveryDrone::new, MobCategory.MISC)
                             .sized(0.75F, 0.75F)
-                            .clientTrackingRange(16)
-                            .updateInterval(1)
-                            //? if forge || neoforge {
-                            .setShouldReceiveVelocityUpdates(false)
-                            //?}
+                            .clientTrackingRange(10)
+                            .updateInterval(3)
                             .build("delivery_drone"));
 
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.drone.EntityRequestDrone>> REQUEST_DRONE =
@@ -1222,11 +1191,8 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.drone.EntityRequestDrone>of(
                                     com.hbm_m.entity.drone.EntityRequestDrone::new, MobCategory.MISC)
                             .sized(0.75F, 0.75F)
-                            .clientTrackingRange(16)
-                            .updateInterval(1)
-                            //? if forge || neoforge {
-                            .setShouldReceiveVelocityUpdates(false)
-                            //?}
+                            .clientTrackingRange(10)
+                            .updateInterval(3)
                             .build("request_drone"));
 
     public static final RegistrySupplier<EntityType<ZirnoxDebrisEntity>> ZIRNOX_DEBRIS =
@@ -1244,9 +1210,19 @@ public class ModEntities {
                                     com.hbm_m.entity.projectile.CogEntity::new, MobCategory.MISC)
                             // Original: setSize(1F, 1F).
                             .sized(1F, 1F)
-                            .clientTrackingRange(63)
-                            .updateInterval(1)
+                            .clientTrackingRange(10)
+                            .updateInterval(3)
                             .build("cog"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.PileDebrisEntity>> PILE_DEBRIS =
+            ENTITY_TYPES.register("pile_debris",
+                    () -> EntityType.Builder.<com.hbm_m.entity.projectile.PileDebrisEntity>of(
+                                    com.hbm_m.entity.projectile.PileDebrisEntity::new, MobCategory.MISC)
+                            // Original: die Trefferbreite 0.35F aus dem Aufruf in handleMeltdown.
+                            .sized(0.35F, 0.35F)
+                            .clientTrackingRange(10)
+                            .updateInterval(3)
+                            .build("pile_debris"));
 
     /** 1:1-Port von {@code EntitySawblade}: das Blatt aus einem ueberdrehten Saegewerk. */
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.SawbladeEntity>> SAWBLADE =
@@ -1257,8 +1233,6 @@ public class ModEntities {
                             .clientTrackingRange(63)
                             .updateInterval(1)
                             .build("sawblade"));
-
-    // pile_debris: Original-SEDNA-BulletConfig PileCoreBlockEntity.pile_debris (EntityBulletBaseMK4), keine eigene Entity.
 
     /** Original EntityTorpedo (entity_torpedo, Reichweite 1000). */
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.EntityTorpedo>> TORPEDO =
@@ -1326,24 +1300,5 @@ public class ModEntities {
 
     public static void init() {
         ENTITY_TYPES.register();
-        //? if fabric {
-        /*net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                NOLO.get(), NoloEntity.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_TAINTED_CREEPER.get(), EntityCreeperTainted.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_VOLATILE_CREEPER.get(), EntityCreeperVolatile.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_PHOSGENE_CREEPER.get(), EntityCreeperPhosgene.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_GOLD_CREEPER.get(), EntityCreeperGold.createAttributes());
-        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
-                ENTITY_MOB_NUCLEAR_CREEPER.get(), EntityCreeperNuclear.createAttributes());
-        net.minecraft.world.entity.SpawnRestriction.register(
-                NOLO.get(),
-                net.minecraft.world.entity.SpawnPlacements.Type.ON_GROUND,
-                net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                NoloEntity::checkNoloSpawnRules);
-        *///?}
     }
 }

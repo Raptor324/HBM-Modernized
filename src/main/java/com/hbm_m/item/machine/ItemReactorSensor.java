@@ -1,25 +1,28 @@
 package com.hbm_m.item.machine;
 
-import com.hbm_m.platform.StackNbt;
-
 import java.util.List;
+
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.machines.MachineReactorResearchBlockEntity;
 import com.hbm_m.blockentity.machines.UniversalMachinePartBlockEntity;
+import com.hbm_m.item.ITooltipProvider;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-
-import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1-Port von {@code ItemReactorSensor} (1.7.10): mit einem Rechtsklick auf einen
@@ -27,7 +30,7 @@ import org.jetbrains.annotations.Nullable;
  * ({@code x}/{@code y}/{@code z}). Das Reaktorsteuerpult liest sie aus - siehe
  * {@code TileEntityReactorControl.establishLink()}.
  */
-public class ItemReactorSensor extends Item {
+public class ItemReactorSensor extends Item implements ITooltipProvider {
 
     public static final String NBT_X = "x";
     public static final String NBT_Y = "y";
@@ -47,7 +50,7 @@ public class ItemReactorSensor extends Item {
             return InteractionResult.PASS;
         }
 
-        net.minecraft.world.entity.player.Player player = context.getPlayer();
+        Player player = context.getPlayer();
 
         if (!level.isClientSide()) {
             if (player != null) {
@@ -58,13 +61,16 @@ public class ItemReactorSensor extends Item {
                         .append(Component.literal("Position set!").withStyle(ChatFormatting.GREEN)));
             }
 
-            CompoundTag tag = StackNbt.orCreate(context.getItemInHand());
-            tag.putInt(NBT_X, core.getX());
-            tag.putInt(NBT_Y, core.getY());
-            tag.putInt(NBT_Z, core.getZ());
+            StackNbt.edit(context.getItemInHand(), tag -> {
+                tag.putInt(NBT_X, core.getX());
+                tag.putInt(NBT_Y, core.getY());
+                tag.putInt(NBT_Z, core.getZ());
+            });
 
-            if (player != null)
-                level.playSound(null, player.getX(), player.getY(), player.getZ(), com.hbm_m.sound.ModSounds.TOOL_TECH_BOOP.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+            if (player != null) {
+                ModSounds.TOOL_TECH_BOOP.ifPresent(sound ->
+                        level.playSound(null, player.getX(), player.getY(), player.getZ(), sound, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F));
+            }
         }
 
         return InteractionResult.sidedSuccess(level.isClientSide());
@@ -102,14 +108,9 @@ public class ItemReactorSensor extends Item {
     }
 
     @Override
-    //? if < 1.21.1 {
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-    //?} else {
-    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> tooltip, TooltipFlag flag) {
-    *///?}
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         BlockPos bound = getBoundPos(stack);
 
-        // 1:1 Original ItemReactorSensor.addInformation: drei graue Koordinatenzeilen bzw. Hinweis
         if (bound != null) {
             tooltip.add(Component.literal("x: " + bound.getX()).withStyle(ChatFormatting.GRAY));
             tooltip.add(Component.literal("y: " + bound.getY()).withStyle(ChatFormatting.GRAY));

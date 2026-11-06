@@ -11,13 +11,13 @@ import net.minecraft.world.level.Level;
 public class BlockGasExplosive extends BlockGasFlammable {
 
     public BlockGasExplosive() {
-        super(); // Original: erbt Farbe und Verhalten von BlockGasFlammable
+        super();
     }
 
     @Override
     protected void combust(ServerLevel level, BlockPos pos) {
         super.combust(level, pos);
         level.explode(null, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
-                3F, Level.ExplosionInteraction.TNT);
+                3.0F, Level.ExplosionInteraction.TNT);
     }
 }

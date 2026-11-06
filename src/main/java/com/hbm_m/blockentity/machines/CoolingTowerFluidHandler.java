@@ -1,13 +1,13 @@
 package com.hbm_m.blockentity.machines;
 
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+
 //? if forge {
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /**
  * Forge fluid capability bridge for the (large) Cooling Tower.
@@ -97,14 +97,11 @@ public class CoolingTowerFluidHandler implements IFluidHandler {
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-
 /^*
  * Forge fluid capability bridge for the (large) Cooling Tower.
  * Tank 0 = hot coolant input, tank 1 = cooled coolant output.
  ^/
-public class CoolingTowerFluidHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+public class CoolingTowerFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
 
     private final MachineCoolingTowerBlockEntity blockEntity;
 
@@ -118,12 +115,12 @@ public class CoolingTowerFluidHandler implements net.neoforged.neoforge.fluids.c
     }
 
     @Override
-    public @NotNull net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+    public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
         FluidTank target = blockEntity.getTank(tank);
         if (target == null || target.getFill() <= 0) {
-            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
         }
-        return new net.neoforged.neoforge.fluids.FluidStack(target.getTankType(), target.getFill());
+        return new net.minecraftforge.fluids.FluidStack(target.getTankType(), target.getFill());
     }
 
     @Override
@@ -132,14 +129,14 @@ public class CoolingTowerFluidHandler implements net.neoforged.neoforge.fluids.c
     }
 
     @Override
-    public boolean isFluidValid(int tank, @NotNull net.neoforged.neoforge.fluids.FluidStack stack) {
+    public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
         if (stack.isEmpty()) return false;
         if (tank != MachineCoolingTowerBlockEntity.TANK_HOT_IN) return false;
         return blockEntity.getTank(MachineCoolingTowerBlockEntity.TANK_HOT_IN).isFluidValid(stack.getFluid());
     }
 
     @Override
-    public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+    public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
         if (resource.isEmpty()) return 0;
 
         FluidTank input = blockEntity.getTank(MachineCoolingTowerBlockEntity.TANK_HOT_IN);
@@ -156,30 +153,30 @@ public class CoolingTowerFluidHandler implements net.neoforged.neoforge.fluids.c
     }
 
     @Override
-    public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
-        if (resource.isEmpty()) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+    public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+        if (resource.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
 
         FluidTank out = blockEntity.getTank(MachineCoolingTowerBlockEntity.TANK_COOLANT_OUT);
-        if (out.getFill() <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
-        if (!VanillaFluidEquivalence.sameSubstance(out.getTankType(), resource.getFluid())) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        if (out.getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+        if (!VanillaFluidEquivalence.sameSubstance(out.getTankType(), resource.getFluid())) return net.minecraftforge.fluids.FluidStack.EMPTY;
 
         int planned = Math.min(resource.getAmount(), out.getFill());
-        if (planned <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        if (planned <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
 
         int drained = action == FluidAction.EXECUTE ? out.drainMb(planned) : planned;
-        return drained > 0 ? new net.neoforged.neoforge.fluids.FluidStack(out.getTankType(), drained) : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        return drained > 0 ? new net.minecraftforge.fluids.FluidStack(out.getTankType(), drained) : net.minecraftforge.fluids.FluidStack.EMPTY;
     }
 
     @Override
-    public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-        if (maxDrain <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+    public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+        if (maxDrain <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
 
         FluidTank out = blockEntity.getTank(MachineCoolingTowerBlockEntity.TANK_COOLANT_OUT);
-        if (out.getFill() <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        if (out.getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
 
         int planned = Math.min(maxDrain, out.getFill());
         int drained = action == FluidAction.EXECUTE ? out.drainMb(planned) : planned;
-        return drained > 0 ? new net.neoforged.neoforge.fluids.FluidStack(out.getTankType(), drained) : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        return drained > 0 ? new net.minecraftforge.fluids.FluidStack(out.getTankType(), drained) : net.minecraftforge.fluids.FluidStack.EMPTY;
     }
 }
 *///?}

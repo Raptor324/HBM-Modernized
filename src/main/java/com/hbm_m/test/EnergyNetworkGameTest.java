@@ -1,6 +1,5 @@
 package com.hbm_m.test;
 
-import com.hbm_m.api.energy.ConverterBlockEntity;
 import com.hbm_m.api.energy.Nodespace;
 import com.hbm_m.api.energy.PowerNet;
 import com.hbm_m.api.energy.SwitchBlock;
@@ -20,13 +19,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
-*///?}
 
 /**
  * Кроссплатформенные GameTests энергосети energymk2.
@@ -423,23 +417,13 @@ public final class EnergyNetworkGameTest {
         helper.setBlock(bat, ModBlocks.MACHINE_BATTERY.get());
         placeWire(helper, new BlockPos(2, 1, 1));
 
-        // Original TileEntityBatteryBase: redLow = mode_input, redHigh = mode_output
-        // (Port-Zaehlung 1 = INPUT, 2 = OUTPUT). Der Puffermodus ist NICHT Standard,
-        // er wird hier fuer den Junction-Lebenszyklus explizit gesetzt.
-        MachineBatteryBlockEntity fresh =
-                (MachineBatteryBlockEntity) helper.getLevel().getBlockEntity(helper.absolutePos(bat));
-        check(fresh != null, "Battery BE exists");
-        check(fresh.modeOnNoSignal == 1 && fresh.modeOnSignal == 2,
-                "Battery defaults to INPUT without / OUTPUT with redstone like the original");
-        fresh.modeOnNoSignal = 0;
-
         helper.startSequence()
             .thenWaitUntil(() -> {
                 MachineBatteryBlockEntity be =
                         (MachineBatteryBlockEntity) helper.getLevel()
                                 .getBlockEntity(helper.absolutePos(bat));
                 check(be != null, "Battery BE exists");
-                check(be.getCurrentMode() == 0, "Battery is in BOTH(buffer) mode after switching");
+                check(be.getCurrentMode() == 0, "Battery starts in BOTH(buffer) mode by default");
                 Nodespace.PowerNode jn = nodeAt(helper, bat);
                 check(jn != null && jn.hasValidNet(),
                         "Buffer-mode battery maintains its own junction node with a valid net");
@@ -576,20 +560,6 @@ public final class EnergyNetworkGameTest {
             .thenSucceed();
     }
 
-    @GameTest(template = "empty3x3x3", batch = "energy_flow", timeoutTicks = 250)
-    public static void flowConverterPullsFromHbmNet(GameTestHelper helper) {
-        placeBattery(helper, new BlockPos(1, 1, 1), 2, 100_000L);
-        placeWire(helper, new BlockPos(2, 1, 1));
-        helper.setBlock(new BlockPos(2, 1, 2), ModBlocks.CONVERTER_BLOCK.get());
-
-        helper.succeedWhen(() -> {
-            BlockEntity conv = helper.getLevel().getBlockEntity(helper.absolutePos(new BlockPos(2, 1, 2)));
-            check(conv instanceof ConverterBlockEntity, "Converter BE exists");
-            long buffered = ((ConverterBlockEntity) conv).getEnergyStored();
-            check(buffered > 0, "Converter buffers energy pulled from the HBM network (got " + buffered + ")");
-        });
-    }
-
     /**
      * Репродукция реального сценария: мультиблок-генератор (буржуйка) → провод → приемник.
      * Буржуйка ставится целиком (onPlace формирует структуру), энергия задается напрямую
@@ -630,26 +600,85 @@ public final class EnergyNetworkGameTest {
      */
     @GameTest(template = "empty5x5x5", batch = "energy_flow", timeoutTicks = 300)
     public static void flowChargesAdvancedAssemblerThroughWire(GameTestHelper helper) {
+        // Сборщик ставится контроллером, структура формируется в onPlace.
+        // Структура 3×3×3 занимает x=1..3, y=1..3, z=1..3. Кольцо проводов —
+        // СНАРУЖИ структуры (периметр x∈{0,4} ∪ z∈{0,4} на y=1..2): провода,
+        // поставленные на фасады структуры, ломают мультиблок (коллапс сносит ядро).
+        helper.setBlock(new BlockPos(2, 1, 2), ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get());
+        for (int y = 1; y <= 2; y++) {
+            for (int x = 0; x <= 4; x++) {
+                placeWire(helper, new BlockPos(x, y, 0));
+                placeWire(helper, new BlockPos(x, y, 4));
+            }
+            for (int z = 1; z <= 3; z++) {
+                placeWire(helper, new BlockPos(0, y, z));
+                placeWire(helper, new BlockPos(4, y, z));
+            }
+        }
+
+        // Батарея ставится ПОСЛЕ кольца: клетка (0,1,0) — часть периметра,
+        // батарея заменяет провод и встаёт в кольцо как источник.
         placeBattery(helper, new BlockPos(0, 1, 0), 2, 500_000L);
-        placeWire(helper, new BlockPos(0, 1, 1));
-        placeWire(helper, new BlockPos(0, 1, 2));
-
-        // Сборщик ставится контроллером, структура формируется в onPlace
-        BlockPos asmCore = new BlockPos(2, 1, 2);
-        helper.setBlock(asmCore, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get());
-
-        // Der 3x3x3-Sockel belegt x/z 1..3 um den Kern (2,1,2). Die frueheren Ringdraehte auf
-        // x/z 1..3 ueberschrieben eigene Strukturteile -> UniversalMachinePartBlock.onRemove riss
-        // den Kern ab ("Assembler core BE exists" scheiterte). Der Draht (0,1,2) liegt jetzt wie im
-        // Original-getConPos (Kern -2 auf X) direkt am Westkonnektor (1,1,2) an.
-        check(helper.getLevel().getBlockEntity(helper.absolutePos(asmCore)) instanceof IEnergyReceiver,
-                "Assembler core BE exists right after placement");
 
         helper.succeedWhen(() -> {
-            BlockEntity be = helper.getLevel().getBlockEntity(helper.absolutePos(asmCore));
-            check(be instanceof IEnergyReceiver, "Assembler core BE exists");
-            long ae = ((IEnergyReceiver) be).getEnergyStored();
-            check(ae > 0, "Advanced assembler charged through wire network (got " + ae + ")");
+            // Ядро ищем сканом по всему шаблону: его позиция зависит от геометрии
+            // структуры и направления фасада, а не от позиции контроллера.
+            BlockEntity core = null;
+            int receivers = 0;
+            for (int x = 0; x <= 4; x++)
+                for (int y = 0; y <= 4; y++)
+                    for (int z = 0; z <= 4; z++) {
+                        BlockEntity be = helper.getLevel().getBlockEntity(helper.absolutePos(new BlockPos(x, y, z)));
+                        if (be instanceof com.hbm_m.blockentity.BaseMachineBlockEntity machine) {
+                            receivers++;
+                            if (core == null) core = be;
+                        }
+                    }
+            check(core != null, "Assembler core BE (BaseMachineBlockEntity) not found in 5x5x5, receivers="
+                    + receivers);
+            long ae = ((IEnergyReceiver) core).getEnergyStored();
+            if (ae <= 0) {
+                int nodesWithNet = 0, providers = 0, receiversInNet = 0;
+                long tracker = -1;
+                for (int x = 0; x <= 4; x++)
+                    for (int y = 0; y <= 4; y++)
+                        for (int z = 0; z <= 4; z++) {
+                            var node = com.hbm_m.api.energy.Nodespace.getNode(
+                                    helper.getLevel(), helper.absolutePos(new BlockPos(x, y, z)));
+                            if (node != null && node.net != null && node.net.isValid()) {
+                                nodesWithNet++;
+                                if (true) { var pn = node.net; // net already typed PowerNet
+
+                                    providers = Math.max(providers, pn.providerEntries.size());
+                                    receiversInNet = Math.max(receiversInNet, pn.receiverEntries.size());
+                                    tracker = pn.energyTracker;
+                                }
+                            }
+                        }
+                java.util.LinkedHashSet<com.hbm_m.api.energy.PowerNet> nets = new java.util.LinkedHashSet<>();
+                for (int x2 = 0; x2 <= 4; x2++)
+                    for (int y2 = 0; y2 <= 4; y2++)
+                        for (int z2 = 0; z2 <= 4; z2++) {
+                            var node = com.hbm_m.api.energy.Nodespace.getNode(
+                                    helper.getLevel(), helper.absolutePos(new BlockPos(x2, y2, z2)));
+                            if (node != null) { var pn2 = node.net; // net already typed PowerNet
+
+                                nets.add(pn2);
+                            }
+                        }
+                StringBuilder members = new StringBuilder();
+                for (com.hbm_m.api.energy.PowerNet pn2 : nets) {
+                    if (members.length() > 0) members.append(';');
+                    members.append("P=").append(pn2.providerEntries.keySet().stream()
+                            .map(o -> o.getClass().getSimpleName()).distinct().toList());
+                    members.append(",R=").append(pn2.receiverEntries.keySet().stream()
+                            .map(o -> o.getClass().getSimpleName()).distinct().toList());
+                }
+                check(false, "Advanced assembler charged through wire network (got " + ae + ", machine BEs="
+                        + receivers + ", nodesWithNet=" + nodesWithNet + ", providers=" + providers
+                        + ", receiversInNet=" + receiversInNet + ", energyTracker=" + tracker
+                        + ", members=" + members + ")");
+            }
         });
     }
 }

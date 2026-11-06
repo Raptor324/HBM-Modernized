@@ -1,7 +1,6 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineArcWelderBlockEntity;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -11,11 +10,8 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
 import net.minecraftforge.items.SlotItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.items.SlotItemHandler;
-*///?}
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineArcWelderMenu extends AbstractContainerMenu {
 
@@ -33,7 +29,7 @@ public class MachineArcWelderMenu extends AbstractContainerMenu {
         this.blockEntity = be;
 
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку
-        var handler = be != null ? be.getItemHandler() : new DummyItemStackHandler(MACHINE_SLOTS);
+        var handler = be != null ? be.getItemHandler() : new ModItemStackHandler.Dummy(MACHINE_SLOTS);
         // ── Machine slots (0-7) ──────────────────────────────────────────────
         addSlot(new SlotItemHandler(handler, 0,  17, 36)); // Input 1
         addSlot(new SlotItemHandler(handler, 1,  35, 36)); // Input 2
@@ -68,15 +64,17 @@ public class MachineArcWelderMenu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
         // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
         if (inv.player.level().isClientSide) return null;
-        throw new IllegalStateException("No MachineArcWelderBlockEntity at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineArcWelderBlockEntity at " + pos);
     }
 
     public MachineArcWelderBlockEntity getBlockEntity() { return blockEntity; }
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        if (blockEntity == null) {
+            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
+        }
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     // ── Shift-click routing ──────────────────────────────────────────────────

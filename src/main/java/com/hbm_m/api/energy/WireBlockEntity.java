@@ -22,13 +22,12 @@ import org.jetbrains.annotations.Nullable;
  * Проводник энергосети: создает узел (PowerNode) в UniNodespace, энергии не хранит.
  * Аналог TileEntityCableBaseNT из 1.7.10.
  */
-public class WireBlockEntity extends BlockEntity implements PowerConductor, com.hbm_m.platform.HbmCapabilityProvider {
+public class WireBlockEntity extends BlockEntity implements PowerConductor {
 
     //? if forge {
     private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-    //?} elif neoforge {
-    /*private final com.hbm_m.platform.LazyCap<com.hbm_m.interfaces.IEnergyConnector> hbmConnector = com.hbm_m.platform.LazyCap.of(() -> this);
-    *///?}
+    private final LazyOptional<net.minecraftforge.energy.IEnergyStorage> feBridge = LazyOptional.of(this::createFeBridge);
+    //?}
 
     public WireBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.WIRE_BE.get(), pos, state);
@@ -54,11 +53,65 @@ public class WireBlockEntity extends BlockEntity implements PowerConductor, com.
         return true;
     }
 
+    /**
+     * Мост чужой FE на сеть этого провода: чужие кабели/машины, приложенные к проводу,
+     * пьют/льют энергию против опубликованных сетью бюджетов (ForeignEnergyBridge).
+     */
+    private ForeignEnergyBridge bridge() {
+        if (this.level == null || this.level.isClientSide) return null;
+        Nodespace.PowerNode node = Nodespace.getNode((ServerLevel) this.level, getBlockPos());
+        if (node == null || node.net == null || !node.net.isValid()) return null;
+        return node.net.foreignBridge;
+    }
+
+    private long feKey() {
+        return getBlockPos().asLong();
+    }
+
+    private long feTick() {
+        return level == null ? 0L : level.getGameTime();
+    }
+
     //? if forge {
+    private net.minecraftforge.energy.IEnergyStorage createFeBridge() {
+        return new net.minecraftforge.energy.IEnergyStorage() {
+            @Override public int receiveEnergy(int maxReceive, boolean simulate) {
+                ForeignEnergyBridge b = bridge();
+                return b == null ? 0 : (int) b.insertFe(maxReceive, feKey(), feTick());
+            }
+            @Override public int extractEnergy(int maxExtract, boolean simulate) {
+                if (simulate) return 0;
+                ForeignEnergyBridge b = bridge();
+                return b == null ? 0 : (int) b.extractFe(maxExtract);
+            }
+            @Override public int getEnergyStored() {
+                ForeignEnergyBridge b = bridge();
+                long fe = b == null ? 0 : b.amountFe();
+                return (int) Math.min(Integer.MAX_VALUE, fe);
+            }
+            @Override public int getMaxEnergyStored() {
+                ForeignEnergyBridge b = bridge();
+                long fe = b == null ? 0 : b.capacityFe();
+                return (int) Math.min(Integer.MAX_VALUE, fe);
+            }
+            @Override public boolean canReceive() {
+                ForeignEnergyBridge b = bridge();
+                return b != null && b.insertableFe() > 0;
+            }
+            @Override public boolean canExtract() {
+                ForeignEnergyBridge b = bridge();
+                return b != null && b.extractableFe() > 0;
+            }
+        };
+    }
+
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
             return hbmConnector.cast();
+        }
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY) {
+            return feBridge.cast();
         }
         return super.getCapability(cap, side);
     }
@@ -67,43 +120,64 @@ public class WireBlockEntity extends BlockEntity implements PowerConductor, com.
     public void invalidateCaps() {
         super.invalidateCaps();
         hbmConnector.invalidate();
+        feBridge.invalidate();
     }
 
-    @Override
-    public void onChunkUnloaded() {
-        super.onChunkUnloaded();
-        destroyOwnNode();
-    }
-    //?} elif neoforge {
-    /*@Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR) {
-            return hbmConnector.cast();
+    //?}
+
+    //? if neoforge {
+    /*private net.minecraftforge.energy.IEnergyStorage feBridgeInstance;
+
+    // Вызывается из регистрации капабилити (ModCapabilities).
+    public net.minecraftforge.energy.IEnergyStorage getFeStorage() {
+        if (feBridgeInstance == null) {
+            feBridgeInstance = new net.minecraftforge.energy.IEnergyStorage() {
+                @Override public int receiveEnergy(int maxReceive, boolean simulate) {
+                    ForeignEnergyBridge b = bridge();
+                    return b == null ? 0 : (int) b.insertFe(maxReceive, feKey(), feTick());
+                }
+                @Override public int extractEnergy(int maxExtract, boolean simulate) {
+                    if (simulate) return 0;
+                    ForeignEnergyBridge b = bridge();
+                    return b == null ? 0 : (int) b.extractFe(maxExtract);
+                }
+                @Override public int getEnergyStored() {
+                    ForeignEnergyBridge b = bridge();
+                    long fe = b == null ? 0 : b.amountFe();
+                    return (int) Math.min(Integer.MAX_VALUE, fe);
+                }
+                @Override public int getMaxEnergyStored() {
+                    ForeignEnergyBridge b = bridge();
+                    long fe = b == null ? 0 : b.capacityFe();
+                    return (int) Math.min(Integer.MAX_VALUE, fe);
+                }
+                @Override public boolean canReceive() {
+                    ForeignEnergyBridge b = bridge();
+                    return b != null && b.insertableFe() > 0;
+                }
+                @Override public boolean canExtract() {
+                    ForeignEnergyBridge b = bridge();
+                    return b != null && b.extractableFe() > 0;
+                }
+            };
         }
-        return com.hbm_m.platform.HbmCapabilityProvider.super.getHbmCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateHbmCaps() {
-        com.hbm_m.platform.HbmCapabilityProvider.super.invalidateHbmCaps();
-        hbmConnector.invalidate();
-    }
-
-    @Override
-    public void onChunkUnloaded() {
-        super.onChunkUnloaded();
-        destroyOwnNode();
+        return feBridgeInstance;
     }
     *///?}
+
+    // NeoForge has onChunkUnloaded too (IBlockEntityExtension); keeping it in the forge-only
+    // block left the node in Nodespace after an unload on 1.21.1.
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        destroyOwnNode();
+    }
 
     @Override
     public void setRemoved() {
         super.setRemoved();
-        //? if neoforge {
-        /*invalidateHbmCaps();
-        *///?}
         destroyOwnNode();
-        //? if forge || neoforge {
+        //? if forge {
         hbmConnector.invalidate();
         //?}
     }

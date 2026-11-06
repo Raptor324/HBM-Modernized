@@ -16,8 +16,8 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * 1:1 {@code RenderMeteor}: ein 5x5x5 grosser Wuerfel mit der Textur des geschmolzenen Meteorgesteins (das Original
- * bindet die Datei direkt, also den ganzen Animationsstreifen), um die Achse (1,1,1) rotierend, voll beleuchtet.
+ * 1:1 {@code RenderMeteor}: 5x5x5 cube with molten meteor rock texture (original binds
+ * the full texture sheet with animation strip), rotating around (1,1,1) axis, fullbright.
  */
 public class MeteorRenderer extends EntityRenderer<EntityMeteor> {
 
@@ -37,7 +37,7 @@ public class MeteorRenderer extends EntityRenderer<EntityMeteor> {
 
         VertexConsumer t = buffers.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
         Matrix4f m = pose.last().pose();
-        // Wie im Original die ganze Datei (Animationsstreifen aus 3 Bildern) auf jede Seite
+        // As in original, full animation strip mapped to each side
         float vMax = 1F;
         int l = 0xF000F0;
 
@@ -53,11 +53,7 @@ public class MeteorRenderer extends EntityRenderer<EntityMeteor> {
     }
 
     private static void v(VertexConsumer t, Matrix4f m, float x, float y, float z, float u, float v, int light) {
-        //? if < 1.21.1 {
-        t.vertex(m, x, y, z).color(1F, 1F, 1F, 1F).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(0, 1, 0).endVertex();
-        //?} else {
-        /*t.addVertex(m, x, y, z).setColor(1F, 1F, 1F, 1F).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(0, 1, 0);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexFull(t, m, x, y, z, 1F, 1F, 1F, 1F, u, v, OverlayTexture.NO_OVERLAY, light, 0, 1, 0);
     }
 
     @Override

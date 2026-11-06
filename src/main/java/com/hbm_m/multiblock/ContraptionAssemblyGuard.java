@@ -25,33 +25,50 @@ package com.hbm_m.multiblock;
  * </ul>
  *
  * <p>ThreadLocal, т.к. вся сборка выполняется синхронно на server thread.
- * Страховка от утечки глубины (исключение внутри чужого метода между push/pop):
- * окно автоматически истекает через 30 секунд реального времени.
+ * A leaked window is force-closed at the end of the server tick (see #endServerTick):
+ * a foreign mixin can cancel the engine method at HEAD, and then our pop never runs.
  */
 public final class ContraptionAssemblyGuard {
 
     private ContraptionAssemblyGuard() {}
 
-    /** Максимальная вложенность окон (защита от переполнения счётчика). */
-    private static final int MAX_DEPTH = 8;
-
-    /** Страховочное время жизни окна: 30 с. Достаточно даже для гигантских сборок. */
-    private static final long WINDOW_TIMEOUT_NANOS = 30_000_000_000L;
-
     private static final ThreadLocal<Integer> DEPTH = ThreadLocal.withInitial(() -> 0);
-    private static final ThreadLocal<Long> DEADLINE_NANOS = ThreadLocal.withInitial(() -> 0L);
 
-    /** Открыть окно (вызывается из mixin'ов на HEAD методов движков сборки). */
+    /**
+     * Открыть окно (вызывается из mixin'ов на HEAD методов движков сборки).
+     *
+     * <p>The depth is not capped. It used to stop incrementing past a limit while pop() always
+     * decremented, so nesting deeper than the cap closed the window while the outermost engine was
+     * still moving blocks - which is exactly the dupe this guard exists to prevent.</p>
+     */
     public static void push() {
         int d = DEPTH.get();
         if (d == 0) {
-            DEADLINE_NANOS.set(System.nanoTime() + WINDOW_TIMEOUT_NANOS);
-            // Диагностика дюпа: видно, открывается ли окно вообще и на каком потоке.
-            com.hbm_m.main.MainRegistry.LOGGER.info(
-                "[HBM] окно сборки ОТКРЫТО (thread {})", Thread.currentThread().getName());
+            com.hbm_m.main.MainRegistry.LOGGER.debug(
+                "[HBM] contraption move window opened (thread {})", Thread.currentThread().getName());
         }
-        if (d < MAX_DEPTH) {
-            DEPTH.set(d + 1);
+        DEPTH.set(d + 1);
+    }
+
+    /**
+     * Force the window shut at the end of a server tick.
+     *
+     * <p>The RETURN half of a push/pop pair is not reliable: another mod's mixin can cancel the
+     * engine method at HEAD (this modpack has four mods injecting into SubLevelAssemblyHelper), and
+     * then our pop is never reached. Measured in game: seven windows opened over a session, none
+     * closed - every window stayed open for the whole 30 s failsafe, and breaking or placing an HBM
+     * machine in that time did nothing (a part broke without its structure, a placed machine built
+     * no structure at all).
+     *
+     * <p>Every engine block move runs synchronously inside one server tick, so a window that
+     * outlives its tick is by definition a leak - closing it here bounds the damage to that tick.
+     */
+    public static void endServerTick() {
+        int d = DEPTH.get();
+        if (d > 0) {
+            DEPTH.set(0);
+            com.hbm_m.main.MainRegistry.LOGGER.debug(
+                "[HBM] contraption move window leaked (depth {}), forced shut at tick end", d);
         }
     }
 
@@ -59,25 +76,16 @@ public final class ContraptionAssemblyGuard {
     public static void pop() {
         int d = DEPTH.get();
         if (d == 1) {
-            com.hbm_m.main.MainRegistry.LOGGER.info(
-                "[HBM] окно сборки ЗАКРЫТО (thread {})", Thread.currentThread().getName());
+            com.hbm_m.main.MainRegistry.LOGGER.debug(
+                "[HBM] contraption move window closed (thread {})", Thread.currentThread().getName());
         }
         DEPTH.set(Math.max(0, d - 1));
     }
 
     /**
      * @return true, пока идёт перенос блоков движком сборки/разборки.
-     * Просроченное окно (страховочный таймаут) считается закрытым.
      */
     public static boolean isMoving() {
-        int d = DEPTH.get();
-        if (d <= 0) return false;
-        if (System.nanoTime() > DEADLINE_NANOS.get()) {
-            // Утечка (исключение между push/pop) — сбрасываем, чтобы не
-            // заблокировать обычное разрушение машин навсегда.
-            DEPTH.set(0);
-            return false;
-        }
-        return true;
+        return DEPTH.get() > 0;
     }
 }

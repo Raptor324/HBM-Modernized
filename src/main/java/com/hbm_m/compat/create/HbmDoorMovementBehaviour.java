@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.compat.create;
 
 import com.hbm_m.block.decorations.DoorBlock;
@@ -177,4 +176,3 @@ public class HbmDoorMovementBehaviour implements MovementBehaviour {
         }
     }
 }
-//?}

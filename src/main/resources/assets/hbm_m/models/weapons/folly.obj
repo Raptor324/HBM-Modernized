@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'folly.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Cog
 v 0.382683 1.923880 -4.500000
 v 0.707107 1.707107 -4.500000

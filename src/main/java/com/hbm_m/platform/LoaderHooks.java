@@ -1,5 +1,7 @@
 package com.hbm_m.platform;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.function.Function;
 
 import net.minecraft.client.renderer.block.model.BlockModel;
@@ -11,34 +13,58 @@ import net.minecraft.client.resources.model.ModelBaker;
 import net.minecraft.client.resources.model.ModelState;
 import net.minecraft.resources.ResourceLocation;
 
-//? if < 1.21.1 {
 import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
 import net.minecraftforge.client.model.obj.ObjLoader;
 import net.minecraftforge.client.model.obj.ObjModel;
-//?} else {
-/*import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
-import net.neoforged.neoforge.client.model.obj.ObjLoader;
-import net.neoforged.neoforge.client.model.obj.ObjModel;
-*///?}
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public final class LoaderHooks {
     private LoaderHooks() {}
+
+    // Собственный вечный OBJ-кеш УДАЛЁН: ObjLoader.INSTANCE сам кеширует по ModelSettings
+    // (включая flipV) и сбрасывает кеш на resource reload (F3+T) — наш ConcurrentHashMap
+    // удерживал старые модели навсегда и ломал hot-reload .obj-ассетов.
+
+    /** Локации, для которых уже предупреждали, что сырой .obj недоступен (чтобы не спамить лог каждый кадр/запекание). */
+    private static final java.util.Set<String> RAW_OBJ_WARNED = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     /**
      * Кросс-версионная загрузка OBJ модели.
      * Исправляет баг 1.20.1 Forge, где flipV ошибочно передавался вместо automaticCulling.
+     *
+     * <p><b>Nmesh-first:</b> данные модели теперь идут из {@link com.hbm_m.client.model.nmesh.NMeshLoader#load}
+     * (бинарный {@code .nmesh} из джарки, собранный таском compileNucleusMeshes, либо runtime-фолбэк
+     * сырого .obj из ресурс-пака внутри самого NMeshLoader). Прямой вызов этого метода для ПОЛУЧЕНИЯ
+     * геометрии запрещён — используйте {@code NMeshLoader.load(...)}. Здесь остался только фолбэк
+     * {@link ObjLoader} для resourcepack-оверрайдов с живым .obj, и он вызывается лишь тогда, когда
+     * сырой .obj реально есть в ресурсах: в джарке без *.obj/*.mtl ObjLoader всё равно упал бы, поэтому
+     * вместо него — явное предупреждение в лог и исключение с внятной причиной.
      */
     public static ObjModel loadObjModel(ResourceLocation modelLocation, boolean flipV) {
-        return ObjLoader.INSTANCE.loadModel(
+        // Прогрев/валидация бинарного меша: кешируется в NMeshLoader, nmesh-first пути дальше читают из кеша.
+        com.hbm_m.client.model.nmesh.NMeshData nmesh = com.hbm_m.client.model.nmesh.NMeshLoader.load(modelLocation);
+        net.minecraft.server.packs.resources.Resource objRes = null;
+        try {
+            objRes = net.minecraft.client.Minecraft.getInstance()
+                    .getResourceManager().getResource(modelLocation).orElse(null);
+        } catch (Throwable ignored) {
+        }
+        if (objRes == null) {
+            if (RAW_OBJ_WARNED.add(modelLocation.toString())) {
+                com.hbm_m.main.MainRegistry.LOGGER.warn(
+                        "LoaderHooks.loadObjModel: no raw .obj resource for {} (jar ships compiled .nmesh only; nmesh available: {}). " +
+                        "Call NMeshLoader.load() for model data; the ObjLoader fallback needs a resourcepack .obj override.",
+                        modelLocation, nmesh != null);
+            }
+            throw new IllegalStateException(
+                    "Raw OBJ resource missing for " + modelLocation
+                    + " — the jar ships .nmesh only; use com.hbm_m.client.model.nmesh.NMeshLoader.load() instead of the ObjLoader fallback");
+        }
+        ObjModel model = ObjLoader.INSTANCE.loadModel(
             new ObjModel.ModelSettings(modelLocation, false, true, flipV, true, null)
         );
+        com.hbm_m.main.MainRegistry.LOGGER.debug("LoaderHooks: parsed OBJ model {} (raw .obj fallback)", modelLocation);
+        return model;
     }
 
     /**
@@ -62,6 +88,89 @@ public final class LoaderHooks {
         return blockModel.bake(baker, blockModel, spriteGetter, modelState, modelLocation, guiLight3d);
         //?} else {
         /*return blockModel.bake(baker, blockModel, spriteGetter, modelState, guiLight3d);
+        *///?}
+    }
+
+    // =====================================================================================
+    //  Model Registration & Handling Bridge (бывшие PlatformHooks-методы).
+    //
+    //  1.20.1: ModelResourceLocation extends ResourceLocation.
+    //  1.21.1: ModelResourceLocation is a record (does NOT extend ResourceLocation).
+    //          RegisterGeometryLoaders требует ResourceLocation, RegisterAdditional требует ModelResourceLocation.
+    // =====================================================================================
+
+    /** Кросс-версионный ключ «инвентарной» модели сета (единая точка для register/get). */
+    private static net.minecraft.client.resources.model.ModelResourceLocation itemModelLocation(ResourceLocation id) {
+        //? if < 1.21.1 {
+        return new net.minecraft.client.resources.model.ModelResourceLocation(id, "inventory");
+        //?} else {
+        /*return new net.minecraft.client.resources.model.ModelResourceLocation(
+                ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "item/" + id.getPath()), "standalone");
+        *///?}
+    }
+
+    /** Создание ModelResourceLocation. Возвращает Object, чтобы не зависеть от изменения иерархии наследования. */
+    public static Object createModelLocation(ResourceLocation id, String variant) {
+        return new net.minecraft.client.resources.model.ModelResourceLocation(id, variant);
+    }
+
+    /** Извлечение ResourceLocation (ID) из ModelResourceLocation. */
+    public static ResourceLocation getModelId(Object modelResourceLocation) {
+        //? if < 1.21.1 {
+        return (ResourceLocation) modelResourceLocation;
+        //?} else {
+        /*return ((net.minecraft.client.resources.model.ModelResourceLocation) modelResourceLocation).id();
+        *///?}
+    }
+
+    /** Регистрация дополнительной standalone-модели. */
+    public static void registerAdditionalModel(Object event, ResourceLocation loc) {
+        //? if < 1.21.1 {
+        ((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(loc);
+        //?} else {
+        /*((net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional) event).register(
+                new net.minecraft.client.resources.model.ModelResourceLocation(loc, "standalone"));
+        *///?}
+    }
+
+    /**
+     * Регистрация "инвентарной" модели сета по её базовому id (например hbm_m:t51_armor).
+     * Файл модели ищется в {@code models/item/<path>.json} на обеих версиях.
+     */
+    public static void registerItemModel(Object event, ResourceLocation id) {
+        //? if < 1.21.1 {
+        ((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(
+                (net.minecraft.client.resources.model.ModelResourceLocation) itemModelLocation(id));
+        //?} else {
+        /*((net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional) event).register(itemModelLocation(id));
+        *///?}
+    }
+
+    /** Запечённая "инвентарная" модель сета, зарегистрированная через {@link #registerItemModel}. */
+    public static BakedModel getItemModel(net.minecraft.client.resources.model.ModelManager manager, ResourceLocation id) {
+        // ModelManager.getModel(ModelResourceLocation) одинаков на обеих версиях,
+        // itemModelLocation() уже возвращает ModelResourceLocation — гейт и каст избыточны.
+        return manager.getModel(itemModelLocation(id));
+    }
+
+    /** Регистрация Geometry Loader. */
+    public static void registerGeometryLoader(Object event, String name, Object loader) {
+        //? if < 1.21.1 {
+        ((net.minecraftforge.client.event.ModelEvent.RegisterGeometryLoaders) event).register(
+                name, (net.minecraftforge.client.model.geometry.IGeometryLoader<?>) loader);
+        //?} else {
+        /*((net.neoforged.neoforge.client.event.ModelEvent.RegisterGeometryLoaders) event).register(
+                ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, name),
+                (net.minecraftforge.client.model.geometry.IGeometryLoader<?>) loader);
+        *///?}
+    }
+
+    /** BakedModel из ModelManager по ResourceLocation (скрывает смену сигнатуры getModel() в 1.21.1). */
+    public static BakedModel getModel(net.minecraft.client.resources.model.ModelManager manager, ResourceLocation loc) {
+        //? if < 1.21.1 {
+        return manager.getModel(loc);
+        //?} else {
+        /*return manager.getModel(new net.minecraft.client.resources.model.ModelResourceLocation(loc, "standalone"));
         *///?}
     }
 }

@@ -126,3 +126,4 @@ public class NukeCustomBlockEntity extends NukeBaseBlockEntity {
         return new NukeCustomMenu(id, inventory, this);
     }
 }
+

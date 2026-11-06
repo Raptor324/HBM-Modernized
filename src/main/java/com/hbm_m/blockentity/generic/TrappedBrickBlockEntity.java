@@ -28,6 +28,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.MobHooks;
 
 /** 1:1 {@code TileEntityTrappedBrick}: Melder-Fallen (Steinschlag, Pfeile, Saeule, Zombie, Spinnen) loesen bei Spielern im Meldebereich aus. */
 public class TrappedBrickBlockEntity extends BlockEntity {
@@ -63,7 +64,7 @@ public class TrappedBrickBlockEntity extends BlockEntity {
                 /*Arrow arrow = new Arrow(w, xCoord + 0.5 + ox, yCoord + 0.5, zCoord + 0.5 + oz, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
                 *///?}
                 arrow.setDeltaMovement(ox, 0, oz);
-                if (trap() == Trap.FLAMING_ARROW) PlatformHooks.setSecondsOnFire(arrow, 60);
+                if (trap() == Trap.FLAMING_ARROW) MobHooks.setSecondsOnFire(arrow, 60);
                 w.addFreshEntity(arrow);
             }
             case PILLAR -> {

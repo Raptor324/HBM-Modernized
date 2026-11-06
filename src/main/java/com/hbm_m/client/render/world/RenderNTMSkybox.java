@@ -28,12 +28,11 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * 1:1-Port der Himmelszusaetze aus {@code RenderNTMSkyboxChainloader} und {@code RenderNTMSkyboxImpact}.
- * <p>Das Original haengt sich als Sky-Renderer vor/hinter den vorhandenen Himmel; hier laeuft das Zeichnen direkt
- * nach dem Vanilla-Himmel ({@code AFTER_SKY}). Normal: Leitstern (nur durch polarisiertes Glas), Digamma-Stern
- * und Bobmazon-Satellit. Nach dem Einschlag (Staub/Feuer > 0): Digamma-Stern mit Alpha {@code dust} und
- * Satellit mit Alpha {@code dust * (1 - Regen)}; Sonne/Mond/Sterne und Morgenrot daempft
- * {@code LevelRendererImpactMixin}.</p>
+ * 1:1 port of sky additions from {@code RenderNTMSkyboxChainloader} and {@code RenderNTMSkyboxImpact}.
+ * <p>Original hooks as sky renderer before/after existing sky; here rendering executes directly
+ * after vanilla sky ({@code AFTER_SKY}). Normal: Lode Star (visible only through polarized glass), Digamma Star
+ * and Bobmazon satellite. Post-impact (dust/fire > 0): Digamma Star with alpha {@code dust} and
+ * satellite with alpha {@code dust * (1 - rain)}; sun/moon/stars and dawn attenuated by {@code LevelRendererImpactMixin}.</p>
  */
 public final class RenderNTMSkybox {
 
@@ -51,7 +50,7 @@ public final class RenderNTMSkybox {
         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
     }
 
-    /** Original {@code ModEventHandlerClient.onClientTickLast}: impact-Himmel, sonst Chainloader, nur Oberwelt. */
+    /** Original {@code ModEventHandlerClient.onClientTickLast}: impact sky or chainloader, overworld only. */
     public static boolean isImpactSky(ClientLevel world) {
         return ImpactWorldHandler.getDustForClient(world) > 0 || ImpactWorldHandler.getFireForClient(world) > 0;
     }
@@ -64,9 +63,14 @@ public final class RenderNTMSkybox {
         if (world.dimension() != Level.OVERWORLD) return;
         if (com.hbm_m.api.space.SpaceApi.overridesSky(world)) return; // Space-Addon zeichnet den Himmel selbst
 
-        updateLodeStar(mc, world);
+        // Sky base (R_cam): on 1.20.1 event pose stack already includes rotation; on 1.21.1 identity.
+        com.hbm_m.platform.RenderHooks.applySkyViewBasis(poseStack);
+
+        // Lode Star raycast runs in client tick (CLIENT_POST), not per frame.
 
         poseStack.pushPose();
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthFunc( org.lwjgl.opengl.GL11.GL_LEQUAL);
         RenderSystem.depthMask(false);
         RenderSystem.enableBlend();
         RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE,
@@ -86,55 +90,31 @@ public final class RenderNTMSkybox {
         poseStack.popPose();
     }
 
-    /** {@code RenderNTMSkyboxChainloader.render} ab der Stelle nach dem Elternhimmel. */
+    /** {@code RenderNTMSkyboxChainloader.render} section executed after parent sky. */
     private static void renderChainloader(PoseStack ps, float partialTicks, Minecraft mc, ClientLevel world) {
-        float var12 = 0.5F + world.random.nextFloat() * 0.25F;
-        double dist = 100D;
-
         if (renderLodeStar) {
+            // Original twinkle size - sampled only when star is rendered (client world random must not be consumed from render thread per frame).
+            float var12 = 0.5F + world.random.nextFloat() * 0.25F;
             ps.pushPose();
             ps.mulPose(Axis.XP.rotationDegrees(-75.0F));
             ps.mulPose(Axis.YP.rotationDegrees(10.0F));
-            quad(ps, lodeStar, var12, dist, 1F, 1F, 1F, 1.0F);
+            quad(ps, lodeStar, var12, 100D, 1F, 1F, 1F, 1.0F);
             ps.popPose();
         }
-
-        float celestial = world.getTimeOfDay(partialTicks);
-        float brightness = (float) Math.sin(celestial * Math.PI);
-        brightness *= brightness;
-
-        ps.pushPose();
-        ps.mulPose(Axis.YP.rotationDegrees(-90.0F));
-        ps.mulPose(Axis.XP.rotationDegrees(celestial * 360.0F));
-        ps.mulPose(Axis.XP.rotationDegrees(140.0F));
-        ps.mulPose(Axis.ZP.rotationDegrees(-40.0F));
-
-        float digamma = HbmLivingProps.getDigamma(mc.player);
-        var12 = 1F * (1 + digamma * 0.25F);
-        dist = 100D - digamma * 2.5;
-
-        quad(ps, digammaStar, var12, dist, brightness, brightness, brightness, 1.0F);
-        ps.popPose();
-
-        ps.pushPose();
-        ps.mulPose(Axis.XP.rotationDegrees(-40.0F));
-        ps.mulPose(Axis.YP.rotationDegrees(System.currentTimeMillis() % (360 * 1000) / 1000F));
-        ps.mulPose(Axis.XP.rotationDegrees(System.currentTimeMillis() % (360 * 100) / 100F));
-
-        var12 = 0.5F;
-        dist = 100D;
-
-        // Original: die Farbe vom Digamma-Stern bleibt gesetzt
-        quad(ps, bobmazonSat, var12, dist, brightness, brightness, brightness, 1.0F);
-        ps.popPose();
+        renderCelestialObjects(ps, partialTicks, mc, world, 1.0F, 1.0F);
     }
 
-    /** Der Digamma-/Satelliten-Block aus {@code RenderNTMSkyboxImpact.render}. */
+    /** Digamma / satellite section from {@code RenderNTMSkyboxImpact.render}. */
     private static void renderImpact(PoseStack ps, float partialTicks, Minecraft mc, ClientLevel world) {
         float atmosphericDust = ImpactWorldHandler.getDustForClient(world);
         float dust = Math.max((1.0F - (atmosphericDust * 2)), 0);
         float rain = dust * (1.0F - world.getRainLevel(partialTicks));
+        renderCelestialObjects(ps, partialTicks, mc, world, dust, rain);
+    }
 
+    /** Shared Digamma star / satellite section of both sky variants (differing only in alpha values). */
+    private static void renderCelestialObjects(PoseStack ps, float partialTicks, Minecraft mc, ClientLevel world,
+                                               float starAlpha, float satAlpha) {
         float celestial = world.getTimeOfDay(partialTicks);
         float brightness = (float) Math.sin(celestial * Math.PI);
         brightness *= brightness;
@@ -149,7 +129,7 @@ public final class RenderNTMSkybox {
         float var12 = 1F * (1 + digamma * 0.25F);
         double dist = 100D - digamma * 2.5;
 
-        quad(ps, digammaStar, var12, dist, brightness, brightness, brightness, dust);
+        quad(ps, digammaStar, var12, dist, brightness, brightness, brightness, starAlpha);
         ps.popPose();
 
         ps.pushPose();
@@ -160,39 +140,46 @@ public final class RenderNTMSkybox {
         var12 = 0.5F;
         dist = 100D;
 
-        quad(ps, bobmazonSat, var12, dist, brightness, brightness, brightness, rain);
+        // Original: color of Digamma star remains active
+        quad(ps, bobmazonSat, var12, dist, brightness, brightness, brightness, satAlpha);
         ps.popPose();
     }
 
-    /** Die Tessellator-Quads des Originals: (-s,-s) 0/0, (s,-s) 0/1, (s,s) 1/1, (-s,s) 1/0. */
+    /** Original tessellator quads: (-s,-s) 0/0, (s,-s) 0/1, (s,s) 1/1, (-s,s) 1/0. */
     private static void quad(PoseStack ps, ResourceLocation texture, float s, double dist, float r, float g, float b, float a) {
-        RenderSystem.setShaderTexture(0, texture);
-        RenderSystem.setShaderColor(r, g, b, a);
+        if (a <= 0.0F || r <= 0.0F && g <= 0.0F && b <= 0.0F) return;
         Matrix4f m = ps.last().pose();
         float d = (float) dist;
-        //? if < 1.21.1 {
-        BufferBuilder bb = Tesselator.getInstance().getBuilder();
-        bb.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        bb.vertex(m, -s, d, -s).uv(0.0F, 0.0F).endVertex();
-        bb.vertex(m, s, d, -s).uv(0.0F, 1.0F).endVertex();
-        bb.vertex(m, s, d, s).uv(1.0F, 1.0F).endVertex();
-        bb.vertex(m, -s, d, s).uv(1.0F, 0.0F).endVertex();
-        Tesselator.getInstance().end();
-        //?} else {
-        /*BufferBuilder bb = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        bb.addVertex(m, -s, d, -s).setUv(0.0F, 0.0F);
-        bb.addVertex(m, s, d, -s).setUv(0.0F, 1.0F);
-        bb.addVertex(m, s, d, s).setUv(1.0F, 1.0F);
-        bb.addVertex(m, -s, d, s).setUv(1.0F, 0.0F);
-        com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(bb.buildOrThrow());
-        *///?}
+        if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()
+                && com.hbm_m.client.render.shader.PackAdditiveQueue.engaged()) {
+            float[] verts = new float[] {
+                    -s, d, -s, 0.0F, 0.0F, r, g, b, a, 0.0F, 1.0F, 0.0F,
+                     s, d, -s, 0.0F, 1.0F, r, g, b, a, 0.0F, 1.0F, 0.0F,
+                     s, d,  s, 1.0F, 1.0F, r, g, b, a, 0.0F, 1.0F, 0.0F,
+                    -s, d,  s, 1.0F, 0.0F, r, g, b, a, 0.0F, 1.0F, 0.0F
+            };
+            com.hbm_m.client.render.shader.PackAdditiveQueue.pushWithDepthMode(
+                    texture, org.lwjgl.opengl.GL11.GL_QUADS, m, verts, verts.length,
+                    com.hbm_m.client.render.shader.PackAdditiveQueue.DEPTH_MODE_SKY);
+            return;
+        }
+        RenderSystem.setShaderTexture(0, texture);
+        RenderSystem.setShaderColor(r, g, b, a);
+        com.mojang.blaze3d.vertex.BufferBuilder bb = com.hbm_m.platform.RenderHooks.beginTesselator(
+                Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        com.hbm_m.platform.RenderHooks.vertexTex(bb, m, -s, d, -s, 0.0F, 0.0F);
+        com.hbm_m.platform.RenderHooks.vertexTex(bb, m, s, d, -s, 0.0F, 1.0F);
+        com.hbm_m.platform.RenderHooks.vertexTex(bb, m, s, d, s, 1.0F, 1.0F);
+        com.hbm_m.platform.RenderHooks.vertexTex(bb, m, -s, d, s, 1.0F, 0.0F);
+        com.hbm_m.platform.RenderHooks.drawWithShader(bb);
     }
 
     /**
-     * Original {@code onClientTickLast}: alle 200 ms ein Strahl 25 Bloecke nach Norden, 15 Grad angehoben; trifft er
-     * polarisiertes Glas, ist der Leitstern zu sehen.
+     * Original {@code onClientTickLast}: raycast 25 blocks north elevated 15 degrees every 200 ms;
+     * if it intersects polarized glass, the Lode Star becomes visible. Executes in CLIENT_POST tick
+     * rather than render frame.
      */
-    private static void updateLodeStar(Minecraft mc, ClientLevel world) {
+    public static void updateLodeStar(Minecraft mc, ClientLevel world) {
         long millis = System.currentTimeMillis();
         if (lastStarCheck + 200 < millis) {
             renderLodeStar = false;

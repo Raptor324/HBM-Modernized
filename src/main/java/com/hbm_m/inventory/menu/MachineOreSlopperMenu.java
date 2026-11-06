@@ -5,7 +5,6 @@ import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -15,6 +14,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1 {@code ContainerOreSlopper}: Batterie (8,72), Fluid-ID (26,72), Eingang (71,27), sechs Ausgaenge 2x3 ab (134,18),
@@ -36,7 +36,7 @@ public class MachineOreSlopperMenu extends AbstractContainerMenu {
 
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку
         var container = new ModItemStackHandlerContainer(
-                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOT_COUNT),
                 blockEntity != null ? blockEntity::setChanged : null);
 
         this.addSlot(new Slot(container, 0, 8, 72));
@@ -66,7 +66,7 @@ public class MachineOreSlopperMenu extends AbstractContainerMenu {
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
         if (blockEntity instanceof MachineOreSlopperBlockEntity slopper) return slopper;
         if (inventory.player.level().isClientSide) return null;
-        throw new IllegalStateException("No MachineOreSlopperBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":ore_slopper_menu");
+        throw new MenuBlockEntityMissingException("No MachineOreSlopperBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":ore_slopper_menu");
     }
 
     public MachineOreSlopperBlockEntity getBlockEntity() {

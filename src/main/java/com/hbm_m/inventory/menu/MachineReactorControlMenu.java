@@ -10,11 +10,11 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Menue des Reaktorsteuerpults. Ein Steckplatz fuer den Reaktorfuehler; die Koordinate stammt aus
@@ -125,7 +125,6 @@ public class MachineReactorControlMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player,
-                ModBlocks.MACHINE_CONTROLLER.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.MACHINE_CONTROLLER.get());
     }
 }

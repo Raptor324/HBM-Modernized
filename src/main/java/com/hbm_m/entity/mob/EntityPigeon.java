@@ -33,6 +33,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code EntityPigeon}: Taube mit Lauf-/Flugzustand. Fliegt zufaellig auf (oder bei Angriff/Feuer), haelt sich

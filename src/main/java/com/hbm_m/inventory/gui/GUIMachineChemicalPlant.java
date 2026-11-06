@@ -24,20 +24,17 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  * GUI для Chemical Plant - порт с 1.7.10.
  * UV-координаты и layout соответствуют оригинальному GUIMachineChemicalPlant.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChemicalPlantMenu> {
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
-            RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
-    *///?} else {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
-    //?}
 
     public GUIMachineChemicalPlant(MachineChemicalPlantMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -154,7 +151,7 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         if (isMouseOver(mouseX, mouseY, 7, 125, 18, 18)) {
             ChemicalPlantRecipe recipe = getSelectedRecipe();
             if (recipe != null) {
-                guiGraphics.renderTooltip(this.font, buildRecipeTooltip(recipe), Optional.empty(), mouseX, mouseY);
+                com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(guiGraphics, this.font, buildRecipeTooltip(recipe), mouseX, mouseY);
             } else {
                 guiGraphics.renderTooltip(this.font,
                         Component.translatable("gui.recipe.setRecipe").withStyle(ChatFormatting.YELLOW),
@@ -242,15 +239,9 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
             String name = variants.length == 0 ? "?" : variants[0].getHoverName().getString();
             lines.add(Component.literal("  " + in.count() + "x " + name).withStyle(ChatFormatting.GRAY));
         }
-        for (int fi = 0; fi < recipe.getFluidInputs().size(); fi++) {
-            var fin = recipe.getFluidInputs().get(fi);
-            var line = Component.literal("  " + fin.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
-                    .append(FluidLocalization.nameFromFluidId(BuiltInRegistries.FLUID.getKey(fin.getFluid())).copy().withStyle(ChatFormatting.GRAY));
-            // Original GenericRecipe.input(): " at <rot>N PU" bei Druckeingaengen
-            int pressure = recipe.getFluidInputPressure(fi);
-            if (pressure != 0) line.append(Component.literal(" ").append(Component.translatable("gui.recipe.atPressure")).append(" ").withStyle(ChatFormatting.BLUE))
-                    .append(Component.literal(pressure + " PU").withStyle(ChatFormatting.RED));
-            lines.add(line);
+        for (var fin : recipe.getFluidInputs()) {
+            lines.add(Component.literal("  " + fin.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
+                    .append(FluidLocalization.nameFromFluidId(BuiltInRegistries.FLUID.getKey(fin.getFluid())).copy().withStyle(ChatFormatting.GRAY)));
         }
 
         lines.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));

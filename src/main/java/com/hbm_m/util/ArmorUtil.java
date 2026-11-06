@@ -156,6 +156,7 @@ public final class ArmorUtil {
         if (checkArmorAny(player, ModItems.FAU_HELMET, ModItems.FAU_PLATE, ModItems.FAU_LEGS, ModItems.FAU_BOOTS)) return true;
         if (checkArmorAny(player, ModItems.DNS_HELMET, ModItems.DNS_PLATE, ModItems.DNS_LEGS, ModItems.DNS_BOOTS)) return true;
         return player.hasEffect(EffectHooks.of(com.hbm_m.effect.ModEffects.STABILITY));
+
     }
 
     public static boolean checkForDigamma2(Player player) {
@@ -204,19 +205,29 @@ public final class ArmorUtil {
     /**
      * Износ фильтра на надетой маске (или на маске, прицепленной к шлему).
      * Порт {@link com.hbm.util.ArmorUtil#damageGasMaskFilter} (1.7.10).
+     * The original loses the wear of an attached mask - it writes it into the copy decoded from
+     * the helmet's NBT - so the result is written back here.
      */
     public static void damageGasMaskFilter(LivingEntity entity, int damage) {
         if (damage <= 0) {
             return;
         }
-        ItemStack mask = GasMaskUtil.resolveWornMask(entity);
-        if (!mask.isEmpty() && mask.getItem() instanceof IGasMask) {
-            IGasMask.damageFilter(mask, damage);
+        GasMaskUtil.WornMask worn = GasMaskUtil.resolveWornMaskRef(entity);
+        if (worn.mask().getItem() instanceof IGasMask && IGasMask.damageFilter(worn.mask(), damage)) {
+            worn.commit();
         }
     }
 
     /** Есть ли на сущности маска (надетая, прицепленная к шлему или в слоте лица Curios). */
     public static boolean isWearingMask(LivingEntity entity) {
         return !GasMaskUtil.resolveWornMask(entity).isEmpty();
+    }
+
+    /**
+     * Маска надета, но фильтра нет. Порт {@code ArmorUtil.isWearingEmptyMask} (1.7.10).
+     */
+    public static boolean isWearingEmptyMask(LivingEntity entity) {
+        ItemStack mask = GasMaskUtil.resolveWornMask(entity);
+        return !mask.isEmpty() && !IGasMask.hasFilter(mask);
     }
 }

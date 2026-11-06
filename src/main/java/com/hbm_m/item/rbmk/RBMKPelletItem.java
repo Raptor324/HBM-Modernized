@@ -122,20 +122,20 @@ public class RBMKPelletItem extends Item {
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> list, TooltipFlag flag) {
     *///?}
         list.add(Component.literal(ChatFormatting.ITALIC + fullName));
-        list.add(Component.literal(ChatFormatting.DARK_GRAY.toString() + ChatFormatting.ITALIC + "Pellet for recycling"));
+        list.add(Component.translatableWithFallback("desc.hbm_m.pellet.recycling", "Pellet for recycling").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
 
         int meta = getState(stack);
 
         switch (meta % 5) {
-            case 0 -> list.add(Component.literal("Brand New").withStyle(ChatFormatting.GOLD));
-            case 1 -> list.add(Component.literal("Barely Depleted").withStyle(ChatFormatting.YELLOW));
-            case 2 -> list.add(Component.literal("Moderately Depleted").withStyle(ChatFormatting.GREEN));
-            case 3 -> list.add(Component.literal("Highly Depleted").withStyle(ChatFormatting.DARK_GREEN));
-            case 4 -> list.add(Component.literal("Fully Depleted").withStyle(ChatFormatting.DARK_GRAY));
+            case 0 -> list.add(Component.translatableWithFallback("desc.hbm_m.pellet.brand_new", "Brand New").withStyle(ChatFormatting.GOLD));
+            case 1 -> list.add(Component.translatableWithFallback("desc.hbm_m.pellet.barely_depleted", "Barely Depleted").withStyle(ChatFormatting.YELLOW));
+            case 2 -> list.add(Component.translatableWithFallback("desc.hbm_m.pellet.moderately_depleted", "Moderately Depleted").withStyle(ChatFormatting.GREEN));
+            case 3 -> list.add(Component.translatableWithFallback("desc.hbm_m.pellet.highly_depleted", "Highly Depleted").withStyle(ChatFormatting.DARK_GREEN));
+            case 4 -> list.add(Component.translatableWithFallback("desc.hbm_m.pellet.fully_depleted", "Fully Depleted").withStyle(ChatFormatting.DARK_GRAY));
         }
 
         if (isPoisoned(meta))
-            list.add(Component.literal("High Xenon Poison").withStyle(ChatFormatting.DARK_PURPLE));
+            list.add(Component.translatableWithFallback("desc.hbm_m.pellet.xenon", "High Xenon Poison").withStyle(ChatFormatting.DARK_PURPLE));
     }
 
     /** Original: ItemRBMKPellet extends ItemNuclearWaste - fallengelassen unverwundbar und ohne Verschwinde-Timer. */
@@ -143,9 +143,7 @@ public class RBMKPelletItem extends Item {
     public boolean onEntityItemUpdate(ItemStack stack, net.minecraft.world.entity.item.ItemEntity entity) {
         if (!entity.isInvulnerable()) {
             entity.setInvulnerable(true);
-            //? if forge || neoforge {
             entity.lifespan = Integer.MAX_VALUE;
-            //?}
         }
         return false;
     }

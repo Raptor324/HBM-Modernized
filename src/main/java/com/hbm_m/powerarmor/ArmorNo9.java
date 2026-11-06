@@ -32,7 +32,6 @@ public class ArmorNo9 extends ArmorModel implements IAttackHandler, IDamageHandl
         super(material, type, properties);
     }
 
-    //? if !fabric {
     @Override
     public boolean isDamageable(ItemStack stack) {
         return false;
@@ -42,7 +41,6 @@ public class ArmorNo9 extends ArmorModel implements IAttackHandler, IDamageHandl
     public int getMaxDamage(ItemStack stack) {
         return 0;
     }
-    //?}
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {

@@ -12,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineAmmoPressMenu extends AbstractContainerMenu {
 
@@ -66,7 +67,7 @@ public class MachineAmmoPressMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineAmmoPressBlockEntity ammoPress) {
             return ammoPress;
         }
-        throw new IllegalStateException("No MachineAmmoPressBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":ammo_press_menu");
+        throw new MenuBlockEntityMissingException("No MachineAmmoPressBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":ammo_press_menu");
     }
 
     public MachineAmmoPressBlockEntity getBlockEntity() {
@@ -75,8 +76,7 @@ public class MachineAmmoPressMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

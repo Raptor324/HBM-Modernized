@@ -12,9 +12,10 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Slot-Layout 1:1 aus {@code ContainerMachineHydrotreater} (1.7.10 Original): 11 Maschinenslots in Original-Reihenfolge,
- *  Ein-/Ausgabe nur entnehmbar ueber die Slotpruefung des BE. */
+ *  Ein-/Ausgabe nur entnehmbar ueber die Slotpruefung des BE (siehe {@link MachineHydrotreaterBlockEntity}). */
 public class MachineHydrotreaterMenu extends AbstractContainerMenu {
 
     private final MachineHydrotreaterBlockEntity blockEntity;
@@ -66,7 +67,7 @@ public class MachineHydrotreaterMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineHydrotreaterBlockEntity be) {
             return be;
         }
-        throw new IllegalStateException("No MachineHydrotreaterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":hydrotreater_menu");
+        throw new MenuBlockEntityMissingException("No MachineHydrotreaterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":hydrotreater_menu");
     }
 
     public MachineHydrotreaterBlockEntity getBlockEntity() {
@@ -75,8 +76,7 @@ public class MachineHydrotreaterMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     /** Original {@code SlotDeprecated}: haelt Altbestand, sonst weder sichtbar noch bedienbar. */

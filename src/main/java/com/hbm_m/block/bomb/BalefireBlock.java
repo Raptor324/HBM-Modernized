@@ -20,6 +20,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FireBlock;
 import net.minecraft.world.level.block.TntBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code Balefire}: gruenes Hoellenfeuer. Brennt nie von selbst aus (ab Alter 15 ruht es), greift aggressiver
@@ -116,7 +117,7 @@ public class BalefireBlock extends FireBlock {
 
     @Override
     public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
-        PlatformHooks.setSecondsOnFire(entity, 10);
+        MobHooks.setSecondsOnFire(entity, 10);
         if (entity instanceof LivingEntity living) living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 5 * 20, 9));
     }
 

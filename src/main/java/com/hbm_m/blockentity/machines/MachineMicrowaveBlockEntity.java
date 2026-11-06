@@ -8,6 +8,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineMicrowaveMenu;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.SimpleContainer;
@@ -34,7 +35,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * dies ist im Original ein absichtlicher Bestrafungsmechanismus fuer die hoechste Geschwindigkeits-
  * stufe, keine Fehlportierung.
  */
-public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity {
+public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.interfaces.ICopiable {
 
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_OUTPUT = 1;
@@ -50,6 +51,10 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity {
     public int speed = 0;
 
     private final SimpleContainer recipeInput = new SimpleContainer(1);
+
+    /** Кэш vanilla smelting-скана по фингерпринту входного стека (value-keyed, CONTRACT 2 CachedRecipeResolver). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<SmeltingRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
 
     public MachineMicrowaveBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MICROWAVE_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER);
@@ -78,8 +83,13 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity {
             }
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Anti-sync-spam: подпись покрывает энергию, time/speed и фингерпринты всех слотов
+        // (всё, что пишет writeNbtData) — пакет только при реальном изменении.
+        long sig = be.time * 31L + be.speed;
+        sig = sig * 31L + com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_INPUT));
+        sig = sig * 31L + com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_OUTPUT));
+        sig = sig * 31L + com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_BATTERY));
+        be.syncIfStateChanged(be.energy, sig);
     }
 
     public void adjustSpeed(int delta) {
@@ -116,17 +126,22 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity {
 
         ItemStack result = recipe.get().getResultItem(level.registryAccess());
         if (result.isEmpty()) return false;
-        if (!com.hbm_m.platform.PlatformHooks.isEdible(input) && !com.hbm_m.platform.PlatformHooks.isEdible(result)) return false;
+        if (!com.hbm_m.platform.ItemHooks.isEdible(input) && !com.hbm_m.platform.ItemHooks.isEdible(result)) return false;
 
         ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
         if (current.isEmpty()) return true;
-        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)) return false;
+        if (!com.hbm_m.platform.StackNbt.sameItemSameTags(current, result)) return false;
         return current.getCount() + result.getCount() <= result.getMaxStackSize();
     }
 
     private java.util.Optional<SmeltingRecipe> getRecipe(Level level, ItemStack input) {
         // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput) и возвращает RecipeHolder.
-        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(level, RecipeType.SMELTING, input);
+        // Скан кэшируется по фингерпринту входного стека (value-keyed); негативный результат
+        // тоже кэшируется; epoch сбрасывает кэш при /reload.
+        SmeltingRecipe recipe = recipeResolver.resolve(level, RecipeType.SMELTING,
+                com.hbm_m.platform.StackNbt.fingerprint(input),
+                (lvl, all) -> com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(lvl, RecipeType.SMELTING, input).orElse(null));
+        return java.util.Optional.ofNullable(recipe);
     }
 
     public long getPowerScaled(int scale) {
@@ -155,6 +170,27 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity {
         super.readNbtData(tag, registries);
         time = tag.getInt("time");
         speed = tag.getInt("speed");
+    }
+
+    // ==================== Устройство настройки (оригинал) ====================
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putInt("microSpeed", speed);
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, Player player, BlockPos pos) {
+        if (nbt.contains("microSpeed")) speed = Mth.clamp(nbt.getInt("microSpeed"), 0, MAX_SPEED);
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    @Override
+    public String[] infoForDisplay(Level level, BlockPos pos) {
+        return new String[]{ "copytool.speed" };
     }
 
     // ==================== GUI ====================
@@ -230,5 +266,11 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity {
     @Override
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return com.hbm_m.platform.RenderBounds.INFINITE;
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
     }
 }

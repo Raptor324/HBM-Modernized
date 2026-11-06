@@ -35,12 +35,27 @@ public class MachineZirnoxDestroyedBlockEntity extends BaseHbmBlockEntity {
         super(ModBlockEntities.ZIRNOX_DESTROYED_BE.get(), pos, state);
     }
 
+    /**
+     * Модель обломков выступает за габариты структуры 5×5×2 (OBJ: x −3.5..3.2,
+     * y 0..3.1, z −2.9..3.2 относительно ядра), поэтому AABB взят с запасом ±4.
+     */
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new AABB(worldPosition.getX() - 4, worldPosition.getY(), worldPosition.getZ() - 4,
+                worldPosition.getX() + 4, worldPosition.getY() + 4, worldPosition.getZ() + 4);
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineZirnoxDestroyedBlockEntity blockEntity) {
         if (level.isClientSide) {
             return;
         }
 
-        blockEntity.radiate(level, pos);
+        // 200^3 entity query + per-entity block line march — phase-spread, not every tick.
+        if (blockEntity.probeDue(10)) {
+            blockEntity.radiate(level, pos);
+        }
 
         RandomSource random = level.getRandom();
         if (random.nextInt(5000) == 0) {
@@ -51,7 +66,8 @@ public class MachineZirnoxDestroyedBlockEntity extends BaseHbmBlockEntity {
             blockEntity.spawnFlameEffects((ServerLevel) level, pos, random);
         }
 
-        blockEntity.setChanged();
+        // writeNbtData ships only onFire — sync on its flip, not every tick.
+        blockEntity.syncIfStateChanged(0L, blockEntity.onFire ? 1L : 0L);
     }
 
     private void spawnFlameEffects(ServerLevel level, BlockPos pos, RandomSource random) {

@@ -93,11 +93,7 @@ public class GasCentrifugeRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<GasCentrifugeRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "gas_centrifuge");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "gas_centrifuge");
-        //?}
 
         @Override
         public GasCentrifugeRecipe readJson(ResourceLocation recipeId, JsonObject json) {

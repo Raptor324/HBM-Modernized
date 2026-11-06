@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.compat.create;
 
 import com.hbm_m.block.entity.doors.DoorDecl;
@@ -66,4 +65,3 @@ public final class DoorShapeComputer {
         ContraptionDoorState.setOpen(level, controllerLocalPos, open);
     }
 }
-//?}

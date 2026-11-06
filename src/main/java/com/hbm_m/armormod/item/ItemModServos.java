@@ -1,6 +1,5 @@
 package com.hbm_m.armormod.item;
 
-import com.hbm_m.platform.AttributeOps;
 
 import java.util.List;
 
@@ -19,6 +18,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.AttributeHooks;
 
 /** 1:1 {@code ItemModServos} (servo_set / servo_set_desh). */
 public class ItemModServos extends ItemArmorMod {
@@ -75,7 +75,7 @@ public class ItemModServos extends ItemArmorMod {
         com.google.common.collect.Multimap<net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>, net.minecraft.world.entity.ai.attributes.AttributeModifier> multimap = com.google.common.collect.HashMultimap.create();
     *///?}
         int t = armorType(armor);
-        var op = AttributeOps.MULTIPLY_TOTAL;
+        var op = AttributeHooks.MULTIPLY_TOTAL;
         if (t == 1) {
             if (this == ModItems.SERVO_SET.get())
                 multimap.put(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE, modifier(armor, "NTM Armor Mod Servos", 0.5, op));

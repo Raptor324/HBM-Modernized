@@ -100,6 +100,13 @@ public final class RenderHelperA {
      * {@code glDepthMask(false)}, Farbe {@code glColor4f(r, g, b, 1)} und Texturmatrix
      * {@code glScalef(scale) * glRotatef(rot, 0, 0, 1) * glTranslatef(0, movement, 0)}; danach wird das Teil gezeichnet.
      */
+    public static void renderGlintPart(ResourceLocation modelLocation, String part, ResourceLocation tex, float r, float g, float b,
+                                       float scale, float rot, float movement) {
+        RenderType type = GlintType.make(tex, r, g, b, scale, rot, movement);
+        com.hbm_m.client.render.weapon.WeaponRenderRegistry.renderPartQuads(modelLocation, part, GunGL.pose(),
+                GunGL.buffers().getBuffer(type), GunGL.light(), OverlayTexture.NO_OVERLAY, 1F, 1F, 1F, 1F);
+    }
+
     public static void renderGlintPart(SimpleObjModel model, String part, ResourceLocation tex, float r, float g, float b,
                                        float scale, float rot, float movement) {
         RenderType type = GlintType.make(tex, r, g, b, scale, rot, movement);

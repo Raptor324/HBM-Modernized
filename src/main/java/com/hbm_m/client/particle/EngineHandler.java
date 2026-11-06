@@ -5,35 +5,78 @@ import com.hbm_m.client.missile.track.MissileTrackWorldRender;
 import com.hbm_m.particle.nt.ParticleEngineNT;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-//? if forge {
+import dev.architectury.event.events.client.ClientPlayerEvent;
+import dev.architectury.event.events.client.ClientTickEvent;
+
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+
+//? if forge {
 import net.minecraftforge.fml.common.Mod;
 
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 //?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+/*import net.neoforged.fml.common.EventBusSubscriber;
 
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 @EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
 *///?}
 public class EngineHandler {
 
-    @SubscribeEvent
-    public static void onLeave(ClientPlayerNetworkEvent.LoggingOut event) {
-        ParticleEngineNT.INSTANCE.clear();
+    private static boolean initialized = false;
+
+    /**
+     * Единая регистрация на Architectury-событиях вместо дублированных loader-обработчиков:
+     * CLIENT_PLAYER_QUIT заменяет ClientPlayerNetworkEvent.LoggingOut, CLIENT_PRE —
+     * TickEvent.ClientTickEvent(START)/ClientTickEvent.Pre. Вызывается из ClientSetup.initClient().
+     * Loader-обработчики кадра (RenderLevelStage/RenderTick) остаются на шинах лоадеров:
+     * на NeoForge 1.21.1 render-tick-события нет, эта пара осознанно разводится гейтом.
+     */
+    public static void init() {
+        if (initialized) return;
+        initialized = true;
+        ClientPlayerEvent.CLIENT_PLAYER_QUIT.register(player -> ParticleEngineNT.INSTANCE.clear());
+        ClientTickEvent.CLIENT_PRE.register(client -> {
+            handleFlashbackExportTransition();
+            // Гейт паузы + /tick freeze — общий с треками ракет (ClientWorldFreeze).
+            if (com.hbm_m.client.ClientWorldFreeze.worldRunsNormally()) {
+                doParticleTick(true);
+            }
+        });
+    }
+
+    /** true = идёт экспорт Flashback (состояние на прошлом клиентском тике). */
+    private static boolean flashbackExportActive = false;
+
+    /**
+     * Граница старта/конца экспорта Flashback (переход флага isExporting).
+     * Экспорт переигрывает запись с чистого листа: на старте гасим всё, что
+     * дожило из сессии просмотрщика (после скраббинга таймлайна движок держит
+     * эффекты от чужих позиций плейхеда — без очистки они наслаивались бы на
+     * пересобранные), дальше движок детерминированно восстанавливается из
+     * пере-доставленных payload, ReplaceOnRespawn гасит наложение.
+     */
+    private static void handleFlashbackExportTransition() {
+        boolean exporting = com.hbm_m.client.ClientWorldFreeze.isFlashbackExporting();
+        if (exporting == flashbackExportActive) {
+            return;
+        }
+        flashbackExportActive = exporting;
+        if (exporting) {
+            int ghosted = ParticleEngineNT.INSTANCE.countParticles();
+            ParticleEngineNT.INSTANCE.clear();
+            com.hbm_m.main.MainRegistry.LOGGER.info(
+                    "[Flashback export] start: cleared {} live NT particle(s) carried over from the viewer session, rewind purge suppressed for the export run",
+                    ghosted);
+        } else {
+            com.hbm_m.main.MainRegistry.LOGGER.info("[Flashback export] end: rewind purge re-enabled");
+        }
     }
 
     //? if forge {
@@ -59,7 +102,27 @@ public class EngineHandler {
 
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_WEATHER) return;
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_WEATHER) {
+            // Fabulous (useShaderTransparency): transparencyChain.process()
+            // композитит weather/particle таргеты в main только ПОСЛЕ
+            // AFTER_WEATHER — RawScreenSpaceLight рисуем на AFTER_LEVEL.
+            if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+                onAfterLevelFabulous();
+            }
+            return;
+        }
+
+        // ЧИСТЫЕ ванильные матрицы кадра ДО любого extended-pass: под DH
+        // beginVanillaExtendedPass подменяет проекцию на удлинённую (far=8e6),
+        // а RawScreenSpaceLight в сценариях A/B обязан разворачивать uDepthTex0
+        // именно ВАНИЛЬНОЙ проекцией (той, которой растеризованы чанки).
+        org.joml.Matrix4f vanillaProj = new org.joml.Matrix4f(event.getProjectionMatrix());
+        //? if < 1.21.1 {
+        org.joml.Matrix4f vanillaMv = new org.joml.Matrix4f(event.getPoseStack().last().pose());
+        //?} else {
+        /*org.joml.Matrix4f vanillaMv = new org.joml.Matrix4f(event.getModelViewMatrix());
+        *///?}
+        com.hbm_m.client.render.shader.RawScreenSpaceLight.captureVanillaFrameMatrices(vanillaProj, vanillaMv);
 
         // Матрица поворота камеры кадра (frustumMatrix): на ней строятся ВСЕ
         // camera-relative вершины прохода. Больше НЕ полагаемся на ambient
@@ -81,10 +144,46 @@ public class EngineHandler {
         } finally {
             com.hbm_m.platform.RenderHooks.popLevelModelView();
         }
+
+        // Vanilla-путь (сценарии A/B, Fast/Fancy): под Iris/Oculus вызов делал
+        // бы двойной дро — MixinIrisRenderingPipelinePreComposite зовёт
+        // drawIfReady() на TAIL finalizeLevelRendering. Fabulous уходит в
+        // AFTER_LEVEL (композит погоды/частиц в main там ещё не отработал).
+        if (!com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()
+                && !Minecraft.useShaderTransparency()) {
+            com.hbm_m.client.render.shader.RawScreenSpaceLight.drawIfReady();
+            Minecraft.getInstance().getMainRenderTarget().bindWrite(false);
+        }
     }
 
-    private static void renderAfterWeather(RenderLevelStageEvent event) {
-        // РАДИКАЛЬНАЯ СТРАХОВКА: если рисовать нечего (DH не рендерит, NT-частиц
+    /**
+     * Fabulous (vanilla "Fabulous!" graphics): {@code transparencyChain.process()}
+     * композитит weather/particle таргеты в mainRenderTarget только на
+     * AFTER_LEVEL — здесь RawScreenSpaceLight видит финальный кадр и единый
+     * main depth. Вызов только без внешнего шейдерпака (под паком дро делает
+     * MixinIrisRenderingPipelinePreComposite на TAIL finalizeLevelRendering).
+     */
+    private static void onAfterLevelFabulous() {
+        if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()) {
+            return;
+        }
+        com.hbm_m.client.render.shader.RawScreenSpaceLight.drawIfReady();
+        Minecraft.getInstance().getMainRenderTarget().bindWrite(false);
+    }
+
+    /**
+     * Флаш NT-батчей под окном {@link com.hbm_m.client.render.shader.NtDirectPass}:
+     * под паком begin() пре-биндит FBO пайплайна пака (иначе наши кастомные
+     * ShaderInstance ушли бы в ванильный main, который Iris затирает финальным
+     * блитом), а VertexBufferMixin снимает маскирование Iris с наших шейдеров
+     * между apply() и draw - блендинг/цвет берутся из JSON нашего шейдера, а не
+     * из материала пака. Без пака окно - no-op, путь прежний.
+     */
+    private static void flushNtBatches() {
+        com.hbm_m.client.render.shader.NtDirectPass.run(null);
+    }
+
+    private static void renderAfterWeather(RenderLevelStageEvent event) {        // РАДИКАЛЬНАЯ СТРАХОВКА: если рисовать нечего (DH не рендерит, NT-частиц
         // нет, треков ракет нет) — НЕ ТРОГАЕМ НИЧЕГО в кадре вообще. Любая наша
         // манипуляция состоянием/FBO в этом окне — чистый риск для ванильного
         // рендера; на пустом проходе она и была источником артефактов.
@@ -130,11 +229,7 @@ public class EngineHandler {
         // отсюда «затемнение меша при переходе entity<->track» и мигание.
         // Единый туман сцены = бесшовный переход между путями рендера.
 
-        //? if < 1.21.1 {
-        float partialTick = event.getPartialTick();
-        //?} else {
-        /*float partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
-        *///?}
+        float partialTick = com.hbm_m.platform.RenderHooks.getPartialTickRaw();
 
         // Порог деления = граница ванильной прорисовки: ближе рисуем с нативным
         // depth-тестом, дальше — тем же ванильным путём, но с удлинённой
@@ -167,7 +262,7 @@ public class EngineHandler {
             // Чужие батчи флашим ДО биндинга DH depth в Sampler1, иначе они
             // улетели бы в GPU с нашей depth-текстурой вместо их сэмплеров.
             buffer.endBatch();
-            ParticleEngineNT.buffer().endBatch();
+            flushNtBatches();
             try {
                 // ОККЛЮЗИЯ ПРОТИВ LOD:
                 //  - без Iris: копия DH-глубины в главный z-buffer (композит DH
@@ -179,26 +274,29 @@ public class EngineHandler {
                 //    FB пайплайна) и копируем DH-глубину туда СЫРОЙ GL-программой
                 //    (RawDhDepthCopy) — маскирование на неё не действует.
                 boolean irisActive = com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive();
-                // ГЕЙТ КОПИИ ГЛУБИНЫ (перф, семантика не меняется):
-                //  - без Iris копия нужна ТОЛЬКО дальним мешам ракет — nuke_cloud
-                //    окклюдится в шейдере сэмплированием DH DEPTH32F (Sampler1),
-                //    фуллскрин-проход с gl_FragDepth им не требуется;
-                //  - под Iris setDhShaderFarMode не выставляется: окклюзия ВСЕГО
-                //    дальнего контента — нативным depth-тестом против скопированной
-                //    глубины, поэтому копия нужна при любом дальнем контенте.
-                // hasTrackInBucket даёт только ложноположительные ответы, так что
-                // гейт консервативен: копия никогда не пропускается, когда нужна.
+                // ГЕЙТ КОПИИ ГЛУБИНЫ: копия нужна при ЛЮБОМ дальнем контенте
+                // (частицы ИЛИ меши), в обеих ветках. Историческая разветвление
+                // было рассчитано на окклюзию nuke_cloud сэмплированием DH
+                // DEPTH32F прямо в шейдере (Sampler1) — но тот путь давно
+                // вырезан: shader-side discard «vDhWinZ > lodDepth» убрали
+                // (сравнение window-Z разных конвенций резало гриб по невидимым
+                // источникам глубины), и теперь ВСЁ дальнее окклюдится ТОЛЬКО
+                // нативным depth-тестом против скопированной глубины. Без Iris
+                // гейт оставался farMeshes — и гриб без дальних ракет вообще
+                // не получал копии глубины (DH 3.3.1: «гриб сквозь блоки»
+                // без шейдеров; под шейдерами гейт (hasParticles||farMeshes)
+                // и потому «работало»).
                 boolean farMeshes = com.hbm_m.client.missile.track.MissileTrackWorldRender
                         .hasTrackInBucket(partialTick, splitSq, true);
-                boolean needDepthCopy = irisActive
-                        ? (hasParticles || farMeshes)
-                        : farMeshes;
+                boolean needDepthCopy = hasParticles || farMeshes;
                 if (needDepthCopy) {
                     if (irisActive) {
                         try {
                             net.minecraft.client.renderer.ShaderInstance contentShader =
-                                    com.hbm_m.client.render.shader.FarContentShaders.resolveTexColor();
+                                    com.hbm_m.client.render.shader.ModShaders.resolveTexColor();
                             if (contentShader != null) {
+                                // PROGRAM CACHE DESYNC PROTECTION: same lastApplied skip guard as DhDepthCopy:76.
+                                com.hbm_m.client.render.shader.ShaderBindResync.ensureFreshBind(contentShader);
                                 contentShader.apply(); // биндит целевой FB пайплайна
                             }
                             com.hbm_m.client.render.shader.RawDhDepthCopy.copyIntoBoundFramebuffer(
@@ -224,9 +322,10 @@ public class EngineHandler {
 
                 setDhShaderFarMode(1.0F,
                         com.hbm_m.client.compat.dh.DhClientState.dhProjection());
-                ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, true);
+                com.hbm_m.client.render.shader.NtDirectPass.run(() -> {
+                    ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, true);
+                });
                 buffer.endBatch();
-                ParticleEngineNT.buffer().endBatch();
             } finally {
                 // Сброс Sampler1 сразу после флаша: RenderSystem.shaderTextures —
                 // глобальное состояние, следующее чужое дро не должно получить
@@ -244,15 +343,17 @@ public class EngineHandler {
             com.hbm_m.client.compat.dh.DhClientCompat.beginCapturedVanillaPass(partialTick);
             setDhShaderFarMode(0.0F, null);
             MissileTrackWorldRender.renderFiltered(partialTick, splitSq, false);
-            ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, false);
+            com.hbm_m.client.render.shader.NtDirectPass.run(() -> {
+                ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, false);
+            });
             buffer.endBatch();
-            ParticleEngineNT.buffer().endBatch();
             com.hbm_m.client.compat.dh.DhClientCompat.endVanillaExtendedPass();
 
             // 3. Вспышка — оверлей поверх всего.
-            ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            com.hbm_m.client.render.shader.NtDirectPass.run(() -> {
+                ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            });
             buffer.endBatch();
-            ParticleEngineNT.buffer().endBatch();
         } else {
             // DH не рендерит: полный проход, тоже на захваченной матрице.
             // ЕДИНСТВЕННЫЙ источник отрисовки мешей ракет (дубль в
@@ -261,9 +362,10 @@ public class EngineHandler {
             com.hbm_m.client.compat.dh.DhClientCompat.beginCapturedVanillaPass(partialTick);
             setDhShaderFarMode(0.0F, null);
             MissileTrackWorldRender.renderFiltered(partialTick, Double.NaN, false);
-            ParticleEngineNT.INSTANCE.render(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            com.hbm_m.client.render.shader.NtDirectPass.run(() -> {
+                ParticleEngineNT.INSTANCE.render(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            });
             buffer.endBatch();
-            ParticleEngineNT.buffer().endBatch();
             // ФИКС «чёрного экрана» при совместном рендере меш+частицы:
             // диаг fsp показала, что после флаша NT-батчей физические бинды
             // TU1/TU2 уезжают в ноль ([0/0/0]), а кеш GlStateManager продолжает
@@ -273,9 +375,10 @@ public class EngineHandler {
             Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
             Minecraft.getInstance().gameRenderer.overlayTexture().setupOverlayColor();
             com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
-            ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            com.hbm_m.client.render.shader.NtDirectPass.run(() -> {
+                ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            });
             buffer.endBatch();
-            ParticleEngineNT.buffer().endBatch();
             com.hbm_m.client.compat.dh.DhClientCompat.endVanillaExtendedPass();
         }
 
@@ -316,7 +419,7 @@ public class EngineHandler {
      * mode 1 — попиксельная окклюзия против DH LOD (Sampler1 = DEPTH32F);
      * mode 2 — диагностика: цвет = (vDhWinZ, DH-глубина, 0), без discard.
      * Под Iris-паком не вызывается по смыслу: там контент рисуется через
-     * ExtendedShader пака (FarContentShaders), окклюзия — нативным depth-тестом
+     * ExtendedShader пака (ModShaders.resolveTexColor), окклюзия — нативным depth-тестом
      * против единого z-buffer'а (LOD'ы рендерятся DH прямо в него).
      */
     private static void setDhShaderFarMode(float mode, org.joml.Matrix4f dhProj) {
@@ -327,13 +430,16 @@ public class EngineHandler {
         if (sh == null) return;
         boolean farMode = mode > 0.5F;
         try {
-            sh.safeGetUniform("DhDepthTest").set(mode);
+            var uDepth = sh.safeGetUniform("DhDepthTest");
+            if (uDepth != null) uDepth.set(mode);
             if (!farMode) return;
             var mc = Minecraft.getInstance();
             var win = mc.getWindow();
-            sh.safeGetUniform("DhViewport").set((float) win.getWidth(), (float) win.getHeight());
+            var uViewport = sh.safeGetUniform("DhViewport");
+            if (uViewport != null) uViewport.set((float) win.getWidth(), (float) win.getHeight());
             if (dhProj != null) {
-                sh.safeGetUniform("DhProjMat").set(new org.joml.Matrix4f(dhProj));
+                var uProj = sh.safeGetUniform("DhProjMat");
+                if (uProj != null) uProj.set(new org.joml.Matrix4f(dhProj));
             }
             int texId = com.hbm_m.client.compat.dh.DhOcclusionGpu.getDhActiveDepthTextureId();
             if (texId > 0) {
@@ -351,29 +457,34 @@ public class EngineHandler {
         }
     }
 
-    //? if forge {
-    @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.START && !Minecraft.getInstance().isPaused()) {
-            // Ленивая привязка DH-моста (DI-реестр DH может очиститься при его
-            // инициализации). Класс DhRenderBridge наследует DH-класс — грузить
-            // его можно только при наличии DH (guard строго до упоминания).
-            if (com.hbm_m.compat.dh.DhCompat.isModPresent()) {
-                com.hbm_m.client.compat.dh.DhRenderBridge.tryRegister();
-            }
-            ParticleEngineNT.INSTANCE.tick();
+    /**
+     * Общий тик NT-частиц (forge- и neoforge-ветки onClientTick).
+     *
+     * 1) Откат назад: клиентский gameTime УМЕНЬШИЛСЯ (реплеер вроде Flashback
+     *    отмотал таймлайн) — движок вычисляет границу отката и удаляет только
+     *    частицы «из будущего» (шлейф ракеты после точки перемотки), история
+     *    до точки остаётся. См. ParticleEngineNT.onWorldGameTime.
+     * 2) worldRunsNormally=false (1.21.1 /tick freeze — гейт в ClientWorldFreeze):
+     *    частицы замораживаются вместе с миром, как ванильные.
+     */
+    private static void doParticleTick(boolean worldRunsNormally) {
+        // Ленивая привязка DH-моста (DI-реестр DH может очиститься при его
+        // инициализации). Класс DhRenderBridge наследует DH-класс — грузить
+        // его можно только при наличии DH (guard строго до упоминания).
+        if (com.hbm_m.compat.dh.DhCompat.isModPresent()) {
+            com.hbm_m.client.compat.dh.DhRenderBridge.tryRegister();
         }
-    }
-    //?} elif neoforge {
-    /*@SubscribeEvent
-    public static void onClientTick(ClientTickEvent.Pre event) {
-        if (!Minecraft.getInstance().isPaused()) {
-            // Ленивая привязка DH-моста (см. forge-ветку).
-            if (com.hbm_m.compat.dh.DhCompat.isModPresent()) {
-                com.hbm_m.client.compat.dh.DhRenderBridge.tryRegister();
-            }
-            ParticleEngineNT.INSTANCE.tick();
+        if (!worldRunsNormally) return;
+        ParticleEngineNT engine = ParticleEngineNT.INSTANCE;
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level != null) {
+            // Экспорт Flashback: rewind-purge гасим на весь его прогон —
+            // отмотки setup/кейфреймов понижают gameTime (SetTime из снапшота
+            // чанка), а поток окно переигрывает ВПЕРЁД, так что зачищенные
+            // эффекты без повторной доставки пропали бы до конца рендера.
+            engine.onWorldGameTime(level.getGameTime(),
+                    !com.hbm_m.client.ClientWorldFreeze.isFlashbackExporting());
         }
+        engine.tick();
     }
-    *///?}
 }

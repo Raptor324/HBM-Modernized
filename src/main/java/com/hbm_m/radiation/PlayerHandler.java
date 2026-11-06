@@ -12,7 +12,6 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.RadiationDataPacket;
-import com.hbm_m.platform.PlayerPersistentData;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import dev.architectury.event.events.common.PlayerEvent;
@@ -35,19 +34,23 @@ import net.minecraft.world.item.ItemStack;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.UUID;
+import com.hbm_m.platform.MobHooks;
 
 
 
 public class PlayerHandler {
     
     // Хранит текущий уровень радиации для каждого игрока
-    private static final HashMap<UUID, Float> playerRads = new HashMap<>();
+    // ConcurrentHashMap: written by the server thread, read by the client render thread
+    // (ParticleEffectClient through HbmLivingProps.getRadiation). In singleplayer that is one
+    // process, and a plain HashMap can spin forever inside getNode when a read races a put.
+    private static final java.util.Map<UUID, Float> playerRads = new java.util.concurrent.ConcurrentHashMap<>();
     
     // Ключ для хранения радиации в данных игрока
     private static final String NBT_KEY_PLAYER_RADIATION = "hbm_m_player_radiation";
 
     // Счетчик тиков для периодического обновления (per-player через UUID)
-    private static final HashMap<UUID, Integer> tickCounters = new HashMap<>();
+    private static final java.util.Map<UUID, Integer> tickCounters = new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
      * Регистрация всех обработчиков событий.
@@ -131,7 +134,7 @@ public class PlayerHandler {
      */
     private static void onPlayerJoin(ServerPlayer serverPlayer) {
         float rads = 0.0F;
-        CompoundTag persistentData = PlayerPersistentData.get(serverPlayer);
+        CompoundTag persistentData = MobHooks.getPersistentData(serverPlayer);
         if (persistentData.contains(NBT_KEY_PLAYER_RADIATION)) {
             CompoundTag data = persistentData.getCompound(NBT_KEY_PLAYER_RADIATION);
             rads = Math.round(data.getFloat("radiationLevel") * 10.0f) / 10.0f;
@@ -147,7 +150,7 @@ public class PlayerHandler {
      */
     private static void onPlayerQuit(ServerPlayer serverPlayer) {
         float rounded = Math.round(getPlayerRads(serverPlayer) * 10.0f) / 10.0f;
-        CompoundTag persistentData = PlayerPersistentData.get(serverPlayer);
+        CompoundTag persistentData = MobHooks.getPersistentData(serverPlayer);
         CompoundTag data = new CompoundTag();
         data.putFloat("radiationLevel", rounded);
         persistentData.put(NBT_KEY_PLAYER_RADIATION, data);
@@ -318,6 +321,7 @@ public class PlayerHandler {
             Commands.literal(RefStrings.MODID)
                 .then(HbmExplosionCommands.buildExplosionBranch())
                 .then(Commands.literal("rad")
+                    .requires(src -> src.hasPermission(2))
                     .then(Commands.argument("targets", EntityArgument.entities())
                         .then(Commands.literal("clear")
                             .executes(ctx -> {

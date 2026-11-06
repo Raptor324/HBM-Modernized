@@ -77,14 +77,14 @@ public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements M
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
+        tag.put("inventory", inventory.serialize( registries));
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         if (tag.contains("inventory")) {
-            com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
+            inventory.deserialize(tag.getCompound("inventory"), registries);
         }
     }
 
@@ -140,4 +140,5 @@ public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements M
         sidedItems.invalidate();
     }
     *///?}
+
 }

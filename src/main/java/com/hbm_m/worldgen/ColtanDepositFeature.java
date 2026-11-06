@@ -1,75 +1,100 @@
 package com.hbm_m.worldgen;
 
-import java.util.List;
-import java.util.Optional;
-
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.config.ModClothConfig;
-import com.mojang.serialization.Codec;
+import com.hbm_m.config.WorldConfig;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
-import net.minecraft.world.level.levelgen.feature.configurations.OreConfiguration;
-import net.minecraft.world.level.levelgen.structure.templatesystem.TagMatchTest;
 
 /**
- * 1:1 HbmWorldGen (Coltan): die Lagerstaette liegt um einen einzigen, aus dem Weltseed bestimmten Punkt
- * ({@code new Random(seed + 5)}, Gauss * 1500) - genau dorthin zeigt der Coltan-Kompass ({@code coltan_tool}).
- * Pro Chunk 2 x 5 Versuche, Reichweite 750 / r, Adern der Groesse 4 auf Hoehe 15-39.
- * Optional ({@code enable528ColtanSpawn}) zusaetzlich zufaellig verteilte Adern wie normale Erze.
+ * Порт колтановых месторождений из 1.7.10 (HbmWorldGen, блок enable528ColtanDeposit).
+ *
+ * В оригинале разбросанного спавна нет: руда генерируется вокруг центров,
+ * детерминированно вычисленных из сида мира:
+ * <pre>
+ *   Random colRand = new Random(world.getSeed() + 5);
+ *   int colX = (int)(colRand.nextGaussian() * 1500);
+ *   int colZ = (int)(colRand.nextGaussian() * 1500);
+ * </pre>
+ * Далее на каждый чанк — 2 попытки, каждая проверяет 5 «сужающихся колец»
+ * (range = 750 / r); если точка чанка попадает в квадрат колец, ставится
+ * жила WorldGenMinable размером 4 (оригинал: y 15..39 → современный −49..−25).
+ * Опционально ({@code enable528ColtanSpawn}) — дополнительный случайный спавн жил.
  */
 public class ColtanDepositFeature extends Feature<NoneFeatureConfiguration> {
 
-    public ColtanDepositFeature(Codec<NoneFeatureConfiguration> codec) {
-        super(codec);
+    private static final int SEED_SALT = 5;
+    private static final double SIGMA = 1500.0D;
+    private static final int BASE_RANGE = 750;
+
+    private static long cachedSeed = Long.MIN_VALUE;
+    private static int centerX;
+    private static int centerZ;
+
+    public ColtanDepositFeature() {
+        super(NoneFeatureConfiguration.CODEC);
     }
 
     /** Lage der Lagerstaette (colX, colZ) wie im Original und im Kompass. */
     public static int[] depositCenter(long seed) {
-        java.util.Random colRand = new java.util.Random(seed + 5);
-        int colX = (int) (colRand.nextGaussian() * 1500);
-        int colZ = (int) (colRand.nextGaussian() * 1500);
+        RandomSource rand = RandomSource.create(seed + SEED_SALT);
+        int colX = (int) (rand.nextGaussian() * SIGMA);
+        int colZ = (int) (rand.nextGaussian() * SIGMA);
         return new int[] { colX, colZ };
+    }
+
+    private static void computeCenters(long seed) {
+        if (cachedSeed == seed) return;
+        int[] col = depositCenter(seed);
+        centerX = col[0];
+        centerZ = col[1];
+        cachedSeed = seed;
     }
 
     @Override
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
         WorldGenLevel level = context.level();
         // Original: innerhalb von if(WorldConfig.overworldOre)
-        if (!com.hbm_m.config.WorldConfig.overworldOre) return false;
+        if (!WorldConfig.overworldOre) return false;
+
+        BlockPos origin = context.origin();
         RandomSource rand = context.random();
-        int i = context.origin().getX() & ~15;
-        int j = context.origin().getZ() & ~15;
+
+        computeCenters(level.getSeed());
+
         ModClothConfig cfg = ModClothConfig.get();
         boolean placed = false;
 
+        // Опциональный случайный спавн (enable528ColtanSpawn)
         if (cfg.enable528ColtanSpawn) {
             for (int v = 0; v < cfg.coltanRate; v++) {
-                placed |= vein(context, rand, new BlockPos(i + rand.nextInt(16), 15 + rand.nextInt(40), j + rand.nextInt(16)));
+                int x = origin.getX() + rand.nextInt(16);
+                int y = rand.nextInt(25) - 49;
+                int z = origin.getZ() + rand.nextInt(16);
+                generateVein(level, rand, x, y, z, 4);
+                placed = true;
             }
         }
 
-        int[] col = depositCenter(level.getSeed());
-        int colX = col[0];
-        int colZ = col[1];
-        int colRange = 750;
-
         if (cfg.enable528ColtanDeposit) {
-            for (int k = 0; k < 2; k++) {
-                for (int r = 1; r <= 5; r++) {
-                    int randPosX = i + rand.nextInt(16);
-                    int randPosY = rand.nextInt(25) + 15;
-                    int randPosZ = j + rand.nextInt(16);
+            for (int attempt = 0; attempt < 2; attempt++) {
+                for (int ring = 1; ring <= 5; ring++) {
+                    int x = origin.getX() + rand.nextInt(16);
+                    int y = rand.nextInt(25) - 49;
+                    int z = origin.getZ() + rand.nextInt(16);
 
-                    int range = colRange / r;
-
-                    if (randPosX <= colX + range && randPosX >= colX - range && randPosZ <= colZ + range && randPosZ >= colZ - range) {
-                        placed |= vein(context, rand, new BlockPos(randPosX, randPosY, randPosZ));
+                    int range = BASE_RANGE / ring;
+                    if (x <= centerX + range && x >= centerX - range
+                            && z <= centerZ + range && z >= centerZ - range) {
+                        generateVein(level, rand, x, y, z, 4);
+                        placed = true;
                     }
                 }
             }
@@ -77,11 +102,37 @@ public class ColtanDepositFeature extends Feature<NoneFeatureConfiguration> {
         return placed;
     }
 
-    /** WorldGenMinable(ore_coltan, 4): Ader aus 4 Bloecken im Stein (Tiefenschiefer als Tiefenschiefer-Variante). */
-    private static boolean vein(FeaturePlaceContext<NoneFeatureConfiguration> context, RandomSource rand, BlockPos pos) {
-        OreConfiguration config = new OreConfiguration(List.of(
-                OreConfiguration.target(new TagMatchTest(BlockTags.STONE_ORE_REPLACEABLES), ModBlocks.COLTAN_ORE.get().defaultBlockState()),
-                OreConfiguration.target(new TagMatchTest(BlockTags.DEEPSLATE_ORE_REPLACEABLES), ModBlocks.COLTAN_ORE_DEEPSLATE.get().defaultBlockState())), 4);
-        return Feature.ORE.place(new FeaturePlaceContext<>(Optional.empty(), context.level(), context.chunkGenerator(), rand, pos, config));
+    /** Аналог WorldGenMinable(ore, 4): блоб из n блоков со случайным смещением. */
+    private void generateVein(WorldGenLevel level, RandomSource rand, int x, int y, int z, int size) {
+        float dx = rand.nextFloat() * (float) Math.PI;
+        double dX = x + Math.sin(dx) * size * 0.5F;
+        double dY = y + 0.5D;
+        double dZ = z + Math.cos(dx) * size * 0.5F;
+        double stepX = -Math.sin(dx) / size;
+        double stepZ = Math.cos(dx) / size;
+
+        BlockState ore = ModBlocks.COLTAN_ORE.get().defaultBlockState();
+
+        for (int i = 0; i < size; i++) {
+            dX += stepX * rand.nextDouble();
+            dZ += stepZ * rand.nextDouble();
+            double offset = Math.sin(i * Math.PI / size) * (size * 0.5D);
+            for (int bx = (int) (dX - offset); bx <= (int) (dX + offset); bx++) {
+                for (int by = (int) (dY - offset); by <= (int) (dY + offset); by++) {
+                    for (int bz = (int) (dZ - offset); bz <= (int) (dZ + offset); bz++) {
+                        double tx = (bx + 0.5D - dX) / offset;
+                        double ty = (by + 0.5D - dY) / offset;
+                        double tz = (bz + 0.5D - dZ) / offset;
+                        if (tx * tx + ty * ty + tz * tz >= 1.0D) continue;
+                        BlockPos pos = new BlockPos(bx, by, bz);
+                        BlockState state = level.getBlockState(pos);
+                        if (state.is(BlockTags.STONE_ORE_REPLACEABLES)
+                                || state.is(BlockTags.DEEPSLATE_ORE_REPLACEABLES)) {
+                            level.setBlock(pos, ore, 2);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

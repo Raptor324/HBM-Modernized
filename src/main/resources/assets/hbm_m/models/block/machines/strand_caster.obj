@@ -1,6 +1,6 @@
 # Blender v2.79 (sub 0) OBJ File: 'strand_caster.blend'
 # www.blender.org
-o plate
+g plate
 mtllib strand_caster.mtl
 usemtl default
 v -0.500000 0.937500 -1.500000
@@ -47,7 +47,7 @@ f 7/4/2 8/17/2 5/5/2
 f 3/7/3 5/18/3 8/8/3
 f 4/10/4 8/19/4 7/11/4
 f 1/13/5 6/20/5 5/14/5
-o caster
+g caster
 v -1.000000 0.000000 1.000000
 v 1.000000 0.000000 1.000000
 v -1.000000 0.000000 -6.000000

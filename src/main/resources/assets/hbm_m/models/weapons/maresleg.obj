@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'maresleg.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Lever
 v -0.187500 0.769607 -3.582107
 v -0.187500 0.445183 -3.798880

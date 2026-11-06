@@ -5,7 +5,6 @@ import com.hbm_m.blockentity.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
-import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -14,7 +13,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -71,7 +69,7 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         ModItemStackHandler handler = this.blockEntity != null
                 ? this.blockEntity.getInventory()
-                : new DummyItemStackHandler(MACHINE_SLOTS);
+                : new ModItemStackHandler.Dummy(MACHINE_SLOTS);
         this.machineInventory = new HandlerContainer(handler);
 
         // Original slot layout from ContainerCrystallizer
@@ -158,7 +156,7 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
         if (inv.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("BlockEntity is not a Crystallizer");
+        throw new MenuBlockEntityMissingException("BlockEntity is not a Crystallizer");
     }
 
     public MachineCrystallizerBlockEntity getBlockEntity() {
@@ -306,8 +304,10 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        if (blockEntity == null) {
+            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
+        }
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.CRYSTALLIZER.get());
     }
 
     /** Vanilla-адаптер для {@link ModItemStackHandler}, чтобы использовать обычные {@link Slot}. */

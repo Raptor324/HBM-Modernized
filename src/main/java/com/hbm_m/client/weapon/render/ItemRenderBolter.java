@@ -81,29 +81,17 @@ public class ItemRenderBolter extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 2.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, -0.75, 1.25);
-
+		setupThirdPerson(stack, 2.5D, 0, -0.75, 1.25);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 2.75D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(-0.25, -0.5, 0);
+		setupInv(stack, 2.75D, -0.25, -0.5, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -12.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, -0.5, 0);
+		setupModTable(stack, -12.5D, 0, -0.5, 0);
 	}
 
 	@Override

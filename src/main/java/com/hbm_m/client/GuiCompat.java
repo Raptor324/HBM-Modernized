@@ -1,5 +1,7 @@
 package com.hbm_m.client;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 
@@ -16,11 +18,7 @@ import net.minecraft.client.gui.screens.Screen;
  * сводится к этому статическому хелперу с внутренним version-gating.
  */
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public final class GuiCompat {
     private GuiCompat() {}
 
@@ -77,6 +75,11 @@ public final class GuiCompat {
      * сквозь которую просвечивает «каша» из блюренного мира. Блюр остаётся под всем
      * меню, поверх — только чистый тёмный градиент.
      */
+    /** Есть ли перевод у ключа (для фоллбеков заголовков рецептов). */
+    public static boolean hasTranslation(String key) {
+        return net.minecraft.locale.Language.getInstance().has(key);
+    }
+
     public static void renderFlatBlurredBackground(Screen screen, GuiGraphics guiGraphics, float partialTick) {
         //? if < 1.21.1 {
         screen.renderBackground(guiGraphics);

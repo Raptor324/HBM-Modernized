@@ -4,6 +4,7 @@ import com.hbm_m.blockentity.machines.MachineMixerBlockEntity;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
+import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -14,15 +15,19 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** 1:1 {@code ContainerMixer}: Batterie (12,72), fester Stoff (52,72), Fluid-ID (126,72), Upgrades (148,18/36). */
 public class MachineMixerMenu extends AbstractContainerMenu {
+
+    private static final int MACHINE_SLOTS = MachineMixerBlockEntity.SLOT_COUNT;
 
     private final MachineMixerBlockEntity mixer;
     private final ContainerData data;
 
     public MachineMixerMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
-        this(id, inventory, (MachineMixerBlockEntity) inventory.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(5));
+        this(id, inventory, getBlockEntity(inventory, extraData), new SimpleContainerData(5));
     }
 
     public static MachineMixerMenu create(int id, Inventory inventory, MachineMixerBlockEntity blockEntity) {
@@ -34,16 +39,22 @@ public class MachineMixerMenu extends AbstractContainerMenu {
         this.mixer = mixer;
         this.data = data;
 
-        var c = new ModItemStackHandlerContainer(mixer.getInventory(), mixer::setChanged);
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        ModItemStackHandlerContainer machineInventory =
+                new ModItemStackHandlerContainer(
+                        mixer != null ? mixer.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOTS),
+                        mixer != null ? mixer::setChanged : null);
+
         // Battery
-        this.addSlot(new Slot(c, 0, 12, 72));
+        this.addSlot(new Slot(machineInventory, 0, 12, 72));
         // Item Input
-        this.addSlot(new Slot(c, 1, 52, 72));
+        this.addSlot(new Slot(machineInventory, 1, 52, 72));
         // Fluid ID
-        this.addSlot(new Slot(c, 2, 126, 72));
+        this.addSlot(new Slot(machineInventory, 2, 126, 72));
         // Upgrades
-        this.addSlot(new Slot(c, 3, 148, 18));
-        this.addSlot(new Slot(c, 4, 148, 36));
+        this.addSlot(new Slot(machineInventory, 3, 148, 18));
+        this.addSlot(new Slot(machineInventory, 4, 148, 36));
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 9; j++) {
@@ -56,6 +67,20 @@ public class MachineMixerMenu extends AbstractContainerMenu {
         }
 
         addDataSlots(data);
+    }
+
+    private static MachineMixerBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
+        BlockPos pos = buffer.readBlockPos();
+        BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
+        if (blockEntity instanceof MachineMixerBlockEntity mixerBlockEntity) {
+            return mixerBlockEntity;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
+        }
+        throw new MenuBlockEntityMissingException("No MachineMixerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mixer_menu");
     }
 
     public MachineMixerBlockEntity getBlockEntity() { return mixer; }
@@ -113,7 +138,6 @@ public class MachineMixerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(mixer, player, 128.0D);
+        return MenuReach.stillValid(player, mixer);
     }
 }

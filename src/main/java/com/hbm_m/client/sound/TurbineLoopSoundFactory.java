@@ -11,12 +11,14 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  * Клиентский цикл звука турбины — вынесен из {@link MachineIndustrialTurbineBlockEntity}, чтобы
  * серверный класс BE не содержал в bytecode ссылок на {@link AbstractTickableSoundInstance}.
  * Pitch/Volume зависят от Flywheel-Spin (0..1), wie im Original (AudioWrapper.updatePitch/updateVolume).
  */
+@OnlyIn(Dist.CLIENT)
 public final class TurbineLoopSoundFactory {
 
     private static final double MAX_AUDIBLE_DISTANCE = 35.0;
@@ -27,13 +29,19 @@ public final class TurbineLoopSoundFactory {
         BlockPos pos = turbine.getBlockPos();
         return new AbstractTickableSoundInstance(sound, SoundSource.BLOCKS, RandomSource.create()) {
             {
-                this.x = pos.getX() + 0.5;
-                this.y = pos.getY() + 0.5;
-                this.z = pos.getZ() + 0.5;
+                updatePosition();
                 this.looping = true;
                 this.delay = 0;
                 this.attenuation = Attenuation.LINEAR;
                 applySpin(turbine.getSpin());
+            }
+
+            /** Sable ships move - re-anchor in world space every tick (raw plot-grid coords mute the loop). */
+            private void updatePosition() {
+                net.minecraft.world.phys.Vec3 world = com.hbm_m.sound.SableSoundPosition.project(pos, 0.5D);
+                this.x = world.x;
+                this.y = world.y;
+                this.z = world.z;
             }
 
             private void applySpin(double spin) {
@@ -56,6 +64,7 @@ public final class TurbineLoopSoundFactory {
                     return;
                 }
 
+                updatePosition();
                 LocalPlayer player = Minecraft.getInstance().player;
                 if (player == null || player.distanceToSqr(this.x, this.y, this.z) > MAX_AUDIBLE_DISTANCE * MAX_AUDIBLE_DISTANCE) {
                     this.stop();

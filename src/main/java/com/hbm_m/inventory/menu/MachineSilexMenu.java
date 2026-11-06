@@ -3,7 +3,6 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.blockentity.machines.MachineSilexBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -13,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1 {@code ContainerSILEX}: Eingang (80,12), Fluidkennung (8,24), Kanister ein/aus (26/44,24), Ausgang (116,90),
@@ -32,7 +32,7 @@ public class MachineSilexMenu extends AbstractContainerMenu {
         super(ModMenuTypes.SILEX_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        var handler = blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOTS);
+        var handler = blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOTS);
         var container = new ModItemStackHandlerContainer(handler, blockEntity != null ? blockEntity::setChanged : () -> { });
 
         // Eingang
@@ -71,10 +71,11 @@ public class MachineSilexMenu extends AbstractContainerMenu {
             return silexBlockEntity;
         }
         // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineSilexBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":silex_menu");
+        throw new MenuBlockEntityMissingException("No MachineSilexBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":silex_menu");
     }
 
     public MachineSilexBlockEntity getBlockEntity() {
@@ -83,8 +84,7 @@ public class MachineSilexMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     /** Original {@code transferStackInSlot}: Maschine -> Spieler, sonst in den Eingang. */

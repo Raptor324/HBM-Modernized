@@ -1,14 +1,18 @@
 {
   "structures": [
     {
+      "structure": "hbm_m:buraxclaster",
+      "weight": 1
+    },
+    {
       "structure": "hbm_m:desert_atom",
       "weight": 1
     }
   ],
   "placement": {
     "type": "minecraft:random_spread",
-    "spacing": 1,
-    "separation": 0,
-    "salt": 14357618
+    "salt": 9806773710,
+    "spacing": 36,
+    "separation": 9
   }
 }

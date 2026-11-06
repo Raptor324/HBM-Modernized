@@ -7,6 +7,7 @@ import com.hbm_m.handler.HazardClass;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 
@@ -23,20 +24,21 @@ public class BlockGasMonoxide extends BlockGasBase {
 
     @Override
     protected void affect(LivingEntity living) {
-        if (ArmorRegistry.hasProtection(living, 3, HazardClass.GAS_MONOXIDE)) {
+        if (ArmorRegistry.hasProtection(living, 3, HazardClass.GAS_LUNG)) {
             damageWornFilter(living);
         } else if (living.level() instanceof ServerLevel serverLevel) {
-            living.hurt(ModDamageSources.monoxide(serverLevel), 1F);
+            living.hurt(ModDamageSources.monoxide(serverLevel), 1.0F);
         }
     }
 
     @Override
-    public Direction getFirstDirection(ServerLevel level, BlockPos pos, RandomSource random) {
+    public Direction getFirstDirection(Level level, BlockPos pos, RandomSource random) {
+        if (random.nextInt(5) == 0) return Direction.UP;
         return Direction.DOWN;
     }
 
     @Override
-    public Direction getSecondDirection(ServerLevel level, BlockPos pos, RandomSource random) {
+    public Direction getSecondDirection(Level level, BlockPos pos, RandomSource random) {
         return randomHorizontal(random);
     }
 

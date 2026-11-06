@@ -28,9 +28,9 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 
 //?}
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /**
  * BlockEntity для Fracking Tower (Гидроразрывная вышка).
@@ -43,7 +43,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
  * - Поддержка апгрейдов скорости и энергии
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.block.IPersistentNBT {
+public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.block.IPersistentNBT, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
     
     // Энергия
     protected static long maxPower = 5_000_000L;
@@ -86,6 +86,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
     protected int speedUpgradeLevel = 0;
     protected int powerUpgradeLevel = 0;
     protected int afterburnerUpgradeLevel = 0;
+    protected int overdriveUpgradeLevel = 0;
 
     private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
 
@@ -223,7 +224,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         if (powerUpgradeLevel > 0) {
             baseDelay = (int) (baseDelay * (1.0 + powerUpgradeLevel * 0.10));
         }
-        return Math.max(1, baseDelay);
+        return Math.max(1, baseDelay / (overdriveUpgradeLevel + 1));
     }
 
     public long getConsumption() {
@@ -235,7 +236,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         if (powerUpgradeLevel > 0) {
             baseConsumption = (long) (baseConsumption * (1.0 - powerUpgradeLevel * 0.25));
         }
-        return baseConsumption;
+        return baseConsumption * (overdriveUpgradeLevel + 1);
     }
 
     //=====================================================================================//
@@ -248,15 +249,10 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         entity.ensureNetworkInitialized();
         entity.chargeFromBatterySlot(SLOT_BATTERY);
         entity.updateUpgrades();
+        entity.burnAfterburnerGas();
         entity.processFluidContainers();
 
-        // Original TileEntityOilDrillBase: Nachbrenner verbrennt pro Stufe 10 mB Erdgas je Tick zu 5 HE/mB
-        int abLevel = entity.upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.AFTERBURN);
-        int toBurn = Math.min(entity.gasTank.getFluidAmountMb(), abLevel * 10);
-        if (toBurn > 0) {
-            entity.gasTank.drainInternal(toBurn);
-            entity.energy = Math.min(entity.getMaxEnergyStored(), entity.energy + toBurn * 5L);
-        }
+
         
         // Проверка условий для работы
         if (!entity.canOperate()) {
@@ -285,8 +281,30 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         }
 
         entity.indicator = 0; // Норма
-        entity.setChanged();
-        entity.sendUpdateToClient();
+        entity.syncIfStateChanged(frackSyncLo(entity), frackSyncHi(entity));
+    }
+
+    // P6 anti-sync-spam: 128-битная подпись отрисовываемого состояния (прогресс, индикатор,
+    // уровни апгрейдов и все три танка как fluid-фингерпринты). setChanged/sendBlockUpdated
+    // только при реальном изменении — контент пакета прежний (весь writeNbtData).
+    private static long frackSyncLo(MachineFrackingTowerBlockEntity e) {
+        return (e.progressTimer & 0xFFFFFFFFL)
+                | ((long) (e.indicator & 0xF)) << 32
+                | ((long) (e.speedUpgradeLevel & 0xF)) << 36
+                | ((long) (e.powerUpgradeLevel & 0xF)) << 40
+                | ((long) (e.afterburnerUpgradeLevel & 0xF)) << 44
+                | ((long) (e.overdriveUpgradeLevel & 0xF)) << 48;
+    }
+
+    private static long frackSyncHi(MachineFrackingTowerBlockEntity e) {
+        return com.hbm_m.recipe.index.CachedRecipeResolver.sign(1L,
+                tankFingerprint(e.oilTank), tankFingerprint(e.gasTank), tankFingerprint(e.fracksolTank));
+    }
+
+    private static long tankFingerprint(com.hbm_m.inventory.fluid.tank.FluidTank tank) {
+        Fluid type = tank.getTankType();
+        return com.hbm_m.recipe.index.CachedRecipeResolver.sign(2L,
+                type == null ? 0L : type.hashCode(), tank.getFill());
     }
 
     private static final java.util.Map<com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType, Integer> VALID_UPGRADES_FRACK = java.util.Map.of(
@@ -300,8 +318,8 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         upgradeManager.checkSlots(inventory, SLOT_UPGRADE_1, SLOT_UPGRADE_3, VALID_UPGRADES_FRACK);
         speedUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED);
         powerUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.POWER);
-        afterburnerUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.AFTERBURN)
-                + upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE);
+        afterburnerUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.AFTERBURN);
+        overdriveUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE);
     }
 
     /**
@@ -391,8 +409,6 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         if (oil > 0) oilTank.fillMb(ModFluids.CRUDE_OIL.getSource(), oil);
         if (gas > 0) gasTank.fillMb(ModFluids.GAS.getSource(),       gas);
 
-        if (afterburnerUpgradeLevel > 0) applyAfterburnerEffect(orePos);
-
         indicator = 0;
     }
 
@@ -460,7 +476,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
     }
 
     protected boolean isBedrockOilDeposit(Block block) {
-        return block == ModBlocks.ORE_BEDROCK_OIL.get() || block == ModBlocks.BEDROCK_OIL.get();
+        return block == ModBlocks.ORE_BEDROCK_OIL.get();
     }
 
     /**
@@ -474,25 +490,18 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         }
     }
 
-    /**
-     * Применение эффекта Afterburner апгрейда.
-     */
-    protected void applyAfterburnerEffect(BlockPos pos) {
-        // Der Nachbrenner wirkt wie im Original nur ueber die Gasverbrennung im Tick (siehe tick()), nicht pro Bohrvorgang.
+    /** GIT TileEntityOilDrillBase: the afterburner burns associated gas every tick, not on extraction. */
+    protected void burnAfterburnerGas() {
+        int toBurn = Math.min(gasTank.getFluidAmountMb(), afterburnerUpgradeLevel * 10);
+        if (toBurn <= 0) return;
+        gasTank.drainMb(toBurn);
+        energy = Math.min(energy + toBurn * 5L, getMaxEnergyStored());
     }
 
     //=====================================================================================//
     // NBT СЕРИАЛИЗАЦИЯ
     //=====================================================================================//
 
-    //? if fabric {
-    /*@Nullable
-    public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
-        if (side == Direction.DOWN) return fracksolTank.getStorage();
-        if (side == Direction.UP)   return oilTank.getStorage();
-        return gasTank.getStorage();
-    }
-    *///?}
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
@@ -505,6 +514,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         tag.putInt("speedUpgrade", speedUpgradeLevel);
         tag.putInt("powerUpgrade", powerUpgradeLevel);
         tag.putInt("afterburnerUpgrade", afterburnerUpgradeLevel);
+        tag.putInt("overdriveUpgrade", overdriveUpgradeLevel);
     }
 
     @Override
@@ -518,18 +528,38 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         speedUpgradeLevel = tag.getInt("speedUpgrade");
         powerUpgradeLevel = tag.getInt("powerUpgrade");
         afterburnerUpgradeLevel = tag.getInt("afterburnerUpgrade");
+        overdriveUpgradeLevel = tag.getInt("overdriveUpgrade");
     }
 
     //=====================================================================================//
     // CAPABILITIES
     //=====================================================================================//
 
-    //? if forge || neoforge {
+    // ==================== IFluidUserMK2 / MK2-Netz ====================
+
+    @Override
+    public FluidTank[] getAllTanks() { return new FluidTank[] { oilTank, gasTank, fracksolTank }; }
+
+    @Override
+    public FluidTank[] getReceivingTanks() { return new FluidTank[] { fracksolTank }; }
+
+    @Override
+    public FluidTank[] getSendingTanks() { return new FluidTank[] { oilTank, gasTank }; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, net.minecraft.core.Direction fromDir) {
+        return fromDir != null;
+    }
+
     @Override
     protected void setupFluidCapability() {
         setFluidHandler(new FrackingTowerFluidHandler(this));
     }
-    //?}
 
     //=====================================================================================//
     // РЕНДЕРИНГ
@@ -570,5 +600,9 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         nbt.put("oilTank", oilTank.writeNBT(new CompoundTag()));
         nbt.put("gasTank", gasTank.writeNBT(new CompoundTag()));
         nbt.put("fracksolTank", fracksolTank.writeNBT(new CompoundTag()));
+    }
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
     }
 }

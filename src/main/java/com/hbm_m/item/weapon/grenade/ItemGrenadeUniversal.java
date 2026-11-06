@@ -249,6 +249,7 @@ public class ItemGrenadeUniversal extends Item implements IEquipReceiver, IAnima
     /** Original {@code ClientProxy}: {@code registerItemRenderer(grenade_universal, new ItemRenderGrenade())}. */
     //? if forge {
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -259,6 +260,7 @@ public class ItemGrenadeUniversal extends Item implements IEquipReceiver, IAnima
     }
     //?} elif neoforge {
     /*@Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             @Override

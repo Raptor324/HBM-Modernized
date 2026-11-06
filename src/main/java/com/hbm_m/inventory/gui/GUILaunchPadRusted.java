@@ -3,6 +3,7 @@ import com.hbm_m.client.GuiCompat;
 
 import java.util.Random;
 
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.blockentity.machines.LaunchPadRustedBlockEntity;
 import com.hbm_m.inventory.menu.LaunchPadRustedMenu;
 import com.hbm_m.item.ModItems;
@@ -25,19 +26,21 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.Random;
+
 /**
- * 1:1 {@code GUILaunchPadRusted}: Knopf "Release Missile", Anzeigen fuer Codes/Schluessel, achtstelliger
- * Startcode (aus der Position gewuerfelt) und die eingebaute Rakete als Vorschau.
+ * GUI ржавой пусковой площадки — порт {@code GUILaunchPadRusted} (1.7.10):
+ * индикаторы наличия кода и ключа, 8-значный код запуска (детерминирован
+ * координатами пада: {@code Random(x*131071 + z)}), статус ракеты и её превью.
+ *
+ * Отличие от оригинала: кнопка Release не нужна — ракета загружается и
+ * выгружается предметом через слот 0 (в 1.7.10 пад заряжался только
+ * генерацией силоса).
  */
 public class GUILaunchPadRusted extends GuiInfoScreen<LaunchPadRustedMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_rusted.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_rusted.png");
-            //?}
-
 
     public GUILaunchPadRusted(LaunchPadRustedMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -69,43 +72,30 @@ public class GUILaunchPadRusted extends GuiInfoScreen<LaunchPadRustedMenu> {
             return;
         }
 
-        boolean hasCodes = be.getInventory().getStackInSlot(1).getItem() == ModItems.LAUNCH_CODE.get();
-        boolean hasKey = be.getInventory().getStackInSlot(2).getItem() == ModItems.LAUNCH_KEY.get();
+        // 1.7.10: индикаторы кода и ключа
+        boolean hasCodes = be.getInventory().getStackInSlot(LaunchPadRustedBlockEntity.SLOT_LAUNCH_CODE)
+                .is(ModItems.LAUNCH_CODE.get());
+        boolean hasKey = be.getInventory().getStackInSlot(LaunchPadRustedBlockEntity.SLOT_LAUNCH_KEY)
+                .is(ModItems.LAUNCH_KEY.get());
 
-        if (hasCodes) guiGraphics.blit(TEXTURE, leftPos + 121, topPos + 32, 192, 0, 6, 8);
-        if (hasKey) guiGraphics.blit(TEXTURE, leftPos + 139, topPos + 32, 192, 0, 6, 8);
+        if (hasCodes) guiGraphics.blit(TEXTURE, this.leftPos + 121, this.topPos + 32, 192, 0, 6, 8);
+        if (hasKey) guiGraphics.blit(TEXTURE, this.leftPos + 139, this.topPos + 32, 192, 0, 6, 8);
 
-        if (hasCodes && hasKey && be.missileLoaded) {
-            Random rand = new Random(be.getBlockPos().getX() * 131_071 + be.getBlockPos().getZ());
+        // 1.7.10: 8-значный код, детерминированный координатами пада
+        if (hasCodes && hasKey && be.isMissileValid()) {
+            Random rand = new Random(be.getBlockPos().getX() * 131_071L + be.getBlockPos().getZ());
             int launchCodes = rand.nextInt(100_000_000);
 
             for (int i = 0; i < 8; i++) {
                 int magnitude = (int) Math.pow(10, i);
                 int digit = (launchCodes % (magnitude * 10)) / magnitude;
-                guiGraphics.blit(TEXTURE, leftPos + 109 + 6 * i, topPos + 85, 192 + 6 * digit, 8, 6, 8);
+                guiGraphics.blit(TEXTURE, this.leftPos + 109 + 6 * i, this.topPos + 85, 192 + 6 * digit, 8, 6, 8);
             }
         }
 
-        //? if forge || neoforge {
-        if (be.missileLoaded) {
-            ItemStack missile = new ItemStack(ModItems.MISSILE_DOOMSDAY_RUSTED.get());
-            guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(this.leftPos + 70.0F, this.topPos + 120.0F, 100.0F);
-            guiGraphics.pose().mulPose(Axis.YP.rotationDegrees(90.0F));
-            float scale = 0.875F;
-            guiGraphics.pose().scale(scale, scale, scale);
-            guiGraphics.pose().scale(-8.0F, -8.0F, -8.0F);
-            Lighting.setupForFlatItems();
+        GUILaunchPadLarge.renderMissilePreview(guiGraphics, be, this.leftPos, this.topPos);
 
-            var bufferSource = guiGraphics.bufferSource();
-            com.hbm_m.client.render.missile.MissileRenderHelper.drawBakedQuads(
-                    guiGraphics.pose(), bufferSource, LightTexture.FULL_BRIGHT, missile);
-            bufferSource.endBatch(net.minecraft.client.renderer.RenderType.solid());
-
-            Lighting.setupFor3DItems();
-            guiGraphics.pose().popPose();
-        }
-        //?}
+        GUILaunchPadLarge.renderStatusLabel(guiGraphics, be, this.leftPos, this.topPos);
     }
 
     @Override

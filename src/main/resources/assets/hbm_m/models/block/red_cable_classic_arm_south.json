@@ -1,29 +1,21 @@
 {
-  "loader": "forge:obj",
-  "model": "hbm_m:models/block/red_cable.obj",
-  "flip_v": true,
-  "render_type": "minecraft:solid",
+  "parent": "minecraft:block/block",
+  "ambientocclusion": false,
   "textures": {
     "particle": "hbm_m:block/red_cable_classic",
     "surface": "hbm_m:block/red_cable_classic"
   },
-  "transform": {
-    "translation": [
-      0.5,
-      0.5,
-      0.5
-    ]
-  },
-  "visibility": {
-    "Core": false,
-    "CX": false,
-    "CY": false,
-    "CZ": false,
-    "negZ": false,
-    "posZ": true,
-    "negX": false,
-    "posX": false,
-    "posY": false,
-    "negY": false
-  }
+  "elements": [
+    {
+      "from": [ 5.5, 5.5, 10.5 ],
+      "to": [ 10.5, 10.5, 16 ],
+      "faces": {
+        "south": { "uv": [ 0, 0, 5, 5 ], "texture": "#surface", "cullface": "south" },
+        "up":    { "uv": [ 5, 0, 10, 5 ], "texture": "#surface" },
+        "down":  { "uv": [ 5, 0, 10, 5 ], "texture": "#surface" },
+        "west":  { "uv": [ 5, 0, 10, 5 ], "texture": "#surface" },
+        "east":  { "uv": [ 5, 0, 10, 5 ], "texture": "#surface" }
+      }
+    }
+  ]
 }

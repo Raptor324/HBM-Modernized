@@ -14,8 +14,8 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * 1:1 {@code RenderFENSU}: Sockel, um die X-Achse (Hoehe 2,5) drehende Scheibe ({@code rotation/prevRotation}) und
- * die mitdrehenden, vollhellen Lichter ohne Flaechenausblendung.
+ * 1:1 {@code RenderFENSU}: base, disc rotating around X axis (height 2.5) ({@code rotation/prevRotation}) and
+ * rotating fullbright lights without face culling.
  */
 public class FENSURenderer implements com.hbm_m.client.render.HbmBerBounds<MachineFENSUBlockEntity> {
 
@@ -31,7 +31,7 @@ public class FENSURenderer implements com.hbm_m.client.render.HbmBerBounds<Machi
         ps.pushPose();
         ps.translate(0.5D, 0D, 0.5D);
 
-        // Original: Metadaten 2/4/3/5 -> 90/180/270/0 Grad
+        // Original: metadata 2/4/3/5 -> 90/180/270/0 degrees
         switch (fensu.getBlockState().getValue(DummyableMachineBlock.FACING)) {
             case NORTH -> ps.mulPose(Axis.YP.rotationDegrees(90));
             case WEST -> ps.mulPose(Axis.YP.rotationDegrees(180));
@@ -48,7 +48,7 @@ public class FENSURenderer implements com.hbm_m.client.render.HbmBerBounds<Machi
         ps.translate(0, -2.5, 0);
         MODEL.renderPart("Disc", ps, buf.getBuffer(RenderType.entityCutout(TEX)), light);
 
-        // GL_LIGHTING/GL_CULL_FACE aus, Lichtkarte 240/240
+        // Disable GL_LIGHTING and GL_CULL_FACE, lightmap 240/240
         MODEL.renderPart("Lights", ps, buf.getBuffer(RenderType.entityCutoutNoCull(TEX)), LightTexture.FULL_BRIGHT);
 
         ps.popPose();

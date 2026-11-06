@@ -9,6 +9,7 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.inventory.menu.MachineCokerMenu;
+import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.CokerRecipe;
 
@@ -64,7 +65,7 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
         ItemStack[] slots = inventorySlotArray();
         if (tank0.setType(SLOT_FLUID_ID, slots)) applySlotsArray(slots);
 
-        if (level.getGameTime() % 20 == 0) {
+        if (probeDue(20)) {
             for (DirPos con : getConPos()) {
                 this.trySubscribe(tank0.getTankType(), level, con.pos, con.dir);
             }
@@ -113,8 +114,15 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
             if (this.tank1.getFill() > 0) this.tryProvide(tank1, level, con.pos, con.dir);
         }
 
-        setChanged();
-        sendUpdateToClient();
+        // Original networkPackNT(25) ships wasOn/heat/progress and both tank types+fills every tick;
+        // the change-gate signature must therefore cover wasOn and both tank types too, else the
+        // client keeps a stale running state when processing stops without any fill changing.
+        long type0 = tank0.getTankType() == null ? 0L : tank0.getTankType().hashCode() & 0xFFFFFFFFL;
+        long type1 = tank1.getTankType() == null ? 0L : tank1.getTankType().hashCode() & 0xFFFFFFFFL;
+        syncIfStateChanged(
+                (long) progress << 33 | (long) heat << 1 | (wasOn ? 1L : 0L),
+                (long) tank0.getFill() << 48 | (long) tank1.getFill() << 32 | (type0 * 31 + type1) & 0xFFFFFFFFL
+        );
     }
 
     private void clientTick(Level level, BlockPos pos) {
@@ -170,7 +178,7 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
         if (output != null && !output.isEmpty()) {
             ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
             if (!current.isEmpty()) {
-                if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, output)) return false;
+                if (!com.hbm_m.platform.StackNbt.sameItemSameTags(current, output)) return false;
                 if (output.getCount() + current.getCount() > output.getMaxStackSize()) return false;
             }
         }
@@ -240,6 +248,11 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
+    @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
+        return fromDir != null;
+    }
+
     // ── Zugriff ──────────────────────────────────────────────────────────────
 
     public FluidTank getTank0() { return tank0; }
@@ -265,17 +278,20 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        tank0.readFromNBT(tag, "t0");
-        tank1.readFromNBT(tag, "t1");
-        progress = tag.getInt("prog");
+        if (tag.contains("t0")) tank0.readFromNBT(tag, "t0");
+        else if (tag.contains("tank0")) tank0.readFromNBT(tag, "tank0");
+        if (tag.contains("t1")) tank1.readFromNBT(tag, "t1");
+        else if (tag.contains("tank1")) tank1.readFromNBT(tag, "tank1");
+        progress = tag.contains("prog") ? tag.getInt("prog") : tag.getInt("progress");
         heat = tag.getInt("heat");
         wasOn = tag.getBoolean("wasOn");
     }
 
-    // ── Slots (Original: nur Slot 1 zugaenglich, nichts einfuegbar) ───────────
+    // ── Slot validation ──────────────────────────────────────────────────────
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot == SLOT_FLUID_ID) return stack.getItem() instanceof FluidIdentifierItem;
         return false;
     }
 
@@ -295,7 +311,6 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineCokerMenu.create(id, inventory, this);
     }
-
     private AABB bb = null;
 
     //? if forge {
@@ -317,6 +332,12 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
             });
 
     @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
+    }
+
+    @Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
         return super.getCapability(cap, side);
@@ -328,13 +349,20 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
         sidedItems.invalidate();
     }
     //?} elif neoforge {
-    /*/^* Original {@code ISidedInventory}: Slot {1}; nichts hinein, das Ergebnis heraus. ^/
+    
+    /*// Original {@code ISidedInventory}: Slot {1}; nichts hinein, das Ergebnis heraus.
     private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
             new com.hbm_m.blockentity.SidedItemAccess.Rules() {
                 @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 1 }; }
                 @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
                 @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
             });
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side).resolve().orElse(null);
+    }
 
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {

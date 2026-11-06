@@ -110,6 +110,16 @@ public abstract class DoorDecl {
     }
 
     /**
+     * Статичная рамка выделения: дверь, чья визуальная анимация не оставляет
+     * «частично открытой» геометрии для наведения (qe_sliding, sliding_seal —
+     * тонкие створки уезжают в карманы). Рамка выделения не меняется с прогрессом,
+     * чтобы по двери всегда можно было навестись и закрыть её.
+     */
+    public boolean hasStaticSelectionShape() {
+        return false;
+    }
+
+    /**
      * ID блока для автоматической загрузки модели
      */
     public abstract ResourceLocation getBlockId();
@@ -185,6 +195,124 @@ public abstract class DoorDecl {
         return new AABB(0, 0, 0, 1, 1, 1);
     }
 
+    // ==================== Пошаговая коллизия (порт 1.7.10, автоматизированная) ====================
+
+    /**
+     * Ретрактится ли часть схемы в момент прогресса {@code progress} (0=закрыто, 1=открыто).
+     *
+     * <p>Порт пошагового открытия {@code TileEntityDoorGeneric.updateEntity} (1.7.10), где
+     * колонки створки физически достраивались/удалялись блоками-extras: колонка {@code j}
+     * (0..|tangent|-1) вдоль оси движения проходила при
+     * {@code progress >= j / (steps - 1)} — одинаково для открытия и закрытия (формула
+     * симметрична). Ось движения из {@code range[5]} — переключение осей 1:1 с оригиналом:
+     * case 0 → движение по Z (span по Y), case 1 → по Y (span по X), case 2 → по X (span по Y).
+     *
+     * <p>В Modernized реальные блоки не ставятся/не удаляются — эта формула просто
+     * вычисляет, чья коллизия в момент t заменяется на open/empty-форму.
+     * Двери без объявленных {@link #getDoorOpenRanges()} получают дискретное поведение
+     * (проходимость только при progress = 1).
+     */
+    public boolean isPartRetracted(BlockPos localPos, float progress) {
+        if (progress >= 1.0f) return true;
+        // Полностью закрыта — всё solid (оригинал: в CLOSED extras отсутствуют)
+        if (progress <= 0.0f) return false;
+        int[][] ranges = getDoorOpenRanges();
+        if (ranges.length == 0) return false;
+
+        for (int i = 0; i < ranges.length; i++) {
+            int[] range = ranges[i];
+            int steps = Math.abs(range[3]);
+            int sign = Integer.signum(range[3]);
+            int along = switch (range[5]) {
+                case 0 -> localPos.getZ() - range[2];
+                case 1 -> localPos.getY() - range[1];
+                default -> localPos.getX() - range[0];
+            };
+            int j = sign >= 0 ? along : -along;
+            if (j < 0 || j >= steps) continue; // часть вне этого диапазона движения
+
+            float threshold = getRetractionThreshold(j, steps, i);
+            float time = getDoorRangeOpenTime(progress, i);
+            if (Float.isNaN(threshold)) return progress > 0.0f;
+            // Оригинал: колонка активна, пока threshold <= time (симметрично для
+            // открытия и закрытия — закрывающийся цикл идёт по j в обратную сторону
+            // с теми же порогами). Строгая сравнение: порог 0 при time = 0 (дверь ещё
+            // в начале фазы ретракции, напр. окно ремапа WATER_DOOR 35..40/60) НЕ
+            // должен ретрактнуться — иначе дверь становится проходимой сразу по клику.
+            if (threshold < time) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Двери без «частичной» коллизии (створка уезжает целиком): проходимость
+     * переключается ТОЛЬКО по окончании анимации — открывается дверь становится
+     * проходимой в конце открытия, закрывается остаётся проходимой до конца
+     * закрытия. Не по клику.
+     */
+    public boolean flipsPassabilityAtAnimationEnd() { return false; }
+
+    /**
+     * Переопределение прогресса коллизии с учётом направления движения — для дверей
+     * с особым таймингом проходимости (VAULT_DOOR). Базовое поведение — обычный прогресс.
+     *
+     * @param state 0=закрыта, 1=открыта, 2=закрывается, 3=открывается
+     * @param progress обычный прогресс openTicks/openTime (0..1)
+     */
+    public float getCollisionProgress(byte state, float progress) { return progress; }
+
+    /**
+     * Порог ретракции колонки {@code j} диапазона {@code rangeIdx} (0..1; NaN = колонка
+     * уходит с первого тика открытия). Дефолт — формула оригинала с квирком делителя
+     * abs(tangent − 1) (для отрицательного тангенса −n делитель равен n+1; tangent = ±1 →
+     * 0/0 = NaN, квирк SLIDING_SEAL_DOOR). Двери с чётной шириной переопределяют для
+     * симметричного расхождения от центрального шва.
+     */
+    public float getRetractionThreshold(int j, int steps, int rangeIdx) {
+        int tangent = getDoorOpenRanges()[rangeIdx][3];
+        int divisor = Math.abs(tangent - 1);
+        return divisor == 0 ? Float.NaN : (float) j / divisor;
+    }
+
+    /**
+     * Порт {@code DoorDecl.getDoorRangeOpenTime(ticks, idx)}: ремап прогресса для
+     * диапазона {@code idx} (0..1). По умолчанию — линейный прогресс без ремапа.
+     * Переопределяется дверями со «ступенчатым» окном: WATER_DOOR (ремап тиков 35–40
+     * из 60), SILO_HATCH / SILO_HATCH_LARGE (скачок на тике 20 из 60).
+     */
+    public float getDoorRangeOpenTime(float progress, int idx) {
+        return progress;
+    }
+
+    /** Порт {@code getNormTime}: клампнутый ремап прогресса в окне [from, to] (в долях 0..1). */
+    protected static float remapTime(float progress, float from, float to) {
+        if (to <= from) return progress >= from ? 1.0f : 0.0f;
+        return Math.max(0.0f, Math.min(1.0f, (progress - from) / (to - from)));
+    }
+
+    /**
+     * Единая карта коллизий двери в момент {@code progress} в локальных координатах схемы:
+     * для каждой части — закрытая форма, пока её колонка не ретрактнулась, и open/empty-форма
+     * после. Из этой карты DoorBlock строит ОДНУ общую рамку коллизии/выделения двери,
+     * перестраиваемую при каждом изменении тиков (см. DoorBlockEntity.getUnifiedCollisionShape).
+     */
+    public Map<BlockPos, net.minecraft.world.phys.shapes.VoxelShape> getCollisionShapesAt(float progress) {
+        DoorStructureDefinition def = getStructureDefinition();
+        if (def == null) return Collections.emptyMap();
+        Map<BlockPos, net.minecraft.world.phys.shapes.VoxelShape> out = new HashMap<>();
+        for (Map.Entry<BlockPos, net.minecraft.world.phys.shapes.VoxelShape> e : def.getClosedShapes().entrySet()) {
+            net.minecraft.world.phys.shapes.VoxelShape closed = e.getValue();
+            if (closed == null || closed.isEmpty()) continue;
+            net.minecraft.world.phys.shapes.VoxelShape shape = isPartRetracted(e.getKey(), progress)
+                    ? def.getOpenShapes().getOrDefault(e.getKey(), net.minecraft.world.phys.shapes.Shapes.empty())
+                    : closed;
+            if (shape != null && !shape.isEmpty()) {
+                out.put(e.getKey(), shape);
+            }
+        }
+        return out;
+    }
+
     // Звуки
     @Nullable public SoundEvent getOpenSoundStart() { return null; }
     @Nullable public SoundEvent getOpenSoundEnd() { return null; }
@@ -210,6 +338,63 @@ public abstract class DoorDecl {
     public int getBakedModelRotationOffsetY() { return 0; }
 
     public double[][] getClippingPlanes() { return new double[0][]; }
+
+    /**
+     * Per-part clipping-плоскости в формате glClipPlane: {@code {A,B,C,D}}, «внутри» =
+     * {@code A*x + B*y + C*z + D >= 0} (конвенция «+D», см. DoorPartClipper). Система
+     * координат — ПОЗ-пространство запечённых партов (после DoorDecl-трансформации части);
+     * резолвер MachineDoorRenderer инвертирует позовую дельту doPartTransform и переводит
+     * плоскости в локальные координаты геометрии.
+     * <p>
+     * <b>Допущение no-wrap</b> (рабочее, не догма): поз-СК = {@code R·(v+t)}, БЕЗ
+     * blockCenterToCorner запекания модели. Прецедент — MachineZirnoxRenderer; эмпирика
+     * дверей его подтверждает, но exec-гейт обязателен: фактические bbox запечённых квадов
+     * логируются по {@code -Dhbm.debugDoorBakedBbox=true} (точка —
+     * MachinePartRenderer.ensureBuilt), пороги фиксируются только после совпадения лога
+     * с ожиданиями no-wrap. При center-коррекции порог = поз-край кармана ± 0.0001.
+     * <p>
+     * Пустой массив = «плоскостей нет» (маппится в null в резолвере — часть остаётся
+     * в обычном MDI-тире). По умолчанию: статичная рама (frame/base/DoorFrame) — без
+     * плоскостей (иначе рамы всех дверей навсегда деградировали бы в immediate-тир),
+     * остальные парты — общие {@link #getClippingPlanes()}.
+     */
+    public double[][] getClippingPlanes(String partName, float openTicks, @Nullable DoorModelSelection selection) {
+        if (isStaticFramePartName(partName)) return new double[0][];
+        return getClippingPlanes();
+    }
+
+    /**
+     * Целевой хук клип-плоскостей для DAE-партов ("dae/&lt;node&gt;"): плоскости
+     * {@code {A,B,C,D}} (конвенция «+D») в ЛОКАЛЬНОЙ СК узла .dae; инверсию в локальную
+     * СК rest-геометрии выполняет резолвер (doorDaeClipPlanes: та же цепочка
+     * applyDaeRootOffset + mulPoseChain с тем же {@code time}, что у аниматора узла).
+     * <p>
+     * НЕ путать с {@link #getClippingPlanes(String, float, DoorModelSelection)}: тот
+     * матчит doPartTransform-имена ("LeftLock"), а фактическое имя DAE-парта —
+     * "dae/LeftLock" — буквальное equals НИКОГДА не совпадало, именные override'ы были
+     * недостижимы, и все DAE-узлы получали generic OBJ-слэб (sliding_blast:
+     * SLIDING_BLAST_SLAB {0,0,±1,2.5} из OBJ-анимационной математики: ход ±2.125,
+     * lock pivot 1.8125), посаженный в СК узла, где он резал видимую геометрию.
+     * Корень старой поломки задокументирован здесь; плоскости хука — по фактическим
+     * экстентам мешей .dae, БЕЗ OBJ-чисел (см. переопределение в sliding_blast_door).
+     * <p>
+     * Базовая реализация — null (клип DAE отключён: вся геометрия узла, дыр нет).
+     *
+     * @param nodeName имя узла БЕЗ префикса "dae/" (doorLeft/DoorCircleLeft/...)
+     * @param node     узел .dae (com.hbm_m.client.loader.dae.DaeNode)
+     * @param time     время анимации (сек), то же, что у аниматора узла
+     */
+    public double[][] getDaeClippingPlanes(String nodeName, @Nullable com.hbm_m.client.loader.dae.DaeNode node,
+                                           float time) {
+        return null;
+    }
+
+    /** Зеркало MachineDoorRenderer.isStaticFramePart: рама рисуется без DoorDecl-трансформации. */
+    private static boolean isStaticFramePartName(String partName) {
+        return "frame".equalsIgnoreCase(partName)
+                || "base".equalsIgnoreCase(partName)
+                || "DoorFrame".equals(partName);
+    }
 
     // Трансформации
     public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
@@ -250,6 +435,19 @@ public abstract class DoorDecl {
     }
 
     public boolean doesRender(String partName, boolean child) { return true; }
+
+    /**
+     * Куллинг части с учётом состояния конкретной двери (interpolated openTicks).
+     * Даёт декларации покадровую, state-aware отбраковку сегментов (blast door:
+     * сегменты створки исчезают при входе в корпус). По умолчанию — обычный хук.
+     * Переопределяется только дверями, чьи части физически заходят в корпус
+     * (сейчас — blast_door); остальным скрытие дают clipping-плоскости
+     * getClippingPlanes(partName, openTicks, selection) (CPU-клип в
+     * MachinePartRenderer через DoorPartClipper) и уход створок в solid-блоки карманов.
+     */
+    public boolean doesRender(DoorBlockEntity be, String partName, float openTicks, boolean child) {
+        return doesRender(partName, child);
+    }
 
     public String[] getChildren(String partName) { return new String[0]; }
 
@@ -499,6 +697,11 @@ public abstract class DoorDecl {
             builder.addSymbol('G', Block.box(8, 0, 0, 16, 16, 16), PartRole.DEFAULT);   // правый вертикальный полублок
             builder.addSymbol('T', Block.box(0, 10, 0, 16, 16, 16), PartRole.DEFAULT); // полублок в верхнем положении
             builder.addSymbol('M', Block.box(0, 0, 0, 16, 1, 16), PartRole.DEFAULT); // плита в нижнем положении
+            // Угловые «ступеньки»: плита пола/потолка на ВСЮ ширину клетки + столбик
+            // к стене — иначе у стен остаётся дыра в пол-блока (плита не доходит,
+            // столбик не накрывает проходную половину угла)
+            builder.addSymbol('S', Shapes.or(Block.box(0, 0, 0, 8, 16, 16), Block.box(0, 0, 0, 16, 1, 16)), PartRole.DEFAULT);
+            builder.addSymbol('R', Shapes.or(Block.box(8, 0, 0, 16, 16, 16), Block.box(0, 0, 0, 16, 1, 16)), PartRole.DEFAULT);
             // Схема ЗАКРЫТОЙ двери (Вид спереди, Y сверху вниз)
             String[] closed = {
                 "XXXXXXX",
@@ -516,7 +719,7 @@ public abstract class DoorDecl {
                 "HOOOOOG",
                 "HOOOOOG",
                 "HOOOOOG",
-                "HMMMMMG"
+                "SMMMMMR"
             };
             
             // Регистрируем структуру (C - центр/контроллер)
@@ -530,22 +733,22 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "large_vehicle_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "large_vehicle_door");
-            //?}
 
         }
 
         @Override
         public DoorModelSelection getDefaultModelSelection() {
-            return DoorModelSelection.modern(DoorSkin.DEFAULT);
+            // Скин по умолчанию - "clear" (в локализации "Standard"):
+            // именно на его модели (large_vehicle_door_clean.obj) построены
+            // чёрный/синий/красный скины. DoorSkin.of(id) обогащается из
+            // DoorModelRegistry (large_vehicle_door_config.json).
+            return DoorModelSelection.modern("clear");
         }
 
-        @Override 
-        public int getOpenTime() { 
-            return 60; 
+        @Override
+        public int getOpenTime() {
+            return 60;
         }
 
         @Override
@@ -564,17 +767,34 @@ public abstract class DoorDecl {
             return true;
         }
 
-        @Override 
+        @Override
         public double[][] getClippingPlanes() {
+            // no-wrap (рама z[-3.5, 3.5], створки закрыты до ±3.312, открыты до ±6.312):
+            // слэб по Z ±3.5. Заявленные ранее {±1,0,0,3.5} переосены в Z: ход створок
+            // в поз-СК идёт по Z (transform rotY(90)+t(0,0,-3)).
+            // FALLBACK при wrap-гипотезе (exec-лог bbox покажет карман рамы z[-5.5, 1.5]):
+            // {0,0,1,5.4999} (z >= -5.4999) и {0,0,-1,1.4999} (z <= 1.4999) — D-константы
+            // были записаны зеркально в предыдущей ревизии, {0,0,1,1.4999} отрезало бы у
+            // закрытой створки ~3.8 блока. Общее правило: порог = поз-край кармана ± 0.0001,
+            // карман = поз-экстент рамы (лог -Dhbm.debugDoorBakedBbox=true).
             return new double[][] {
-                { 1.0, 0.0, 0.0, 3.5 },
-                { -1.0, 0.0, 0.0, 3.5 }
+                { 0.0, 0.0, 1.0, 3.5 },
+                { 0.0, 0.0, -1.0, 3.5 }
             };
         }
 
+        // Диапазоны оригинала ({0,0,0,-4,6,2} / {0,0,0,4,6,2}): створка разъезжается
+        // в обе стороны ПОКОЛОНОЧНО. Порог j/steps вместо оригинального квирка:
+        // у оригинала делитель для отрицательного тангенса больше (5 против 3) и
+        // левая половина отставала от правой, хотя визуально створки равные
         @Override
         public int[][] getDoorOpenRanges() {
-            return new int[0][];
+            return new int[][] { { 0, 0, 0, -4, 6, 2 }, { 0, 0, 0, 4, 6, 2 } };
+        }
+
+        @Override
+        public float getRetractionThreshold(int j, int steps, int rangeIdx) {
+            return (float) j / steps;
         }
 
         @Override public SoundEvent getOpenSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
@@ -596,6 +816,12 @@ public abstract class DoorDecl {
             builder.addSymbol('G', Block.box(8, 0, 0, 16, 16, 16), PartRole.DEFAULT);   // правый вертикальный полублок
             builder.addSymbol('T', Block.box(0, 10, 0, 16, 16, 16), PartRole.DEFAULT); // полублок в верхнем положении
             builder.addSymbol('M', Block.box(0, 0, 0, 16, 3, 16), PartRole.DEFAULT); // плита в нижнем положении
+            // Угловые «ступеньки»: плита на всю ширину + столбик к стене — без них
+            // у стен остаются дыры в пол-блока в полу и потолке проёма
+            builder.addSymbol('S', Shapes.or(Block.box(0, 0, 0, 8, 16, 16), Block.box(0, 0, 0, 16, 3, 16)), PartRole.DEFAULT);
+            builder.addSymbol('R', Shapes.or(Block.box(8, 0, 0, 16, 16, 16), Block.box(0, 0, 0, 16, 3, 16)), PartRole.DEFAULT);
+            builder.addSymbol('U', Shapes.or(Block.box(0, 0, 0, 8, 16, 16), Block.box(0, 10, 0, 16, 16, 16)), PartRole.DEFAULT);
+            builder.addSymbol('W', Shapes.or(Block.box(8, 0, 0, 16, 16, 16), Block.box(0, 10, 0, 16, 16, 16)), PartRole.DEFAULT);
             String[] closed = {
                 "####",
                 "####",
@@ -604,10 +830,10 @@ public abstract class DoorDecl {
             };
 
             String[] open = {
-                "HTTG",
+                "UTTW",
                 "HOOG",
                 "HOOG",
-                "HMMG"
+                "SMMR"
             };
             
             // Регистрируем структуру (C - центр/контроллер)
@@ -615,11 +841,7 @@ public abstract class DoorDecl {
         }
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "round_airlock_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "round_airlock_door");
-            //?}
 
         }
 
@@ -642,14 +864,29 @@ public abstract class DoorDecl {
         }
 
         @Override public double[][] getClippingPlanes() {
+            // Асимметричный слэб (OBJ: frame z[-2.0, 2.0], doorLeft z[-0.125, 1.938];
+            // +t(0,0,0.5) => поз-карман z[-1.5, 2.5]): z >= -1.4999 и z <= 2.4999.
+            // Держит закрытую doorLeft (до 2.438) целиком, прячет открытую в solid-колонне
+            // кармана. Паритет ntm-next RenderAirlockDoor (slab + pose.translate(0,0,0.5)
+            // => поз-слэб [-1.499, 2.499]).
             return new double[][] {
-                { 0.0, 0.0, 1.0, 2.0001 },
-                { 0.0, 0.0, -1.0, 2.0001 }
+                { 0.0, 0.0, 1.0, 1.4999 },
+                { 0.0, 0.0, -1.0, 2.4999 }
             };
         }
 
-        @Override public int[][] getDoorOpenRanges() {
-            return new int[][] { { 0, 0, 0, -2, 4, 2 }, { 0, 0, 0, 3, 4, 2 } };
+        // Чётная ширина (4 блока, створки 2+2 от центрального шва на x=0|x=1):
+        // обе центральные колонки уходят сразу (j=0), обе внешние на прогрессе 0.5 —
+        // порог j/steps вместо оригинального квирка (у него левая/правая половины
+        // получали разные пороги 1/3 и 1/2 и дверь "разъезжалась" криво)
+        @Override
+        public int[][] getDoorOpenRanges() {
+            return new int[][] { { 0, 0, 0, -2, 4, 2 }, { 1, 0, 0, 2, 4, 2 } };
+        }
+
+        @Override
+        public float getRetractionThreshold(int j, int steps, int rangeIdx) {
+            return (float) j / steps;
         }
 
         @Override
@@ -675,6 +912,12 @@ public abstract class DoorDecl {
             builder.addSymbol('G', Block.box(8, 0, 0, 16, 16, 16), PartRole.DEFAULT);   // правый вертикальный полублок
             builder.addSymbol('T', Block.box(0, 12, 0, 16, 16, 16), PartRole.DEFAULT); // полублок в верхнем положении
             builder.addSymbol('M', Block.box(0, 0, 0, 16, 3, 16), PartRole.DEFAULT); // плита в нижнем положении
+            // Угловые «ступеньки»: плита на всю ширину + столбик к стене — без них
+            // у стен остаются дыры в пол-блока в полу и потолке проёма
+            builder.addSymbol('S', Shapes.or(Block.box(0, 0, 0, 8, 16, 16), Block.box(0, 0, 0, 16, 3, 16)), PartRole.DEFAULT);
+            builder.addSymbol('R', Shapes.or(Block.box(8, 0, 0, 16, 16, 16), Block.box(0, 0, 0, 16, 3, 16)), PartRole.DEFAULT);
+            builder.addSymbol('U', Shapes.or(Block.box(0, 0, 0, 8, 16, 16), Block.box(0, 12, 0, 16, 16, 16)), PartRole.DEFAULT);
+            builder.addSymbol('W', Shapes.or(Block.box(8, 0, 0, 16, 16, 16), Block.box(0, 12, 0, 16, 16, 16)), PartRole.DEFAULT);
 
             // Вид спереди (Y сверху вниз)
             // Дверь 4 блока в ширину, 3 в высоту
@@ -686,9 +929,9 @@ public abstract class DoorDecl {
             };
 
             String[] open = {
-                "HTTG", // Верхняя рама остается? Если нет, ставь OOOO
+                "UTTW", // Верхняя рама остается? Если нет, ставь OOOO
                 "HOOG", // Проход
-                "HMMG"  // Контроллер остается твердым, остальное проход
+                "SMMR"  // Контроллер остается твердым, остальное проход
             };
 
             // Если C - это контроллер, метод parseVertical сам посчитает координаты остальных блоков
@@ -702,11 +945,7 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "fire_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "fire_door");
-            //?}
 
         }
 
@@ -746,8 +985,13 @@ public abstract class DoorDecl {
             builder.addSymbol('#', Shapes.block(), PartRole.DEFAULT);
             builder.addSymbol('C', Shapes.block(), PartRole.CONTROLLER);
             builder.addSymbol('O', Shapes.empty(), PartRole.DEFAULT);
+            // Потолок проёма толщиной в пол-блока и пол в 1 пиксель (как у large
+            // vehicle door): проём 3.5 блока. Боковые стенки — ПОЛНЫЕ блоки на всю
+            // высоту (толщина стены 1 блок), плиты пола/потолка только над проёмом
+            builder.addSymbol('T', Block.box(0, 8, 0, 16, 16, 16), PartRole.DEFAULT);
+            builder.addSymbol('M', Block.box(0, 0, 0, 16, 1, 16), PartRole.DEFAULT);
 
-            // 7x5 frame with 5x4 opening
+            // 7x4 frame with 5x3.5 opening
             String[] closed = {
                 "#######",
                 "#######",
@@ -755,10 +999,10 @@ public abstract class DoorDecl {
                 "###C###"
             };
             String[] open = {
-                "#######",
+                "#TTTTT#",
                 "#OOOOO#",
                 "#OOOOO#",
-                "#OOOOO#" 
+                "#MMMMM#"
             };
             defineStructure(builder.parseVertical(closed, open, 'C'));
         }
@@ -768,22 +1012,19 @@ public abstract class DoorDecl {
             return new String[] { "Frame", "LeftDoor", "RightDoor", "LeftLock", "RightLock" };
         }
 
+        /** Общий слэб z in [-2.5, 2.5] створок и замков (см. getClippingPlanes ниже). */
+        private final double[][] SLIDING_BLAST_SLAB = {
+                { 0, 0, 1, 2.5 }, { 0, 0, -1, 2.5 }
+        };
+
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "sliding_blast_door");
-            *///?} else {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_blast_door");
-            //?}
         }
 
         @Override
         public ResourceLocation getColladaAnimationSource() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "models/block/doors/sliding_blast_door");
-            *///?} else {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/sliding_blast_door");
-            //?}
         }
 
         @Override
@@ -801,6 +1042,22 @@ public abstract class DoorDecl {
         @Override 
         public int getOpenTime() { 
             return 24; 
+        }
+
+        // Створки разъезжаются В СТОРОНЫ от центрального шва: левая створка
+        // (x=0,-1,-2) уходит влево, правая (x=1,2) вправо — проём открывается от
+        // центра наружу (хвостовой край створки первым). Порог j/steps.
+        @Override
+        public int[][] getDoorOpenRanges() {
+            // ось 2 = движение по X (как у vehicle door). Ширина нечётная (7),
+            // поэтому центральная колонка x=0 — одна: щель в 1 блок, затем
+            // симметричные пары x=±1 (1/3) и x=±2 (2/3)
+            return new int[][] { { 0, 0, 0, -3, 4, 2 }, { 0, 0, 0, 3, 4, 2 } };
+        }
+
+        @Override
+        public float getRetractionThreshold(int j, int steps, int rangeIdx) {
+            return (float) j / steps;
         }
 
         @Override
@@ -865,8 +1122,91 @@ public abstract class DoorDecl {
 
         @Override
         public double[][] getClippingPlanes() {
-            // (glClipPlane в современном MixedPipelineIndexVertex builder'е) — TODO.
-            return new double[][] { { 0, 0, 1, 2.5 }, { 0, 0, -1, 2.5 } };
+            // Створки: слэб z in [-2.5, 2.5] (glClipPlane в современном
+            // MixedPipelineIndexVertex builder'е). Transform identity, ход ±2.125.
+            return SLIDING_BLAST_SLAB;
+        }
+
+        @Override
+        public double[][] getClippingPlanes(String partName, float openTicks, @Nullable DoorModelSelection selection) {
+            boolean isLock = "LeftLock".equals(partName) || "RightLock".equals(partName);
+            // Замки (LeftLock/RightLock), MODERN-путь: ДИНАМИЧЕСКАЯ полуплоскость
+            // (порт ntm-next RenderSlidingBlastDoor.leaf: halfspace(0, side*sin(swing),
+            // side*cos(swing), 2.5 - |travel|)), приведённая к позовой СК
+            // doPartTransform (p' = R·(p - o + t) + o, o = (0, 1.8125, 0), R = rotX(swing)).
+            //
+            // ВЫВОД. Требуемый локальный колпак: s·z_local <= 2.5 - travel
+            // (s = сторона замка; кончик, торчащий из кармана |z'| > 2.5, срезается ровно
+            // при protrusion). Перевод в позовую СК: n = R·(0,0,-s), D = D_l - n·c,
+            // c = R·t + (I-R)·o. Подстановка (t = s·travel, sin/cos от swing) даёт
+            // n = (0, s·sin, -s·cos) и D = 2.5 - s·o_y·sin — |travel| сокращается
+            // ТОЧНО (проверено подстановкой в 4 точках: закрыто/открыто × Left/Right).
+            //
+            // ЗНАК s: LeftLock ходит в +Z (getTranslation: +maxOpen·doorProg),
+            // RightLock в -Z; s = sign(travel) — как side в ntm-next (там travel>0
+            // несёт RightLock, в Modernized — LeftLock; обе стороны симметричны).
+            //
+            // КРИТЕРИИ (замер: OBJ LeftLock/RightLock local z [0.000, 0.483],
+            // поворот вокруг origin (0, 1.8125, 0)):
+            //  - закрыто (swing=90°, travel=0): Left {0,1,0,0.6875} → y' >= -0.6875,
+            //    y' = 1.8125 - z_local ∈ [1.33, 1.81]; Right {0,-1,0,4.3125} →
+            //    y' <= 4.3125 — крутилка НЕ режется (статичный слэб ±2.5 в позовой СК
+            //    после инверсии требовал y_local >= -0.6875 и срезал нижнюю часть
+            //    замка — «пропавшая крутилка» при openTicks=0);
+            //  - открыто (swing=180°, travel=2.125): LeftLock z' = -z_local - 2.125 ∈
+            //    [-2.608, -2.125] → плоскость {0,0,1,2.5} срезает торчащий кончик
+            //    z_local > 0.375 (те же ~0.108, что были задокументированы для слэба);
+            //    RightLock z' ∈ [1.642, 2.125] — не торчит, плоскость {0,0,-1,2.5}
+            //    не режет ничего.
+            if (isLock && selection != null && !selection.isLegacy()) {
+                float lockProg = Math.max(0f, Math.min(1f, openTicks / 4f)); // 0..4 → 0..1 (getRotation)
+                double theta = Math.toRadians(90f + 90f * lockProg);
+                double sin = Math.sin(theta), cos = Math.cos(theta);
+                int side = "LeftLock".equals(partName) ? 1 : -1;
+                return new double[][] { { 0.0, side * sin, -side * cos, 2.5 - side * 1.8125 * sin } };
+            }
+            if (isLock) {
+                // LEGACY-путь: замки не вращаются (getRotation выше — modern-only) и
+                // ходят на ±3.0 без поворота; позовая СК совпадает с локальной (R=I).
+                // Статичный слэб ±2.5 — прежнее валидированное поведение (при fully open
+                // замок уходит за z'=+2.5 и скрывается целиком).
+                return SLIDING_BLAST_SLAB;
+            }
+            return super.getClippingPlanes(partName, openTicks, selection);
+        }
+
+        // ==================== DAE-хук: плоскости в локальной СК узла .dae ====================
+
+        /** Слэб листьев: z ∈ [-0.3, 0.3] — фактический экстент Cube_007 (DoorLeft) / Cube_016 (DoorRight). */
+        private final double[][] DAE_LEAF_SLAB = {
+                { 0, 0, 1, 0.3 }, { 0, 0, -1, 0.3 }
+        };
+        /** Слэб замков: z ∈ [-0.32, 0.32] — экстент Cube_008 (DoorCircleLeft) / Cube_017 (DoorCircleRight) z[-0.3176, 0.2827] с запасом. */
+        private final double[][] DAE_LOCK_SLAB = {
+                { 0, 0, 1, 0.32 }, { 0, 0, -1, 0.32 }
+        };
+
+        /**
+         * DAE-плоскости по фактическим z-экстентам узлов .dae (замер позиций мешей:
+         * DoorLeft Cube_007 x[-0.15,2.5] z[-0.3,0.3]; DoorRight Cube_016 x[-2.5,0]
+         * z[-0.3,0.3]; замки Cube_008/017 z[-0.3176,0.2827]) — НЕ OBJ-числа 2.5 /
+         * 1.8125 / 2.125, которые через старый путь decl.getClippingPlanes("dae/...")
+         * доставались всем DAE-узлам (именной override "LeftLock" недостижим для
+         * "dae/LeftLock" — буквальное equals) и резали видимую геометрию. Для
+         * вращающихся замков (DoorCircle*, transform-канал — матрица поворота) слэб
+         * в локальной СК узла срезает качающиеся из кармана части; для листьев
+         * (трансляция вдоль X) слэб по собственному z-экстенту — no-op по построению:
+         * числовая эффективность скрытия листьев «в карман» требует игровой валидации
+         * (приёмка DAE-створок на open=0/24 — вне статической проверки).
+         */
+        @Override
+        public double[][] getDaeClippingPlanes(String nodeName, @Nullable com.hbm_m.client.loader.dae.DaeNode node,
+                                               float time) {
+            switch (nodeName) {
+                case "DoorLeft", "DoorRight" -> { return DAE_LEAF_SLAB; }
+                case "DoorCircleLeft", "DoorCircleRight" -> { return DAE_LOCK_SLAB; }
+                default -> { return null; } // DoorFrame / Window / уникализированные имена — без клипа
+            }
         }
 
         @Override
@@ -905,11 +1245,7 @@ public abstract class DoorDecl {
         }
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "sliding_seal_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_seal_door");
-            //?}
 
         }
 
@@ -938,6 +1274,13 @@ public abstract class DoorDecl {
             return new double[][] { { 0, 0, -1, 0.5001 } };
         }
 
+        // Створка целиком уезжает в карман: коллизия пуста в открытом виде,
+        // рамка выделения статична (чтобы наводиться и закрывать).
+        // Проходимость — по окончании анимации, не по клику.
+        @Override public boolean hasStaticSelectionShape() { return true; }
+
+        @Override public boolean flipsPassabilityAtAnimationEnd() { return true; }
+
         @Override public int[][] getDoorOpenRanges() {
             return new int[][] { { 0, 0, 0, 1, 2, 2 } };
         }
@@ -961,9 +1304,12 @@ public abstract class DoorDecl {
             builder.addSymbol('G', Block.box(8, 0, 0, 16, 16, 16), PartRole.DEFAULT);   // правый вертикальный полублок
             builder.addSymbol('T', Block.box(0, 6, 0, 16, 16, 16), PartRole.DEFAULT); // полублок в верхнем положении
             builder.addSymbol('M', Block.box(0, 0, 6, 16, 16, 10), PartRole.DEFAULT); // тонкая стена
+            // Верхний ряд в ЗАКРЫТОМ виде: не цельный блок, а форма открытого положения
+            // (выступ y6..16) + тонкая панель по середине — по толщине рядов ниже
+            builder.addSymbol('V', Shapes.or(Block.box(0, 6, 0, 16, 16, 16), Block.box(0, 0, 6, 16, 16, 10)), PartRole.DEFAULT);
             // Схема ЗАКРЫТОЙ двери (Вид спереди, Y сверху вниз)
             String[] closed = {
-                "XXXXX",
+                "VVVVV",
                 "MMMMM",
                 "MMMMM",
                 "MMMMM",
@@ -985,11 +1331,7 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "secure_access_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "secure_access_door");
-            //?}
 
         }
 
@@ -1067,11 +1409,7 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "qe_sliding_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "qe_sliding_door");
-            //?}
 
         }
 
@@ -1096,8 +1434,18 @@ public abstract class DoorDecl {
             }
         }
 
+        // Две половины (чётная ширина 2) уходят одновременно с первого тика:
+        // диапазоны с tangent=±1 дают NaN-порог (квирк оригинала) = мгновенная
+        // ретракция колонки при начале движения и мгновенное заполнение при закрытии
+        // Створки целиком уезжают в карманы: коллизия пуста в открытом виде,
+        // рамка выделения статична (чтобы наводиться и закрывать).
+        // Проходимость — по окончании анимации, не по клику.
+        @Override public boolean hasStaticSelectionShape() { return true; }
+
+        @Override public boolean flipsPassabilityAtAnimationEnd() { return true; }
+
         @Override public int[][] getDoorOpenRanges() {
-            return new int[][] { { 0, 0, 0, 2, 2, 2 } };
+            return new int[][] { { 0, 0, 0, 1, 2, 2 }, { 1, 0, 0, 1, 2, 2 } };
         }
 
         @Override public SoundEvent getOpenSoundEnd() { return ModSounds.SLIDING_DOOR_OPENED.get(); }
@@ -1144,11 +1492,7 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "qe_containment_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "qe_containment_door");
-            //?}
 
         }
 
@@ -1171,7 +1515,7 @@ public abstract class DoorDecl {
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
             // Декаль движется вместе с дверью
             if ("door".equals(partName) || "decal".equals(partName)) {
-                set(trans, 0, 3.0F * getNormTime(openTicks), 0);
+                set(trans, 0, 2.25F * getNormTime(openTicks), 0);
             } else {
                 super.getTranslation(partName, openTicks, child, trans);
             }
@@ -1205,6 +1549,21 @@ public abstract class DoorDecl {
 
     public static final DoorDecl WATER_DOOR = new DoorDecl() {
 
+        // Ремап времени диапазона 1:1 с оригиналом (getNormTime(ticks, 35, 40) при
+        // timeToOpen 60): коллизия статична до прогресса 35/60, затем вся дверь
+        // исчезает за окно 35..40/60 (фаза болтов), полностью проходима с 40/60
+        @Override
+        public float getDoorRangeOpenTime(float progress, int idx) {
+            return remapTime(progress, 35.0f / 60.0f, 40.0f / 60.0f);
+        }
+
+        // Дверь на петлях — никаких поколоночных порогов: вся створка освобождает
+        // проём единым блоком в начале фазы болтов (окно ремапа выше)
+        @Override
+        public float getRetractionThreshold(int j, int steps, int rangeIdx) {
+            return 0.0f;
+        }
+
         {
             DoorStructureDefinition.Builder builder = DoorStructureDefinition.create();
             
@@ -1215,9 +1574,19 @@ public abstract class DoorDecl {
             // Регистрируем символы с нашей тонкой формой
             builder.addSymbol('#', thinDoorShape, PartRole.DEFAULT);
             builder.addSymbol('C', thinDoorShape, PartRole.CONTROLLER);
-            builder.addSymbol('H', Block.box(0, 0, 6, 8, 16, 10), PartRole.DEFAULT);    // левый вертикальный полублок
-            builder.addSymbol('G', Block.box(11, 0, 6, 16, 16, 10), PartRole.DEFAULT);   // правый вертикальный полублок
-            builder.addSymbol('T', Block.box(0, 13, 0, 16, 16, 16), PartRole.DEFAULT); // полублок в верхнем положении
+            builder.addSymbol('H', Block.box(0, 0, 6, 5, 16, 10), PartRole.DEFAULT);    // левый вертикальный полустолбик (5px, как правый)
+            builder.addSymbol('G', Block.box(11, 0, 6, 16, 16, 10), PartRole.DEFAULT);   // правый вертикальный полустолбик
+            // Угловые «ступеньки»: тонкая плита на всю ширину + полустолбик к стене
+            builder.addSymbol('S', Shapes.or(Block.box(0, 0, 6, 5, 16, 10), Block.box(0, 0, 6, 16, 1, 10)), PartRole.DEFAULT);
+            builder.addSymbol('R', Shapes.or(Block.box(11, 0, 6, 16, 16, 10), Block.box(0, 0, 6, 16, 1, 10)), PartRole.DEFAULT);
+            // Тонкий пол центральной нижней клетки — той же толщины, что ступеньки S/R
+            builder.addSymbol('F', Block.box(0, 0, 6, 16, 1, 10), PartRole.DEFAULT);
+            // Потолочная плита по толщине двери + угловые комбинации столбик∨плита
+            // (U/W — как у round_airlock/fire_door): без них в открытом виде остаются
+            // дыры в углах проёма между стойками H/G и потолочной плитой
+            builder.addSymbol('T', Block.box(0, 13, 6, 16, 16, 10), PartRole.DEFAULT); // плита в верхнем положении
+            builder.addSymbol('U', Shapes.or(Block.box(0, 0, 6, 5, 16, 10), Block.box(0, 13, 6, 16, 16, 10)), PartRole.DEFAULT);
+            builder.addSymbol('W', Shapes.or(Block.box(11, 0, 6, 16, 16, 10), Block.box(0, 13, 6, 16, 16, 10)), PartRole.DEFAULT);
 
             // Схема 2x2
             // C - контроллер (0, 0, 0)
@@ -1227,12 +1596,12 @@ public abstract class DoorDecl {
                 "#C#"
             };
 
-            // В открытом состоянии используем пробелы. 
+            // В открытом состоянии используем пробелы.
             // В нашей системе Builder.parse пробел по умолчанию означает Shapes.empty()
             String[] open = {
-                "TTT",
+                "UTW",
                 "H G",
-                "H G"
+                "SFR"
             };
 
             // Регистрируем структуру
@@ -1241,11 +1610,7 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "water_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "water_door");
-            //?}
 
         }
 
@@ -1390,6 +1755,14 @@ public abstract class DoorDecl {
     };    
 
     public static final DoorDecl SILO_HATCH = new DoorDecl() {
+
+        // Оригинал getNormTime(ticks, 20, 20): коллизия в два шага — внутренняя колонка
+        // (j=0) с первого тика открытия, остальные три — разом на прогрессе 20/60
+        @Override
+        public float getDoorRangeOpenTime(float progress, int idx) {
+            return remapTime(progress, 20.0f / 60.0f, 20.0f / 60.0f);
+        }
+
         {
             DoorStructureDefinition.Builder builder = DoorStructureDefinition.create();
             // Хатч обычно плоский, используем полную коллизию для закрытого состояния
@@ -1417,11 +1790,7 @@ public abstract class DoorDecl {
             defineStructure(builder.parseHorizontal(closed, open, 'C'));
         }
 
-        //? if fabric && < 1.21.1 {
-        /*@Override public ResourceLocation getBlockId() { return new ResourceLocation(RefStrings.MODID, "silo_hatch");
-        *///?} else {
                 @Override public ResourceLocation getBlockId() { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silo_hatch");
-        //?}
  }
         @Override public String[] getPartNames() { return new String[] { "frame", "door" }; }
         @Override public int getOpenTime() { return 60; }
@@ -1463,6 +1832,13 @@ public abstract class DoorDecl {
     };
 
     public static final DoorDecl SILO_HATCH_LARGE = new DoorDecl() {
+
+        // Оригинал getNormTime(ticks, 20, 20): как SILO_HATCH — два шага коллизии
+        @Override
+        public float getDoorRangeOpenTime(float progress, int idx) {
+            return remapTime(progress, 20.0f / 60.0f, 20.0f / 60.0f);
+        }
+
         {
             DoorStructureDefinition.Builder builder = DoorStructureDefinition.create();
             builder.addSymbol('#', Shapes.block(), PartRole.DEFAULT);
@@ -1493,11 +1869,7 @@ public abstract class DoorDecl {
             defineStructure(builder.parseHorizontal(closed, open, 'C'));
         }
 
-        //? if fabric && < 1.21.1 {
-        /*@Override public ResourceLocation getBlockId() { return new ResourceLocation(RefStrings.MODID, "silo_hatch_large");
-        *///?} else {
                 @Override public ResourceLocation getBlockId() { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silo_hatch_large");
-        //?}
  }
         @Override public String[] getPartNames() { return new String[] { "frame", "door" }; }
         @Override public int getOpenTime() { return 60; }
@@ -1545,7 +1917,9 @@ public abstract class DoorDecl {
             // Повторяет оригинальный getBlockBound из 1.7.10:
             // закрытая дверь — тонкая створка 0.375..0.625 по Z (т.е. 6/16..10/16)
             VoxelShape thin = Block.box(0, 0, 6, 16, 16, 10);
+            VoxelShape floor = Block.box(0, 0, 0, 16, 3, 16);
             builder.addSymbol('#', thin, PartRole.DEFAULT);
+            builder.addSymbol('_', floor, PartRole.DEFAULT);
             builder.addSymbol('C', thin, PartRole.CONTROLLER);
 
             // Вид спереди (Y сверху вниз): 3 блока в ширину (X), 3 в высоту (Y).
@@ -1561,17 +1935,13 @@ public abstract class DoorDecl {
             String[] open = {
                 "###",
                 "   ",
-                "   "
+                "___"
             };
 
             defineStructure(builder.parseVertical(closed, open, 'C'));
         }
 
-        //? if fabric && < 1.21.1 {
-        /*@Override public ResourceLocation getBlockId() { return new ResourceLocation(RefStrings.MODID, "cargo_door");
-        *///?} else {
                 @Override public ResourceLocation getBlockId() { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "cargo_door");
-        //?}
  }
 
         @Override public String[] getPartNames() { return new String[] { "Frame", "DoorTop", "DoorBot" }; }
@@ -1594,7 +1964,7 @@ public abstract class DoorDecl {
         }
 
         // BusAnimation оригинала: BOT поднимается на 2 блока за timeToOpen*2 тиков
-        // (полный проезд한다 за открытие), TOP поднимается на 1 блок с задержкой.
+        // (полный проезд за открытие), TOP поднимается на 1 блок с задержкой.
         // В Modernized трансляции задаётся через нормированный прогресс [0..1].
         @Override
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
@@ -1655,11 +2025,7 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "vault_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "vault_door");
-            //?}
 
         }
 
@@ -1777,16 +2143,24 @@ public abstract class DoorDecl {
             return getNormTime(openTicks, 40, 120);
         }
 
-        @Override 
-        public double[][] getClippingPlanes() {
-            return new double[][] { { 0, -1, 0, 3.0001 } };
+        // Clipping-плоскостей НЕТ (переопределение {0,-1,0,3.0001} удалено — артефакт
+        // копипасты, оно резало бы витринную створку). Паритет RenderVaultDoor без planes.
+
+        // Динамической поколоночной коллизии нет: проходимость управляется
+        // getCollisionProgress ниже (30 тиков = 1.5 с из openTime 120).
+
+        // Открытие: створка непроходима первые 30 тиков, потом проходима.
+        // Закрытие: остаётся проходимой, пока до конца закрытия не останется
+        // 30 тиков — дверь «переходит в закрытое состояние» за 1.5 с до конца.
+        @Override
+        public float getCollisionProgress(byte state, float progress) {
+            return switch (state) {
+                case 3 -> progress < 30.0f / 120.0f ? 0.0f : 1.0f;
+                case 2 -> progress > 30.0f / 120.0f ? 1.0f : 0.0f;
+                default -> progress >= 1.0f ? 1.0f : 0.0f;
+            };
         }
 
-        @Override 
-        public int[][] getDoorOpenRanges() {
-            return new int[][] { { -1, 1, 0, 3, 3, 2 } };
-        }
-        
         // Отключаем стандартный спам звуков
         @Override public SoundEvent getOpenSoundStart() { return null; }
         @Override public SoundEvent getOpenSoundEnd() { return null; }

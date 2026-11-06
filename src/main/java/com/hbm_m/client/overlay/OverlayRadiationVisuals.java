@@ -15,7 +15,9 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+@OnlyIn(Dist.CLIENT)
 public class OverlayRadiationVisuals {
     private static final RandomSource random = RandomSource.create();
     private static final List<RadiationPixel> activePixels = new ArrayList<>();

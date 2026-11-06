@@ -1,76 +1,220 @@
 package com.hbm_m.client.render.implementations;
 
-import org.joml.Matrix4f;
-
-import com.hbm_m.block.machines.DemonLampBlock;
-import com.hbm_m.blockentity.machines.DemonLampBlockEntity;
-import com.hbm_m.client.ClientRenderHandler;
-import com.hbm_m.client.render.SimpleObjModel;
-import com.hbm_m.lib.RefStrings;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 
-/** 1:1 {@code RenderDemonLamp}: Lampe plus zwei Kraenze aus 16 blauen, additiven Lichtfaechern bis 15 Bloecke. */
-public class DemonLampRenderer implements com.hbm_m.client.render.HbmBerBounds<DemonLampBlockEntity> {
+import org.joml.Matrix4f;
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/blocks/demon_lamp.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/demon_lamp.png");
+import com.hbm_m.block.decorations.DemonLampBlock;
+import com.hbm_m.blockentity.decorations.DemonLampBlockEntity;
+import com.hbm_m.client.render.PlainBufferSource;
+import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
+import com.hbm_m.platform.RenderHooks;
 
-    public DemonLampRenderer(BlockEntityRendererProvider.Context ctx) { }
+@OnlyIn(Dist.CLIENT)
+/**
+ * Demon Core Lamp rays: 16 additive quads per ring, two rings (slightly below /
+ * above the block center) forming a fan of light rays that shoot outward along
+ * the block's facing axis, plus a bright crossed-quad core. The lamp sphere itself is the chunk-meshed OBJ
+ * block model; only the rays/core are drawn here.
+ *
+ * <p>Rays and core use {@link com.hbm_m.client.ClientRenderHandler.CustomRenderTypes#DEMON_LAMP_RAYS}
+ * (POSITION_COLOR, additive LIGHTNING blend, no cull, NO depth write — the
+ * depth-writing vanilla {@code lightning()} made translucent water/particles
+ * drawn later fail the depth test behind the ray quads). Drawn through an
+ * isolated {@link PlainBufferSource}. That is the only stable
+ * combination under shaderpacks, established over four iterations:
+ * <ul>
+ *   <li>custom render types are unusable - Iris masks vanilla shaders on them and
+ *       its ExtendedShader applies the PACK program's BlendModeOverride/alpha test
+ *       (hard-cut rings; Complementary "spokes" from flat glColor);</li>
+ *   <li>vertex formats Iris extends (NEW_ENTITY, BLOCK, ...) underfill in a bare
+ *       builder outside Iris's own pipelines ("Not filled all elements");</li>
+ *   <li>lightning() (POSITION_COLOR) has no UVs - pack fallback programs sample
+ *       gtexture at undefined coordinates (Photon static/dither). beaconBeam binds
+ *       its own texture and carries real UVs, so the smooth radial fade lives in
+ *       ray_fade.png and renders identically everywhere; the color lives in the
+ *       texture too (beacon_beam has no vertex color).</li>
+ * </ul>
+ *
+ * <p>Shaderpack soul-flame note: the blue soul-torch treatment (emissive, colored
+ * voxel light) is keyed by Photon/Complementary/BSL on the <em>terrain</em> block
+ * id from the pack's own {@code block.properties}. ShaderBlockIdDisguises
+ * registers our block with soul_torch's id in the loaded pack's id map (polled
+ * per frame, in-memory only).
+ */
+public class DemonLampRenderer implements BlockEntityRenderer<DemonLampBlockEntity> {
 
-    @Override
-    public void render(DemonLampBlockEntity te, float f, PoseStack ps, MultiBufferSource buf, int light, int overlay) {
-        ps.pushPose();
-        ps.translate(0.5D, 0.5D, 0.5D);
-        switch (te.getBlockState().getValue(DemonLampBlock.FACING)) {
-            case DOWN -> ps.mulPose(Axis.XP.rotationDegrees(180));
-            case UP -> { }
-            case NORTH -> { ps.mulPose(Axis.XP.rotationDegrees(90)); ps.mulPose(Axis.ZP.rotationDegrees(180)); }
-            case SOUTH -> ps.mulPose(Axis.XP.rotationDegrees(90));
-            case WEST -> { ps.mulPose(Axis.XP.rotationDegrees(90)); ps.mulPose(Axis.ZP.rotationDegrees(90)); }
-            case EAST -> { ps.mulPose(Axis.XP.rotationDegrees(90)); ps.mulPose(Axis.ZP.rotationDegrees(270)); }
+    public static final int RAYS = 16;
+    public static final double NEAR = 0.375D;
+
+    /** Blue ray color (0, 0.75, 1). */
+    private static final int COLOR_R = 0;
+    private static final int COLOR_G = 191;
+    private static final int COLOR_B = 255;
+
+    /** Emissive core: crossed quads at the lamp center, bright for pack bloom. */
+    private static final int CORE_R = 190;
+    private static final int CORE_G = 230;
+    private static final int CORE_B = 255;
+    private static final int CORE_ALPHA = 230;
+    private static final float CORE_HALF = 0.22F;
+
+    private static final ResourceLocation WHITE_TEXTURE =
+            ResourceLocation.tryParse("hbm_m:textures/misc/white.png");
+
+    public DemonLampRenderer(BlockEntityRendererProvider.Context context) {}
+
+    /**
+     * Rays MUST be drawn through an isolated {@link PlainBufferSource}
+     * (ParticleEngineNT.buffer() rule): immediate draw at the right point of the
+     * BE pass, and no interaction with the shared render-pass source (which
+     * Oculus replaces with its batched-entity-rendering machinery).
+     */
+    private static MultiBufferSource.BufferSource raysSource;
+
+    private static synchronized MultiBufferSource.BufferSource raysSource() {
+        if (raysSource == null) {
+            raysSource = RenderHooks.createPlainBufferSource(256);
         }
-        ps.translate(0, -0.5F, 0);
-
-        MODEL.renderAll(ps, buf.getBuffer(RenderType.entityCutout(TEX)), light);
-
-        VertexConsumer vc = buf.getBuffer(ClientRenderHandler.CustomRenderTypes.DETONATOR_LASER_GLOW);
-        Matrix4f m = ps.last().pose();
-        double near = 0.375D, far = 15D;
-        for (int j = 0; j < 2; j++) {
-            double h = 0.5;
-            double height = j == 0 ? -h : h;
-            double vx = 1, vz = 0;
-            for (int i = 0; i < 16; i++) {
-                double y0 = 0.5D + j * 0.125D, y1 = y0 + height;
-                float x0 = (float) (vx * near), z0 = (float) (vz * near), x1 = (float) (vx * far), z1 = (float) (vz * far);
-                double a = Math.PI * 2D / 16D, c = Math.cos(a), s = Math.sin(a);
-                double nvx = vx * c + vz * s, nvz = vz * c - vx * s;
-                //? if < 1.21.1 {
-                vc.vertex(m, x0, (float) y0, z0).color(0F, 0.75F, 1F, 0.25F).endVertex();
-                vc.vertex(m, x1, (float) y1, z1).color(0F, 0.75F, 1F, 0F).endVertex();
-                vc.vertex(m, (float) (nvx * far), (float) y1, (float) (nvz * far)).color(0F, 0.75F, 1F, 0F).endVertex();
-                vc.vertex(m, (float) (nvx * near), (float) y0, (float) (nvz * near)).color(0F, 0.75F, 1F, 0.25F).endVertex();
-                //?} else {
-                /*vc.addVertex(m, x0, (float) y0, z0).setColor(0F, 0.75F, 1F, 0.25F);
-                vc.addVertex(m, x1, (float) y1, z1).setColor(0F, 0.75F, 1F, 0F);
-                vc.addVertex(m, (float) (nvx * far), (float) y1, (float) (nvz * far)).setColor(0F, 0.75F, 1F, 0F);
-                vc.addVertex(m, (float) (nvx * near), (float) y0, (float) (nvz * near)).setColor(0F, 0.75F, 1F, 0.25F);
-                *///?}
-                vx = nvx;
-                vz = nvz;
-            }
-        }
-        ps.popPose();
+        return raysSource;
     }
 
-    @Override public boolean shouldRenderOffScreen(DemonLampBlockEntity te) { return true; }
-    @Override public int getViewDistance() { return 256; }
+    @Override
+    public void render(DemonLampBlockEntity lamp, float partialTick, PoseStack pose,
+            MultiBufferSource buffers, int light, int overlay) {
+        // Thin additive quads cast hard angular shadows in shadow-mapped packs -
+        // the rays are pure light, they must not appear in shadow maps at all.
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            return;
+        }
+        Direction facing = lamp.getBlockState().getValue(DemonLampBlock.FACING);
+
+        pose.pushPose();
+        pose.translate(0.5D, 0.5D, 0.5D);
+        orient(pose, facing);
+        pose.translate(0.0D, -0.5D, 0.0D);
+        Matrix4f matrix = pose.last().pose();
+
+        // Rings: additive POSITION_COLOR, split into four brightness segments per
+        // ray. Packs whose fallback declares flat glColor cannot interpolate vertex
+        // color at all - the stepped segments fake the radial fade there; packs
+        // with varying interpolation render them as a piecewise-smooth fade.
+        MultiBufferSource.BufferSource source = raysSource();
+        VertexConsumer buf = source.getBuffer(com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.DEMON_LAMP_RAYS);
+        emitRays(matrix, buf);
+        // White in the shader sampler: pack fallback programs for lightning sample
+        // gtexture at undefined UVs; white makes that a no-op. Vanilla lightning
+        // ignores the sampler. Textured types rebind their own sampler later.
+        com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, WHITE_TEXTURE);
+        source.endBatch();
+
+        // Emissive core: bright crossed quads at the block center - pack bloom and
+        // the vanilla additive blend both pick these up as the light source itself.
+        VertexConsumer coreBuf = source.getBuffer(com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.DEMON_LAMP_RAYS);
+        emitCore(matrix, coreBuf);
+        source.endBatch();
+
+        pose.popPose();
+    }
+
+    /** Rotates local space so the +Y ray fan points along {@code facing}
+     * (rotations 1:1 from RenderDemonLamp 1.7.10). */
+    public static void orient(PoseStack poseStack, Direction facing) {
+        switch (facing) {
+            case DOWN -> poseStack.mulPose(Axis.XP.rotationDegrees(180));
+            case UP -> {}
+            case NORTH -> {
+                poseStack.mulPose(Axis.XP.rotationDegrees(90));
+                poseStack.mulPose(Axis.ZP.rotationDegrees(180));
+            }
+            case SOUTH -> poseStack.mulPose(Axis.XP.rotationDegrees(90));
+            case WEST -> {
+                poseStack.mulPose(Axis.XP.rotationDegrees(90));
+                poseStack.mulPose(Axis.ZP.rotationDegrees(90));
+            }
+            case EAST -> {
+                poseStack.mulPose(Axis.XP.rotationDegrees(90));
+                poseStack.mulPose(Axis.ZP.rotationDegrees(270));
+            }
+        }
+    }
+
+    /** Ray brightness at the segment boundaries, ring -> tip. Vertex alpha is
+     * constant per segment (flat-glColor packs pick the provoking vertex), but
+     * interpolated smoothly by vanilla and varying-glColor fallbacks. */
+    private static final int[] SEG_ALPHA = {100, 66, 40, 18, 4};
+
+    private static void emitRays(Matrix4f matrix, VertexConsumer buf) {
+        float turn = (float) (Math.PI * 2D / RAYS);
+        float cos = Mth.cos(turn);
+        float sin = Mth.sin(turn);
+        float far = (float) DemonLampBlockEntity.RENDER_RANGE;
+        double x = 1D, z = 0D;
+        for (int j = 0; j < 2; j++) {
+            float y0 = (float) (0.5D + j * 0.125D);
+            float y1 = (float) (0.5D + j * 0.125D + (j == 0 ? -0.5D : 0.5D));
+            for (int i = 0; i < RAYS; i++) {
+                float nx = (float) (x * cos + z * sin);
+                float nz = (float) (z * cos - x * sin);
+                for (int s = 0; s < 4; s++) {
+                    float t0 = s / 4F, t1 = (s + 1) / 4F;
+                    float r0 = (float) (NEAR + (far - NEAR) * t0);
+                    float r1 = (float) (NEAR + (far - NEAR) * t1);
+                    float ya0 = y0 + (y1 - y0) * t0;
+                    float ya1 = y0 + (y1 - y0) * t1;
+                    int c0 = SEG_ALPHA[s], c1 = SEG_ALPHA[s + 1];
+                    RenderHooks.vertexColor(buf, matrix, (float) (x * r0), ya0, (float) (z * r0),
+                            COLOR_R, COLOR_G, COLOR_B, c0);
+                    RenderHooks.vertexColor(buf, matrix, (float) (x * r1), ya1, (float) (z * r1),
+                            COLOR_R, COLOR_G, COLOR_B, c1);
+                    RenderHooks.vertexColor(buf, matrix, nx * r1, ya1, nz * r1,
+                            COLOR_R, COLOR_G, COLOR_B, c1);
+                    RenderHooks.vertexColor(buf, matrix, (float) (nx * r0), ya0, (float) (nz * r0),
+                            COLOR_R, COLOR_G, COLOR_B, c0);
+                }
+                double nd = x * cos + z * sin;
+                z = z * cos - x * sin;
+                x = nd;
+            }
+        }
+    }
+
+    /** Crossed billboard quads at the block center (local ring frame: center y = 0.5). */
+    private static void emitCore(Matrix4f matrix, VertexConsumer buf) {
+        float c = 0.5F, h = CORE_HALF;
+        coreQuad(buf, matrix, c - h, c - h, 0, c + h, c - h, 0, c + h, c + h, 0, c - h, c + h, 0);
+        coreQuad(buf, matrix, 0, c - h, c - h, 0, c - h, c + h, 0, c + h, c + h, 0, c + h, c - h);
+    }
+
+    private static void coreQuad(VertexConsumer buf, Matrix4f matrix,
+            float ax, float ay, float az, float bx, float by, float bz,
+            float cx, float cy, float cz, float dx, float dy, float dz) {
+        RenderHooks.vertexColor(buf, matrix, ax, ay, az, CORE_R, CORE_G, CORE_B, CORE_ALPHA);
+        RenderHooks.vertexColor(buf, matrix, bx, by, bz, CORE_R, CORE_G, CORE_B, CORE_ALPHA);
+        RenderHooks.vertexColor(buf, matrix, cx, cy, cz, CORE_R, CORE_G, CORE_B, CORE_ALPHA);
+        RenderHooks.vertexColor(buf, matrix, dx, dy, dz, CORE_R, CORE_G, CORE_B, CORE_ALPHA);
+    }
+
+    @Override
+    public boolean shouldRenderOffScreen(DemonLampBlockEntity lamp) {
+        // Under a pack the rays must draw outside the frustum so shader shadow
+        // maps keep them; vanilla culling via the BE render bbox is enough otherwise.
+        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
+    }
+
+    @Override
+    public int getViewDistance() {
+        return 256;
+    }
 }

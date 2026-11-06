@@ -9,11 +9,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  * Client-only helper for door animation delay (overlap period between BER and baked model).
  * Kept separate from DoorBlockEntity so the server never loads client-only code.
  */
+@OnlyIn(Dist.CLIENT)
 public final class DoorAnimationDelayHelper {
 
     private static final long ANIMATION_DELAY_MS = 500;
@@ -54,5 +56,16 @@ public final class DoorAnimationDelayHelper {
     public static boolean isInDelayPeriod(DoorBlockEntity be) {
         Long untilMs = DELAY_UNTIL_MAP.get(be);
         return untilMs != null && System.currentTimeMillis() < untilMs;
+    }
+
+    /** Unconditionally clears any pending delay for the specified door entity. */
+    public static void clear(DoorBlockEntity be) {
+        if (be == null) return;
+        DELAY_UNTIL_MAP.remove(be);
+        QUEUE.removeIf(entry -> {
+            DoorBlockEntity target = entry.ref.get();
+            return target == null || target == be;
+        });
+        be.clearAnimationDelayClient();
     }
 }

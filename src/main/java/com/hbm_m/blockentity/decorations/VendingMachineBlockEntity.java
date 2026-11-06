@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.BlockHooks;
 
 /** 1:1 {@code BlockVendingMachine.TileEntityVendingMachine}: nur Renderbereich (1x2x1). */
 public class VendingMachineBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {

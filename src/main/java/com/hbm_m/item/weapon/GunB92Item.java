@@ -2,7 +2,6 @@ package com.hbm_m.item.weapon;
 
 import com.hbm_m.platform.PlatformHooks;
 
-import com.hbm_m.platform.AttributeOps;
 
 import com.hbm_m.platform.StackNbt;
 
@@ -40,6 +39,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.AttributeHooks;
 
 /**
  * 1:1 {@code GunB92} (Altwaffe, "Star Blaster"): Rechtsklick mit Ladung = Bogen-Spannen, Loslassen nach &ge; 10 Ticks
@@ -101,7 +101,8 @@ public class GunB92Item extends Item {
                     setPower(stack, 0);
                     EntityNukeExplosionMK3 ex = EntityNukeExplosionMK3.statFacFleija(level, entity.getX(), entity.getY(), entity.getZ(), 50);
                     if (!ex.isRemoved()) {
-                        level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 100.0F, level.random.nextFloat() * 0.1F + 0.9F);
+                        // Original: world.playSoundEffect("random.explode") -> Vanilla-Kategorie hostile
+                        level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 100.0F, level.random.nextFloat() * 0.1F + 0.9F);
                         level.addFreshEntity(ex);
                         EntityCloudFleijaRainbow cloud = new EntityCloudFleijaRainbow(ModEntities.CLOUD_FLEIJA_RAINBOW.get(), level, 50);
                         cloud.setPos(entity.getX(), entity.getY(), entity.getZ());
@@ -129,15 +130,16 @@ public class GunB92Item extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        // Original: onItemRightClick gibt immer den Stack zurueck -> SUCCESS (mit Arm-Schwung)
         if (!player.isShiftKeyDown() && getPower(stack) > 0) {
             if (getAnim(stack) == 0) {
                 player.startUsingItem(hand);
-                return InteractionResultHolder.consume(stack);
+                return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
             }
         } else {
             if (getAnim(stack) == 0 && !level.isClientSide) setAnim(stack, 1);
         }
-        return InteractionResultHolder.pass(stack);
+        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
     }
 
     @Override
@@ -189,7 +191,7 @@ public class GunB92Item extends Item {
         if (slot != EquipmentSlot.MAINHAND) return ImmutableMultimap.of();
     *///?}
         return ImmutableMultimap.of(Attributes.ATTACK_DAMAGE,
-                com.hbm_m.platform.AttributeHooks.modifier(com.hbm_m.platform.AttributeHooks.BASE_ATTACK_DAMAGE_UUID, "Weapon modifier", 3.5, AttributeOps.ADDITION));
+                com.hbm_m.platform.AttributeHooks.modifier(com.hbm_m.platform.AttributeHooks.BASE_ATTACK_DAMAGE_UUID, "Weapon modifier", 3.5, AttributeHooks.ADDITION));
     }
 
     //? if forge {
@@ -199,6 +201,7 @@ public class GunB92Item extends Item {
     }
 
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -214,6 +217,7 @@ public class GunB92Item extends Item {
     }
 
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             @Override

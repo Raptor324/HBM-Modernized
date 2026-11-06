@@ -14,6 +14,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1-Port von {@code GUICoreEmitter} (1.7.10), 176x166.
@@ -22,14 +24,11 @@ import net.minecraft.world.entity.player.Inventory;
  * Eingabefeld bei (57, 57) mit dem Fuellbalken darueber bei (53, 45), rechts daneben bei (97, 52)
  * der Knopf, der die Zahl uebernimmt, und bei (133, 52) der An/Aus-Schalter.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineCoreEmitter extends GuiInfoScreen<MachineCoreEmitterMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/dfc/gui_emitter.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/dfc/gui_emitter.png");
-            //?}
 
     private static final int FIELD_X = 57;
     private static final int FIELD_Y = 57;

@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.compat.create;
 
 import com.hbm_m.compat.ContraptionDoorState;
@@ -8,14 +7,8 @@ import com.simibubi.create.content.contraptions.Contraption;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Клиентская инициализация render-состояния двери на контрапшене.
  */
@@ -43,4 +36,3 @@ public final class DoorClientInit {
         }
     }
 }
-//?}

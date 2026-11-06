@@ -1,5 +1,7 @@
 package com.hbm_m.block.bomb;
 
+import java.util.List;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.bomb.IBomb;
@@ -20,9 +22,11 @@ import com.hbm_m.main.Polaroid;
 import com.hbm_m.particle.helper.IParticleCreator;
 import com.hbm_m.sound.HbmSoundsNT;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.FluidTags;
@@ -31,6 +35,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -50,6 +55,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code com.hbm.blocks.bomb.Landmine}: mine_ap, mine_he, mine_shrap, mine_fat, mine_naval.
@@ -86,6 +92,29 @@ public class LandmineBlock extends Block implements EntityBlock, IBomb {
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
+    //? if < 1.21.1 {
+    @Override
+    public void appendHoverText(ItemStack stack,
+                                 @Nullable BlockGetter level,
+                                 List<Component> tooltip,
+                                 TooltipFlag flag) {
+    //?} else {
+    /*@Override
+    public void appendHoverText(ItemStack stack,
+                                 net.minecraft.world.item.Item.TooltipContext level,
+                                 List<Component> tooltip,
+                                 TooltipFlag flag) {
+    *///?}
+        if (this == ModBlocks.MINE_FAT.get()) {
+            tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line1").withStyle(ChatFormatting.DARK_RED));
+            tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line2").withStyle(ChatFormatting.RED));
+            tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line3").withStyle(ChatFormatting.GRAY));
+        } else if (this == ModBlocks.NAVAL_MINE.get()) {
+            tooltip.add(Component.translatable("tooltip.hbm_m.naval_mine.line1").withStyle(ChatFormatting.GRAY));
+        } else {
+            tooltip.add(Component.translatable("tooltip.hbm_m.mine.line1").withStyle(ChatFormatting.GRAY));
+        }
+    }
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         if (this == ModBlocks.MINE_AP.get() || this == ModBlocks.MINE_SHRAP.get()) return SHAPE_AP;
@@ -136,7 +165,7 @@ public class LandmineBlock extends Block implements EntityBlock, IBomb {
     //?} else {
     /*@Override
     protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+        return com.hbm_m.platform.BlockHooks.useItemResult(hbmUse(state, world, pos, player, hand, hit));
     }
     private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     *///?}

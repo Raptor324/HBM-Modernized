@@ -79,6 +79,16 @@ public class RedCableGaugeBlockEntity extends BaseHbmBlockEntity implements Powe
         deltaLastSecond = Math.max(tag.getLong("deltaLastSecond"), 0);
     }
 
+    // Without this the node outlives the block: the grid stays merged through a position that
+    // no longer conducts, and a conductor placed there later inherits the ghost node.
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (level instanceof ServerLevel serverLevel) {
+            Nodespace.destroyNode(serverLevel, getBlockPos());
+        }
+    }
+
     // ── Redstone-over-Radio (1:1 BlockCableGauge.TileEntityCableGauge) ──
 
     @Override

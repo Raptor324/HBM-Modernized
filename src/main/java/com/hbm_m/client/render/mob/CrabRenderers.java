@@ -23,7 +23,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
-/** 1:1 {@code RenderCyberCrab}, {@code RenderTeslaCrab}, {@code RenderTaintCrab} samt {@code ModelTeslaCrab/ModelTaintCrab}. */
+/** 1:1 {@code RenderCyberCrab}, {@code RenderTeslaCrab}, {@code RenderTaintCrab} including {@code ModelTeslaCrab/ModelTaintCrab}. */
 public final class CrabRenderers {
 
     private CrabRenderers() { }
@@ -32,7 +32,7 @@ public final class CrabRenderers {
         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
     }
 
-    /** {@code RenderCyberCrab}: Quadermodell, Schatten 1 ohne Deckkraft. */
+    /** {@code RenderCyberCrab}: cuboid model, shadow 1 without opacity. */
     public static class Cyber extends MobRenderer<EntityCyberCrab, ModelCrab<EntityCyberCrab>> {
 
         private static final ResourceLocation TEX = tex("textures/entity/crab.png");
@@ -48,7 +48,7 @@ public final class CrabRenderers {
         }
     }
 
-    /** {@code ModelTeslaCrab}/{@code ModelTaintCrab}: OBJ-Teile, Beine schwenken um Y. */
+    /** {@code ModelTeslaCrab}/{@code ModelTaintCrab}: OBJ parts, legs swing around Y. */
     public static class ObjCrabModel<T extends EntityCyberCrab> extends EntityModel<T> {
 
         private final SimpleObjModel model;
@@ -99,7 +99,7 @@ public final class CrabRenderers {
     private static final SimpleObjModel TESLA_OBJ = new SimpleObjModel(tex("models/mobs/teslacrab.obj"));
     private static final SimpleObjModel TAINT_OBJ = new SimpleObjModel(tex("models/mobs/taintcrab.obj"));
 
-    /** Blitze zu den {@code zap}-Zielen ab Hoehe {@code dy} (Original 0x404040, RANDOM/SOLID). */
+    /** Lightning arcs to {@code zap} targets from elevation {@code dy} (original 0x404040, RANDOM/SOLID). */
     static void beams(EntityCyberCrab entity, List<Vec3> targets, double dy, PoseStack ps, MultiBufferSource buffers) {
         ps.pushPose();
         ps.translate(0, dy, 0);

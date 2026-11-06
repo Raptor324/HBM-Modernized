@@ -3,8 +3,8 @@ package com.hbm_m.client.render;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 /**
- * Reicht alle Eckpunkte an einen Puffer weiter und verschiebt dabei die Texturkoordinaten - Ersatz fuer das
- * {@code glMatrixMode(GL_TEXTURE); glTranslated(du, dv, 0)} der Originalrenderer (laufende Baender, Wasser).
+ * Forwards all vertices to a buffer while translating texture coordinates - replacement for
+ * {@code glMatrixMode(GL_TEXTURE); glTranslated(du, dv, 0)} in original renderers (moving belts, water).
  */
 public final class UvShiftConsumer implements VertexConsumer {
 
@@ -18,7 +18,7 @@ public final class UvShiftConsumer implements VertexConsumer {
         this(delegate, du, dv, 1F, 1F);
     }
 
-    /** Original {@code glScalef(su, sv, 1); glTranslatef(du, dv, 0)} auf der Texturmatrix: {@code (u + du) * su}. */
+    /** Original {@code glScalef(su, sv, 1); glTranslatef(du, dv, 0)} on texture matrix: {@code (u + du) * su}. */
     public UvShiftConsumer(VertexConsumer delegate, float du, float dv, float su, float sv) {
         this.delegate = delegate;
         this.du = du;

@@ -1,9 +1,8 @@
-//? if forge || neoforge {
 package com.hbm_m.client.render;
 
 import com.hbm_m.client.render.armor.ArmorObjModel;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.mixin.LivingEntityRendererInvoker;
+import com.hbm_m.mixin.client.LivingEntityRendererInvoker;
 import com.hbm_m.network.PermaSyncMemePacket;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -17,19 +16,16 @@ import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.resources.ResourceLocation;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+//? if forge {
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.fml.common.Mod;
 //?} else {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+/*import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RenderPlayerEvent;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 *///?}
 
@@ -37,18 +33,18 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
 /**
- * 1:1 {@code ModelMan} + {@code ModEventHandlerRenderer}: Spieler aus {@link PermaSyncMemePacket#boykissers}
- * werden statt mit dem Skin mit {@code models/armor/player_fem.obj} / {@code textures/entity/player_fem.png}
- * gezeichnet. {@code onRenderPlayerPre} blendet alle Skin-Teile aus, die Teile von {@code ModelMan} uebernehmen
- * Drehung und Gelenkpunkt des Spielermodells ({@code copyRotationFrom}) und werden wie
- * {@code ModelRendererObj.render} gezeichnet. Das Halten von Gegenstaenden ({@code onRenderHeldItem}) haengt am
- * rechten Arm mit gleicher Lage wie Vanilla und bleibt deshalb bei der {@code ItemInHandLayer}.
+ * 1:1 equivalent of {@code ModelMan} + {@code ModEventHandlerRenderer}: Players in {@link PermaSyncMemePacket#boykissers}
+ * are rendered with {@code models/armor/player_fem.obj} / {@code textures/entity/player_fem.png} instead of their skin.
+ * {@code onRenderPlayerPre} hides all skin parts; {@code ModelMan} parts adopt the rotation and pivot of the player
+ * model ({@code copyRotationFrom}) and are drawn like {@code ModelRendererObj.render}. Held items
+ * ({@code onRenderHeldItem}) attach to the right arm with the same orientation as vanilla and thus remain on {@code ItemInHandLayer}.
  */
 public class ModelManLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
 
     private static final float PX = 0.0625F;
     private static final ResourceLocation TEX = ResourceLocation.tryParse(MainRegistry.MOD_ID + ":textures/entity/player_fem.png");
     private static final ResourceLocation OBJ = ResourceLocation.tryParse(MainRegistry.MOD_ID + ":models/armor/player_fem.obj");
+    private static final Quaternionf ROT_SCRATCH = new Quaternionf();
 
     public ModelManLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent) {
         super(parent);
@@ -75,20 +71,20 @@ public class ModelManLayer extends RenderLayer<AbstractClientPlayer, PlayerModel
         part(model, ps, vc, light, "RightLeg", m.rightLeg, -1.9F, 12.0F, 0.0F);
     }
 
-    /** {@code ModelRendererObj.render}: Gelenkpunkt, Drehung Z-Y-X, Ursprung zurueck, Skala 1/16. */
+    /** {@code ModelRendererObj.render}: Pivot point, Z-Y-X rotation, origin translation, scale 1/16. */
     private static void part(ArmorObjModel model, PoseStack ps, VertexConsumer vc, int light, String name,
                              ModelPart bone, float ox, float oy, float oz) {
         ps.pushPose();
         ps.translate(bone.x * PX, bone.y * PX, bone.z * PX);
         if (bone.zRot != 0.0F || bone.yRot != 0.0F || bone.xRot != 0.0F)
-            ps.mulPose(new Quaternionf().rotationZYX(bone.zRot, bone.yRot, bone.xRot));
+            ps.mulPose(ROT_SCRATCH.rotationZYX(bone.zRot, bone.yRot, bone.xRot));
         ps.translate(-ox * PX, -oy * PX, -oz * PX);
         ps.scale(PX, PX, PX);
         model.renderPart(name, ps, vc, light, 1F, 1F, 1F, 1F);
         ps.popPose();
     }
 
-    /** Original {@code onRenderPlayerPre} / {@code onRenderPlayerPost}: Skin-Teile aus- und wieder einblenden. */
+    /** Original {@code onRenderPlayerPre} / {@code onRenderPlayerPost}: Hide and restore player skin parts. */
     //? if forge {
     @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
     //?} else {
@@ -134,7 +130,7 @@ public class ModelManLayer extends RenderLayer<AbstractClientPlayer, PlayerModel
     //? if forge {
     @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     //?} else {
-    /*@EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    /*@EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
     *///?}
     public static final class ModEvents {
 
@@ -148,7 +144,7 @@ public class ModelManLayer extends RenderLayer<AbstractClientPlayer, PlayerModel
                 ((LivingEntityRendererInvoker) renderer).hbm_m$getLayers().add(new ModelManLayer((RenderLayerParent) renderer));
             }
             //?} else {
-            /*// 1.21.1: Skins als PlayerSkin.Model, addLayer ist oeffentlich (kein Mixin-Accessor noetig)
+            /*// 1.21.1: Skins as PlayerSkin.Model, addLayer is public (no mixin accessor needed)
             for (net.minecraft.client.resources.PlayerSkin.Model skin : event.getSkins()) {
                 Object renderer = event.getSkin(skin);
                 if (!(renderer instanceof LivingEntityRenderer living)) continue;
@@ -160,4 +156,3 @@ public class ModelManLayer extends RenderLayer<AbstractClientPlayer, PlayerModel
         private ModEvents() {}
     }
 }
-//?}

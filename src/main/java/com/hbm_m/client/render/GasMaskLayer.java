@@ -24,8 +24,8 @@ import net.minecraft.world.item.ItemStack;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 /**
- * Рендер противогаза на голове персонажа — надетая маска или маска-модификация,
- * прицепленная к шлему. Порт getArmorModel/ItemModGasmask.modRender (1.7.10).
+ * Renders a gas mask on the character's head - a worn mask or a mask modification
+ * attached to a helmet. Port of getArmorModel/ItemModGasmask.modRender (1.7.10).
  */
 public class GasMaskLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends RenderLayer<T, M> {
 
@@ -56,19 +56,19 @@ public class GasMaskLayer<T extends LivingEntity, M extends HumanoidModel<T>> ex
         ensureBaked();
         ItemStack head = entity.getItemBySlot(EquipmentSlot.HEAD);
 
-        // 1. Надетая маска-шлем.
+        // 1. Worn mask-helmet.
         if (head.getItem() instanceof ArmorGasMaskItem mask) {
             renderVariant(entity, mask.variant, IGasMask.hasFilter(head), poseStack, buffer, packedLight);
         }
 
-        // 1b. Original ArmorHazmatMask/ArmorLiquidator: M65-Modell mit der Ruestungstextur.
+        // 1b. Original ArmorHazmatMask/ArmorLiquidator: render the M65 model with the armor texture.
         if (head.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSB fsb && fsb.isObjArmor()
                 && (head.getItem() instanceof com.hbm_m.powerarmor.ArmorHazmatMask || head.getItem() instanceof com.hbm_m.powerarmor.ArmorLiquidator)) {
             String tex = fsb.getTexture();
             renderM65(entity, tex.substring(tex.indexOf(':') + 1), IGasMask.hasFilter(head), poseStack, buffer, packedLight);
         }
 
-        // 2. Маска, прицепленная к шлему как модификация (attachment_mask).
+        // 2. Mask attached to a helmet as a modification (attachment_mask).
         for (ItemStack mod : ArmorModificationHelper.pryMods(head)) {
             if (!mod.isEmpty() && mod.getItem() instanceof ItemModGasmask gasmask) {
                 renderM65(entity, gasmask.getModelTexture(), IGasMask.hasFilter(mod),
@@ -76,7 +76,7 @@ public class GasMaskLayer<T extends LivingEntity, M extends HumanoidModel<T>> ex
             }
         }
 
-        // 3. Маска в слоте лица Curios (опционально) — поверх шлема.
+        // 3. Mask in the Curios face slot (optional) - on top of the helmet.
         ItemStack faceMask = CuriosClientCompat.getFaceMask(entity);
         if (faceMask.getItem() instanceof ArmorGasMaskItem mask) {
             renderVariant(entity, mask.variant, IGasMask.hasFilter(faceMask), poseStack, buffer, packedLight);
@@ -104,7 +104,7 @@ public class GasMaskLayer<T extends LivingEntity, M extends HumanoidModel<T>> ex
             PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         poseStack.pushPose();
         getParentModel().head.translateAndRotate(poseStack);
-        // 1.7.10: scale 18/16, затем ×1.01
+        // 1.7.10: scale 18/16, then x1.01
         float s = 1.125F * 1.01F;
         poseStack.scale(s, s, s);
         RenderType rt = RenderType.armorCutoutNoCull(texture(texture));

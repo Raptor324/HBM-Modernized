@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.render.item;
 
 import java.util.List;
@@ -21,12 +20,12 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.world.inventory.InventoryMenu;
 
 /**
- * vJ: Inventar-Icons der RBMK-Saeulen 1:1 nach den ISBRH-Inventarpfaden des Originals
- * ({@code RenderRBMKRod/RenderRBMKReflector/RenderRBMKControl#renderInventoryBlock}) statt ueber den Welt-BER:
- * vier gestapelte Segmente (S 0.35), Seiten-/Deckeltexturen wie {@code RBMKBase#getIcon}, bei Brennelementen
- * OBJ "Inner"/"Cap" und gruen getoente Brennstaebe (0x304825), bei Steuerstaeben/Kesseln die vier Rohrstutzen
- * ({@code _pipe_top/_pipe_side}) und der Deckel {@code rbmk_rods "Lid"} (ohne Kessel/Heizer).
- * Die Lage im Slot entspricht {@code RenderItem#renderItemIntoGUI} fuer 3D-Bloecke:
+ * RBMK column inventory icons matching original ISBRH inventory rendering
+ * ({@code RenderRBMKRod/RenderRBMKReflector/RenderRBMKControl#renderInventoryBlock}):
+ * four stacked segments (scale 0.35), top and side textures from {@code RBMKBase#getIcon},
+ * fuel elements use OBJ "Inner"/"Cap" and green-tinted fuel rods (0x304825), control rods / boilers
+ * include four pipe nozzles ({@code _pipe_top/_pipe_side}) and lid {@code rbmk_rods "Lid"} (except boilers/heaters).
+ * Slot position corresponds to {@code RenderItem#renderItemIntoGUI} for 3D blocks:
  * T(x-2, y+3) S(10) T(1, 0.5, 1) S(1, 1, -1) Rx(210) Ry(45) Ry(-90).
  */
 public final class RBMKColumnInventoryRender {
@@ -35,7 +34,7 @@ public final class RBMKColumnInventoryRender {
 
     public enum Kind { ROD, PASSIVE, CONTROL }
 
-    /** Original-Rendertyp je Port-ID, null = kein ISBRH-Saeulenblock */
+    /** Original render kind per port ID, null = not an ISBRH column block */
     public static Kind kind(String id) {
         if (id.startsWith("rbmk_element")) return Kind.ROD;
         switch (id) {
@@ -49,9 +48,9 @@ public final class RBMKColumnInventoryRender {
         }
     }
 
-    /** GUI-Pose von renderByItem (T(x+8,y+8) S(16,-16,16) T(-0.5)) -> Lage des Originals vor renderInventoryBlock */
-    /** Pose/Normalenmatrix beim Eintritt (renderByItem); Normalen werden exakt ueber die eigene Kette gerechnet,
-     * weil PoseStack#scale bei gespiegelten nicht-uniformen Skalierungen das Normalenvorzeichen verliert */
+    /** GUI pose from renderByItem (T(x+8,y+8) S(16,-16,16) T(-0.5)) -> original position before renderInventoryBlock */
+    /** Input pose/normal matrices (renderByItem); normals computed explicitly from local chain
+     * to avoid normal sign flip on mirrored non-uniform scales in PoseStack#scale */
     private static final Matrix4f BASE_POSE = new Matrix4f();
     private static final Matrix3f BASE_NORMAL = new Matrix3f();
 
@@ -111,7 +110,7 @@ public final class RBMKColumnInventoryRender {
                     box(vc, ps, 0, 0, 0, 1, 1, 1, top, top, side, light);
                     if (i < 3) ps.translate(0, 1, 0);
                 }
-                // RBMKPipedBase.renderPipes: vier Stutzen ueber dem obersten Segment, ohne Unterseite
+                // RBMKPipedBase.renderPipes: four pipe nozzles above top segment, omitting bottom face
                 TextureAtlasSprite pTop = tex(id + "_pipe_top");
                 TextureAtlasSprite pSide = tex(id + "_pipe_side");
                 double[][] pipes = {
@@ -130,8 +129,8 @@ public final class RBMKColumnInventoryRender {
     }
 
     /**
-     * Quader in Blockkoordinaten mit Ursprung (-0.5, 0, -0.5) wie {@code renderer.renderFace*(block, -0.5, y, -0.5, icon)};
-     * UV wie RenderBlocks (Teilflaechen nehmen den passenden Texturausschnitt). null = Flaeche weglassen.
+     * Cuboid in block coordinates with origin (-0.5, 0, -0.5) matching {@code renderer.renderFace*(block, -0.5, y, -0.5, icon)};
+     * UV matching RenderBlocks (sub-surfaces sample the appropriate texture region). null = omit face.
      */
     private static void box(VertexConsumer vc, PoseStack ps, double x0d, double y0d, double z0d, double x1d, double y1d, double z1d,
                             TextureAtlasSprite up, TextureAtlasSprite down, TextureAtlasSprite side, int light) {
@@ -150,26 +149,26 @@ public final class RBMKColumnInventoryRender {
         }
         if (side != null) {
             float v0 = 1 - yy1, v1 = 1 - yy0;
-            // Z- (Norden)
+            // Z- (North)
             quad(vc, ps, side, light, 0, 0, -1,
                     ox + x0, y1, oz + z0, x1, v0, ox + x1, y1, oz + z0, x0, v0,
                     ox + x1, y0, oz + z0, x0, v1, ox + x0, y0, oz + z0, x1, v1);
-            // Z+ (Sueden)
+            // Z+ (South)
             quad(vc, ps, side, light, 0, 0, 1,
                     ox + x0, y1, oz + z1, x0, v0, ox + x0, y0, oz + z1, x0, v1,
                     ox + x1, y0, oz + z1, x1, v1, ox + x1, y1, oz + z1, x1, v0);
-            // X- (Westen)
+            // X- (West)
             quad(vc, ps, side, light, -1, 0, 0,
                     ox + x0, y1, oz + z1, z1, v0, ox + x0, y1, oz + z0, z0, v0,
                     ox + x0, y0, oz + z0, z0, v1, ox + x0, y0, oz + z1, z1, v1);
-            // X+ (Osten)
+            // X+ (East)
             quad(vc, ps, side, light, 1, 0, 0,
                     ox + x1, y0, oz + z1, z0, v1, ox + x1, y0, oz + z0, z1, v1,
                     ox + x1, y1, oz + z0, z1, v0, ox + x1, y1, oz + z1, z0, v0);
         }
     }
 
-    /** vier Ecken (x, y, z, u, v) mit u/v in 0..1 des Sprites */
+    /** Four corners (x, y, z, u, v) with u/v within 0..1 of sprite */
     private static void quad(VertexConsumer vc, PoseStack ps, TextureAtlasSprite s, int light, float nx, float ny, float nz,
                              float... c) {
         Matrix4f m = ps.last().pose();
@@ -177,11 +176,11 @@ public final class RBMKColumnInventoryRender {
         for (int i = 0; i < 4; i++) {
             int b = i * 5;
             com.hbm_m.platform.RenderHooks.vertexFull(vc, m, c[b], c[b + 1], c[b + 2], 255, 255, 255, 255,
-                    su(s, c[b + 3]), sv(s, c[b + 4]), OverlayTexture.NO_OVERLAY, light, n.x, n.y, n.z);
+                    com.hbm_m.platform.RenderHooks.spriteU(s, c[b + 3]), com.hbm_m.platform.RenderHooks.spriteV(s, c[b + 4]), OverlayTexture.NO_OVERLAY, light, n.x, n.y, n.z);
         }
     }
 
-    /** {@code ObjUtil.renderPartWithIcon}: Flaechen mit Sprite-UV; shadow = Helligkeit aus der Flaechennormalen */
+    /** {@code ObjUtil.renderPartWithIcon}: faces with sprite UV; shadow = brightness from face normal */
     private static void obj(VertexConsumer vc, PoseStack ps, List<float[]> tris, TextureAtlasSprite s,
                             int r, int g, int b, boolean shadow, int light) {
         if (tris == null || s == null) return;
@@ -202,7 +201,7 @@ public final class RBMKColumnInventoryRender {
             for (int pass = 0; pass < 4; pass++) {
                 int base = Math.min(pass, 2) * 8;
                 com.hbm_m.platform.RenderHooks.vertexFull(vc, m, t[base], t[base + 1], t[base + 2], cr, cg, cb, 255,
-                        su(s, t[base + 3]), sv(s, 1F - t[base + 4]), OverlayTexture.NO_OVERLAY, light, n.x, n.y, n.z);
+                        com.hbm_m.platform.RenderHooks.spriteU(s, t[base + 3]), com.hbm_m.platform.RenderHooks.spriteV(s, 1F - t[base + 4]), OverlayTexture.NO_OVERLAY, light, n.x, n.y, n.z);
             }
         }
     }
@@ -211,21 +210,4 @@ public final class RBMKColumnInventoryRender {
         return new Matrix3f(BASE_NORMAL).mul(new Matrix3f(local).invert().transpose());
     }
 
-    /** Sprite-UV aus 0..1 (1.20.1: getU erwartet 0..16, 1.21.1: 0..1) */
-    private static float su(TextureAtlasSprite s, float f) {
-        //? if < 1.21.1 {
-        return s.getU(f * 16F);
-        //?} else {
-        /*return s.getU(f);
-        *///?}
-    }
-
-    private static float sv(TextureAtlasSprite s, float f) {
-        //? if < 1.21.1 {
-        return s.getV(f * 16F);
-        //?} else {
-        /*return s.getV(f);
-        *///?}
-    }
 }
-//?}

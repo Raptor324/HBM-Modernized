@@ -157,11 +157,7 @@ public class SolderingRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<SolderingRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "soldering_station");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "soldering_station");
-        //?}
 
         private static Ingredient[] readGroup(JsonObject json, String key, int[] countsOut) {
             if (!json.has(key)) return new Ingredient[0];

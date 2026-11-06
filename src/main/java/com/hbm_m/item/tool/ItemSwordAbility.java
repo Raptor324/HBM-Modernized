@@ -1,10 +1,8 @@
 package com.hbm_m.item.tool;
 
-import com.hbm_m.platform.AttributeHooks;
 
 import com.hbm_m.platform.PlatformHooks;
 
-import com.hbm_m.platform.AttributeOps;
 
 import com.hbm_m.platform.ItemHooks;
 
@@ -34,6 +32,7 @@ import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.AttributeHooks;
 
 /**
  * 1:1 {@code com.hbm.items.tool.ItemSwordAbility}: Schwert mit festem Schaden, Bewegungsmodifikator und
@@ -121,9 +120,9 @@ public class ItemSwordAbility extends SwordItem implements ITooltipProvider {
         if (slot != EquipmentSlot.MAINHAND) return ImmutableMultimap.of();
         ImmutableMultimap.Builder<net.minecraft.core.Holder<Attribute>, AttributeModifier> builder = ImmutableMultimap.builder();
     *///?}
-        builder.put(Attributes.ATTACK_DAMAGE, AttributeHooks.modifier(AttributeHooks.BASE_ATTACK_DAMAGE_UUID, "Tool modifier", this.damage, AttributeOps.ADDITION));
-        builder.put(Attributes.ATTACK_SPEED, AttributeHooks.modifier(AttributeHooks.BASE_ATTACK_SPEED_UUID, "Weapon modifier", -2.4F, AttributeOps.ADDITION));
-        builder.put(Attributes.MOVEMENT_SPEED, AttributeHooks.modifier(AttributeHooks.BASE_ATTACK_DAMAGE_UUID, "Tool modifier", movement, AttributeOps.MULTIPLY_BASE));
+        builder.put(Attributes.ATTACK_DAMAGE, AttributeHooks.modifier(AttributeHooks.BASE_ATTACK_DAMAGE_UUID, "Tool modifier", this.damage, AttributeHooks.ADDITION));
+        builder.put(Attributes.ATTACK_SPEED, AttributeHooks.modifier(AttributeHooks.BASE_ATTACK_SPEED_UUID, "Weapon modifier", -2.4F, AttributeHooks.ADDITION));
+        builder.put(Attributes.MOVEMENT_SPEED, AttributeHooks.modifier(AttributeHooks.BASE_ATTACK_DAMAGE_UUID, "Tool modifier", movement, AttributeHooks.MULTIPLY_BASE));
         return builder.build();
     }
 
@@ -139,6 +138,7 @@ public class ItemSwordAbility extends SwordItem implements ITooltipProvider {
     /** BEWLR fuer die 1.7-IItemRenderer (ItemRenderGavel/Shim/RedstoneSword); greift nur bei builtin/entity-Itemmodellen. */
     //? if forge {
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -149,6 +149,7 @@ public class ItemSwordAbility extends SwordItem implements ITooltipProvider {
     }
     //?} elif neoforge {
     /*@Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             @Override

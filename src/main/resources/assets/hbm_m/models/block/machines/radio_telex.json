@@ -5,7 +5,7 @@
   },
   "children": {
     "telex": {
-      "loader": "forge:obj",
+      "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/machines/telex.obj",
       "flip_v": true,
       "textures": {

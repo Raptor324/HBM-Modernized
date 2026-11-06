@@ -14,6 +14,7 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1 {@code ContainerMachineDiFurnaceRTG}: Eingaenge (80,18)/(80,54), Ausgang (134,36), Pellets 2x3 ab (22,18),
@@ -36,11 +37,15 @@ public class MachineDifurnaceRtgMenu extends AbstractContainerMenu {
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
 
-        this.addSlot(new Slot(container, 0, 80, 18));
-        this.addSlot(new Slot(container, 1, 80, 54));
-        this.addSlot(new Slot(container, 2, 134, 36) { @Override public boolean mayPlace(ItemStack s) { return false; } });
-        int[][] pellets = { {22, 18}, {40, 18}, {22, 36}, {40, 36}, {22, 54}, {40, 54} };
-        for (int i = 0; i < 6; i++) this.addSlot(new Slot(container, 3 + i, pellets[i][0], pellets[i][1]));
+        this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.SLOT_INPUT_TOP, 80, 18));
+        this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.SLOT_INPUT_BOTTOM, 80, 54));
+        this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.SLOT_OUTPUT, 134, 36) {
+            @Override
+            public boolean mayPlace(ItemStack stack) { return false; }
+        });
+        for (int i = 0; i < MachineDifurnaceRtgBlockEntity.PELLET_SLOT_COUNT; i++) {
+            this.addSlot(new Slot(container, MachineDifurnaceRtgBlockEntity.PELLET_SLOT_START + i, 22 + (i % 2) * 18, 18 + (i / 2) * 18));
+        }
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -62,7 +67,7 @@ public class MachineDifurnaceRtgMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineDifurnaceRtgBlockEntity difurnace) {
             return difurnace;
         }
-        throw new IllegalStateException("No MachineDifurnaceRtgBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":machine_difurnace_rtg_menu");
+        throw new MenuBlockEntityMissingException("No MachineDifurnaceRtgBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":machine_difurnace_rtg_menu");
     }
 
     public MachineDifurnaceRtgBlockEntity getBlockEntity() {
@@ -83,11 +88,7 @@ public class MachineDifurnaceRtgMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     /** Original {@code transferStackInSlot}: Pellets in die Pelletplaetze, alles andere in die Eingaenge. */

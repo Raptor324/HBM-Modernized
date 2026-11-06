@@ -2,7 +2,6 @@ package com.hbm_m.item.tool;
 
 import com.hbm_m.platform.PlatformHooks;
 
-import com.hbm_m.platform.AttributeOps;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
@@ -14,6 +13,7 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.AttributeHooks;
 
 /**
  * 1:1 {@code com.hbm.items.tool.ItemToolingWeapon} ({@code wrench_archineer}: WRENCH, 1000 Haltbarkeit, 12 Schaden).
@@ -46,6 +46,6 @@ public class ItemToolingWeapon extends ItemTooling {
     private Multimap<net.minecraft.core.Holder<Attribute>, AttributeModifier> hbmSlotModifiers(EquipmentSlot slot) {
         if (slot != EquipmentSlot.MAINHAND) return ImmutableMultimap.of();
     *///?}
-        return ImmutableMultimap.of(Attributes.ATTACK_DAMAGE, com.hbm_m.platform.AttributeHooks.modifier(com.hbm_m.platform.AttributeHooks.BASE_ATTACK_DAMAGE_UUID, "Weapon modifier", damage, AttributeOps.ADDITION));
+        return ImmutableMultimap.of(Attributes.ATTACK_DAMAGE, com.hbm_m.platform.AttributeHooks.modifier(com.hbm_m.platform.AttributeHooks.BASE_ATTACK_DAMAGE_UUID, "Weapon modifier", damage, AttributeHooks.ADDITION));
     }
 }

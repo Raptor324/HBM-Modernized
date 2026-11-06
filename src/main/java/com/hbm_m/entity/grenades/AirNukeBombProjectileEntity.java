@@ -73,17 +73,19 @@ public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(SYNCHED_YAW, 0.0F);
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-
         super.defineSynchedData(builder);
-        builder.define(SYNCHED_YAW, 0.0F);
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    *///?}
+
+        defs.define(SYNCHED_YAW, 0.0F);
     
     }
-    *///?}
 
     public void syncYawWithPlane(float planeYaw) {
         this.entityData.set(SYNCHED_YAW, planeYaw);
@@ -186,9 +188,12 @@ public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
 
     private void playDetonationSound(ServerLevel level, BlockPos pos) {
         List<SoundEvent> candidates = new ArrayList<>();
-        if (ModSounds.EXPLOSION_LARGE_NEAR.isPresent()) candidates.add(ModSounds.BOMBDET1.get());
-        if (ModSounds.EXPLOSION_LARGE_NEAR.isPresent()) candidates.add(ModSounds.BOMBDET2.get());
-        if (ModSounds.EXPLOSION_LARGE_NEAR.isPresent()) candidates.add(ModSounds.BOMBDET3.get());
+        // Each line guarded its own sound, not EXPLOSION_LARGE_NEAR: with that one absent the list
+        // stayed empty and nextInt(0) below threw.
+        if (ModSounds.BOMBDET1.isPresent()) candidates.add(ModSounds.BOMBDET1.get());
+        if (ModSounds.BOMBDET2.isPresent()) candidates.add(ModSounds.BOMBDET2.get());
+        if (ModSounds.BOMBDET3.isPresent()) candidates.add(ModSounds.BOMBDET3.get());
+        if (candidates.isEmpty()) return;
 
         SoundEvent soundEvent = candidates.get(RANDOM.nextInt(candidates.size()));
         level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
@@ -206,10 +211,9 @@ public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
                         BlockState checkState = serverLevel.getBlockState(checkPos);
                         Block block = checkState.getBlock();
 
-                        if (block instanceof IDetonatable detonatable) {
-                            int delay = (int) (dist * 2.0);
-                            serverLevel.getServer().tell(new TickTask(delay, () ->
-                                    detonatable.onDetonate(serverLevel, checkPos, checkState, player)));
+                        if (block instanceof IDetonatable) {
+                            com.hbm_m.api.bomb.BombDetonation.triggerDetonatableLater(
+                                    serverLevel, checkPos, block, player, (int) (dist * 2));
                         }
                     }
                 }

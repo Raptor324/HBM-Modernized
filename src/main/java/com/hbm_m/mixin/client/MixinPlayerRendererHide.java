@@ -39,5 +39,6 @@ public abstract class MixinPlayerRendererHide {
             if (disable.disablesPart(player, stack, "left_leg")) { model.leftLeg.visible = false; model.leftPants.visible = false; }
             if (disable.disablesPart(player, stack, "right_leg")) { model.rightLeg.visible = false; model.rightPants.visible = false; }
         }
+
     }
 }

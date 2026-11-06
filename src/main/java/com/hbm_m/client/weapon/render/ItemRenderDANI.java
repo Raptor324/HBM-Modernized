@@ -6,7 +6,6 @@ import com.hbm_m.client.weapon.WeaponResources;
 import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
 import com.hbm_m.render.anim.HbmAnimations;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
@@ -164,49 +163,30 @@ public class ItemRenderDANI extends ItemRenderWeaponBase {
 
 	@Override
 	public void renderEquipped(ItemStack stack, Object... data) {
-
 		GunGL.bindTexture(WeaponResources.dani_lunar_tex);
 		GunGL.renderAll(WeaponResources.bio_revolver);
-
-		//Stopgap: at the moment, the flashMap is gun agnostic and does not care about index.
-		LivingEntity ent = (LivingEntity) data[1]; //Entity is second obj. passed
-		long shot;
-		if(ent == Minecraft.getInstance().player) {
-			ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-			shot = gun.lastShot[1];
-		} else {
-			shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-			if(shot < 0) return;
+		long shot = getEquippedShotTime(stack, data, 1);
+		if(shot >= 0) {
+			GunGL.pushMatrix();
+			GunGL.translate(0, 1.5, 9.25);
+			GunGL.rotate(90, 0, 1, 0);
+			renderMuzzleFlash(shot, 75, 7.5);
+			GunGL.popMatrix();
 		}
-
-		GunGL.pushMatrix();
-		GunGL.translate(0, 1.5, 9.25);
-		GunGL.rotate(90, 0, 1, 0);
-		renderMuzzleFlash(shot, 75, 7.5);
-		GunGL.popMatrix();
 	}
 
 	@Override
 	public void renderEquippedAkimbo(ItemStack stack, LivingEntity ent) {
-
 		GunGL.bindTexture(WeaponResources.dani_celestial_tex);
 		GunGL.renderAll(WeaponResources.bio_revolver);
-
-		//EntityPlayer is first & only object passed
-		long shot;
-		if(ent == Minecraft.getInstance().player) {
-			ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-			shot = gun.lastShot[0];
-		} else {
-			shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-			if(shot < 0) return;
+		long shot = getEquippedShotTime(stack, ent, 0);
+		if(shot >= 0) {
+			GunGL.pushMatrix();
+			GunGL.translate(0, 1.5, 9.25);
+			GunGL.rotate(90, 0, 1, 0);
+			renderMuzzleFlash(shot, 75, 7.5);
+			GunGL.popMatrix();
 		}
-
-		GunGL.pushMatrix();
-		GunGL.translate(0, 1.5, 9.25);
-		GunGL.rotate(90, 0, 1, 0);
-		renderMuzzleFlash(shot, 75, 7.5);
-		GunGL.popMatrix();
 	}
 
 	@Override

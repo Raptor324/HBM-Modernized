@@ -537,6 +537,15 @@ public class MachineAutosawBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
     }
 
     @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, net.minecraft.core.Direction fromDir) {
+        return fromDir != net.minecraft.core.Direction.UP && (
+                com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(fluid, ModFluids.WOODOIL.getSource()) ||
+                com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(fluid, ModFluids.ETHANOL.getSource()) ||
+                com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(fluid, ModFluids.FISHOIL.getSource()) ||
+                com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(fluid, ModFluids.HEAVYOIL.getSource()) ||
+                com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(fluid, ModFluids.COALCREOSOTE.getSource()));
+    }
+
     protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
         nbt.putBoolean("isOn", this.isOn);
         nbt.putBoolean("isSuspended", this.isSuspended);

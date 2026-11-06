@@ -52,7 +52,8 @@ public class EntityCreeperTainted extends Creeper {
         }
 
         this.dead = true;
-        this.level().explode(this, this.getX(), this.getY(), this.getZ(), 5.0F, false, Level.ExplosionInteraction.MOB);
+        // 1.7.10: createExplosion(..., isSmoking = false) - hurts entities, never breaks blocks.
+        this.level().explode(this, this.getX(), this.getY(), this.getZ(), 5.0F, false, Level.ExplosionInteraction.NONE);
 
         if (this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
             spreadTaint(this.isPowered());

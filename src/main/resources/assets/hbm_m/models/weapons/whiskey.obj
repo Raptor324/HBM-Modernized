@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'whiskey.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Plane
 v -0.437500 1.750000 0.375000
 v -0.375000 1.750000 0.437500

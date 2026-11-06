@@ -13,8 +13,14 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
-/** 1:1 {@code ContainerWatz}: 24 Pelletplaetze in Achteckform (i, j aus [0,6), Ecken abgeschnitten). */
+/**
+ * 24 pellet slots laid out in the same diamond/octagon shape as the original
+ * {@code ContainerWatz} (i, j in [0,6) with the corners clipped), reflecting the reactor's
+ * cross-shaped footprint even though the multiblock casing itself is a simplified 5x5x3 box
+ * (see class doc on {@code MachineWatzPowerplantBlock}).
+ */
 public class MachineWatzPowerplantMenu extends AbstractContainerMenu {
 
     private static final int MACHINE_SLOT_COUNT = MachineWatzPowerplantBlockEntity.PELLET_SLOTS;
@@ -67,7 +73,7 @@ public class MachineWatzPowerplantMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineWatzPowerplantBlockEntity watz) {
             return watz;
         }
-        throw new IllegalStateException("No MachineWatzPowerplantBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":watz_powerplant_menu");
+        throw new MenuBlockEntityMissingException("No MachineWatzPowerplantBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":watz_powerplant_menu");
     }
 
     public MachineWatzPowerplantBlockEntity getBlockEntity() {
@@ -76,8 +82,7 @@ public class MachineWatzPowerplantMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

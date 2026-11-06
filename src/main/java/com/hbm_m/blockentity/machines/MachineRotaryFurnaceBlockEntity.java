@@ -138,7 +138,7 @@ public class MachineRotaryFurnaceBlockEntity extends MachinePollutingBlockEntity
             if (output.amount <= 0) this.output = null;
         }
 
-        RotaryFurnaceRecipe recipe = RotaryFurnaceRecipes.getRecipe(inventory.getStackInSlot(0), inventory.getStackInSlot(1), inventory.getStackInSlot(2));
+        RotaryFurnaceRecipe recipe = RotaryFurnaceRecipes.getRecipe(level, inventory.getStackInSlot(0), inventory.getStackInSlot(1), inventory.getStackInSlot(2));
         this.isProgressing = false;
 
         if (recipe != null) {
@@ -360,12 +360,11 @@ public class MachineRotaryFurnaceBlockEntity extends MachinePollutingBlockEntity
         return super.getCapability(cap, side);
     }
     //?} elif neoforge {
-    /*/^*
-     * Original {@code getAccessibleSlotsFromSide(x, y, z, side)}: die drei Rueckwandzellen (rot, gelb, gruen) fuehren
-     * je in einen Eingabeslot, die vordere Brennstoffklappe in Slot 4. Entnehmen ist nirgends moeglich.
-     ^/
+    
+    /*// Original {@code getAccessibleSlotsFromSide(x, y, z, side)}: die drei Rueckwandzellen (rot, gelb, gruen) fuehren
+    // je in einen Eingabeslot, die vordere Brennstoffklappe in Slot 4. Entnehmen ist nirgends moeglich.
     @Override
-    public net.neoforged.neoforge.items.IItemHandler getConditionalItemHandler(BlockPos part, @Nullable Direction side) {
+    public net.minecraftforge.items.IItemHandler getConditionalItemHandler(BlockPos part, @Nullable Direction side) {
         if (side == null) return null;
         Direction dir = getDir();
         Direction rot = dir.getClockWise();
@@ -379,7 +378,7 @@ public class MachineRotaryFurnaceBlockEntity extends MachinePollutingBlockEntity
 
         if (slot < 0) return null;
         final int target = slot;
-        return new net.neoforged.neoforge.items.IItemHandler() {
+        return new net.minecraftforge.items.IItemHandler() {
             @Override public int getSlots() { return 1; }
             @Override public @NotNull ItemStack getStackInSlot(int s) { return inventory.getStackInSlot(target); }
             @Override public @NotNull ItemStack insertItem(int s, @NotNull ItemStack stack, boolean simulate) {
@@ -392,7 +391,7 @@ public class MachineRotaryFurnaceBlockEntity extends MachinePollutingBlockEntity
         };
     }
 
-    /^* Original {@code getAccessibleSlotsFromSide(side)}: der Kern selbst bietet keinen Zugriff. ^/
+    // Original {@code getAccessibleSlotsFromSide(side)}: der Kern selbst bietet keinen Zugriff.
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
@@ -476,5 +475,10 @@ public class MachineRotaryFurnaceBlockEntity extends MachinePollutingBlockEntity
         if (bb == null) bb = new AABB(worldPosition.getX() - 2, worldPosition.getY(), worldPosition.getZ() - 2,
                 worldPosition.getX() + 3, worldPosition.getY() + 5, worldPosition.getZ() + 3);
         return bb;
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
     }
 }

@@ -119,23 +119,13 @@ public final class MiscMobRenderers {
             float r = net.minecraft.util.FastColor.ARGB32.red(hbmColor) / 255F, g = net.minecraft.util.FastColor.ARGB32.green(hbmColor) / 255F;
             float b = net.minecraft.util.FastColor.ARGB32.blue(hbmColor) / 255F, a = net.minecraft.util.FastColor.ARGB32.alpha(hbmColor) / 255F;
         *///?}
-            //? if < 1.21.1 {
-            head.render(ps, vc, light, overlay, r, g, b, a);
-            beak.render(ps, vc, light, overlay, r, g, b, a);
-            (fat ? bodyFat : body).render(ps, vc, light, overlay, r, g, b, a);
-            rightLeg.render(ps, vc, light, overlay, r, g, b, a);
-            leftLeg.render(ps, vc, light, overlay, r, g, b, a);
-            ass.render(ps, vc, light, overlay, r, g, b, a);
-            feathers.render(ps, vc, light, overlay, r, g, b, a);
-            //?} else {
-            /*head.render(ps, vc, light, overlay, hbmColor);
-            beak.render(ps, vc, light, overlay, hbmColor);
-            (fat ? bodyFat : body).render(ps, vc, light, overlay, hbmColor);
-            rightLeg.render(ps, vc, light, overlay, hbmColor);
-            leftLeg.render(ps, vc, light, overlay, hbmColor);
-            ass.render(ps, vc, light, overlay, hbmColor);
-            feathers.render(ps, vc, light, overlay, hbmColor);
-            *///?}
+            com.hbm_m.platform.RenderHooks.renderPart(head, ps, vc, light, overlay, r, g, b, a);
+            com.hbm_m.platform.RenderHooks.renderPart(beak, ps, vc, light, overlay, r, g, b, a);
+            com.hbm_m.platform.RenderHooks.renderPart(fat ? bodyFat : body, ps, vc, light, overlay, r, g, b, a);
+            com.hbm_m.platform.RenderHooks.renderPart(rightLeg, ps, vc, light, overlay, r, g, b, a);
+            com.hbm_m.platform.RenderHooks.renderPart(leftLeg, ps, vc, light, overlay, r, g, b, a);
+            com.hbm_m.platform.RenderHooks.renderPart(ass, ps, vc, light, overlay, r, g, b, a);
+            com.hbm_m.platform.RenderHooks.renderPart(feathers, ps, vc, light, overlay, r, g, b, a);
         }
     }
 

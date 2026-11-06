@@ -223,7 +223,7 @@ public final class ConsumableRecipeGenerator {
         shaped(w, ModItems.INSERT_STEEL, 1, p("DPD", "PSP", "DPD"), 'D', ModItems.DUCTTAPE, 'P', ironPlate, 'S', m(ModMaterials.STEEL, MaterialShape.BLOCK));
         shaped(w, ModItems.INSERT_DU, 1, p("DPD", "PSP", "DPD"), 'D', ModItems.DUCTTAPE, 'P', ironPlate, 'S', m(ModMaterials.URANIUM238, MaterialShape.BLOCK));
         shaped(w, ModItems.INSERT_GHIORSIUM, 1, p("DPD", "PSP", "DPD"), 'D', ModItems.DUCTTAPE, 'P', m(ModMaterials.GH336, MaterialShape.INGOT), 'S', m(ModMaterials.URANIUM238, MaterialShape.INGOT));
-        shaped(w, ModItems.INSERT_POLONIUM, 1, p("DPD", "PSP", "DPD"), 'D', ModItems.DUCTTAPE, 'P', ironPlate, 'S', ModBlocks.POLONIUM210_BLOCK.get());
+        shaped(w, ModItems.INSERT_POLONIUM, 1, p("DPD", "PSP", "DPD"), 'D', ModItems.DUCTTAPE, 'P', ironPlate, 'S', m(ModMaterials.POLONIUM, MaterialShape.BLOCK));
         shaped(w, ModItems.INSERT_ERA, 1, p("DPD", "PSP", "DPD"), 'D', ModItems.DUCTTAPE, 'P', ironPlate, 'S', m(ModMaterials.SEMTEX, MaterialShape.INGOT));
         shaped(w, ModItems.INSERT_KEVLAR, 1, p("KIK", "IDI", "KIK"), 'K', ModItems.PLATE_KEVLAR, 'I', anyRubber, 'D', ModItems.DUCTTAPE);
         shaped(w, ModItems.INSERT_SAPI, 1, p("PKP", "DPD", "PKP"), 'P', anyPlastic, 'K', ModItems.INSERT_KEVLAR, 'D', ModItems.DUCTTAPE);

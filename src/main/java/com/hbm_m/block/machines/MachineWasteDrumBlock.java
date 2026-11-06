@@ -27,12 +27,11 @@ public class MachineWasteDrumBlock extends BaseEntityBlock {
     @Override
     public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
 
-
     /** audit10: 1:1 {@code WasteDrum.breakBlock} - Inhalt faellt beim Entfernen heraus. */
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
-        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.machines.MachineWasteDrumBlockEntity be) {
-            com.hbm_m.block.BlockDropUtil.dropSlots(level, pos, be.getInventory(), 0, Integer.MAX_VALUE);
+        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
+            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
         }
         super.onRemove(state, level, pos, newState, moving);
     }
@@ -65,7 +64,6 @@ public class MachineWasteDrumBlock extends BaseEntityBlock {
             }
         }
     }
-
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineWasteDrumBlockEntity(pos, state);

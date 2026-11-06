@@ -1,5 +1,7 @@
 package com.hbm_m.explosion;
 
+import java.util.UUID;
+
 /**
  * Заглушка для MK5: без разрушения блоков, мгновенно «завершён».
  */
@@ -10,12 +12,7 @@ public final class NoOpExplosionRay implements IExplosionRay {
     private NoOpExplosionRay() {}
 
     @Override
-    public void cacheChunksTick(int processTimeMs) {
-        // no-op
-    }
-
-    @Override
-    public void destructionTick(int processTimeMs) {
+    public void update(long msBudget) {
         // no-op
     }
 
@@ -27,5 +24,15 @@ public final class NoOpExplosionRay implements IExplosionRay {
     @Override
     public boolean isComplete() {
         return true;
+    }
+
+    @Override
+    public boolean isContained() {
+        return true;
+    }
+
+    @Override
+    public void setDetonator(UUID detonator) {
+        // no-op
     }
 }

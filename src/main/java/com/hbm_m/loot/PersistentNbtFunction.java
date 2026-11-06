@@ -15,6 +15,7 @@ import net.minecraft.world.level.storage.loot.functions.LootItemConditionalFunct
 import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
+import com.hbm_m.platform.BlockEntityItemData;
 
 /** {@code IPersistentNBT.getDrops}: schreibt die persistenten Daten der Blockentitaet als BlockEntityTag in den Drop. */
 public class PersistentNbtFunction extends LootItemConditionalFunction {

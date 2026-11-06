@@ -65,6 +65,22 @@ public class MachineDroneProviderBlockEntity extends BaseMachineBlockEntity {
         return ItemStack.EMPTY;
     }
 
+    public ItemStack extractMatching(ItemStack pattern, int amount) {
+        for (int i = 0; i < INVENTORY_SIZE; i++) {
+            ItemStack stack = inventory.getStackInSlot(i);
+            if (stack.isEmpty() || !com.hbm_m.platform.StackNbt.sameItemSameTags(stack, pattern)) continue;
+
+            int toTake = Math.min(amount, stack.getCount());
+            ItemStack taken = stack.copy();
+            taken.setCount(toTake);
+            stack.shrink(toTake);
+            if (stack.isEmpty()) inventory.setStackInSlot(i, ItemStack.EMPTY);
+            setChanged();
+            return taken;
+        }
+        return ItemStack.EMPTY;
+    }
+
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return true;
@@ -84,7 +100,6 @@ public class MachineDroneProviderBlockEntity extends BaseMachineBlockEntity {
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineDroneProviderMenu.create(id, inventory, this);
     }
-
     //? if forge {
     /** Original {@code ISidedInventory}: Slots {0-8}; alles hinein, nichts heraus. */
     private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
@@ -105,25 +120,5 @@ public class MachineDroneProviderBlockEntity extends BaseMachineBlockEntity {
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?} elif neoforge {
-    /*/^* Original {@code ISidedInventory}: Slots {0-8}; alles hinein, nichts heraus. ^/
-    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
-            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
-                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 8); }
-                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
-                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
-            });
-
-    @Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
-        return super.getHbmCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateHbmCaps() {
-        super.invalidateHbmCaps();
-        sidedItems.invalidate();
-    }
-    *///?}
+    //?}
 }

@@ -323,7 +323,7 @@ public final class ShredderRecipeGenerator {
             ModMaterials ingot = ModMaterials.byId(powderName);
             if (ingot == null) continue;
 
-            var ingotRegistry = ModMaterialItems.get(ModMaterialItems.ingotMaterial(ingot), MaterialShape.INGOT);
+            var ingotRegistry = ModMaterialItems.get(ingot, MaterialShape.INGOT);
             var powderRegistry = ModMaterialItems.get(ingot, MaterialShape.POWDER);
 
             // Если нет предмета слитка или порошка - пропускаем

@@ -29,8 +29,13 @@ public final class BulletRenderers {
 
             ps.pushPose();
             if (bullet.config.renderRotations) {
-                ps.mulPose(Axis.YP.rotationDegrees(Mth.lerp(interp, bullet.yRotO, bullet.getYRot()) - 90.0F));
-                ps.mulPose(Axis.ZP.rotationDegrees(Mth.lerp(interp, bullet.xRotO, bullet.getXRot()) + 180));
+                // 1:1 RenderBulletMK4: rotate by the entity's interpolated heading (yaw-90, then pitch+180).
+                // Entity angles use the 1.7.10 Sedna convention (pitch positive up); the +180 flip makes the
+                // tracer tail (local +X) trail behind the flight direction.
+                float bYaw = Mth.lerp(interp, bullet.yRotO, bullet.getYRot());
+                float bPitch = Mth.lerp(interp, bullet.xRotO, bullet.getXRot());
+                ps.mulPose(Axis.YP.rotationDegrees(bYaw - 90.0F));
+                ps.mulPose(Axis.ZP.rotationDegrees(bPitch + 180.0F));
             }
             if (bullet.config.renderer != null) {
                 GunGL.begin(ps, buffers, light);

@@ -11,6 +11,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Port of {@code GUIScreenRBMKGraph} - two rolling charts, each with an RTTY channel, a label, an
@@ -18,6 +20,7 @@ import net.minecraft.network.chat.Component;
  * off lets that end of the axis auto-scale to the data, exactly like {@code minBound}/
  * {@code maxBound} in the original.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKGraph extends Screen {
 
     private static final int UNITS = RBMKGraphBlockEntity.UNITS;

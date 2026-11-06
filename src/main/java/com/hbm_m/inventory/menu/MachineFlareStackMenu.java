@@ -1,23 +1,37 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineFlareStackBlockEntity;
-import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
+import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
-/** 1:1 {@code ContainerMachineGasFlare}: Batterie, Fluid rein/raus, Fluidkennung, zwei Upgrades. */
+/**
+ * Порт {@code ContainerMachineGasFlare} (1.7.10): Battery (143,71), Fluid in (17,17),
+ * Fluid out = take-only (17,53), Fluid-ID (35,71), Upgrades (80,71)/(98,71);
+ * инвентарь игрока на 121/179.
+ */
 public class MachineFlareStackMenu extends AbstractContainerMenu {
 
-    private static final int MACHINE_SLOTS = 6;
+    /** 6 slots (battery, fluid in/out, fluid ID, 2 upgrades) — размер, передаваемый в конструктор BaseMachineBlockEntity. */
+    public static final int MACHINE_SLOT_COUNT = 6;
+
+    private static final int SLOT_BATTERY = MachineFlareStackBlockEntity.SLOT_BATTERY;
+    private static final int SLOT_FLUID_IN = MachineFlareStackBlockEntity.SLOT_FLUID_IN;
+    private static final int SLOT_FLUID_OUT = MachineFlareStackBlockEntity.SLOT_FLUID_OUT;
+    private static final int SLOT_FLUID_ID = MachineFlareStackBlockEntity.SLOT_FLUID_ID;
+    private static final int SLOT_UPGRADE_1 = MachineFlareStackBlockEntity.SLOT_UPGRADE_1;
+    private static final int SLOT_UPGRADE_2 = MachineFlareStackBlockEntity.SLOT_UPGRADE_2;
 
     private final MachineFlareStackBlockEntity blockEntity;
 
@@ -28,34 +42,34 @@ public class MachineFlareStackMenu extends AbstractContainerMenu {
     public MachineFlareStackMenu(int id, Inventory inventory, MachineFlareStackBlockEntity blockEntity) {
         super(ModMenuTypes.FLARE_STACK_MENU.get(), id);
         this.blockEntity = blockEntity;
-        ModItemStackHandlerContainer tedf = new ModItemStackHandlerContainer(
-                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOTS),
-                blockEntity != null ? blockEntity::setChanged : null);
 
-        // Batterie
-        this.addSlot(new Slot(tedf, 0, 143, 71));
-        // Fluid rein
-        this.addSlot(new Slot(tedf, 1, 17, 17));
-        // Fluid raus
-        this.addSlot(new Slot(tedf, 2, 17, 53) {
-            @Override public boolean mayPlace(ItemStack stack) { return false; }
-        });
-        // Fluidkennung
-        this.addSlot(new Slot(tedf, 3, 35, 71));
+        // null-BE возможен только в реплее Flashback — рендерим заглушку без машины.
+        var handler = blockEntity != null
+                ? blockEntity.getInventory()
+                : new com.hbm_m.platform.ModItemStackHandler.Dummy(MACHINE_SLOT_COUNT);
+        var container = new com.hbm_m.inventory.ModItemStackHandlerContainer(handler,
+                blockEntity != null ? blockEntity::setChanged : () -> {});
+
+        // Battery
+        this.addSlot(new Slot(container, SLOT_BATTERY, 143, 71));
+        // Fluid in
+        this.addSlot(new Slot(container, SLOT_FLUID_IN, 17, 17));
+        // Fluid out — SlotTakeOnly: класть нельзя, забирать можно
+        this.addSlot(new SlotTakeOnly(container, SLOT_FLUID_OUT, 17, 53));
+        // Fluid ID
+        this.addSlot(new Slot(container, SLOT_FLUID_ID, 35, 71));
         // Upgrades
-        this.addSlot(new Slot(tedf, 4, 80, 71));
-        this.addSlot(new Slot(tedf, 5, 98, 71));
+        this.addSlot(new Slot(container, SLOT_UPGRADE_1, 80, 71));
+        this.addSlot(new Slot(container, SLOT_UPGRADE_2, 98, 71));
 
-        int offset = 37;
-
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 9; j++) {
-                this.addSlot(new Slot(inventory, j + i * 9 + 9, 8 + j * 18, 84 + i * 18 + offset));
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 121 + row * 18));
             }
         }
 
-        for (int i = 0; i < 9; i++) {
-            this.addSlot(new Slot(inventory, i, 8 + i * 18, 142 + offset));
+        for (int col = 0; col < 9; col++) {
+            this.addSlot(new Slot(inventory, col, 8 + col * 18, 179));
         }
     }
 
@@ -70,10 +84,11 @@ public class MachineFlareStackMenu extends AbstractContainerMenu {
             return flareStackBlockEntity;
         }
         // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineFlareStackBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":flare_stack_menu");
+        throw new MenuBlockEntityMissingException("No MachineFlareStackBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":flare_stack_menu");
     }
 
     public MachineFlareStackBlockEntity getBlockEntity() {
@@ -82,51 +97,69 @@ public class MachineFlareStackMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
+    /**
+     * Порт {@code ContainerMachineGasFlare.transferStackInSlot}: слоты машины → инвентарь;
+     * из инвентаря: fluid identifier → слот 3, батарея → слот 0, апгрейд → слоты 4/5,
+     * остальное → канистры (слоты 1/2).
+     */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         ItemStack result = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
 
         if (slot != null && slot.hasItem()) {
-            ItemStack stack = slot.getItem();
-            result = stack.copy();
+            ItemStack slotStack = slot.getItem();
+            result = slotStack.copy();
 
-            if (index <= 5) {
-                if (!this.moveItemStackTo(stack, MACHINE_SLOTS, this.slots.size(), true)) {
+            if (index < MACHINE_SLOT_COUNT) {
+                if (!this.moveItemStackTo(slotStack, MACHINE_SLOT_COUNT, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
             } else {
-
-                if (result.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier) {
-                    if (!this.moveItemStackTo(stack, 3, 4, false)) {
+                if (slotStack.getItem() instanceof FluidIdentifierItem) {
+                    if (!this.moveItemStackTo(slotStack, SLOT_FLUID_ID, SLOT_FLUID_ID + 1, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (result.getItem() instanceof com.hbm_m.api.item.IBatteryItem) {
-                    if (!this.moveItemStackTo(stack, 0, 1, false)) {
+                } else if (com.hbm_m.api.energy.ItemEnergyAccess.isEnergySource(slotStack)) {
+                    if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (result.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
-                    if (!this.moveItemStackTo(stack, 4, 6, false)) {
+                } else if (slotStack.getItem() instanceof ItemMachineUpgrade) {
+                    if (!this.moveItemStackTo(slotStack, SLOT_UPGRADE_1, SLOT_UPGRADE_2 + 1, false)) {
                         return ItemStack.EMPTY;
                     }
                 } else {
-                    if (!this.moveItemStackTo(stack, 1, 2, false)) {
+                    if (!this.moveItemStackTo(slotStack, SLOT_FLUID_IN, SLOT_FLUID_OUT + 1, false)) {
                         return ItemStack.EMPTY;
                     }
                 }
             }
 
-            if (stack.isEmpty()) {
+            if (slotStack.isEmpty()) {
                 slot.set(ItemStack.EMPTY);
             } else {
                 slot.setChanged();
             }
+            if (slotStack.getCount() == result.getCount()) {
+                return ItemStack.EMPTY;
+            }
+            slot.onTake(player, slotStack);
+        }
+        return result;
+    }
+
+    /** Порт {@code SlotTakeOnly}: mayPlace = false, извлечение разрешено. */
+    private static class SlotTakeOnly extends Slot {
+        public SlotTakeOnly(Container container, int index, int x, int y) {
+            super(container, index, x, y);
         }
 
-        return result;
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            return false;
+        }
     }
 }

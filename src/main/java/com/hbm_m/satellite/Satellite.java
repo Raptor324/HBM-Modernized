@@ -145,7 +145,7 @@ public abstract class Satellite {
             if (this.requestableSlots[i] == null || this.requestableSlots[i].isEmpty()) continue;
             CompoundTag itemTag = new CompoundTag();
             itemTag.putByte("slot", (byte) i);
-            com.hbm_m.platform.PlatformHooks.saveItemStack(this.requestableSlots[i], itemTag, com.hbm_m.platform.PlatformHooks.bestEffortProvider());
+            com.hbm_m.platform.StackNbt.save(this.requestableSlots[i], itemTag, com.hbm_m.platform.PlatformHooks.bestEffortProvider());
             items.add(itemTag);
         }
         nbt.put("requestableSlots", items);
@@ -168,7 +168,7 @@ public abstract class Satellite {
         for (int i = 0; i < items.size(); i++) {
             CompoundTag itemTag = items.getCompound(i);
             int j = itemTag.getByte("slot") & 255;
-            if (j < this.requestableSlots.length) this.requestableSlots[j] = com.hbm_m.platform.PlatformHooks.itemStackOf(itemTag, com.hbm_m.platform.PlatformHooks.bestEffortProvider());
+            if (j < this.requestableSlots.length) this.requestableSlots[j] = com.hbm_m.platform.StackNbt.parse(itemTag, com.hbm_m.platform.PlatformHooks.bestEffortProvider());
         }
     }
 

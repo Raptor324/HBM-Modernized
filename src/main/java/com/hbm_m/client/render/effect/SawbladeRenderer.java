@@ -1,7 +1,8 @@
 package com.hbm_m.client.render.effect;
 
-import com.hbm_m.client.render.implementations.SawmillRenderer;
+import com.hbm_m.client.render.SimpleObjModel;
 import com.hbm_m.entity.projectile.CogEntity;
+import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
@@ -16,6 +17,9 @@ import net.minecraft.resources.ResourceLocation;
  * fliegt dreht es sich mit der Uhrzeit.
  */
 public class SawbladeRenderer extends EntityRenderer<CogEntity> {
+
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/sawmill.obj"));
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/sawmill.png");
 
     public SawbladeRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);
@@ -41,13 +45,13 @@ public class SawbladeRenderer extends EntityRenderer<CogEntity> {
         }
 
         ps.translate(0, -1.375, 0);
-        SawmillRenderer.MODEL.renderPart("Blade", ps, buffer.getBuffer(RenderType.entityCutout(getTextureLocation(cog))), light);
+        MODEL.renderPart("Blade", ps, buffer.getBuffer(RenderType.entityCutout(getTextureLocation(cog))), light);
         ps.popPose();
         super.render(cog, yaw, partialTick, ps, buffer, light);
     }
 
     @Override
     public ResourceLocation getTextureLocation(CogEntity cog) {
-        return SawmillRenderer.TEX;
+        return TEX;
     }
 }

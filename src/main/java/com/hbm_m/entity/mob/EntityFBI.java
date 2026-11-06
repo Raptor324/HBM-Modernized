@@ -50,6 +50,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code EntityFBI}: FBI-Agent der Razzia. Bricht Tueren und Bloecke im Weg, zerstoert Maschinen in Reichweite
@@ -231,6 +232,6 @@ public class EntityFBI extends Monster implements RangedAttackMob {
         List<ItemEntity> items = level().getEntitiesOfClass(ItemEntity.class, new AABB(getX(), getY(), getZ(), getX(), getY(), getZ()).inflate(range, range, range));
 
         for (ItemEntity item : items)
-            PlatformHooks.setSecondsOnFire(item, 10);
+            MobHooks.setSecondsOnFire(item, 10);
     }
 }

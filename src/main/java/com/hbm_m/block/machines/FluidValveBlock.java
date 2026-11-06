@@ -40,7 +40,7 @@ import net.minecraft.world.phys.BlockHitResult;
  * Redstone-ueber-Funk): Rohrstueck, das nur im Zustand AN (Metadaten 1) einen Netzknoten bildet. Die Fluessigkeit
  * setzt wie bei jedem Rohr ({@code FluidDuctBase}) der Fluessigkeits-Identifikator.
  */
-public class FluidValveBlock extends BaseEntityBlock implements ILookOverlay {
+public class FluidValveBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public enum Mode { VALVE, SWITCH, COUNTER }
 
@@ -76,6 +76,30 @@ public class FluidValveBlock extends BaseEntityBlock implements ILookOverlay {
         level.setBlock(pos, s.setValue(ON, on), 2);
         level.playSound(null, pos.getX(), pos.getY(), pos.getZ(), HbmSoundsNT.get("block.reactorStart"), SoundSource.BLOCKS, 1.0F, pitch);
         if (level.getBlockEntity(pos) instanceof FluidValveBlockEntity valve) valve.updateState();
+    }
+
+    /**
+     * Порт {@code FluidValve.printHook}: имя жидкости, заданной идентификатором, окрашенное
+     * в её цвет (та же схема, что у {@link FluidDuctBlock}).
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof FluidValveBlockEntity valve)) return;
+        Fluid fluid = valve.getFluidType();
+        if (fluid == null || fluid == Fluids.EMPTY) {
+            fluid = com.hbm_m.inventory.fluid.ModFluids.NONE.getSource();
+        }
+        int rgb = com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
+        String name = com.hbm_m.api.fluids.HbmFluidRegistry.getFluidName(fluid);
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(name)
+                .withStyle(net.minecraft.network.chat.Style.EMPTY
+                        .withColor(net.minecraft.network.chat.TextColor.fromRgb(rgb))));
+        // FFA delta: FluidCounterValve zeigt den Messwert im Look-Overlay
+        if (mode == Mode.COUNTER) text.add(net.minecraft.network.chat.Component.literal("Counter: " + valve.getCounter()));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Override
@@ -125,17 +149,6 @@ public class FluidValveBlock extends BaseEntityBlock implements ILookOverlay {
     /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
     *///?}
         if (mode == Mode.COUNTER) com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
-    }
-
-    @Override
-    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level level, BlockPos pos) {
-        if (!(level.getBlockEntity(pos) instanceof FluidValveBlockEntity valve)) return;
-        List<Component> text = new ArrayList<>();
-        Fluid fluid = valve.getFluidType();
-        if (fluid == null || fluid == Fluids.EMPTY) fluid = ModFluids.NONE.getSource();
-        text.add(Component.literal(HbmFluidRegistry.getFluidName(fluid)).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF))));
-        if (mode == Mode.COUNTER) text.add(Component.literal("Counter: " + valve.getCounter()));
-        ILookOverlay.printGeneric(g, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     //? if >1.20.1 {

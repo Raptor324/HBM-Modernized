@@ -3,8 +3,8 @@
     "fragment": "hbm_m:block_lit",
     "samplers": [
         { "name": "Sampler0" },
-        { "name": "Sampler1" },
-        { "name": "Sampler2" }
+        { "name": "Sampler2" },
+        { "name": "uJointSpecs" }
     ],
     "uniforms": [
         { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
@@ -12,6 +12,13 @@
         { "name": "FogStart", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "FogEnd", "type": "float", "count": 1, "values": [ 1.0 ] },
         { "name": "FogColor", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
-        { "name": "FadeAlpha", "type": "float", "count": 1, "values": [ 1.0 ] }
+        { "name": "FadeAlpha", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "uStaticFadeStart", "type": "float", "count": 1, "values": [ 1000000000.0 ] },
+        { "name": "uStaticFadeEnd", "type": "float", "count": 1, "values": [ 1000000001.0 ] },
+        { "name": "uAnimFadeStart", "type": "float", "count": 1, "values": [ 1000000000.0 ] },
+        { "name": "uAnimFadeEnd", "type": "float", "count": 1, "values": [ 1000000001.0 ] },
+        { "name": "uDitherFade", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "uAnimTicks", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "uPartialTick", "type": "float", "count": 1, "values": [ 0.0 ] }
     ]
 }

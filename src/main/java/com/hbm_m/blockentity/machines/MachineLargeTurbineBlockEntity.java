@@ -1,10 +1,11 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.api.fluids.IFluidConnectorMK2;
+import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
+import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.platform.RenderBounds;
 
 import java.util.Random;
-
-import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.FluidType;
@@ -13,6 +14,9 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.FT_Coolable;
 import com.hbm_m.inventory.fluid.trait.FT_Coolable.CoolingType;
 import com.hbm_m.inventory.menu.MachineLargeTurbineMenu;
+import com.hbm_m.interfaces.IEnergyModeHolder;
+import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.item.liquids.FluidIdentifierItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,16 +28,25 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.PlatformHooks;
 
-/**
- * 1:1 {@code TileEntityMachineLargeTurbine} (im Original "LEGACY"): entspannt Dampf nach {@link FT_Coolable}
- * (Turbine), hoechstens ein Fuenftel des Tankinhalts je Tick; der Energiepuffer verliert jeden Tick 5 %. Dampf rein
- * und Abdampf raus seitlich und vorn, Strom hinten. Der Rotor laeuft auf dem Client mit Beschleunigung hoch und aus.
- */
-public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+import net.minecraftforge.fluids.capability.IFluidHandler;
+
+//? if forge {
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
+//?}
+
+public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, IEnergyModeHolder {
 
     public static final int SLOT_FLUID_ID_IN    = 0;
     public static final int SLOT_FLUID_ID_OUT   = 1;
@@ -63,9 +76,19 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
     public float fanAcceleration = 0F;
     private final float audioDesync;
 
+    //? if forge {
+    private LazyOptional<IFluidHandler> steamInputHandler = LazyOptional.empty();
+    private LazyOptional<IFluidHandler> spentOutputHandler = LazyOptional.empty();
+    //?}
+
     public MachineLargeTurbineBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.LARGE_TURBINE_BE.get(), pos, state, INVENTORY_SIZE, maxPower, 0L, maxPower);
         this.audioDesync = new Random().nextFloat() * 0.05F;
+    }
+
+    @Override
+    public int getCurrentMode() {
+        return 2; // OUTPUT only, so the energy network treats this as a generator.
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineLargeTurbineBlockEntity be) {
@@ -85,7 +108,7 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
 
         Direction dir = dir();
         BlockPos back = worldPosition.relative(dir, -4);
-        this.tryProvide(world, back.getX(), back.getY(), back.getZ(), dir.getOpposite());
+        this.tryProvide(tanks[1], world, back, dir.getOpposite());
         for (DirPos con : getConPos()) this.trySubscribe(tanks[0].getTankType(), world, con.pos, con.dir);
         for (DirPos con : getConPos()) this.tryProvide(tanks[1], world, con.pos, con.dir);
 
@@ -125,8 +148,7 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
         slots = slotsArray();
         if (tanks[1].unloadTank(SLOT_OUTPUT_IO_IN, SLOT_OUTPUT_IO_OUT, slots)) applySlots(slots);
 
-        setChanged();
-        sendUpdateToClient();
+        syncIfStateChanged(this.energy, (operational ? 1L : 0L) | (((long) tanks[0].getFill()) << 1) | (((long) tanks[1].getFill()) << 32));
     }
 
     private void clientTick() {
@@ -190,6 +212,13 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
+    @Override
+    public boolean canConnect(Fluid fluid, Direction fromDir) {
+        if (fromDir == null || fluid == null || fluid == Fluids.EMPTY) return false;
+        if (VanillaFluidEquivalence.sameSubstance(fluid, ModFluids.SPENTSTEAM.getSource())) return true;
+        return FluidType.getTrait(fluid, FT_Coolable.class) != null;
+    }
+
     // ── Zugriff ────────────────────────────────────────────────────────────
 
     public FluidTank[] getTanks() { return tanks; }
@@ -213,9 +242,11 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        tanks[0].readFromNBT(tag, "water");
-        tanks[1].readFromNBT(tag, "steam");
-        operational = tag.getBoolean("operational");
+        if (tag.contains("water")) tanks[0].readFromNBT(tag, "water");
+        else if (tag.contains("input")) tanks[0].readFromNBT(tag, "input");
+        if (tag.contains("steam")) tanks[1].readFromNBT(tag, "steam");
+        else if (tag.contains("output")) tanks[1].readFromNBT(tag, "output");
+        operational = tag.contains("operational") ? tag.getBoolean("operational") : tag.getBoolean("active");
     }
 
     /** Original {@code deserialize}: {@code shouldTurn} ist das vom Server gemeldete {@code operational}. */
@@ -227,7 +258,18 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return false;
+        return switch (slot) {
+            case SLOT_FLUID_ID_IN   -> stack.getItem() instanceof FluidIdentifierItem;
+            case SLOT_FLUID_ID_OUT,
+                 SLOT_INPUT_IO_OUT,
+                 SLOT_OUTPUT_IO_OUT -> false;
+            case SLOT_INPUT_IO_IN,
+                 SLOT_OUTPUT_IO_IN  -> com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack);
+            case SLOT_BATTERY -> stack.getItem() instanceof ItemCreativeBattery
+                                  || isEnergyProviderItem(stack)
+                                  || isEnergyReceiverItem(stack);
+            default -> false;
+        };
     }
 
     // ── Menue ───────────────────────────────────────────────────────────────
@@ -246,6 +288,107 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineLargeTurbineMenu.create(id, inventory, this);
     }
+
+    // ── Forge fluid capabilities ─────────────────────────────────────────────
+
+    //? if forge {
+    @Override
+    protected void setupFluidCapability() {
+        steamInputHandler  = LazyOptional.of(() -> new SteamInputHandler(this));
+        spentOutputHandler = LazyOptional.of(() -> new SpentOutputHandler(this));
+    }
+
+    @Override
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == ForgeCapabilities.FLUID_HANDLER) {
+            if (side == Direction.UP) return spentOutputHandler.cast();
+            return steamInputHandler.cast();
+        }
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        steamInputHandler.invalidate();
+        spentOutputHandler.invalidate();
+    }
+
+    private static class SteamInputHandler implements IFluidHandler {
+        private final MachineLargeTurbineBlockEntity be;
+        SteamInputHandler(MachineLargeTurbineBlockEntity be) { this.be = be; }
+
+        @Override public int getTanks() { return 1; }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            return new net.minecraftforge.fluids.FluidStack(be.tanks[0].getTankType(), be.tanks[0].getFill());
+        }
+
+        @Override public int getTankCapacity(int tank) { return be.tanks[0].getMaxFill(); }
+
+        @Override
+        public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
+            return FluidType.getTrait(stack.getFluid(), FT_Coolable.class) != null;
+        }
+
+        @Override
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || FluidType.getTrait(resource.getFluid(), FT_Coolable.class) == null) return 0;
+            int space = be.tanks[0].getMaxFill() - be.tanks[0].getFill();
+            int toFill = Math.min(space, resource.getAmount());
+            if (toFill <= 0) return 0;
+            if (action.execute()) be.tanks[0].fillMb(resource.getFluid(), toFill);
+            return toFill;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+    }
+
+    private static class SpentOutputHandler implements IFluidHandler {
+        private final MachineLargeTurbineBlockEntity be;
+        SpentOutputHandler(MachineLargeTurbineBlockEntity be) { this.be = be; }
+
+        @Override public int getTanks() { return 1; }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            return new net.minecraftforge.fluids.FluidStack(be.tanks[1].getTankType(), be.tanks[1].getFill());
+        }
+
+        @Override public int getTankCapacity(int tank) { return be.tanks[1].getMaxFill(); }
+        @Override public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) { return false; }
+        @Override public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) { return 0; }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || be.tanks[1].getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            if (!VanillaFluidEquivalence.sameSubstance(resource.getFluid(), be.tanks[1].getTankType()))
+                return net.minecraftforge.fluids.FluidStack.EMPTY;
+            int toDrain = Math.min(resource.getAmount(), be.tanks[1].getFill());
+            net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(be.tanks[1].getTankType(), toDrain);
+            if (action.execute()) be.tanks[1].drainMb(toDrain);
+            return drained;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (maxDrain <= 0 || be.tanks[1].getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            int toDrain = Math.min(maxDrain, be.tanks[1].getFill());
+            net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(be.tanks[1].getTankType(), toDrain);
+            if (action.execute()) be.tanks[1].drainMb(toDrain);
+            return drained;
+        }
+    }
+    //?}
 
     /** Original: {@code INFINITE_EXTENT_AABB}. */
     //? if forge {

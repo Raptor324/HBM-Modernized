@@ -4,10 +4,12 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import com.hbm_m.client.render.ClientRenderFlags;
+import com.hbm_m.client.render.FrameViewState;
 import com.hbm_m.client.render.LightSampleCache;
 import com.hbm_m.client.render.MdiBatchCoordinator;
+import com.hbm_m.client.render.NucleusDebug;
+import com.hbm_m.client.render.PersistentUploadStaging;
 import com.hbm_m.client.render.RenderFrameLight;
-import com.hbm_m.client.render.implementations.DoorRenderer;
 import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineChemicalPlantRenderer;
@@ -23,35 +25,22 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.world.phys.Vec3;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 /**
  * Instanced / MDI batching for OBJ machine parts on vanilla Forge world render stages.
  *
  * <p>One client <em>render frame</em> = one {@code AFTER_BLOCK_ENTITIES} flush + present.
- * Do not defer draw to {@code Level#getGameTime()} — several render frames share one tick,
+ * Do not defer draw to {@code Level#getGameTime()} - several render frames share one tick,
  * buffers would fill to the per-part instance cap ({@link ClientRenderFlags#maxInstances()})
  * and machines would strobe (overflow warnings in log).
  *
- * <p>РЕГРЕССИЯ-СТОП: present here, not {@code AFTER_LEVEL} / {@code RenderTickEvent.END}
- * (dirty GL texture units → white lightmap).
+ * <p>REGRESSION STOP: present here, not {@code AFTER_LEVEL} / {@code RenderTickEvent.END}
+ * (dirty GL texture units lead to a white lightmap).
  */
 
-//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class InstancedRenderFrame {
 
     private InstancedRenderFrame() {}
@@ -62,17 +51,47 @@ public final class InstancedRenderFrame {
         if (projection == null) {
             return;
         }
+        if (cameraPos != null) {
+            FrameViewState.checkAnchorDrift(cameraPos);
+        }
         RenderFrameLight.onFrameStart();
         ClientRenderFlags.onFrameStart();
+        // Shadow phase has already run: an unflushed global shadow batch means the
+        // mixin did not fire -> automatic fallback to the immediate shadow path.
+        com.hbm_m.client.render.IrisShadowBatchCollector.onMainPassFrameStart();
+        // Per-frame counters for the F3 ([Nucleus]) section; the overlay draws later in this frame.
+        NucleusDebug.onFrameStart();
+        // Event-driven light: invalidate light caches + render-dirty machines in
+        // sections whose light changed (CrankShaft LightUpdatedVisualStorage pattern).
+        com.hbm_m.client.render.LightSampleCache.drainLightUpdates(net.minecraft.client.Minecraft.getInstance().level);
+        // Retained Instance Graph (Milestone 3): drain async handoffs and re-evaluate
+        // dirty light. No per-frame sparse GPU flush: the retained graph's global
+        // backing buffer was dead VRAM (never bound or drawn) - real rendering
+        // streams through spec.syncInstanceRecord -> InstancedStaticPartRenderer,
+        // so the sparse queue is an upload no-op.
+        com.hbm_m.client.render.retained.RetainedInstanceGraph rig = com.hbm_m.client.render.retained.RetainedInstanceGraph.get();
+        rig.drainHandoffQueue();
         // Detect Iris pipeline rebuilds before BER so cached ExtendedShader /
         // sampler bindings are not reused with destroyed GlResources.
         IrisExtendedShaderAccess.tickPass();
         MachineChemicalPlantRenderer.clearDeferredFluids();
         MachineCrystallizerRenderer.clearDeferredFluids();
-        if (ClientRenderFlags.enableOcclusionCulling()) {
+        // Arm high-performance CPU Frustum Culler with camera-relative planes and exact camera position:
+        if (cameraPos != null) {
+            CpuFrustumCuller.INSTANCE.updateCameraRelative(
+                    projection,
+                    FrameViewState.viewBasisRotation(),
+                    cameraPos
+            );
+        }
+
+        // Single source of truth: the effective occlusion mode. The legacy
+        // enableOcclusionCulling boolean is only a config-load mirror - gating the
+        // CPU helper on it left ray-marching enabled (mode=CPU) without frustum
+        // capture / cache pruning when the mirror drifted.
+        if (ModClothConfig.get().getEffectiveOcclusionCullingMode() == ModClothConfig.OcclusionCullingMode.CPU) {
             OcclusionCullingHelper.onFrameStart();
             OcclusionCullingHelper.captureBlockEntityPassFrustum(blockEntityFrustum);
-            OcclusionCullingHelper.captureCpuFrustumFallback(projection, cameraPos);
         } else {
             OcclusionCullingHelper.captureBlockEntityPassFrustum(null);
         }
@@ -89,41 +108,84 @@ public final class InstancedRenderFrame {
         }
 
         // Per-part VBO BERs open a persistent Iris batch even when instanced batching is off.
-        // Must close before outline / hand — not only inside the instanced-flush branch below.
+        // Must close before outline / hand - not only inside the instanced-flush branch below.
         IrisRenderBatch.closePersistentIfActive();
 
         try {
-            // Инстансинг включён всегда; forceVanillaImmediatePath проверяется внутри
-            // ClientRenderFlags.useInstancedBatching() самими BER. MDI включается
-            // автоматически (caps + отсутствие shader pack) — см. MdiBatchCoordinator.beginFrame.
+            // Instancing is always enabled; forceVanillaImmediatePath is checked inside
+            // ClientRenderFlags.useInstancedBatching() by the BERs themselves. MDI is enabled
+            // automatically (caps + no shader pack) - see MdiBatchCoordinator.beginFrame.
             RenderFrameLight.ensureLightTextureUpdated();
 
             MdiBatchCoordinator coord = MdiBatchCoordinator.beginFrame(projection);
             flushAllInstanced(projection);
+            // Global-batch Tier-1 flush: after the flat walk above (every main-pass
+            // bake flows MachineRenderRegistry.flushAll -> MachineSpec.flush ->
+            // MachinePartRenderer.flush -> InstancedStaticPartRenderer.flush ->
+            // IrisInstancedBatchRenderer.flushBatchIris -> NucleusGpuBaker.bakeMain),
+            // BEFORE the MDI endFrame / fading phase. ONE glMultiDrawElementsIndirect
+            // per frame through the pack's own gbuffers program. No-op when nothing
+            // baked.
+            com.hbm_m.client.render.NucleusGpuBaker.presentMainBatch(projection);
+            com.hbm_m.client.render.NucleusGpuBaker.tickFrameCleanup();
             if (coord != null) {
-                coord.endFrame(false);
+                coord.endFrame();
+            }
+
+            // Phase 2: fading instances of direct (non-MDI) paths (GPU-bones chain parts
+            // of assembler machines, DoorRenderer, MDI fallback) - strictly AFTER the
+            // MDI multi-draw, so translucent geometry does not write depth before
+            // opaque machines (depth-reject "hole in chunk" artifact).
+            flushAllInstancedFading(projection);
+
+            // All span uploads of this frame went to the staging ring - place a fence
+            // guarding reuse of the range by the next frame.
+            // Only fence the staging ring if something actually instantiated and used it;
+            // calling getOrCreate() here allocated 32 MB of dead VRAM when GpuSpanUploader
+            // uses glBufferSubData.
+            PersistentUploadStaging staging = PersistentUploadStaging.peekOrNull();
+            if (staging != null) {
+                staging.endFrame();
             }
 
             MdiRenderFrameGate.advanceAfterPresent();
 
-            // БЕЗ guard'а useInstancedBatching: при выключенном инстансинге
-            // не-instanced путь (SingleMeshVboRenderer.render / renderSingle)
-            // всё равно ходит через LightSampleCache. Без инкремента currentFrame
-            // условие lastFrame == currentFrame остаётся true навсегда — свет машин
-            // замерзает на первом сэмпле, а fast-path слот lastQueriedBE навсегда
-            // удерживает сильную ссылку на последний BlockEntity (пиннит весь Level
-            // после выхода из мира).
+            // NO useInstancedBatching guard here: even with instancing disabled the
+            // non-instanced path (SingleMeshVboRenderer.render / renderSingle) still goes
+            // through LightSampleCache. Without the currentFrame increment, the
+            // lastFrame == currentFrame condition stays true forever - machine light
+            // freezes at the first sample, and the fast-path lastQueriedBE slot keeps a
+            // strong reference to the last BlockEntity (pinning the whole Level after
+            // leaving a world).
             LightSampleCache.onFrameStart();
 
-            // После flush instanced (или при выключенном batching): depth содержит все части BER.
-            // Chemplant/Crystallizer — deferred: рисуется здесь, в AFTER_BLOCK_ENTITIES,
-            // после closePersistentIfActive и instanced-flush, внутри IrisPhaseGuard
-            // BLOCK_ENTITIES (см. MachineChemicalPlantRenderer.presentDeferredFluids).
+            // After the instanced flush (or with batching disabled): depth contains all BER parts.
+            // Chemplant/Crystallizer are deferred: drawn here, in AFTER_BLOCK_ENTITIES,
+            // after closePersistentIfActive and the instanced flush, inside the IrisPhaseGuard
+            // BLOCK_ENTITIES phase (see MachineChemicalPlantRenderer.presentDeferredFluids).
             MachineChemicalPlantRenderer.presentDeferredFluids();
             MachineCrystallizerRenderer.presentDeferredFluids();
         } catch (Throwable t) {
             MainRegistry.LOGGER.error("[HBM-M] instanced present failed", t);
+            com.hbm_m.client.render.HardwareTierManager.triggerRuntimeDegradation("InstancedRenderFrame.presentAfterBlockEntities", t);
+            // Safety after the exception: drop any bake-collect entries that never
+            // reached their flush (their pool ranges may be re-laid-out next frame),
+            // fence the staging copies already submitted
+            // (otherwise the next frame may overwrite an unfinished range) and
+            // invalidate the camera cache (serial did not grow - without the reset the
+            // next frame would reuse a stale view matrix).
+            PersistentUploadStaging staging = PersistentUploadStaging.peekOrNull();
+            if (staging != null) {
+                staging.endFrame();
+            }
+            FrameViewState.invalidate();
             MdiBatchCoordinator.discardActiveSessionNoDispatch();
+            // The comment above promised this and it never happened: entries
+            // collected before the throw survived into the next frame, whose flush
+            // then appended the same caches AGAIN - duplicate draw commands in one
+            // glMultiDrawElementsIndirect (z-fighting/flicker) and unbounded
+            // PENDING_MAIN growth when the throw repeated every frame.
+            com.hbm_m.client.render.NucleusGpuBaker.discardPendingBatches();
             MachineChemicalPlantRenderer.clearDeferredFluids();
             MachineCrystallizerRenderer.clearDeferredFluids();
         }
@@ -164,17 +226,22 @@ public final class InstancedRenderFrame {
     }
 
     private static void flushAllInstanced(Matrix4f projection) {
-        // Фабричные станки (machine/) — единый реестр вместо N хардкодов flushInstancedBatches.
+        // Factory machines (machine/) - single registry instead of N hardcoded flushInstancedBatches.
         com.hbm_m.client.render.machine.MachineRenderRegistry.flushAll(projection);
+    }
 
-        // Легаси-рендереры, ещё не мигрированные на фабрику.
-        DoorRenderer.flushInstancedBatches(projection);
+    /**
+     * Phase 2 of the flush: fading instances of direct (non-MDI) paths. Frame invariant:
+     * "opaque of all paths -> fading MDI (inside the multi-draw) -> fading of direct paths".
+     */
+    private static void flushAllInstancedFading(Matrix4f projection) {
+        com.hbm_m.client.render.machine.MachineRenderRegistry.flushAllFading(projection);
     }
 
     public static void clear() {
         MdiRenderFrameGate.reset();
         InstancedRenderStats.clear();
-        MdiBatchCoordinator.cancelScheduledDraw();
+        NucleusDebug.onFrameStart();
         MdiBatchCoordinator.discardActiveSessionNoDispatch();
         MdiBatchCoordinator.clearCachedRedraw();
     }

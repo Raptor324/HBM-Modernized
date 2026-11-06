@@ -13,6 +13,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IMultiblockPart;
+import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -59,14 +60,36 @@ public class ClientRenderHandler {
          *  Без Iris — кастомный шейдер nuke_cloud (попиксельная окклюзия против LOD).
          *  Под активным паком Iris — ExtendedShader ключа TEXTURED_COLOR: неизвестные
          *  Iris'у модовые ShaderInstance маскируются disableDepthColor и рисуются
-         *  «в никуда» (см. FarContentShaders). */
+         *  «в никуда» (см. ModShaders.resolveTexColor). */
         private static final RenderStateShard.ShaderStateShard NUKE_TEX_COLOR_SHADER =
                 new RenderStateShard.ShaderStateShard(
-                        com.hbm_m.client.render.shader.FarContentShaders::resolveTexColor);
+                        com.hbm_m.client.render.shader.ModShaders::resolveTexColor);
 
         private static final RenderStateShard.ShaderStateShard NUKE_ADD_TEX_COLOR_SHADER =
                 new RenderStateShard.ShaderStateShard(
-                        com.hbm_m.client.render.shader.FarContentShaders::resolveAddTexColor);
+                        com.hbm_m.client.render.shader.ModShaders::resolveAddTexColor);
+
+        // -- NT direct variants (see com.hbm_m.client.render.shader.NtDirectPass) --
+        // Under an active pack the NT render types bind OUR core shaders instead of
+        // the pack's ExtendedShaders: Photon declares blend.gbuffers_textured = off
+        // and treats everything routed into its translucent material as scene-lit
+        // and color-multiplied-by-alpha, which washed out the gas flame and broke
+        // the flash blending (drawn "as a square"). Our shaders apply their own
+        // JSON blend and vanilla fragment behavior at apply(); VertexBufferMixin
+        // undoes Iris's shader masking inside the NtDirectPass window; the pack
+        // pipeline FBO is pre-bound by NtDirectPass.begin(). Output goes to the
+        // DEFAULT buffer (the pack's colortex0), NOT TRANSLUCENT_TARGET - the pack
+        // composite screen-doors/fogs anything routed into its translucent buffer
+        // (the "fog in front of the mushroom" artifact).
+        private static final RenderStateShard.ShaderStateShard NT_CLOUDS_SHADER =
+                new RenderStateShard.ShaderStateShard(
+                        com.hbm_m.client.render.shader.ModShaders::getNukeCloudShader);
+        private static final RenderStateShard.ShaderStateShard NT_ADD_SHADER =
+                new RenderStateShard.ShaderStateShard(
+                        com.hbm_m.client.render.shader.ModShaders::getNukeAddShader);
+        private static final RenderStateShard.ShaderStateShard NT_LIT_SHADER =
+                new RenderStateShard.ShaderStateShard(
+                        com.hbm_m.client.render.shader.ModShaders::getNtColorTexLightmapShader);
 
         /** Флаг «идёт отрисовка дальнего контента в DH FBO» (мост).
          *  Раньше переключал nukeClouds() на DH-вариант рендертайпа; теперь
@@ -85,10 +108,48 @@ public class ClientRenderHandler {
          *  Исторически выбирал между NUKE_CLOUDS и удалённым DH-вариантом
          *  NUKE_CLOUDS_DH по флагу FAR_PASS_ACTIVE; с перехода на «ПЛАН Б»
          *  частицы в DH FBO не рисуются, поэтому флаг остаётся только для
-         *  диагностики и селектор всегда возвращает базовый тип. */
+         *  диагностики. Под активным паком возвращает прямой вариант
+         *  (наши шейдеры, см. NT direct-комментарий выше) - иначе пак гоняет
+         *  гриб через свой translucent-материал (туман/дизерингPhoton). */
         public static RenderType nukeClouds(ResourceLocation texture) {
+            if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()) {
+                return NUKE_CLOUDS_DIRECT.apply(texture);
+            }
             return NUKE_CLOUDS.apply(texture);
         }
+
+        /** Селектор вспышки: аналог {@link #nukeClouds} - под паком прямой
+         *  вариант с нашим nuke_add (аддитивный блендинг из JSON шейдера
+         *  переживает apply(), у пака blend.gbuffers_textured = off). */
+        public static RenderType nukeFlash(ResourceLocation texture) {
+            if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()) {
+                return NUKE_FLASH_DIRECT.apply(texture);
+            }
+            return NUKE_FLASH.apply(texture);
+        }
+
+        /** Селектор светящихся lightmap-частиц: под паком - наш клон
+         *  position_color_tex_lightmap (NT_LIT_DIRECT), иначе как раньше. */
+        public static RenderType towerParticles(ResourceLocation texture) {
+            return ntLit(TOWER_PARTICLES, texture);
+        }
+
+        public static RenderType ashesParticles(ResourceLocation texture) {
+            return ntLit(ASHES_PARTICLES, texture);
+        }
+
+        public static RenderType gasFireParticles(ResourceLocation texture) {
+            return ntLit(GAS_FIRE_PARTICLES, texture);
+        }
+
+        private static RenderType ntLit(Function<ResourceLocation, RenderType> vanilla,
+                                        ResourceLocation texture) {
+            if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()) {
+                return NT_LIT_DIRECT.apply(texture);
+            }
+            return vanilla.apply(texture);
+        }
+
 
         private CustomRenderTypes(String s, VertexFormat v, VertexFormat.Mode m, int i, boolean b, boolean b2, Runnable r, Runnable r2) { super(s, v, m, i, b, b2, r, r2); }
 
@@ -158,6 +219,22 @@ public class ClientRenderHandler {
                         .setTransparencyState(LIGHTNING_TRANSPARENCY)
                         .setDepthTestState(LEQUAL_DEPTH_TEST)
                         .setCullState(CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false));
+
+        /** Demon Core Lamp rays/core: additive POSITION_COLOR, cull off, НЕ пишет глубину.
+         *  Ванильный {@code RenderType.lightning()} использует COLOR_DEPTH_WRITE —
+         *  огромные квады лучей записывают глубину, и вода/частицы/сущности,
+         *  отрисовываемые позже, отсекаются depth-тестом (эффект «под кругом
+         *  не видно воду»). См. также {@link #RBMK_CHERENKOV}. */
+        public static final RenderType DEMON_LAMP_RAYS = create("hbm_m_demon_lamp_rays",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 2048, false, false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
                         .setLightmapState(NO_LIGHTMAP)
                         .setWriteMaskState(COLOR_WRITE)
                         .createCompositeState(false));
@@ -235,6 +312,19 @@ public class ClientRenderHandler {
                                 .setOutputState(TRANSLUCENT_TARGET)
                                 .createCompositeState(false)));
 
+        /** Прямой вариант под пак: наш nuke_cloud (свой JSON-блендинг, ванильный
+         *  фрагментник), вывод в DEФОЛТНЫЙ буфер - не в translucent-цель пака. */
+        public static final Function<ResourceLocation, RenderType> NUKE_CLOUDS_DIRECT = Util.memoize(
+                texture -> create("nuke_clouds_direct", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 239120, true, false,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(NT_CLOUDS_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(NO_LIGHTMAP)
+                                .setWriteMaskState(COLOR_WRITE)
+                                .createCompositeState(false)));
+
         /** Nuke flash (NukeTorex) - без depth test, чтобы рендерился поверх всего. */
         public static final Function<ResourceLocation, RenderType> NUKE_FLASH = Util.memoize(
                 texture -> create("nuke_flash", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 545234, true, false,
@@ -247,6 +337,19 @@ public class ClientRenderHandler {
                                 .setLightmapState(NO_LIGHTMAP)
                                 .setWriteMaskState(COLOR_WRITE)
                                 .setOutputState(TRANSLUCENT_TARGET)
+                                .createCompositeState(false)));
+
+        /** Прямой вариант вспышки под пак: nuke_add с аддитивом из JSON. */
+        public static final Function<ResourceLocation, RenderType> NUKE_FLASH_DIRECT = Util.memoize(
+                texture -> create("nuke_flash_direct", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 545234, true, false,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(NT_ADD_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, true))
+                                .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                                .setDepthTestState(NO_DEPTH_TEST)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(NO_LIGHTMAP)
+                                .setWriteMaskState(COLOR_WRITE)
                                 .createCompositeState(false)));
 
         /**
@@ -270,9 +373,61 @@ public class ClientRenderHandler {
                         .setOutputState(TRANSLUCENT_TARGET)
                         .createCompositeState(false));
 
+        /** Прямой вариант блика под пак: nuke_add + дефолтный вывод. */
+        private static final RenderType NUKE_GLOW_ADD_DIRECT = create("hbm_m_nuke_glow_add_direct", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 545234, true, false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(NT_ADD_SHADER)
+                        .setTextureState(new RenderStateShard.TextureStateShard(
+                                net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_PARTICLES, false, false))
+                        .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false));
+
         public static RenderType nukeGlowAdd() {
+            if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()) {
+                return NUKE_GLOW_ADD_DIRECT;
+            }
             return NUKE_GLOW_ADD;
         }
+
+        /** Прямой вариант lightmap-частиц под пак: наш клон
+         *  position_color_tex_lightmap + дефолтный вывод (зеркало TOWER/ASHES). */
+        private static final Function<ResourceLocation, RenderType> NT_LIT_DIRECT = Util.memoize(
+                texture -> create("hbm_m_nt_lit_direct", DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 1536, false, false,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(NT_LIT_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(LIGHTMAP)
+                                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                .setWriteMaskState(COLOR_WRITE)
+                                .createCompositeState(false)));
+
+        /** Пламя GasFire: зеркало приватного GasFireRenderTypes из ParticleGasFlame
+         *  (без явных lightmap/writeMask - дефолты билдера: LIGHTMAP,
+         *  COLOR_DEPTH_WRITE, LEQUAL) - общее с остальными NT-типами ветвление. */
+        public static final Function<ResourceLocation, RenderType> GAS_FIRE_PARTICLES = Util.memoize(
+                texture -> create("hbm_m_gas_fire", DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 1536, false, false,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(POSITION_COLOR_TEX_LIGHTMAP_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                                .setCullState(NO_CULL)
+                                .createCompositeState(false)));
+
+        /** Прямой вариант пламени под пак: nt_color_tex_lightmap. */
+        public static final Function<ResourceLocation, RenderType> GAS_FIRE_DIRECT = Util.memoize(
+                texture -> create("hbm_m_gas_fire_direct", DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 1536, false, false,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(NT_LIT_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                                .setCullState(NO_CULL)
+                                .createCompositeState(false)));
 
         /**
          * локаои 1.7.10-рендера костей/пепла (ParticleSkeleton/ParticleAshes).
@@ -403,10 +558,9 @@ public class ClientRenderHandler {
         public static final RenderType PYLON_OVERLAY = makePylonOverlay();
 
         private static RenderType makePylonOverlay() {
-            //? if < 1.21.1 {
-            return create("hbm_m_pylon_overlay", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 4096, false, false,
+            return create("hbm_m_pylon_overlay", com.hbm_m.platform.RenderHooks.positionColorTexFormat(), VertexFormat.Mode.QUADS, 4096, false, false,
                     RenderType.CompositeState.builder()
-                            .setShaderState(POSITION_COLOR_TEX_SHADER)
+                            .setShaderState(com.hbm_m.platform.RenderHooks.positionColorTexShader())
                             .setTextureState(new RenderStateShard.TextureStateShard(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS, false, false))
                             .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                             .setCullState(NO_CULL)
@@ -414,47 +568,20 @@ public class ClientRenderHandler {
                             .setDepthTestState(LEQUAL_DEPTH_TEST)
                             .setWriteMaskState(COLOR_WRITE)
                             .createCompositeState(false));
-            //?} else {
-            /*return create("hbm_m_pylon_overlay", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 4096, false, false,
-                    RenderType.CompositeState.builder()
-                            .setShaderState(RENDERTYPE_TEXT_BACKGROUND_SHADER)
-                            .setTextureState(new RenderStateShard.TextureStateShard(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS, false, false))
-                            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
-                            .setCullState(NO_CULL)
-                            .setLightmapState(NO_LIGHTMAP)
-                            .setDepthTestState(LEQUAL_DEPTH_TEST)
-                            .setWriteMaskState(COLOR_WRITE)
-                            .createCompositeState(false));
-            *///?}
         }
 
         /** Кабели ЛЭП (RedPylonWireRenderer): текстурированные квады wire.png, UV-тайлинг 1/8 блока. */
         public static final Function<ResourceLocation, RenderType> PYLON_WIRE = Util.memoize(
-                texture -> {
-                    //? if < 1.21.1 {
-                    return create("hbm_m_pylon_wire", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 262144, false, false,
-                            RenderType.CompositeState.builder()
-                                    .setShaderState(POSITION_COLOR_TEX_SHADER)
-                                    .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-                                    .setTransparencyState(NO_TRANSPARENCY)
-                                    .setCullState(NO_CULL)
-                                    .setLightmapState(NO_LIGHTMAP)
-                                    .setDepthTestState(LEQUAL_DEPTH_TEST)
-                                    .setWriteMaskState(COLOR_DEPTH_WRITE)
-                                    .createCompositeState(false));
-                    //?} else {
-                    /*return create("hbm_m_pylon_wire", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 262144, false, false,
-                            RenderType.CompositeState.builder()
-                                    .setShaderState(RENDERTYPE_TEXT_BACKGROUND_SHADER)
-                                    .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-                                    .setTransparencyState(NO_TRANSPARENCY)
-                                    .setCullState(NO_CULL)
-                                    .setLightmapState(NO_LIGHTMAP)
-                                    .setDepthTestState(LEQUAL_DEPTH_TEST)
-                                    .setWriteMaskState(COLOR_DEPTH_WRITE)
-                                    .createCompositeState(false));
-                    *///?}
-                });
+                texture -> create("hbm_m_pylon_wire", com.hbm_m.platform.RenderHooks.positionColorTexFormat(), VertexFormat.Mode.QUADS, 262144, false, false,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(com.hbm_m.platform.RenderHooks.positionColorTexShader())
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(NO_TRANSPARENCY)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(NO_LIGHTMAP)
+                                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                .setWriteMaskState(COLOR_DEPTH_WRITE)
+                                .createCompositeState(false)));
 
         /** Fleija cloud — untextured sphere, full-bright color (порт RenderCloudFleija). */
         public static final RenderType FLEIJA_SPHERE = create("fleija_sphere",                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 262144, false, false,
@@ -709,17 +836,7 @@ public class ClientRenderHandler {
     private static net.minecraft.client.renderer.MultiBufferSource.BufferSource highlightBufferSource() {
         net.minecraft.client.renderer.MultiBufferSource.BufferSource bs = highlightBufferSource;
         if (bs == null) {
-            // PlainBufferSource, а НЕ MultiBufferSource.immediate(): под
-            // ImmediatelyFast фабрика подменяет источник на BatchableBufferSource,
-            // падающий на пустых sortOnUpload-батчах — а HIGHLIGHT_BOX_FILL
-            // сортируемый (см. PlainBufferSource).
-            //? if < 1.21.1 {
-            bs = new com.hbm_m.client.render.PlainBufferSource(
-                    new com.mojang.blaze3d.vertex.BufferBuilder(CustomRenderTypes.HIGHLIGHT_BOX_FILL.bufferSize()));
-            //?} else {
-            /*bs = new com.hbm_m.client.render.PlainBufferSource(
-                    new com.mojang.blaze3d.vertex.ByteBufferBuilder(CustomRenderTypes.HIGHLIGHT_BOX_FILL.bufferSize()));
-            *///?}
+            bs = com.hbm_m.platform.RenderHooks.createPlainBufferSource(CustomRenderTypes.HIGHLIGHT_BOX_FILL.bufferSize());
             highlightBufferSource = bs;
         }
         return bs;
@@ -772,9 +889,8 @@ public class ClientRenderHandler {
                 boolean drawWest = !highlightedBlocks.containsKey(pos.west());
                 boolean drawEast = !highlightedBlocks.containsKey(pos.east());
 
-                AABB boundingBox = new AABB(pos).inflate(0.002D);
-                renderFilledBox(effectiveMatrix, fillConsumer, boundingBox, cameraPos, redColor, alpha,
-                        drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast, false);
+                renderHighlightBox(effectiveMatrix, fillConsumer, pos, cameraPos, redColor, alpha,
+                        drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast);
                 return false;
             });
         }
@@ -798,9 +914,8 @@ public class ClientRenderHandler {
                     boolean drawWest = !orphanedPhantomBlocks.containsKey(pos.west());
                     boolean drawEast = !orphanedPhantomBlocks.containsKey(pos.east());
 
-                    AABB boundingBox = new AABB(pos).inflate(0.002D);
-                    renderFilledBox(effectiveMatrix, fillConsumer, boundingBox, cameraPos, purpleColor, purpleAlpha,
-                            drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast, false);
+                    renderHighlightBox(effectiveMatrix, fillConsumer, pos, cameraPos, purpleColor, purpleAlpha,
+                            drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast);
                     return false;
                 });
             }
@@ -808,6 +923,24 @@ public class ClientRenderHandler {
 
         buf.endBatch(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
         poseStack.popPose();
+    }
+
+    /**
+     * One highlighted block. On a Sable ship the position is in the plot grid (~2e7): the box is
+     * drawn at the origin and the ship pose, composed in double, carries it to the camera - the
+     * float cast inside renderFilledBox would otherwise be off by whole blocks.
+     */
+    private static void renderHighlightBox(Matrix4f cameraRelative, VertexConsumer consumer, BlockPos pos, Vec3 cameraPos,
+                                           Color color, float alpha, boolean drawDown, boolean drawUp,
+                                           boolean drawNorth, boolean drawSouth, boolean drawWest, boolean drawEast) {
+        Matrix4f shipLocal = com.hbm_m.compat.sable.SableClientCompat.localToView(pos, cameraPos);
+        if (shipLocal != null) {
+            renderFilledBox(shipLocal, consumer, new AABB(BlockPos.ZERO).inflate(0.002D), cameraPos, color, alpha,
+                    drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast, false);
+        } else {
+            renderFilledBox(cameraRelative, consumer, new AABB(pos).inflate(0.002D), cameraPos, color, alpha,
+                    drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast, false);
+        }
     }
 
     // Рендерим только те грани куба, которые не примыкают к другим подсвеченным блокам.
@@ -829,82 +962,40 @@ public class ClientRenderHandler {
         }
         
         if (drawDown) {
-            //? if < 1.21.1 {
-            consumer.vertex(matrix, minX, minY, minZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, maxX, minY, minZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, minX, minY, maxZ).color(r, g, b, alpha).endVertex();
-            //?} else {
-            /*consumer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, alpha);
-            *///?}
+            RenderHooks.vertexColor(consumer, matrix, minX, minY, minZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, maxX, minY, minZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, maxX, minY, maxZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, minX, minY, maxZ, r, g, b, alpha);
         }
         if (drawUp) {
-            //? if < 1.21.1 {
-            consumer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, minX, maxY, minZ).color(r, g, b, alpha).endVertex();
-            //?} else {
-            /*consumer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, alpha);
-            *///?}
+            RenderHooks.vertexColor(consumer, matrix, minX, maxY, maxZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, maxX, maxY, maxZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, maxX, maxY, minZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, minX, maxY, minZ, r, g, b, alpha);
         }
         if (drawNorth) {
-            //? if < 1.21.1 {
-            consumer.vertex(matrix, minX, minY, minZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, minX, maxY, minZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, maxX, minY, minZ).color(r, g, b, alpha).endVertex();
-            //?} else {
-            /*consumer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, alpha);
-            *///?}
+            RenderHooks.vertexColor(consumer, matrix, minX, minY, minZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, minX, maxY, minZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, maxX, maxY, minZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, maxX, minY, minZ, r, g, b, alpha);
         }
         if (drawSouth) {
-            //? if < 1.21.1 {
-            consumer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, minX, minY, maxZ).color(r, g, b, alpha).endVertex();
-            //?} else {
-            /*consumer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, alpha);
-            *///?}
+            RenderHooks.vertexColor(consumer, matrix, maxX, minY, maxZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, maxX, maxY, maxZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, minX, maxY, maxZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, minX, minY, maxZ, r, g, b, alpha);
         }
         if (drawWest) {
-            //? if < 1.21.1 {
-            consumer.vertex(matrix, minX, minY, maxZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, minX, maxY, minZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, minX, minY, minZ).color(r, g, b, alpha).endVertex();
-            //?} else {
-            /*consumer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, alpha);
-            *///?}
+            RenderHooks.vertexColor(consumer, matrix, minX, minY, maxZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, minX, maxY, maxZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, minX, maxY, minZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, minX, minY, minZ, r, g, b, alpha);
         }
         if (drawEast) {
-            //? if < 1.21.1 {
-            consumer.vertex(matrix, maxX, minY, minZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, alpha).endVertex();
-            consumer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, alpha).endVertex();
-            //?} else {
-            /*consumer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, alpha);
-            consumer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, alpha);
-            *///?}
+            RenderHooks.vertexColor(consumer, matrix, maxX, minY, minZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, maxX, maxY, minZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, maxX, maxY, maxZ, r, g, b, alpha);
+            RenderHooks.vertexColor(consumer, matrix, maxX, minY, maxZ, r, g, b, alpha);
         }
     }
 

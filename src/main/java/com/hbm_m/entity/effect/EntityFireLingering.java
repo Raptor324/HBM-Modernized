@@ -20,6 +20,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code EntityFireLingering}: Flaechenbrand (Diesel, Balefire, Phosphor, Oxy, Schwarzfeuer) fuer eine feste Dauer.
@@ -115,7 +116,7 @@ public class EntityFireLingering extends Entity {
                         else HbmLivingProps.setBlackFire(livng, HbmLivingProps.getBlackFire(livng) + 5);
                     }
                 } else {
-                    PlatformHooks.setSecondsOnFire(e, 4);
+                    MobHooks.setSecondsOnFire(e, 4);
                 }
             }
         } else {

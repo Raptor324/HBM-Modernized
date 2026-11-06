@@ -11,9 +11,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * 1:1 {@code RenderSmallTower} / {@code RenderLargeTower}: das statische Turmmodell, auf den Kern zentriert,
- * ungedreht (das Original kennt keine Ausrichtung), Rueckseiten nicht verworfen ({@code GL_CULL_FACE} aus).
- * Sichtweite 256 wie {@code getMaxRenderDistanceSquared 65536}.
+ * 1:1 {@code RenderSmallTower} / {@code RenderLargeTower}: static tower model centered on core,
+ * unrotated (original has no orientation), backfaces rendered ({@code GL_CULL_FACE} disabled).
+ * Render distance 256 matching {@code getMaxRenderDistanceSquared 65536}.
  */
 public class CoolingTowerRenderer<T extends BlockEntity> implements com.hbm_m.client.render.HbmBerBounds<T> {
 

@@ -1,6 +1,5 @@
 package com.hbm_m.client.render.shader;
 
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
@@ -18,15 +17,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-@Environment(EnvType.CLIENT)*///?}
 public final class IrisRenderBatch implements AutoCloseable {
 
     private static final IrisRenderBatch INSTANCE = new IrisRenderBatch();
@@ -38,23 +31,23 @@ public final class IrisRenderBatch implements AutoCloseable {
     private boolean isOuter;
     /**
      * True for any "persistent" batch (shadow or main) that intentionally outlives
-     * its caller's try-with-resources scope. Each pass — shadow and main — opens
+     * its caller's try-with-resources scope. Each pass - shadow and main - opens
      * exactly ONE persistent batch per frame so every dispatched BlockEntity in
      * that pass shares a single {@code shader.apply()} (framebuffer bind + Iris
      * CustomUniforms push + every sampler bind). Closed lazily by:
      * <ul>
      *   <li>{@link #begin} when the next call's pass differs from the active
-     *       batch's {@link #isShadowPass} — i.e. the shadow→main transition
-     *       inside one frame closes shadow and opens main, the main→shadow
+     *       batch's {@link #isShadowPass} - i.e. the shadow->main transition
+     *       inside one frame closes shadow and opens main, the main->shadow
      *       transition between frames does the inverse, and</li>
      *   <li>{@link #closePersistentIfActive()} fired from
-     *       {@code RenderLevelStageEvent.AFTER_LEVEL} — the safety net for the
+     *       {@code RenderLevelStageEvent.AFTER_LEVEL} - the safety net for the
      *       last batch of the frame (whose pass-change close never gets
      *       triggered because no follow-up {@link #begin} happens this frame).</li>
      * </ul>
      * <p>
      * Without this, {@code IrisRenderBatch.begin()} pays {@code apply()/clear()}
-     * on EVERY BE: ~6.5% of frame time per BE under BSL × N visible machines × 2
+     * on EVERY BE: ~6.5% of frame time per BE under BSL x N visible machines x 2
      * passes. On a 400-machine farm under BSL that's the dominant cost. With this,
      * the cost is paid exactly twice per frame regardless of how many BEs render.
      * <p>
@@ -69,7 +62,7 @@ public final class IrisRenderBatch implements AutoCloseable {
      */
     private boolean isPersistent;
 
-    /** Pass identity of the active persistent batch — used to detect pass changes. */
+    /** Pass identity of the active persistent batch - used to detect pass changes. */
     private boolean isShadowPass;
 
     private ShaderInstance shader;
@@ -97,14 +90,6 @@ public final class IrisRenderBatch implements AutoCloseable {
     private long cachedPipelineGeneration = -1L;
     private IrisDerivedMatrixUniforms.Locations matrixLocs = IrisDerivedMatrixUniforms.Locations.NONE;
 
-    /** Reusable scratch buffers - avoid alloc per draw call. */
-    private final Matrix4f mvInverseTmp = new Matrix4f();
-    private final Matrix3f normalTmp = new Matrix3f();
-    private final float[] mvFloats = new float[16];
-    private final float[] mvInverseFloats = new float[16];
-    private final float[] normalMatFloats = new float[9];
-    /** Scratch for quantizing the 8-corner UV2 into a stable slot key. */
-    private final short[] cornerShort16 = new short[16];
     /** Scratch float view of the quantized corner UV2 (0..240). */
     private final float[] cornerFloat16 = new float[16];
 
@@ -144,21 +129,21 @@ public final class IrisRenderBatch implements AutoCloseable {
      * <p>
      * <b>Both passes batched.</b> Shadow AND main pass each open one persistent
      * batch per frame. The returned handle is always {@link #NOOP_NESTED} on
-     * success — the caller's try-with-resources is decorative; the underlying
+     * success - the caller's try-with-resources is decorative; the underlying
      * batch outlives it. Subsequent BEs in the same pass piggyback on the same
      * {@code shader.apply()} via {@link #active()}. The batch is torn down when:
      * <ul>
      *   <li>a later {@code begin(...)} call's pass differs from the active
-     *       batch's {@link #isShadowPass} — typical case is the shadow→main
+     *       batch's {@link #isShadowPass} - typical case is the shadow->main
      *       transition inside one frame, but it also handles the rare
      *       (debug-paused / single-stepped) main→shadow inverse, or</li>
-     *   <li>{@link #closePersistentIfActive()} fires at {@code AFTER_LEVEL} —
+     *   <li>{@link #closePersistentIfActive()} fires at {@code AFTER_LEVEL} -
      *       the safety net for the LAST batch of every frame (which has no
      *       follow-up begin() this frame to trigger pass-change close).</li>
      * </ul>
      * This collapses N × {@code apply()/clear()} pairs into exactly TWO per frame
      * total (one shadow, one main) regardless of machine count. On a 400-machine
-     * farm under BSL the savings dominate the per-pass CPU budget — Iris's
+     * farm under BSL the savings dominate the per-pass CPU budget - Iris's
      * {@code apply()} is the single most expensive call on this path because it
      * binds the framebuffer, pushes every CustomUniform, and re-binds every
      * sampler.
@@ -172,19 +157,17 @@ public final class IrisRenderBatch implements AutoCloseable {
      * @param projectionMatrix  projection matrix to upload once into the shader
      */
     public static IrisRenderBatch begin(boolean shadowPass, Matrix4f projectionMatrix) {
-        //? if forge || neoforge {
-        // Shadow pass открывает NON-PERSISTENT батч: он живёт строго внутри
-        // одного BER (try-with-resources вызывающего закрывает его до
-        // возврата из render()). Раньше существовал персистентный shadow-батч,
-        // переживавший границу проходов: его ленивый teardown (ExtendedShader
-        // .clear() ребиндит MAIN FBO + восстановление устаревшей фазы) падал
-        // на произвольные моменты основного прохода — на 1.20.1 это задваивало
-        // анимированную растительность. Полный запрет кастомного GL в shadow
-        // лечил это, но putBulkData на каждую часть стоил ~80% кадра (spark:
-        // цепочки BufferBuilder.vertex). Компромисс: apply()/clear() ОДИН раз
-        // теневого цикла BE (ровно как ванильные BE на endBatch), без
-        // накопления инстансов и без состояния через границу проходов.
-        // Fallback без батча — putBulkData через bufferSource.
+        // Shadow pass opens a NON-PERSISTENT batch: it lives strictly within one
+        // BER (the caller's try-with-resources closes it before render() returns).
+        // A persistent shadow batch that previously survived the pass boundary had
+        // its lazy teardown (ExtendedShader.clear() rebinds the MAIN FBO + restores
+        // a stale phase) land at arbitrary points of the main pass - on 1.20.1 that
+        // doubled animated vegetation. Banning all custom GL in shadow fixed that,
+        // but per-part putBulkData cost ~80% of a frame (spark: BufferBuilder.vertex
+        // chains). Compromise: apply()/clear() ONCE for the shadow BE loop (exactly
+        // like vanilla BEs on endBatch), with no instance accumulation and no state
+        // carried across the pass boundary. No-batch fallback is putBulkData via
+        // bufferSource.
 
         // Pass-change detection: if the active batch's pass differs from the
         // requested one, tear it down before opening the new one. Covers BOTH
@@ -211,13 +194,13 @@ public final class IrisRenderBatch implements AutoCloseable {
         if (shader == null) {
             return null;
         }
+        INSTANCE.isShadowPass = shadowPass;
         try {
             INSTANCE.setupOuter(shader, projectionMatrix);
-            // Main pass — персистентный (одно apply на кадр, закрытие в
-            // presentAfterBlockEntities / AFTER_LEVEL / при смене фазы).
-            // Shadow pass — только на время BER (закрывается close()).
+            // Main pass - persistent (one apply per frame, closed in
+            // presentAfterBlockEntities / AFTER_LEVEL / on phase change).
+            // Shadow pass - only for the duration of one BER (closed by close()).
             INSTANCE.isPersistent = !shadowPass;
-            INSTANCE.isShadowPass = shadowPass;
             ACTIVE = INSTANCE;
             return shadowPass ? INSTANCE : NOOP_NESTED;
         } catch (Throwable t) {
@@ -228,49 +211,7 @@ public final class IrisRenderBatch implements AutoCloseable {
             INSTANCE.isShadowPass = false;
             return null;
         }
-        //?}
 
-        //? if fabric {
-        /*// On Fabric there is no AFTER_BLOCK_ENTITIES event. The persistent
-        // batch model used on Forge keeps shader.apply() bound across all BEs
-        // in one pass — but the eventual shader.clear() fires at
-        // AFTER_TRANSLUCENT, by which point Iris has already moved past the
-        // block entity phase, swapped framebuffers, and unbound the program.
-        // The deferred clear() then corrupts Iris's pipeline state, causing
-        // "No active program" errors and models drawn to screen-space.
-        //
-        // Fix: use non-persistent per-BE batches on Fabric. Each BER's
-        // try-with-resources opens its own apply()/clear() pair that closes
-        // while Iris still has the correct phase active. Nested calls within
-        // one BER return NOOP_NESTED to avoid redundant apply()/clear().
-        // Cost: one apply()/clear() per BE instead of one per frame. This is
-        // acceptable because Fabric block entity dispatch is synchronous and
-        // Iris's apply() is fast when the framebuffer is already bound.
-
-        // Nested call — a parent BER already holds the active batch.
-        if (ACTIVE != null) {
-            return NOOP_NESTED;
-        }
-
-        ShaderInstance shader = IrisExtendedShaderAccess.getBlockShader(shadowPass);
-        if (shader == null) {
-            return null;
-        }
-        try {
-            INSTANCE.setupOuter(shader, projectionMatrix);
-            INSTANCE.isPersistent = false;
-            INSTANCE.isShadowPass = shadowPass;
-            ACTIVE = INSTANCE;
-            return INSTANCE;
-        } catch (Throwable t) {
-            MainRegistry.LOGGER.warn("IrisRenderBatch.begin ({}) failed ({}), falling back to per-call path",
-                    shadowPass ? "shadow" : "main", t.toString());
-            INSTANCE.tryRestoreState();
-            INSTANCE.isPersistent = false;
-            INSTANCE.isShadowPass = false;
-            return null;
-        }
-        *///?}
     }
 
     /**
@@ -343,7 +284,7 @@ public final class IrisRenderBatch implements AutoCloseable {
         com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
         com.mojang.blaze3d.systems.RenderSystem.bindTexture(blockAtlas.getId());
 
-        if (!IrisShaderApply.tryApply(shader)) {
+        if (!ShaderBindResync.tryApply(shader)) {
             throw new IllegalStateException("ExtendedShader.apply() failed (destroyed GlResource or invalid pipeline phase)");
         }
 
@@ -366,6 +307,11 @@ public final class IrisRenderBatch implements AutoCloseable {
         lastBoundVao = -1;
         lastBlockU = Integer.MIN_VALUE;
         lastSkyV = Integer.MIN_VALUE;
+
+        // Snapshot the gbuffer/shadow FB for the instanced Iris path: the pack
+        // apply above has bound the correct FB - this is the only guaranteed
+        // moment (see IrisInstancedShaders.captureLiveFramebuffer).
+        IrisInstancedShaders.captureLiveFramebuffer(isShadowPass);
     }
 
     /**
@@ -381,65 +327,27 @@ public final class IrisRenderBatch implements AutoCloseable {
      */
     private void bindCompanionVao(IrisCompanionMesh companion, int targetVao) {
         if (shader == null || !companion.isBuilt()) return;
-        GlStateManager._glBindVertexArray(targetVao);
-        companion.prepareForShader(shader.getId());
         if (lastBoundVao != targetVao) {
-            // VAO changed: its UV2 generic-attrib still holds whatever value was
-            // last written on THAT VAO (possibly stale from a previous BE/frame,
-            // or 0 on a freshly primed VAO). The constant-UV2 fast path below
-            // would otherwise trust the lastBlockU/lastSkyV carried over from the
-            // previous VAO and skip the glVertexAttribI2i re-issue when two BEs
-            // share the same packedLight — rendering the 2nd+ machine with a
-            // wrong/zero lightmap. restoreConstantLightmap() is a no-op in
-            // constant mode, so the cache must be invalidated here.
+            GlStateManager._glBindVertexArray(targetVao);
+            companion.prepareForShader(shader.getId());
+            lastBoundVao = targetVao;
             lastBlockU = Integer.MIN_VALUE;
             lastSkyV = Integer.MIN_VALUE;
         }
-        lastBoundVao = targetVao;
     }
 
     /**
-     * Detaches the companion VAO after a draw so intermediate vanilla/Iris work
-     * (outline, chunk uploads) does not inherit our vertex layout. Restores the
-     * VAO captured in {@link #setupOuter()} (including {@code 0} = unbind).
-     * Do not substitute an empty dummy VAO here — that leaves {@code drawElements}
-     * with no valid vertex state and can crash the GL driver.
+     * Unbinds the companion VAO before foreign (vanilla/bufferSource) drawing.
+     * Also really detaches for persistent batches: vanilla immediate work (text,
+     * bufferSource.endBatch of individual BERs) may interleave between our draws
+     * and must not inherit our vertex layout. The next drawCompanion rebinds the
+     * VAO via the lastBoundVao cache (invalidated here).
      */
-    private void releaseCompanionVaoAfterDraw(IrisCompanionMesh companion) {
-        if (companion != null) {
-            companion.restoreConstantLightmap();
-        }
-        GlVaoSafety.bindVertexArray(previousVao);
-        lastBoundVao = -1;
-    }
-
-    /**
-     * Runs a short vanilla draw (recipe icon, item BER overlay) while a persistent
-     * Iris batch is open. Re-applies the batch shader afterward so the next
-     * {@link #drawCompanion} still hits the correct program.
-     */
-    public static void runVanillaOverlay(Runnable draw) {
-        IrisRenderBatch batch = ACTIVE;
-        if (batch == null || !batch.isOuter || batch.shader == null) {
-            draw.run();
-            return;
-        }
-        batch.runVanillaOverlayInner(draw);
-    }
-
-    private void runVanillaOverlayInner(Runnable draw) {
-        int vaoBeforeOverlay = GlVaoSafety.currentBinding();
-        try {
-            GlVaoSafety.bindVertexArray(0);
-            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
-            draw.run();
-        } finally {
-            RenderSystem.setShader(() -> shader);
-            if (!IrisShaderApply.tryApply(shader)) {
-                MainRegistry.LOGGER.warn("IrisRenderBatch.runVanillaOverlay: ExtendedShader.apply() failed");
-            }
-            GlVaoSafety.bindVertexArray(vaoBeforeOverlay);
-            lastBoundVao = -1;
+    public static void detachCompanionVaoForVanillaWork() {
+        IrisRenderBatch b = ACTIVE;
+        if (b != null && b.isOuter) {
+            GlVaoSafety.bindVertexArray(b.previousVao);
+            b.lastBoundVao = -1;
         }
     }
 
@@ -450,7 +358,7 @@ public final class IrisRenderBatch implements AutoCloseable {
      * <p>
      * Must be called from within a {@link #begin}/{@link #close} pair on the OUTER
      * batch returned by {@link #active()}. The work happens eagerly under the
-     * caller's still-bound shader program — deferring to teardown is unsafe
+     * caller's still-bound shader program - deferring to teardown is unsafe
      * because Iris swaps framebuffer + program between shadow and main passes
      * before our lazy {@code actuallyClose()} runs.
      */
@@ -474,46 +382,12 @@ public final class IrisRenderBatch implements AutoCloseable {
             IrisExtendedShaderAccess.setCurrentRenderedBlockEntity(0);
         }
 
-        // Fill mvFloats once and reuse for all three uniform uploads below,
-        // avoiding repeated Matrix4f.get() calls.
-        modelView.get(mvFloats);
-
         bindCompanionVao(companion, targetVao);
+        // Cheap no-op in constant mode (early-return on a flag), but required
+        // on the per-vertex -> constant transition within the same batch (main pass).
         companion.restoreConstantLightmap();
 
-        float[] mvSrc = mvFloats;
-
-        // Direct GL upload of ModelViewMat - skips Mojang's Uniform.set/upload
-        // proxy stack (ShaderInstance.Uniform.upload → uploadAsMatrix →
-        // RenderSystem.glUniformMatrix4 → GlStateManager._glUniformMatrix4 →
-        // GL20C.nglUniformMatrix4fv). Profiler attributed ~8.67% of frame time
-        // to those layers in the analogous flushBatchIris loop; we get the same
-        // win here.
-        if (matrixLocs.modelView() >= 0) {
-            GL20.glUniformMatrix4fv(matrixLocs.modelView(), false, mvSrc);
-        }
-
-        // ExtendedShader.apply() derived inverse/normal from the IDENTITY matrix
-        // we passed in setupOuter; per-instance we re-derive from the real ModelView.
-        boolean haveInverse = false;
-        if (matrixLocs.modelViewInverse() >= 0) {
-            mvInverseTmp.set(mvSrc).invert();
-            mvInverseTmp.get(mvInverseFloats);
-            GL20.glUniformMatrix4fv(matrixLocs.modelViewInverse(), false, mvInverseFloats);
-            haveInverse = true;
-        }
-        if (matrixLocs.normalMat() >= 0) {
-            if (haveInverse) {
-                normalTmp.set(mvInverseTmp).transpose();
-            } else {
-                normalTmp.set(mvSrc[0], mvSrc[1], mvSrc[2],
-                              mvSrc[4], mvSrc[5], mvSrc[6],
-                              mvSrc[8], mvSrc[9], mvSrc[10])
-                         .invert().transpose();
-            }
-            normalTmp.get(normalMatFloats);
-            GL20.glUniformMatrix3fv(matrixLocs.normalMat(), false, normalMatFloats);
-        }
+        IrisDerivedMatrixUniforms.uploadDerivedMatrices(matrixLocs, modelView);
 
         int uv2Loc = companion.getUv2Location();
         if (uv2Loc != -1) {
@@ -526,16 +400,25 @@ public final class IrisRenderBatch implements AutoCloseable {
             // Plant. LightSampleCache already collapses cross-part lookups, so
             // the cache hit rate here is essentially 100% within one BE.
             if (blockU != lastBlockU || skyV != lastSkyV) {
-                companion.bindVaoIfNeeded();
                 GL30.glVertexAttribI2i(uv2Loc, blockU, skyV);
                 lastBlockU = blockU;
                 lastSkyV = skyV;
             }
         }
 
-        companion.bindVaoIfNeeded();
         GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
-        releaseCompanionVaoAfterDraw(companion);
+        // Per-draw VAO/lightmap state is NOT released in a persistent batch:
+        // releasing here forced the next drawCompanionWithPerVertexLight to fully
+        // rebuild its per-vertex lightmap binding (activate/restore ping-pong,
+        // ~10% of a frame). State is handed back in tryRestoreState() at close()
+        // and at explicit vanilla boundaries (detachCompanionVaoForVanillaWork).
+        // A non-persistent (shadow) batch lives strictly
+        // within one BER: no vanilla work can interleave between parts of one
+        // machine, and close()/tryRestoreState() restores the VAO. Per-part VAO
+        // ping-pong (release + rebind + the glGetInteger in
+        // ensureCompanionVaoBound) used to bust the lastBoundVao cache, so
+        // glVertexAttribI2i ran on EVERY part even though all parts of a machine
+        // share the same light.
     }
 
     /**
@@ -544,7 +427,7 @@ public final class IrisRenderBatch implements AutoCloseable {
      * from the 8 world-space corner samples in {@code cornerUV16}.
      * <p>
      * The companion mesh must support the per-vertex lightmap path
-     * ({@link IrisCompanionMesh#supportsPerVertexLightmap()}) — it bakes
+     * ({@link IrisCompanionMesh#supportsPerVertexLightmap()}) - it bakes
      * trilinear weights per vertex at build time so this call only pays the
      * per-instance combine + single {@code glBufferSubData}. When the mesh
      * doesn't support it (build failed, unusual vertex format) we fall back
@@ -553,7 +436,7 @@ public final class IrisRenderBatch implements AutoCloseable {
      * <p>
      * Why this is the right default under Iris: pack shaders read {@code vaUV2}
      * per vertex anyway, so supplying per-vertex values gives a smooth
-     * in-mesh gradient at zero GPU cost over the constant-UV2 path — we only
+     * in-mesh gradient at zero GPU cost over the constant-UV2 path - we only
      * trade a few dozen kilobytes of per-frame CPU arithmetic for proper
      * block-light response across multi-block machines. A torch on one side
      * of an Advanced Assembler now visibly brightens just that side.
@@ -563,7 +446,7 @@ public final class IrisRenderBatch implements AutoCloseable {
      *                             path); {@code iris_ModelViewMatInverse} /
      *                             {@code iris_NormalMat} are derived from it
      * @param cornerUV16           {@code [c0.blockU, c0.skyV, c1.blockU, ...
-     *                             c7.skyV]} — 16 floats, typically produced
+     *                             c7.skyV]} - 16 floats, typically produced
      *                             by {@code LightSampleCache.getOrSample8}
      * @param packedLightFallback  packed light to use when the per-vertex
      *                             path can't run (companion mesh doesn't
@@ -608,46 +491,18 @@ public final class IrisRenderBatch implements AutoCloseable {
             IrisExtendedShaderAccess.setCurrentRenderedBlockEntity(0);
         }
 
-        modelView.get(mvFloats);
-
         bindCompanionVao(companion, targetVao);
 
-        float[] mvSrc = mvFloats;
-
-        if (matrixLocs.modelView() >= 0) {
-            GL20.glUniformMatrix4fv(matrixLocs.modelView(), false, mvSrc);
-        }
-
-        boolean haveInverse = false;
-        if (matrixLocs.modelViewInverse() >= 0) {
-            mvInverseTmp.set(mvSrc).invert();
-            mvInverseTmp.get(mvInverseFloats);
-            GL20.glUniformMatrix4fv(matrixLocs.modelViewInverse(), false, mvInverseFloats);
-            haveInverse = true;
-        }
-        if (matrixLocs.normalMat() >= 0) {
-            if (haveInverse) {
-                normalTmp.set(mvInverseTmp).transpose();
-            } else {
-                normalTmp.set(mvSrc[0], mvSrc[1], mvSrc[2],
-                              mvSrc[4], mvSrc[5], mvSrc[6],
-                              mvSrc[8], mvSrc[9], mvSrc[10])
-                         .invert().transpose();
-            }
-            normalTmp.get(normalMatFloats);
-            GL20.glUniformMatrix3fv(matrixLocs.normalMat(), false, normalMatFloats);
-        }
+        IrisDerivedMatrixUniforms.uploadDerivedMatrices(matrixLocs, modelView);
 
         // Hash the quantized corner UV2 into a stable key and request a slot that can
         // be reused across draws when the light field repeats (dense farms).
-        long key = 1469598103934665603L;
+        long key = IrisCompanionMesh.LIGHT_KEY_FNV_OFFSET;
         for (int k = 0; k < 16; k++) {
             int q = Math.round(cornerUV16[k]);
             if (q < 0) q = 0; else if (q > 240) q = 240;
-            cornerShort16[k] = (short) q;
             cornerFloat16[k] = (float) q;
-            key ^= (q & 0xFFFF);
-            key *= 1099511628211L;
+            key = IrisCompanionMesh.lightKeyStep(key, q);
         }
         // Ensure we have a modest slot budget for the per-part path. Unlike the instanced
         // renderer, this path can't cheaply know the total instance count up front, so we
@@ -669,11 +524,12 @@ public final class IrisRenderBatch implements AutoCloseable {
         lastSkyV = Integer.MIN_VALUE;
 
         GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
-        releaseCompanionVaoAfterDraw(companion);
+        // No per-draw release (see the comment in drawCompanion): VAO and per-vertex
+        // lightmap stay active until close()/an explicit vanilla boundary.
     }
 
     /**
-     * Per-vertex path for tall meshes that use a 2×4×2 world probe lattice.
+     * Per-vertex path for tall meshes that use a 2x4x2 world probe lattice.
      * REMOVED together with the sliced-light system: the mesh per-vertex lightmap
      * is now 8-corner trilinear only (see {@link #drawCompanionWithPerVertexLight}).
      */
@@ -739,7 +595,12 @@ public final class IrisRenderBatch implements AutoCloseable {
      * we never reuse a batch built against a now-deleted shader program.
      */
     public static void invalidateCaches() {
-        if (ACTIVE != null && ACTIVE.isPersistent) {
+        // Close ANY active batch, not only persistent ones: a non-persistent
+        // (shadow) batch leaked by an exception would otherwise keep its shader
+        // and per-draw state alive into the next pass. closePersistentIfActive
+        // has the same unconditional guard for the same reason; actuallyClose
+        // clears ACTIVE itself.
+        if (ACTIVE != null) {
             ACTIVE.actuallyClose();
         }
         INSTANCE.cachedShaderProgram = -1;

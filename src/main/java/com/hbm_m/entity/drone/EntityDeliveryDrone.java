@@ -18,6 +18,7 @@ import net.minecraft.world.level.Level;
 import com.hbm_m.platform.PlatformHooks;
 
 import java.util.Arrays;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Port von {@code com.hbm.entity.item.EntityDeliveryDrone} (1.7.10 Original) - Pipeline A ("manuelle
@@ -54,17 +55,16 @@ public class EntityDeliveryDrone extends EntityDroneBase {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(EXPRESS, false);
-        this.entityData.define(CHUNK_LOADING, false);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
-        builder.define(EXPRESS, false);
-        builder.define(CHUNK_LOADING, false);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     *///?}
+        defs.define(EXPRESS, false);
+        defs.define(CHUNK_LOADING, false);
+    }
 
     public boolean isExpress() { return this.entityData.get(EXPRESS); }
     public boolean isChunkLoading() { return this.entityData.get(CHUNK_LOADING); }
@@ -127,9 +127,13 @@ public class EntityDeliveryDrone extends EntityDroneBase {
 
     @Override
     public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
-        if (!level().isClientSide && !this.isRemoved()) {
-            hitByEntity(source.getEntity());
+        // The original's EntityDroneBase.hitByEntity only reacts when the attacker is a player, and
+        // it never overrides attackEntityFrom - so fire, lava, mobs and explosions leave a drone
+        // alone. Reacting to every source made a drone dump its cargo to a stray arrow on the way.
+        if (level().isClientSide || this.isRemoved() || !(source.getEntity() instanceof Player)) {
+            return false;
         }
+        hitByEntity(source.getEntity());
         return true;
     }
 
@@ -162,7 +166,7 @@ public class EntityDeliveryDrone extends EntityDroneBase {
             CompoundTag entry = list.getCompound(i);
             int slot = entry.getInt("slot");
             if (slot >= 0 && slot < items.length) {
-                items[slot] = PlatformHooks.itemStackOf(entry, this.level().registryAccess());
+                items[slot] = StackNbt.parse(entry, this.level().registryAccess());
             }
         }
 
@@ -178,7 +182,7 @@ public class EntityDeliveryDrone extends EntityDroneBase {
         ListTag list = new ListTag();
         for (int i = 0; i < items.length; i++) {
             if (!items[i].isEmpty()) {
-                CompoundTag entry = PlatformHooks.safeItemSave(items[i], this.level().registryAccess());
+                CompoundTag entry = StackNbt.saveNew(items[i], this.level().registryAccess());
                 entry.putInt("slot", i);
                 list.add(entry);
             }

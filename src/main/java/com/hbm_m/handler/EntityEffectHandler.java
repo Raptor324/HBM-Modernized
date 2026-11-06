@@ -1,7 +1,5 @@
 package com.hbm_m.handler;
 
-import com.hbm_m.platform.EffectHooks;
-
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.handler.pollution.PollutionHandler;
 import com.hbm_m.inventory.fluid.trait.PollutionType;
@@ -79,6 +77,7 @@ public final class EntityEffectHandler {
         }
 
         handleRadiationFX(entity);
+
         EntityEffectHandlerExtra.handleDigamma(entity);
 
         handleLungDisease(entity);
@@ -86,16 +85,6 @@ public final class EntityEffectHandler {
 
         handlePollution(entity);
         EntityEffectHandlerExtra.handleTemperature(entity);
-
-        EntityEffectHandlerExtra.handleDashing(entity);
-        EntityEffectHandlerExtra.handlePlinking(entity);
-
-        if (entity instanceof Player player) EntityEffectHandlerExtra.handleFauxLadder(player);
-    }
-
-    /** Fuer den Vomit-Klang der Ansteckung (MKU) aus {@link EntityEffectHandlerExtra}. */
-    static void vomitSound(Level level, LivingEntity entity) {
-        playVomitSound(level, entity);
     }
 
     /**
@@ -133,7 +122,7 @@ public final class EntityEffectHandler {
 
             // Original: die beiden oberen Stufen setzen beide Staerke 2 - so uebernommen.
             if (metal > 25) {
-                entity.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.LEAD), 100, metal < 50 ? 0 : 2));
+                com.hbm_m.platform.EffectHooks.addEffect(entity, ModEffects.LEAD, 100, metal < 50 ? 0 : 2);
             }
         }
     }
@@ -500,6 +489,11 @@ public final class EntityEffectHandler {
         nbt.putInt("count", count);
         nbt.putInt("entity", entity.getId());
         IParticleCreator.sendPacket(level, entity.getX(), entity.getY(), entity.getZ(), 25, nbt);
+    }
+
+    /** Fuer den Vomit-Klang der Ansteckung (MKU) aus {@link EntityEffectHandlerExtra}. */
+    static void vomitSound(Level level, LivingEntity entity) {
+        playVomitSound(level, entity);
     }
 
     private static void playVomitSound(Level level, LivingEntity entity) {

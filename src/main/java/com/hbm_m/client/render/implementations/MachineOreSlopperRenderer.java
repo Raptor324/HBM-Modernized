@@ -1,106 +1,156 @@
 package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.block.machines.DummyableMachineBlock;
+import java.util.List;
+
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineOreSlopperBlockEntity;
-import com.hbm_m.blockentity.machines.MachineOreSlopperBlockEntity.SlopperAnimation;
-import com.hbm_m.client.render.SimpleObjModel;
-import com.hbm_m.item.ModItems;
+import com.hbm_m.client.render.MeshRenderCache;
+import com.hbm_m.client.render.machine.MachineRenderers;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.PlatformHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.LoaderHooks;
+import com.hbm_m.client.render.machine.MachineRenderApi;
 
 /**
- * 1:1 {@code RenderOreSlopper}: Sockel, Schlitten (faehrt 3 Bloecke), Hydraulik und Schaufel (senken sich bis 1,25),
- * waehrend des Hebens ein Erzbrocken in der Schaufel, gegenlaeufige Schreddermesser und der Luefter.
+ * Ore slopper on the {@link MachineRenderers} factory: Fan rotates around X,
+ * BladesLeft/BladesRight rotate around Z in counter-phase. Geometry comes from
+ * injected models (not multipart); no block transform is applied (the legacy
+ * renderer drew in raw block coordinates).
  */
-public class MachineOreSlopperRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineOreSlopperBlockEntity> {
+public final class MachineOreSlopperRenderer {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/ore_slopper.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/ore_slopper.png");
+    private static final ResourceLocation FAN_MODEL_ID = id("ore_slopper_fan");
+    private static final ResourceLocation BLADES_LEFT_MODEL_ID = id("ore_slopper_blades_left");
+    private static final ResourceLocation BLADES_RIGHT_MODEL_ID = id("ore_slopper_blades_right");
 
-    public MachineOreSlopperRenderer(BlockEntityRendererProvider.Context ctx) { }
+    // Pivots copied 1:1 from RenderOreSlopper (OBJ space) plus 0.5 to compensate the baked offset.
+    private static final double BLADES_LEFT_PIVOT_X = 0.375 + 0.5;
+    private static final double BLADES_RIGHT_PIVOT_X = -0.375 + 0.5;
+    private static final double BLADES_PIVOT_Y = 2.75;
+    private static final double FAN_PIVOT_Y = 1.875;
+    private static final double FAN_PIVOT_Z = -1.0 + 0.5;
 
-    @Override
-    public void render(MachineOreSlopperBlockEntity slopper, float interp, PoseStack ps, MultiBufferSource buf, int light, int overlay) {
-        ps.pushPose();
-        ps.translate(0.5D, 0D, 0.5D);
-
-        // Original: Metadaten 3/5/2/4 -> 180/270/0/90 Grad
-        switch (slopper.getBlockState().getValue(DummyableMachineBlock.FACING)) {
-            case SOUTH -> ps.mulPose(Axis.YP.rotationDegrees(180));
-            case EAST -> ps.mulPose(Axis.YP.rotationDegrees(270));
-            case WEST -> ps.mulPose(Axis.YP.rotationDegrees(90));
-            default -> { }
-        }
-
-        VertexConsumer vc = buf.getBuffer(RenderType.entityCutout(TEX));
-        MODEL.renderPart("Base", ps, vc, light);
-
-        ps.pushPose();
-
-        double slide = slopper.prevSlider + (slopper.slider - slopper.prevSlider) * interp;
-        ps.translate(0, 0, slide * -3);
-        MODEL.renderPart("Slider", ps, vc, light);
-
-        ps.pushPose();
-        double extend = (slopper.prevBucket + (slopper.bucket - slopper.prevBucket) * interp) * 1.5;
-        ps.translate(0, -Mth.clamp(extend - 0.25, 0, 1.25), 0);
-        MODEL.renderPart("Hydraulics", ps, vc, light);
-        ps.translate(0, -Mth.clamp(extend, 0, 1.25), 0);
-        MODEL.renderPart("Bucket", ps, vc, light);
-
-        if (slopper.animation == SlopperAnimation.LIFTING) {
-            ps.translate(0.0625D, 4.3125D, 2D);
-            ps.mulPose(Axis.YP.rotationDegrees(90));
-            ps.mulPose(Axis.XP.rotationDegrees(-90));
-            ps.scale(1.75F, 1.75F, 1.75F);
-            // Original: ItemStack(ModItems.bedrock_ore, 1, 0) = BedrockOreGrade.BASE, BedrockOreType.LIGHT
-            Minecraft.getInstance().getItemRenderer().renderStatic(new ItemStack(ModItems.BEDROCK_ORE_BASE_LIGHT.get()),
-                    ItemDisplayContext.FIXED, light, overlay, ps, buf, slopper.getLevel(), 0);
-            vc = buf.getBuffer(RenderType.entityCutout(TEX));
-        }
-
-        ps.popPose();
-        ps.popPose();
-
-        float blades = slopper.prevBlades + (slopper.blades - slopper.prevBlades) * interp;
-
-        ps.pushPose();
-        ps.translate(0.375, 2.75, 0);
-        ps.mulPose(Axis.ZP.rotationDegrees(blades));
-        ps.translate(-0.375, -2.75, 0);
-        MODEL.renderPart("BladesLeft", ps, vc, light);
-        ps.popPose();
-
-        ps.pushPose();
-        ps.translate(-0.375, 2.75, 0);
-        ps.mulPose(Axis.ZP.rotationDegrees(-blades));
-        ps.translate(0.375, -2.75, 0);
-        MODEL.renderPart("BladesRight", ps, vc, light);
-        ps.popPose();
-
-        float fan = slopper.prevFan + (slopper.fan - slopper.prevFan) * interp;
-
-        ps.pushPose();
-        ps.translate(0, 1.875, -1);
-        ps.mulPose(Axis.XP.rotationDegrees(-fan));
-        ps.translate(0, -1.875, 1);
-        MODEL.renderPart("Fan", ps, vc, light);
-        ps.popPose();
-
-        ps.popPose();
+    public static void register() {
+        MachineRenderers.machine("oreslopper", ModBlockEntities.ORE_SLOPPER_BE.get(),
+                MachineOreSlopperBlockEntity.class)
+            // Static body from multipart model; moving parts are dynamic parts
+            // from separate models (matching legacy renderer).
+            // Slider/Hydraulics/Bucket are animated (1:1 RenderOreSlopper),
+            // plus floating bedrock ore chunk in the bucket during LIFTING (hook).
+            .part("Base")
+            .part("Slider", MachineOreSlopperRenderer::animateSlider)
+            .part("Hydraulics", MachineOreSlopperRenderer::animateHydraulics)
+            .part("Bucket", MachineOreSlopperRenderer::animateBucket)
+            .dynamicPart("BladesLeft", MachineOreSlopperRenderer::animateBladesLeft,
+                    be -> partQuads("ore_slopper/blades_left", BLADES_LEFT_MODEL_ID), be -> "bl")
+            .dynamicPart("BladesRight", MachineOreSlopperRenderer::animateBladesRight,
+                    be -> partQuads("ore_slopper/blades_right", BLADES_RIGHT_MODEL_ID), be -> "br")
+            .dynamicPart("Fan", MachineOreSlopperRenderer::animateFan,
+                    be -> partQuads("ore_slopper/fan", FAN_MODEL_ID), be -> "fan")
+            .blockTransform((be, animator) -> { /* legacy renderer drew in raw block coordinates */ })
+            .hook(MachineOreSlopperRenderer::renderOreChunk)
+            .register();
     }
 
-    @Override public boolean shouldRenderOffScreen(MachineOreSlopperBlockEntity te) { return true; }
-    @Override public int getViewDistance() { return 256; }
+    private MachineOreSlopperRenderer() {}
+
+    private static ResourceLocation id(String path) {
+        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/" + path);
+    }
+
+    private static List<net.minecraft.client.renderer.block.model.BakedQuad> partQuads(
+            String cacheKey, ResourceLocation modelId) {
+        var modelManager = Minecraft.getInstance().getModelManager();
+        BakedModel model = LoaderHooks.getModel(modelManager, modelId);
+        if (model == null || model == modelManager.getMissingModel()) return List.of();
+        return MeshRenderCache.getOrCompilePartGeometry(cacheKey, model).solidQuads();
+    }
+
+    private static boolean animateBladesLeft(MachineOreSlopperBlockEntity be, float partialTick,
+                                             long gameTime, PoseStack pose) {
+        float blades = Mth.lerp(partialTick, be.prevBladesRotation, be.bladesRotation);
+        pose.translate(BLADES_LEFT_PIVOT_X, BLADES_PIVOT_Y, 0.5);
+        pose.mulPose(Axis.ZP.rotationDegrees(blades));
+        pose.translate(-BLADES_LEFT_PIVOT_X, -BLADES_PIVOT_Y, -0.5);
+        return true;
+    }
+
+    private static boolean animateBladesRight(MachineOreSlopperBlockEntity be, float partialTick,
+                                              long gameTime, PoseStack pose) {
+        float blades = Mth.lerp(partialTick, be.prevBladesRotation, be.bladesRotation);
+        pose.translate(BLADES_RIGHT_PIVOT_X, BLADES_PIVOT_Y, 0.5);
+        pose.mulPose(Axis.ZP.rotationDegrees(-blades));
+        pose.translate(-BLADES_RIGHT_PIVOT_X, -BLADES_PIVOT_Y, -0.5);
+        return true;
+    }
+
+    private static boolean animateFan(MachineOreSlopperBlockEntity be, float partialTick,
+                                      long gameTime, PoseStack pose) {
+        float fan = Mth.lerp(partialTick, be.prevFanRotation, be.fanRotation);
+        pose.translate(0.5, FAN_PIVOT_Y, FAN_PIVOT_Z);
+        pose.mulPose(Axis.XP.rotationDegrees(-fan));
+        pose.translate(-0.5, -FAN_PIVOT_Y, -FAN_PIVOT_Z);
+        return true;
+    }
+
+    // --- Bucket animations (1:1 RenderOreSlopper) and ore chunk ---
+
+    private static float sliderPos(MachineOreSlopperBlockEntity be, float pt) {
+        return Mth.lerp(pt, be.prevSlider, be.slider);
+    }
+
+    private static float bucketExt(MachineOreSlopperBlockEntity be, float pt) {
+        return (Mth.lerp(pt, be.prevBucket, be.bucket)) * 1.5F;
+    }
+
+    /** Slider moves forward by 3 blocks during the cycle. */
+    private static boolean animateSlider(MachineOreSlopperBlockEntity be, float pt, long gt, PoseStack pose) {
+        pose.translate(0, 0, sliderPos(be, pt) * -3);
+        return true;
+    }
+
+    /** Hydraulics lower down to 1.25 (with 0.25 gap), on top of slider transform. */
+    private static boolean animateHydraulics(MachineOreSlopperBlockEntity be, float pt, long gt, PoseStack pose) {
+        pose.translate(0, 0, sliderPos(be, pt) * -3);
+        pose.translate(0, -Mth.clamp(bucketExt(be, pt) - 0.25F, 0, 1.25F), 0);
+        return true;
+    }
+
+    /** Bucket lowers down to 1.25, on top of hydraulics transform. */
+    private static boolean animateBucket(MachineOreSlopperBlockEntity be, float pt, long gt, PoseStack pose) {
+        pose.translate(0, 0, sliderPos(be, pt) * -3);
+        pose.translate(0, -Mth.clamp(bucketExt(be, pt) - 0.25F, 0, 1.25F), 0);
+        pose.translate(0, -Mth.clamp(bucketExt(be, pt), 0, 1.25F), 0);
+        return true;
+    }
+
+    /**
+     * 1:1 RenderOreSlopper: during LIFTING, a piece of bedrock ore is suspended in the bucket
+     * (original: ItemStack(ModItems.bedrock_ore, 1, 0) = BASE/LIGHT).
+     */
+    private static void renderOreChunk(MachineOreSlopperBlockEntity be, float pt,
+                                       PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buf,
+                                       int packedLight, int packedOverlay, MachineRenderApi api) {
+        if (be.animation != MachineOreSlopperBlockEntity.SlopperAnimation.LIFTING) return;
+        pose.pushPose();
+        pose.translate(0, 0, sliderPos(be, pt) * -3);
+        pose.translate(0, -Mth.clamp(bucketExt(be, pt) - 0.25F, 0, 1.25F), 0);
+        pose.translate(0, -Mth.clamp(bucketExt(be, pt), 0, 1.25F), 0);
+        pose.translate(0.0625D, 4.3125D, 2D);
+        pose.mulPose(Axis.YP.rotationDegrees(90));
+        pose.mulPose(Axis.XP.rotationDegrees(-90));
+        pose.scale(1.75F, 1.75F, 1.75F);
+        Minecraft.getInstance().getItemRenderer().renderStatic(new net.minecraft.world.item.ItemStack(com.hbm_m.item.ModItems.BEDROCK_ORE_BASE_LIGHT.get()),
+                net.minecraft.world.item.ItemDisplayContext.FIXED, packedLight, packedOverlay, pose, buf, be.getLevel(), 0);
+        pose.popPose();
+    }
 }

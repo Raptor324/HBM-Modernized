@@ -18,20 +18,18 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import com.hbm_m.platform.StackNbt;
 /**
  * GUI for manual designator: adjust target X/Z with buttons.
  * Port from 1.7.10 GUIScreenDesignator. No container/menu.
  */
+@OnlyIn(Dist.CLIENT)
 public class DesignatorScreen extends Screen {
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
-            RefStrings.MODID, "textures/gui/gui_designator.png");
-    *///?} else {
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/gui_designator.png");
-    //?}
 
     private static final int WIDTH = 176;
     private static final int HEIGHT = 178;
@@ -58,8 +56,8 @@ public class DesignatorScreen extends Screen {
         shownX = 0;
         shownZ = 0;
         ItemStack stack = player.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND);
-        if (!stack.isEmpty() && stack.is(ModItems.DESIGNATOR_MANUAL.get()) && PlatformHooks.hasItemTag(stack)) {
-            var tag = PlatformHooks.getItemTag(stack);
+        if (!stack.isEmpty() && stack.is(ModItems.DESIGNATOR_MANUAL.get()) && StackNbt.has(stack)) {
+            var tag = StackNbt.read(stack);
             if (tag != null && tag.contains("xCoord")) {
                 shownX = tag.getInt("xCoord");
                 shownZ = tag.getInt("zCoord");

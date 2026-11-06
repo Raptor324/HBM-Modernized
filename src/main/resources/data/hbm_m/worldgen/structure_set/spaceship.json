@@ -1,14 +1,18 @@
 {
   "structures": [
     {
+      "structure": "hbm_m:bedrockoiltest",
+      "weight": 1
+    },
+    {
       "structure": "hbm_m:spaceship",
       "weight": 1
     }
   ],
   "placement": {
     "type": "minecraft:random_spread",
-    "spacing": 1,
-    "separation": 0,
-    "salt": 14357619
+    "salt": 9878543710,
+    "spacing": 36,
+    "separation": 9
   }
 }

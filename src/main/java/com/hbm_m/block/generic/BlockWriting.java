@@ -10,6 +10,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@link com.hbm.blocks.generic.BlockWriting} ({@code brick_concrete_marked}): Rechtsklick (nicht schleichend)
@@ -27,7 +28,7 @@ public class BlockWriting extends Block {
     //?} else {
     /*@Override
     protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+        return com.hbm_m.platform.BlockHooks.useItemResult(hbmUse(state, world, pos, player, hand, hit));
     }
     private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     *///?}

@@ -37,6 +37,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code FluidDuctGauge}: Vollblock-Rohr aus Stahl mit Rohrmarkierung, auf der Vorderseite (zum Spieler) ein
@@ -75,7 +76,7 @@ public class FluidDuctGaugeBlock extends BaseEntityBlock implements ILookOverlay
     //?} else {
     /*@Override
     protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, level, pos, player, hand, hit));
+        return com.hbm_m.platform.BlockHooks.useItemResult(hbmUse(state, level, pos, player, hand, hit));
     }
     private InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     *///?}

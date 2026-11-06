@@ -12,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineTurbineGasMenu extends AbstractContainerMenu {
 
@@ -54,7 +55,7 @@ public class MachineTurbineGasMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineTurbineGasBlockEntity turbineBlockEntity) {
             return turbineBlockEntity;
         }
-        throw new IllegalStateException("No MachineTurbineGasBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":turbinegas_menu");
+        throw new MenuBlockEntityMissingException("No MachineTurbineGasBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":turbinegas_menu");
     }
 
     public MachineTurbineGasBlockEntity getBlockEntity() {
@@ -63,8 +64,7 @@ public class MachineTurbineGasMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

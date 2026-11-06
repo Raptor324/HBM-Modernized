@@ -19,6 +19,7 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1 {@code ContainerMachineAssemblyFactory}: Menue-Slotindex == Tile-Slotindex (60), dann Spielerinventar bei (33,158).

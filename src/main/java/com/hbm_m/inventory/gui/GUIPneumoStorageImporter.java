@@ -9,11 +9,14 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1-Port von {@code GUIPneumoStorageImporter} (1.7.10), 176x185. Drei mal drei Plaetze in der
  * Mitte - was dort liegt, wandert von selbst ins Lagernetz.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIPneumoStorageImporter extends AbstractContainerScreen<PneumoStorageImporterMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
@@ -39,13 +42,5 @@ public class GUIPneumoStorageImporter extends AbstractContainerScreen<PneumoStor
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // Original drawGuiContainerForegroundLayer
-        String name = this.title.getString();
-        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 5, 4210752, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 91, 4210752, false);
     }
 }

@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'charge_thrower.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Oomph
 v 2.000000 1.000000 6.750000
 v 2.500000 0.866025 6.750000

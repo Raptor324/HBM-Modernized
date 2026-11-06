@@ -13,6 +13,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -45,21 +46,25 @@ public class ItemDrone extends Item implements ITooltipProvider {
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        Level level = context.getLevel();
         if (context.getClickedFace() != Direction.UP) return InteractionResult.PASS;
-        if (level.isClientSide) return InteractionResult.SUCCESS;
 
-        // stack.getItemDamage() < 4: nur die Patrol-Varianten spawnen eine Drohne
-        if (!request) {
-            BlockPos pos = context.getClickedPos();
-            EntityDeliveryDrone drone = EntityDeliveryDrone.create(level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, express, chunkLoading);
-            level.addFreshEntity(drone);
+        Level level = context.getLevel();
+        Player player = context.getPlayer();
+
+        if (!level.isClientSide) {
+            // stack.getItemDamage() < 4: nur die Patrol-Varianten spawnen eine Drohne
+            if (!request) {
+                BlockPos pos = context.getClickedPos();
+                EntityDeliveryDrone drone = EntityDeliveryDrone.create(level, pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5, express, chunkLoading);
+                level.addFreshEntity(drone);
+            }
+
+            if (player != null && !player.getAbilities().instabuild) {
+                context.getItemInHand().shrink(1);
+            }
         }
 
-        // Original: stack.stackSize-- ohne Kreativ-Pruefung
-        context.getItemInHand().shrink(1);
-
-        return InteractionResult.PASS;
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     @Override

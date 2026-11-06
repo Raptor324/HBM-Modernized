@@ -10,6 +10,7 @@ public class ArmorHEV extends ModPowerArmorItem {
 
     public ArmorHEV(ModArmorMaterials material, Type type, Properties properties, String texture,
                     long maxPower, long chargeRate, long consumption, long drain) {
-        super(material, type, properties, texture, maxPower, chargeRate, consumption, drain);
+        // Basis (machines) nimmt PowerArmorSpecs; FFA-Reihenfolge hier: maxPower, chargeRate, consumption, drain.
+        super(material, type, properties, new PowerArmorSpecs(maxPower, chargeRate, drain, consumption));
     }
 }

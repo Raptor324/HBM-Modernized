@@ -19,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.ItemHooks;
 
 /**
  * Gemeinsame Basis fuer die {@code ItemFood}-Abkoemmlinge des Originals ({@code ItemLemon},
@@ -173,8 +174,8 @@ public class HbmFoodItem extends Item {
         }
 
         FoodProperties food() {
-            FoodProperties.Builder b = PlatformHooks.foodBuilder(heal, saturation);
-            if (wolf) b = PlatformHooks.setMeat(b);
+            FoodProperties.Builder b = ItemHooks.foodBuilder(heal, saturation);
+            if (wolf) b = ItemHooks.setMeat(b);
             if (alwaysEdible) {
                 //? if < 1.21.1 {
                 b = b.alwaysEat();

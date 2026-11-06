@@ -3,10 +3,12 @@ package com.hbm_m.compat.jei;
 import com.hbm_m.recipe.AnvilRecipe.OverlayType;
 
 import net.minecraft.client.gui.GuiGraphics;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  * Draws NEI-style anvil overlay frames on top of {@link JeiAnvilTextures#GUI_NEI_ANVIL}.
  */
+@OnlyIn(Dist.CLIENT)
 public final class JeiAnvilRendering {
 
     private JeiAnvilRendering() {

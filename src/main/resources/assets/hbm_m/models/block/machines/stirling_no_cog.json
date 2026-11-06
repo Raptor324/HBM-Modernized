@@ -5,7 +5,7 @@
 	"loader": "forge:composite",
 	"children": {
 		"stirling_no_cog_model": {
-			"loader": "forge:obj",
+			"loader": "hbm_m:nmesh_obj",
 			"model": "hbm_m:models/block/machines/stirling.obj",
 			"flip_v": true,
 			"render_type": "minecraft:cutout",
@@ -19,9 +19,9 @@
 	},
 	"transform": {
 		"translation": [
-			0.5,
+			0.0,
 			0,
-			0.5
+			0.0
 		],
 		"rotation": [
 			0,

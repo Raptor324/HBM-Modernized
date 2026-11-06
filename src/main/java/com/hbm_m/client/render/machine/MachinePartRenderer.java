@@ -8,7 +8,9 @@ import org.joml.Matrix4f;
 import com.hbm_m.client.render.ClientRenderFlags;
 import com.hbm_m.client.render.InstancedGlCompat;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
+import com.hbm_m.client.render.IrisShadowBatchCollector;
 import com.hbm_m.client.render.MeshRenderCache;
+import com.hbm_m.client.render.PartEnqueueRequest;
 import com.hbm_m.client.render.PartGeometry;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.platform.RenderHooks;
@@ -17,71 +19,87 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * GPU-держатель ОДНОЙ части станка, создаваемый движком автоматически.
+ * GPU holder of a SINGLE machine part, created automatically by the engine.
  * <p>
- * Цепочка деградации per draw (в порядке попыток):
+ * Degradation chain per draw (in attempt order):
  * <ol>
- *   <li>MDI (внутри {@link InstancedStaticPartRenderer#flush} — автоматически,
- *       если GL43/ARB доступны и нет shader pack);</li>
+ *   <li>MDI (inside {@link InstancedStaticPartRenderer#flush} - automatic,
+ *       if GL43/ARB is available and there is no shader pack);</li>
  *   <li>hardware instancing ({@code glDrawElementsInstanced});</li>
  *   <li>per-BE VBO ({@link SingleMeshVboRenderer});</li>
- *   <li>ванильный immediate ({@code putBulkData}) — также принудительно через
+ *   <li>vanilla immediate ({@code putBulkData}) - also forced via
  *       {@code forceVanillaImmediatePath}.</li>
  * </ol>
- * Геометрия строится один раз лениво на render thread; до этого вызовы повторяются.
+ * Geometry is built once, lazily, on the render thread; before that calls are retried.
  */
 final class MachinePartRenderer {
 
     private final String key;
     private final String partName;
-    private final int boneId;
     private final boolean dynamic;
 
     @Nullable private InstancedStaticPartRenderer instanced;
     @Nullable private SingleMeshVboRenderer single;
     @Nullable private List<BakedQuad> quads;
     private boolean attempted;
+    private float minX, minY, minZ, maxX, maxY, maxZ;
+    private boolean boundsValid;
 
-    // scratch для bone-пути
-    private final Matrix4f tmpPartLocal = new Matrix4f();
-
-    MachinePartRenderer(String key, String partName, int boneId, boolean dynamic) {
-        this.key = key;
-        this.partName = partName;
-        this.boneId = boneId;
-        this.dynamic = dynamic;
+    enum ClipClassification {
+        INSIDE,
+        OUTSIDE,
+        STRADDLING
     }
 
-    /** true, если попытка построения уже была (успешной или нет) — квад resolver больше не вызывать. */
+    /**
+     * Render frame of the last use - the LRU stamp for the per-dynKey sweep
+     * (MachineSpec). Stamped at creation and on every
+     * cache find (full loop or roster assert), so a holder of a machine
+     * visible in ANY pass never goes stale.
+     */
+    private long lastUseFrame;
+
+    MachinePartRenderer(String key, String partName, boolean dynamic) {
+        this.key = key;
+        this.partName = partName;
+        this.dynamic = dynamic;
+        this.lastUseFrame = IrisShadowBatchCollector.renderFrame();
+    }
+
+    /** true if a build attempt has already been made (successful or not) - do not call the quad resolver again. */
     boolean isAttempted() { return attempted; }
 
+    long lastUseFrame() { return lastUseFrame; }
+
+    /** LRU stamp update on a cache hit (frame source: IrisShadowBatchCollector.renderFrame). */
+    void markUsed(long frame) { lastUseFrame = frame; }
+
     boolean matches(MachineSpec.PartDef<?> part, String cacheKey) {
-        return this.key.equals(cacheKey) && this.boneId == part.boneId();
+        return this.key.equals(cacheKey);
     }
 
     String key() { return key; }
 
-    /** Ленивое построение. Вне render thread — просто отложить попытку. */
+    /** Lazy build. Off the render thread - simply defer the attempt. */
     void ensureBuilt(@Nullable BakedModel partModel, @Nullable List<BakedQuad> dynamicQuadsIn) {
         if (attempted) return;
         if (!RenderSystem.isOnRenderThread()) return;
 
         this.attempted = true;
         SingleMeshVboRenderer.VboData data = null;
-        if (dynamic) {
+        if (dynamic || (dynamicQuadsIn != null && !dynamicQuadsIn.isEmpty())) {
             List<BakedQuad> resolved = (dynamicQuadsIn == null || dynamicQuadsIn.isEmpty())
                     ? List.of() : dynamicQuadsIn;
             this.quads = resolved;
             if (!resolved.isEmpty()) {
-                data = PartGeometry.buildVboDataFromQuads(resolved, partName, boneId);
+                debugDoorBakedBbox(resolved);
+                data = PartGeometry.buildVboDataFromQuads(resolved, partName);
                 this.single = MeshRenderCache.getOrCreateRendererFromQuadList(key, resolved);
             }
         } else {
@@ -90,14 +108,18 @@ final class MachinePartRenderer {
                     : PartGeometry.EMPTY;
             this.quads = geo.solidQuads();
             if (!geo.isEmpty()) {
-                data = geo.toVboData(partName, boneId);
+                data = geo.toVboData(partName);
                 this.single = MeshRenderCache.getOrCreateRenderer(key, partModel);
             }
         }
 
+        if (this.quads != null && !this.quads.isEmpty()) {
+            computeAabb(this.quads);
+        }
+
         if (data != null) {
             if (InstancedGlCompat.supportsInstancedAttributeDivisor()) {
-                InstancedStaticPartRenderer r = new InstancedStaticPartRenderer(data, quads, boneId > 0);
+                InstancedStaticPartRenderer r = new InstancedStaticPartRenderer(data, quads);
                 r.setMdiTraceTag(key);
                 this.instanced = r;
             } else {
@@ -106,55 +128,322 @@ final class MachinePartRenderer {
         }
     }
 
+    private void computeAabb(List<BakedQuad> quadsList) {
+        float lx0 = Float.MAX_VALUE, ly0 = Float.MAX_VALUE, lz0 = Float.MAX_VALUE;
+        float lx1 = -Float.MAX_VALUE, ly1 = -Float.MAX_VALUE, lz1 = -Float.MAX_VALUE;
+        boolean found = false;
+        for (BakedQuad q : quadsList) {
+            int[] v = q.getVertices();
+            if (v.length < 12) continue;
+            int stride = v.length / 4;
+            for (int i = 0; i < 4; i++) {
+                float x = Float.intBitsToFloat(v[i * stride]);
+                float y = Float.intBitsToFloat(v[i * stride + 1]);
+                float z = Float.intBitsToFloat(v[i * stride + 2]);
+                lx0 = Math.min(lx0, x); lx1 = Math.max(lx1, x);
+                ly0 = Math.min(ly0, y); ly1 = Math.max(ly1, y);
+                lz0 = Math.min(lz0, z); lz1 = Math.max(lz1, z);
+                found = true;
+            }
+        }
+        if (found) {
+            this.minX = lx0; this.minY = ly0; this.minZ = lz0;
+            this.maxX = lx1; this.maxY = ly1; this.maxZ = lz1;
+            this.boundsValid = true;
+        }
+    }
+
+    ClipClassification classifyAabb(float[][] clipPlanes) {
+        if (!boundsValid || clipPlanes == null || clipPlanes.length == 0) {
+            return ClipClassification.INSIDE;
+        }
+        boolean anyStraddling = false;
+        for (float[] plane : clipPlanes) {
+            float a = plane[0], b = plane[1], c = plane[2], d = plane[3];
+            float dMin = a * (a >= 0f ? minX : maxX)
+                       + b * (b >= 0f ? minY : maxY)
+                       + c * (c >= 0f ? minZ : maxZ) + d;
+            float dMax = a * (a >= 0f ? maxX : minX)
+                       + b * (b >= 0f ? maxY : minY)
+                       + c * (c >= 0f ? maxZ : minZ) + d;
+            if (dMax <= 1e-4f) {
+                return ClipClassification.OUTSIDE;
+            }
+            if (dMin < -1e-4f) {
+                anyStraddling = true;
+            }
+        }
+        return anyStraddling ? ClipClassification.STRADDLING : ClipClassification.INSIDE;
+    }
+
     boolean hasGeometry() {
         return instanced != null || single != null || (quads != null && !quads.isEmpty());
+    }
+
+    /**
+     * Diagnostic gate for door clipping plane assumptions: actual baked quad bbox per part.
+     * All door parts pass through this branch as dynamicPart. Enabled via {@code -Dhbm.debugDoorBakedBbox=true}.
+     * Expected no-wrap ranges: airlock frame z[-1.5, 2.5], doorLeft z[0.375, 2.438];
+     * large_vehicle frame z[-3.5, 3.5]; sliding_blast frame z[-3.5, 3.5]; fire door y[0, 3].
+     */
+    private void debugDoorBakedBbox(List<BakedQuad> quads) {
+        if (!Boolean.getBoolean("hbm.debugDoorBakedBbox")) return;
+        float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, minZ = Float.MAX_VALUE;
+        float maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE, maxZ = -Float.MAX_VALUE;
+        for (BakedQuad q : quads) {
+            int[] v = q.getVertices();
+            int stride = v.length / 4;
+            for (int i = 0; i < 4; i++) {
+                float x = Float.intBitsToFloat(v[i * stride]);
+                float y = Float.intBitsToFloat(v[i * stride + 1]);
+                float z = Float.intBitsToFloat(v[i * stride + 2]);
+                minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+                minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+                minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+            }
+        }
+        com.hbm_m.main.MainRegistry.LOGGER.info(
+                "[HBM-M] DoorBakedBbox part='{}': x[{}, {}] y[{}, {}] z[{}, {}] quads={}",
+                partName, minX, maxX, minY, maxY, minZ, maxZ, quads.size());
     }
 
     InstancedStaticPartRenderer instanced() { return instanced; }
 
     /**
-     * Добавляет текущий кадр-инстанс или рисует fallback-путём.
-     *
-     * @param poseStack  стек с блочным трансформом + аниматором части (composed pose)
-     * @param blockPose  матрица блочного трансформа БЕЗ аниматора (снимок до push аниматора)
-     * @param basePoseStack вспомогательный стек, last().pose() которого движок выставляет в blockPose
-     * @param sharedLight общий 8-corner световой сэмпл машины (или null)
+     * Adds the current frame instance or draws via a fallback path. All
+     * per-instance parameters (pose, light, uvRect, tint, falloff, anim params,
+     * fade mode, static-pose flag, clip planes) travel inside {@code rq} - the BER fills it
+     * per part; there is no global pending state to clear on the degradation
+     * exits below (an unread request simply goes stale, the next
+     * {@link PartEnqueueRequest#obtain()} resets it).
      */
-    void enqueue(PoseStack poseStack, Matrix4f blockPose, PoseStack basePoseStack,
-                 int packedLight, BlockPos blockPos, BlockEntity blockEntity,
-                 @Nullable MultiBufferSource bufferSource, @Nullable float[] sharedLight) {
-        if (ClientRenderFlags.forceVanillaImmediate()) {
-            renderQuadsFallback(poseStack, packedLight, blockEntity, bufferSource);
+    void enqueue(PartEnqueueRequest rq) {
+        PoseStack poseStack = rq.poseStack;
+        int packedLight = rq.packedLight;
+        BlockEntity blockEntity = rq.blockEntity;
+        MultiBufferSource bufferSource = rq.bufferSource;
+        float[] uvRect = rq.uvRect;
+        float[] tint = rq.tint;
+        float[][] clipPlanes = rq.clipPlanes;
+
+        // O(1) AABB classifier for door planes:
+        // INSIDE -> part is fully inside (e.g. closed door), no clipping needed,
+        //           clear clipPlanes and dispatch to standard GPU MDI instancing!
+        // OUTSIDE -> part has fully recessed into the wall pocket, free instancer slot and return.
+        // STRADDLING -> part currently intersects the pocket plane, clip via zero-allocation streamer.
+        if (clipPlanes != null && clipPlanes.length > 0 && boundsValid) {
+            ClipClassification classification = classifyAabb(clipPlanes);
+            if (classification == ClipClassification.OUTSIDE) {
+                if (instanced != null && rq.blockPos != null && instanced.hasSlot(rq.blockPos.asLong())) {
+                    instanced.freeSlot(rq.blockPos.asLong());
+                }
+                return;
+            } else if (classification == ClipClassification.INSIDE) {
+                rq.clipPlanes = null;
+                clipPlanes = null;
+            } else {
+                // STRADDLING
+                if (instanced != null && rq.blockPos != null && instanced.hasSlot(rq.blockPos.asLong())) {
+                    instanced.freeSlot(rq.blockPos.asLong());
+                }
+                noteShadowFallback("clipPlanes(straddling)");
+                renderClippedQuads(poseStack, packedLight, bufferSource, uvRect, tint, clipPlanes);
+                return;
+            }
+        } else if (clipPlanes != null && clipPlanes.length > 0) {
+            if (instanced != null && rq.blockPos != null && instanced.hasSlot(rq.blockPos.asLong())) {
+                instanced.freeSlot(rq.blockPos.asLong());
+            }
+            noteShadowFallback("clipPlanes(fallback)");
+            renderClippedQuads(poseStack, packedLight, bufferSource, uvRect, tint, clipPlanes);
             return;
         }
-        if (instanced != null && instanced.isInitialized() && ClientRenderFlags.useInstancedBatching()) {
-            if (boneId > 0) {
-                // partLocal = block⁻¹ × composed (адд-метод композитит base×part сам)
-                tmpPartLocal.set(blockPose).invert().mul(poseStack.last().pose());
-                basePoseStack.last().pose().set(blockPose);
-                instanced.addInstanceGpuBones(basePoseStack, tmpPartLocal, packedLight, blockPos,
-                        blockEntity, bufferSource, sharedLight);
+
+        // WIAJ demo screen: render through the per-BE VBO tier with the screen's own
+        // PoseStack/bufferSource - the instanced/MDI paths are tied to the level frame
+        // and would register fake instances in the level's instanced graph. Parts with
+        // uvRect/tint (block_lit_simple cannot remap them) degrade to immediate.
+        if (ClientRenderFlags.guiRenderFrame()) {
+            if (uvRect == null && isWhiteTint(tint) && single != null) {
+                single.render(poseStack, packedLight, rq.blockPos, blockEntity, bufferSource);
             } else {
-                instanced.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource, sharedLight);
+                noteShadowFallback("guiRenderFrame");
+                renderQuadsFallback(poseStack, packedLight, blockEntity, bufferSource, uvRect, tint);
             }
             return;
         }
-        if (single != null) {
-            single.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
+
+        // Diagram capture renders BEs into a bound offscreen FBO with a fake ortho projection;
+        // deferred paths (instancing/single-VBO) flush only in the main pass, so machines would
+        // vanish from the sketch - draw immediately into the shared buffer source instead.
+        if (ClientRenderFlags.forceVanillaImmediate()
+                || com.hbm_m.compat.simulated.DiagramRenderCompat.isRenderingDiagram()) {
+            noteShadowFallback("forceVanillaImmediate/diagram");
+            renderQuadsFallback(poseStack, packedLight, blockEntity, bufferSource, uvRect, tint);
             return;
         }
-        renderQuadsFallback(poseStack, packedLight, blockEntity, bufferSource);
+        if (instanced != null && instanced.isInitialized() && ClientRenderFlags.useInstancedBatching()) {
+            instanced.addInstance(rq);
+            return;
+        }
+        if (uvRect == null && isWhiteTint(tint) && single != null) {
+            single.render(poseStack, packedLight, rq.blockPos, blockEntity, bufferSource);
+            return;
+        }
+        // uvRect != null: the single-VBO path keeps normalized UVs, and block_lit_simple
+        // cannot remap them. Non-white tint: block_lit does not read tint. Both cases -
+        // degrade to immediate (UV remap into the atlas + r/g/b/a into the vertices).
+        // Falloff is not applied on the immediate path (no per-vertex gradient
+        // available) - the tint is flat.
+        noteShadowFallback(shadowFallbackReason(null, uvRect, tint));
+        renderQuadsFallback(poseStack, packedLight, blockEntity, bufferSource, uvRect, tint);
     }
 
-    /** Ванильный immediate: универсальный последний уровень и ручной резерв из конфига. */
-    void renderQuadsFallback(PoseStack poseStack, int packedLight, BlockEntity blockEntity,
-                             @Nullable MultiBufferSource bufferSource) {
+    /**
+     * Zero-allocation streaming rendering for clipped quads (Sutherland-Hodgman).
+     */
+    private void renderClippedQuads(PoseStack poseStack, int packedLight,
+                                    @Nullable MultiBufferSource bufferSource,
+                                    @Nullable float[] uvRect, @Nullable float[] tint,
+                                    float[][] clipPlanes) {
         if (quads == null || quads.isEmpty() || bufferSource == null) return;
+        if (com.hbm_m.config.ModClothConfig.get().doorClipDebug) {
+            debugDumpQuads(uvRect);
+        }
+        com.hbm_m.client.render.NucleusDebug.recordDraw(1, 1, "Immediate (clipped)");
         float fade = SingleMeshVboRenderer.getFadeAlpha();
-        VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
+        float tr = 1f, tg = 1f, tb = 1f;
+        if (tint != null && tint.length >= 4) {
+            tr = tint[0]; tg = tint[1]; tb = tint[2];
+        }
+        float alpha = fade;
+
+        VertexConsumer consumer = bufferSource.getBuffer(
+                com.hbm_m.client.model.ModelHelper.clipRenderType(alpha));
+        DoorPartClipper.renderClipped(quads, clipPlanes, uvRect, consumer, poseStack.last(),
+                tr, tg, tb, alpha, packedLight);
+    }
+
+    /**
+     * Shadow-pass fallback accounting: every part degrading to putBulkData in the
+     * shadow pass defeats the global shadow batch (per-quad CPU cost through Iris's
+     * extended vertex format), so the first reason per renderer is logged and every
+     * occurrence is counted for the F3 shadow line. Main pass is not counted.
+     */
+    private void noteShadowFallback(String reason) {
+        if (!com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            return;
+        }
+        com.hbm_m.client.render.NucleusDebug.recordShadowFallback();
+        if (shadowFallbackLogged) {
+            return;
+        }
+        shadowFallbackLogged = true;
+        com.hbm_m.main.MainRegistry.LOGGER.warn(
+                "[HBM-M] Shadow fallback: part renderer '{}' degraded to putBulkData ({})",
+                key, reason);
+    }
+
+    private String shadowFallbackReason(@Nullable float[][] clipPlanes, @Nullable float[] uvRect,
+                                        @Nullable float[] tint) {
+        if (clipPlanes != null) return "clipPlanes!=null";
+        if (instanced == null) return "instanced=null";
+        if (!instanced.isInitialized()) return "instanced=uninitialized";
+        if (!ClientRenderFlags.useInstancedBatching()) return "useInstancedBatching=false";
+        if (uvRect != null) return "uvRect!=null";
+        if (!isWhiteTint(tint)) return "tint!=white";
+        return "single=null";
+    }
+
+    /** One-shot guard for the shadow-fallback reason warn log (the counter lives in NucleusDebug). */
+    private boolean shadowFallbackLogged;
+
+    // ==== Door clip tier debugging (config doorClipDebug): one-time dump of part sprite/UV ====
+    private static final java.util.Set<String> CLIP_DEBUG_DUMPED = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    private void debugDumpQuads(@Nullable float[] uvRect) {
+        debugDumpUv("in", quads, uvRect);
+    }
+
+    private void debugDumpUv(String tag, List<BakedQuad> quads, @Nullable float[] uvRect) {
+        if (!CLIP_DEBUG_DUMPED.add(key + ":" + tag)) return;
+        StringBuilder sb = new StringBuilder(tag + " part='").append(key).append("' quads=").append(quads.size()).append(" uvRect=").append(uvRect == null ? "null" : java.util.Arrays.toString(uvRect));
+        int n = Math.min(quads.size(), 6);
+        for (int i = 0; i < n; i++) {
+            BakedQuad q = quads.get(i);
+            int[] v = q.getVertices();
+            int stride = v.length / 4;
+            float uMin = Float.MAX_VALUE, uMax = -Float.MAX_VALUE, vMin = Float.MAX_VALUE, vMax = -Float.MAX_VALUE;
+            float xMin = Float.MAX_VALUE, xMax = -Float.MAX_VALUE, yMin = Float.MAX_VALUE, yMax = -Float.MAX_VALUE, zMin = Float.MAX_VALUE, zMax = -Float.MAX_VALUE;
+            for (int vi = 0; vi < 4; vi++) {
+                float u = Float.intBitsToFloat(v[vi * stride + 4]);
+                float vv = Float.intBitsToFloat(v[vi * stride + 5]);
+                uMin = Math.min(uMin, u); uMax = Math.max(uMax, u);
+                vMin = Math.min(vMin, vv); vMax = Math.max(vMax, vv);
+                float px = Float.intBitsToFloat(v[vi * stride]);
+                float py = Float.intBitsToFloat(v[vi * stride + 1]);
+                float pz = Float.intBitsToFloat(v[vi * stride + 2]);
+                xMin = Math.min(xMin, px); xMax = Math.max(xMax, px);
+                yMin = Math.min(yMin, py); yMax = Math.max(yMax, py);
+                zMin = Math.min(zMin, pz); zMax = Math.max(zMax, pz);
+            }
+            var s = q.getSprite();
+            sb.append(String.format("%n  quad[%d] sprite=%s atlasRect=[%.1f..%.1f, %.1f..%.1f] pos=[%.3f..%.3f, %.3f..%.3f, %.3f..%.3f] uv=[%.4f..%.4f, %.4f..%.4f] stride=%d",
+                    i, s == null ? "null" : s.contents().name(),
+                    s == null ? -1 : s.getU0(), s == null ? -1 : s.getU1(),
+                    s == null ? -1 : s.getV0(), s == null ? -1 : s.getV1(),
+                    uMin, uMax, vMin, vMax,
+                    xMin, xMax, yMin, yMax, zMin, zMax, stride));
+        }
+        com.hbm_m.main.MainRegistry.LOGGER.info("[HBM-M][DoorClipDebug] {}", sb);
+    }
+
+    /** null or white RGB - passthrough (the only case where the single-VBO path is allowed).
+     *  Alpha is not checked: it carries emission strength (heat), not transparency. */
+    private static boolean isWhiteTint(@Nullable float[] tint) {
+        if (tint == null) return true;
+        return tint.length >= 4
+                && tint[0] == 1f && tint[1] == 1f && tint[2] == 1f;
+    }
+
+    /** Vanilla immediate: the universal last tier and the manual config reserve. */
+    void renderQuadsFallback(PoseStack poseStack, int packedLight, BlockEntity blockEntity,
+                             @Nullable MultiBufferSource bufferSource, @Nullable float[] uvRect,
+                             @Nullable float[] tint) {
+        if (quads == null || quads.isEmpty() || bufferSource == null) return;
+        List<BakedQuad> drawn = quads;
+        if (!com.hbm_m.client.model.ModelHelper.isIdentityRect(uvRect)) {
+            // Expand normalized UVs into the skin's atlas rect (rare path).
+            drawn = com.hbm_m.client.model.ModelHelper.expandQuadUvsUnit(quads,
+                    uvRect[0], uvRect[1], uvRect[2], uvRect[3],
+                    quads.get(0).getSprite());
+        }
+        com.hbm_m.client.render.NucleusDebug.recordDraw(1, 1, "Immediate (fallback)");
+        float fade = SingleMeshVboRenderer.getFadeAlpha();
+        float tr = 1f, tg = 1f, tb = 1f;
+        if (tint != null && tint.length >= 4) {
+            tr = tint[0]; tg = tint[1]; tb = tint[2];
+        }
+        float alpha = fade;
+        // Cutout, not solid: solid has no alpha test, so transparent texels of glass/window
+        // parts come out black. Cutout discards them; translucent stays for the fade path
+        // (alpha blending). Shared helper (dedup with renderClippedQuads).
+        // WIAJ demo screen: the isometric pose has a negative determinant, which flips the
+        // projected winding - the cull-enabled chunk types would hide the outward faces, so
+        // use the no-cull variant over the same block atlas there.
+        VertexConsumer consumer = bufferSource.getBuffer(
+                ClientRenderFlags.guiRenderFrame() && alpha >= 0.99f
+                        ? net.minecraft.client.renderer.RenderType.entityCutoutNoCull(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS)
+                        : com.hbm_m.client.model.ModelHelper.clipRenderType(alpha));
         PoseStack.Pose pose = poseStack.last();
-        for (BakedQuad quad : quads) {
-            RenderHooks.putBulkData(consumer, pose, quad, 1f, 1f, 1f, fade, packedLight,
+        for (BakedQuad quad : drawn) {
+            // terrain RenderTypes do not compute shade from normals - bake it into
+            // r/g/b, otherwise the immediate path draws machines flat (unlike the
+            // VBO paths). The part tint multiplies on top (r/g/b may be > 1 -
+            // overbright glow).
+            float shade = RenderHooks.quadShade(quad.getDirection());
+            RenderHooks.putBulkData(consumer, pose, quad,
+                    shade * tr, shade * tg, shade * tb, alpha, packedLight,
                     OverlayTexture.NO_OVERLAY, false);
         }
     }
@@ -165,13 +454,29 @@ final class MachinePartRenderer {
         }
     }
 
+    /**
+     * Phase 2 (after MDI): fading instances of the direct path.
+     * For MDI-compatible renderers - no-op (their fading was drawn by the coordinator).
+     */
+    void flushFading(Matrix4f projection) {
+        if (instanced != null) {
+            instanced.flushFading(projection);
+        }
+    }
+
+    /** Key of the global fading-window sort (see InstancedStaticPartRenderer.fadingSortKeyDistSq). */
+    float fadingSortKeyDistSq() {
+        return (instanced != null) ? instanced.fadingSortKeyDistSq() : -1f;
+    }
+
     void clear() {
         if (instanced != null) {
             instanced.cleanup();
             instanced = null;
         }
-        single = null;   // владелец — MeshRenderCache (чистится им)
+        single = null;   // owned by MeshRenderCache (it cleans it up)
         quads = null;
+        boundsValid = false;
         attempted = false;
     }
 }

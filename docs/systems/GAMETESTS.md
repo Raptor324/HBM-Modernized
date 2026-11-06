@@ -11,6 +11,7 @@
 |------|-----------|
 | `src/main/java/com/hbm_m/test/PlatformHooksGameTest.java` | Функциональные тесты каждого метода `PlatformHooks` (21 группа, 34 теста) |
 | `src/main/java/com/hbm_m/test/CrossLoaderParityGameTest.java` | Паритетные тесты: фиксируют идентичность контракта 1.20.1 ↔ 1.21.1 (20 тестов) |
+| `src/main/java/com/hbm_m/test/GasGameTest.java` | Система газов `com.hbm_m.block.gas`: распространение, болезни лёгких, радиация, смерть по дозе, маски/фильтры, воспламенение, фиделити 1.7.10 (41 тест, batch `gas`) |
 | `src/main/java/com/hbm_m/test/GameTestRegistration.java` | Per-loader регистрация тест-классов через `RegisterGameTestsEvent` (stonecutter-gated) |
 
 Тестовые классы — в том же source-set `src/main/java`, что и остальной код, поэтому
@@ -25,8 +26,16 @@ stonecutter препроцессит их так же: `//? if forge` / `//? if 
 
 # Forge 1.20.1 (переключить активный проект, затем запустить)
 ./gradlew "Set active project to 1.20.1-forge"
-./gradlew :1.20.1-forge:runGameTestServer
+# ВАЖНО: -PnoClientMods обязателен — Embeddium/Oculus падают на DEDICATED_SERVER
+./gradlew :1.20.1-forge:runGameTestServer -PnoClientMods
 ```
+
+Оба рана используют выделенный gameDir `runGameTest/`: мир "Test Level" (vanilla flat)
+пересоздаётся каждый прогон (doFirst в build-скриптах) — условия арен идентичны на
+обеих версиях и не зависят от состояния общего `run/`, которым пользуются клиент/сервер.
+Нюанс ванили: flat-мир 1.20.1 имеет поверхность на y≈62 (тесты на y=-60 идут под землёй,
+skylight=0), 1.21.1 — поверхность на y≈-61 (тесты под открытым небом). Sky-зависимые
+тесты ветвятся по фактическому `canSeeSky`, а не по платформе.
 
 Run-конфиги зарегистрированы в:
 - `build.neoforge.gradle.kts` — блок `neoForge { runs { register("gameTestServer") { ... } } }`
@@ -594,3 +603,32 @@ persistentData (`HbmLivingProps`), chunk-attachments (`ChunkRadiation`) и hazar
    // Закомментирован для прогона runGameTestServer (server-side, не нужны шейдеры).
    // "modRuntimeOnly"("curse.maven:oculus-581495:6020952")
    ```
+
+## GasGameTest — 41 тест, batch `gas`
+
+Система газов `com.hbm_m.block.gas` (порт `com.hbm.blocks.gas` 1.7.10). Механика:
+
+- **Прямые вызовы** `BlockStateBase.entityInside(level, pos, entity)` — детерминированная
+  проверка начислений/эффектов (это тот же мост, который ваниль зовёт из
+  `Entity.checkInsideBlocks`; сам метод блока на 1.21.1 protected, поэтому через state).
+- **Мировые тесты** — герметичные каменные/обсидиановые комнаты внутри `empty5x5x5`:
+  газ физически не может покинуть клетку (все соседи solid), `entityInside` срабатывает
+  каждый тик.
+- **Вероятностные события** (случайное движение, испарение, коррупция) — через
+  `succeedWhen` (опрос каждый тик до успеха); вероятности сбоя ≤ 1e-4, расчёт в javadoc.
+- **Ловушка mock-игрока**: ванильный `makeMockPlayer()` на 1.20.1 возвращает
+  **креативного** игрока (креатив игнорирует газы) — используется свой
+  `makeSurvivalPlayer` (1.20.1) / `makeMockPlayer(GameType.SURVIVAL)` (1.21.1).
+
+| Группа | Тесты |
+|--------|-------|
+| Регистрация и свойства | `gas_blocksRegistered` (10 газов, классы, id 1:1, explosive extends flammable), `gas_blockProperties` (replaceable/пустая коллизия/INVISIBLE/−1.0F/DESTROY/random ticks), `gas_onPlaceSchedulesTick` |
+| Направления и задержки | `gas_directionsSinkingGases` (monoxide всегда DOWN; asbestos/coal 1/5 DOWN), `gas_directionsRisingGases` (radon/radon_dense 1/5 UP, tomb 1/3, meltdown 1/2), `gas_directionsFlammableAndDelays` (1/3 вертикаль, delay 16..20, база 2) |
+| Распространение | `gas_monoxideSinksIntoAirPocket` (детерминированное падение, 3 шахты), `gas_cannotLeakThroughSolid`, `gas_asbestosSpreadsThroughDoorway`, `gas_radonRises`, `gas_radonDenseCorruptsGrass` (трава → coarse dirt), `gas_flammableIgnitesFromTorch`, `gas_explosiveDetonatesFromTorch` (обсидиановая камера сдерживает взрыв 3.0), `gas_flammableIgnitesFromBurningPig` |
+| Очки в мировом цикле | `gas_exposureAsbestosAccumulates` (+1/тик), `gas_exposureCoalBlackLungAccumulates` (+10/тик), `gas_exposureReachesLethalDose` (доведение до maxAsbestos через газ → смерть) |
+| Контакт (точные значения) | asbestos/coal/radon/radon_dense/meltdown ×N контактов → точные дозы + накопление radEnv (contaminate); protected-варианты: маска блокирует, фильтр −1/контакт; `gas_contactTombBypassesMask` (RAD_BYPASS), `gas_contactTombRemovesRadaway` (снятие противоядия), chlorine (5 эффектов + защищённый вариант), monoxide (мировой цикл, i-frames) |
+| Эффект радиации | radon_dense → `ModEffects.RADIATION` 15с amp 0; meltdown → 60с amp 2 (в т.ч. через маску) |
+| Фиделити 1.7.10 | `gas_radonDenseLeavesFallout` (испарение оставляет fallout), `gas_meltdownConvertsAirToRadonDense` (1/7 за тик), `gas_meltdownPumpsChunkRadiationUnderSky` (на neoforge — накачка +5/тик под небом; на forge арена под землёй — проверка гейта canSeeSky) |
+| Смерть по дозе | `gas_lethalAsbestosKillsPig`, `gas_lethalCoalKillsPig` (max → 1000 урона, счётчик → 0) |
+| Игрок | `gas_playerAsbestosAccumulates`, `gas_playerCoalAccumulates`, `gas_playerProtectedByGasMask`, `gas_playerAsbestosLethal` |
+| Фильтр | `gas_filterExhaustsAndDetaches` (износ до max → отсоединение) |

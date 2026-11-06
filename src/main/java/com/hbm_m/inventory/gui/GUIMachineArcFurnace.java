@@ -1,10 +1,10 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm_m.blockentity.machines.MachineArcFurnaceBlockEntity;
-import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.material.Mats;
 import com.hbm_m.inventory.material.Mats.MaterialStack;
 import com.hbm_m.inventory.menu.MachineArcFurnaceMenu;
@@ -24,11 +24,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  * 1:1 {@code GUIMachineArcFurnaceLarge}: Modusschalter (151,17), Betriebslampe (7,17), Strom (8,36) und Fortschritt
  * (17,36) als Saeulen, Schmelzsaeule (152,36) mit gestapelten Materialfarben.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineArcFurnace extends GuiInfoScreen<MachineArcFurnaceMenu> {
 
     private static final ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_arc_furnace.png");

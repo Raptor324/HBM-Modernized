@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code Floodlight.TileEntityFloodlight}: verbraucht 100 HE/Tick (Puffer 5000, Anschluss nur an der

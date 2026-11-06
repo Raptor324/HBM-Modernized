@@ -15,6 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import com.hbm_m.platform.StackNbt;
 
 public class MachineBatteryBlockItem extends BlockItem implements ITooltipProvider {
 
@@ -27,20 +28,26 @@ public class MachineBatteryBlockItem extends BlockItem implements ITooltipProvid
 
     @Override
     public void appendHbmTooltip(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
-        // 1:1 Original MachineBattery.addInformation (IPersistentInfoProvider): alle vier Zeilen nur, wenn der
-        // Gegenstand gespeicherte Blockdaten traegt (ItemBlockBase prueft NBT_PERSISTENT_KEY).
+        // Используем long для вычислений
+        // Если у тебя есть утилита EnergyFormatter.format(long), лучше использовать её для красивых чисел (1M, 1G и т.д.)
+
+        pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.capacity", maxPower).withStyle(ChatFormatting.GOLD));
+        pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.charge_speed", maxPower / 200).withStyle(ChatFormatting.GOLD));
+        pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.discharge_speed", maxPower / 600).withStyle(ChatFormatting.GOLD));
+
         // Читаем энергию из NBT
-        if (PlatformHooks.hasItemTag(pStack)) {
+        if (StackNbt.has(pStack)) {
             // BlockEntityTag на 1.20.1 — NBT-подтег (getTagElement); на 1.21.1 — тот же ключ
             // "BlockEntityTag" внутри CUSTOM_DATA (BlockItem пишет туда BE-данные при placement-копии).
             //? if < 1.21.1 {
             CompoundTag blockEntityTag = pStack.getTagElement("BlockEntityTag");
             //?} else {
-            /*CompoundTag custom = PlatformHooks.getItemTag(pStack);
+            /*CompoundTag custom = StackNbt.read(pStack);
             CompoundTag blockEntityTag = custom != null && custom.contains("BlockEntityTag")
                     ? custom.getCompound("BlockEntityTag") : null;
             *///?}
-            // Ladung liegt wie in der Blockentitaet unter "energy" (IPersistentNBT.writeNBT); "Energy" = alte Drops.
+            // The block entity writes "energy" as a long; getInt truncated anything above 2^31 to a
+            // wrong (often negative) number. "Energy" is the legacy copy_nbt spelling.
             if (blockEntityTag != null) {
                 long energy = 0;
                 if (blockEntityTag.contains("energy")) {
@@ -49,10 +56,9 @@ public class MachineBatteryBlockItem extends BlockItem implements ITooltipProvid
                     energy = blockEntityTag.getLong("Energy");
                 }
 
-                pTooltip.add(Component.literal("Stores up to " + com.hbm_m.util.BobMathUtil.getShortNumber(maxPower) + "HE").withStyle(ChatFormatting.GOLD));
-                pTooltip.add(Component.literal("Charge speed: " + com.hbm_m.util.BobMathUtil.getShortNumber(maxPower / 200) + "HE").withStyle(ChatFormatting.GOLD));
-                pTooltip.add(Component.literal("Discharge speed: " + com.hbm_m.util.BobMathUtil.getShortNumber(maxPower / 600) + "HE").withStyle(ChatFormatting.GOLD));
-                pTooltip.add(Component.literal(com.hbm_m.util.BobMathUtil.getShortNumber(energy) + "/" + com.hbm_m.util.BobMathUtil.getShortNumber(maxPower) + "HE").withStyle(ChatFormatting.YELLOW));
+                if (energy > 0) {
+                    pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.stored", energy, maxPower).withStyle(ChatFormatting.YELLOW));
+                }
             }
         }
 

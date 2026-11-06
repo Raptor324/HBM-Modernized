@@ -1,6 +1,9 @@
 package com.hbm_m.client.render;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
@@ -17,13 +20,8 @@ import org.lwjgl.opengl.GL30;
  * current binding is {@code 0}.
  */
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+
 public final class GlVaoSafety {
 
     private static int dummyVao = 0;
@@ -37,8 +35,20 @@ public final class GlVaoSafety {
         return dummyVao;
     }
 
-    /** Exact VAO bind, including {@code 0} (unbind). */
+    /**
+     * Exact VAO bind, including {@code 0} (unbind).
+     * <p>
+     * Binding {@code 0} also nulls vanilla's {@code BufferUploader.lastImmediateBuffer}
+     * (verified cost: one static-null store) so the next vanilla/TACZ immediate draw
+     * honestly rebinds its VAO instead of trusting the bind cache while the physical
+     * binding has just become foreign. Cannot break our own draws: our draw paths use
+     * unconditional explicit VAO binds, and vanilla's own {@code VertexBuffer.bind()}
+     * calls {@code invalidate()} itself.
+     */
     public static void bindVertexArray(int vao) {
+        if (vao == 0) {
+            BufferUploader.invalidate();
+        }
         GlStateManager._glBindVertexArray(vao);
     }
 
@@ -60,7 +70,9 @@ public final class GlVaoSafety {
             }
             work.run();
         } finally {
-            GlStateManager._glBindVertexArray(previousVao);
+            // Route through bindVertexArray so the restore-to-0 case (usedDummy)
+            // also invalidates the vanilla immediate-draw bind cache.
+            bindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
         }
     }

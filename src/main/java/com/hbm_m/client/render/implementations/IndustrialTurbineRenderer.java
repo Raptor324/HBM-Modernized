@@ -14,7 +14,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 
-/** 1:1 {@code RenderIndustrialTurbine}: Gehaeuse, Anzeige nach Dampfstufe ({@code 135 - stufe * 90}), drehendes Schwungrad. */
+/** 1:1 {@code RenderIndustrialTurbine}: housing, gauge display based on steam tier ({@code 135 - tier * 90}), rotating flywheel. */
 public class IndustrialTurbineRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineIndustrialTurbineBlockEntity> {
 
     public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/industrial_turbine.obj"));

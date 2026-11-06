@@ -18,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Manual designator: right-click opens GUI to set target X/Z with buttons.
@@ -40,10 +41,10 @@ public class ItemDesignatorManual extends Item implements IDesignatorItem, ITool
 
     @Override
     public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        if (PlatformHooks.hasItemTag(stack) && PlatformHooks.getItemTag(stack).contains("xCoord")) {
+        if (StackNbt.has(stack) && StackNbt.read(stack).contains("xCoord")) {
             tooltip.add(Component.translatable("tooltip.hbm_m.designator.target"));
-            tooltip.add(Component.literal("X: " + PlatformHooks.getItemTag(stack).getInt("xCoord")).withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.literal("Z: " + PlatformHooks.getItemTag(stack).getInt("zCoord")).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("X: " + StackNbt.read(stack).getInt("xCoord")).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("Z: " + StackNbt.read(stack).getInt("zCoord")).withStyle(ChatFormatting.GRAY));
         } else {
             tooltip.add(Component.translatable("tooltip.hbm_m.designator.no_target"));
         }
@@ -51,13 +52,13 @@ public class ItemDesignatorManual extends Item implements IDesignatorItem, ITool
 
     @Override
     public boolean isReady(Level level, ItemStack stack, int x, int y, int z) {
-        var tag = PlatformHooks.getItemTag(stack);
+        var tag = StackNbt.read(stack);
         return tag != null && tag.contains("xCoord") && tag.contains("zCoord");
     }
 
     @Override
     public Vec3 getCoords(Level level, ItemStack stack, int x, int y, int z) {
-        var tag = PlatformHooks.getItemTag(stack);
+        var tag = StackNbt.read(stack);
         if (tag == null || !tag.contains("xCoord")) return Vec3.ZERO;
         return new Vec3(tag.getInt("xCoord"), 0, tag.getInt("zCoord"));
     }

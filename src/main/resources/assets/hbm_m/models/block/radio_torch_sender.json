@@ -1,0 +1,6 @@
+{
+  "parent": "hbm_m:block/templates/radio_torch",
+  "textures": {
+    "torch": "hbm_m:block/rtty_sender_off"
+  }
+}

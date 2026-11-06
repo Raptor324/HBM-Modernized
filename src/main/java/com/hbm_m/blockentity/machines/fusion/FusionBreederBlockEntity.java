@@ -359,4 +359,16 @@ public class FusionBreederBlockEntity extends BaseMachineBlockEntity
         sidedItems.invalidate();
     }
     *///?}
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        //? if forge {
+        return getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, side).resolve().orElse(null);
+        //?} elif neoforge {
+        /*return getHbmCapability(com.hbm_m.platform.HbmCap.ITEM_HANDLER, side).orElse(null);
+        *///?} else {
+        /*return this.inventory;
+        *///?}
+    }
 }

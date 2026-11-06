@@ -18,9 +18,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 1:1 {@code RenderMinecartTest}: Vanilla-Lore, statt des Blocks das Little-Boy-Modell; beim Zuenden wie die TNT-Lore
- * aufblaehend und weiss blinkend. Das Original verweist auf die nicht vorhandene Textur {@code LilBoy2.png}; der Port
- * nimmt die Little-Boy-Modelltextur.
+ * 1:1 {@code RenderMinecartTest}: vanilla minecart with Little Boy model replacing block; priming inflates
+ * and flashes white like TNT minecart. The original referenced non-existent {@code LilBoy2.png}; port uses
+ * the Little Boy model texture.
  */
 public class RenderMinecartTest extends MinecartRenderer<EntityMinecartTest> {
 
@@ -33,7 +33,7 @@ public class RenderMinecartTest extends MinecartRenderer<EntityMinecartTest> {
 
     @Override
     protected void renderMinecartContents(@NotNull EntityMinecartTest cart, float interp, @NotNull BlockState state, @NotNull PoseStack ps, @NotNull MultiBufferSource buffers, int light) {
-        // Vanilla verschiebt um die Blockecke und dreht um 90 Grad; das Original rendert um den Mittelpunkt
+        // Vanilla offsets by block corner and rotates 90 deg; original renders around center
         ps.pushPose();
         ps.mulPose(Axis.YP.rotationDegrees(-90.0F));
         ps.translate(0.5F, 0.5F, -0.5F);

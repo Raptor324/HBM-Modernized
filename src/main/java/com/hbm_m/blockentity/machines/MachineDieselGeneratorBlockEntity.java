@@ -4,12 +4,14 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.api.tile.IControlReceiver;
+import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.FluidContainerRegistry;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.FT_Combustible;
+import com.hbm_m.inventory.fluid.trait.FT_Combustible.FuelGrade;
 import com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType;
 import com.hbm_m.inventory.menu.MachineDieselGeneratorMenu;
 
@@ -87,8 +89,7 @@ public class MachineDieselGeneratorBlockEntity extends com.hbm_m.blockentity.Mac
         chargeItemInSlot(SLOT_BATTERY);
         if (isOn) generate(level, pos);
 
-        setChanged();
-        sendUpdateToClient();
+        syncIfStateChanged(getEnergyStored(), (isOn ? 1L : 0L) | (wasOn ? 2L : 0L) | (((long) tank.getFill()) << 2));
     }
 
     private void clientTick() {
@@ -176,8 +177,7 @@ public class MachineDieselGeneratorBlockEntity extends com.hbm_m.blockentity.Mac
     @Override
     public void receiveControl(CompoundTag data) {
         if (data.contains("turnOn")) this.isOn = !this.isOn;
-        setChanged();
-        sendUpdateToClient();
+        syncIfStateChanged(getEnergyStored(), (isOn ? 1L : 0L) | (wasOn ? 2L : 0L) | (((long) tank.getFill()) << 2));
     }
 
     /** Original: {@code receiveControl} mit dem Schluessel {@code turnOn}. */
@@ -189,15 +189,26 @@ public class MachineDieselGeneratorBlockEntity extends com.hbm_m.blockentity.Mac
 
     // ==================== IFluidUserMK2 / MK2-Netz ====================
 
-    @Override public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
-    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }
-    @Override public FluidTank[] getSendingTanks() { return this.getSmokeTanks(); }
+    @Override
+    public FluidTank[] getAllTanks() {
+        return new FluidTank[] { tank, smoke, smokeLeaded, smokePoison };
+    }
+
+    @Override
+    public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }
+
+    @Override
+    public FluidTank[] getSendingTanks() { return this.getSmokeTanks(); }
 
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
+    @Override
+    public boolean canConnect(Fluid fluid, Direction fromDir) {
+        return fromDir != null;
+    }
     // ==================== NBT ====================
 
     @Override
@@ -211,7 +222,7 @@ public class MachineDieselGeneratorBlockEntity extends com.hbm_m.blockentity.Mac
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        if (tag.contains("tank")) tank.readFromNBT(tag, "tank"); // aeltere Port-Speicherstaende
+        if (tag.contains("tank")) tank.readFromNBT(tag, "tank");
         else tank.readFromNBT(tag, "fuel");
         isOn = tag.getBoolean("isOn");
         wasOn = tag.getBoolean("wasOn");
@@ -221,7 +232,7 @@ public class MachineDieselGeneratorBlockEntity extends com.hbm_m.blockentity.Mac
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("container.machineDiesel");
+        return Component.translatable("container.hbm_m.dieselgen");
     }
 
     @Override
@@ -232,8 +243,9 @@ public class MachineDieselGeneratorBlockEntity extends com.hbm_m.blockentity.Mac
     /** Original {@code isItemValidForSlot}: Slot 0 nur passende volle Behaelter, Slot 2 nur Batterien. */
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (slot == SLOT_FLUID_IN) return FluidContainerRegistry.getFluidContent(stack, tank.getTankType()) > 0;
+        if (slot == SLOT_FLUID_IN) return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack);
         if (slot == SLOT_BATTERY) return isEnergyReceiverItem(stack) || isEnergyProviderItem(stack);
+        if (slot == SLOT_FLUID_ID) return stack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier || stack.getItem() instanceof com.hbm_m.item.liquids.FluidIdentifierItem;
         return false;
     }
 

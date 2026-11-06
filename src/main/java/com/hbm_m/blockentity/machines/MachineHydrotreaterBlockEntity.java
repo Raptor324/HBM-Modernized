@@ -107,8 +107,16 @@ public class MachineHydrotreaterBlockEntity extends BaseMachineBlockEntity imple
             be.tryProvide(be.tanks[3], level, neighborPos, dir);
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // P6: пакет клиенту только при реальном изменении состояния (энергия + подписи баков)
+        be.syncIfStateChanged(
+                (be.energy * 31L + fp(be.tanks[0])) * 31L + fp(be.tanks[1]),
+                fp(be.tanks[2]) * 31L + fp(be.tanks[3]));
+    }
+
+    /** Подпись бака: тип жидкости + уровень заполнения. */
+    private static long fp(FluidTank tank) {
+        Fluid type = tank.getTankType();
+        return (type == null ? 0L : type.hashCode() * 31L) + tank.getFill();
     }
 
     /** Direktport von {@code reform()}. */
@@ -239,5 +247,10 @@ public class MachineHydrotreaterBlockEntity extends BaseMachineBlockEntity imple
         for (var tank : tanks) if (tank.getFill() > 0) empty = false;
         if (empty) return;
         for (int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "tank" + i);
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
     }
 }

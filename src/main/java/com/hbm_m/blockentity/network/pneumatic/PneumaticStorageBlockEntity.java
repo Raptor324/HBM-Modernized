@@ -171,13 +171,11 @@ public abstract class PneumaticStorageBlockEntity extends BaseMachineBlockEntity
         super.setRemoved();
     }
 
-    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
         detach();
     }
-    //?}
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {

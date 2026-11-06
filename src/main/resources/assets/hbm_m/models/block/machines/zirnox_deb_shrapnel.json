@@ -1,17 +1,17 @@
 {
   "textures": {
-    "particle": "hbm_m:block/machine/zirnox_destroyed",
-    "default": "hbm_m:block/machine/zirnox_destroyed"
+    "particle": "hbm_m:block/machine/zirnox",
+    "default": "hbm_m:block/machine/zirnox"
   },
   "loader": "forge:composite",
   "children": {
     "model": {
-      "loader": "forge:obj",
+      "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/zirnox/deb_shrapnel.obj",
       "flip_v": true,
       "render_type": "minecraft:solid",
       "textures": {
-        "default": "hbm_m:block/machine/zirnox_destroyed"
+        "default": "hbm_m:block/machine/zirnox"
       }
     }
   }

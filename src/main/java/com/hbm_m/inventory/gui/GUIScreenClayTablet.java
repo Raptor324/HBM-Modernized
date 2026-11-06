@@ -19,6 +19,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code GUIScreenClayTablet}: Tontafel 142x84 aus {@code guide_pedestal.png}; mit {@code tabletSeed} wird ein
@@ -66,8 +67,8 @@ public class GUIScreenClayTablet extends Screen {
 
         ArrayList<PedestalRecipe> recipeSet = PedestalRecipes.recipeSets[Math.abs(tabletMeta) % PedestalRecipes.recipeSets.length];
 
-        if (!held.isEmpty() && PlatformHooks.contains(held, "tabletSeed") && !recipeSet.isEmpty()) {
-            Random rand = new Random(PlatformHooks.getLong(held, "tabletSeed"));
+        if (!held.isEmpty() && StackNbt.contains(held, "tabletSeed") && !recipeSet.isEmpty()) {
+            Random rand = new Random(StackNbt.getLong(held, "tabletSeed"));
             PedestalRecipe recipe = recipeSet.get(rand.nextInt(recipeSet.size()));
 
             if (recipe.extra == PedestalExtraCondition.FULL_MOON) g.blit(texture, guiLeft + 120, guiTop + 62, 142 + iconOffset, 32, 16, 16);

@@ -1,7 +1,6 @@
 package com.hbm_m.blockentity.machines.icf;
 
 import com.hbm_m.platform.PlatformHooks;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +18,7 @@ import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1-Port von {@code TileEntityICFController} (1.7.10): das Steuerpult des ICF-Lasers.
@@ -49,7 +49,7 @@ import net.minecraft.world.phys.AABB;
  * als zusaetzliche Netzanschluesse der Maschine meldet - im Original macht das jeder
  * Anschlussblock fuer sich.</p>
  */
-public class ICFControllerBlockEntity extends BaseMachineBlockEntity {
+public class ICFControllerBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.interfaces.IRelocatable {
 
     /** Original: {@code capacitorPower = 2_500_000}. */
     public static final int CAPACITOR_POWER = 2_500_000;
@@ -84,6 +84,11 @@ public class ICFControllerBlockEntity extends BaseMachineBlockEntity {
         setChanged();
     }
 
+    @Override
+    public void relocate(java.util.function.UnaryOperator<BlockPos> transform) {
+        ports.replaceAll(port -> transform.apply(port).immutable());
+        setChanged();
+    }
     public int getCellCount()         { return cellCount; }
     public int getEmitterCount()      { return emitterCount; }
     public int getCapacitorCount()    { return capacitorCount; }
@@ -223,7 +228,7 @@ public class ICFControllerBlockEntity extends BaseMachineBlockEntity {
         for (Entity e : level.getEntitiesOfClass(Entity.class, beam)) {
             // Original: {@code DamageSource.inFire}, 50 Schaden und fuenf Sekunden Feuer.
             e.hurt(level.damageSources().inFire(), 50F);
-            PlatformHooks.setSecondsOnFire(e, 5);
+            MobHooks.setSecondsOnFire(e, 5);
         }
 
         be.setEnergyStored(0L);

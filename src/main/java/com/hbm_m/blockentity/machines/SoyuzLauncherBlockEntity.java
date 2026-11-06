@@ -1,6 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.item.IDesignatorItem;
 import com.hbm_m.block.ModBlocks;
@@ -74,6 +75,10 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity implements 
     private boolean starting = false;
     private int countdown = MAX_COUNTDOWN;
 
+    /** Cached slot snapshot for the tank load loops; rebuilt whenever slot contents change. */
+    @Nullable
+    private ItemStack[] cachedSlots;
+
     protected final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
@@ -118,9 +123,13 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity implements 
             }
         }
 
-        boolean fuelChanged = be.tanks[0].loadTank(SLOT_FUEL_IN, SLOT_FUEL_OUT, be.slotArray());
-        boolean oxyChanged = be.tanks[1].loadTank(SLOT_OXIDIZER_IN, SLOT_OXIDIZER_OUT, be.slotArray());
+        // One slot snapshot per tick, shared by both tank loads and the write-back;
+        // rebuilt each tick it is needed so external slot changes are always seen.
+        be.cachedSlots = be.slotArray();
+        boolean fuelChanged = be.tanks[0].loadTank(SLOT_FUEL_IN, SLOT_FUEL_OUT, be.cachedSlots);
+        boolean oxyChanged = be.tanks[1].loadTank(SLOT_OXIDIZER_IN, SLOT_OXIDIZER_OUT, be.cachedSlots);
         be.writeBackSlots();
+        be.cachedSlots = null;
 
         be.chargeBattery();
 
@@ -139,7 +148,22 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity implements 
         if (fuelChanged || oxyChanged) {
             be.setChanged();
         }
-        be.sendUpdateToClient();
+        // Sync only on a state delta: shipped scalar state + fingerprints of the non-cargo slots
+        // (cargo moves through the menu, not the BE packet). Covers mode/starting/countdown,
+        // energy, both tank fills and every dedicated slot.
+        long stateSig = com.hbm_m.recipe.index.CachedRecipeResolver.sign(1L,
+                be.mode, be.starting ? 1L : 0L, be.countdown, be.energy,
+                be.tanks[0].getFill(), be.tanks[1].getFill());
+        long stacks = be.slotFingerprint(SLOT_ROCKET) ^ be.slotFingerprint(SLOT_DESIGNATOR)
+                ^ be.slotFingerprint(SLOT_SATELLITE) ^ be.slotFingerprint(SLOT_LANDER)
+                ^ be.slotFingerprint(SLOT_FUEL_IN) ^ be.slotFingerprint(SLOT_FUEL_OUT)
+                ^ be.slotFingerprint(SLOT_OXIDIZER_IN) ^ be.slotFingerprint(SLOT_OXIDIZER_OUT)
+                ^ be.slotFingerprint(SLOT_BATTERY);
+        be.syncIfStateChanged(stateSig, stacks);
+    }
+
+    private long slotFingerprint(int slot) {
+        return com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(slot));
     }
 
     /** Original updateEntity (Client): Bereitschafts-Schleifenton waehrend des Countdowns, Rauch beim Abheben. */
@@ -179,8 +203,8 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity implements 
     }
 
     private void writeBackSlots() {
-        // loadTank() mutates the array in place for the in/out slot pair; push both back.
-        ItemStack[] slots = slotArray();
+        // loadTank() mutates the snapshot array in place for the in/out slot pair; push both back.
+        ItemStack[] slots = this.cachedSlots != null ? this.cachedSlots : slotArray();
         inventory.setStackInSlot(SLOT_FUEL_IN, slots[SLOT_FUEL_IN]);
         inventory.setStackInSlot(SLOT_FUEL_OUT, slots[SLOT_FUEL_OUT]);
         inventory.setStackInSlot(SLOT_OXIDIZER_IN, slots[SLOT_OXIDIZER_IN]);
@@ -279,7 +303,10 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity implements 
     }
 
     public boolean canLaunch() {
-        return hasRocket() && hasFuel() && hasPower() && designator() != 1 && orbital() != 1 && satellite() != 1;
+        // hasOxy was only wired to the GUI lamp, so a launch drained tanks[1] whether or not it held
+        // any oxidiser. Upstream canLaunch requires hasAllFuel() = jet fuel AND oxidiser.
+        return hasRocket() && hasFuel() && hasOxy() && hasPower()
+                && designator() != 1 && orbital() != 1 && satellite() != 1;
     }
 
     public boolean hasFuel() {

@@ -89,11 +89,7 @@ public class LiquefactorRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<LiquefactorRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "liquefactor");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "liquefactor");
-        //?}
 
         @Override
         public LiquefactorRecipe readJson(ResourceLocation recipeId, JsonObject json) {

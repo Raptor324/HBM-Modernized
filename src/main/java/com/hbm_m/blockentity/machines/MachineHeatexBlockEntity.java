@@ -84,8 +84,9 @@ public class MachineHeatexBlockEntity extends BaseMachineBlockEntity
             if (this.tanks[1].getFill() > 0) this.tryProvide(tanks[1], level, con[0], d);
         }
 
-        setChanged();
-        sendUpdateToClient();
+        long lo = (long) heatEnergy | (((long) tickDelay) << 32);
+        long hi = (long) tanks[0].getFill() | (((long) tanks[1].getFill()) << 32);
+        syncIfStateChanged(lo, hi);
     }
 
     protected void setupTanks() {
@@ -161,6 +162,16 @@ public class MachineHeatexBlockEntity extends BaseMachineBlockEntity
         if (data.contains("toCool")) this.amountToCool = Mth.clamp(data.getInt("toCool"), 1, tanks[0].getMaxFill());
         if (data.contains("delay")) this.tickDelay = Math.max(data.getInt("delay"), 1);
         setChanged();
+    }
+
+    /** Wie der Machines-Port: direkter Aufruf aus {@code SetHeatexControlC2SPacket} (NOT_SET = Feld freilassen). */
+    public void receiveControl(int toCool, int tickDelay) {
+        if (toCool != com.hbm_m.network.SetHeatexControlC2SPacket.NOT_SET)
+            this.amountToCool = Mth.clamp(toCool, 1, tanks[0].getMaxFill());
+        if (tickDelay != com.hbm_m.network.SetHeatexControlC2SPacket.NOT_SET)
+            this.tickDelay = Math.max(tickDelay, 1);
+        setChanged();
+        sendUpdateToClient();
     }
 
     @Override

@@ -11,11 +11,14 @@ import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Baked model for rendering AJR armor in GUI/hand.
  * Uses the shared multipart baked model infrastructure (same as T51).
  */
+@OnlyIn(Dist.CLIENT)
 public class AJRArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final String[] AJR_ORDER = {

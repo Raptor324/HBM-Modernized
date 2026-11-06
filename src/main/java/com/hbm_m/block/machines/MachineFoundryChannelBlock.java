@@ -3,10 +3,20 @@ package com.hbm_m.block.machines;
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineFoundryBaseBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFoundryChannelBlockEntity;
+import com.hbm_m.inventory.material.Mats.MaterialStack;
+import com.hbm_m.item.material.ItemScraps;
+import com.hbm_m.platform.BlockHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -21,6 +31,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -100,32 +111,6 @@ public class MachineFoundryChannelBlock extends BaseEntityBlock {
         return b instanceof MachineFoundryChannelBlock || b == ModBlocks.FOUNDRY_MOLD.get();
     }
 
-    //? if < 1.21.1 {
-    @Override
-    public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
-    //?} else {
-    /*@Override
-    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
-        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, level, pos, player, hand, hit));
-    }
-    private net.minecraft.world.InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
-    *///?}
-        if (level.isClientSide) return net.minecraft.world.InteractionResult.SUCCESS;
-        if (FoundryBlockUtil.isShovel(player.getItemInHand(hand)) && level.getBlockEntity(pos) instanceof MachineFoundryChannelBlockEntity cast) {
-            FoundryBlockUtil.shovelOut(level, pos, player, cast, 0.5);
-            return net.minecraft.world.InteractionResult.CONSUME;
-        }
-        return net.minecraft.world.InteractionResult.PASS;
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide && level.getBlockEntity(pos) instanceof MachineFoundryChannelBlockEntity cast) {
-            FoundryBlockUtil.dropContents(level, pos, cast, 0.5);
-        }
-        super.onRemove(state, level, pos, newState, moving);
-    }
-
     private VoxelShape buildShape(BlockState s) {
         VoxelShape shape = CENTER;
         for (Direction d : PROP.keySet())
@@ -138,10 +123,71 @@ public class MachineFoundryChannelBlock extends BaseEntityBlock {
         return new MachineFoundryChannelBlockEntity(pos, state);
     }
 
+    //? if < 1.21.1 {
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos,
+                                  Player player, InteractionHand hand, BlockHitResult hit) {
+        return handleUse(state, level, pos, player, hand);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return handleUse(state, level, pos, player, InteractionHand.MAIN_HAND);
+    }
+    *///?}
+
+    /**
+     * Оригинал FoundryChannel.onBlockActivated: только совок — вычерпать расплав
+     * в шлак-предметы; прочие клики игнорируются. Оверлея у канала в оригинале нет.
+     */
+    private InteractionResult handleUse(BlockState state, Level level, BlockPos pos,
+                                        Player player, InteractionHand hand) {
+        // Оригинал для не-совка возвращает false: действие не обработано, ваниль продолжает
+        // установку блока из руки. PASS обязан уходить и на клиенте — иначе клиент скипает
+        // предикцию BlockItem и ставящий игрок не слышит звук установки.
+        ItemStack held = player.getItemInHand(hand);
+        if (!(held.getItem() instanceof ShovelItem)) return InteractionResult.PASS;
+        if (level.isClientSide) return InteractionResult.SUCCESS;
+
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineFoundryChannelBlockEntity channel)) return InteractionResult.PASS;
+
+        if (channel.amount > 0 && channel.type != null) {
+            ItemStack scrap = ItemScraps.create(new MaterialStack(channel.type, channel.amount));
+            if (!scrap.isEmpty()) {
+                if (!player.addItem(scrap)) {
+                    level.addFreshEntity(new ItemEntity(level,
+                            pos.getX() + 0.5, pos.getY() + 0.5F, pos.getZ() + 0.5, scrap));
+                }
+            }
+            channel.amount = 0;
+            channel.type = null;
+            channel.setChanged();
+            level.sendBlockUpdated(pos, state, state, 3);
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    /** Оригинал FoundryChannel.breakBlock: шлак остатка расплава. */
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
+        // FFA-Delta: nicht auf dem Client abwerfen (Ghost-Items verhindern)
+        if (!state.is(newState.getBlock()) && !level.isClientSide
+                && level.getBlockEntity(pos) instanceof MachineFoundryChannelBlockEntity channel
+                && channel.amount > 0 && channel.type != null) {
+            ItemStack scrap = ItemScraps.create(new MaterialStack(channel.type, channel.amount));
+            if (!scrap.isEmpty()) {
+                level.addFreshEntity(new ItemEntity(level,
+                        pos.getX() + 0.5, pos.getY() + 0.5F, pos.getZ() + 0.5, scrap));
+            }
+        }
+        super.onRemove(state, level, pos, newState, moving);
+    }
+
     @Nullable @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.FOUNDRY_CHANNEL_BE.get(),
-                MachineFoundryChannelBlockEntity::tick);
+                (lvl, pos, st, be) -> MachineFoundryBaseBlockEntity.tick(lvl, pos, st, be));
     }
 
     //? if >1.20.1 {

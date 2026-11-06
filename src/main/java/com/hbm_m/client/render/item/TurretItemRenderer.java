@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.render.item;
 
 import java.util.HashMap;
@@ -16,10 +15,10 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * vJ: Gegenstandsdarstellung der Geschuetztuerme 1:1 nach {@code ItemRenderLibrary} (Chekhov, Friendly, Jeremy, Tauon,
- * Richard, Howard, Howard beschaedigt, Maxwell, Fritz, Arty) bzw. {@code RenderTurretSentry/RenderTurretHIMARS#getRenderer}:
- * Inventar = {@code ItemRenderBase}-Kette ({@link OrigInventoryTransform}) + {@code renderInventory()} + {@code renderCommon()}
- * mit Sockel, Lafette und Waffe in den Original-Texturen. Ausserhalb des Inventars dieselbe Gruppe auf Blockgroesse.
+ * Item renderer for turrets matching {@code ItemRenderLibrary} (Chekhov, Friendly, Jeremy, Tauon,
+ * Richard, Howard, Howard Damaged, Maxwell, Fritz, Arty) and {@code RenderTurretSentry/RenderTurretHIMARS#getRenderer}:
+ * inventory = {@code ItemRenderBase} chain ({@link OrigInventoryTransform}) + {@code renderInventory()} + {@code renderCommon()}
+ * with base, mount and weapon using original textures. Outside inventory, same group at block scale.
  */
 public final class TurretItemRenderer {
 
@@ -49,7 +48,7 @@ public final class TurretItemRenderer {
 
     public static void render(String id, ItemStack stack, ItemDisplayContext ctx, PoseStack ps, MultiBufferSource buf, int light) {
         ps.pushPose();
-        // renderInventory(): Versatz und Massstab je Turm
+        // renderInventory(): offset and scale per turret
         double ty;
         double tx = 0;
         double s;
@@ -69,7 +68,7 @@ public final class TurretItemRenderer {
             ps.translate(tx, ty, 0);
             ps.scale((float) s, (float) s, (float) s);
         } else {
-            // ausserhalb des Inventars: gleiche Groesse wie im Slot (16 Pixel = 1 Block), auf der Blockmitte stehend
+            // Outside inventory: same size as slot (16 pixels = 1 block), centered on block
             RBMKColumnItemRenderer.applyDisplay(stack, ctx, ps);
             ps.translate(0.5, 0, 0.5);
             float k = (float) (s / 16D);
@@ -80,7 +79,7 @@ public final class TurretItemRenderer {
         ps.popPose();
     }
 
-    /** renderCommon() / renderCommonWithStack() der Original-Itemrenderer */
+    /** renderCommon() / renderCommonWithStack() from original item renderers */
     private static void renderCommon(String id, PoseStack ps, MultiBufferSource buf, int light) {
         switch (id) {
             case "turret_chekhov" -> {
@@ -171,4 +170,3 @@ public final class TurretItemRenderer {
         }
     }
 }
-//?}

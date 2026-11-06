@@ -20,7 +20,11 @@ public abstract class MixinItemRendererTemplatePreview {
 
     @ModifyVariable(method = "render", at = @At("HEAD"), argsOnly = true, ordinal = 0)
     private ItemStack hbm_m$swapAssemblyTemplatePreviewStack(ItemStack stack) {
-        if (!Screen.hasShiftDown()) {
+        // Shift должен работать только в GUI-превьюхе: Screen.hasShiftDown() читает
+        // физическую клавишу и в мире, где Shift - это присед. Без проверки screen
+        // шаблоны в рамках, на земле и в руках других игроков превращались в готовые
+        // предметы, пока игрок просто крался.
+        if (net.minecraft.client.Minecraft.getInstance().screen == null || !Screen.hasShiftDown()) {
             return stack;
         }
         if (!(stack.getItem() instanceof ItemAssemblyTemplate)) {

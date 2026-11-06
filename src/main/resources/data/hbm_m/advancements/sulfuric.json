@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:achievement_icon_balls"
+      "item": "hbm_m:canister_napalm"
     },
     "title": {
       "translate": "advancements.hbm_m.sulfuric.title"

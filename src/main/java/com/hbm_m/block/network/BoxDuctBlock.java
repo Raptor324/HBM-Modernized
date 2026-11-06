@@ -49,6 +49,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.BlockEntityItemData;
 
 /**
  * 1:1 {@code FluidDuctBox} ({@code fluid_duct_box}: 5 Groessen x Silber/Kupfer/Weiss in Metadaten 0-14),
@@ -158,14 +159,26 @@ public class BoxDuctBlock extends BaseEntityBlock implements ILookOverlay {
         ItemStack s = new ItemStack(item);
         CompoundTag bst = new CompoundTag();
         bst.putString("meta", Integer.toString(meta));
-        com.hbm_m.platform.BlockStateItemData.put(s, bst);
+        com.hbm_m.platform.BlockEntityItemData.putState(s, bst);
         return s;
     }
 
     public static int metaOf(ItemStack stack) {
-        CompoundTag t = StackNbt.tag(stack);
-        if (t == null || !t.contains("BlockStateTag")) return 0;
-        try { return Integer.parseInt(t.getCompound("BlockStateTag").getString("meta")); } catch (NumberFormatException e) { return 0; }
+        if (stack == null || stack.isEmpty()) return 0;
+        //? if >= 1.21.1 {
+        /*net.minecraft.world.item.component.BlockItemStateProperties bs = stack.get(net.minecraft.core.component.DataComponents.BLOCK_STATE);
+        if (bs != null) {
+            String m = bs.properties().get("meta");
+            if (m != null) {
+                try { return Integer.parseInt(m); } catch (NumberFormatException ignored) {}
+            }
+        }
+        *///?}
+        CompoundTag t = StackNbt.read(stack);
+        if (t != null && t.contains("BlockStateTag")) {
+            try { return Integer.parseInt(t.getCompound("BlockStateTag").getString("meta")); } catch (NumberFormatException ignored) {}
+        }
+        return 0;
     }
 
     @Override

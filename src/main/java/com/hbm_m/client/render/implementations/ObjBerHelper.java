@@ -9,21 +9,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
- * Gemeinsame Kleinigkeiten fuer die BERs, die vorher nur statische Blockmodelle waren (Audit 6): Original-Metadate aus
- * FACING, damit die Original-Drehschalter der TESRs unveraendert uebernommen werden koennen.
+ * Shared helpers for BERs that previously were static block models: derive original metadata from
+ * FACING so the original TESR rotation switches can be reused directly.
  */
-//? if forge {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public final class ObjBerHelper {
 
     private ObjBerHelper() {}
 
-    /** Ausrichtung aus HORIZONTAL_FACING / FACING, sonst Norden. */
+    /** Orientation from HORIZONTAL_FACING / FACING, otherwise North. */
     public static Direction facing(BlockEntity be) {
         BlockState state = be.getBlockState();
         if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) return state.getValue(BlockStateProperties.HORIZONTAL_FACING);
@@ -31,7 +25,7 @@ public final class ObjBerHelper {
             Direction d = state.getValue(BlockStateProperties.FACING);
             return d.getAxis().isHorizontal() ? d : Direction.NORTH;
         }
-        // eigene "facing"-Properties (z.B. BarrelTankBlock)
+        // Custom "facing" properties (e.g. BarrelTankBlock)
         for (net.minecraft.world.level.block.state.properties.Property<?> p : state.getProperties()) {
             if ("facing".equals(p.getName()) && state.getValue(p) instanceof Direction d && d.getAxis().isHorizontal()) return d;
         }
@@ -39,8 +33,8 @@ public final class ObjBerHelper {
     }
 
     /**
-     * Original-Richtungsmetadate (ForgeDirection-Ordinal 2 Nord, 3 Sued, 4 West, 5 Ost; bei BlockDummyable
-     * {@code meta - offset}). Der Port setzt FACING wie das Original auf die dem Spieler zugewandte Seite.
+     * Original direction metadata (ForgeDirection ordinal 2 North, 3 South, 4 West, 5 East; for BlockDummyable
+     * {@code meta - offset}). The port sets FACING to the side facing the player, matching original.
      */
     public static int meta(BlockEntity be) {
         return switch (facing(be)) {
@@ -51,7 +45,7 @@ public final class ObjBerHelper {
         };
     }
 
-    /** Wie {@link #meta}, aber mit oben/unten (ForgeDirection-Ordinal 0 unten, 1 oben) fuer 6-seitige Bloecke. */
+    /** Like {@link #meta}, but including up/down (ForgeDirection ordinal 0 down, 1 up) for 6-sided blocks. */
     public static int meta6(BlockEntity be) {
         BlockState state = be.getBlockState();
         if (state.hasProperty(BlockStateProperties.FACING)) return state.getValue(BlockStateProperties.FACING).get3DDataValue();
@@ -63,16 +57,16 @@ public final class ObjBerHelper {
         ps.mulPose(Axis.YP.rotationDegrees(deg));
     }
 
-    /** Blockstate-y-Drehung (north 0, east 90, south 180, west 270) auf den Stapel legen, Drehpunkt Blockmitte. */
+    /** Push blockstate Y-rotation (north 0, east 90, south 180, west 270) onto pose stack, pivot at block center. */
     public static void rotateLikeBlockstate(PoseStack ps, Direction facing) {
         float y = (facing.toYRot() + 180F) % 360F;
         ps.mulPose(Axis.YP.rotationDegrees(-y));
     }
 
     /**
-     * {@code RenderDecoItem} mit {@code RenderItem.renderInFrame = true} (kein Wippen, ein Stueck): Rahmen-Skalierung
-     * 0.5128205 und -0.05; Bloecke 1.25-fach, +0.05, -90 Grad, Viertelgroesse; flache Gegenstaende um 180 Grad
-     * gedreht, halbe Groesse, Symbol von -0.25 bis 0.75 (Mitte +0.25).
+     * {@code RenderDecoItem} with {@code RenderItem.renderInFrame = true} (no bobbing, single piece): frame scaling
+     * 0.5128205 and -0.05; blocks 1.25x, +0.05, -90 degrees, quarter size; flat items rotated 180 degrees,
+     * half size, icon from -0.25 to 0.75 (center +0.25).
      */
     public static void renderDecoItemInFrame(PoseStack ps, net.minecraft.client.renderer.MultiBufferSource buf,
                                              net.minecraft.world.item.ItemStack stack, int light,

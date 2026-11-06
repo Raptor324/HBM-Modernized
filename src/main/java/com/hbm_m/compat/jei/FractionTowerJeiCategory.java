@@ -13,7 +13,6 @@ import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge || neoforge {
 /**
  * JEI-Kategorie des Fraktionierturms (siehe {@link FractionTowerRecipe}).
  *
@@ -50,7 +49,3 @@ public class FractionTowerJeiCategory extends JeiFluidRecipeCategory<FractionTow
                 FluidStack.create(recipe.getOutputB(), recipe.getOutputBMb()));
     }
 }
-//?} else {
-/*public final class FractionTowerJeiCategory {
-    private FractionTowerJeiCategory() {}
-}*///?}

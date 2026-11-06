@@ -1,5 +1,7 @@
 package com.hbm_m.client.render;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import com.hbm_m.compat.ContraptionRenderCompat;
 import com.hbm_m.config.ModClothConfig;
 
@@ -13,24 +15,35 @@ import net.minecraft.world.phys.Vec3;
  * all BER renderers. Centralizes the distance check and fade factor math
  * so every renderer behaves identically.
  *
- * <p>The fade zone spans the last 16 blocks (1 chunk) before the cutoff
- * distance. Within this zone, {@link #computeFade} returns a value in
- * {@code (0, 1]} that renderers multiply into their alpha / color to
- * smoothly dissolve the part instead of popping it out abruptly.
+ * <p>The fade zone spans the tail of the cutoff distance — a fraction of it
+ * ({@link #FADE_ZONE_FRACTION}), not a fixed block count. Within this zone,
+ * {@link #computeFade} returns a value in {@code (0, 1]} that renderers
+ * multiply into their alpha / color to smoothly dissolve the part instead of
+ * popping it out abruptly.
  */
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+
 public final class RenderDistanceHelper {
 
     private RenderDistanceHelper() {}
 
-    private static final double FADE_ZONE_BLOCKS = 16.0;
+    /**
+     * Fade zone width: a fraction of the cutoff distance, clamped to a sane
+     * maximum. A fixed 16 blocks read as instant disappearance: at flight speed
+     * a machine crosses them in a fraction of a second while the fade ring stays
+     * put - rows of farms "fly through" it, which looks like a pop cutoff.
+     * A proportion gives a long visible dissolution at any distance
+     * (128 blocks -> ~38 block zone, 256 -> 64).
+     */
+    private static final double FADE_ZONE_FRACTION = 0.3;
+    private static final double FADE_ZONE_MIN_BLOCKS = 16.0;
+    private static final double FADE_ZONE_MAX_BLOCKS = 64.0;
+
+    private static double fadeZoneBlocks(double maxBlocks) {
+        double zone = maxBlocks * FADE_ZONE_FRACTION;
+        return Math.max(FADE_ZONE_MIN_BLOCKS, Math.min(zone, FADE_ZONE_MAX_BLOCKS));
+    }
 
     /**
      * Within this many blocks of {@link #getStaticDistanceBlocks()}, 8-corner spatial
@@ -95,6 +108,12 @@ public final class RenderDistanceHelper {
         return computeAnimatedFade(blockEntity.getBlockPos());
     }
 
+    /** Variant taking a precomputed distance - no repeated camera fetch (Nucleus hot path). */
+    public static float computeAnimatedFade(BlockEntity blockEntity, double distSq) {
+        if (ContraptionRenderCompat.isContraptionRender(blockEntity)) return 1.0f;
+        return computeFade(blockEntity.getBlockPos(), getAnimatedDistanceBlocks(), distSq);
+    }
+
     /**
      * Computes a fade factor for static parts at the given position.
      */
@@ -110,6 +129,12 @@ public final class RenderDistanceHelper {
         return computeStaticFade(blockEntity.getBlockPos());
     }
 
+    /** Variant taking a precomputed distance - no repeated camera fetch (Nucleus hot path). */
+    public static float computeStaticFade(BlockEntity blockEntity, double distSq) {
+        if (ContraptionRenderCompat.isContraptionRender(blockEntity)) return 1.0f;
+        return computeFade(blockEntity.getBlockPos(), getStaticDistanceBlocks(), distSq);
+    }
+
     /**
      * Core fade calculation.
      *
@@ -119,18 +144,123 @@ public final class RenderDistanceHelper {
      */
     public static float computeFade(BlockPos blockPos, double maxBlocks) {
         if (maxBlocks <= 0) return -1f;
-        double distSq = distanceSqToCamera(blockPos);
+        return computeFade(blockPos, maxBlocks, distanceSqToCamera(blockPos));
+    }
+
+    /**
+     * Core fade calculation with a precomputed distance - does not read the camera itself.
+     */
+    public static float computeFade(BlockPos blockPos, double maxBlocks, double distSq) {
+        if (maxBlocks <= 0) return -1f;
         double maxSq = maxBlocks * maxBlocks;
         if (distSq > maxSq) return -1f;
 
-        double fadeStartBlocks = Math.max(0, maxBlocks - FADE_ZONE_BLOCKS);
+        double zone = fadeZoneBlocks(maxBlocks);
+        double fadeStartBlocks = Math.max(0, maxBlocks - zone);
         double fadeStartSq = fadeStartBlocks * fadeStartBlocks;
         if (distSq <= fadeStartSq) return 1.0f;
 
         double dist = Math.sqrt(distSq);
-        float t = (float) ((maxBlocks - dist) / FADE_ZONE_BLOCKS);
+        float t = (float) ((maxBlocks - dist) / zone);
         return Math.max(0f, Math.min(1f, t));
     }
+
+    // ── GPU fade ramp (camera-independent records) ─────────────────────
+    // The instance record stores a static fade MODE (InstancedStaticPartRenderer
+    // .FADE_MODE_*), not a per-frame alpha: an alpha derived from the camera
+    // position changes every frame of motion and the span-diff never converges.
+    // The ramp is evaluated on the GPU per instance (vertex shader) from the
+    // view-space distance; the CPU mirrors the exact same formula here for the
+    // opaque/fading membership split (the two must stay in sync).
+
+    /** Linear ramp, must match fadeRamp() in block_lit_instanced.vsh. */
+    private static float evalRamp(double distSq, double maxBlocks) {
+        if (maxBlocks <= 0) return 1.0f;
+        double maxSq = maxBlocks * maxBlocks;
+        if (distSq >= maxSq) return 0.0f;
+        double zone = fadeZoneBlocks(maxBlocks);
+        double fadeStartBlocks = Math.max(0, maxBlocks - zone);
+        if (distSq <= fadeStartBlocks * fadeStartBlocks) return 1.0f;
+        double dist = Math.sqrt(distSq);
+        float t = (float) ((maxBlocks - dist) / zone);
+        return Math.max(0f, Math.min(1f, t));
+    }
+
+    /** Static-zone ramp for the membership split. Mirrors the vertex shader. */
+    public static float evalStaticFadeAlpha(double distSq) {
+        return evalRamp(distSq, getStaticDistanceBlocks());
+    }
+
+    /**
+     * Animation-zone ramp for the membership split. CONTINUOUS with the
+     * animated-part skip: past the anim cutoff the ramp returns 0 (the record
+     * renders invisible), matching MachineBer.renderAll which does not record
+     * animated parts beyond the cutoff. A part origin offset from the machine
+     * anchor can carry a record while the anchor is inside the cutoff - the
+     * former "1.0 past the end" branch rendered it frozen-opaque (opaque flash
+     * on approach, then the ramp). Must mirror gpuFadeAlpha in
+     * block_lit_instanced.vsh. Disabled zone (maxBlocks &lt;= 0) - always 1.
+     */
+    public static float evalAnimFadeAlpha(double distSq) {
+        double maxBlocks = getAnimatedDistanceBlocks();
+        if (maxBlocks <= 0) return 1.0f;
+        if (distSq >= maxBlocks * maxBlocks) return 0.0f;
+        return evalRamp(distSq, maxBlocks);
+    }
+
+    /**
+     * Per-instance alpha from the stored fade mode and the instance-origin
+     * distance squared (anchor-relative pos vs {@code FrameViewState.relCam} -
+     * the same distance the vertex shader computes in view space).
+     */
+    public static float evalInstanceAlpha(double distSq, float fadeMode) {
+        // R4-2.3: FADE_MODE_INVISIBLE (-1) records are clipped out entirely by the
+        // vertex shader (freed slots, conditionally hidden parts). They must not
+        // enter the fading membership - classifying them as fading made every
+        // frame with freed slots run the opaque/fading partition (which also
+        // permutes the retained buffer) and deferred them to the phase-2 draw.
+        if (fadeMode < 0.0f) {
+            return 1.0f;
+        }
+        if (fadeMode >= com.hbm_m.client.render.InstancedStaticPartRenderer.FADE_MODE_NONE_DIVIDER) {
+            return 1.0f;
+        }
+        float staticAlpha = evalStaticFadeAlpha(distSq);
+        if (fadeMode >= com.hbm_m.client.render.InstancedStaticPartRenderer.FADE_MODE_MIN_ANIM_DIVIDER) {
+            return staticAlpha;
+        }
+        float animAlpha = evalAnimFadeAlpha(distSq);
+        return Math.min(staticAlpha, animAlpha);
+    }
+
+    /** Ramp start (blocks) for the static zone, for the vertex shader uniform. Disabled zone - huge (ramp pinned to 1). */
+    public static float gpuStaticFadeStart() {
+        double m = getStaticDistanceBlocks();
+        if (m <= 0) return GPU_FADE_DISABLED;
+        return (float) Math.max(0, m - fadeZoneBlocks(m));
+    }
+
+    /** Ramp end (blocks) for the static zone. */
+    public static float gpuStaticFadeEnd() {
+        double m = getStaticDistanceBlocks();
+        return m <= 0 ? GPU_FADE_DISABLED + 1.0f : (float) m;
+    }
+
+    /** Ramp start (blocks) for the animation zone. Disabled - huge. */
+    public static float gpuAnimFadeStart() {
+        double m = getAnimatedDistanceBlocks();
+        if (m <= 0) return GPU_FADE_DISABLED;
+        return (float) Math.max(0, m - fadeZoneBlocks(m));
+    }
+
+    /** Ramp end (blocks) for the animation zone. */
+    public static float gpuAnimFadeEnd() {
+        double m = getAnimatedDistanceBlocks();
+        return m <= 0 ? GPU_FADE_DISABLED + 1.0f : (float) m;
+    }
+
+    /** Ramp start sentinel: every real distance is below it, so the ramp stays at 1. */
+    public static final float GPU_FADE_DISABLED = 1.0e9f;
 
     /**
      * Safely computes fade factor, bypassing fading entirely on Create contraptions.
@@ -156,5 +286,24 @@ public final class RenderDistanceHelper {
         double maxBlocks = getStaticDistanceBlocks();
         double detailBlocks = Math.max(0, maxBlocks - LIGHT_CORNER_DETAIL_MARGIN_BLOCKS);
         return detailBlocks * detailBlocks;
+    }
+
+    /**
+     * Fast CPU subpixel test for a part's object-space bounding box `[minX, minY, minZ, maxX, maxY, maxZ]`
+     * at squared camera distance `distSq`. Returns true if the part projects to less than `minPixels` on screen.
+     */
+    public static boolean isSubpixelPart(float[] objBbox, double distSq, float minPixels) {
+        if (objBbox == null || objBbox.length < 6 || distSq <= 16.0) {
+            return false;
+        }
+        float dx = objBbox[3] - objBbox[0];
+        float dy = objBbox[4] - objBbox[1];
+        float dz = objBbox[5] - objBbox[2];
+        float radiusSq = 0.25f * (dx * dx + dy * dy + dz * dz);
+        int vh = Math.max(1, Minecraft.getInstance().getWindow().getHeight());
+        // Conservative focal length (~1.4f for standard 70 deg FOV)
+        float focalPx = vh * 1.4f;
+        double projectedPxSq = (double) (radiusSq * focalPx * focalPx);
+        return projectedPxSq < (double) (minPixels * minPixels) * distSq;
     }
 }

@@ -3,6 +3,7 @@ package com.hbm_m.client.machine;
 import java.util.Arrays;
 
 import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.interfaces.IClientTicker;
 import com.hbm_m.sound.AdvancedAssemblerSoundInstance;
 import com.hbm_m.sound.ModSounds;
 
@@ -12,13 +13,14 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  * Клиентский тикер advanced assembler: вынесен из BlockEntity, чтобы dedicated server
  * не загружал класс с полями клиентских звуков.
  */
-public class AdvancedAssemblerClientTicker {
+@OnlyIn(Dist.CLIENT)
+public class AdvancedAssemblerClientTicker implements IClientTicker {
 
     private final AssemblerArm[] arms = new AssemblerArm[2];
     private float ringAngle;
@@ -28,8 +30,18 @@ public class AdvancedAssemblerClientTicker {
     private int ringDelay;
     private boolean wasCraftingLastTick = false;
     private AdvancedAssemblerSoundInstance soundInstance;
+    /** Bumped whenever any arm angle changed this tick - the O(1) epoch salt
+     * consumed by {@code MachineAdvancedAssemblerRenderer.animationEpoch} (it
+     * replaces hashing every arm angle per render frame). Streamed record words derive
+     * only from the arm angles, so the checksum covers exactly the inputs the
+     * render-side epoch must observe. */
+    public long animVersion;
+    private int lastAngleHash;
 
-    public AdvancedAssemblerClientTicker() {
+    private final MachineAdvancedAssemblerBlockEntity be;
+
+    public AdvancedAssemblerClientTicker(MachineAdvancedAssemblerBlockEntity be) {
+        this.be = be;
         for (int i = 0; i < arms.length; i++) {
             arms[i] = new AssemblerArm();
         }
@@ -43,67 +55,142 @@ public class AdvancedAssemblerClientTicker {
         return prevRingAngle;
     }
 
+    public float getRingAngle(float partialTick) {
+        return Mth.lerp(partialTick, prevRingAngle, ringAngle);
+    }
+
     public AssemblerArm[] getArms() {
         return arms;
     }
 
-    public void clientTick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
-        updateSound(entity);
+    @Override
+    public void clientTick() {
+        Level level = be.getLevel();
+        BlockPos pos = be.getBlockPos();
+        // World-space anchor: on a Sable ship the BE sits in far-away plot-grid
+        // chunks of this level, so every distance gate and every sound anchor
+        // must use the projected position (parity with ClientSoundManager.isAudible).
+        net.minecraft.world.phys.Vec3 worldCenter = level != null
+                ? com.hbm_m.compat.sable.SableCompat.blockCenterInWorld(level, pos)
+                : new net.minecraft.world.phys.Vec3(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+        // Distance gate: on assembler farms thousands of tickers each hit the
+        // sound engine every tick (SoundEngine.play stalls the render thread on
+        // its audio-pool future). Beyond ~24 blocks the sounds are inaudible
+        // anyway - keep the animation, skip all OpenAL traffic.
+        boolean inEarshot = isInEarshot(worldCenter);
+        updateSound(be, inEarshot);
 
         this.prevRingAngle = this.ringAngle;
-        boolean craftingNow = entity.isClientCrafting();
-
+        boolean craftingNow = be.isClientCrafting();
+        boolean armAiActive = isWithinDistance(worldCenter, ARM_AI_DISTANCE_SQ);
         if (craftingNow) {
             for (AssemblerArm arm : arms) {
                 arm.updateInterp();
-                arm.updateArm(level, pos, level.random);
+                if (armAiActive) {
+                    arm.updateArm(level, worldCenter, level.random, inEarshot);
+                }
             }
         } else {
             for (AssemblerArm arm : arms) {
                 arm.updateInterp();
-                arm.returnToNullPos();
+                if (armAiActive) {
+                    arm.returnToNullPos();
+                }
             }
         }
 
         if (craftingNow && !wasCraftingLastTick) {
-            this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
+            this.ringTarget = this.ringAngle + (level.random.nextFloat() * 2 - 1) * 135;
             this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
             this.ringDelay = 0;
-            level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.5f, 1.0f, false);
+            if (inEarshot) {
+                level.playLocalSound(worldCenter.x, worldCenter.y, worldCenter.z,
+                    ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.5f, 1.0f, false);
+            }
         }
 
         wasCraftingLastTick = craftingNow;
 
         if (craftingNow) {
-            if (this.ringAngle != this.ringTarget) {
-                float ringDelta = Mth.wrapDegrees(this.ringTarget - this.ringAngle);
-                if (Math.abs(ringDelta) <= this.ringSpeed) {
-                    this.ringAngle = this.ringTarget;
-                    this.ringDelay = 20 + level.random.nextInt(21);
-                } else {
-                    this.ringAngle += Math.signum(ringDelta) * this.ringSpeed;
-                }
-            } else if (this.ringDelay > 0) {
+            boolean advance = this.ringAngle != this.ringTarget;
+            if (!advance && this.ringDelay > 0) {
                 this.ringDelay--;
                 if (this.ringDelay == 0) {
-                    level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                        ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.3f, 1.0f, false);
-                    this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
+                    if (inEarshot) {
+                        level.playLocalSound(worldCenter.x, worldCenter.y, worldCenter.z,
+                            ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.3f, 1.0f, false);
+                    }
+                    this.ringTarget = this.ringAngle + (level.random.nextFloat() * 2 - 1) * 135;
                     this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
+                    advance = true;
                 }
             }
-        } else {
-            if (Math.abs(this.ringAngle) > 0.1f) {
-                this.ringAngle = Mth.lerp(0.1f, this.ringAngle, 0);
-            } else {
-                this.ringAngle = 0;
+            if (advance) {
+                if (Math.abs(this.ringTarget - this.ringAngle) <= this.ringSpeed) {
+                    this.ringAngle = this.ringTarget;
+                } else {
+                    this.ringAngle += Math.signum(this.ringTarget - this.ringAngle) * this.ringSpeed;
+                }
+                if (this.ringAngle == this.ringTarget) {
+                    while (this.ringTarget >= 360f) {
+                        this.ringTarget -= 360f;
+                        this.ringAngle -= 360f;
+                        this.prevRingAngle -= 360f;
+                    }
+                    while (this.ringTarget <= -360f) {
+                        this.ringTarget += 360f;
+                        this.ringAngle += 360f;
+                        this.prevRingAngle += 360f;
+                    }
+                    this.ringDelay = 20 + level.random.nextInt(21);
+                }
             }
+        }
+        // Not crafting: the ring freezes in place (no return-to-zero unwind).
+
+        // Arm-angle change salt for the render epoch (see animVersion).
+        // Bit-mixing hash, NOT an additive sum: two arms moving by CANCELLING
+        // deltas kept the old checksum unchanged, the render epoch stayed
+        // "stable" and the frozen walk asserted the arms mid-swing - and the
+        // freeze then stopped the very changes the sum watched, locking the
+        // machine in a frozen pose while the tracked ring extrapolated its
+        // stale segment past the target. A bitwise mix cannot cancel: any angle bit flip changes
+        // the hash deterministically.
+        int hash = 0;
+        for (AssemblerArm arm : arms) {
+            if (arm != null) {
+                for (float a : arm.angles) {
+                    hash = hash * 31 + Float.floatToRawIntBits(a);
+                }
+            }
+        }
+        if (hash != lastAngleHash) {
+            lastAngleHash = hash;
+            animVersion++;
         }
     }
 
-    private void updateSound(MachineAdvancedAssemblerBlockEntity entity) {
-        boolean isCrafting = entity.isClientCrafting();
+    private static boolean isInEarshot(net.minecraft.world.phys.Vec3 worldCenter) {
+        return isWithinDistance(worldCenter, EARSHOT_DISTANCE_SQ);
+    }
+
+    private static boolean isWithinDistance(net.minecraft.world.phys.Vec3 worldCenter, double maxDistSq) {
+        net.minecraft.client.player.LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null) {
+            return false;
+        }
+        double dx = worldCenter.x - player.getX();
+        double dy = worldCenter.y - player.getY();
+        double dz = worldCenter.z - player.getZ();
+        return dx * dx + dy * dy + dz * dz <= maxDistSq;
+    }
+
+    private static final double EARSHOT_DISTANCE_SQ = 24.0 * 24.0;
+    /** Beyond this the arm AI (updateArm / returnToNullPos) is skipped - see the gate in clientTick. */
+    private static final double ARM_AI_DISTANCE_SQ = 48.0 * 48.0;
+
+    private void updateSound(MachineAdvancedAssemblerBlockEntity entity, boolean inEarshot) {
+        boolean isCrafting = entity.isClientCrafting() && inEarshot;
         if (isCrafting && (this.soundInstance == null || this.soundInstance.isStopped())) {
             this.soundInstance = new AdvancedAssemblerSoundInstance(entity.getBlockPos());
             Minecraft.getInstance().getSoundManager().play(this.soundInstance);
@@ -155,7 +242,7 @@ public class AdvancedAssemblerClientTicker {
             speed[3] = 0.5f;
         }
 
-        public void updateArm(Level level, BlockPos pos, RandomSource random) {
+        public void updateArm(Level level, net.minecraft.world.phys.Vec3 soundPos, RandomSource random, boolean inEarshot) {
             resetSpeed();
             if (actionDelay > 0) {
                 actionDelay--;
@@ -171,8 +258,10 @@ public class AdvancedAssemblerClientTicker {
                     break;
                 case EXTEND_STRIKER:
                     if (move()) {
-                        level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                            ModSounds.ASSEMBLER_STRIKE_RANDOM.get(), SoundSource.BLOCKS, 0.5f, 1.0F, false);
+                        if (inEarshot) {
+                            level.playLocalSound(soundPos.x, soundPos.y, soundPos.z,
+                                ModSounds.ASSEMBLER_STRIKE_RANDOM.get(), SoundSource.BLOCKS, 0.5f, 1.0F, false);
+                        }
                         state = ArmActionState.RETRACT_STRIKER;
                         targetAngles[3] = 0f;
                     }

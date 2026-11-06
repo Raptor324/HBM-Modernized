@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code BlockWandStructure} (wand_structure): Meta 0 = Speicherblock ({@code wand_structure_save}), Meta 1 =
@@ -56,7 +57,7 @@ public class BlockWandStructure extends BaseEntityBlock implements ILookOverlay 
     //?} else {
     /*@Override
     protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+        return com.hbm_m.platform.BlockHooks.useItemResult(hbmUse(state, world, pos, player, hand, hit));
     }
     private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     *///?}
@@ -124,7 +125,7 @@ public class BlockWandStructure extends BaseEntityBlock implements ILookOverlay 
         ILookOverlay.printGeneric(guiGraphics, getName(), 0xffff00, 0x404000, text);
     }
     //? if >= 1.21.1 {
-    /*public static final com.mojang.serialization.MapCodec<BlockWandStructure> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(BlockWandStructure.class);
+    /*public static final com.mojang.serialization.MapCodec<BlockWandStructure> CODEC = com.hbm_m.platform.BlockHooks.unsupportedCodec(BlockWandStructure.class);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

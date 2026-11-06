@@ -70,7 +70,6 @@ public class HeldItemInventory extends SimpleContainer {
 
     /** {@code ItemStackUtil.addStacksToNBT}. */
     public static void addStacksToNBT(ItemStack stack, ItemStack... stacks) {
-        if (!StackNbt.has(stack)) StackNbt.set(stack, new CompoundTag());
         ListTag tags = new ListTag();
         for (int i = 0; i < stacks.length; i++) {
             if (stacks[i] != null && !stacks[i].isEmpty()) {
@@ -80,7 +79,8 @@ public class HeldItemInventory extends SimpleContainer {
                 tags.add(slotNBT);
             }
         }
-        StackNbt.tag(stack).put("items", tags);
+        // orCreate вместо set(EMPTY)+tag(): на 1.21.1 set() с пустым тегом удаляет компонент
+        StackNbt.orCreate(stack).put("items", tags);
     }
 
     @Override

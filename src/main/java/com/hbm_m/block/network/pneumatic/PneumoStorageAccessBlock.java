@@ -88,8 +88,13 @@ public class PneumoStorageAccessBlock extends PneumaticStorageBlockBase {
     protected boolean spillOnRemove(Level level, BlockPos pos) {
         return false;
     }
-    //? if >= 1.21.1 {
+
+    //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<PneumoStorageAccessBlock> CODEC = simpleCodec(PneumoStorageAccessBlock::new);
-    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
     *///?}
 }

@@ -46,6 +46,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.LevelHooks;
 
 public class MachineCyclotronBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -189,6 +190,7 @@ public class MachineCyclotronBlock extends BaseEntityBlock implements IMultibloc
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
+            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
             removeLegacyCells(level, pos);
             getStructureHelper().destroyStructure(level, pos, state.getValue(FACING));
         }
@@ -223,7 +225,7 @@ public class MachineCyclotronBlock extends BaseEntityBlock implements IMultibloc
                         if (plugItem != null && held.getItem() == plugItem && !cyc.getPlug(i)) {
                             held.shrink(1);
                             cyc.setPlug(i);
-                            PlatformHooks.playSound(level, pos, ModSounds.UPGRADE_PLUG.get(),
+                            LevelHooks.playSound(level, pos, ModSounds.UPGRADE_PLUG.get(),
                                     SoundSource.BLOCKS, 1.5F, 1.0F);
                             return InteractionResult.sidedSuccess(false);
                         }

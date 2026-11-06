@@ -5,6 +5,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Forge-only event hook for {@link ChunkRadiationDebugRenderer}.
@@ -12,6 +13,7 @@ import net.minecraftforge.fml.common.Mod;
  * Kept separate so the renderer itself stays loader-agnostic.
  */
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public final class ChunkRadiationDebugRendererForge {
     private ChunkRadiationDebugRendererForge() {}
 

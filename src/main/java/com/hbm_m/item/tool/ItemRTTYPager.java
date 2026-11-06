@@ -88,8 +88,8 @@ public class ItemRTTYPager extends Item implements IItemControlReceiver, IToolti
     @Override
     public void receiveControl(ItemStack stack, CompoundTag data) {
         if (data.contains("chan")) {
-            if (!StackNbt.has(stack)) StackNbt.set(stack, new CompoundTag());
-            StackNbt.tag(stack).putString(KEY_CHANNEL, data.getString(KEY_CHANNEL));
+            // orCreate вместо set(EMPTY)+tag(): на 1.21.1 set() с пустым тегом удаляет компонент
+            StackNbt.orCreate(stack).putString(KEY_CHANNEL, data.getString(KEY_CHANNEL));
         }
     }
 }

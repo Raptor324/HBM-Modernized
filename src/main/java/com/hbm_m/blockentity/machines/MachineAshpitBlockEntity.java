@@ -103,6 +103,28 @@ public class MachineAshpitBlockEntity extends BaseMachineBlockEntity {
         ashLevel[type.ordinal()] += amount;
     }
 
+    /** GIT TileEntityFireboxBase: a burner dumps the fuel's raw burn time into an ash pit right below it. */
+    public static void feedFromBurner(Level level, BlockPos burnerPos, ItemStack fuel, int baseTime) {
+        if (level == null || baseTime <= 0) return;
+        if (!(level.getBlockEntity(burnerPos.below()) instanceof MachineAshpitBlockEntity ashpit)) return;
+        ashpit.addAsh(ashFromFuel(fuel), baseTime);
+        ashpit.setChanged();
+    }
+
+    /** GIT TileEntityFireboxBase.getAshFromFuel; the 1.7.10 ore dict names map onto tags plus item ids. */
+    public static AshType ashFromFuel(ItemStack stack) {
+        String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
+        if (stack.is(net.minecraft.tags.ItemTags.COALS) || id.contains("coke") || id.contains("coal") || id.contains("lignite")) {
+            return AshType.COAL;
+        }
+        if (stack.is(net.minecraft.tags.ItemTags.LOGS) || stack.is(net.minecraft.tags.ItemTags.PLANKS)
+                || stack.is(net.minecraft.tags.ItemTags.SAPLINGS)
+                || id.contains("log") || id.contains("wood") || id.contains("sapling")) {
+            return AshType.WOOD;
+        }
+        return AshType.MISC;
+    }
+
     private boolean processAsh(AshType type) {
         if (ashLevel[type.ordinal()] < type.threshold) return false;
 
@@ -114,7 +136,7 @@ public class MachineAshpitBlockEntity extends BaseMachineBlockEntity {
                 ashLevel[type.ordinal()] -= type.threshold;
                 return true;
             } else if (current.getCount() < current.getMaxStackSize()
-                    && com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, toAdd)) {
+                    && com.hbm_m.platform.StackNbt.sameItemSameTags(current, toAdd)) {
                 current.grow(1);
                 ashLevel[type.ordinal()] -= type.threshold;
                 return true;

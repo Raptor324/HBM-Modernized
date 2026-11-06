@@ -1,64 +1,52 @@
 {
   "textures": {
-    "particle": "hbm_m:block/machine/zirnox"
+    "default": "hbm_m:block/machine/zirnox"
   },
-  "loader": "forge:composite",
-  "children": {
-    "zirnox_model": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/zirnox.obj",
-      "flip_v": true,
-      "render_type": "minecraft:solid",
-      "textures": {
-        "default": "hbm_m:block/machine/zirnox"
-      }
-    }
-  },
-  "transform": {
-    "translation": [0.5, 0, -1.5],
-    "rotation": [0, 90, 0],
-    "scale": 1.0
-  },
+  "loader": "hbm_m:machine_parts_loader",
+  "model": "hbm_m:models/block/zirnox.obj",
+  "flip_v": true,
+  "render_type": "minecraft:solid",
+  "transform": {"origin": "corner", "translation": [0.5, 0, 0.5], "rotation": [0, 90, 0], "scale": 1.0},
   "display": {
     "thirdperson_righthand": {
-        "rotation": [ 5, 45, 0 ],
-        "translation": [ 0.00, 1.50, 0.00 ],
-        "scale": [ 0.13, 0.13, 0.13 ]
+      "rotation": [ 75, 45, 0 ],
+      "translation": [ 0.0, 2.5, 0.0 ],
+      "scale": [ 0.16, 0.16, 0.16 ]
     },
     "thirdperson_lefthand": {
-        "rotation": [ 75, 45, 0 ],
-        "translation": [ 0.00, 2.50, 0.00 ],
-        "scale": [ 0.20, 0.20, 0.20 ]
+      "rotation": [ 75, 45, 0 ],
+      "translation": [ 0.0, 2.5, 0.0 ],
+      "scale": [ 0.16, 0.16, 0.16 ]
     },
     "firstperson_righthand": {
-        "rotation": [ 2, 97, 334 ],
-        "translation": [ 0.00, 2.25, 2.75 ],
-        "scale": [ 0.11, 0.11, 0.11 ]
+      "rotation": [ 0, 45, 0 ],
+      "translation": [ 0.5, 1.0, 0.0 ],
+      "scale": [ 0.09, 0.09, 0.09 ]
     },
     "firstperson_lefthand": {
-        "rotation": [ 0, 45, 0 ],
-        "translation": [ 0.75, 1.00, 0.00 ],
-        "scale": [ 0.20, 0.20, 0.20 ]
+      "rotation": [ 0, 45, 0 ],
+      "translation": [ 0.0, 0.0, 0.0 ],
+      "scale": [ 0.09, 0.09, 0.09 ]
     },
     "gui": {
-        "rotation": [ 30, 129, 0 ],
-        "translation": [ 0.50, -3.50, 0.00 ],
-        "scale": [ 0.13, 0.13, 0.13 ]
+      "rotation": [ 30, 135, 0 ],
+      "translation": [ 0.0, -3.1, 0.0 ],
+      "scale": [ 0.13, 0.13, 0.13 ]
     },
     "head": {
-        "rotation": [ 0, 0, 0 ],
-        "translation": [ 0.00, 0.00, 0.00 ],
-        "scale": [ 1.00, 1.00, 1.00 ]
+      "rotation": [ 0, 0, 0 ],
+      "translation": [ 0.0, 0.0, 0.0 ],
+      "scale": [ 1.0, 1.0, 1.0 ]
     },
     "fixed": {
-        "rotation": [ 0, 180, 0 ],
-        "translation": [ 0.00, 0.00, 0.00 ],
-        "scale": [ 0.30, 0.30, 0.30 ]
+      "rotation": [ 0, 180, 0 ],
+      "translation": [ 0.0, -4.3, 0.0 ],
+      "scale": [ 0.18, 0.18, 0.18 ]
     },
     "ground": {
-        "rotation": [ 0, 0, 0 ],
-        "translation": [ 0.00, 3.00, 0.00 ],
-        "scale": [ 0.18, 0.18, 0.18 ]
+      "rotation": [ 0, 0, 0 ],
+      "translation": [ 0.0, 3.0, 0.0 ],
+      "scale": [ 0.28, 0.28, 0.28 ]
     }
-}
+  }
 }

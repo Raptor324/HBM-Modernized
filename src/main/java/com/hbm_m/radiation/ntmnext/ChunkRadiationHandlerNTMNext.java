@@ -112,8 +112,7 @@ public class ChunkRadiationHandlerNTMNext extends ChunkRadiationHandler {
         }
     }
     //?} else {
-    /*// Fabric/NeoForge: ChunkRadiationManager ruft das nur fuer ChunkRadiationHandlerSimple auf;
-    // dort muss vor Nutzung noch ein eigener Unload-Hook verdrahtet werden.
+    /*// Fabric/NeoForge: ChunkRadiationManager.onChunkUnload dispatcht an Simple und NTMNext.
     public void receiveChunkUnload(LevelChunk chunk) {
         if (chunk.getLevel() instanceof ServerLevel server) {
             NtmRadiationSystem.onChunkUnload(server, chunk);

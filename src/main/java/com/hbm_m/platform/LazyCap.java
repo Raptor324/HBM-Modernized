@@ -18,14 +18,30 @@ import org.jetbrains.annotations.Nullable;
  ^/
 public final class LazyCap<T> {
 
-    private static final LazyCap<Void> EMPTY = new LazyCap<>(null);
+    // isValid=false у синглтона EMPTY: иначе addListener навсегда сохранял бы лямбды
+    // (с захваченными BlockEntity) в общий для всего мода CopyOnWriteArrayList — утечка.
+    private static final LazyCap<Void> EMPTY;
+    static {
+        LazyCap<Void> e = new LazyCap<>((Supplier<Void>) null);
+        e.isValid = false;
+        EMPTY = e;
+    }
 
     private @Nullable Supplier<? extends T> supplier;
     private @Nullable T resolved;
     private boolean isValid = true;
+    // Ленивый список: аллоцируется только при первом addListener. Каждый capability-запрос
+    // (HbmCaps.get/item/defaults/query) создаёт LazyCap — CopyOnWriteArrayList на каждый
+    // вызов мусорил хип в горячем пути труб/кабелей.
+    private @Nullable java.util.List<Consumer<LazyCap<T>>> listeners;
 
     private LazyCap(@Nullable Supplier<? extends T> supplier) {
         this.supplier = supplier;
+    }
+
+    private LazyCap(@Nullable T resolvedValue, boolean preResolved) {
+        this.supplier = null;
+        this.resolved = resolvedValue;
     }
 
     public static <T> LazyCap<T> of(@Nullable Supplier<? extends T> supplier) {
@@ -38,7 +54,8 @@ public final class LazyCap<T> {
         if (value == null) return empty();
         if (value instanceof LazyCap<?> lc) return (LazyCap<T>) lc;
         T v = (T) value;
-        return new LazyCap<>(() -> v);
+        // Без лямбды: конструктор прямого значения (горячий путь capability-запросов).
+        return new LazyCap<>(v, true);
     }
 
     @SuppressWarnings("unchecked")
@@ -52,8 +69,10 @@ public final class LazyCap<T> {
     }
 
     private @Nullable T getValue() {
-        if (!isValid || supplier == null) return null;
-        if (resolved == null) resolved = supplier.get();
+        if (!isValid) return null;
+        if (resolved != null) return resolved;
+        if (supplier == null) return null;
+        resolved = supplier.get();
         return resolved;
     }
 
@@ -89,7 +108,8 @@ public final class LazyCap<T> {
     }
 
     public Optional<T> resolve() {
-        return isPresent() ? Optional.ofNullable(getValue()) : Optional.empty();
+        // Одно вычисление getValue(): isPresent() здесь звал supplier.get() второй раз
+        return Optional.ofNullable(getValue());
     }
 
     public <U> Optional<U> map(Function<? super T, ? extends U> mapper) {
@@ -98,17 +118,39 @@ public final class LazyCap<T> {
     }
 
     public <U> LazyCap<U> lazyMap(Function<? super T, ? extends U> mapper) {
-        return isPresent() ? of(() -> mapper.apply(getValue())) : empty();
+        // Лениво: isPresent() здесь немедленно вычислял supplier.get(), убивая ленивость.
+        // Плюс guard на EMPTY/resolved-null: маппинг пустого LazyCap не аллоцирует новый.
+        if (!isValid || (resolved == null && supplier == null)) return empty();
+        return of(() -> {
+            T v = getValue();
+            return v == null ? null : mapper.apply(v);
+        });
     }
 
-    /^* Forge: Listener bei Invalidierung. Auf NeoForge uebernimmt das {@code BlockCapabilityCache}; hier ohne Wirkung. ^/
+    /^* Forge: Listener bei Invalidierung. Wird bei {@link #invalidate()} aufgerufen. ^/
     public void addListener(Consumer<LazyCap<T>> listener) {
+        if (listener != null) {
+            if (!this.isValid) {
+                listener.accept(this);
+            } else {
+                if (this.listeners == null) {
+                    this.listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+                }
+                this.listeners.add(listener);
+            }
+        }
     }
 
     public void invalidate() {
         if (this == EMPTY) return;
         this.isValid = false;
         this.resolved = null;
+        if (this.listeners != null) {
+            for (Consumer<LazyCap<T>> listener : this.listeners) {
+                listener.accept(this);
+            }
+            this.listeners = null;
+        }
     }
 }
 *///?}

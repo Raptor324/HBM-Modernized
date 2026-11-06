@@ -38,7 +38,6 @@ public class MachineFoundrySlagtapBlockEntity extends MachineFoundryOutletBlockE
 
     @Override
     public boolean canAcceptPartialFlow(Level world, BlockPos pos, Direction side, MaterialStack stack) {
-
         if (filter != null && (filter != stack.material ^ invertFilter)) return false;
         if (isClosed()) return false;
         if (side != facing().getOpposite()) return false;
@@ -49,7 +48,6 @@ public class MachineFoundrySlagtapBlockEntity extends MachineFoundryOutletBlockE
     @Override
     @Nullable
     public MaterialStack flow(Level world, BlockPos pos, Direction side, MaterialStack stack) {
-
         if (stack == null || stack.material == null || stack.amount <= 0) {
             return null;
         }

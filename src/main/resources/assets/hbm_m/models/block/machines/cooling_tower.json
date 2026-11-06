@@ -1,135 +1,52 @@
 {
+  "loader": "hbm_m:machine_parts_loader",
+  "model": "hbm_m:models/block/machines/tower_large.obj",
+  "flip_v": true,
+  "render_type": "minecraft:solid",
   "textures": {
+    "default": "hbm_m:block/machine/tower_large",
     "particle": "hbm_m:block/machine/tower_large"
   },
-  "loader": "forge:composite",
-  "children": {
-    "tower_large_model": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/machines/tower_large.obj",
-      "flip_v": true,
-      "render_type": "minecraft:solid",
-      "textures": {
-        "default": "hbm_m:block/machine/tower_large"
-      }
-    }
-  },
   "transform": {
-    "translation": [
-      0.5,
-      0,
-      0.5
-    ],
-    "rotation": [
-      0,
-      0,
-      0
-    ],
+    "translation": [0.5, 0, 0.5],
+    "rotation": [0, 0, 0],
     "scale": 1.0
   },
   "display": {
-    "gui": {"rotation":[30,225,0],"translation":[0,-4.176,0],"scale":[0.0584,0.0584,0.0584]},
+    "gui": {
+      "rotation": [30, 225, 0],
+      "translation": [0, -4.176, 0],
+      "scale": [0.0584, 0.0584, 0.0584]
+    },
     "fixed": {
-      "rotation": [
-        0,
-        90,
-        0
-      ],
-      "translation": [
-        0,
-        -4,
-        0
-      ],
-      "scale": [
-        0.094,
-        0.094,
-        0.094
-      ]
+      "rotation": [0, 90, 0],
+      "translation": [0, -4, 0],
+      "scale": [0.094, 0.094, 0.094]
     },
     "ground": {
-      "rotation": [
-        0,
-        90,
-        0
-      ],
-      "translation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        0.094,
-        0.094,
-        0.094
-      ]
+      "rotation": [0, 90, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.094, 0.094, 0.094]
     },
     "thirdperson_righthand": {
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "translation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        0.0625,
-        0.0625,
-        0.0625
-      ]
+      "rotation": [0, 0, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.0625, 0.0625, 0.0625]
     },
     "thirdperson_lefthand": {
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "translation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        0.0625,
-        0.0625,
-        0.0625
-      ]
+      "rotation": [0, 0, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.0625, 0.0625, 0.0625]
     },
     "firstperson_righthand": {
-      "rotation": [
-        0,
-        90,
-        0
-      ],
-      "translation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        0.0625,
-        0.0625,
-        0.0625
-      ]
+      "rotation": [0, 90, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.0625, 0.0625, 0.0625]
     },
     "firstperson_lefthand": {
-      "rotation": [
-        0,
-        90,
-        0
-      ],
-      "translation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        0.0625,
-        0.0625,
-        0.0625
-      ]
+      "rotation": [0, 90, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.0625, 0.0625, 0.0625]
     }
   }
 }

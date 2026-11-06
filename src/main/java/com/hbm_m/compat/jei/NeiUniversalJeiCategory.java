@@ -1,5 +1,4 @@
 package com.hbm_m.compat.jei;
-//? if forge || neoforge {
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -137,7 +136,3 @@ public class NeiUniversalJeiCategory implements IRecipeCategory<NeiUniversalJeiC
         JeiNeiRendering.drawMachineSlot(guiGraphics, 0, false);
     }
 }
-//?} else {
-/*public final class NeiUniversalJeiCategory {
-    private NeiUniversalJeiCategory() {}
-}*///?}

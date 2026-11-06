@@ -22,13 +22,8 @@ import com.hbm_m.platform.recipe.RecipeInputWrapper;
 import com.hbm_m.sound.ClientSoundBootstrap;
 
 import dev.architectury.registry.registries.RegistrySupplier;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -45,6 +40,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 
 public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
 
@@ -70,6 +66,10 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     private int soundCycle = 0;
     private boolean isActive = false;
     private boolean clientIsActive = false;
+
+    /** Кэш скана рецептов измельчения: сигнатура = фингерпринт входного стака (включая damage). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<ShredderRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
     private int syncCounter = 0;
     private static final int SYNC_INTERVAL = 20;
 
@@ -176,9 +176,8 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             blockEntity.serverTick(level, pos);
         }
     }
-//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
-//?}
+
     private void clientTick() {
         // Original: kein Dauerklang, das Geraeusch kommt serverseitig (siehe serverTick)
     }
@@ -236,6 +235,9 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
                             int newDamage = Math.min(maxDamage, oldDamage + 1);
                             if (newDamage != oldDamage) {
                                 blade.setDamageValue(newDamage);
+                                if (oldDamage < maxDamage && newDamage >= maxDamage) {
+                                    level.playSound(null, pos, SoundEvents.ITEM_BREAK, SoundSource.BLOCKS, 1.0F, 0.8F);
+                                }
                                 dirty = true;
                             }
                         }
@@ -276,8 +278,11 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         }
 
         if (dirty) {
-            setChanged();
-            sendUpdateToClient();
+            long lo = this.getEnergyStored();
+            long hi = progress * 31L + (isActive ? 1L : 0L);
+            hi = hi * 31L + StackNbt.fingerprint(inventory.getStackInSlot(BLADE_LEFT));
+            hi = hi * 31L + StackNbt.fingerprint(inventory.getStackInSlot(BLADE_RIGHT));
+            syncIfStateChanged(lo, hi);
         }
     }
 
@@ -315,14 +320,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
 
         for (int i = INPUT_START; i <= INPUT_END; i++) {
             ItemStack stack = inventory.getStackInSlot(i);
-            // E11 (Fork, nur mit Space-Addon): Wackelkopf "Gwen" im Schredder -> Schredder explodiert
-            if (!stack.isEmpty() && com.hbm_m.api.space.SpaceApi.forkActive() && com.hbm_m.api.space.SpaceApi.fork().shredderExplodes(stack)) {
-                if (level != null && !level.isClientSide) {
-                    level.destroyBlock(worldPosition, false);
-                    level.explode(null, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5, 5F, true, net.minecraft.world.level.Level.ExplosionInteraction.BLOCK);
-                }
-                break;
-            } else if (!stack.isEmpty() && stack.getCount() > 0 && hasSpace(stack)) {
+            if (!stack.isEmpty() && stack.getCount() > 0 && hasSpace(stack)) {
                 return true;
             }
         }
@@ -344,7 +342,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
                 for (int outSlot = OUTPUT_START; outSlot <= OUTPUT_END; outSlot++) {
                     ItemStack outputStack = inventory.getStackInSlot(outSlot);
                     if (!outputStack.isEmpty() && 
-                        PlatformHooks.isSameItemSameTags(outputStack, result) &&
+                        StackNbt.sameItemSameTags(outputStack, result) &&
                         outputStack.getCount() + result.getCount() <= outputStack.getMaxStackSize()) {
                         
                         outputStack.grow(result.getCount());
@@ -379,7 +377,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             if (slotStack.isEmpty()) {
                 return true;
             }
-            if (PlatformHooks.isSameItemSameTags(slotStack, result) &&
+            if (StackNbt.sameItemSameTags(slotStack, result) &&
                 slotStack.getCount() + result.getCount() <= result.getMaxStackSize()) {
                 return true;
             }
@@ -389,27 +387,35 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     }
 
     private ItemStack getRecipeResult(ItemStack input) {
+        // Пустая ветка ДО резолвера: пустая сигнатура = 0 и не должна отравлять кэш.
         if (input.isEmpty() || level == null) {
             return new ItemStack(ModMaterialItems.item(ModMaterials.SCRAP, MaterialShape.SCRAP), 1);
         }
 
-        SimpleContainer container = new SimpleContainer(1);
-        container.setItem(0, input);
-        RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
-        Optional<ShredderRecipe> recipe = RecipeHooks.getAllRecipes(level, ShredderRecipe.Type.INSTANCE).stream()
-                .filter(r -> r.matchesRecipe(wrapper, level))
-                .findFirst();
-        
-        if (recipe.isPresent()) {
-            return recipe.get().getResultItem(level.registryAccess()).copy();
+        // Чистый матч рецепта по фингерпринту входа (CONTRACT 1): проверка места под выход
+        // (hasSpace) остаётся ВНЕ резолвера и переоценивается каждый тик — закэшированный
+        // рецепт никогда не блокирует измельчитель после освобождения выходов.
+        ShredderRecipe recipe = recipeResolver.resolve(level, ShredderRecipe.Type.INSTANCE,
+                StackNbt.fingerprint(input), (lvl, all) -> {
+                    SimpleContainer container = new SimpleContainer(1);
+                    container.setItem(0, input);
+                    RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
+                    for (ShredderRecipe r : all) {
+                        if (r.matchesRecipe(wrapper, lvl)) return r;
+                    }
+                    return null;
+                });
+
+        if (recipe != null) {
+            return recipe.getResultItem(level.registryAccess()).copy();
         }
-        
+
         if (isDustLike(input)) {
             ItemStack copy = input.copy();
             copy.setCount(1);
             return copy;
         }
-        
+
         return new ItemStack(ModMaterialItems.item(ModMaterials.SCRAP, MaterialShape.SCRAP), 1);
     }
 

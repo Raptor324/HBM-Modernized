@@ -1,12 +1,11 @@
 package com.hbm_m.client.render.effect;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.joml.Matrix4f;
+import com.hbm_m.client.model.nmesh.NMeshData;
+import com.hbm_m.client.model.nmesh.NMeshLoader;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -16,21 +15,15 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 /**
- * Кэш {@code sphere_new.obj} для Fleija-облака (без текстуры, только цвет).
+ * Cached {@code sphere_new.obj} mesh for the Fleija cloud (no texture, flat color only).
  */
 public final class FleijaSphereMesh {
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation SPHERE_OBJ = new ResourceLocation(RefStrings.MODID, "models/sphere_new.obj");
-    *///?} else {
         private static final ResourceLocation SPHERE_OBJ = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/sphere_new.obj");
-    //?}
 
-    private record Vec3(float x, float y, float z) {}
     private record Tri(float x1, float y1, float z1, float x2, float y2, float z2, float x3, float y3, float z3) {}
 
     private static List<Tri> triangles = List.of();
@@ -72,61 +65,32 @@ public final class FleijaSphereMesh {
                                    float x, float y, float z,
                                    float r, float g, float b, float a,
                                    int light, int overlay) {
-        //? if < 1.21.1 {
-        consumer.vertex(matrix, x, y, z).color(r, g, b, a).uv(0, 0).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
-        //?} else {
-        /*// 1.21.1: vertex->addVertex; color(int 0-255), uv->setUv, overlayCoords->setOverlay, uv2->setLight, normal->setNormal, без endVertex.
-        consumer.addVertex(matrix, x, y, z)
-                .setColor((int)(r * 255), (int)(g * 255), (int)(b * 255), (int)(a * 255))
-                .setUv(0, 0).setOverlay(overlay).setLight(light).setNormal(0, 1, 0);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexFull(consumer, matrix, x, y, z, r, g, b, a, 0, 0, overlay, light, 0, 1, 0);
     }
 
+    /**
+     * Nmesh-first: binary {@code .nmesh} (or runtime resourcepack .obj via NMeshLoader).
+     * UV and normals are ignored - the cloud renders with flat color and fixed normal (0,1,0).
+     */
     private static List<Tri> loadTriangles(ResourceManager rm) {
-        ResourceLocation file = ResourceLocation.fromNamespaceAndPath(SPHERE_OBJ.getNamespace(), SPHERE_OBJ.getPath());
-        Resource resource = rm.getResource(file).orElse(null);
-        if (resource == null) {
-            MainRegistry.LOGGER.warn("Fleija sphere OBJ missing: {}", file);
+        NMeshData nmesh = NMeshLoader.load(SPHERE_OBJ);
+        if (nmesh == null) {
+            MainRegistry.LOGGER.warn("Fleija sphere mesh missing: {}", SPHERE_OBJ);
             return List.of();
         }
 
-        List<Vec3> positions = new ArrayList<>();
         List<Tri> tris = new ArrayList<>();
-
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(resource.open(), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty() || line.startsWith("#")) {
-                    continue;
-                }
-                if (line.startsWith("v ")) {
-                    String[] p = line.split("\\s+");
-                    positions.add(new Vec3(Float.parseFloat(p[1]), Float.parseFloat(p[2]), Float.parseFloat(p[3])));
-                    continue;
-                }
-                if (line.startsWith("f ")) {
-                    String[] parts = line.substring(2).trim().split("\\s+");
-                    if (parts.length < 3) {
-                        continue;
-                    }
-                    int[] indices = new int[parts.length];
-                    for (int i = 0; i < parts.length; i++) {
-                        indices[i] = Integer.parseInt(parts[i].split("/")[0]);
-                    }
-                    for (int i = 1; i < indices.length - 1; i++) {
-                        Vec3 a = positions.get(indices[0] - 1);
-                        Vec3 b = positions.get(indices[i] - 1);
-                        Vec3 c = positions.get(indices[i + 1] - 1);
-                        tris.add(new Tri(a.x(), a.y(), a.z(), b.x(), b.y(), b.z(), c.x(), c.y(), c.z()));
-                    }
-                }
+        for (NMeshData.SubMesh sm : nmesh.subMeshes()) {
+            float[] verts = sm.vertices;
+            int[] idx = sm.indices;
+            for (int i = 0; i + 2 < idx.length; i += 3) {
+                int b0 = idx[i] * 8, b1 = idx[i + 1] * 8, b2 = idx[i + 2] * 8;
+                tris.add(new Tri(
+                        verts[b0], verts[b0 + 1], verts[b0 + 2],
+                        verts[b1], verts[b1 + 1], verts[b1 + 2],
+                        verts[b2], verts[b2 + 1], verts[b2 + 2]));
             }
-        } catch (Exception e) {
-            MainRegistry.LOGGER.error("Failed to load Fleija sphere OBJ {}", file, e);
-            return List.of();
         }
-
         return List.copyOf(tris);
     }
 }

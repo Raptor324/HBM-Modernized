@@ -472,7 +472,7 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_BATTERY) return true;
-        if (slot == SLOT_BLUEPRINT) return stack.is(ModItems.BLUEPRINTS.get());
+        if (slot == SLOT_BLUEPRINT) return stack.is(ModItems.BLUEPRINTS.get()) || stack.is(ModItems.BLUEPRINT_FOLDER.get());
         if (slot == SLOT_BOOSTER) {
             for (Booster b : getBoosters()) if (stack.is(b.item())) return true;
             return false;
@@ -862,4 +862,16 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
         sidedItems.invalidate();
     }
     *///?}
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        //? if forge {
+        return getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, side).resolve().orElse(null);
+        //?} elif neoforge {
+        /*return getHbmCapability(com.hbm_m.platform.HbmCap.ITEM_HANDLER, side).orElse(null);
+        *///?} else {
+        /*return this.inventory;
+        *///?}
+    }
 }

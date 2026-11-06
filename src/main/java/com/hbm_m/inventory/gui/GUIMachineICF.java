@@ -11,7 +11,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  * 1:1-Port von {@code GUIICF} (1.7.10), 248x222.
  *
@@ -20,6 +21,7 @@ import java.util.List;
  *
  * <p>Die Hitze zeigt die runde Anzeige bei (196, 98) - derselbe Zeiger wie im Original.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineICF extends AbstractContainerScreen<MachineICFMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
@@ -103,11 +105,4 @@ public class GUIMachineICF extends AbstractContainerScreen<MachineICFMenu> {
         return localX >= x && localX < x + w && localY >= y && localY < y + h;
     }
 
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // Original drawGuiContainerForegroundLayer
-        String name = this.title.getString();
-        guiGraphics.drawString(this.font, name, 124 - this.font.width(name) / 2, 6, 4210752, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 44, 129, 4210752, false);
-    }
 }

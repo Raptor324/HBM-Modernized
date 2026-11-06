@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
@@ -30,6 +31,7 @@ import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.recipe.ShredderRecipe;
 import com.hbm_m.worldgen.BedrockOreDensity;
 
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -50,6 +52,7 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code TileEntityMachineExcavator}: grosser Bergbaubohrer. Bohrt Ring um Ring ({@code 1 + 2 * Effekt}) bis
@@ -60,6 +63,7 @@ import net.minecraft.world.phys.Vec3;
  */
 public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2,
         com.hbm_m.api.tile.IControlReceiver, com.hbm_m.interfaces.IUpgradeInfoProvider {
+
 
     /** Original: 0 Batterie, 1 Fluidkennung, 2-3 Aufwertungen, 4 Bohrkopf, 5-13 Puffer. */
     public static final int SLOT_BATTERY = 0;
@@ -107,9 +111,34 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implem
         VALID_UPGRADES.put(UpgradeType.EFFECT, 3);
     }
 
+
     public MachineMiningDrillBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MINING_DRILL_BE.get(), pos, state, INVENTORY_SIZE, maxPower, maxPower, 0L);
     }
+
+    // ==================== IFluidUserMK2 / MK2-Netz ====================
+    @Override
+    public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
+
+    @Override
+    public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, net.minecraft.core.Direction fromDir) {
+        return fromDir != null;
+    }
+
+    //? if forge {
+    @Override
+    protected void setupFluidCapability() {
+        setFluidHandler(tank);
+    }
+    //?}
 
     private Direction facing() {
         BlockState state = getBlockState();
@@ -339,7 +368,7 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implem
             for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
                 nbt.putDouble(type.name().toLowerCase(java.util.Locale.ROOT), BedrockOreDensity.getDensity(pos.getX(), pos.getZ(), type) * mult);
             }
-            PlatformHooks.setItemTag(stack, nbt);
+            StackNbt.set(stack, nbt);
         }
 
         Direction dir = facing();
@@ -355,7 +384,7 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implem
 
         for (int i = OUTPUT_START; i <= OUTPUT_END; i++) {
             ItemStack s = inventory.getStackInSlot(i);
-            if (!s.isEmpty() && s.getCount() < s.getMaxStackSize() && PlatformHooks.isSameItemSameTags(stack, s)) {
+            if (!s.isEmpty() && s.getCount() < s.getMaxStackSize() && StackNbt.sameItemSameTags(stack, s)) {
                 int toAdd = Math.min(s.getMaxStackSize() - s.getCount(), stack.getCount());
                 ItemStack grown = s.copy();
                 grown.grow(toAdd);
@@ -465,6 +494,7 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implem
         ItemStack tool = new ItemStack(Items.DIAMOND_PICKAXE);
         if (this.getFortuneLevel() > 0) com.hbm_m.platform.ItemHooks.setEnchantmentLevel(tool, world, "fortune", this.getFortuneLevel());
         if (this.canSilkTouch()) com.hbm_m.platform.ItemHooks.setEnchantmentLevel(tool, world, "silk_touch", 1);
+
 
         LootParams.Builder builder = new LootParams.Builder(world)
                 .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
@@ -584,6 +614,7 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implem
 
             if (items.size() > index) {
                 inventory.setStackInSlot(i, items.get(index).copy());
+
             } else {
                 inventory.setStackInSlot(i, ItemStack.EMPTY);
             }
@@ -618,7 +649,7 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implem
             for (int i = OUTPUT_START; i <= OUTPUT_END; i++) {
                 ItemStack s = inventory.getStackInSlot(i);
 
-                if (!s.isEmpty() && s.getCount() < s.getMaxStackSize() && PlatformHooks.isSameItemSameTags(stack, s)) {
+                if (!s.isEmpty() && s.getCount() < s.getMaxStackSize() && StackNbt.sameItemSameTags(stack, s)) {
                     int toAdd = Math.min(s.getMaxStackSize() - s.getCount(), stack.getCount());
                     ItemStack grown = s.copy();
                     grown.grow(toAdd);
@@ -655,9 +686,10 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implem
             if (item.getCount() <= 0) continue;
             com.hbm_m.blockentity.network.CraneInventoryUtil.addToInventory(inv, item);
             chuteTimer = 40;
+
         }
         //?} elif neoforge {
-        /*net.neoforged.neoforge.items.IItemHandler inv = com.hbm_m.blockentity.network.CraneInventoryUtil.inventoryAt(world, pos, dir);
+        /*net.minecraftforge.items.IItemHandler inv = com.hbm_m.blockentity.network.CraneInventoryUtil.inventoryAt(world, pos, dir);
         if (inv == null) return;
 
         for (ItemStack item : items) {
@@ -760,6 +792,7 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implem
         tag.putBoolean("v", enableVeinMiner);
         tag.putBoolean("s", enableSilkTouch);
         tag.putInt("t", targetDepth);
+
         tank.writeToNBT(tag, "tank");
         tag.putBoolean("operational", operational);
         tag.putInt("chuteTimer", chuteTimer);
@@ -777,17 +810,10 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implem
         this.tank.readFromNBT(tag, "tank");
         this.operational = tag.getBoolean("operational");
         this.chuteTimer = tag.getInt("chuteTimer");
+
     }
 
     // ── Fluid ────────────────────────────────────────────────────────────────
-
-    @Override public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
-    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }
-
-    @Override
-    public boolean isLoaded() {
-        return level != null && !isRemoved() && level.isLoaded(worldPosition);
-    }
 
     public FluidTank getTank() { return tank; }
 

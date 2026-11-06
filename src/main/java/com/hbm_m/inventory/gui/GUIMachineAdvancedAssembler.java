@@ -25,19 +25,17 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
 import com.hbm_m.util.EnergyFormatter;
-
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import com.hbm_m.platform.StackNbt;
 // TODO: РќСѓР¶РµРЅ СѓС‚РёР»РёС‚Р°СЂРЅС‹Р№ РєР»Р°СЃСЃ РґР»СЏ РѕС‚СЂРёСЃРѕРІРєРё РїРѕРґСЃРєР°Р·РѕРє Рё Р¶РёРґРєРѕСЃС‚РµР№.
 // Р­С‚РѕС‚ С„СѓРЅРєС†РёРѕРЅР°Р» СЃРµР№С‡Р°СЃ РІСЃС‚СЂРѕРµРЅ РІ СЌС‚РѕС‚ РєР»Р°СЃСЃ
 
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<MachineAdvancedAssemblerMenu> {
 
     // РўРµРєСЃС‚СѓСЂР° РёР· СЃС‚Р°СЂРѕРіРѕ GUI
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_assembler.png");
-    *///?} else {
-        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_assembler.png");
-    //?}
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_assembler.png");
 
     // private static final ResourceLocation TEMPLATE_FOLDER_ICON = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/item/template_folder.png");
 
@@ -112,17 +110,15 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             }
         }
 
-        // Original: recipe.inputItem[i] als Geist im i-ten Eingangsslot (extractForCyclingDisplay(20))
-        if (recipe != null) {
-            renderGhostItems(guiGraphics, recipe);
-        }
+        // РћС‚СЂРёСЃРѕРІРєР° "РїСЂРёР·СЂР°С‡РЅС‹С…" РїСЂРµРґРјРµС‚РѕРІ РІ РїСѓСЃС‚С‹С… СЃР»РѕС‚Р°С…
+        renderGhostItems(guiGraphics);
 
         // Original: inputTank (8,99 / 52x16) und outputTank (80,99 / 52x16), waagerecht gefuellt
         if (this.menu.getBlockEntity() != null) {
             this.menu.getBlockEntity().getInputTank().renderTank(guiGraphics, this.leftPos + 8, this.topPos + 99, 52, 16, 1);
             this.menu.getBlockEntity().getOutputTank().renderTank(guiGraphics, this.leftPos + 80, this.topPos + 99, 52, 16, 1);
         }
-        
+
         // TODO: РћС‚СЂРёСЃРѕРІРєР° Р¶РёРґРєРѕСЃС‚РµР№ РІ С‚Р°РЅРєР°С…
         // РљРѕРіРґР° Сѓ BlockEntity Р±СѓРґСѓС‚ РјРµС‚РѕРґС‹ getInputTank() Рё getOutputTank(), СЂР°СЃРєРѕРјРјРµРЅС‚РёСЂСѓР№С‚Рµ:
         /*
@@ -143,23 +139,7 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
      * Р“СЂСѓРїРїРёСЂСѓРµС‚ РѕРґРёРЅР°РєРѕРІС‹Рµ РёРЅРіСЂРµРґРёРµРЅС‚С‹ Рё РїРѕРєР°Р·С‹РІР°РµС‚ СЃСѓРјРјР°СЂРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ.
      */
 
-    private void renderGhostItems(GuiGraphics guiGraphics, AssemblerRecipe recipe) {
-        var inputs = recipe.getInputDisplaySlots();
-        for (int i = 0; i < inputs.size() && i < 12; i++) {
-            net.minecraft.world.inventory.Slot slot = this.menu.slots.get(4 + i);
-            if (slot.hasItem()) continue;
-            var in = inputs.get(i);
-            ItemStack[] variants = in.ingredient().getItems();
-            if (variants.length == 0) continue;
-            ItemStack ghost = variants[(int) ((System.currentTimeMillis() / 1000) % variants.length)].copy();
-            ghost.setCount(in.count());
-            GhostItemRenderUtil.renderTranslucent(guiGraphics, ghost, this.leftPos + slot.x, this.topPos + slot.y, 0.5F);
-            if (ghost.getCount() > 1) guiGraphics.renderItemDecorations(this.font, ghost, this.leftPos + slot.x, this.topPos + slot.y);
-        }
-    }
-
-    @SuppressWarnings("unused")
-    private void renderGhostItemsGrouped(GuiGraphics guiGraphics) {
+    private void renderGhostItems(GuiGraphics guiGraphics) {
         // РРЎРџРћР›Р¬Р—РЈР•Рњ РјРµС‚РѕРґ РёР· BlockEntity, РєРѕС‚РѕСЂС‹Р№ РїРѕР»СѓС‡Р°РµС‚ РґР°РЅРЅС‹Рµ РёР· РјРѕРґСѓР»СЏ
         if (this.menu.getBlockEntity() == null) return; // тайл может отсутствовать в реплее Flashback
         NonNullList<ItemStack> ghostItems = this.menu.getBlockEntity().getGhostItems();
@@ -178,7 +158,7 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             // РС‰РµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ РїСЂРµРґРјРµС‚ РІ РіСЂСѓРїРїРµ
             ItemStack found = null;
             for (ItemStack key : groupedItems.keySet()) {
-                if (PlatformHooks.isSameItemSameTags(key, stack)) {
+                if (StackNbt.sameItemSameTags(key, stack)) {
                     found = key;
                     break;
                 }
@@ -284,8 +264,7 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
                         // Р”РћР‘РђР’Р›РЇР•Рњ РџР РћР”Р’РРќРЈРўР«Р™ РўРЈР›РўРРџ РЎ Р”Р•РўРђР›РЇРњР Р Р•Р¦Р•РџРўРђ
                         com.hbm_m.util.TemplateTooltipUtil.buildRecipeTooltip(assemblerRecipe, tooltip);
                         
-                        guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(),
-                                                pMouseX, pMouseY);
+                        com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(guiGraphics, this.font, tooltip, pMouseX, pMouseY);
                     }
                 });
             } else {
@@ -296,11 +275,12 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             }
         }
         
+        // РџРѕРґСЃРєР°Р·РєРё РґР»СЏ С‚Р°РЅРєРѕРІ (РёР· РѕСЂРёРіРёРЅР°Р»Р°, РїРѕСЂС‚РёСЂРѕРІР°РЅРѕ РёР· FFA)
         if (this.menu.getBlockEntity() != null) {
             this.menu.getBlockEntity().getInputTank().renderTankInfo(guiGraphics, this.font, pMouseX, pMouseY, this.leftPos + 8, this.topPos + 99, 52, 16);
             this.menu.getBlockEntity().getOutputTank().renderTankInfo(guiGraphics, this.font, pMouseX, pMouseY, this.leftPos + 80, this.topPos + 99, 52, 16);
         }
-        // (alter Entwurf:)
+
         /*
         if (isMouseOver(pMouseX, pMouseY, 8, 99, 52, 16)) {
             FluidTank inputTank = this.menu.getBlockEntity().getInputTank();

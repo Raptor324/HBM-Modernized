@@ -113,8 +113,9 @@ public class MachineOilburnerBlockEntity extends MachinePollutingBlockEntity
         if (shouldCool)
             this.heatEnergy = Math.max(this.heatEnergy - Math.max(this.heatEnergy / 1000, 1), 0);
 
-        setChanged();
-        sendUpdateToClient();
+        long lo = (long) heatEnergy * 31L + (isOn ? 1L : 0L) * 7L + setting;
+        long hi = (long) tank.getFill() | (((long) tank.getTankType().hashCode()) << 32);
+        syncIfStateChanged(lo, hi);
     }
 
     /** Original {@code toggleSetting}. */
@@ -170,6 +171,17 @@ public class MachineOilburnerBlockEntity extends MachinePollutingBlockEntity
 
     //? if forge {
     @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
+            net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
+            return tank.getForgeFluidCapability().cast();
+        }
+        return super.getCapability(cap, side);
+    }
+    //?}
+
+    //? if forge {
+    @Override
     //?}
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
@@ -193,6 +205,25 @@ public class MachineOilburnerBlockEntity extends MachinePollutingBlockEntity
         heatEnergy = tag.getInt("heatEnergy");
         setting = tag.contains("setting") ? tag.getByte("setting") : 1;
         if (setting < 1) setting = 1;
+    }
+
+        @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
+        return fromDir != null;
+    }
+
+    public void toggleOn() {
+        this.isOn = !this.isOn;
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    public void toggleSetting() {
+        cycleSetting();
+    }
+
+    public boolean isOn() {
+        return isOn;
     }
 
     // ── Redstone-over-Radio (1:1 TileEntityHeaterOilburner) ──

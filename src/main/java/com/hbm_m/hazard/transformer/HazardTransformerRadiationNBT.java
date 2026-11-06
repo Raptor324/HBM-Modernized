@@ -8,6 +8,7 @@ import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.StackNbt;
 
 public class HazardTransformerRadiationNBT extends HazardTransformerBase {
 
@@ -18,7 +19,7 @@ public class HazardTransformerRadiationNBT extends HazardTransformerBase {
 
     @Override
     public void transformPost(ItemStack stack, List<HazardEntry> entries) {
-        CompoundTag tag = PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.read(stack);
         if (tag != null && tag.contains(RAD_KEY)) {
             entries.add(new HazardEntry(HazardRegistry.RADIATION, tag.getFloat(RAD_KEY)));
         }

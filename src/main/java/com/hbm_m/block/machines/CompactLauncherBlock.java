@@ -27,6 +27,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code CompactLauncher}: 3x3-Werfer fuer Baukastenraketen. Die vier Ecken sind Anschluesse ({@code dummy_port}),
@@ -83,7 +84,7 @@ public class CompactLauncherBlock extends DummyableMachineBlock implements IBomb
     //?} else {
     /*@Override
     protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, level, pos, player, hand, hit));
+        return com.hbm_m.platform.BlockHooks.useItemResult(hbmUse(state, level, pos, player, hand, hit));
     }
     private InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     *///?}

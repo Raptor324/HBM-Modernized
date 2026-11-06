@@ -68,6 +68,11 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
     *///?}
 
     @Override
+    public @Nullable Object getFluidHandler(@Nullable Direction side) {
+        return tank.getCapability();
+    }
+
+    @Override
     public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
 
     @Override
@@ -89,7 +94,7 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
                 if (dir == Direction.UP || dir == Direction.DOWN) continue;
-                trySubscribe(tank.getTankType(), level, pos.relative(dir), dir);
+                trySubscribe(tank, level, pos.relative(dir), dir);
             }
         }
 
@@ -98,6 +103,7 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
                 level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                         10.0F, Level.ExplosionInteraction.BLOCK);
                 tank.drainMb(tank.getFluidAmountMb());
+                setChanged();
                 return;
             }
 
@@ -108,6 +114,7 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
 
             com.hbm_m.inventory.fluid.trait.FT_Polluting.pollute(level, pos, tank.getStoredFluid(),
                     com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType.SPILL, toSpill);
+
             // NTM Space FT_Gaseous.release (W-R9A-1): Gase gehen in die Koerper-Atmosphaere (ohne Addon no-op)
             if (FluidType.getTrait(spilled, com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous.class) != null
                     || FluidType.getTrait(spilled, com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous_ART.class) != null) {
@@ -115,9 +122,10 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
             }
 
             spillPuddle(level, pos, toSpill);
-        }
 
-        setChanged();
+            // Анти-sync-spam: пометка грязного чанка только при фактическом сбросе жидкости.
+            setChanged();
+        }
     }
 
     /**
@@ -148,9 +156,7 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
         net.minecraft.world.phys.Vec3 end = start.add(
                 level.getRandom().nextGaussian() * 5, -25, level.getRandom().nextGaussian() * 5);
 
-        var hit = level.clip(new net.minecraft.world.level.ClipContext(start, end,
-                net.minecraft.world.level.ClipContext.Block.COLLIDER,
-                net.minecraft.world.level.ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
+        var hit = level.clip(com.hbm_m.platform.LevelHooks.clipContext(start, end, net.minecraft.world.level.ClipContext.Fluid.NONE));
 
         // Nur auf einer Oberseite bildet sich eine Pfuetze.
         if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) return;

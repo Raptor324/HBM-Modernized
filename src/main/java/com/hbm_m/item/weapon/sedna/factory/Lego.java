@@ -48,9 +48,6 @@ import net.minecraft.world.phys.Vec3;
  */
 public class Lego {
 
-    public static final Random ANIM_RAND = new Random();
-
-    /** Original {@code worldObj.playSoundEffect(x, y, z, "hbm:...", vol, pitch)} - Schluessel wie im Original. */
     public static void playSound(Entity entity, String sound, float volume, float pitch) {
         SoundEvent ev = HbmSoundsNT.get(sound);
         if (ev != null) entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), ev, SoundSource.PLAYERS, volume, pitch);

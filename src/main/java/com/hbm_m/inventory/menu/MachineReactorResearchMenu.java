@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineReactorResearchMenu extends AbstractContainerMenu {
 
@@ -61,7 +62,7 @@ public class MachineReactorResearchMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineReactorResearchBlockEntity reactorBlockEntity) {
             return reactorBlockEntity;
         }
-        throw new IllegalStateException("No MachineReactorResearchBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":reactor_research_menu");
+        throw new MenuBlockEntityMissingException("No MachineReactorResearchBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":reactor_research_menu");
     }
 
     public MachineReactorResearchBlockEntity getBlockEntity() {
@@ -70,8 +71,7 @@ public class MachineReactorResearchMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

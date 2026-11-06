@@ -60,7 +60,7 @@ public class ItemStarterKit extends Item implements ITooltipProvider {
                     "wiring_red_copper", "magnetron*5", "piston_selenium", "piston_selenium", "piston_selenium",
                     "canister_full_diesel*16", "canister_full_biofuel*16", "battery_potato", "screwdriver", "mining_drill",
                     "dieselgen*2", "red_cable*64", "red_wire_coated*16", "red_pylon*8", "machine_battery_socket*4",
-                    "battery_pack_battery_lead*4", "machine_converter_he_rf", "machine_converter_rf_he"}),
+                    "battery_pack_battery_lead*4"}),
             Map.entry("gadget_kit", new String[] {
                     "nuke_gadget", "fat_man_explosive", "fat_man_explosive", "fat_man_explosive", "fat_man_explosive",
                     "gadget_wireing", "gadget_core", "#haz0"}),

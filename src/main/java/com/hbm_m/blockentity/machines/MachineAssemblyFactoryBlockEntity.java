@@ -247,8 +247,8 @@ public class MachineAssemblyFactoryBlockEntity extends BaseMachineBlockEntity
         chargeFromBatterySlot(SLOT_BATTERY);
     }
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+        @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//? if forge {
     //?}
     private void clientTick() {
         // Original: ELECTRIC_MOTOR_LOOP (Lautstaerke 0.5, Tonhoehe 0.75), solange ein Modul arbeitet
@@ -403,7 +403,7 @@ public class MachineAssemblyFactoryBlockEntity extends BaseMachineBlockEntity
     }
     //?} elif neoforge {
     /*@Override
-    public net.neoforged.neoforge.items.IItemHandler getConditionalItemHandler(BlockPos part, @Nullable Direction side) {
+    public net.minecraftforge.items.IItemHandler getConditionalItemHandler(BlockPos part, @Nullable Direction side) {
         BlockPos[] io = ioParts();
         for (int i = 0; i < io.length; i++) {
             if (io[i].equals(part)) {
@@ -419,14 +419,14 @@ public class MachineAssemblyFactoryBlockEntity extends BaseMachineBlockEntity
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
-            net.neoforged.neoforge.items.IItemHandler h = new SlotView(ACCESSIBLE);
+            net.minecraftforge.items.IItemHandler h = new SlotView(ACCESSIBLE);
             return com.hbm_m.platform.LazyCap.of(() -> h).cast();
         }
         return super.getHbmCapability(cap, side);
     }
 
     /^* Sicht auf ausgewaehlte Slots mit den Original-Regeln fuer Einfuegen/Entnehmen. ^/
-    private class SlotView implements net.neoforged.neoforge.items.IItemHandler {
+    private class SlotView implements net.minecraftforge.items.IItemHandler {
         private final int[] map;
         SlotView(int[] map) { this.map = map; }
         @Override public int getSlots() { return map.length; }

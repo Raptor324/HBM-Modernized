@@ -4,15 +4,11 @@ import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
 
 /** Original {@code TileEntityMachineAssemblyFactory.createAudioLoop}: ELECTRIC_MOTOR_LOOP, Lautstaerke 0.5, Tonhoehe 0.75. */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
 public class AssemblyFactorySoundInstance extends AbstractTickableSoundInstance {
 
     public AssemblyFactorySoundInstance(BlockPos pos) {

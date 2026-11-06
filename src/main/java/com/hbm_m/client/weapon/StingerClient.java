@@ -1,5 +1,8 @@
 package com.hbm_m.client.weapon;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 //? if forge {
 import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
 import com.hbm_m.item.weapon.sedna.impl.ItemGunStinger;
@@ -8,11 +11,8 @@ import com.hbm_m.lib.RefStrings;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
@@ -30,7 +30,7 @@ public final class StingerClient {
     public static void onOverlayPre(RenderGuiOverlayEvent.Pre event) {
         if (event.getOverlay() != VanillaGuiOverlay.CROSSHAIR.type()) return;
         Player player = GunClientHooks.clientPlayer();
-        if (player == null) return;
+        if (player == null || player.isSpectator()) return;
         ItemStack stack = player.getMainHandItem();
         if (!(stack.getItem() instanceof ItemGunStinger gun)) return;
 
@@ -57,15 +57,12 @@ import com.hbm_m.lib.RefStrings;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 /^* NeoForge-Gegenstueck: Stinger-Fadenkreuz und Aufschaltbalken (gleiches Verhalten wie der Forge-Zweig). ^/
-@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+@EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
 public final class StingerClient {
 
     private StingerClient() { }
@@ -74,7 +71,7 @@ public final class StingerClient {
     public static void onOverlayPre(RenderGuiLayerEvent.Pre event) {
         if (!VanillaGuiLayers.CROSSHAIR.equals(event.getName())) return;
         Player player = GunClientHooks.clientPlayer();
-        if (player == null) return;
+        if (player == null || player.isSpectator()) return;
         ItemStack stack = player.getMainHandItem();
         if (!(stack.getItem() instanceof ItemGunStinger gun)) return;
 

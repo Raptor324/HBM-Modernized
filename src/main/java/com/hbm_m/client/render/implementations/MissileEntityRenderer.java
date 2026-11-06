@@ -31,13 +31,7 @@ import net.minecraft.resources.ResourceLocation;
  * {@link com.hbm_m.client.missile.track.MissileTrackWorldRender}; otherwise vanilla entity lerp here.
  */
 
-//? if forge {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class MissileEntityRenderer<T extends MissileBaseEntity> extends EntityRenderer<T> {
 
     public MissileEntityRenderer(EntityRendererProvider.Context context) {
@@ -92,12 +86,12 @@ public class MissileEntityRenderer<T extends MissileBaseEntity> extends EntityRe
 
         LightSampleCache.BASE_POSE.set(poseStack.last().pose());
         LightSampleCache.BASE_POSE_SET.set(true);
-        // ВНИМАНИЕ: НЕ трогаем RenderSystem.setShaderFog*! Глобальная раздвижка
-        // тумана кадра (fogEnd = max(prev, dist+512)) утекала между кадрами и
-        // заливала мир чёрным туманом fogColor дальше ~460 блоков (мир y<0 —
-        // fogColor почти чёрный) — «чёрный экран во время полёта ракеты»,
-        // с мерцанием при переключении энтити/track-путей. Дальнему мешу туман
-        // глушится собственными юниформами block_lit (entityMissileDepthBias).
+        // WARNING: do NOT touch RenderSystem.setShaderFog*! Stretching the global frame
+        // fog (fogEnd = max(prev, dist+512)) leaked between frames and drowned the world
+        // in black fogColor beyond ~460 blocks (world y<0 - fogColor is almost black):
+        // "black screen during missile flight", with flickering when switching
+        // entity/track paths. Fog is suppressed for the far mesh by block_lit's own
+        // uniforms (entityMissileDepthBias).
         SingleMeshVboRenderer.setEntityMissileDepthBias(true);
         try {
             if (data != null) {

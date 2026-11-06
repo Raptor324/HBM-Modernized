@@ -35,13 +35,8 @@ import net.minecraft.world.item.ItemStack;
  */
 public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
-            RefStrings.MODID, "textures/gui/processing/gui_anvil.png");
-    *///?} else {
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/processing/gui_anvil.png");
-    //?}
 
     private final int tier;
     private final List<AnvilRecipe> originList = new ArrayList<>();
@@ -56,14 +51,14 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
 
     public GUIAnvil(AnvilMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-        this.tier = menu.tier.getLegacyId();
+        this.tier = menu.blockEntity.getTier().getLegacyId();
         this.imageWidth = 176;
         this.imageHeight = 222;
         this.playerInventory = inventory;
 
         if (inventory.player.level() != null) {
             for (AnvilRecipe recipe : AnvilRecipeManager.getConstruction(inventory.player.level())) {
-                if (recipe.canCraftOn(menu.tier)) this.originList.add(recipe);
+                if (recipe.canCraftOn(menu.blockEntity.getTier())) this.originList.add(recipe);
             }
         }
 

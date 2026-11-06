@@ -1,8 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
-import com.hbm_m.client.render.SimpleObjModel;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
+import com.hbm_m.client.weapon.WeaponResources;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 
@@ -16,9 +16,12 @@ import net.minecraft.world.item.ItemStack;
  */
 public class ItemRenderShim extends ItemRenderWeaponBase {
 
-    public static final SimpleObjModel shimmer_sledge = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/shimmer_sledge.obj"));
-    public static final SimpleObjModel shimmer_axe = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/shimmer_axe.obj"));
-    public static final SimpleObjModel stopsign = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/weapons/stopsign.obj"));
+    public static final ResourceLocation shimmer_sledge = WeaponResources.shimmer_sledge;
+    public static final ResourceLocation shimmer_axe = WeaponResources.shimmer_axe;
+    public static final ResourceLocation stopsign = WeaponResources.stopsign;
+    public static final ResourceLocation shimmer_sledge_loc = shimmer_sledge;
+    public static final ResourceLocation shimmer_axe_loc = shimmer_axe;
+    public static final ResourceLocation stopsign_loc = stopsign;
     public static final ResourceLocation shimmer_sledge_tex = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/shimmer_sledge.png");
     public static final ResourceLocation shimmer_axe_tex = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/shimmer_axe.png");
     public static final ResourceLocation stopsign_tex = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/weapons/stopsign.png");

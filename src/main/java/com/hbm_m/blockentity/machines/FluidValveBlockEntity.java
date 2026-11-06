@@ -116,13 +116,11 @@ public class FluidValveBlockEntity extends BaseHbmBlockEntity implements IFluidP
         super.setRemoved();
     }
 
-    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         if (node != null) node.expired = true;
         super.onChunkUnloaded();
     }
-    //?}
 
     // ---- Redstone ueber Funk (nur Zaehlventil) ----
     private void setState(int state) {

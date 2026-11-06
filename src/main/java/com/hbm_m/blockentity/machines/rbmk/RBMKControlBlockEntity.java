@@ -68,7 +68,9 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
     public double getMult() { return level; }
 
     public void setTarget(double target) {
-        this.targetLevel = Math.max(0, Math.min(1, target));
+        // Math.min/max propagate NaN, and every later comparison against NaN is false, which freezes
+        // the rod. The value comes straight off a client packet.
+        this.targetLevel = Double.isNaN(target) ? 0D : Math.max(0, Math.min(1, target));
     }
 
     /**
@@ -137,18 +139,7 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
         }
         return super.getCapability(cap, side);
     }
-    //?} elif neoforge {
-    /*@Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (isPowered()) {
-            if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER)
-                return com.hbm_m.platform.LazyCap.of(() -> (IEnergyReceiver) this).cast();
-            if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR)
-                return com.hbm_m.platform.LazyCap.of(() -> (com.hbm_m.interfaces.IEnergyConnector) this).cast();
-        }
-        return super.getHbmCapability(cap, side);
-    }
-    *///?}
+    //?}
 
     @Override
     public void setRemoved() {

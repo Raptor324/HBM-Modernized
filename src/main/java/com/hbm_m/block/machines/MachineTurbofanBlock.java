@@ -31,8 +31,8 @@ import net.minecraft.world.phys.BlockHitResult;
 
 /**
  * 1:1 {@code MachineTurbofan}: {@code getDimensions {2,0,1,1,3,3}}, {@code getOffset 1}; die vier Anschluesse liegen an
- * den Zellen beiderseits des Kerns (Extras vor/hinter dem Kern und deren linke Nachbarn). Gezeichnet vom
- * {@code TurbofanRenderer}.
+ * den Zellen beiderseits des Kerns (Extras vor/hinter dem Kern und deren linke Nachbarn). Gezeichnet von der
+ * Nucleus-Spec in {@code MachineTurbofanRenderer}.
  */
 public class MachineTurbofanBlock extends DummyableMachineBlock {
 

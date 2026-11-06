@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code BlockOre} als {@code block_meteor_molten}: leuchtet (0.75), kuehlt bei einem Zufallstick zu
@@ -40,7 +41,7 @@ public class BlockMeteorMolten extends BlockOre {
 
     @Override
     public void stepOn(Level world, BlockPos pos, BlockState state, Entity entity) {
-        PlatformHooks.setSecondsOnFire(entity, 5);
+        MobHooks.setSecondsOnFire(entity, 5);
         super.stepOn(world, pos, state, entity);
     }
 

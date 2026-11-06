@@ -97,11 +97,7 @@ public class RadGenRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<RadGenRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "radgen");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radgen");
-        //?}
 
         @Override
         public RadGenRecipe readJson(ResourceLocation recipeId, JsonObject json) {

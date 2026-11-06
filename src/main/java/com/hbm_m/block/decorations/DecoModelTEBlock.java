@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code DecoBlock} mit {@code TileEntityDecoBlock} und {@code RenderDecoBlock}: {@code boxcar} (Gueterwagen)
@@ -57,7 +58,7 @@ public class DecoModelTEBlock extends BaseEntityBlock {
         return new DecoBlockEntity(pos, state);
     }
     //? if >= 1.21.1 {
-    /*public static final com.mojang.serialization.MapCodec<DecoModelTEBlock> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(DecoModelTEBlock.class);
+    /*public static final com.mojang.serialization.MapCodec<DecoModelTEBlock> CODEC = com.hbm_m.platform.BlockHooks.unsupportedCodec(DecoModelTEBlock.class);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

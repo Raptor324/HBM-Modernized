@@ -78,9 +78,7 @@ public class MachineIntakeBlockEntity extends BaseMachineBlockEntity implements 
         }
     }
 
-    //? if forge {
     @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?}
     private void clientSound(boolean running) {
         com.hbm_m.sound.ClientSoundBootstrap.updateSound(this, running, this::createAudioLoop);
     }

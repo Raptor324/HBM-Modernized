@@ -59,37 +59,31 @@ public class MassStorageUpgradeRecipe extends CustomRecipe {
                         ModBlocks.MASS_STORAGE.get()));
     }
 
+    /** Grid view shared by both crafting-input types (CraftingContainer 1.20.1, CraftingInput 1.21.1). */
+    private interface Grid {
+        int width();
+        int height();
+        int size();
+        ItemStack item(int index);
+    }
+
     /** Findet die Stufe, deren Muster im Gitter liegt - oder {@code null}. */
-    //? if < 1.21.1 {
-    private static Step match(CraftingContainer container) {
-        if (container.getWidth() < 3 || container.getHeight() < 3) return null;
-    //?} else {
-    /*private static Step match(net.minecraft.world.item.crafting.CraftingInput container) {
-        if (container.width() < 3 || container.height() < 3) return null;
-    *///?}
+    private static Step match(Grid grid) {
+        if (grid.width() < 3 || grid.height() < 3) return null;
 
         for (Step step : steps()) {
-            if (fits(container, step)) return step;
+            if (fits(grid, step)) return step;
         }
         return null;
     }
 
     /** Das Muster {@code " C " / "PMP" / " P "} - alles andere muss leer sein. */
-    //? if < 1.21.1 {
-    private static boolean fits(CraftingContainer container, Step step) {
+    private static boolean fits(Grid grid, Step step) {
         ItemStack plate = new ItemStack(step.plate().get());
 
-        for (int y = 0; y < container.getHeight(); y++) {
-            for (int x = 0; x < container.getWidth(); x++) {
-                ItemStack stack = container.getItem(x + y * container.getWidth());
-    //?} else {
-    /*private static boolean fits(net.minecraft.world.item.crafting.CraftingInput container, Step step) {
-        ItemStack plate = new ItemStack(step.plate().get());
-
-        for (int y = 0; y < container.height(); y++) {
-            for (int x = 0; x < container.width(); x++) {
-                ItemStack stack = container.getItem(x + y * container.width());
-    *///?}
+        for (int y = 0; y < grid.height(); y++) {
+            for (int x = 0; x < grid.width(); x++) {
+                ItemStack stack = grid.item(x + y * grid.width());
 
                 boolean ok;
                 if (y == 0 && x == 1)      ok = stack.is(step.circuit().get());
@@ -105,28 +99,43 @@ public class MassStorageUpgradeRecipe extends CustomRecipe {
         return true;
     }
 
-    //? if < 1.21.1 {
-    @Override
-    public boolean matches(CraftingContainer container, Level level) {
-        return match(container) != null;
-    }
-
-    @Override
-    public ItemStack assemble(CraftingContainer container, RegistryAccess registries) {
-        Step step = match(container);
+    private static ItemStack assembleFrom(Grid grid) {
+        Step step = match(grid);
         if (step == null) return ItemStack.EMPTY;
 
         ItemStack out = new ItemStack(step.to());
 
         // Der eigentliche Sinn: den Inhalt der alten Kiste uebernehmen.
-        for (int i = 0; i < container.getContainerSize(); i++) {
-            ItemStack stack = container.getItem(i);
+        for (int i = 0; i < grid.size(); i++) {
+            ItemStack stack = grid.item(i);
             if (Block.byItem(stack.getItem()) != step.from()) continue;
-            if (stack.hasTag()) out.setTag(stack.getTag().copy());
+            net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.StackNbt.read(stack);
+            if (tag != null) com.hbm_m.platform.StackNbt.set(out, tag.copy());
             break;
         }
 
         return out;
+    }
+
+    // Only the override signatures differ between the versions; the logic above is shared.
+    //? if < 1.21.1 {
+    private static Grid grid(CraftingContainer c) {
+        return new Grid() {
+            public int width() { return c.getWidth(); }
+            public int height() { return c.getHeight(); }
+            public int size() { return c.getContainerSize(); }
+            public ItemStack item(int index) { return c.getItem(index); }
+        };
+    }
+
+    @Override
+    public boolean matches(CraftingContainer container, Level level) {
+        return match(grid(container)) != null;
+    }
+
+    @Override
+    public ItemStack assemble(CraftingContainer container, RegistryAccess registries) {
+        return assembleFrom(grid(container));
     }
 
     @Override
@@ -135,33 +144,30 @@ public class MassStorageUpgradeRecipe extends CustomRecipe {
         return NonNullList.withSize(container.getContainerSize(), ItemStack.EMPTY);
     }
     //?} else {
-    /*@Override
-    public boolean matches(net.minecraft.world.item.crafting.CraftingInput container, Level level) {
-        return match(container) != null;
+    /*private static Grid grid(net.minecraft.world.item.crafting.CraftingInput c) {
+        return new Grid() {
+            public int width() { return c.width(); }
+            public int height() { return c.height(); }
+            public int size() { return c.size(); }
+            public ItemStack item(int index) { return c.getItem(index); }
+        };
     }
 
     @Override
-    public ItemStack assemble(net.minecraft.world.item.crafting.CraftingInput container, net.minecraft.core.HolderLookup.Provider registries) {
-        Step step = match(container);
-        if (step == null) return ItemStack.EMPTY;
-
-        ItemStack out = new ItemStack(step.to());
-
-        // Der eigentliche Sinn: den Inhalt der alten Kiste uebernehmen.
-        for (int i = 0; i < container.size(); i++) {
-            ItemStack stack = container.getItem(i);
-            if (Block.byItem(stack.getItem()) != step.from()) continue;
-            if (!stack.getComponentsPatch().isEmpty()) out.applyComponents(stack.getComponentsPatch());
-            break;
-        }
-
-        return out;
+    public boolean matches(net.minecraft.world.item.crafting.CraftingInput input, Level level) {
+        return match(grid(input)) != null;
     }
 
     @Override
-    public NonNullList<ItemStack> getRemainingItems(net.minecraft.world.item.crafting.CraftingInput container) {
+    public ItemStack assemble(net.minecraft.world.item.crafting.CraftingInput input,
+                              net.minecraft.core.HolderLookup.Provider registries) {
+        return assembleFrom(grid(input));
+    }
+
+    @Override
+    public NonNullList<ItemStack> getRemainingItems(net.minecraft.world.item.crafting.CraftingInput input) {
         // Die alte Kiste wird verbraucht - sie steckt jetzt im Ergebnis.
-        return NonNullList.withSize(container.size(), ItemStack.EMPTY);
+        return NonNullList.withSize(input.size(), ItemStack.EMPTY);
     }
     *///?}
 

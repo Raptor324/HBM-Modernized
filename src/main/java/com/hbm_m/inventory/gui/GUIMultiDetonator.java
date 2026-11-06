@@ -83,41 +83,22 @@ public class GUIMultiDetonator extends Screen {
                     Component.literal("Name"));
 
             PointData pointData = detonatorItem.getPointData(detonatorStack, i);
-            String currentName = "";
-            int currentX = 0, currentY = 0, currentZ = 0;
-            boolean hasTarget = false;
-
-            if (pointData != null && !pointData.name.isEmpty()) {
-                currentName = pointData.name;
-                currentX = pointData.x;
-                currentY = pointData.y;
-                currentZ = pointData.z;
-                hasTarget = pointData.hasTarget;
-            } else {
-                currentName = "Point " + (i + 1);
-            }
+            String currentName = (pointData != null && !pointData.name.isEmpty())
+                    ? pointData.name
+                    : "Point " + (i + 1);
 
             nameInput.setValue(currentName);
             nameInput.setMaxLength(16);
 
             final int finalI = i;
-            final String finalCurrentName = currentName;
-            final int finalX = currentX;
-            final int finalY = currentY;
-            final int finalZ = currentZ;
-            final boolean finalHasTarget = hasTarget;
 
-// ⭐ КРИТИЧНО: На каждое изменение имени отправляем ПОЛНЫЕ данные на сервер
             nameInput.setResponder(name -> {
                 if (!name.isEmpty()) {
                     // Сохраняем локально на клиенте
                     detonatorItem.setPointName(detonatorStack, finalI, name);
 
-                    // ⭐ ГЛАВНОЕ: Отправляем пакет на сервер с ПОЛНЫМИ данными
-                    ModPacketHandler.sendToServer(
-                        ModPacketHandler.SYNC_POINT,
-                        new SyncPointPacket(finalI, name, finalX, finalY, finalZ, finalHasTarget)
-                    );
+                    // Отправляем пакет на сервер для синхронизации имени
+                    SyncPointPacket.sendToServer(finalI, name);
                 }
             });
 

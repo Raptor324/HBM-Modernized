@@ -20,7 +20,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /** Port of {@code BlockMassStorage} (1.7.10 Original). */
-public class MachineMassStorageBlock extends BaseEntityBlock {
+public class MachineMassStorageBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     /**
      * 1:1-Port der vier Metadatenstufen aus {@code BlockMassStorage}: von der Holzkiste mit
@@ -164,7 +164,7 @@ public class MachineMassStorageBlock extends BaseEntityBlock {
             for (int i = 0; i < inv.getSlots(); i++) {
                 net.minecraft.world.item.ItemStack stack = inv.getStackInSlot(i);
                 if (stack.isEmpty()) continue;
-                nbt.put("slot" + i, com.hbm_m.platform.PlatformHooks.safeItemSave(stack, registries));
+                nbt.put("slot" + i, com.hbm_m.platform.StackNbt.saveNew(stack, registries));
             }
 
             if (storage.lockState.isLocked) {
@@ -177,7 +177,7 @@ public class MachineMassStorageBlock extends BaseEntityBlock {
             }
 
             if (!nbt.isEmpty()) {
-                com.hbm_m.platform.PlatformHooks.setItemTag(drop, nbt);
+                com.hbm_m.platform.StackNbt.set(drop, nbt);
             }
 
             level.addFreshEntity(new net.minecraft.world.entity.item.ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, drop));
@@ -192,16 +192,16 @@ public class MachineMassStorageBlock extends BaseEntityBlock {
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable net.minecraft.world.entity.LivingEntity placer, net.minecraft.world.item.ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
-        if (level.isClientSide || !com.hbm_m.platform.PlatformHooks.hasItemTag(stack)) return;
+        if (level.isClientSide || !com.hbm_m.platform.StackNbt.has(stack)) return;
         if (!(level.getBlockEntity(pos) instanceof MachineMassStorageBlockEntity storage)) return;
-        net.minecraft.nbt.CompoundTag nbt = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        net.minecraft.nbt.CompoundTag nbt = com.hbm_m.platform.StackNbt.read(stack);
         if (nbt == null) return;
         net.minecraft.core.HolderLookup.Provider registries = level.registryAccess();
         var inv = storage.getInventory();
 
         for (int i = 0; i < inv.getSlots(); i++) {
             net.minecraft.nbt.CompoundTag slot = nbt.getCompound("slot" + i);
-            inv.setStackInSlot(i, slot.isEmpty() ? net.minecraft.world.item.ItemStack.EMPTY : com.hbm_m.platform.PlatformHooks.itemStackOf(slot, registries));
+            inv.setStackInSlot(i, slot.isEmpty() ? net.minecraft.world.item.ItemStack.EMPTY : com.hbm_m.platform.StackNbt.parse(slot, registries));
         }
 
         if (nbt.contains("lock")) {
@@ -233,8 +233,8 @@ public class MachineMassStorageBlock extends BaseEntityBlock {
 
     /** Original {@code addInformation}: Sorte in Gold und "Vorrat / Fassungsvermoegen". */
     public void addInformation(net.minecraft.world.item.ItemStack stack, java.util.List<net.minecraft.network.chat.Component> list) {
-        if (!com.hbm_m.platform.PlatformHooks.hasItemTag(stack)) return;
-        net.minecraft.nbt.CompoundTag nbt = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        if (!com.hbm_m.platform.StackNbt.has(stack)) return;
+        net.minecraft.nbt.CompoundTag nbt = com.hbm_m.platform.StackNbt.read(stack);
         if (nbt == null || !nbt.contains("slot1")) return;
 
         //? if < 1.21.1 {
@@ -242,12 +242,52 @@ public class MachineMassStorageBlock extends BaseEntityBlock {
         //?} else {
         /*net.minecraft.core.HolderLookup.Provider registries = com.hbm_m.platform.PlatformHooks.clientProvider();
         *///?}
-        net.minecraft.world.item.ItemStack type = com.hbm_m.platform.PlatformHooks.itemStackOf(nbt.getCompound("slot1"), registries);
+        net.minecraft.world.item.ItemStack type = com.hbm_m.platform.StackNbt.parse(nbt.getCompound("slot1"), registries);
 
         if (!type.isEmpty()) {
             list.add(net.minecraft.network.chat.Component.literal(type.getHoverName().getString()).withStyle(net.minecraft.ChatFormatting.GOLD));
             list.add(net.minecraft.network.chat.Component.literal(String.format(java.util.Locale.US, "%,d", nbt.getInt("stack")) + " / " + String.format(java.util.Locale.US, "%,d", tier.capacity)));
         }
+    }
+
+    /**
+     * Port of {@code BlockMassStorage.printHook}: empty storage shows a cyan "Empty" title; a
+     * filter-bearing storage shows the filter's name, the fill count and a green-to-red percentage.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineMassStorageBlockEntity storage)) return;
+
+        net.minecraft.world.item.ItemStack filter = storage.getFilterStack();
+        boolean full = !filter.isEmpty();
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        net.minecraft.network.chat.Component title;
+        int titleCol;
+        int bgCol;
+
+        if (full) {
+            title = filter.getHoverName();
+            text.add(net.minecraft.network.chat.Component.literal(
+                    String.format(java.util.Locale.US, "%,d", storage.getStockpile())
+                            + " / " + String.format(java.util.Locale.US, "%,d", storage.getCapacity())));
+
+            double percent = (double) storage.getStockpile() / (double) storage.getCapacity();
+            int charge = (int) Math.floor(percent * 10_000D);
+            int color = ((int) (0xFF - 0xFF * percent)) << 16 | ((int) (0xFF * percent) << 8);
+            text.add(net.minecraft.network.chat.Component.literal((charge / 100D) + "%")
+                    .withStyle(net.minecraft.network.chat.Style.EMPTY
+                            .withColor(net.minecraft.network.chat.TextColor.fromRgb(color))));
+
+            titleCol = 0xffff00;
+            bgCol = 0x404000;
+        } else {
+            title = net.minecraft.network.chat.Component.literal("Empty");
+            titleCol = 0x00ffff;
+            bgCol = 0x004040;
+        }
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics, title, titleCol, bgCol, text);
     }
 
     //? if >1.20.1 {

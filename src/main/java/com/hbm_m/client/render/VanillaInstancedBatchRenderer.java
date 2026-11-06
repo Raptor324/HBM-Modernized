@@ -1,6 +1,9 @@
 package com.hbm_m.client.render;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import java.nio.Buffer;
+import java.nio.FloatBuffer;
 
 import com.hbm_m.client.render.shader.ModShaders;
 import net.minecraft.client.Minecraft;
@@ -18,6 +21,7 @@ import org.joml.Matrix4f;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
+import com.mojang.blaze3d.platform.GlStateManager;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
@@ -39,16 +43,13 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
  * for access to shared state (instance buffer, VAO/VBO ids, etc.).
  */
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 final class VanillaInstancedBatchRenderer {
 
     private final InstancedStaticPartRenderer parent;
+
+    /** Scratch MV composite for uploadSingleInstance (rendering is single-threaded). */
+
 
     private ShaderInstance cachedShader = null;
     private int cachedShaderProgramId = -1;
@@ -110,34 +111,72 @@ final class VanillaInstancedBatchRenderer {
             uFogColor.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
         }
         if (uFadeAlpha != null) uFadeAlpha.set(SingleMeshVboRenderer.getFadeAlpha());
+        SingleMeshVboRenderer.applyFadeRampUniforms(shader);
         // Sampler0/Sampler2: {@link SingleMeshVboRenderer#prepareBlockLitSamplers} + bindBlockLitSamplerTextures.
+    }
+
+    /**
+     * Iris instanced path: sets the iris_ uniforms, switches the program to ours
+     * (the pack shader has already bound the FB) and uploads them. Call instead of
+     * apply(): ExtendedShader.apply()/clear() would bind their own (dead) FB clones.
+     */
+    void useIrisProgram(ShaderInstance ours, Matrix4f proj, Matrix4f modelView) {
+        updateUniformCache(ours);
+        if (uProjMat != null) uProjMat.set(proj);
+        if (uModelView != null) uModelView.set(modelView);
+        if (uFogStart != null) uFogStart.set(RenderSystem.getShaderFogStart());
+        if (uFogEnd != null) uFogEnd.set(RenderSystem.getShaderFogEnd());
+        if (uFogColor != null) {
+            float[] c = RenderSystem.getShaderFogColor();
+            uFogColor.set(c[0], c[1], c[2], c[3]);
+        }
+        // Distance-fade ramp + anim clock: the vanilla path sets these via
+        // applyFadeRampUniforms in applyCommonUniforms - useIrisProgram bypasses
+        // apply(), so without this the iris shader kept its JSON defaults forever
+        // (0.0 anim time, 1e9 fade start = ramp disabled).
+        SingleMeshVboRenderer.applyFadeRampUniforms(ours);
+        GlStateManager._glUseProgram(ours.getId());
+        if (uProjMat != null) uProjMat.upload();
+        if (uModelView != null) uModelView.upload();
+        if (uFogStart != null) uFogStart.upload();
+        if (uFogEnd != null) uFogEnd.upload();
+        if (uFogColor != null) uFogColor.upload();
+        // applyFadeRampUniforms only SETS the uniforms (never uploads), so upload
+        // each here while our program is bound. ExtendedShader.getUniform resolves
+        // the "iris_" prefix internally; missing uniforms resolve null - skipped.
+        for (String uName : new String[]{"uStaticFadeStart", "uStaticFadeEnd", "uAnimFadeStart",
+                "uAnimFadeEnd", "uAnimTicks", "uPartialTick"}) {
+            Uniform u = ours.getUniform(uName);
+            if (u != null) u.upload();
+        }
     }
 
     // ── 1.21.1 view-rotation stripping ────────────────────────────────
 
     //? if >= 1.21.1 {
-    /*// На 1.21.1 Mojang переносит camera view rotation (R_cam) в projection matrix
-    // RenderLevelStageEvent'а: event.getProjectionMatrix() = P*R_cam. При этом BER
-    // poseStack, из которого addInstance извлекает InstPos/InstRot, тоже несёт R_cam
-    // (mat = R_cam * T(blockPos - cameraPos) * perBELocal — см. комментарий в
-    // SingleMeshVboRenderer.render и fillInstanceCornerLight, где R_cam invert'ится).
-    // Instanced VS собирает modelView = T(InstPos)*R(InstRot) ≡ R_cam*T(d)*localRot,
-    // и если ProjMat = P*R_cam, итог = P*R_cam*R_cam*T(d)*localRot = P*R_cam²*...
-    // → двойная ротация. Симптом: модель "летает" по экрану, корректно только при
-    // yaw=180/0 (где R_cam²≈I). Фикс: stripp'им R_cam из event projection перед upload'ом.
+    /*// On 1.21.1 Mojang moves the camera view rotation (R_cam) into the projection matrix
+    // of RenderLevelStageEvent: event.getProjectionMatrix() = P*R_cam. Meanwhile the BER
+    // poseStack, from which addInstance extracts InstPos/InstRot, also carries R_cam
+    // (mat = R_cam * T(blockPos - cameraPos) * perBELocal - see the comment in
+    // SingleMeshVboRenderer.render and fillInstanceCornerLight, where R_cam is inverted).
+    // The instanced VS builds modelView = T(InstPos)*R(InstRot) == R_cam*T(d)*localRot,
+    // and if ProjMat = P*R_cam the result is P*R_cam*R_cam*T(d)*localRot = P*R_cam^2*...
+    // -> double rotation. Symptom: the model "flies" across the screen, correct only at
+    // yaw=180/0 (where R_cam^2 ~ I). Fix: strip R_cam from the event projection before upload.
     //
-    // ВАЖНО: stripp'им ТОЛЬКО event projection (из flushBatchVanilla/flushBatchIris).
-    // RenderSystem.getProjectionMatrix() на 1.21.1 НЕ содержит R_cam (там чистая P) —
-    // его использует renderSingleVanilla и SingleMeshVboRenderer.render (не-instanced BER),
-    // где R_cam применяется один раз через poseStack ModelViewMat. Стриппинг там ломает.
+    // IMPORTANT: strip ONLY the event projection (from flushBatchVanilla/flushBatchIris).
+    // RenderSystem.getProjectionMatrix() on 1.21.1 does NOT contain R_cam (pure P there) -
+    // it is used by renderSingleVanilla and SingleMeshVboRenderer.render (non-instanced BER),
+    // where R_cam is applied once via the poseStack ModelViewMat. Stripping there breaks it.
     private final org.joml.Matrix4f strippedProjection = new org.joml.Matrix4f();
     private final org.joml.Matrix4f invViewRotTmp = new org.joml.Matrix4f();
     *///?}
 
     Matrix4f stripViewRotationForInstanced(Matrix4f projection) {
-        // По ванильному GameRenderer.renderLevel 1.21.1 проекция события — это P*bob
-        // БЕЗ R_cam (R_cam передаётся отдельным аргументом frustumMatrix и живёт в modelViewStack).
-        // Умножение P * R_cam^-1 портило проекцию → instanced-модели летали по экрану.
+        // Per vanilla GameRenderer.renderLevel on 1.21.1, the event projection is P*bob
+        // WITHOUT R_cam (R_cam is passed separately as the frustumMatrix argument and lives
+        // in modelViewStack). Multiplying by P * R_cam^-1 corrupted the projection ->
+        // instanced models flew across the screen.
         return projection;
     }
 
@@ -221,32 +260,26 @@ final class VanillaInstancedBatchRenderer {
 
     void uploadSingleInstance(PoseStack poseStack, int packedLight,
                               @Nullable BlockEntity blockEntity) {
+        // renderSingle writes the record into the shared instanceBuffer - the clean-reuse
+        // sync with the coordinator is lost (safety for accidental double use of a renderer).
+        parent.noteMdiDispatchLost();
+        parent.mdiRecordWriteHappened = true;
+        parent.invalidateRoster();
         parent.instanceBuffer.clear();
-        Matrix4f mat = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
-        mat.getTranslation(parent.posTmp);
-        mat.getNormalizedRotation(parent.rotTmp);
+        // Record in world coordinates (see InstancedStaticPartRenderer.convertToWorldRecord):
+        // the camera is applied in the vsh via ModelViewMat = FrameViewState.viewMatrix().
+        // convertToWorldRecord takes the RAW pose now (W0 = invViewRot * modelView is
+        // applied inside, memoized per frame) - the composed matrix is no longer needed.
+        parent.convertToWorldRecord(poseStack.last().pose());
 
         BlockPos blockPosForSample = (blockEntity != null) ? blockEntity.getBlockPos() : BlockPos.ZERO;
-        if (LightSampleCache.BASE_POSE_SET.get()) {
-            parent.tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
-        } else {
-            var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-            //? if < 1.21.1 {
-            parent.tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
-             //?} else {
-            /*parent.tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
-            *///?}
-            parent.tmpLocalPose.set(parent.tmpInvViewRot).mul(poseStack.last().pose());
-            parent.tmpLocalPose.m30(parent.tmpLocalPose.m30() - (float) (blockPosForSample.getX() - cam.x));
-            parent.tmpLocalPose.m31(parent.tmpLocalPose.m31() - (float) (blockPosForSample.getY() - cam.y));
-            parent.tmpLocalPose.m32(parent.tmpLocalPose.m32() - (float) (blockPosForSample.getZ() - cam.z));
-        }
+        LightSampleCache.computeLocalPose(poseStack.last().pose(), blockPosForSample, parent.tmpLocalPose);
         long partHash = System.identityHashCode(parent);
 
         LightSampleCache.getOrSample8(blockEntity, partHash, parent.objBbox, blockPosForSample,
                 parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
 
-        parent.memPutInstanceRecordAtBaseFloat(0);
+        parent.memPutInstanceRecordAtBaseFloat(0, parent.objBbox);
         ((Buffer) parent.instanceBuffer).position(parent.instanceDataSize);
         parent.instanceBuffer.flip();
     }
@@ -273,15 +306,23 @@ final class VanillaInstancedBatchRenderer {
 
             GL30.glBindVertexArray(parent.vaoId);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, parent.instanceVboId);
+            // Self-heal the VAO instance attribs (see drawInstanceRange).
+            parent.pointInstanceAttribsTo(parent.instanceVboId);
             parent.uploadInstanceStreamToBoundVbo();
             enableVertexAttribsForDraw();
 
             RenderSystem.setShader(() -> shader);
-            // renderSingle вызывается из BER (DoorRenderer) — projection из RenderSystem.getProjectionMatrix()
-            // НЕ содержит R_cam на 1.21.1 (R_cam только в event.getProjectionMatrix()). Stripp'им InstPos/InstRot
-            // из poseStack (тоже с R_cam), но ProjMat — как есть. На 1.20.1 тождественно.
-            applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), new Matrix4f());
+            // renderSingle is called from a BER (DoorRenderer) - the projection from
+            // RenderSystem.getProjectionMatrix() does NOT contain R_cam on 1.21.1 (R_cam
+            // is only in event.getProjectionMatrix()). InstPos/InstRot are world-space now,
+            // the camera lives in ModelViewMat (R_cam * T(-cam)). Identity on 1.20.1.
+            applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), FrameViewState.viewMatrix());
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
+            // PROGRAM CACHE DESYNC PROTECTION: Oculus can raw-glUseProgram(0) without
+            // clearing static lastProgramId - the next apply() would skip the honest
+            // bind and route uniforms/draws to program 0 (black meshes). Same guard as
+            // SingleMeshVboRenderer / MdiBatchCoordinator.
+            com.hbm_m.client.render.shader.ShaderBindResync.ensureFreshBind(shader);
             shader.apply();
             SingleMeshVboRenderer.bindBlockLitSamplerTextures(shader);
 
@@ -289,16 +330,38 @@ final class VanillaInstancedBatchRenderer {
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
-            // Управляемый вызов: сырой GL11.glDisable(GL_CULL_FACE) не обновлял
-            // кеш GlStateManager, и RenderStateGuard.close() восстанавливал
-            // cull но-опом (кеш считал его всё ещё включённым).
+            // Managed call: a raw GL11.glDisable(GL_CULL_FACE) did not update the
+            // GlStateManager cache, and RenderStateGuard.close() restored cull as a
+            // no-op (the cache believed it was still enabled).
             RenderSystem.disableCull();
-            if (fade < 0.99f) {
-                RenderSystem.enableBlend();
-                RenderSystem.defaultBlendFunc();
+            // The record's fade slot holds a static MODE sentinel (1.0/0.9999/0.9998),
+            // not a per-frame alpha - the raw value never crosses 0.99, so the legacy
+            // `fade < 0.99f` gate never enabled blending and single instances (doors
+            // outside the batch) rendered fully opaque through the whole fade ring.
+            // Evaluate the real alpha with the CPU mirror (same formula as the vsh).
+            // Dither mode: never blends - the FSH discards by screen hash.
+            boolean ditherFade = com.hbm_m.config.ModClothConfig.get().nucleusDitherFade;
+            if (fade < InstancedStaticPartRenderer.FADE_MODE_NONE_DIVIDER && !ditherFade) {
+                float px = parent.instanceBuffer.get(0);
+                float py = parent.instanceBuffer.get(1);
+                float pz = parent.instanceBuffer.get(2);
+                double dx = px - FrameViewState.relCamX();
+                double dy = py - FrameViewState.relCamY();
+                double dz = pz - FrameViewState.relCamZ();
+                float alpha = RenderDistanceHelper.evalInstanceAlpha(
+                        dx * dx + dy * dy + dz * dz, fade);
+                if (alpha < 0.99f) {
+                    RenderSystem.enableBlend();
+                    RenderSystem.defaultBlendFunc();
+                    // A fading single instance (doors outside the batch) is drawn right in the
+                    // BER phase - before the MDI bases; without depth writing it would not
+                    // depth-reject them. RenderStateGuard will restore the mask.
+                    RenderSystem.depthMask(false);
+                }
             }
 
             InstancedGlCompat.glDrawElementsInstancedCompat(GL11.GL_TRIANGLES, parent.indexCount, GL11.GL_UNSIGNED_INT, 0, 1);
+            NucleusDebug.recordDraw(1, 1, "Instanced (single)");
         } catch (Exception e) {
             MainRegistry.LOGGER.error("VanillaInstancedBatchRenderer.renderSingleVanilla failed", e);
         } finally {
@@ -308,29 +371,37 @@ final class VanillaInstancedBatchRenderer {
 
     // ── Batch flush ────────────────────────────────────────────────────
 
-    // РЕГРЕССИЯ-СТОП: порядок draw — VAO → shader → identity ModelView → prepareSamplers → apply → bind → draw.
-    // НЕ менять порядок; НЕ рисовать без bindBlockLitSamplerTextures после apply (белые OBJ).
+    // REGRESSION GUARD: draw order is VAO -> shader -> identity ModelView -> prepareSamplers -> apply -> bind -> draw.
+    // Do NOT change the order; do NOT draw without bindBlockLitSamplerTextures after apply (white OBJs).
     void flushBatchVanilla(Matrix4f projectionMatrix) {
-        // 1.21.1: projection из event.getProjectionMatrix() несёт R_cam; instanced VS
-        // собирает modelView из InstPos/InstRot (тоже с R_cam) → двойная ротация. Stripp'им.
+        // 1.21.1: the projection from event.getProjectionMatrix() carries R_cam; the instanced
+        // VS builds modelView from InstPos/InstRot (also with R_cam) -> double rotation. Strip it.
         Matrix4f proj = stripViewRotationForInstanced(projectionMatrix);
         boolean alreadyFlipped = false;
 
         MdiBatchCoordinator coord = MdiBatchCoordinator.active();
         if (coord != null
-                && !parent.storesPerInstancePartBone
                 && parent.atlasVertexBytesRetained != null
                 && parent.atlasIndicesRetained != null
                 && parent.atlasIndexCountRetained > 0
                 && !ShaderCompatibilityDetector.isExternalShaderActive()) {
             parent.instanceBuffer.flip();
             alreadyFlipped = true;
+            // Clean frame: not a single write into the buffer (skip-write) and the buffer
+            // is in sync with the snapshot - the coordinator reuses last frame's record as is.
+            if (parent.canSubmitMdiClean()
+                    && coord.submitClean(parent, parent.indexCount, parent.instanceCount)) {
+                parent.noteMdiDispatched();
+                return;
+            }
             boolean accepted = coord.submit(parent, parent.indexCount, parent.instanceCount,
                     parent.instanceDataSize, parent.instanceBuffer, parent.instanceCullIndices, parent.instanceOcclusionKeys,
                     parent.atlasVertexBytesRetained, parent.atlasIndicesRetained, parent.atlasIndexCountRetained);
             if (accepted) {
+                parent.noteMdiDispatched();
                 return;
             }
+            parent.noteMdiDispatchLost();
         }
 
         ShaderInstance shader = ModShaders.getBlockLitInstancedShader();
@@ -344,50 +415,161 @@ final class VanillaInstancedBatchRenderer {
             return;
         }
 
+        // Tier-2 direct draw ahead (the coordinator either is inactive or rejected
+        // the batch): build the renderer's own VAO/VBO/EBO/instance VBO on first
+        // need. A pure Tier-1 renderer never gets here - its own GL objects are
+        // never created (lazy own-GL, see InstancedStaticPartRenderer).
+        if (!parent.ensureOwnGlObjects()) {
+            parent.instanceCount = 0;
+            if (parent.instanceBuffer != null) {
+                parent.instanceBuffer.clear();
+            }
+            return;
+        }
+
         if (!alreadyFlipped) {
             parent.instanceBuffer.flip();
         }
 
-        // RenderStateGuard снимает и симметрично восстанавливает VAO,
-        // ARRAY_BUFFER, cull, depth test/mask/func и blend+blendFunc —
-        // ровно тот набор, который раньше снапшотился вручную ниже.
+        // RenderStateGuard snapshots and symmetrically restores VAO,
+        // ARRAY_BUFFER, cull, depth test/mask/func and blend+blendFunc -
+        // exactly the set that used to be snapshotted manually below.
         try (RenderStateGuard ignored = RenderStateGuard.snapshot()) {
-            float minFade = 1f;
-            for (int i = 0; i < parent.instanceCount; i++) {
-                float fa = parent.instanceBuffer.get(i * parent.instanceDataSize + parent.instanceFadeFloatOffset);
-                if (fa < minFade) minFade = fa;
+            // Variant G on the direct path (renderers not accepted by the atlas):
+            // opaque instances are drawn NOW - before the MDI dispatch; fading ones
+            // are copied into the snapshot and picked up by flushFadingVanilla AFTER
+            // the multi-draw. Otherwise fading parts write depth before the opaque
+            // base from MDI and depth-reject it.
+            // Dither mode: no blending - the whole batch draws as one opaque
+            // range (the FSH discards fading pixels by screen hash); no
+            // partition, no deferred fading phase.
+            boolean ditherFade = com.hbm_m.config.ModClothConfig.get().nucleusDitherFade;
+            int opaque = ditherFade ? parent.instanceCount
+                    // R4-2.3: instance-method wrapper - partitions AND re-points the
+                    // renderer's keyed allocator slots at the permuted record positions.
+                    : parent.partitionAndRemapAllocator();
+            if (opaque < parent.instanceCount) {
+                // The partition reordered records (fading present) - the buffer content
+                // diverged from the coordinator's snapshot; the clean path is unavailable.
+                parent.noteMdiDispatchLost();
             }
+            if (opaque > 0) {
+                drawInstanceRange(shader, proj, parent.instanceBuffer, 0, opaque);
+            }
+            parent.deferFading(opaque, parent.instanceCount - opaque);
+        } catch (Exception e) {
+            MainRegistry.LOGGER.error("Error during instanced flush (vanilla)", e);
+        } finally {
+            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
+            RenderSystem.setShaderTexture(0, net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS);
+        }
+    }
 
+    /**
+     * Draws {@code count} instances starting at record {@code firstRecord} of buffer
+     * {@code data}. The block_lit contract is unchanged: VAO -> shader -> ModelViewMat=V ->
+     * prepareSamplers -> apply -> bind -> draw (do NOT change - white OBJs).
+     * InstPos/InstRot are world-space: ModelViewMat = R_cam * T(-cam) (FrameViewState).
+     * Blend is unnecessary for the opaque range: all fade ~ 1 by partition construction.
+     */
+    private void drawInstanceRange(ShaderInstance shader, Matrix4f proj, FloatBuffer data,
+                                   int firstRecord, int count) {
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthFunc(GL11.GL_LEQUAL);
+        RenderSystem.depthMask(true);
+        RenderSystem.disableCull();
+
+        GL30.glBindVertexArray(parent.vaoId);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, parent.instanceVboId);
+        int stride = parent.instanceDataSize;
+        // Span upload: only changed ranges (orphans are forbidden - skipped spans
+        // must keep the old VBO content). Re-point the VAO instance attribs at
+        // instanceVboId first: attrib pointers are VAO state, and the phase-2
+        // fading draw re-points them at the dedicated fading VBO (a throw there
+        // must not leave this phase reading another machine's records).
+        parent.pointInstanceAttribsTo(parent.instanceVboId);
+        parent.uploadToInstanceVboSpanned(data, firstRecord * stride, 0, count * stride);
+        enableVertexAttribsForDraw();
+
+        RenderSystem.setShader(() -> shader);
+        // ModelViewMat = V: the instanced VS multiplies world-space InstPos/InstRot by it.
+        applyCommonUniforms(shader, proj, FrameViewState.viewMatrix());
+        SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
+        shader.apply();
+        SingleMeshVboRenderer.bindBlockLitSamplerTextures(shader);
+
+        InstancedGlCompat.glDrawElementsInstancedCompat(GL11.GL_TRIANGLES, parent.indexCount,
+                GL11.GL_UNSIGNED_INT, 0, count);
+        NucleusDebug.recordDraw(1, count, "Instanced (direct)");
+    }
+
+    /**
+     * Phase 2 of the direct path: fading instances deferred by {@link #flushBatchVanilla}.
+     * Called AFTER the MDI dispatch (InstancedRenderFrame.flushAllInstancedFading).
+     * <p>
+     * depthMask(true): depth-write is required for self-overlap within a model
+     * (a spike inside an arm housing must not "poke through" while blending).
+     * Mutual depth-reject of machines is excluded by sorting: instances within the
+     * snapshot are back-to-front (partitionInstancesOpaqueFirst), renderer windows are
+     * sorted by the farthest fading instance in {@code MachineSpec.flushFading}.
+     */
+    void flushFadingVanilla(Matrix4f projectionMatrix, int count) {
+        ShaderInstance shader = ModShaders.getBlockLitInstancedShader();
+        if (shader == null || parent.fadingSnapshot == null) {
+            return;
+        }
+        Matrix4f proj = stripViewRotationForInstanced(projectionMatrix);
+        // Dither mode: no blending anywhere - discarded fragments never write
+        // depth, so the deferred phase is order-independent and blend-free.
+        boolean ditherFade = com.hbm_m.config.ModClothConfig.get().nucleusDitherFade;
+        try (RenderStateGuard ignored = RenderStateGuard.snapshot()) {
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
             RenderSystem.disableCull();
-            if (minFade < 0.99f) {
+            if (!ditherFade) {
                 RenderSystem.enableBlend();
                 RenderSystem.defaultBlendFunc();
             }
 
             GL30.glBindVertexArray(parent.vaoId);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, parent.instanceVboId);
-            parent.uploadInstanceStreamToBoundVbo();
+            // Span upload of the fading range into the DEDICATED fading VBO -
+            // NOT into instanceVboId [0, count): the opaque phase uploaded its
+            // records there and synced vboShadow against them; overwriting the
+            // region (and the shadow) would destroy the differential-upload
+            // cache of both phases whenever fading instances exist.
+            parent.uploadToFadingVboSpanned(parent.fadingSnapshot, count * parent.instanceDataSize);
+            // Draw from the fading VBO: re-point the VAO instance attribs at it,
+            // and restore them to the main instance VBO after the draw (attrib
+            // pointers are VAO state - the next opaque phase must keep reading
+            // instanceVboId).
+            parent.pointInstanceAttribsTo(parent.fadingInstanceVboId);
             enableVertexAttribsForDraw();
 
             RenderSystem.setShader(() -> shader);
-            // Identity ModelView: instanced VS берёт позу из InstPos/InstRot. НЕ подставлять poseStack.last() — ломает batch.
-            applyCommonUniforms(shader, proj, new Matrix4f());
-            // Текстуры: prepare → apply → bind (см. SingleMeshVboRenderer «РЕГРЕССИЯ-СТОП»). Только apply() = белые модели.
+            applyCommonUniforms(shader, proj, FrameViewState.viewMatrix());
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
+            // PROGRAM CACHE DESYNC PROTECTION: Oculus can raw-glUseProgram(0) without
+            // clearing static lastProgramId - the next apply() would skip the honest
+            // bind and route uniforms/draws to program 0 (black meshes). Same guard as
+            // SingleMeshVboRenderer / MdiBatchCoordinator.
+            com.hbm_m.client.render.shader.ShaderBindResync.ensureFreshBind(shader);
             shader.apply();
             SingleMeshVboRenderer.bindBlockLitSamplerTextures(shader);
 
-            InstancedGlCompat.glDrawElementsInstancedCompat(GL11.GL_TRIANGLES, parent.indexCount, GL11.GL_UNSIGNED_INT, 0, parent.instanceCount);
+            InstancedGlCompat.glDrawElementsInstancedCompat(GL11.GL_TRIANGLES, parent.indexCount,
+                    GL11.GL_UNSIGNED_INT, 0, count);
+            NucleusDebug.recordDraw(1, count, "Instanced (direct)");
 
-            if (minFade < 0.99f) {
+            // Restore the VAO instance attribs to the main instance VBO (phase-2
+            // drew from the dedicated fading VBO - see the upload above).
+            parent.pointInstanceAttribsTo(parent.instanceVboId);
+
+            if (!ditherFade) {
                 RenderSystem.disableBlend();
             }
-
         } catch (Exception e) {
-            MainRegistry.LOGGER.error("Error during instanced flush (vanilla)", e);
+            MainRegistry.LOGGER.error("Error during instanced fading flush (vanilla)", e);
         } finally {
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             RenderSystem.setShaderTexture(0, net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS);

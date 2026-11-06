@@ -9,7 +9,9 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashMap;
 import java.util.Set;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+@OnlyIn(Dist.CLIENT)
 public class T51ArmorModelLoader extends AbstractObjPartModelLoader<T51ArmorBakedModel> {
 
     // Имена должны совпадать с "o <name>" в t51.obj. [file:26]

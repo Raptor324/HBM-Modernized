@@ -39,6 +39,18 @@ public class AssemblerRecipe extends PlatformRecipe {
     private List<dev.architectury.fluid.FluidStack> fluidInputs = List.of();
     private List<dev.architectury.fluid.FluidStack> fluidOutputs = List.of();
 
+    /** Eine Variante einer Zufallsausgabe (Original {@code ChanceOutput}). */
+    public record WeightedStack(ItemStack stack, int weight) {}
+
+    /**
+     * Zufallsausgabe (Original {@code ChanceOutputMulti}, z.B. ass.nitra): pro Durchlauf wird aus der
+     * Gruppe genau eine Variante nach Gewicht gezogen. JSON: {@code "chance_outputs": [[{"item":..,
+     * "count":..,"weight":..}, ...], ...]} — gleiches Format wie {@code RockMillRecipe}. Ein Rezept hat
+     * dann kein festes {@code "output"}; als Icon dient die erste Variante (Original
+     * {@code GenericRecipe.getIcon}: {@code ChanceOutputMulti.pool.get(0)}).
+     */
+    private List<List<WeightedStack>> chanceOutputs = List.of();
+
     public AssemblerRecipe(ResourceLocation id, ItemStack output, NonNullList<Ingredient> recipeItems,
                            int duration, int power) {
         this(id, output, recipeItems, null, duration, power, null);
@@ -75,6 +87,43 @@ public class AssemblerRecipe extends PlatformRecipe {
     public List<dev.architectury.fluid.FluidStack> getFluidInputs() { return fluidInputs; }
     public List<dev.architectury.fluid.FluidStack> getFluidOutputs() { return fluidOutputs; }
 
+    public AssemblerRecipe withChanceOutputs(List<List<WeightedStack>> groups) {
+        this.chanceOutputs = groups != null ? List.copyOf(groups) : List.of();
+        return this;
+    }
+
+    public List<List<WeightedStack>> getChanceOutputs() { return chanceOutputs; }
+
+    /** Rezept mit festem Ausgang (bei Zufallsausgaben wie ass.nitra leer — dort nur chanceOutputs). */
+    public boolean hasFixedOutput() { return !output.isEmpty(); }
+
+    /** Alle moeglichen Zufallsausgaenge (Original {@code ChanceOutputMulti.getAllPossibilities}). */
+    public List<ItemStack> getPossibleOutputs() {
+        List<ItemStack> out = new ArrayList<>();
+        for (List<WeightedStack> group : chanceOutputs) {
+            for (WeightedStack w : group) {
+                if (!w.stack().isEmpty()) out.add(w.stack());
+            }
+        }
+        return out;
+    }
+
+    /** Zieht aus jeder Zufallsgruppe eine Variante (Original {@code ChanceOutputMulti.collapse}). */
+    public List<ItemStack> rollChanceOutputs(net.minecraft.util.RandomSource random) {
+        List<ItemStack> out = new ArrayList<>();
+        for (List<WeightedStack> group : chanceOutputs) {
+            int total = 0;
+            for (WeightedStack w : group) total += Math.max(0, w.weight());
+            if (total <= 0) continue;
+            int roll = random.nextInt(total);
+            for (WeightedStack w : group) {
+                roll -= Math.max(0, w.weight());
+                if (roll < 0) { out.add(w.stack().copy()); break; }
+            }
+        }
+        return out;
+    }
+
     @Override
     public boolean matchesRecipe(RecipeInputWrapper pContainer, Level pLevel) {
         if (pLevel.isClientSide()) {
@@ -98,6 +147,14 @@ public class AssemblerRecipe extends PlatformRecipe {
 
     @Override
     public ItemStack getResultItemSafe() {
+        // Zufallsausgabe: das Icon ist die erste Variante (Original GenericRecipe.getIcon,
+        // ChanceOutputMulti -> pool.get(0).stack), damit Template/Rezeptanzeige weiter funktionieren.
+        if (output.isEmpty()) {
+            for (List<WeightedStack> group : chanceOutputs) {
+                if (!group.isEmpty() && !group.get(0).stack().isEmpty()) return group.get(0).stack().copy();
+            }
+            return ItemStack.EMPTY;
+        }
         return output.copy();
     }
 
@@ -136,9 +193,17 @@ public class AssemblerRecipe extends PlatformRecipe {
 
         @Override
         public AssemblerRecipe readJson(ResourceLocation pRecipeId, JsonObject pSerializedRecipe) {
-            ItemStack output = RecipeHooks.itemStackFromJson(GsonHelper.getAsJsonObject(pSerializedRecipe, "output"));
+            // Zufallsausgabe (ass.nitra): kein festes "output", dafuer "chance_outputs".
+            ItemStack output = pSerializedRecipe.has("output")
+                    ? RecipeHooks.itemStackFromJson(GsonHelper.getAsJsonObject(pSerializedRecipe, "output"))
+                    : ItemStack.EMPTY;
+            List<List<WeightedStack>> chanceOutputs = readChanceOutputs(pSerializedRecipe);
+            if (output.isEmpty() && chanceOutputs.isEmpty()) {
+                throw new com.google.gson.JsonSyntaxException(
+                        "AssemblerRecipe " + pRecipeId + ": entweder \"output\" oder \"chance_outputs\" noetig");
+            }
             JsonArray ingredientsJson = GsonHelper.getAsJsonArray(pSerializedRecipe, "ingredients");
-            
+
             NonNullList<Ingredient> inputs = NonNullList.create();
             List<AssemblerInputSlot> displaySlots = new ArrayList<>();
             for (int i = 0; i < ingredientsJson.size(); i++) {
@@ -152,9 +217,28 @@ public class AssemblerRecipe extends PlatformRecipe {
             int duration = GsonHelper.getAsInt(pSerializedRecipe, "duration", 100);
             int power = GsonHelper.getAsInt(pSerializedRecipe, "power", 1000);
             String blueprintPool = GsonHelper.getAsString(pSerializedRecipe, "blueprint_pool", null);
-            
+
             return new AssemblerRecipe(pRecipeId, output, inputs, displaySlots, duration, power, blueprintPool)
-                    .withFluids(readFluids(pSerializedRecipe, "fluid_inputs"), readFluids(pSerializedRecipe, "fluid_outputs"));
+                    .withFluids(readFluids(pSerializedRecipe, "fluid_inputs"), readFluids(pSerializedRecipe, "fluid_outputs"))
+                    .withChanceOutputs(chanceOutputs);
+        }
+
+        /** {@code [[{"item":..,"count":..,"weight":..}, ...], ...]} wie bei {@code RockMillRecipe}. */
+        private static List<List<WeightedStack>> readChanceOutputs(JsonObject json) {
+            if (!json.has("chance_outputs")) return List.of();
+            JsonArray groups = GsonHelper.getAsJsonArray(json, "chance_outputs");
+            List<List<WeightedStack>> result = new ArrayList<>(groups.size());
+            for (JsonElement g : groups) {
+                List<WeightedStack> group = new ArrayList<>();
+                for (JsonElement el : g.getAsJsonArray()) {
+                    JsonObject obj = el.getAsJsonObject().deepCopy();
+                    int weight = GsonHelper.getAsInt(obj, "weight", 1);
+                    obj.remove("weight");
+                    group.add(new WeightedStack(RecipeHooks.itemStackFromJson(obj), weight));
+                }
+                result.add(group);
+            }
+            return result;
         }
 
         @Override
@@ -174,15 +258,26 @@ public class AssemblerRecipe extends PlatformRecipe {
             ItemStack output = RecipeHooks.readItem(pBuffer);
             int duration = pBuffer.readInt();
             int power = pBuffer.readInt();
-            
+
             String blueprintPool = pBuffer.readBoolean() ? pBuffer.readUtf() : null;
 
             List<dev.architectury.fluid.FluidStack> fin = new ArrayList<>();
             for (int i = pBuffer.readVarInt(); i > 0; i--) fin.add(RecipeHooks.readFluidStack(pBuffer));
             List<dev.architectury.fluid.FluidStack> fout = new ArrayList<>();
             for (int i = pBuffer.readVarInt(); i > 0; i--) fout.add(RecipeHooks.readFluidStack(pBuffer));
-            
-            return new AssemblerRecipe(pRecipeId, output, inputs, displaySlots, duration, power, blueprintPool).withFluids(fin, fout);
+
+            int groupCount = pBuffer.readVarInt();
+            List<List<WeightedStack>> chanceOutputs = new ArrayList<>(groupCount);
+            for (int g = 0; g < groupCount; g++) {
+                int n = pBuffer.readVarInt();
+                List<WeightedStack> group = new ArrayList<>(n);
+                for (int i = 0; i < n; i++) group.add(new WeightedStack(RecipeHooks.readItem(pBuffer), pBuffer.readVarInt()));
+                chanceOutputs.add(group);
+            }
+
+            return new AssemblerRecipe(pRecipeId, output, inputs, displaySlots, duration, power, blueprintPool)
+                    .withFluids(fin, fout)
+                    .withChanceOutputs(chanceOutputs);
         }
 
         @Override
@@ -193,10 +288,11 @@ public class AssemblerRecipe extends PlatformRecipe {
                 pBuffer.writeVarInt(slot.count());
             }
 
+            // Zufallsrezepte schicken ein leeres Output-Item; die Varianten folgen unten.
             RecipeHooks.writeItem(pBuffer, pRecipe.getResultItemSafe());
             pBuffer.writeInt(pRecipe.getDuration());
             pBuffer.writeInt(pRecipe.getPowerConsumption());
-            
+
             if (pRecipe.blueprintPool != null) {
                 pBuffer.writeBoolean(true);
                 pBuffer.writeUtf(pRecipe.blueprintPool);
@@ -208,6 +304,15 @@ public class AssemblerRecipe extends PlatformRecipe {
             for (dev.architectury.fluid.FluidStack fs : pRecipe.fluidInputs) RecipeHooks.writeFluidStack(pBuffer, fs);
             pBuffer.writeVarInt(pRecipe.fluidOutputs.size());
             for (dev.architectury.fluid.FluidStack fs : pRecipe.fluidOutputs) RecipeHooks.writeFluidStack(pBuffer, fs);
+
+            pBuffer.writeVarInt(pRecipe.chanceOutputs.size());
+            for (List<WeightedStack> group : pRecipe.chanceOutputs) {
+                pBuffer.writeVarInt(group.size());
+                for (WeightedStack w : group) {
+                    RecipeHooks.writeItem(pBuffer, w.stack());
+                    pBuffer.writeVarInt(w.weight());
+                }
+            }
         }
 
         /** {@code [{"fluid": id, "amount": mB}]} wie beim Chemiewerk. */

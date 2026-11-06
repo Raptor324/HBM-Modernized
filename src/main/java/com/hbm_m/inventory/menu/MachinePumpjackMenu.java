@@ -4,7 +4,6 @@ import com.hbm_m.blockentity.machines.MachinePumpjackBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -14,6 +13,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** 1:1 {@code ContainerMachineOilWell} (1.7.10) - dasselbe Slotlayout wie der Bohrturm. */
 public class MachinePumpjackMenu extends AbstractContainerMenu {
@@ -30,7 +30,7 @@ public class MachinePumpjackMenu extends AbstractContainerMenu {
 
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку
         var container = new ModItemStackHandlerContainer(
-                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(8),
+                blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(8),
                 blockEntity != null ? blockEntity::setChanged : null);
 
         // Battery

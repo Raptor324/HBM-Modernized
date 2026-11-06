@@ -1,5 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
+import com.hbm_m.client.render.weapon.WeaponJointRig;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.client.weapon.WeaponResources;
@@ -75,25 +78,14 @@ public class ItemRenderMareslegAkimbo extends ItemRenderWeaponBase {
 			this.renderSmokeNodes(gun.getConfig(stack, index).smokeNodes, 0.25D);
 			GunGL.popMatrix();
 
-			GunGL.renderPart(WeaponResources.maresleg, "Gun");
+			WeaponRenderRegistry.renderPart(WeaponResources.maresleg, "Gun", GunGL.pose());
 
-			GunGL.pushMatrix();
-			GunGL.translate(0, 0.125, -2.875);
-			GunGL.rotate(lever[0], 1, 0, 0);
-			GunGL.translate(0, -0.125, 2.875);
-			GunGL.renderPart(WeaponResources.maresleg, "Lever");
-			GunGL.popMatrix();
-
-			GunGL.pushMatrix();
-			GunGL.translate(shell[0], shell[1] - 0.75, shell[2]);
-			GunGL.renderPart(WeaponResources.maresleg, "Shell");
-			GunGL.popMatrix();
+			WeaponJointRig rig = WeaponRenderRegistry.getRig(WeaponResources.maresleg);
+			WeaponKinematics.renderPartWithJoint(rig, "Lever", GunGL.pose(), (float) lever[0]);
+			WeaponKinematics.renderPartWithVector(rig, "Shell", GunGL.pose(), (float) shell[0], (float) (shell[1] - 0.75), (float) shell[2]);
 
 			if(flag[0] != 0) {
-				GunGL.pushMatrix();
-				GunGL.translate(0, -0.5, 0);
-				GunGL.renderPart(WeaponResources.maresleg, "Shell");
-				GunGL.popMatrix();
+				WeaponKinematics.renderPartWithVector(rig, "Shell", GunGL.pose(), 0f, -0.5f, 0f);
 			}
 
 			GunGL.pushMatrix();
@@ -198,48 +190,15 @@ public class ItemRenderMareslegAkimbo extends ItemRenderWeaponBase {
 	@Override
 	public void renderEquipped(ItemStack stack, Object... data) {
 		renderOther(stack, ItemRenderType.EQUIPPED);
-		//grumble grumble
-		LivingEntity ent = (LivingEntity) data[1];
-		long shot;
-		double shotRand = 0;
-		if(ent == Minecraft.getInstance().player) {
-			ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-			shot = gun.lastShot[1];
-			shotRand = gun.shotRand;
-		} else {
-			shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-			if(shot < 0) return;
+		if(data.length > 1 && data[1] instanceof LivingEntity ent) {
+			renderEquippedMuzzleFlash(stack, ent, 1, 0, 1, 3.75, 1.0D, 75, 5);
 		}
-
-		GunGL.pushMatrix();
-		GunGL.translate(0, 1, 3.75);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.rotate(90 * shotRand, 1, 0, 0);
-		this.renderMuzzleFlash(shot, 75, 5);
-		GunGL.popMatrix();
 	}
 
 	@Override
 	public void renderEquippedAkimbo(ItemStack stack, LivingEntity ent) {
 		renderOther(stack, ItemRenderType.EQUIPPED);
-
-		long shot;
-		double shotRand = 0;
-		if(ent == Minecraft.getInstance().player) {
-			ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-			shot = gun.lastShot[0];
-			shotRand = gun.shotRand;
-		} else {
-			shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-			if(shot < 0) return;
-		}
-
-		GunGL.pushMatrix();
-		GunGL.translate(0, 1, 3.75);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.rotate(90 * shotRand, 1, 0, 0);
-		this.renderMuzzleFlash(shot, 75, 5);
-		GunGL.popMatrix();
+		renderEquippedMuzzleFlash(stack, ent, 0, 0, 1, 3.75, 1.0D, 75, 5);
 	}
 
 	@Override

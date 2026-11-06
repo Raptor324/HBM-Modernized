@@ -1,7 +1,5 @@
 package com.hbm_m.handler.pollution;
 
-import com.hbm_m.platform.AttributeOps;
-
 import java.util.UUID;
 
 import com.hbm_m.config.ModClothConfig;
@@ -20,6 +18,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Enemy;
+import com.hbm_m.platform.AttributeHooks;
 
 /**
  * Haengt {@link PollutionHandler} an den Serverlauf - im Original sind das die
@@ -65,7 +64,6 @@ public final class PollutionEvents {
             decorateMob(entity, world, x, y, z);
             return EventResult.pass();
         });
-
         //? if forge {
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener((net.minecraftforge.event.entity.player.PlayerSleepInBedEvent event) -> {
             if (com.hbm_m.config.MobConfig.rampantGlyphidGuidance()) {
@@ -86,7 +84,6 @@ public final class PollutionEvents {
         *///?}
     }
 
-    //? if forge || neoforge {
     /** 1:1 {@code rampantScoutPopulator}. */
     //? if forge {
     private static void rampantScoutPopulator(net.minecraftforge.event.level.LevelEvent.PotentialSpawns event) {
@@ -118,7 +115,6 @@ public final class PollutionEvents {
             }
         }
     }
-    //?}
 
     // ═══════════════════════════ Mob-Verstaerkung ═══════════════════════════
 
@@ -145,17 +141,17 @@ public final class PollutionEvents {
 
         // Original: Operation 1 = MULTIPLY_BASE, Werte 1.0 (doppeltes Leben) und 1.5.
         AttributeInstance health = living.getAttribute(Attributes.MAX_HEALTH);
-        if (health != null && com.hbm_m.platform.AttributeHooks.getModifier(health, MAX_HEALTH_ID) == null) {
+        if (health != null && !com.hbm_m.platform.AttributeHooks.hasModifier(health, MAX_HEALTH_ID)) {
             health.addPermanentModifier(com.hbm_m.platform.AttributeHooks.modifier(
                     MAX_HEALTH_ID, "Soot Anger Health Increase", 1D,
-                    AttributeOps.MULTIPLY_BASE));
+                    com.hbm_m.platform.AttributeHooks.MULTIPLY_BASE));
         }
 
         AttributeInstance damage = living.getAttribute(Attributes.ATTACK_DAMAGE);
-        if (damage != null && com.hbm_m.platform.AttributeHooks.getModifier(damage, ATTACK_DAMAGE_ID) == null) {
+        if (damage != null && !com.hbm_m.platform.AttributeHooks.hasModifier(damage, ATTACK_DAMAGE_ID)) {
             damage.addPermanentModifier(com.hbm_m.platform.AttributeHooks.modifier(
                     ATTACK_DAMAGE_ID, "Soot Anger Damage Increase", 1.5D,
-                    AttributeOps.MULTIPLY_BASE));
+                    com.hbm_m.platform.AttributeHooks.MULTIPLY_BASE));
         }
 
         living.heal(living.getMaxHealth());

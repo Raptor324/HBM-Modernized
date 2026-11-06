@@ -12,6 +12,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
@@ -30,6 +31,12 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.block.IPersistentNBT, com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
+    // Port der Zaehler aus TileEntityCapacitor: Leistung pro Tick + Werte des letzten Ticks.
+    public long powerReceived;
+    public long powerSent;
+    public long lastPowerReceived;
+    public long lastPowerSent;
+
     @Override
     public String[] getFunctionInfo() {
         return new String[] { PREFIX_VALUE + "fill", PREFIX_VALUE + "fillpercent" };
@@ -44,7 +51,63 @@ public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity implemen
 
     public MachineCapacitorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_CAPACITOR_BE.get(), pos, state, 0,
-                capacityFor(state), Math.max(1, capacityFor(state) / 200), Math.max(1, capacityFor(state) / 600));
+                capacityFor(state), Math.max(1, capacityFor(state) / 100), Math.max(1, capacityFor(state) / 300));
+    }
+
+    @Override
+    public long receiveEnergy(long maxReceive, boolean simulate) {
+        long received = super.receiveEnergy(maxReceive, simulate);
+        if (!simulate && received > 0) this.powerReceived += received;
+        return received;
+    }
+
+    @Override
+    public long extractEnergy(long maxExtract, boolean simulate) {
+        long extracted = super.extractEnergy(maxExtract, simulate);
+        if (!simulate && extracted > 0) this.powerSent += extracted;
+        return extracted;
+    }
+
+    /**
+     * Alle Netz-Zufuhren laufen ueber {@code transferPower} (PowerNet-Verteilung, direkte
+     * Einspeisung, FE-Bruecke) - der Default zaehlt hier NICHT mit, deshalb zaehlt der
+     * Override. Port des Original-Overrides (MachineCapacitor.java:232-244): angenommene
+     * Leistung = power - overshoot (vollem Fit entsprechend "power", bei Overflow
+     * "maxPower - power").
+     */
+    @Override
+    public long transferPower(long power) {
+        // Rumpf des Defaults von IEnergyReceiver.transferPower inline kopiert: ein
+        // qualified super-call ("IEnergyReceiver.super.") ist illegal, weil diese Klasse
+        // das Interface nur ueber BaseMachineBlockEntity erbt, nicht direkt implementiert.
+        if (power + this.getEnergyStored() <= this.getMaxEnergyStored()) {
+            this.setEnergyStored(power + this.getEnergyStored());
+            this.powerReceived += power;
+            return 0;
+        }
+        long capacity = this.getMaxEnergyStored() - this.getEnergyStored();
+        long overshoot = power - capacity;
+        this.powerReceived += capacity;
+        this.setEnergyStored(this.getMaxEnergyStored());
+        return overshoot;
+    }
+
+    /**
+     * Server-Ticker: rollt die Durchflusszaehler pro Tick (Original: Ende von
+     * {@code updateEntity}) und synchronisiert den Client alle 15 Ticks
+     * (Original: {@code networkPackNT(15)}).
+     */
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineCapacitorBlockEntity be) {
+        if (level.isClientSide) return;
+
+        if (level.getGameTime() % 15 == 0) {
+            be.sendUpdateToClient();
+        }
+
+        be.lastPowerReceived = be.powerReceived;
+        be.lastPowerSent = be.powerSent;
+        be.powerReceived = 0;
+        be.powerSent = 0;
     }
 
     private static long capacityFor(BlockState state) {
@@ -117,10 +180,38 @@ public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity implemen
         return null;
     }
 
+    @Override
+    protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        // Original serialize(): power/maxPower/powerReceived/powerSent gehen zum Client;
+        // hier läuft derselbe Kanal auch ins Datadir (Zaehler sind nach einem Tick wieder 0).
+        tag.putLong("powerReceived", powerReceived);
+        tag.putLong("powerSent", powerSent);
+    }
+
+    @Override
+    protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        powerReceived = tag.getLong("powerReceived");
+        powerSent = tag.getLong("powerSent");
+    }
+
     /** Original {@code TileEntityCapacitor.writeNBT}: Ladung und Kapazitaet. */
     @Override
     public void writeNBT(net.minecraft.nbt.CompoundTag nbt) {
         nbt.putLong("energy", getEnergyStored());
         nbt.putLong("capacity", getMaxEnergyStored());
     }
+    //? if >= 1.21.1 {
+    /*public void saveToItemStack(net.minecraft.world.item.ItemStack stack) {
+        net.minecraft.nbt.CompoundTag beTag = new net.minecraft.nbt.CompoundTag();
+        this.writeNBT(beTag);
+        if (!beTag.isEmpty()) {
+            net.minecraft.nbt.CompoundTag root = new net.minecraft.nbt.CompoundTag();
+            root.put("BlockEntityTag", beTag);
+            stack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
+                    net.minecraft.world.item.component.CustomData.of(root));
+        }
+    }
+    *///?}
 }

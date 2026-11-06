@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'fatman.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Piston
 v 0.000000 1.187500 -5.750000
 v -0.132583 1.132582 -5.750000

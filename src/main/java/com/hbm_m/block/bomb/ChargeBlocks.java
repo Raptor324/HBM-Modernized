@@ -75,7 +75,7 @@ public final class ChargeBlocks {
         public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
         //?} else {
         /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
-            BlockGetter level = com.hbm_m.platform.PlatformHooks.tooltipLevel(hbmTooltipCtx);
+            BlockGetter level = com.hbm_m.platform.ItemHooks.tooltipLevel(hbmTooltipCtx);
         *///?}
             //? if < 1.21.1 {
             super.appendHoverText(stack, level, list, flag);
@@ -116,7 +116,7 @@ public final class ChargeBlocks {
         public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
         //?} else {
         /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
-            BlockGetter level = com.hbm_m.platform.PlatformHooks.tooltipLevel(hbmTooltipCtx);
+            BlockGetter level = com.hbm_m.platform.ItemHooks.tooltipLevel(hbmTooltipCtx);
         *///?}
             //? if < 1.21.1 {
             super.appendHoverText(stack, level, list, flag);
@@ -154,7 +154,7 @@ public final class ChargeBlocks {
         public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
         //?} else {
         /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
-            BlockGetter level = com.hbm_m.platform.PlatformHooks.tooltipLevel(hbmTooltipCtx);
+            BlockGetter level = com.hbm_m.platform.ItemHooks.tooltipLevel(hbmTooltipCtx);
         *///?}
             //? if < 1.21.1 {
             super.appendHoverText(stack, level, list, flag);

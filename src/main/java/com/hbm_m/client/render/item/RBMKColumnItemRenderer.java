@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.render.item;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity;
@@ -20,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Generic item renderer for every RBMK column block (fuel, moderator, absorber, control rods,
  * panels, the console, ...): instead of relying on a static baked item model - which for these
  * blocks is either a plain untextured cube or (for the console) a Forge-only custom model
- * loader that doesn't reliably bake in this multi-loader build (see task history) - this hands
+ * loader that doesn't reliably bake in this multi-loader build - this hands
  * the item off to a throwaway {@link BlockEntity} instance at the origin and renders it through
  * the exact same {@code BlockEntityRenderer} already used in-world (RBMKColumnRenderer,
  * MachineRbmkConsoleRenderer, ...), matching the pattern the 1.18.2 community remake
@@ -48,7 +47,7 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
         if (!(state.getBlock() instanceof net.minecraft.world.level.block.EntityBlock entityBlock)) return;
         BlockEntity be = cache.computeIfAbsent(state, s -> entityBlock.newBlockEntity(BlockPos.ZERO, s));
 
-        // vI: Autolader im Inventar 1:1 RenderRBMKAutoloader#getRenderer (ItemRenderBase):
+        // Autoloader in inventory 1:1 RenderRBMKAutoloader#getRenderer (ItemRenderBase):
         // renderInventory T(0,-6,0) S(1.75); renderCommon Ry(180), Base + Piston.
         if (displayContext == ItemDisplayContext.GUI && be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKAutoloaderBlockEntity) {
             java.util.Map<String, java.util.List<float[]>> obj = com.hbm_m.client.render.implementations.RBMKColumnRenderer.getObj("models/rbmk/models/autoloader.obj");
@@ -68,7 +67,7 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
         }
 
         boolean column = be instanceof RBMKColumnBlockEntity;
-        // vJ: Inventar 1:1 renderInventoryBlock des Originals (eigener Pfad statt Welt-BER)
+        // Inventory matches original renderInventoryBlock (dedicated path instead of in-world BER)
         if (displayContext == ItemDisplayContext.GUI) {
             String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
             RBMKColumnInventoryRender.Kind kind = RBMKColumnInventoryRender.kind(id);
@@ -80,9 +79,9 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
                 return;
             }
         }
-        if (!column &&!(be instanceof com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity)) {
-            // vI: Dampfein-/-auslass sind im Original einfache Bloecke (RBMKInlet/RBMKOutlet) ohne Saeulenrenderer ->
-            // Blockmodell zeichnen statt nichts (Icon war leer).
+        if (!column && !(be instanceof com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity)) {
+            // Steam inlet/outlet are simple blocks (RBMKInlet/RBMKOutlet) in original without column renderer ->
+            // render block model.
             poseStack.pushPose();
             applyDisplay(stack, displayContext, poseStack);
             Minecraft.getInstance().getBlockRenderer().renderSingleBlock(state, poseStack, buffer, packedLight, packedOverlay);
@@ -91,8 +90,7 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
         }
 
         poseStack.pushPose();
-        // vI: Anzeige-Waechter unterdrueckt die Display-Werte des builtin/entity-Modells (Blockwerte aus dem Datagen)
-        // -> hier anwenden, sonst stehen die Saeulen ungedreht/frontal im Slot.
+        // Display wrapper suppresses display values of builtin/entity model -> apply here to ensure proper orientation.
         if (column) applyDisplay(stack, displayContext, poseStack);
         // RBMKColumnRenderer draws the column at its true in-world size: RBMKDials.COLUMN_HEIGHT+1
         // blocks tall, plus a 0.25 lid plate on top. Handed to the item renderer unscaled that is
@@ -101,8 +99,8 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
         // the item transforms expect, keeping it centred in X/Z and standing on the bottom face -
         // the icon then shows the complete column instead of its lowest block.
         if (be instanceof RBMKColumnBlockEntity) {
-            // vI: 1:1 renderInventoryBlock des Originals (RenderRBMKRod/-Reflector: T(0,-0.675,0), RenderRBMKControl
-            // fuer alle uebrigen Saeulen: T(0,-0.75,0); jeweils S(0.35)), Blockmitte als Ursprung.
+            // 1:1 original renderInventoryBlock (RenderRBMKRod/-Reflector: T(0,-0.675,0), RenderRBMKControl
+            // for other columns: T(0,-0.75,0); scale 0.35 each), block center as origin.
             Object b = state.getBlock();
             float dy = b instanceof com.hbm_m.block.machines.rbmk.RBMKRodBlock
                     || b instanceof com.hbm_m.block.machines.rbmk.RBMKReflectorBlock ? -0.675F : -0.75F;
@@ -115,7 +113,7 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
         poseStack.popPose();
     }
 
-    /** Wie ItemRenderer: T(.5) * display(ctx) * T(-.5). */
+    /** Standard ItemRenderer transform: T(.5) * display(ctx) * T(-.5). */
     static void applyDisplay(ItemStack stack, ItemDisplayContext ctx, PoseStack ps) {
         net.minecraft.client.resources.model.BakedModel displayModel = Minecraft.getInstance().getItemRenderer().getModel(stack, null, null, 0);
         boolean leftHand = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND || ctx == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
@@ -126,4 +124,3 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
         ps.translate(-0.5F, -0.5F, -0.5F);
     }
 }
-//?}

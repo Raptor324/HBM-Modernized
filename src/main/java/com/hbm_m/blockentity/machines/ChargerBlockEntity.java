@@ -57,7 +57,12 @@ public class ChargerBlockEntity extends BaseMachineBlockEntity {
 
         be.ensureNetworkInitialized();
 
-        List<Player> players = level.getEntitiesOfClass(Player.class, chargeArea(pos));
+        // Дорогой player-query — раз в 10 тиков, плюс немедленный ре-скан на фронтах
+        // выдвижения/задвижения плиты (внизу), чтобы state machine не тупил между пробами.
+        int prevUsingTicks = be.usingTicks;
+        List<Player> players = be.probeDue(10)
+                ? level.getEntitiesOfClass(Player.class, chargeArea(pos))
+                : java.util.Collections.emptyList();
 
         // Original: erst zaehlen, wieviel ueberhaupt gebraucht wird - daran haengt das Ausfahren.
         boolean anythingToCharge = false;
@@ -95,12 +100,18 @@ public class ChargerBlockEntity extends BaseMachineBlockEntity {
         }
 
         // Original: erst bei voll ausgefahrener Platte fliesst Strom.
+        if (be.usingTicks != prevUsingTicks) {
+            // Фронт плиты: немедленный ре-скан, чтобы зарядка началась в тик полного
+            // выдвижения, а не в ближайший probe-тик.
+            players = level.getEntitiesOfClass(Player.class, chargeArea(pos));
+        }
         if (be.usingTicks >= DELAY && be.getEnergyStored() > 0) {
             be.doCharge(players);
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Анти-спам синка: полный пакет только при изменении энергии или отрисовываемого
+        // состояния плиты (usingTicks — анимация, lastOp — частицы/звук).
+        be.syncIfStateChanged(be.getEnergyStored(), (be.charging ? 1L : 0L) | (be.particlesSync ? 2L : 0L) | ((long) be.usingTicks << 2));
     }
 
     /** Original updateEntity auf dem Client: Platte aus-/einfahren und magicCrit-Partikel ({@code -dir}). */
@@ -149,6 +160,11 @@ public class ChargerBlockEntity extends BaseMachineBlockEntity {
         return stacks;
     }
 
+    /* chargeStack(ItemStack, long) kommt aus BaseMachineBlockEntity (protected): laedt den
+       Gegenstand und zieht die aufgenommene Energie vom eigenen Puffer ab - doCharge's
+       "if (getEnergyStored() <= 0) return;" setzt genau auf diese Abziehung. Die fruehere
+       private Lokalkopie schattierte die Basismethode und zog KEINE Energie ab. */
+
     /** Original: eine flache Box auf der Platte, waagerecht um einen halben Block erweitert. */
     private static AABB chargeArea(BlockPos pos) {
         return new AABB(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D,
@@ -183,9 +199,15 @@ public class ChargerBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+        lastUsingTicks = usingTicks;
         usingTicks = tag.getInt("usingTicks");
         charging = tag.getBoolean("charging");
         particlesSync = tag.getBoolean("particles");
+    }
+
+    /** 0..1 - how far the arms have moved out (1.7.10: {@code usingTicks / delay}). */
+    public float getArmProgress(float partialTick) {
+        return (lastUsingTicks + (usingTicks - lastUsingTicks) * partialTick) / (float) DELAY;
     }
 
     @Override

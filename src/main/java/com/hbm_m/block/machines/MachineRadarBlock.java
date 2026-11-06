@@ -107,17 +107,8 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof MachineRadarBlockEntity radar) {
-                com.hbm_m.platform.ModItemStackHandler inv = radar.getInventory();
-                for (int i = 0; i < inv.getSlots(); i++) {
-                    net.minecraft.world.item.ItemStack stack = inv.getStackInSlot(i);
-                    if (!stack.isEmpty()) {
-                        net.minecraft.world.Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), stack);
-                    }
-                }
-            }
             if (!level.isClientSide()) {
+                com.hbm_m.block.MachineDrops.dropInventory(level, pos);
                 structureHelper.destroyStructure(level, pos, state.getValue(FACING));
             }
         }

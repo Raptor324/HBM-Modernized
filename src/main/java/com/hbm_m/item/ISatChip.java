@@ -3,6 +3,7 @@ package com.hbm_m.item;
 import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Port of legacy {@code com.hbm.items.ISatChip}. Items implementing this can be launched
@@ -25,11 +26,11 @@ public interface ISatChip {
     }
 
     default int getFreq(ItemStack stack) {
-        CompoundTag tag = PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.read(stack);
         return tag != null ? tag.getInt("freq") : 0;
     }
 
     default void setFreq(ItemStack stack, int freq) {
-        PlatformHooks.editItemTag(stack, t -> t.putInt("freq", freq));
+        StackNbt.edit(stack, t -> t.putInt("freq", freq));
     }
 }

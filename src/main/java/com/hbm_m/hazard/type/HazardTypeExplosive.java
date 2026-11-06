@@ -12,6 +12,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.MobHooks;
 
 public class HazardTypeExplosive extends HazardTypeBase {
 
@@ -24,7 +25,7 @@ public class HazardTypeExplosive extends HazardTypeBase {
         Level levelWorld = target.level();
         if (!levelWorld.isClientSide && target.isOnFire() && stack.getCount() > 0) {
             stack.shrink(stack.getCount());
-            levelWorld.explode(target, target.getX(), target.getY() + target.getEyeHeight() - com.hbm_m.platform.PlatformHooks.getMyRidingOffset(target),
+            levelWorld.explode(target, target.getX(), target.getY() + target.getEyeHeight() - com.hbm_m.platform.MobHooks.getMyRidingOffset(target),
                     target.getZ(), level, Level.ExplosionInteraction.TNT);
         }
     }

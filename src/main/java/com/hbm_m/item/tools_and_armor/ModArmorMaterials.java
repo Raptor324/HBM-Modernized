@@ -35,7 +35,6 @@ public enum ModArmorMaterials implements ArmorMaterial {
 //?} else {
 /*public enum ModArmorMaterials {
 *///?}
-
     /** Original HBM_ALLOY (Deprecated), ohne Reparaturmaterial. */
     ALLOY("alloy", 40, new int[]{ 3, 8, 6, 3 }, 12,
             SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.EMPTY),
@@ -191,6 +190,11 @@ public enum ModArmorMaterials implements ArmorMaterial {
 
     /** 1.7.10 ItemArmor.maxDamageArray: Helm 11, Brust 16, Beine 15, Stiefel 13. */
     private static final int[] BASE_DURABILITY = { 11, 16, 15, 13 };
+
+    /** Version-agnostic form of the 1.20.1-only getDurabilityForType override. */
+    public int durabilityFor(ArmorItem.Type type) {
+        return BASE_DURABILITY[type.ordinal()] * this.durabilityMultiplier;
+    }
 
     ModArmorMaterials(String name, int durabilityMultiplier, int[] protectionAmounts, int enchantmentValue, Object equipSound,
                       float toughness, float knockbackResistance, Supplier<Ingredient> repairIngredient) {

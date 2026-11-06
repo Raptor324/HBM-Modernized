@@ -93,8 +93,9 @@ public class MachineBoilerBlockEntity extends BaseMachineBlockEntity implements 
             }
         }
 
-        setChanged();
-        sendUpdateToClient();
+        long lo = (isOn ? 1L : 0L) | (hasExploded ? 2L : 0L) | (((long) heat) << 2);
+        long hi = (long) tanks[0].getFill() | (((long) tanks[1].getFill()) << 32);
+        syncIfStateChanged(lo, hi);
     }
 
     private void clientTick() {
@@ -255,6 +256,11 @@ public class MachineBoilerBlockEntity extends BaseMachineBlockEntity implements 
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
+        @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
+        return fromDir != null;
+    }
+
     // ==================== ROR ====================
 
     @Override
@@ -292,10 +298,12 @@ public class MachineBoilerBlockEntity extends BaseMachineBlockEntity implements 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        tanks[0].readFromNBT(tag, "water");
-        tanks[1].readFromNBT(tag, "steam");
+        if (tag.contains("water")) tanks[0].readFromNBT(tag, "water");
+        else if (tag.contains("tank_water")) tanks[0].readFromNBT(tag, "tank_water");
+        if (tag.contains("steam")) tanks[1].readFromNBT(tag, "steam");
+        else if (tag.contains("tank_steam")) tanks[1].readFromNBT(tag, "tank_steam");
         heat = tag.getInt("heat");
-        hasExploded = tag.getBoolean("exploded");
+        hasExploded = tag.contains("exploded") ? tag.getBoolean("exploded") : tag.getBoolean("has_exploded");
         isOn = tag.getBoolean("isOn");
     }
 

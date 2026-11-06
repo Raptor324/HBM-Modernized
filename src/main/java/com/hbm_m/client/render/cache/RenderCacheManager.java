@@ -1,5 +1,7 @@
 package com.hbm_m.client.render.cache;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -12,36 +14,29 @@ import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 /**
- * ЕДИНАЯ точка инвалидации клиентских рендер-кешей.
+ * SINGLE invalidation point for client render caches.
  * <p>
- * Раньше списки очистки жили в трёх расходящихся местах (ClientSetup disconnect,
- * ClientSetup reload-листенер, DeferredCacheCleanupReloadListener) — каждый со
- * своим подмножеством кешей, и новые кеши регулярно забывали добавить.
- * Теперь любой код (reload, disconnect, отладка) зовёт
- * {@link #invalidateAll(Reason)}; новые подсистемы рендера регистрируют свою
- * очистку через {@link #register(InvalidationHook)} и больше нигде не упоминаются.
+ * Previously the cleanup lists lived in three diverging places (ClientSetup disconnect,
+ * ClientSetup reload listener, DeferredCacheCleanupReloadListener), each with its own
+ * subset of caches, and new caches were regularly forgotten. Now any code path (reload,
+ * disconnect, debugging) calls {@link #invalidateAll(Reason)}; new rendering subsystems
+ * register their cleanup via {@link #register(InvalidationHook)} and are not mentioned anywhere else.
  * <p>
- * Инвалидация всегда выполняется на render thread (deferred через
- * {@link RenderSystem#recordRenderCall}, если вызвана из другого потока) —
- * GL-объекты нельзя удалять вне контекста.
+ * Invalidation always runs on the render thread (deferred via
+ * {@link RenderSystem#recordRenderCall} if called from another thread) -
+ * GL objects must not be deleted outside the GL context.
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public final class RenderCacheManager {
 
     public enum Reason {
-        /** F3+T / смена ресурс-пака / перезагрузка шейдеров. */
+        /** F3+T / resource pack change / shader reload. */
         RESOURCE_RELOAD,
-        /** Выход из мира / disconnect. */
+        /** Leaving a world / disconnect. */
         SESSION_END
     }
 
-    /** Очистка одного кеша; вызывается строго на render thread. */
+    /** Clears a single cache; invoked strictly on the render thread. */
     @FunctionalInterface
     public interface InvalidationHook {
         void invalidate(Reason reason);
@@ -52,17 +47,16 @@ public final class RenderCacheManager {
     private RenderCacheManager() {}
 
     /**
-     * Регистрирует дополнительный инвалидатор. Вызывать на этапе init (не на
-     * каждый кадр). Дубликат-защита по имени класса не делается — вызов один
-     * раз из static init владельца кеша.
+     * Registers an extra invalidator. Call during init (not every frame). No duplicate
+     * protection by class name - the call happens once from the cache owner's static init.
      */
     public static void register(InvalidationHook hook) {
         HOOKS.add(hook);
     }
 
     /**
-     * Полная инвалидация всех кешей. Потокобезопасно: всегда исполняется на
-     * render thread (или сразу, или deferred).
+     * Full invalidation of all caches. Thread-safe: always executes on the
+     * render thread (either immediately or deferred).
      */
     public static void invalidateAll(Reason reason) {
         if (RenderSystem.isOnRenderThread()) {
@@ -73,24 +67,32 @@ public final class RenderCacheManager {
     }
 
     /**
-     * Немедленная инвалидация. Только render thread!
-     * Порядок фиксирован: сначала кадровые/MDI-состояния, затем GPU-атлас,
-     * затем кеши рендереров, затем общие mesh/свет/окклюзия.
+     * Immediate invalidation. Render thread only!
+     * Fixed order: per-frame/MDI states first, then the GPU atlas,
+     * then renderer caches, then shared mesh/light/occlusion caches.
      */
     public static void invalidateAllNow(Reason reason) {
         try {
-            // Кадровые состояния (гейт MDI-фрейма, статистика, отложенные redraw)
-            InstancedRenderFrame.clear();
+            // Per-frame states (MDI frame gate, stats, deferred redraws)
+            guarded("InstancedRenderFrame.clear", InstancedRenderFrame::clear);
 
-            // GPU-атлас MDI: сессии не должно переживать reload/disconnect
-            MdiGeometryAtlas.resetForResourceLifecycle();
+            // MDI GPU atlas: sessions must not survive reload/disconnect
+            guarded("MdiGeometryAtlas.resetForResourceLifecycle", MdiGeometryAtlas::resetForResourceLifecycle);
 
-            // Кеши конкретных рендереров (инстансеры, DAE, дверные скины и т.д.);
-            // фабричные станки чистятся через MachineRenderRegistry.clearAll().
-            com.hbm_m.client.render.machine.MachineRenderRegistry.clearAll();
-            com.hbm_m.client.render.implementations.DoorRenderer.clearAllCaches();
+            // Retained instance scene graph & sparse queue
+            guarded("RetainedInstanceGraph.clear",
+                    () -> com.hbm_m.client.render.retained.RetainedInstanceGraph.get().clear());
 
-            // Зарегистрированные инвалидаторы (фабричные спеки, спецэффекты)
+            // Renderer-specific caches (instancers, DAE, door skins, etc.);
+            // factory machines are cleared via MachineRenderRegistry.clearAll().
+            guarded("MachineRenderRegistry.clearAll",
+                    com.hbm_m.client.render.machine.MachineRenderRegistry::clearAll);
+            guarded("MachineDoorRenderer.clearDaeCaches",
+                    com.hbm_m.client.render.implementations.MachineDoorRenderer::clearDaeCaches);
+            guarded("MachineDoorRenderer.resetUvRectAttribCheck",
+                    com.hbm_m.client.render.implementations.MachineDoorRenderer::resetUvRectAttribCheck);
+
+            // Registered invalidators (machine specs, special effects)
             for (InvalidationHook hook : HOOKS) {
                 try {
                     hook.invalidate(reason);
@@ -99,16 +101,59 @@ public final class RenderCacheManager {
                 }
             }
 
-            // Общие компиляторы/кеши движка
-            MeshRenderCache.clearAll();
-            LightSampleCache.invalidateAll();
-            OcclusionCullingHelper.clearCache();
+            // Shared engine compilers/caches
+            guarded("MeshRenderCache.clearAll", MeshRenderCache::clearAll);
+            guarded("LightSampleCache.invalidateAll", LightSampleCache::invalidateAll);
+            guarded("OcclusionCullingHelper.clearCache", OcclusionCullingHelper::clearCache);
 
-            com.hbm_m.powerarmor.layer.AbstractObjArmorLayer.clearAllCaches();
+            guarded("AbstractObjArmorLayer.clearAllCaches",
+                    com.hbm_m.powerarmor.layer.AbstractObjArmorLayer::clearAllCaches);
+
+            // GPU-compute subsystems + keyed caches: their GL storage (HiZ pyramid
+            // texture, culler/scatter SSBOs) lives until its explicit destroy and
+            // must not survive a reload/disconnect; the sampler-location cache is
+            // keyed by pipeline generation and grows across Iris reloads.
+            guarded("NucleusGpuBaker.releaseAll",
+                    com.hbm_m.client.render.NucleusGpuBaker::releaseAll);
+            guarded("PersistentUploadStaging.destroy",
+                    com.hbm_m.client.render.PersistentUploadStaging::destroy);
+            guarded("IrisInstancedShaders.destroyAll",
+                    com.hbm_m.client.render.shader.IrisInstancedShaders::destroyAll);
+            guarded("IrisExtendedShaderAccess.invalidateShaderCache",
+                    com.hbm_m.client.render.shader.IrisExtendedShaderAccess::invalidateShaderCache);
+            guarded("RawFullscreenQuad.destroy",
+                    com.hbm_m.client.render.shader.RawFullscreenQuad::destroy);
+            guarded("RawDhDepthCopy.destroy",
+                    com.hbm_m.client.render.shader.RawDhDepthCopy::destroy);
+            guarded("RawScreenSpaceLight.destroy",
+                    com.hbm_m.client.render.shader.RawScreenSpaceLight::destroy);
+            guarded("PackAdditiveQueue.destroy",
+                    com.hbm_m.client.render.shader.PackAdditiveQueue::destroy);
+            guarded("HiZDepthPyramid.destroy",
+                    () -> com.hbm_m.client.render.culling.HiZDepthPyramid.get().destroy());
+            guarded("NucleusGpuCuller.destroy",
+                    com.hbm_m.client.render.culling.NucleusGpuCuller::destroy);
+            guarded("ComputeScatterUploader.destroy",
+                    com.hbm_m.client.render.ComputeScatterUploader::destroy);
+            guarded("SingleMeshVboRenderer.clearSamplerLocationCache",
+                    com.hbm_m.client.render.SingleMeshVboRenderer::clearSamplerLocationCache);
 
             MainRegistry.LOGGER.info("Render cache invalidation completed ({})", reason);
         } catch (Throwable t) {
             MainRegistry.LOGGER.error("Error during render cache invalidation", t);
+        }
+    }
+
+    /**
+     * One teardown step with its own guard: a throw from one cache must not
+     * cancel the frees of the others (GL storage lives until its Delete* call
+     * and these steps are the only free paths).
+     */
+    private static void guarded(String name, Runnable step) {
+        try {
+            step.run();
+        } catch (Throwable t) {
+            MainRegistry.LOGGER.error("RenderCacheManager: step {} failed", name, t);
         }
     }
 }

@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'gavel.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o diamond_gavel_Cylinder.001
 v -0.000506 0.489145 -0.076187
 v 0.000000 0.546850 -0.076095

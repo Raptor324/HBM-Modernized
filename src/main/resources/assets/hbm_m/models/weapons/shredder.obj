@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'shredder.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Magazine
 v 0.000000 1.500000 0.500000
 v 0.956709 1.309699 0.500000

@@ -12,7 +12,9 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+@OnlyIn(Dist.CLIENT)
 public class GUIMissileAssembly extends AbstractContainerScreen<MissileAssemblyMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -91,6 +93,7 @@ public class GUIMissileAssembly extends AbstractContainerScreen<MissileAssemblyM
         if (isMouseOver(mouseX, mouseY, 115, 35, 18, 18)) {
             net.minecraft.client.Minecraft.getInstance().getSoundManager().play(
                     net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            if (!menu.canBuild()) return super.mouseClicked(mouseX, mouseY, button);
             // тайл может отсутствовать в реплее Flashback
             if (menu.blockEntity == null) return super.mouseClicked(mouseX, mouseY, button);
             ModPacketHandler.sendToServer(ModPacketHandler.BUILD_MISSILE,

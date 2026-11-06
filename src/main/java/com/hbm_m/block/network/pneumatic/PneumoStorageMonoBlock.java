@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * Port von {@code PneumoStorageMono} (1.7.10). Das Massenlager: drei Faecher zu je 100.000 Stueck eines festgelegten Gegenstands.
@@ -76,8 +77,13 @@ public class PneumoStorageMonoBlock extends PneumaticStorageBlockBase {
         player.awardStat(net.minecraft.stats.Stats.BLOCK_MINED.get(this));
         player.causeFoodExhaustion(0.005F);
     }
-    //? if >= 1.21.1 {
+
+    //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<PneumoStorageMonoBlock> CODEC = simpleCodec(PneumoStorageMonoBlock::new);
-    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
     *///?}
 }

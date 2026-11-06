@@ -2,22 +2,14 @@ package com.hbm_m.effect;
 
 import java.util.function.Consumer;
 
-import com.hbm_m.effect.render.PotionSheetRenderer;
 
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 
 import org.jetbrains.annotations.NotNull;
 
-//? if forge {
 import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions;
-*///?}
 
 /**
  * Gemeinsame Basis der aus {@code HbmPotion} portierten Effekte: Farbe, Kategorie und das Symbol
@@ -29,13 +21,20 @@ import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
  */
 public abstract class HbmEffect extends MobEffect {
 
+    /** Same numbers as PotionSheetRenderer.ICON_SIZE / SHEET_ORIGIN_V (potions.png, mod rows from 198). */
+    private static final int SHEET_ICON_SIZE = 18;
+    private static final int SHEET_ORIGIN_V = 198;
+
+
     private final int iconU;
     private final int iconV;
 
     protected HbmEffect(MobEffectCategory category, int color, int iconX, int iconY) {
         super(category, color);
-        this.iconU = PotionSheetRenderer.u(iconX);
-        this.iconV = PotionSheetRenderer.v(iconY);
+        // Sheet geometry inlined: PotionSheetRenderer is a client class (GuiGraphics) and this
+        // constructor runs on the dedicated server too.
+        this.iconU = iconX * SHEET_ICON_SIZE;
+        this.iconV = SHEET_ORIGIN_V + iconY * SHEET_ICON_SIZE;
     }
 
     /**
@@ -76,27 +75,29 @@ public abstract class HbmEffect extends MobEffect {
     }
     *///?}
 
-    //? if forge || neoforge {
+    public int getIconU() { return iconU; }
+    public int getIconV() { return iconV; }
+
+    // Клиентские иконки с общего листа (HUD + инвентарь), обе версии; расширение
+    // живёт здесь — платформенный слой не знает про конкретные эффекты мода.
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(@NotNull Consumer<IClientMobEffectExtensions> consumer) {
         consumer.accept(new IClientMobEffectExtensions() {
-
             @Override
-            public boolean renderInventoryIcon(MobEffectInstance instance,
-                                               EffectRenderingInventoryScreen<?> screen,
-                                               GuiGraphics gfx, int x, int y, int blitOffset) {
-                PotionSheetRenderer.renderInventory(gfx, iconU, iconV, x, y, blitOffset);
+            public boolean renderInventoryIcon(net.minecraft.world.effect.MobEffectInstance instance,
+                    net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen<?> screen,
+                    net.minecraft.client.gui.GuiGraphics gfx, int x, int y, int blitOffset) {
+                com.hbm_m.effect.render.PotionSheetRenderer.renderInventory(gfx, iconU, iconV, x, y, blitOffset);
                 return true;
             }
 
             @Override
-            public boolean renderGuiIcon(MobEffectInstance instance,
-                                         net.minecraft.client.gui.Gui gui,
-                                         GuiGraphics gfx, int x, int y, float z, float alpha) {
-                PotionSheetRenderer.renderHud(gfx, iconU, iconV, x, y, (int) z, alpha);
+            public boolean renderGuiIcon(net.minecraft.world.effect.MobEffectInstance instance, net.minecraft.client.gui.Gui gui,
+                    net.minecraft.client.gui.GuiGraphics gfx, int x, int y, float z, float alpha) {
+                com.hbm_m.effect.render.PotionSheetRenderer.renderHud(gfx, iconU, iconV, x, y, (int) z, alpha);
                 return true;
             }
         });
     }
-    //?}
 }

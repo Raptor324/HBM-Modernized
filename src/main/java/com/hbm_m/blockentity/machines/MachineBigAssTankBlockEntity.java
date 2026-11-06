@@ -47,7 +47,6 @@ public class MachineBigAssTankBlockEntity extends MachineFluidTankBlockEntity {
 
     @Override public int getFloorCount() { return 4 * 4; }
     @Override public BlockPos getFloorPosFromIndex(int index) { return this.standardFloor7x7(index); }
-
     @Override
     public Component getDisplayName() {
         return Component.translatable(ModBlocks.MACHINE_BIGASSTANK.get().getDescriptionId());

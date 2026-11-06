@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.powerarmor.overlay;
 
 import com.hbm_m.extprop.HbmLivingProps;
@@ -12,17 +11,16 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-//? if forge {
+
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+//? if forge {
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 //?} else {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+/*import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 *///?}
 
@@ -33,7 +31,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 //? if forge {
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 //?} else {
-/*@EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+/*@EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
 *///?}
 public final class HEVHudOverlay {
 
@@ -160,4 +158,3 @@ public final class HEVHudOverlay {
         }
     }
 }
-//?}

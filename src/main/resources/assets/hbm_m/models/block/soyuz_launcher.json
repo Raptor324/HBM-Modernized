@@ -1,7 +1,35 @@
 {
-  "loader": "hbm_m:soyuz_launcher_loader",
+  "loader": "hbm_m:machine_parts_loader",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
   "textures": {
     "particle": "hbm_m:block/soyuz/launcher_table"
+  },
+  "parts": {
+    "Table": {
+      "model": "hbm_m:models/soyuz/soyuz_launcher_table.obj",
+      "texture": "hbm_m:block/soyuz/launcher_table"
+    },
+    "TowerBase": {
+      "model": "hbm_m:models/soyuz/soyuz_launcher_tower_base.obj",
+      "texture": "hbm_m:block/soyuz/launcher_tower_base"
+    },
+    "Tower": {
+      "model": "hbm_m:models/soyuz/soyuz_launcher_tower.obj",
+      "texture": "hbm_m:block/soyuz/launcher_tower"
+    },
+    "SupportBase": {
+      "model": "hbm_m:models/soyuz/soyuz_launcher_support_base.obj",
+      "texture": "hbm_m:block/soyuz/launcher_support_base"
+    },
+    "Support": {
+      "model": "hbm_m:models/soyuz/soyuz_launcher_support.obj",
+      "texture": "hbm_m:block/soyuz/launcher_support"
+    },
+    "Legs": {
+      "model": "hbm_m:models/soyuz/soyuz_launcher_legs.obj",
+      "texture": "hbm_m:block/soyuz/launcher_legs"
+    }
   },
   "display": {
     "gui": {

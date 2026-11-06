@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
@@ -50,8 +52,8 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidActionResult;
 import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 //?}
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /**
  * Chemical Plant BlockEntity - порт с 1.7.10.
@@ -375,9 +377,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         return lowest <= highest ? new int[]{ lowest, highest } : IFluidUserMK2.DEFAULT_PRESSURE_RANGE;
     }
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-            //?}
+    @OnlyIn(Dist.CLIENT)
     private void clientTick() {
         ClientSoundBootstrap.updateSound(this, this.isChemplantEffectsActive(), () -> newChemicalPlantSoundInstance());
     }
@@ -482,6 +482,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
             (slot >= SLOT_FLUID_INPUT_EMPTY_START && slot <= SLOT_FLUID_INPUT_EMPTY_END) ||
             (slot >= SLOT_FLUID_OUTPUT_EMPTY_START && slot <= SLOT_FLUID_OUTPUT_EMPTY_END)) {
             return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack); // auch Registry-Behaelter ohne Capability
+
         }
         return true;
     }
@@ -523,6 +524,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
      * запускает эффекты — иначе при паузе из-за нехватки энергии звук/анимация
      * продолжаются, что противоречит поведению оригинала.
      * Синхронизация didProcess при переходе true→false гарантируется в
+
      * {@link com.hbm_m.module.machine.MachineModuleChemplant#updateAndGetDirty}.
      */
     public boolean isChemplantEffectsActive() {
@@ -600,6 +602,12 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         if (level != null && level.isClientSide) {
             ClientSoundBootstrap.updateSound(this, false, null);
         }
+    }
+
+    /** Только горизонтальные грани отдают жидкость — как в forge-фильтре getCapability. */
+    @Override
+    protected boolean isFluidSideAllowed(@Nullable net.minecraft.core.Direction side) {
+        return side == null || side.getAxis().isHorizontal();
     }
 
     //? if forge {
@@ -726,23 +734,23 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         return super.getHbmCapability(cap, side);
     }
 
-    private static class CombinedChemPlantFluidHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+    private static class CombinedChemPlantFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
         private final MachineChemicalPlantBlockEntity be;
         CombinedChemPlantFluidHandler(MachineChemicalPlantBlockEntity be) { this.be = be; }
 
         @Override public int getTanks() { return 6; }
 
         @Override
-        public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+        public net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
             FluidTank t = tank < 3 ? be.inputTanks[tank] : be.outputTanks[tank - 3];
-            if (t.isEmpty()) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
-            return new net.neoforged.neoforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb());
+            if (t.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            return new net.minecraftforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb());
         }
 
         @Override public int getTankCapacity(int tank) { return TANK_CAPACITY; }
 
         @Override
-        public boolean isFluidValid(int tank, net.neoforged.neoforge.fluids.FluidStack stack) {
+        public boolean isFluidValid(int tank, net.minecraftforge.fluids.FluidStack stack) {
             if (tank >= 3) return false;
             if (tank >= be.getActiveFluidInputSlotCount()) return false;
             return true;
@@ -752,7 +760,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         //  - без выбора рецепта / без fluid во входах рецепта — ни один входной бак не примет;
         //  - лишние баки (NONE после setupTanks) не участвуют (иначе они «пылесосят» вторую порцию той же жидкости).
         @Override
-        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (resource.isEmpty()) return 0;
             int bound = be.getActiveFluidInputSlotCount();
             for (int i = 0; i < bound; i++) {
@@ -773,8 +781,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         }
 
         @Override
-        public net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty()) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
             for (int i = 0; i < 3; i++) {
                 FluidTank tank = be.outputTanks[i];
                 if (tank.isEmpty()) continue;
@@ -787,14 +795,14 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
                     be.setChanged();
                 }
                 Fluid normalized = com.hbm_m.api.fluids.VanillaFluidEquivalence.forVanillaContainerFill(tank.getStoredFluid());
-                return new net.neoforged.neoforge.fluids.FluidStack(normalized, toDrain);
+                return new net.minecraftforge.fluids.FluidStack(normalized, toDrain);
             }
-            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
         }
 
         @Override
-        public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-            if (maxDrain <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (maxDrain <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
             for (int i = 0; i < 3; i++) {
                 FluidTank tank = be.outputTanks[i];
                 if (tank.isEmpty()) continue;
@@ -806,9 +814,9 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
                     be.setChanged();
                 }
                 Fluid normalized = com.hbm_m.api.fluids.VanillaFluidEquivalence.forVanillaContainerFill(tank.getStoredFluid());
-                return new net.neoforged.neoforge.fluids.FluidStack(normalized, toDrain);
+                return new net.minecraftforge.fluids.FluidStack(normalized, toDrain);
             }
-            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
         }
     }
 
@@ -899,4 +907,18 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         }
         return null;
     }
+
+    //? if forge {
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
+    }
+    //?} elif neoforge {
+    /*@Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side).resolve().orElse(null);
+    }
+    *///?}
 }

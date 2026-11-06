@@ -8,7 +8,7 @@ import com.hbm_m.interfaces.IChunkRadiation;
 public class ChunkRadiation implements IChunkRadiation {
     private float ambientRadiation = 0.0f;
 
-    private final float MAX_RAD = ModClothConfig.get().maxRad;
+    public static final String NBT_KEY_AMBIENT = "ambientRadiation";
 
     @Override
     public float getAmbientRadiation() {
@@ -17,11 +17,27 @@ public class ChunkRadiation implements IChunkRadiation {
 
     @Override
     public void setAmbientRadiation(float value) {
-        this.ambientRadiation = Mth.clamp(value, 0, MAX_RAD);
+        float maxRad = ModClothConfig.get().maxRad;
+        this.ambientRadiation = Mth.clamp(value, 0, maxRad);
     }
 
     @Override
     public void copyFrom(IChunkRadiation source) {
         this.setAmbientRadiation(source.getAmbientRadiation());
+    }
+
+    public net.minecraft.nbt.CompoundTag saveNBT(net.minecraft.nbt.CompoundTag tag) {
+        if (this.ambientRadiation > 1e-6F) {
+            tag.putFloat(NBT_KEY_AMBIENT, this.ambientRadiation);
+        }
+        return tag;
+    }
+
+    public void loadNBT(net.minecraft.nbt.CompoundTag tag) {
+        if (tag != null && tag.contains(NBT_KEY_AMBIENT)) {
+            setAmbientRadiation(tag.getFloat(NBT_KEY_AMBIENT));
+        } else {
+            setAmbientRadiation(0F);
+        }
     }
 }

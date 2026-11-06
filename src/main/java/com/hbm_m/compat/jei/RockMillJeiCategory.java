@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.RockMillRecipe;
 import com.hbm_m.recipe.RockMillRecipe.CountedIngredient;
@@ -12,14 +11,8 @@ import com.hbm_m.recipe.RockMillRecipe.FluidIngredient;
 
 import dev.architectury.fluid.FluidStack;
 //? if forge {
-//? if forge {
 import mezz.jei.api.forge.ForgeTypes;
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
-//? if forge {
 import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
-//?}
 //?} elif neoforge {
 /*import mezz.jei.api.neoforge.NeoForgeTypes;
 *///?}
@@ -38,7 +31,6 @@ import net.minecraft.world.level.material.Fluids;
 /**
  * JEI port of {@code RockMillRecipeHandler} (extends {@code NEIGenericRecipeHandler}).
  */
-//? if forge || neoforge {
 public class RockMillJeiCategory extends JeiGenericRecipeCategory<RockMillRecipe> {
 
     public static final RecipeType<RockMillRecipe> RECIPE_TYPE =
@@ -77,28 +69,8 @@ public class RockMillJeiCategory extends JeiGenericRecipeCategory<RockMillRecipe
         return recipe.requiresBlueprint();
     }
 
-    @Override
-    protected int getInputXOffset(RockMillRecipe recipe, int inputCount) {
-        if (inputCount > 12) return -9;
-        if (inputCount > 9) return 18;
-        return 0;
-    }
-
-    @Override
-    protected int getOutputXOffset(RockMillRecipe recipe, int outputCount) {
-        return getOffset(getInputCount(recipe));
-    }
-
-    @Override
-    protected int getMachineXOffset(RockMillRecipe recipe) {
-        return getOffset(getInputCount(recipe));
-    }
-
-    private static int getOffset(int inputCount) {
-        if (inputCount > 12) return 27;
-        if (inputCount > 9) return 18;
-        return 0;
-    }
+    // Keine Input-/Output-/Machine-X-Offsets: das Original {@code RockMillRecipeHandler} ueberschreibt
+    // keine der Offset-Methoden von {@code NEIGenericRecipeHandler} (alle liefern dort 0).
 
     @Override
     protected void addInputSlots(IRecipeLayoutBuilder builder, RockMillRecipe recipe, int inputXOffset) {
@@ -129,7 +101,7 @@ public class RockMillJeiCategory extends JeiGenericRecipeCategory<RockMillRecipe
                     .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
                     //?} elif neoforge {
                     /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                    .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
+                    .addIngredient(NeoForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
                     *///?}
             slotIndex++;
         }
@@ -173,7 +145,7 @@ public class RockMillJeiCategory extends JeiGenericRecipeCategory<RockMillRecipe
                     .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
                     //?} elif neoforge {
                     /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                    .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
+                    .addIngredient(NeoForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
                     *///?}
             slotIndex++;
         }
@@ -244,7 +216,3 @@ public class RockMillJeiCategory extends JeiGenericRecipeCategory<RockMillRecipe
         return FluidStack.create(fluid, fluidInput.amount());
     }
 }
-//?} else {
-/*public final class RockMillJeiCategory {
-    private RockMillJeiCategory() {}
-}*///?}

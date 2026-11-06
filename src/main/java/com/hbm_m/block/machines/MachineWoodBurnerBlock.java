@@ -205,4 +205,12 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
+    // Verbatim port of the original MachineWoodBurner.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {0, 0, -1, Direction.NORTH.get3DDataValue()},
+            {1, 0, -1, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

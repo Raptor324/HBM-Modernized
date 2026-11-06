@@ -4,11 +4,14 @@
 import com.hbm_m.multiblock.MultiblockBlockItem;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderHighlightEvent;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /^*
  * NeoForge-only подписчик: при удержании предмета мультиблока отменяет ванильный
@@ -16,19 +19,31 @@ import net.neoforged.neoforge.client.event.RenderHighlightEvent;
  * Зеркалирует MultiblockPlacementHighlightForge.
  ^/
 @EventBusSubscriber(value = Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public final class MultiblockPlacementHighlightNeoForge {
     private MultiblockPlacementHighlightNeoForge() {}
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onHighlight(RenderHighlightEvent.Block event) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || !(mc.player.getMainHandItem().getItem() instanceof MultiblockBlockItem item)) return;
+        if (mc.player == null) return;
+
+        InteractionHand hand = null;
+        MultiblockBlockItem item = null;
+        if (mc.player.getMainHandItem().getItem() instanceof MultiblockBlockItem mainItem) {
+            hand = InteractionHand.MAIN_HAND;
+            item = mainItem;
+        } else if (mc.player.getOffhandItem().getItem() instanceof MultiblockBlockItem offItem) {
+            hand = InteractionHand.OFF_HAND;
+            item = offItem;
+        }
+        if (item == null) return;
 
         BlockHitResult target = event.getTarget();
         if (target.getType() == BlockHitResult.Type.MISS) return;
 
         event.setCanceled(true);
-        MultiblockPlacementHighlight.render(mc.level, mc.player, item, target, event.getPoseStack());
+        MultiblockPlacementHighlight.render(mc.level, mc.player, item, hand, target, event.getPoseStack());
     }
 }
 *///?}

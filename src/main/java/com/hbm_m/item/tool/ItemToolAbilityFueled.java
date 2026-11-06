@@ -100,32 +100,29 @@ public class ItemToolAbilityFueled extends ItemToolAbility implements IFillableI
         return getFill(stack) >= this.consumption;
     }
 
-    //? if !fabric {
     @Override
     public void setDamage(ItemStack stack, int damage) {
         // 1.20: ItemStack.setTag ruft setDamageValue(0) auf - das darf nichts tun (sonst Endlosschleife).
         if (damage <= 0) return;
         this.setFill(stack, Math.max(this.getFill(stack) - damage * consumption, 0));
     }
-    //?}
 
     @Override
     public int getFill(ItemStack stack) {
-        if (StackNbt.read(stack) == null) {
-            StackNbt.set(stack, new CompoundTag());
+        CompoundTag tag = StackNbt.read(stack);
+        if (tag == null) {
             setFill(stack, maxFuel);
             return maxFuel;
         }
 
-        return StackNbt.read(stack).getInt("fuel");
+        return tag.getInt("fuel");
     }
 
     public void setFill(ItemStack stack, int fill) {
-        if (StackNbt.read(stack) == null) {
-            StackNbt.set(stack, new CompoundTag());
-        }
-
-        StackNbt.tag(stack).putInt("fuel", fill);
+        // Не StackNbt.set(new CompoundTag()) + tag(): на 1.21.1 set() с пустым тегом удаляет
+        // компонент (паритет edit()) и tag() возвращает null. orCreate() даёт getOrCreateTag
+        // на обеих версиях.
+        StackNbt.orCreate(stack).putInt("fuel", fill);
     }
 
     @Override

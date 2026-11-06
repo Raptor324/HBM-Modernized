@@ -70,6 +70,7 @@ public class MachinePumpElectricBlockEntity extends BaseMachineBlockEntity imple
             groundCheckDelay--;
         } else {
             onGround = PumpGroundCheck.check(level, pos);
+            groundCheckDelay = 20;
             PumpGroundCheck.applyWaterTable(level, water); // NTM Space: Wassertabelle des Koerpers
         }
 
@@ -79,8 +80,11 @@ public class MachinePumpElectricBlockEntity extends BaseMachineBlockEntity imple
             operate();
         }
 
-        setChanged();
-        level.sendBlockUpdated(pos, getBlockState(), getBlockState(), 3);
+        // Anti-sync-spam: пакет только при изменении состояния (энергия/бак/флаги NBT),
+        // содержимое пакета прежнее. rotor — чисто клиентская анимация, в NBT не пишется.
+        syncIfStateChanged(
+                getEnergyStored() * 31L + water.getTankType().hashCode() * 31L + water.getFill(),
+                (isOn ? 1L : 0L) * 31L + (onGround ? 1L : 0L));
     }
 
     private void clientTick() {

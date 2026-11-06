@@ -19,7 +19,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 /**
@@ -58,7 +57,7 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         Container machineContainer = new HandlerContainer(blockEntity != null
                 ? blockEntity.getInventory()
-                : new DummyItemStackHandler(MACHINE_SLOTS));
+                : new ModItemStackHandler.Dummy(MACHINE_SLOTS));
 
         // Слоты машины - координаты соответствуют старому GUI
         // Missile
@@ -117,7 +116,7 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
         if (inv.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No LaunchPadBaseBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":launch_pad_large_menu");
+        throw new MenuBlockEntityMissingException("No LaunchPadBaseBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":launch_pad_large_menu");
     }
 
     private static MenuType<?> getMenuType() {
@@ -176,8 +175,16 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
+    }
+
+    /** Tries each machine slot that actually accepts the stack, in order. */
+    private boolean moveIntoMachineSlots(net.minecraft.world.item.ItemStack stack) {
+        for (int i = 0; i < MACHINE_SLOTS; i++) {
+            if (!this.slots.get(i).mayPlace(stack)) continue;
+            if (this.moveItemStackTo(stack, i, i + 1, false)) return true;
+        }
+        return false;
     }
 
     @Override
@@ -194,24 +201,10 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
                     return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             } else {
-                net.minecraft.world.item.ItemStack var3 = originalStack;
-                if (com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(var3).isPresent()
-                        || com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(var3).isPresent()
-                        || var3.getItem() instanceof com.hbm_m.item.fekal_electric.ItemCreativeBattery) {
-                    if (!this.moveItemStackTo(stack, 2, 3, false)) return net.minecraft.world.item.ItemStack.EMPTY;
-                } else if (blockEntity != null && blockEntity.isMissileValid(var3)) {
-                    if (!this.moveItemStackTo(stack, 0, 1, false)) return net.minecraft.world.item.ItemStack.EMPTY;
-                } else if (var3.getItem() == com.hbm_m.item.ModItems.FLUID_BARREL_INFINITE.get()) {
-                    if (!this.moveItemStackTo(stack, 3, 4, false)) if (!this.moveItemStackTo(stack, 5, 6, false)) {
-                        return net.minecraft.world.item.ItemStack.EMPTY;
-                    }
-                } else if (blockEntity != null && com.hbm_m.inventory.FluidContainerRegistry.getFluidContent(var3, blockEntity.getTanks()[0].getTankType()) > 0) {
-                    if (!this.moveItemStackTo(stack, 3, 4, false)) return net.minecraft.world.item.ItemStack.EMPTY;
-                } else if (blockEntity != null && com.hbm_m.inventory.FluidContainerRegistry.getFluidContent(var3, blockEntity.getTanks()[1].getTankType()) > 0) {
-                    if (!this.moveItemStackTo(stack, 5, 6, false)) return net.minecraft.world.item.ItemStack.EMPTY;
-                } else if (var3.getItem() instanceof IDesignatorItem) {
-                    if (!this.moveItemStackTo(stack, 1, 2, false)) return net.minecraft.world.item.ItemStack.EMPTY;
-                } else {
+                // Из инвентаря игрока в слоты машины — по одному слоту, с проверкой mayPlace:
+                // vanilla moveItemStackTo skips mayPlace when it merges onto an existing stack, so a
+                // whole-range move could drop items into the take-only fuel and oxidiser outputs.
+                if (!moveIntoMachineSlots(stack)) {
                     return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             }

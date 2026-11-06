@@ -10,16 +10,15 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /** Port of {@code GUIRBMKAutoloader} (1.7.10 Original). */
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKAutoloader extends GuiInfoScreen<RBMKAutoloaderMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/machine/gui_autoloader.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_autoloader.png");
-            //?}
 
     public GUIRBMKAutoloader(RBMKAutoloaderMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
@@ -42,13 +41,5 @@ public class GUIRBMKAutoloader extends GuiInfoScreen<RBMKAutoloaderMenu> {
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // Original drawGuiContainerForegroundLayer
-        String name = this.title.getString();
-        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 6, 16777215, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 88, 4210752, false);
     }
 }

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
@@ -608,7 +609,16 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         return isAusf3Complete && perChunk.isEmpty();
     }
 
+    /**
+     * machines-интерфейс {@link IExplosionRay#update(long)}: FFA-версия делила работу на две
+     * фазы (кэширование лучей, затем разрушение) — драйвим их по очереди из одного апдейта.
+     */
     @Override
+    public void update(long msBudget) {
+        if (isAusf3Complete) destructionTick((int) msBudget);
+        else cacheChunksTick((int) msBudget);
+    }
+
     public void cacheChunksTick(int processTimeMs) {
         if (!isAusf3Complete) {
             if (ModClothConfig.get().enableChunkLoading && !isAreaLoaded()) {
@@ -698,7 +708,6 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         }
     }
 
-    @Override
     public void destructionTick(int processTimeMs) {
         if (!isAusf3Complete) return;
         if (!destructionLogged) {
@@ -791,6 +800,19 @@ public class NukeMk5ChunkEater implements IExplosionRay {
             flushDirtyChunks();
         }
         releaseAllTickets();
+    }
+
+    @Override
+    public boolean isContained() {
+        // FFA-версия не отслеживала выход лучей за радиус; считаем взрыв ограниченным кратером.
+        return true;
+    }
+
+    private UUID detonator;
+
+    @Override
+    public void setDetonator(UUID detonator) {
+        this.detonator = detonator;
     }
 
     /**

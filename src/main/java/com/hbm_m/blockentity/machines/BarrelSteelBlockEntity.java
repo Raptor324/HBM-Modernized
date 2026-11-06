@@ -16,9 +16,9 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Small single-block steel fluid barrel — same logic as {@link MachineFluidTankBlockEntity},
  * just a much smaller capacity and no multiblock structure. Capacity/capability confirmed against
- * the original's in-game tooltip: 16,000 mB; can store hot and (regular) corrosive fluids, but not
- * highly corrosive ones "properly"; cannot store antimatter (matches this class's inherited
- * defaults from {@link MachineFluidTankBlockEntity} - no overrides needed here).
+ * the original's in-game tooltip: 16,000 mB; can store hot, (regular) and highly corrosive fluids
+ * (the tooltip only warns it cannot store them "properly" — no code reaction, NEXT parity),
+ * cannot store antimatter.
  */
 public class BarrelSteelBlockEntity extends MachineFluidTankBlockEntity {
 
@@ -28,9 +28,15 @@ public class BarrelSteelBlockEntity extends MachineFluidTankBlockEntity {
         super(ModBlockEntities.BARREL_STEEL_BE.get(), pos, state, CAPACITY);
     }
 
+    /** NEXT BlockEntityBarrel: steel/tcalloy/antimatter хранят любые едкие жидкости без последствий. */
+    @Override
+    protected boolean canStoreHighlyCorrosive() { return true; }
+
     @Override
     public Component getDisplayName() {
-        return Component.translatable(ModBlocks.BARREL_STEEL.get().getDescriptionId());
+        // Паритет NEXT BlockEntityBarrel.getDefaultName: у всех бочек общий заголовок GUI
+        // "Barrel" (container.hbm.barrel); имя материала остаётся у блока/предмета.
+        return Component.translatable("container.hbm_m.barrel");
     }
 
     @Nullable

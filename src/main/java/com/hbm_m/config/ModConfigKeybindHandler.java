@@ -1,5 +1,8 @@
 package com.hbm_m.config;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
 import org.lwjgl.glfw.GLFW;
 
 import com.hbm_m.client.overlay.OverlayInfoToast;
@@ -16,13 +19,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public class ModConfigKeybindHandler {
     public static final String CATEGORY = "key.categories.hbm_m";
     private static boolean INITIALIZED = false;
@@ -54,6 +51,26 @@ public class ModConfigKeybindHandler {
                     CATEGORY
             );*///?}
 
+    public static final KeyMapping POWER_ARMOR_DASH = new KeyMapping(
+            "key.hbm_m.power_armor_dash",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_V,
+            CATEGORY
+    );
+
+    public static final KeyMapping POWER_ARMOR_VATS = new KeyMapping(
+            "key.hbm_m.power_armor_vats",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_C,
+            CATEGORY
+    );
+
+    public static final KeyMapping POWER_ARMOR_THERMAL = new KeyMapping(
+            "key.hbm_m.power_armor_thermal",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_X,
+            CATEGORY
+    );
 
 
     public static final KeyMapping OPEN_MULTI_DETONATOR = new KeyMapping(
@@ -77,22 +94,21 @@ public class ModConfigKeybindHandler {
     public static final KeyMapping RBMK_CRANE_LOAD = new KeyMapping(
             "key.hbm_m.rbmk_crane_load", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, CATEGORY);
 
+    // Устройство настройки (ItemSettingsTool, 1:1 с EnumKeybind.TOOL_ALT / TOOL_CTRL оригинала):
+    // ALT листает индекс вставки, CTRL включает массовую вставку в трубы. Состояние репортится
+    // серверу по фронту (CopyToolKeyPacket), см. onClientPostTick.
+    public static final KeyMapping COPY_TOOL_ALT = new KeyMapping(
+            "key.hbm_m.copy_tool_alt", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT, CATEGORY);
+    public static final KeyMapping COPY_TOOL_CTRL = new KeyMapping(
+            "key.hbm_m.copy_tool_ctrl", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_CONTROL, CATEGORY);
+
     private static boolean lastCraneUp, lastCraneDown, lastCraneLeft, lastCraneRight, lastCraneLoad;
+    private static boolean lastToolAlt, lastToolCtrl;
 
     public static void init() {
         if (INITIALIZED) return;
         INITIALIZED = true;
 
-        //? if fabric {
-        /*// Fabric: KeyBindingHelper-обвязка Architectury, регистрация в любой момент валидна.
-        KeyMappingRegistry.register(OPEN_CONFIG);
-        KeyMappingRegistry.register(OPEN_MULTI_DETONATOR);
-        KeyMappingRegistry.register(RBMK_CRANE_UP);
-        KeyMappingRegistry.register(RBMK_CRANE_DOWN);
-        KeyMappingRegistry.register(RBMK_CRANE_LEFT);
-        KeyMappingRegistry.register(RBMK_CRANE_RIGHT);
-        KeyMappingRegistry.register(RBMK_CRANE_LOAD);
-        *///?}
 
         // Аналог END-фазы ClientTickEvent на Forge: выполняем после стандартного тика клиента.
         ClientTickEvent.CLIENT_POST.register(client -> onClientPostTick());
@@ -109,8 +125,14 @@ public class ModConfigKeybindHandler {
      */
     public static void registerAll(java.util.function.Consumer<KeyMapping> registrar) {
         registrar.accept(OPEN_CONFIG);
+        registrar.accept(POWER_ARMOR_DASH);
+        registrar.accept(POWER_ARMOR_VATS);
+        registrar.accept(POWER_ARMOR_THERMAL);
         registrar.accept(OPEN_MULTI_DETONATOR);
-        // Kran-Tasten waren auf Forge/NeoForge nie angemeldet (nur im Fabric-Zweig) - nachgezogen.
+        registrar.accept(COPY_TOOL_ALT);
+        registrar.accept(COPY_TOOL_CTRL);
+        // The five RBMK crane binds were missing here while the Fabric path registers all ten:
+        // they never reached the controls screen and consumeClick never fired for them.
         registrar.accept(RBMK_CRANE_UP);
         registrar.accept(RBMK_CRANE_DOWN);
         registrar.accept(RBMK_CRANE_LEFT);
@@ -126,18 +148,27 @@ public class ModConfigKeybindHandler {
 
         // Обработка открытия конфига
         if (OPEN_CONFIG.consumeClick()
-        //? if fabric {
-                /*&& net.minecraft.client.gui.screens.Screen.hasAltDown()
-        *///?}
         ) {
             if (mc.screen == null) {
                 mc.setScreen(new ConfigScreen());
             }
         }
 
+        // Обработка dash силовой брони
+        if (POWER_ARMOR_DASH.consumeClick()) {
+            if (mc.player != null && ModPowerArmorItem.hasFSBArmor(mc.player)) {
+                var chestplate = mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
+                if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
+                    var specs = armorItem.getSpecs();
+                    if (specs.dashCount > 0) {
+                        // performDash is server-only; the client just asks for it.
+                        com.hbm_m.network.packets.PowerArmorDashC2SPacket.sendToServer();
+                        OverlayInfoToast.show(Component.translatable("hud.hbm_m.dash.perform"), 60, OverlayInfoToast.ID_DASH, 0x00FF00);
+                    }
+                }
+            }
+        }
         // Original-Tasten: Zustandsaenderungen an den Server (Dash, Jetpack, HUD, Magnet, Zug, Kran ...).
-        // Der fruehere Port-eigene Dash auf "V" ist entfallen - der Dash laeuft 1:1 ueber
-        // EnumKeybind.DASH (Linke Umschalttaste) und EntityEffectHandler.handleDashing.
         com.hbm_m.handler.HbmKeybinds.onClientTick();
 
         // Original: VATS und Waermebild sind keine Tasten, sondern laufen automatisch, solange das volle
@@ -179,6 +210,14 @@ public class ModConfigKeybindHandler {
                 || right != lastCraneRight || load != lastCraneLoad)) {
             lastCraneUp = up; lastCraneDown = down; lastCraneLeft = left; lastCraneRight = right; lastCraneLoad = load;
             com.hbm_m.network.RBMKCraneControlPacket.send(up, down, left, right, load);
+        }
+
+        // Устройство настройки: репорт ALT/CTRL по фронту (аналог KeybindPacket оригинала).
+        boolean toolAlt = COPY_TOOL_ALT.isDown();
+        boolean toolCtrl = COPY_TOOL_CTRL.isDown();
+        if (mc.player != null && (toolAlt != lastToolAlt || toolCtrl != lastToolCtrl)) {
+            lastToolAlt = toolAlt; lastToolCtrl = toolCtrl;
+            com.hbm_m.network.CopyToolKeyPacket.send(toolAlt, toolCtrl);
         }
     }
 }

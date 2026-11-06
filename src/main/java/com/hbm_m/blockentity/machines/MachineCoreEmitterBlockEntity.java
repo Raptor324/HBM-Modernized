@@ -27,6 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 import java.util.List;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1-Port von {@code TileEntityCoreEmitter} (1.7.10): der Strahler des Dunklen Fusionsreaktors.
@@ -52,7 +53,8 @@ import java.util.List;
  * sondern der eigentliche Grund, warum eine DFC-Anlage eine Kuehlmittelversorgung braucht.</p>
  */
 public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
-        implements ILaserable, com.hbm_m.api.redstoneoverradio.IRORInteractive {
+        implements ILaserable, com.hbm_m.api.redstoneoverradio.IRORInteractive,
+                   com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
 
     /** Original: {@code maxPower = 1000000000L}. */
     public static final long MAX_POWER = 1_000_000_000L;
@@ -82,25 +84,6 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
         super(ModBlockEntities.CORE_EMITTER_BE.get(), pos, state, 4, MAX_POWER, MAX_POWER, 0L);
     }
 
-    //? if forge {
-    @Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return coolantTank.getForgeFluidCapability().cast();
-        }
-        return super.getCapability(cap, side);
-    }
-    //?} elif neoforge {
-    /*@Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
-            return com.hbm_m.platform.LazyCap.ofObj(coolantTank.getCapability()).cast();
-        }
-        return super.getHbmCapability(cap, side);
-    }
-    *///?}
-
     public FluidTank getCoolantTank() { return coolantTank; }
     public int getBeamLength()        { return beam; }
     public int getWatts()             { return watts; }
@@ -123,9 +106,32 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
         return MAX_POWER * watts / 2000L;
     }
 
-    public static void tick(Level level, BlockPos pos, BlockState state, MachineCoreEmitterBlockEntity be) {
-        if (level.isClientSide()) return;
+    //? if forge {
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
+            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
+            return coolantTank.getForgeFluidCapability().cast();
+        }
+        return super.getCapability(cap, side);
+    }
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return com.hbm_m.platform.LazyCap.ofObj(coolantTank.getCapability()).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineCoreEmitterBlockEntity be) {
+        // A receiver only joins a duct network by subscribing to the pipes next to it.
+        if (level.getGameTime() % 20 == 0) {
+            for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
+                be.trySubscribe(be.coolantTank, level, pos.relative(dir), dir);
+            }
+        }
         be.ensureNetworkInitialized();
         be.serverTick(level, pos, state);
     }
@@ -171,8 +177,21 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
             prev = 0;
         }
 
-        setChanged();
-        sendUpdateToClient();
+        // P6 sync gate: полный пакет только при реальном изменении видимого клиенту состояния
+        // (бак, joules/prev/beam, watts, isOn, energy) — вместо безусловного спама каждый тик.
+        long sig = tankFingerprint(coolantTank);
+        sig = sig * 31L + joules;
+        sig = sig * 31L + prev;
+        sig = sig * 31L + beam;
+        sig = sig * 31L + watts;
+        sig = sig * 31L + (isOn ? 1L : 0L);
+        syncIfStateChanged(sig, energy);
+    }
+
+    /** 64-битный фингерпринт танка (тип жидкости + заполнение) для sync-подписи. */
+    private static long tankFingerprint(FluidTank tank) {
+        net.minecraft.world.level.material.Fluid f = tank.getTankType();
+        return (f == null ? 0L : f.hashCode()) * 31L + tank.getFill();
     }
 
     /** 1:1-Port der Strahlschleife. */
@@ -236,7 +255,7 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
             e.setSecondsOnFire(10);
             //?} else {
             /*e.hurt(com.hbm_m.damagesource.ModDamageSources.amsCore(level), 50F);
-            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(e, 10);
+            com.hbm_m.platform.MobHooks.setSecondsOnFire(e, 10);
             *///?}
         }
     }
@@ -289,6 +308,23 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
         }
 
         return null;
+    }
+
+    // The tank used to be reachable only through a forge-gated getCapability override, so on
+    // NeoForge no pipe could ever fill it. The mod's own MK2 interface works on both.
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() {
+        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { coolantTank };
+    }
+
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getReceivingTanks() {
+        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { coolantTank };
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
     @Override

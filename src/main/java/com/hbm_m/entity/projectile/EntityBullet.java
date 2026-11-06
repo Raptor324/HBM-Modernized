@@ -43,6 +43,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code EntityBullet} (altes Pfeil-Geschoss): wird nur noch vom Kampfhubschrauber ({@code "chopper"}, Schaden
@@ -237,7 +238,7 @@ public class EntityBullet extends Entity {
 
             for (Entity entity1 : list) {
 
-                if (entity1.isPickable() && (entity1 != this.shootingEntity || this.ticksInAir >= 5)) {
+                if (entity1.isPickable() && !(entity1 instanceof LivingEntity living && !living.isAlive()) && (entity1 != this.shootingEntity || this.ticksInAir >= 5)) {
                     float f1 = 0.3F;
                     AABB axisalignedbb1 = entity1.getBoundingBox().inflate(f1, f1, f1);
                     var intercept = axisalignedbb1.clip(vec31, vec3);
@@ -295,7 +296,7 @@ public class EntityBullet extends Entity {
                         if (damagesource == null) damagesource = ModDamageSources.revolverBullet(this, owner);
 
                         if (fire || this.isOnFire() && !(entityHit instanceof EnderMan)) {
-                            PlatformHooks.setSecondsOnFire(entityHit, 5);
+                            MobHooks.setSecondsOnFire(entityHit, 5);
                         }
 
                         if (entityHit.hurt(damagesource, (float) damage)) {

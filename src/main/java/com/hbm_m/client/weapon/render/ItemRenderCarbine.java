@@ -114,43 +114,26 @@ public class ItemRenderCarbine extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 1.375D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, 0, 2);
-
+		setupThirdPerson(stack, 1.375D, 0, 0, 2);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
 		if(hasBayonet(stack)) {
-			double scale = 1.1875D;
-			GunGL.scale(scale, scale, scale);
-			GunGL.rotate(25, 1, 0, 0);
-			GunGL.rotate(45, 0, 1, 0);
-			GunGL.translate(1.5, 0, 0);
+			setupInv(stack, 1.1875D, 1.5, 0, 0);
 		} else {
-			double scale = 1.375D;
-			GunGL.scale(scale, scale, scale);
-			GunGL.rotate(25, 1, 0, 0);
-			GunGL.rotate(45, 0, 1, 0);
-			GunGL.translate(-0.5, 0, 0);
+			setupInv(stack, 1.375D, -0.5, 0, 0);
 		}
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -7.75D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, 0, -1.75);
+		setupModTable(stack, -7.75D, 0, 0, -1.75);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(WeaponResources.carbine_tex);
 		GunGL.renderPart(WeaponResources.carbine, "Gun");
 		GunGL.renderPart(WeaponResources.carbine, "Slide");
@@ -165,28 +148,7 @@ public class ItemRenderCarbine extends ItemRenderWeaponBase {
 			GunGL.bindTexture(WeaponResources.carbine_bayonet_tex);
 			GunGL.renderPart(WeaponResources.carbine, "Bayonet");
 		}
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 1, 8);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(90 * shotRand, 1, 0, 0);
-			GunGL.scale(0.5, 0.5, 0.5);
-			renderMuzzleFlash(shot, 75, 7.5);
-			GunGL.popMatrix();
-		}
+		renderEquippedMuzzleFlash(type, stack, data, 0, 1, 8, 0.5D, 75, 7.5);
 	}
 
 	public boolean isScoped(ItemStack stack) {

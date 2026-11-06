@@ -14,6 +14,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineSolidifierMenu extends AbstractContainerMenu {
 
@@ -60,7 +61,7 @@ public class MachineSolidifierMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineSolidifierBlockEntity solidifierBlockEntity) {
             return solidifierBlockEntity;
         }
-        throw new IllegalStateException("No MachineSolidifierBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":solidifier_menu");
+        throw new MenuBlockEntityMissingException("No MachineSolidifierBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":solidifier_menu");
     }
 
     public MachineSolidifierBlockEntity getBlockEntity() {
@@ -69,8 +70,7 @@ public class MachineSolidifierMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

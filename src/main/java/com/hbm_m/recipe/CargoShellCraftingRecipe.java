@@ -13,6 +13,7 @@ import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code CargoShellCraftingHandler}: leere Frachtgranate ({@code ammo_arty} Meta 8 ohne NBT) + genau ein weiterer
@@ -31,7 +32,7 @@ public class CargoShellCraftingRecipe extends CustomRecipe {
     *///?}
 
     private static boolean isEmptyCargoShell(ItemStack stack) {
-        return ItemAmmoArty.typeOf(stack) == ItemAmmoArty.CARGO && !PlatformHooks.hasItemTag(stack);
+        return ItemAmmoArty.typeOf(stack) == ItemAmmoArty.CARGO && !StackNbt.has(stack);
     }
 
     //? if < 1.21.1 {
@@ -99,8 +100,8 @@ public class CargoShellCraftingRecipe extends CustomRecipe {
         if (shell == null || cargo == null)
             return ItemStack.EMPTY;
 
-        CompoundTag cargoTag = PlatformHooks.saveItemStack(cargo, new CompoundTag(), PlatformHooks.bestEffortProvider());
-        PlatformHooks.put(shell, "cargo", cargoTag);
+        CompoundTag cargoTag = StackNbt.save(cargo, new CompoundTag(), PlatformHooks.bestEffortProvider());
+        StackNbt.put(shell, "cargo", cargoTag);
 
         return shell;
     }

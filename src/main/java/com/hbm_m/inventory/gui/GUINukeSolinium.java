@@ -12,10 +12,13 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Экран солиниевой бомбы (схема размещения компонентов).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUINukeSolinium extends GuiInfoScreen<NukeSoliniumMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -41,7 +44,7 @@ public class GUINukeSolinium extends GuiInfoScreen<NukeSoliniumMenu> {
     protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, imageWidth, imageHeight);
 
-        // Original: Teile-Overlays je Slot, Bereitschaftsanzeige bei (134, 90), kein Info-Panel
+        // Original: Teile-Overlays je Slot, Bereitschaftsanzeige bei (134, 90)
         if (be != null) { // тайл может отсутствовать в реплее Flashback
             if (has(0, ModItems.SOLINIUM_IGNITER.get())) guiGraphics.blit(TEXTURE, leftPos + 24, topPos + 84, 0, 222, 22, 14);
             if (has(1, ModItems.SOLINIUM_PROPELLANT.get())) guiGraphics.blit(TEXTURE, leftPos + 46, topPos + 84, 22, 222, 18, 14);
@@ -54,6 +57,8 @@ public class GUINukeSolinium extends GuiInfoScreen<NukeSoliniumMenu> {
             if (has(8, ModItems.SOLINIUM_IGNITER.get())) guiGraphics.blit(TEXTURE, leftPos + 94, topPos + 98, 70, 236, 22, 14);
             if (be.isReady()) guiGraphics.blit(TEXTURE, leftPos + 134, topPos + 90, 176, 0, 16, 16);
         }
+
+        this.drawInfoPanel(guiGraphics, -16, 16, PanelType.LARGE_BLUE_INFO);
     }
 
     private boolean has(int slot, net.minecraft.world.item.Item item) {

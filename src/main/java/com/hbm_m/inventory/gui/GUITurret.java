@@ -23,13 +23,10 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+@OnlyIn(Dist.CLIENT)
 
-/**
- * 1:1 {@code GUITurretBase} (+ {@code GUITurretFritz}-Tank und {@code GUITurretArty}-Modusknopf) fuer alle
- * Geschuetze: An/Aus (115/26), vier Zielkategorien (8/22/36/50, 30), KI-Chip-Namensliste mit Eingabefeld,
- * Strichliste der Abschuesse, Energiebalken und Munitionsanzeige ueber dem Munitionsraster.
- * Die Textur kommt aus {@link TurretStats}.
- */
 public class GUITurret extends AbstractContainerScreen<TurretMenu> {
 
     private final ResourceLocation texture;
@@ -40,7 +37,7 @@ public class GUITurret extends AbstractContainerScreen<TurretMenu> {
         super(pMenu, pPlayerInventory, pTitle);
         // тайл может отсутствовать в реплее Flashback
         this.texture = pMenu.blockEntity != null ? pMenu.blockEntity.getGuiTexture()
-                : ResourceLocation.fromNamespaceAndPath("hbm_m", "textures/gui/weapon/gui_turret_base.png");
+                : ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "textures/gui/weapon/gui_turret_base.png");
         this.imageWidth = 176;
         this.imageHeight = 222;
     }

@@ -46,6 +46,8 @@ public interface IEnergyProvider extends IEnergyConnector {
             Nodespace.PowerNode node = Nodespace.getNode(level, new BlockPos(x, y, z));
             if (node != null && node.net != null && node.net.isValid()) {
                 node.net.addProvider(this);
+                // Заодно сеть сканирует грани проводника на чужие FE-хранилища.
+                node.net.refreshForeign(level, new BlockPos(x, y, z));
                 any = true;
             }
         }

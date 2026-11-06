@@ -71,7 +71,6 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
     /** Last values pushed to clients; see the sync note at the end of {@link #craneTick}. */
     private double syncedFront = Double.NaN, syncedLeft = Double.NaN, syncedProgress = Double.NaN;
     private double syncedTiltFront = Double.NaN, syncedTiltLeft = Double.NaN;
-
     private boolean goesDown = false;
     public double lastProgress = 1D, progress = 1D;
 
@@ -294,7 +293,7 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
         tag.putDouble("tiltLeft", tiltLeft);
         tag.putDouble("loadedHeat", loadedHeat);
         tag.putDouble("loadedEnrichment", loadedEnrichment);
-        if (!loadedItem.isEmpty()) tag.put("loadedItem", com.hbm_m.platform.PlatformHooks.safeItemSave(loadedItem, registries));
+        if (!loadedItem.isEmpty()) tag.put("loadedItem", com.hbm_m.platform.StackNbt.saveNew(loadedItem, registries));
     }
 
     @Override
@@ -317,11 +316,14 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
         tiltLeft  = tag.getDouble("tiltLeft");
         if (tag.contains("loadedHeat"))       loadedHeat       = tag.getDouble("loadedHeat");
         if (tag.contains("loadedEnrichment")) loadedEnrichment = tag.getDouble("loadedEnrichment");
-        loadedItem = tag.contains("loadedItem") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("loadedItem"), registries) : ItemStack.EMPTY;
+        loadedItem = tag.contains("loadedItem") ? com.hbm_m.platform.StackNbt.parse(tag.getCompound("loadedItem"), registries) : ItemStack.EMPTY;
     }
 
     /** 1:1 TileEntityCraneConsole.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */
+    //? if forge {
     @Override
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?}
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return com.hbm_m.platform.RenderBounds.INFINITE;
     }

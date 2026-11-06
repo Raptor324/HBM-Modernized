@@ -71,10 +71,8 @@ public abstract class JetpackFueledBase extends JetpackBase implements IFillable
     }
 
     public static void setFuel(ItemStack stack, int i) {
-        if (StackNbt.read(stack) == null) {
-            StackNbt.set(stack, new CompoundTag());
-        }
-        StackNbt.tag(stack).putInt("fuel", i);
+        // не set(EMPTY)+tag(): на 1.21.1 set() с пустым тегом удаляет компонент и tag() = null
+        StackNbt.orCreate(stack).putInt("fuel", i);
     }
 
     public int getMaxFill(ItemStack stack) {

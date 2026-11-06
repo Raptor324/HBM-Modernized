@@ -20,9 +20,9 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /**
- * 1:1-Port von {@code RenderShrapnel} + {@code ModelShrapnel}: ein 4x4x4-Pixel-Wuerfel
- * (Textur 16x8, gespiegelt, Drehpunkt 1/-0.5/-0.5), auf den Kopf gestellt und schnell um die
- * Raumdiagonale kreiselnd; Vulkanbrocken (Typ >= 2) dreifach vergroessert.
+ * 1:1 port of {@code RenderShrapnel} + {@code ModelShrapnel}: 4x4x4 pixel cube
+ * (16x8 mirrored texture, pivot 1/-0.5/-0.5), inverted and spinning rapidly about its
+ * spatial diagonal; volcanic debris (type >= 2) scaled 3x.
  */
 public class ShrapnelRenderer extends EntityRenderer<EntityShrapnel> {
 

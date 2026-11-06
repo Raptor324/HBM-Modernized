@@ -7,6 +7,7 @@ import com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -19,6 +20,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code MachinePrecAss} (erbt {@code MachineAssemblyMachine}): {@code getDimensions {2,0,1,1,1,1}}, {@code getOffset 1};
@@ -41,6 +43,23 @@ public class MachinePrecAssBlock extends DummyableMachineBlock {
     }
 
     @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            { -1, 0, -1, Direction.WEST.get3DDataValue() },
+            { -1, 0, -1, Direction.NORTH.get3DDataValue() },
+            { -1, 0,  0, Direction.WEST.get3DDataValue() },
+            { -1, 0,  1, Direction.WEST.get3DDataValue() },
+            { -1, 0,  1, Direction.SOUTH.get3DDataValue() },
+            {  0, 0, -1, Direction.NORTH.get3DDataValue() },
+            {  0, 0,  1, Direction.SOUTH.get3DDataValue() },
+            {  1, 0, -1, Direction.EAST.get3DDataValue() },
+            {  1, 0, -1, Direction.NORTH.get3DDataValue() },
+            {  1, 0,  0, Direction.EAST.get3DDataValue() },
+            {  1, 0,  1, Direction.EAST.get3DDataValue() },
+            {  1, 0,  1, Direction.SOUTH.get3DDataValue() }
+        }, facing);
+    }
+
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.ENTITYBLOCK_ANIMATED;
     }
@@ -63,7 +82,7 @@ public class MachinePrecAssBlock extends DummyableMachineBlock {
     //?} else {
     /*@Override
     protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, level, pos, player, hand, hit));
+        return com.hbm_m.platform.BlockHooks.useItemResult(hbmUse(state, level, pos, player, hand, hit));
     }
     private InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     *///?}

@@ -22,15 +22,18 @@ public class ModAttachments {
             .serialize(new IAttachmentSerializer<CompoundTag, IChunkRadiation>() {
                 @Override
                 public IChunkRadiation read(IAttachmentHolder holder, CompoundTag tag, HolderLookup.Provider provider) {
-                    IChunkRadiation rad = new ChunkRadiation();
-                    rad.setAmbientRadiation(tag.contains("ambientRadiation") ? tag.getFloat("ambientRadiation") : 0f);
+                    ChunkRadiation rad = new ChunkRadiation();
+                    rad.loadNBT(tag);
                     return rad;
                 }
                 @Override
                 public CompoundTag write(IChunkRadiation rad, HolderLookup.Provider provider) {
                     CompoundTag tag = new CompoundTag();
+                    if (rad instanceof ChunkRadiation cr) {
+                        return cr.saveNBT(tag);
+                    }
                     float ambient = rad.getAmbientRadiation();
-                    if (ambient > 1e-6F) tag.putFloat("ambientRadiation", ambient);
+                    if (ambient > 1e-6F) tag.putFloat(ChunkRadiation.NBT_KEY_AMBIENT, ambient);
                     return tag;
                 }
             }).build()

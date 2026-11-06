@@ -245,14 +245,8 @@ public class BoxDuctBakedModel implements BakedModel {
             data[o + 1] = Float.floatToRawIntBits((float) v[i][1]);
             data[o + 2] = Float.floatToRawIntBits((float) v[i][2]);
             data[o + 3] = -1;
-            //? if < 1.21.1 {
-            data[o + 4] = Float.floatToRawIntBits(icon.getU(v[i][3]));
-            data[o + 5] = Float.floatToRawIntBits(icon.getV(v[i][4]));
-            //?} else {
-            /*// 1.21.1: getU/getV erwarten 0..1 statt 0..16
-            data[o + 4] = Float.floatToRawIntBits(icon.getU((float) (v[i][3] / 16.0D)));
-            data[o + 5] = Float.floatToRawIntBits(icon.getV((float) (v[i][4] / 16.0D)));
-            *///?}
+            data[o + 4] = Float.floatToRawIntBits(com.hbm_m.platform.RenderHooks.spriteU(icon, (float) v[i][3] / 16F));
+            data[o + 5] = Float.floatToRawIntBits(com.hbm_m.platform.RenderHooks.spriteV(icon, (float) v[i][4] / 16F));
             data[o + 6] = 0;
             data[o + 7] = normal;
         }

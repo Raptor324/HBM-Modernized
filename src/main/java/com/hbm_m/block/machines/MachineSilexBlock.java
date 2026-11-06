@@ -11,6 +11,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -41,6 +42,22 @@ public class MachineSilexBlock extends DummyableMachineBlock {
                 .extra(0, 1, -1)
                 .placementOffset(1)
                 .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
+
+    @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            { 1.9, 1.1,  1.5,  1.5, 0.4, -0.4 },
+            { 1.9, 1.1, -1.5, -1.5, 0.4, -0.4 }
+        };
+    }
+
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {  1, 1, 0, Direction.EAST.get3DDataValue() },
+            { -1, 1, 0, Direction.WEST.get3DDataValue() }
+        }, facing);
     }
 
     @Override

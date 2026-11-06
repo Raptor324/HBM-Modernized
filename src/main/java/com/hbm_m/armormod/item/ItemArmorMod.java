@@ -1,5 +1,6 @@
 package com.hbm_m.armormod.item;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,6 +22,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.AttributeHooks;
 
 /**
  * 1:1 {@code com.hbm.items.armor.ItemArmorMod}: Slot-Typ plus die vier Flags, an welche
@@ -63,6 +65,9 @@ public abstract class ItemArmorMod extends Item implements ITooltipProvider {
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
         addInformation(stack, level, list);
+
+        // Добавляем строки с эффектами, которые определены в дочерних классах.
+        list.addAll(this.getEffectTooltipLines());
 
         list.add(Component.translatable("armorMod.applicableTo").withStyle(ChatFormatting.DARK_PURPLE));
 
@@ -109,6 +114,16 @@ public abstract class ItemArmorMod extends Item implements ITooltipProvider {
         return null;
     }
 
+    /**
+     * МЕТОД, который должны переопределять дочерние классы.
+     * Он возвращает ТОЛЬКО строки, описывающие эффекты мода.
+     * @return Список компонентов с описанием эффектов.
+     */
+    public List<Component> getEffectTooltipLines() {
+        // По умолчанию моды не имеют эффектов.
+        return Collections.emptyList();
+    }
+
     /** Original {@code ((ItemArmor) armor.getItem()).armorType}: 0 Helm, 1 Brust, 2 Beine, 3 Stiefel. */
     public static int armorType(ItemStack armor) {
         if (armor.getItem() instanceof ArmorItem a) {
@@ -125,13 +140,34 @@ public abstract class ItemArmorMod extends Item implements ITooltipProvider {
         return 0;
     }
 
+    /**
+     * Вспомогательный метод для создания модификатора с корректным UUID.
+     * @param armorStack Броня, для которой создается модификатор.
+     * @param attribute Сам атрибут (например, Attributes.MAX_HEALTH).
+     * @param name Имя модификатора.
+     * @param value Значение.
+     * @param operation Операция (ADDITION, MULTIPLY_BASE, MULTIPLY_TOTAL).
+     * @return Готовый AttributeModifier.
+     */
+    protected static AttributeModifier createModifier(ItemStack armorStack, Attribute attribute, String name, double value, AttributeModifier.Operation operation) {
+        if (armorStack.getItem() instanceof ArmorItem armorItem) {
+            // Получаем UUID, соответствующий слоту брони (шлем, ботинки и т.д.)
+            UUID modifierUUID = ArmorModificationHelper.MODIFIER_UUIDS.get(armorItem.getType().getSlot().getIndex());
+            if (modifierUUID != null) {
+                return AttributeHooks.modifier(modifierUUID, name, value, operation);
+            }
+        }
+        // Возвращаем временный модификатор, если что-то пошло не так
+        return AttributeHooks.modifier(name, value, operation);
+    }
+
     /** {@code new AttributeModifier(ArmorModHandler.UUIDs[armorType], name, value, op)}. */
     protected static AttributeModifier modifier(ItemStack armor, String name, double value, AttributeModifier.Operation op) {
-        return PlatformHooks.attributeModifier(ArmorModificationHelper.UUIDs[armorType(armor)], name, value, op);
+        return AttributeHooks.modifier(ArmorModificationHelper.UUIDs[armorType(armor)], name, value, op);
     }
 
     protected static AttributeModifier modifier(UUID uuid, String name, double value, AttributeModifier.Operation op) {
-        return PlatformHooks.attributeModifier(uuid, name, value, op);
+        return AttributeHooks.modifier(uuid, name, value, op);
     }
 
     /** Original: Farbwechsel im Halbsekundentakt ({@code System.currentTimeMillis() % 1000 < 500}). */

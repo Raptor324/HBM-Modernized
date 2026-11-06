@@ -92,6 +92,21 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
 
         be.setChanged();
         be.sendUpdateToClient();
+
+        // Anti-sync-spam: setChanged/sendBlockUpdated only when energy or tank contents moved.
+        be.syncIfStateChanged(be.energy, be.tankSyncSignature());
+    }
+
+    private long tankSyncSignature() {
+        long h = tankFingerprint(tanks[0]);
+        h = h * 31L + tankFingerprint(tanks[1]);
+        h = h * 31L + tankFingerprint(tanks[2]);
+        return h * 31L + tankFingerprint(tanks[3]);
+    }
+
+    private static long tankFingerprint(FluidTank tank) {
+        Fluid type = tank.getTankType();
+        return (type == null ? 0L : type.hashCode() * 31L) + tank.getFill();
     }
 
     /** Direktport von {@code reform()}. */
@@ -230,4 +245,10 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(worldPosition.getX() - 2, worldPosition.getY(), worldPosition.getZ() - 2, worldPosition.getX() + 3, worldPosition.getY() + 7, worldPosition.getZ() + 3);
     }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
+    }
 }
+

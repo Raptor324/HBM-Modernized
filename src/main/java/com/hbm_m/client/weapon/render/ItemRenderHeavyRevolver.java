@@ -1,5 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
+import com.hbm_m.client.render.weapon.WeaponJointRig;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.client.weapon.WeaponResources;
@@ -27,8 +30,7 @@ public class ItemRenderHeavyRevolver extends ItemRenderWeaponBase {
 
 	@Override
 	public float getViewFOV(ItemStack stack, float fov) {
-		float aimingProgress = ItemGunBaseNT.prevAimingProgress + (ItemGunBaseNT.aimingProgress - ItemGunBaseNT.prevAimingProgress) * interp;
-		return  fov * (1 - aimingProgress * (isScoped(stack) ? 0.66F : 0.33F));
+		return standardZoomFov(fov, isScoped(stack) ? 0.66F : 0.33F);
 	}
 
 	@Override
@@ -84,27 +86,25 @@ public class ItemRenderHeavyRevolver extends ItemRenderWeaponBase {
 		GunGL.rotate(reloadTilt[0], 1, 0, 0);
 
 		GunGL.bindTexture(texture);
-		GunGL.renderPart(WeaponResources.lilmac, "Gun");
+		WeaponRenderRegistry.renderPart(WeaponResources.lilmac, "Gun", GunGL.pose());
 
-		GunGL.pushMatrix();
-		GunGL.rotate(cylinderFlip[0], 1, 0, 0);
-		GunGL.renderPart(WeaponResources.lilmac, "Pivot");
-		GunGL.translate(0, 1.75, 0);
-		GunGL.rotate(HbmAnimations.getRelevantTransformation("DRUM")[2] * -60, 1, 0, 0);
-		GunGL.translate(0, -1.75, 0);
-		GunGL.renderPart(WeaponResources.lilmac, "Cylinder");
-		GunGL.translate(reloadBullets[0], reloadBullets[1], reloadBullets[2]);
-		if(HbmAnimations.getRelevantTransformation("RELOAD_BULLETS_CON")[0] != 1)
-		GunGL.renderPart(WeaponResources.lilmac, "Bullets");
-		GunGL.renderPart(WeaponResources.lilmac, "Casings");
-		GunGL.popMatrix();
+		WeaponJointRig rig = WeaponRenderRegistry.getRig(WeaponResources.lilmac);
 
-		GunGL.pushMatrix(); /// HAMMER ///
-		GunGL.translate(4, 1.25, 0);
-		GunGL.rotate(-30 + 30 * HbmAnimations.getRelevantTransformation("HAMMER")[2], 0, 0, 1);
-		GunGL.translate(-4, -1.25, 0);
-		GunGL.renderPart(WeaponResources.lilmac, "Hammer");
-		GunGL.popMatrix();
+		WeaponKinematics.scoped(GunGL.pose(), ps -> {
+			WeaponKinematics.applyJoint(ps, rig.getJoint("Pivot"), (float) cylinderFlip[0]);
+			WeaponRenderRegistry.renderPart(WeaponResources.lilmac, "Pivot", ps);
+
+			WeaponKinematics.applyJoint(ps, rig.getJoint("Cylinder"), (float) (HbmAnimations.getRelevantTransformation("DRUM")[2] * -60));
+			WeaponRenderRegistry.renderPart(WeaponResources.lilmac, "Cylinder", ps);
+
+			WeaponKinematics.applyVectorTranslate(ps, (float) reloadBullets[0], (float) reloadBullets[1], (float) reloadBullets[2]);
+			if(HbmAnimations.getRelevantTransformation("RELOAD_BULLETS_CON")[0] != 1) {
+				WeaponRenderRegistry.renderPart(WeaponResources.lilmac, "Bullets", ps);
+			}
+			WeaponRenderRegistry.renderPart(WeaponResources.lilmac, "Casings", ps);
+		});
+
+		WeaponKinematics.renderPartWithJoint(rig, "Hammer", GunGL.pose(), (float) (-30 + 30 * HbmAnimations.getRelevantTransformation("HAMMER")[2]));
 
 		if(isScoped) {
 			GunGL.bindTexture(WeaponResources.lilmac_scope_tex);
@@ -119,35 +119,21 @@ public class ItemRenderHeavyRevolver extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		GunGL.scale(0.75, 0.75, 0.75);
-		GunGL.translate(0, 1, 3);
-
+		setupThirdPerson(stack, 0.75D, 0, 1, 3);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
 		if(isScoped(stack)) {
-			double scale = 1.125D;
-			GunGL.scale(scale, scale, scale);
-			GunGL.rotate(25, 1, 0, 0);
-			GunGL.rotate(45, 0, 1, 0);
-			GunGL.translate(0, -0.5, 0);
+			setupInv(stack, 1.125D, 0, -0.5, 0);
 		} else {
-			double scale = 1.25D;
-			GunGL.scale(scale, scale, scale);
-			GunGL.rotate(25, 1, 0, 0);
-			GunGL.rotate(45, 0, 1, 0);
+			setupInv(stack, 1.25D, 0, 0, 0);
 		}
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, -0.5, 0);
+		setupModTable(stack, -5D, 0, -0.5, 0);
 	}
 
 	@Override

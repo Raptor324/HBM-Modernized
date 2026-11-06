@@ -96,7 +96,16 @@ public class FluidType {
         return this;
     }
 
-    /** Whether any hazard diamond segment should be drawn on tanks. */
+    /**
+     * Whether any hazard diamond segment should be drawn on tanks.
+     * <p>
+     * Accepted NEXT divergence (extra audit round, N10): NEXT draws an all-zero "0 0 0" diamond
+     * for any fluid whose datapack property exists with zero values and no symbol (~27 files,
+     * e.g. blood), because its render gate is property-presence. Here the gate is data-content
+     * (nonzero rating or non-NONE symbol), so such fluids draw nothing. Chosen deliberately:
+     * mirroring property-presence would require a registration flag on {@link FluidType}
+     * (cross-family API growth in the hazard-bootstrap domain) for a purely cosmetic quirk.
+     */
     public boolean hasHazardDiamond() {
         return poison > 0 || flammability > 0 || reactivity > 0 || symbol != FluidHazardSymbol.NONE;
     }

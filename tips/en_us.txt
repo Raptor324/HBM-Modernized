@@ -1,0 +1,33 @@
+# Tip of the day — one tip per line. Lines starting with # are comments.
+# $ inside a line forces a line break. Edit freely; the game fetches this file
+# from the mod's GitHub at startup (raw URL, branch main).
+There's meteors. Build a roof.
+The blast furnace can be accelerated$by supplying hot air blast from a boiler.
+Don't want to use buckets for water?$Use an infinite barrel instead.
+Iron furnaces are more fuel efficient,$and don't burn while idle.
+Bricked furnaces smelt construction materials faster,$like sand, stone or clay.
+Standard boilers may explode when running full.$Industrial boilers will simply stop.
+Is your RBMK leaking radiation? Use cover panels.
+Flow control pumps can be used to change$fluid distribution priority.
+Pneumatic pipes move items instantly,$and through unloaded chunks.
+Fluids can be voided with a drainage pipe.$This may not be too good for the environment, though.
+Fans are activated by redstone and push entities around.$Ideal for tree farms.
+Don't set the microwave to the highest setting.
+Fractioning towers connect vertically,$stacking them increases throughput.
+Fullerite too difficult? Make fine soot with a pyrolysis oven.
+Exploration pays off. Who knows what you'll find.
+Feeling sick? Check for nearby asbestos.
+Need a lot of fuel early on? The nether is full of flaming coal.
+Get a gun.
+Alexandrite needs explosives to be mined.
+Foundry casts can be removed with a screwdriver.
+No, you can't upgrade a damaged pickaxe.
+Using a screwdriver on a fluid burner$will increase its burn rate.
+Using dye on a pylon will change$the color of the connected wires.
+Capacitors are cheaper than energy storage blocks,$and have faster discharging rates.
+Any foundry part can be emptied by using a shovel.$This drops the contents as foundry scraps.
+Teleporters can teleport any entity,$even items on a conveyor belt.
+Some recipes require blueprints which are found in structures.$You can also buy them from Bobmazon.
+Battery sockets can hold any rechargeable item,$not just batteries and capacitors.
+Redstone-over-radio transmitters also work like$comparators, reading the fill state of connected containers.
+Winter will end just the same, no matter what.

@@ -1,6 +1,8 @@
 package com.hbm_m.client.render.implementations;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity;
+import com.hbm_m.client.model.nmesh.NMeshData;
+import com.hbm_m.client.model.nmesh.NMeshLoader;
 import com.hbm_m.blockentity.machines.rbmk.RBMKControlAutoBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKControlBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKControlManualBlockEntity;
@@ -21,8 +23,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
 import org.joml.Matrix4f;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.*;
 
 /**
@@ -34,13 +34,7 @@ import java.util.*;
  * characteristic hollow octagonal channel appearance visible from the top.
  */
 
-//? if forge {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.hbm_m.client.render.HbmBerBounds<T> {
 
     // ─── Caches ──────────────────────────────────────────────────────────────
@@ -65,64 +59,45 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
 
     // ─── OBJ loading ─────────────────────────────────────────────────────────
 
+    /**
+     * Nmesh-backed geometry chokepoint: reads binary {@code .nmesh} via {@link NMeshLoader}
+     * (raw .obj is runtime resourcepack-fallback inside NMeshLoader) and splits
+     * submeshes by object/group names in the format
+     * {@code groupName -> [x,y,z, u,v, nx,ny,nz] * 3} (raw V - callers invert as needed).
+     * Key is objectName, falling back to groupName (matching SimpleObjModel.ensureLoaded).
+     */
     public static Map<String, List<float[]>> getObj(String resourcePath) {
         return OBJ_CACHE.computeIfAbsent(resourcePath, path -> {
-            try {
-                var res = Minecraft.getInstance().getResourceManager()
-                        .getResource(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path))
-                        .orElse(null);
-                if (res == null) return Map.of();
-                return parseObj(new BufferedReader(new InputStreamReader(res.open())));
-            } catch (Exception e) {
+            NMeshData nmesh = NMeshLoader.load(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path));
+            if (nmesh == null) {
                 return Map.of();
             }
-        });
-    }
-
-    private static Map<String, List<float[]>> parseObj(BufferedReader reader) throws Exception {
-        List<float[]> pos = new ArrayList<>(), uv = new ArrayList<>(), nrm = new ArrayList<>();
-        Map<String, List<float[]>> result = new LinkedHashMap<>();
-        String cur = "default";
-        String line;
-        while ((line = reader.readLine()) != null) {
-            line = line.trim();
-            if (line.startsWith("o ")) {
-                cur = line.substring(2).trim();
-            } else if (line.startsWith("v ") && !line.startsWith("vt") && !line.startsWith("vn")) {
-                String[] p = line.split("\\s+");
-                pos.add(new float[]{Float.parseFloat(p[1]), Float.parseFloat(p[2]), Float.parseFloat(p[3])});
-            } else if (line.startsWith("vt ")) {
-                String[] p = line.split("\\s+");
-                uv.add(new float[]{Float.parseFloat(p[1]), Float.parseFloat(p[2])});
-            } else if (line.startsWith("vn ")) {
-                String[] p = line.split("\\s+");
-                nrm.add(new float[]{Float.parseFloat(p[1]), Float.parseFloat(p[2]), Float.parseFloat(p[3])});
-            } else if (line.startsWith("f ")) {
-                String[] verts = line.substring(2).trim().split("\\s+");
-                List<float[]> vs = new ArrayList<>();
-                for (String vert : verts) {
-                    String[] idx = vert.split("/");
-                    int vi = Integer.parseInt(idx[0]) - 1;
-                    int ti = idx.length > 1 && !idx[1].isEmpty() ? Integer.parseInt(idx[1]) - 1 : -1;
-                    int ni = idx.length > 2 && !idx[2].isEmpty() ? Integer.parseInt(idx[2]) - 1 : -1;
-                    float[] p = pos.get(vi);
-                    float u  = ti >= 0 ? uv.get(ti)[0] : 0, v = ti >= 0 ? uv.get(ti)[1] : 0;
-                    float nx = ni >= 0 ? nrm.get(ni)[0] : 0;
-                    float ny = ni >= 0 ? nrm.get(ni)[1] : 1;
-                    float nz = ni >= 0 ? nrm.get(ni)[2] : 0;
-                    vs.add(new float[]{p[0], p[1], p[2], u, v, nx, ny, nz});
-                }
-                List<float[]> tris = result.computeIfAbsent(cur, k -> new ArrayList<>());
-                for (int i = 1; i < vs.size() - 1; i++) {
+            Map<String, List<float[]>> result = new LinkedHashMap<>();
+            for (NMeshData.SubMesh sm : nmesh.subMeshes()) {
+                String key = !sm.objectName.isEmpty() ? sm.objectName
+                        : (!sm.groupName.isEmpty() ? sm.groupName : "default");
+                List<float[]> tris = result.computeIfAbsent(key, k -> new ArrayList<>());
+                float[] verts = sm.vertices;
+                int[] idx = sm.indices;
+                for (int i = 0; i + 2 < idx.length; i += 3) {
                     float[] t = new float[24];
-                    System.arraycopy(vs.get(0), 0, t, 0, 8);
-                    System.arraycopy(vs.get(i), 0, t, 8, 8);
-                    System.arraycopy(vs.get(i + 1), 0, t, 16, 8);
+                    for (int c = 0; c < 3; c++) {
+                        int b = idx[i + c] * 8;
+                        t[c * 8 + 0] = verts[b + 0];
+                        t[c * 8 + 1] = verts[b + 1];
+                        t[c * 8 + 2] = verts[b + 2];
+                        // raw u,v: renderObjGroup applies (1 - v) on output.
+                        t[c * 8 + 3] = verts[b + 6];
+                        t[c * 8 + 4] = verts[b + 7];
+                        t[c * 8 + 5] = verts[b + 3];
+                        t[c * 8 + 6] = verts[b + 4];
+                        t[c * 8 + 7] = verts[b + 5];
+                    }
                     tris.add(t);
                 }
             }
-        }
-        return result;
+            return result;
+        });
     }
 
     // ─── Render ──────────────────────────────────────────────────────────────

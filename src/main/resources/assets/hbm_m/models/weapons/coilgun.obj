@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'coilgun.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Coils_Cylinder.012
 v -0.463562 0.524760 -0.428106
 v -0.237813 0.524760 -0.428106

@@ -40,6 +40,7 @@ import net.minecraft.world.phys.Vec3;
  * (Taint-, Tesla- und Cyberkrabbe werden geheilt statt getroffen) entfallen, weil es diese Kreaturen
  * im Port nicht gibt. Ozelots bleiben wie im Original verschont, Creeper werden gezuendet. Der
  * Meteoritenakku unter der Spule speist sie wie im Original gratis.</p>
+
  */
 public class TeslaBlockEntity extends BaseMachineBlockEntity {
 
@@ -50,7 +51,8 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
     /** Original: {@code range = 10}. */
     private static final double RANGE = 10.0D;
     /** Original: {@code offset = 1.75} - die Entladung geht von der Spulenspitze aus. */
-    private static final double ORIGIN_OFFSET_Y = 1.75D;
+    public static final double ORIGIN_OFFSET_Y = 1.75D;
+
 
     /** Positionen der zuletzt getroffenen Ziele - fuer die Blitzdarstellung. */
     private final List<Vec3> targets = new ArrayList<>();
@@ -68,16 +70,31 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
         // Original: ein Meteoritenakku direkt unter der Spule speist sie gratis
         if (level.getBlockState(pos.below()).is(com.hbm_m.block.ModBlocks.METEOR_BATTERY.get())) be.setEnergyStored(MAX_POWER);
 
-        if (be.getEnergyStored() >= POWER_PER_ZAP) {
+        // Discharge (entity query + per-candidate clips) phase-spread, not every tick.
+        if (be.probeDue(5) && be.getEnergyStored() >= POWER_PER_ZAP) {
             be.setEnergyStored(be.getEnergyStored() - POWER_PER_ZAP);
 
-            be.targets.addAll(zap(level,
-                    pos.getX() + 0.5D, pos.getY() + ORIGIN_OFFSET_Y, pos.getZ() + 0.5D,
-                    RANGE, null));
+            // World-space origin: on a Sable ship the block position is in the plot grid.
+            Vec3 origin = com.hbm_m.compat.sable.SableCompat.toWorld(level,
+                    pos.getX() + 0.5D, pos.getY() + ORIGIN_OFFSET_Y, pos.getZ() + 0.5D);
+            be.targets.addAll(zap(level, origin.x, origin.y, origin.z, RANGE, null));
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Sync only on a state delta: energy + arc-list fingerprint. No targets (and no prior
+        // arcs to clear) means no sync — the renderer has nothing new to draw.
+        be.syncIfStateChanged(be.getEnergyStored(), be.arcFingerprint());
+    }
+
+    /** Fingerprint of the arc end-point list shipped by writeNbtData. */
+    private long arcFingerprint() {
+        long h = targets.size();
+        for (int i = 0; i < targets.size(); i++) {
+            Vec3 t = targets.get(i);
+            h = h * 31L + Double.doubleToRawLongBits(t.x);
+            h = h * 31L + Double.doubleToRawLongBits(t.y);
+            h = h * 31L + Double.doubleToRawLongBits(t.z);
+        }
+        return h;
     }
 
     /**
@@ -119,6 +136,7 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
                 continue;
             }
 
+
             // Original: Creeper werden gezuendet statt getroffen.
             if (e instanceof Creeper creeper) {
                 creeper.ignite();
@@ -144,6 +162,7 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
                 offset = e.getBbHeight();
 
             hits.add(new Vec3(e.getX(), eyeY - offset, e.getZ()));
+
         }
 
         return hits;
@@ -152,41 +171,42 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
     /** Original: {@code Library.isObstructed} - Sichtlinie zwischen Spule und Ziel. */
     private static boolean isObstructed(Level level, double x, double y, double z,
                                         double tx, double ty, double tz) {
-        BlockHitResult hit = level.clip(new ClipContext(
-                new Vec3(x, y, z), new Vec3(tx, ty, tz),
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
+        BlockHitResult hit = level.clip(com.hbm_m.platform.LevelHooks.clipContext(
+                new Vec3(x, y, z), new Vec3(tx, ty, tz), ClipContext.Fluid.NONE));
         return hit.getType() != HitResult.Type.MISS;
     }
 
-    public List<Vec3> getTargets() {
-        return targets;
-    }
-
-    /** Original serialize/deserialize: die Ziele gehen fuer die Blitze an den Client (RenderTesla). */
+    // The arcs are drawn by TeslaRenderer; 1.7.10 syncs the end points the same way. Stored
+    // relative to the coil origin so the renderer stays in block space.
     @Override
     protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
-        for (Vec3 v : targets) {
-            net.minecraft.nbt.CompoundTag t = new net.minecraft.nbt.CompoundTag();
-            t.putDouble("x", v.x);
-            t.putDouble("y", v.y);
-            t.putDouble("z", v.z);
-            list.add(t);
+        Vec3 origin = level == null ? Vec3.ZERO : com.hbm_m.compat.sable.SableCompat.toWorld(level,
+                worldPosition.getX() + 0.5D, worldPosition.getY() + ORIGIN_OFFSET_Y, worldPosition.getZ() + 0.5D);
+        tag.putInt("arcCount", targets.size());
+        for (int i = 0; i < targets.size(); i++) {
+            Vec3 t = targets.get(i).subtract(origin);
+            tag.putDouble("aX" + i, t.x);
+            tag.putDouble("aY" + i, t.y);
+            tag.putDouble("aZ" + i, t.z);
         }
-        tag.put("targets", list);
+
     }
 
     @Override
     protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         targets.clear();
-        net.minecraft.nbt.ListTag list = tag.getList("targets", net.minecraft.nbt.Tag.TAG_COMPOUND);
-        for (int i = 0; i < list.size(); i++) {
-            net.minecraft.nbt.CompoundTag t = list.getCompound(i);
-            targets.add(new Vec3(t.getDouble("x"), t.getDouble("y"), t.getDouble("z")));
+        int arcs = tag.getInt("arcCount");
+        for (int i = 0; i < arcs; i++) {
+            targets.add(new Vec3(tag.getDouble("aX" + i), tag.getDouble("aY" + i), tag.getDouble("aZ" + i)));
         }
     }
+
+    public List<Vec3> getTargets() {
+        return targets;
+    }
+
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
@@ -216,4 +236,5 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return com.hbm_m.platform.RenderBounds.INFINITE;
     }
+
 }

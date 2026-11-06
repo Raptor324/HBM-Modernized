@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.compat.itemtransformhelper;
 
 import com.hbm_m.lib.RefStrings;
@@ -8,12 +7,12 @@ import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
-//? if forge {
 import net.minecraftforge.client.model.BakedModelWrapper;
+
+//? if forge {
 import net.minecraftforge.fml.ModList;
 //?} else {
-/*import net.neoforged.neoforge.client.model.BakedModelWrapper;
-import net.neoforged.fml.ModList;
+/*import net.neoforged.fml.ModList;
 *///?}
 import org.jetbrains.annotations.Nullable;
 
@@ -21,6 +20,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Item Transform Helper wraps every {@link BakedModel} in a thin delegate that does not forward
@@ -29,6 +30,7 @@ import java.util.Map;
  * after baking (always, not only when ITH is loaded) so BEWLR display transforms behave the same
  * with or without the helper mod.
  */
+@OnlyIn(Dist.CLIENT)
 public final class ItemTransformHelperCompat {
 
     private static final String MOD_ID = "itemtransformhelper";
@@ -57,7 +59,7 @@ public final class ItemTransformHelperCompat {
     public static <K> void installDisplayTransformGuards(Map<K, BakedModel> models) {
         Map<K, BakedModel> replacements = new HashMap<>();
         for (Map.Entry<K, BakedModel> entry : models.entrySet()) {
-            if (!RefStrings.MODID.equals(com.hbm_m.platform.PlatformHooks.getModelId(entry.getKey()).getNamespace())) {
+            if (!RefStrings.MODID.equals(com.hbm_m.platform.LoaderHooks.getModelId(entry.getKey()).getNamespace())) {
                 continue;
             }
             BakedModel baked = entry.getValue();
@@ -143,6 +145,22 @@ public final class ItemTransformHelperCompat {
             return missile.getBewlrDisplayTransforms();
         }
         return meshDelegate.getTransforms();
+    }
+
+    /**
+     * Истина, если display-трансформ к PoseStack уже применит ПАЙПЛАЙН до {@code renderByItem}.
+     * Случай ITH (Item Transforms Helper): его обёртка {@code ItemModelFlexibleCamera} стоит НАД
+     * нашей {@link HbmItemDisplayWrapper} и НЕ переопределяет {@code applyTransform} — работает
+     * дефолтный, который применяет {@code getTransforms()} (форснутую трансформ ITH) в
+     * {@code handleCameraTransforms}. Наш гвард при этом не вызывается вовсе (он под ITH).
+     * Ручное применение display-трансформа в BEWLR в этом случае дублирует её — предмет
+     * рендерится с квадратом масштаба (0.16^2 в GUI, 0.1^2 в руке — «супер мелкий»).
+     */
+    public static boolean pipelineAppliesDisplayTransforms(@Nullable BakedModel displayModel) {
+        if (!isLoaded() || displayModel == null) {
+            return false;
+        }
+        return peelIthWrapper(displayModel) != displayModel;
     }
 
     @Nullable
@@ -330,4 +348,3 @@ public final class ItemTransformHelperCompat {
         }
     }
 }
-//?}

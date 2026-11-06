@@ -1,5 +1,7 @@
 package com.hbm_m.client.render;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
@@ -14,8 +16,8 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL32;
-import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL44;
+import org.lwjgl.opengl.GL45;
 import org.lwjgl.system.MemoryUtil;
 
 import com.hbm_m.client.render.shader.IrisBufferHelper;
@@ -49,14 +51,8 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
  * paths.
  */
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
-public final class IrisCompanionMesh implements IrisCompanionMeshResource {
+@OnlyIn(Dist.CLIENT)
+public final class IrisCompanionMesh {
 
     /**
      * Linker-resolved locations forced by Oculus {@code ProgramCreator} for every
@@ -68,11 +64,23 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
     private static final int IRIS_ATTRIB_TANGENT = 13;
 
     private final List<BakedQuad> quads;
+    private String debugName = "unknown";
     private int vaoId = -1;
     private int vboId = -1;
     private int eboId = -1;
     private int indexCount = 0;
     private int vertexCount = 0;
+    // VRAM accounting: store sizes captured at each
+    // allocation, so MeshRenderCache.irisCompanionVramBytes() can total the
+    // per-part companion footprint for the F3 breakdown without GL queries.
+    /** Companion VBO store bytes (set in ensureBuilt). */
+    private long vboStoreBytes = 0L;
+    /** Companion EBO store bytes (set in ensureBuilt). */
+    private long eboStoreBytes = 0L;
+    /** Lightmap VBO + staging stores (set in reallocateLightmapBuffers; includes the x4 ring on the persistent path). */
+    private long lightmapStoreBytes = 0L;
+    /** Base mesh indices (CPU copy of the EBO) - for GPU-bake instanced expansion. */
+    private int[] baseIndices;
     /**
      * GL attribute location of the per-vertex lightmap (UV2) within this VAO.
      * Set during {@link #ensureBuilt()}; -1 when the format does not contain a
@@ -88,6 +96,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      * precomputed trilinear weights ({@link #perVertexCornerWeights}).
      */
     private int uv2Location = -1;
+    private int colorLocation = -1;
     private boolean built = false;
     private boolean failed = false;
 
@@ -104,7 +113,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      */
     private final float[] objBbox = new float[6];
 
-    // Переиспользуемый массив для записи. Размер будем подгонять при необходимости.
+    // Reusable write array; grown on demand.
     private short[] lightmapTempArray = new short[0];
 
     /**
@@ -125,15 +134,20 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      * or if {@link #ensureBuilt} has not run yet.
      */
     private float[] perVertexCornerWeights;
+    private float[] weldedPositions;
     /**
      * GL buffer holding per-instance per-vertex UV2 values. Laid out as
      * {@code instanceSlots[maxInstanceSlots] × vertexCount × 2 × sizeof(USHORT)}
-     * = {@code 4 bytes} per vertex per instance.
+     * = {@code 4 bytes} per vertex per instance. On the persistent coherent
+     * path (GL 4.4+) the store is ring-sized — {@code LIGHTMAP_RING_DEPTH}
+     * generations × that layout — so each write pass lands in its own region
+     * (audit G1); the non-persistent fallback keeps a single generation.
      * <p>
      * Bound to {@link #uv2Location} in the VAO after the first
      * {@link #activatePerVertexLightmap()} call. Per-draw the caller rebinds
      * the UV2 attribute pointer with a new byte offset ({@code slotIndex *
-     * vertexCount * 4}) to select which instance's UV2 data is read.
+     * vertexCount * 4}, ring-scaled per generation on the persistent path) to
+     * select which instance's UV2 data is read.
      * <p>
      * Sized dynamically by {@link #ensureLightmapCapacity(int)}; {@code -1}
      * when not yet allocated.
@@ -153,8 +167,21 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
     private ShortBuffer lightmapShortView;
     /** True when {@link #lightmapMapped} is active and coherent. */
     private boolean lightmapPersistentMapped = false;
-    /** True when we wrote into the persistent mapped buffer this frame and need a barrier. */
+    /**
+     * True when we wrote into the persistent mapped buffer this frame. Kept as
+     * write-tracking state only (audit G2): a coherent persistent mapping needs
+     * no barrier for the GPU to see client writes, so the flag has no consumer
+     * on the persistent path anymore.
+     */
     private boolean lightmapPersistentDirty = false;
+    /**
+     * True once {@code glBufferStorage} has created an immutable store for
+     * {@link #lightmapVboId}. {@code glBufferData} is then illegal
+     * (GL_INVALID_OPERATION) even if the persistent map failed — updates must
+     * go through {@code glBufferSubData}/{@code glCopyBufferSubData}, which is
+     * legal thanks to GL_DYNAMIC_STORAGE_BIT.
+     */
+    private boolean lightmapImmutableStore = false;
 
     // Optional staging upload path (Embeddium-style): write into a persistently-mapped staging buffer,
     // then glCopyBufferSubData into lightmapVboId. Guarded by a fence so we never overwrite the
@@ -166,11 +193,54 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
     private long lightmapStagingFence = 0L; // GLsync handle stored as long by LWJGL
     private boolean lightmapStagingAvailable = false;
 
+    // ------------------------------------------------------------------------
+    // Ring generations for the persistent coherent lightmap store (audit G1).
+    // ------------------------------------------------------------------------
+    //
+    // A persistent COHERENT mapping makes client writes visible to vertex
+    // fetch immediately, so overwriting a slot while an in-flight draw still
+    // vertex-fetches those bytes tears the draw's lighting. A single store has
+    // that window on every rewrite: an LRU-evicted slot can be a frame or two
+    // old — inside typical driver queue latency (capacities run as low as
+    // 1–32 slots). The ring gives each write pass its own generation region:
+    // slot data for generation g lives at (g * capacity + slot) * 4 bytes per
+    // vertex, and per-generation fences gate the reuse of the oldest region.
+    //
+    // Depth 4 in WRITE-PASS units covers 2 frames when a mesh is written in
+    // both the shadow and the main pass, and up to 4 when only the main pass
+    // writes. Correctness does not depend on the depth — before overwriting
+    // any generation the fence poll below skips the write until the GPU has
+    // drained it (never stalling the render thread: zero-timeout poll only).
+    // Only the persistent path (GL 4.4+) uses the ring; the non-persistent
+    // fallback (CPU scratch / staging + its own fence) keeps single-store
+    // layout and behavior unchanged.
+    private static final int LIGHTMAP_RING_DEPTH = 4; // power of two
+    private static final int LIGHTMAP_RING_MASK = LIGHTMAP_RING_DEPTH - 1;
+    /** Generation (0..DEPTH-1) the current write phase targets. */
+    private int lightmapRingGen = LIGHTMAP_RING_DEPTH - 1;
+    /**
+     * Per-generation fence covering every draw that could still be reading
+     * that generation's region. Created lazily at reuse-check time (stream
+     * ordered after all prior submissions) and polled with a ZERO timeout —
+     * an unsignaled fence skips that pass's writes instead of stalling.
+     */
+    private final long[] lightmapRingFences = new long[LIGHTMAP_RING_DEPTH];
+    /**
+     * True when draws were bound to a generation's region since its fence was
+     * last armed — a fence must be (re)issued before that region is reused.
+     */
+    private final boolean[] lightmapRingFencePending = new boolean[LIGHTMAP_RING_DEPTH];
+    /** True between the first write of a pass and the pass's activate call. */
+    private boolean lightmapRingPhaseOpen = false;
+    /** Fence verdict for the current write phase: false skips all its writes. */
+    private boolean lightmapRingPhaseWritable = true;
+
     /**
      * Number of instance slots the current {@link #lightmapVboId} /
-     * {@link #lightmapCpuScratch} can hold. Grown (never shrunk) by
+     * {@link #lightmapCpuScratch} can hold. Grown by
      * {@link #ensureLightmapCapacity(int)} as the peak instance count per
-     * frame rises.
+     * frame rises, and decayed back toward the recent peak after a sustained
+     * lull ({@link #lightmapRecentPeakSlots}).
      */
     private int lightmapInstanceCapacity = 0;
 
@@ -204,11 +274,19 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      * Per-slot monotonic stamp of when it was last (re)allocated. Eviction
      * picks the OLDEST slot (true LRU) instead of a blind round-robin cursor,
      * so a slot still likely in GPU flight on the coherent persistent-mapped
-     * path is not reclaimed ahead of an older, long-idle one. (A full fix for
-     * the persistent-map write-hazard needs a per-frame fence; LRU minimises
-     * the collision window within the existing capacity.)
+     * path is not reclaimed ahead of an older, long-idle one. (The remaining
+     * cross-frame overwrite window on that path is closed by the ring + fence
+     * gates — see the ring fields above.)
      */
     private long[] lightmapSlotLastUsed = new long[0];
+    /**
+     * Ring generation a slot's current content was written in (persistent
+     * path only; sized to {@link #lightmapInstanceCapacity}). Draws must
+     * vertex-fetch a slot at {@code (gen * capacity + slot)} so a skipped
+     * (fence-gated) rewrite keeps serving the previous, still-coherent
+     * generation's data instead of torn bytes.
+     */
+    private int[] lightmapSlotGen = new int[0];
     private long lightmapSlotAllocCounter = 0L;
     /** Next slot to evict when capacity is full. */
     private int lightmapEvictCursor = 0;
@@ -290,6 +368,14 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         this.quads = quads;
     }
 
+    public String getDebugName() {
+        return debugName;
+    }
+
+    public void setDebugName(String debugName) {
+        this.debugName = (debugName != null && !debugName.isEmpty()) ? debugName : "unknown";
+    }
+
     /**
      * Attempts to build the companion mesh. Must be called on the render thread.
      * Returns {@code true} on success, {@code false} if a previous build failed
@@ -355,10 +441,10 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             // prepareForShader() can hand the linker-resolved locations a
             // pointer to real per-vertex data populated by Iris's
             // MixinBufferBuilder.iris$beforeNext (iris_Entity / mc_midTexCoord
-            // / at_tangent). Имена и порядок — из getElementAttributeNames() /
-            // getElements(); смещения накапливаем по getByteSize() (как раньше
-            // по entrySet getElementMapping), без getElementName/getOffset(Element),
-            // которых нет на 1.20.1 Forge.
+            // / at_tangent). Names and order come from getElementAttributeNames() /
+            // getElements(); offsets are accumulated via getByteSize() (as previously
+            // via entrySet getElementMapping), without getElementName/getOffset(Element),
+            // which do not exist on 1.20.1 Forge.
             elementOffsets.clear();
             elementByName.clear();
             
@@ -371,20 +457,61 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 VertexFormatElement el = elements.get(i);
                 elementOffsets.put(name, runningOffset);
                 elementByName.put(name, el);
+                var usage = RenderHooks.getUsage(el);
+                if (usage == VertexFormatElement.Usage.POSITION) {
+                    elementOffsets.put("position", runningOffset);
+                } else if (usage == VertexFormatElement.Usage.COLOR) {
+                    elementOffsets.put("color", runningOffset);
+                } else if (usage == VertexFormatElement.Usage.NORMAL) {
+                    elementOffsets.put("normal", runningOffset);
+                } else if (usage == VertexFormatElement.Usage.UV) {
+                    elementOffsets.put("uv" + RenderHooks.getIndex(el), runningOffset);
+                }
                 runningOffset += RenderHooks.getByteSize(el);
             }
             //?} else {
-            /*var elements = RenderHooks.getElements(actualFormat);
-            int runningOffset = 0;
+            /*// 1.21.1: the format has no getElementAttributeNames-compatible
+            // name list for Iris elements (ids are dynamic - hardcoded
+            // 11/12/13 no longer match), and paddings are NOT part of the elements
+            // (accumulation undercounted field offsets after a padding). Resolve
+            // names by usage+type, offsets natively from the format.
+            var elements = RenderHooks.getElements(actualFormat);
             for (int i = 0; i < elements.size(); i++) {
                 VertexFormatElement el = elements.get(i);
                 String name = "unknown_" + i;
-                if (el.id() == IRIS_ATTRIB_ENTITY) name = "iris_Entity";
-                else if (el.id() == IRIS_ATTRIB_MID_TEX) name = "mc_midTexCoord";
-                else if (el.id() == IRIS_ATTRIB_TANGENT) name = "at_tangent";
-                elementOffsets.put(name, runningOffset);
+                var usage = RenderHooks.getUsage(el);
+                int glType = RenderHooks.getGlType(el);
+                int off = RenderHooks.getElementOffset(actualFormat, el);
+                if (usage == VertexFormatElement.Usage.POSITION) {
+                    name = "position";
+                    elementOffsets.put("position", off);
+                } else if (usage == VertexFormatElement.Usage.COLOR) {
+                    name = "color";
+                    elementOffsets.put("color", off);
+                } else if (usage == VertexFormatElement.Usage.NORMAL) {
+                    name = "normal";
+                    elementOffsets.put("normal", off);
+                } else if (usage == VertexFormatElement.Usage.UV) {
+                    int uvIdx = RenderHooks.getIndex(el);
+                    if (uvIdx == 3) {
+                        name = "iris_Entity";
+                    } else {
+                        name = "uv" + uvIdx;
+                    }
+                    elementOffsets.put("uv" + uvIdx, off);
+                } else if (usage == VertexFormatElement.Usage.GENERIC
+                        && glType == org.lwjgl.opengl.GL11.GL_FLOAT) {
+                    name = "mc_midTexCoord";
+                } else if (usage == VertexFormatElement.Usage.GENERIC
+                        && glType == org.lwjgl.opengl.GL11.GL_BYTE
+                        && RenderHooks.getCount(el) == 4) {
+                    name = "at_tangent";
+                } else if (usage == VertexFormatElement.Usage.GENERIC
+                        && glType == org.lwjgl.opengl.GL11.GL_SHORT) {
+                    name = "mc_Entity";
+                }
+                elementOffsets.put(name, off);
                 elementByName.put(name, el);
-                runningOffset += RenderHooks.getByteSize(el);
             }
             *///?}
 
@@ -393,14 +520,114 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             if (vaoId == 0 || vboId == 0) {
                 throw new IllegalStateException("Failed to generate companion VAO/VBO");
             }
-
-            GlStateManager._glBindVertexArray(vaoId);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertexBytes, GL15.GL_STATIC_DRAW);
+            com.hbm_m.client.render.debug.GlDebugMarkers.labelVao(this.vaoId, "IrisComp_" + debugName + "_VAO");
+            com.hbm_m.client.render.debug.GlDebugMarkers.labelBuffer(this.vboId, "IrisComp_" + debugName + "_VBO");
 
             int stride = RenderHooks.getVertexSize(actualFormat);
+            int normalOff = elementOffsets.getOrDefault("normal", 32);
+            int rawVertCount = this.vertexCount;
+            int quadCount = rawVertCount / 4;
+            int tableSize = Integer.highestOneBit(Math.max(16, rawVertCount * 2) - 1) << 1;
+            int tableMask = tableSize - 1;
+            int[] hashTable = new int[tableSize];
+            java.util.Arrays.fill(hashTable, -1);
+            int[] vertRemap = new int[rawVertCount];
+            int[] uniqueRawIdx = new int[rawVertCount];
+            int uniqueCount = 0;
+            long srcBaseAddr = MemoryUtil.memAddress(vertexBytes);
+
+            for (int v = 0; v < rawVertCount; v++) {
+                long vAddr = srcBaseAddr + (long) v * stride;
+                // Hash Position (words 0..2), Color (word 3), UV0 (words 4..5), and Normal (3 bytes @ normalOff),
+                // ignoring the uninitialized padding byte and per-quad midTexCoord average so shared vertices
+                // across adjacent triangles weld together identically to PartGeometry.
+                int w0 = MemoryUtil.memGetInt(vAddr);
+                int w1 = MemoryUtil.memGetInt(vAddr + 4L);
+                int w2 = MemoryUtil.memGetInt(vAddr + 8L);
+                int w3 = MemoryUtil.memGetInt(vAddr + 12L);
+                int w4 = MemoryUtil.memGetInt(vAddr + 16L);
+                int w5 = MemoryUtil.memGetInt(vAddr + 20L);
+                int nxyz = MemoryUtil.memGetInt(vAddr + normalOff) & 0x00FFFFFF;
+
+                int h = w0 * 31 + w1;
+                h = h * 31 + w2;
+                h = h * 31 + w3;
+                h = h * 31 + w4;
+                h = h * 31 + w5;
+                h = h * 31 + nxyz;
+                h ^= (h >>> 16);
+
+                int slot = h & tableMask;
+                int found = -1;
+                while (true) {
+                    int cand = hashTable[slot];
+                    if (cand < 0) {
+                        found = uniqueCount++;
+                        uniqueRawIdx[found] = v;
+                        hashTable[slot] = found;
+                        break;
+                    }
+                    long candAddr = srcBaseAddr + (long) uniqueRawIdx[cand] * stride;
+                    if (MemoryUtil.memGetInt(candAddr) == w0
+                            && MemoryUtil.memGetInt(candAddr + 4L) == w1
+                            && MemoryUtil.memGetInt(candAddr + 8L) == w2
+                            && MemoryUtil.memGetInt(candAddr + 12L) == w3
+                            && MemoryUtil.memGetInt(candAddr + 16L) == w4
+                            && MemoryUtil.memGetInt(candAddr + 20L) == w5
+                            && (MemoryUtil.memGetInt(candAddr + normalOff) & 0x00FFFFFF) == nxyz) {
+                        found = cand;
+                        break;
+                    }
+                    slot = (slot + 1) & tableMask;
+                }
+                vertRemap[v] = found;
+            }
+
+            int[] tempIndices = new int[quadCount * 6];
+            int validIdxCount = 0;
+            for (int q = 0, base = 0; q < quadCount; q++, base += 4) {
+                int i0 = vertRemap[base];
+                int i1 = vertRemap[base + 1];
+                int i2 = vertRemap[base + 2];
+                int i3 = vertRemap[base + 3];
+                if (i0 != i1 && i1 != i2 && i2 != i0) {
+                    tempIndices[validIdxCount++] = i0;
+                    tempIndices[validIdxCount++] = i1;
+                    tempIndices[validIdxCount++] = i2;
+                }
+                if (i2 != i3 && i3 != i0 && i0 != i2) {
+                    tempIndices[validIdxCount++] = i2;
+                    tempIndices[validIdxCount++] = i3;
+                    tempIndices[validIdxCount++] = i0;
+                }
+            }
+            int[] indices = java.util.Arrays.copyOf(tempIndices, validIdxCount);
+            this.vertexCount = uniqueCount;
+            this.weldedPositions = new float[uniqueCount * 3];
+
+            ByteBuffer weldedBuf = MemoryUtil.memAlloc(uniqueCount * stride);
+            try {
+                long dstBaseAddr = MemoryUtil.memAddress(weldedBuf);
+                for (int u = 0; u < uniqueCount; u++) {
+                    long sAddr = srcBaseAddr + (long) uniqueRawIdx[u] * stride;
+                    MemoryUtil.memCopy(sAddr, dstBaseAddr + (long) u * stride, stride);
+                    this.weldedPositions[u * 3]     = MemoryUtil.memGetFloat(sAddr);
+                    this.weldedPositions[u * 3 + 1] = MemoryUtil.memGetFloat(sAddr + 4L);
+                    this.weldedPositions[u * 3 + 2] = MemoryUtil.memGetFloat(sAddr + 8L);
+                }
+                weldedBuf.position(0).limit(uniqueCount * stride);
+
+                GlStateManager._glBindVertexArray(vaoId);
+                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+                GL15.glBufferData(GL15.GL_ARRAY_BUFFER, weldedBuf, GL15.GL_STATIC_DRAW);
+                this.vboStoreBytes = weldedBuf.remaining();
+            } finally {
+                MemoryUtil.memFree(weldedBuf);
+            }
+
             int offset = 0;
             int detectedUv2Location = -1;
+            int detectedColorLocation = -1;
             // We only enable the SIX standard Mojang attributes (locations 0..5:
             // Position/Color/UV0/UV1/UV2/Normal). Iris's MixinShaderInstance
             // explicitly binds these names - prefixed with "iris_" - to those
@@ -455,6 +682,9 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 if (RenderHooks.getUsage(element) == VertexFormatElement.Usage.UV && RenderHooks.getIndex(element) == 2) {
                     detectedUv2Location = location;
                 }
+                if (RenderHooks.getUsage(element) == VertexFormatElement.Usage.COLOR) {
+                    detectedColorLocation = location;
+                }
                 offset += RenderHooks.getByteSize(element);
             }
 
@@ -468,23 +698,22 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 GL20.glDisableVertexAttribArray(detectedUv2Location);
             }
             this.uv2Location = detectedUv2Location;
-
-            // Build a triangulated index buffer matching our standard quad layout
-            // (0,1,2,2,3,0) so that we can reuse the companion mesh with raw glDrawElements.
-            int quadCount = vertexCount / 4;
-            int[] indices = new int[quadCount * 6];
-            for (int q = 0, idx = 0, base = 0; q < quadCount; q++, base += 4) {
-                indices[idx++] = base;
-                indices[idx++] = base + 1;
-                indices[idx++] = base + 2;
-                indices[idx++] = base + 2;
-                indices[idx++] = base + 3;
-                indices[idx++] = base;
+            // COLOR is disabled using the same pattern: putBulkData bakes (1,1,1,1) into vertices,
+            // while per-part tint (GunGL.color, used for cartridge casing coloring with grayscale
+            // casings.png) is injected as a constant per draw. Without this under shaderpacks,
+            // tint was lost and casings rendered completely white.
+            if (detectedColorLocation != -1) {
+                GL20.glDisableVertexAttribArray(detectedColorLocation);
             }
+            this.colorLocation = detectedColorLocation;
+
             this.eboId = GL15.glGenBuffers();
+            com.hbm_m.client.render.debug.GlDebugMarkers.labelBuffer(this.eboId, "IrisComp_" + debugName + "_EBO");
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, eboId);
             GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indices, GL15.GL_STATIC_DRAW);
             this.indexCount = indices.length;
+            this.eboStoreBytes = (long) indices.length * 4L;
+            this.baseIndices = indices;
 
             // Bake Iris extended attribs into the VAO while it is still bound.
             // Doing this at draw time races Embeddium/Iris rebinding VAO 0 and
@@ -502,7 +731,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 "IrisCompanionMesh: built {} quads, format stride {} bytes, {} attribute(s)",
                 quadCount, stride, elementCount);
             return true;
-        } catch (Throwable t) {
+        } catch (Exception t) {
             MainRegistry.LOGGER.warn("IrisCompanionMesh: build failed ({}); will fall back to vanilla path",
                 t.getMessage());
             failed = true;
@@ -587,61 +816,69 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
 
         objBbox[0] = minX; objBbox[1] = minY; objBbox[2] = minZ;
         objBbox[3] = maxX; objBbox[4] = maxY; objBbox[5] = maxZ;
+        // perVertexCornerWeights is computed lazily in ensurePerVertexWeights() only
+        // if a Tier-2/3 fallback path actually calls writeInstanceLightmap().
+    }
 
-        // Precompute size with a tiny floor so thin/flat parts don't produce
-        // NaN weights. 1e-4 (100 microns) is far below the lightmap's 1-block
-        // granularity and invisible in the interpolated result.
+    private float[] ensurePerVertexWeights() {
+        if (perVertexCornerWeights != null) {
+            return perVertexCornerWeights;
+        }
+        if (quads == null || vertexCount <= 0) {
+            return null;
+        }
+        float minX = objBbox[0], minY = objBbox[1], minZ = objBbox[2];
+        float maxX = objBbox[3], maxY = objBbox[4], maxZ = objBbox[5];
         float sx = Math.max(maxX - minX, 1e-4f);
         float sy = Math.max(maxY - minY, 1e-4f);
         float sz = Math.max(maxZ - minZ, 1e-4f);
         float invSx = 1f / sx, invSy = 1f / sy, invSz = 1f / sz;
 
-        perVertexCornerWeights = new float[provisionalVertexCount * 8];
-        int wBase = 0;
-        for (BakedQuad quad : quads) {
-            int[] raw = quad.getVertices();
-            if (raw == null || raw.length < 32) continue;
-            for (int i = 0; i < 4; i++) {
-                int base = i * 8;
-                float x = Float.intBitsToFloat(raw[base + 0]);
-                float y = Float.intBitsToFloat(raw[base + 1]);
-                float z = Float.intBitsToFloat(raw[base + 2]);
+        float[] weights = new float[vertexCount * 8];
+        float[] posArr = this.weldedPositions;
+        if (posArr != null && posArr.length >= vertexCount * 3) {
+            for (int v = 0; v < vertexCount; v++) {
+                int wBase = v * 8;
+                float x = posArr[v * 3];
+                float y = posArr[v * 3 + 1];
+                float z = posArr[v * 3 + 2];
                 float wx = Math.max(0f, Math.min(1f, (x - minX) * invSx));
                 float wy = Math.max(0f, Math.min(1f, (y - minY) * invSy));
                 float wz = Math.max(0f, Math.min(1f, (z - minZ) * invSz));
                 float oneMinusWx = 1f - wx, oneMinusWy = 1f - wy, oneMinusWz = 1f - wz;
 
-                // Corner index encoding: bit 0=x, bit 1=y, bit 2=z; set → max side.
-                // Unrolled + factored to minimise multiplies (8 muls instead of 24).
                 float axy0 = oneMinusWx * oneMinusWy;
                 float axy1 = wx * oneMinusWy;
                 float axy2 = oneMinusWx * wy;
                 float axy3 = wx * wy;
-                perVertexCornerWeights[wBase + 0] = axy0 * oneMinusWz;
-                perVertexCornerWeights[wBase + 1] = axy1 * oneMinusWz;
-                perVertexCornerWeights[wBase + 2] = axy2 * oneMinusWz;
-                perVertexCornerWeights[wBase + 3] = axy3 * oneMinusWz;
-                perVertexCornerWeights[wBase + 4] = axy0 * wz;
-                perVertexCornerWeights[wBase + 5] = axy1 * wz;
-                perVertexCornerWeights[wBase + 6] = axy2 * wz;
-                perVertexCornerWeights[wBase + 7] = axy3 * wz;
-                wBase += 8;
+                weights[wBase + 0] = axy0 * oneMinusWz;
+                weights[wBase + 1] = axy1 * oneMinusWz;
+                weights[wBase + 2] = axy2 * oneMinusWz;
+                weights[wBase + 3] = axy3 * oneMinusWz;
+                weights[wBase + 4] = axy0 * wz;
+                weights[wBase + 5] = axy1 * wz;
+                weights[wBase + 6] = axy2 * wz;
+                weights[wBase + 7] = axy3 * wz;
             }
         }
+        perVertexCornerWeights = weights;
+        return weights;
     }
 
     /**
      * @return {@code true} if per-vertex trilinear lighting is available for
-     *         this mesh (weights precomputed + UV2 attribute location known).
+     *         this mesh (UV2 attribute location known and vertices present).
      */
     public boolean supportsPerVertexLightmap() {
-        return built && uv2Location != -1 && perVertexCornerWeights != null && vertexCount > 0;
+        return built && uv2Location != -1 && vertexCount > 0 && quads != null && !quads.isEmpty();
     }
 
     /**
      * Ensures the auxiliary lightmap VBO + CPU scratch can hold at least
-     * {@code requiredInstances} concurrent instance slots. Grows (never
-     * shrinks) to the next power-of-two. No-op if already large enough.
+     * {@code requiredInstances} concurrent instance slots. Grows to the next
+     * power-of-two; after a sustained lull the capacity decays back to the
+     * next power-of-two of the recent peak. No-op if
+     * already large enough.
      * <p>
      * Each slot holds {@code vertexCount} pairs of 16-bit lightmap values
      * (blockU, skyV) → {@code vertexCount * 4 bytes}. For a 2000-vertex part
@@ -653,7 +890,15 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      */
     public void ensureLightmapCapacity(int requiredInstances) {
         if (!supportsPerVertexLightmap()) return;
-        if (requiredInstances <= lightmapInstanceCapacity) return;
+        if (requiredInstances <= lightmapInstanceCapacity) {
+            // Demand fits: track it and let the watermark decay after a
+            // sustained lull. Triggering the shrink HERE (the demand site)
+            // keeps it at the same point in the frame as growth: the realloc
+            // clears perVertexLightmapActive, so the next
+            // activatePerVertexLightmap() rebinds the UV2 pointer safely.
+            noteLightmapDemand(requiredInstances);
+            return;
+        }
 
         // Grow geometrically so repeated small increments don't thrash the
         // driver's buffer allocator. The VRAM cost of over-allocating is tiny
@@ -661,57 +906,107 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         // machine part is under a few hundred instances anyway.
         int newCapacity = Math.max(8, lightmapInstanceCapacity);
         while (newCapacity < requiredInstances) newCapacity <<= 1;
+        reallocateLightmapBuffers(newCapacity);
+        // Growth restarts the watermark tracking against the new capacity.
+        lightmapRecentPeakSlots = 0;
+        lightmapLowDemandFrames = 0;
+    }
 
+    /**
+     * Watermark decay: without it the lightmap VBO
+     * stays at the all-time peak instance count until teardown, even after
+     * the machines that produced the peak have despawned. Growth resets both
+     * trackers; while demand fits, {@link #noteLightmapDemand} tracks the
+     * recent peak and counts consecutive low-demand frames.
+     */
+    private static final int LIGHTMAP_SHRINK_AFTER_FRAMES = 600;
+    /** Highest {@code ensureLightmapCapacity} demand since the last (re)alloc, in slots. */
+    private int lightmapRecentPeakSlots = 0;
+    /** Consecutive low-demand frames (recent peak at most a quarter of capacity). */
+    private int lightmapLowDemandFrames = 0;
+
+    /**
+     * Records a fitting demand observation and, after a sustained lull,
+     * shrinks the buffer through the SAME realloc path as growth (unmap →
+     * delete → recreate at the next power-of-two of the recent peak). The
+     * hysteresis gate - the recent peak must sit at most a quarter of the
+     * capacity - means the buffer only ever shrinks to a quarter of its
+     * current size, so demand oscillating near the old peak can never
+     * flip-flop the reallocation. The window is counted in frames, not
+     * seconds: tick-independent.
+     */
+    private void noteLightmapDemand(int requiredInstances) {
+        if (requiredInstances <= 0) {
+            // Idle observation (zero demand - a baker-owned mesh that no longer
+            // reaches the legacy path). Keep the same decay counter and, after a
+            // sustained lull, free the lightmap buffers entirely: a shrunken
+            // buffer would still hold VRAM for a mesh that never draws through
+            // this path. Re-growth after release is the normal
+            // ensureLightmapCapacity route (min 8 slots).
+            if (lightmapInstanceCapacity <= 0) return;
+            if (++lightmapLowDemandFrames < LIGHTMAP_SHRINK_AFTER_FRAMES) return;
+            releaseLightmapBuffers();
+            lightmapRecentPeakSlots = 0;
+            lightmapLowDemandFrames = 0;
+            return;
+        }
+        if (requiredInstances > lightmapRecentPeakSlots) {
+            lightmapRecentPeakSlots = requiredInstances;
+            lightmapLowDemandFrames = 0;
+            return;
+        }
+        if (lightmapRecentPeakSlots * 4 > lightmapInstanceCapacity) {
+            // Still near the recent peak - no decay window.
+            lightmapLowDemandFrames = 0;
+            return;
+        }
+        if (++lightmapLowDemandFrames < LIGHTMAP_SHRINK_AFTER_FRAMES) return;
+        int newCapacity = 8;
+        while (newCapacity < lightmapRecentPeakSlots) newCapacity <<= 1;
+        reallocateLightmapBuffers(newCapacity);
+        lightmapRecentPeakSlots = 0;
+        lightmapLowDemandFrames = 0;
+    }
+
+    /**
+     * Called by {@code NucleusGpuBaker.bakeEntry} after a successful MODE_MAIN
+     * bake of this mesh. {@code flushBatchIris} returns right after the bake,
+     * so the legacy {@link #ensureLightmapCapacity} path is bypassed - without
+     * this hook the lightmap ring allocated by an earlier legacy fallback
+     * would stay at its peak size until teardown (its low-demand counter would
+     * freeze). Counts the same {@link #LIGHTMAP_SHRINK_AFTER_FRAMES} decay
+     * window; frames that DO fall back to the legacy path observe real demand
+     * and reset the counter as before. Renderers mixing single draws
+     * ({@code drawSingleWithIrisExtended}) with bakes keep re-arming the
+     * counter through those singles - harmless, the release just never fires
+     * for genuinely mixed meshes.
+     */
+    public void noteBakeSuccess() {
+        if (!supportsPerVertexLightmap()) return;
+        noteLightmapDemand(0);
+    }
+
+    /**
+     * (Re)creates the lightmap VBO at {@code newCapacity} slots: unmap →
+     * delete → recreate, resetting the slot allocator and dirty tracking to
+     * match. The old buffers are explicitly unmapped before deletion
+     * (glDeleteBuffers on a persistently-mapped buffer is UB on Mesa/Intel),
+     * the fence is deleted, and the CPU scratch freed - leak-free per the
+     * audit.
+     */
+    private void reallocateLightmapBuffers(int newCapacity) {
         int perSlotBytes = vertexCount * 4;
         int totalBytes = newCapacity * perSlotBytes;
+        // Persistent coherent store holds LIGHTMAP_RING_DEPTH generations of
+        // the slot array (audit G1); the CPU scratch and the staging buffer
+        // stay single-generation — only the mapped path is ring-layout.
+        int ringTotalBytes = LIGHTMAP_RING_DEPTH * totalBytes;
 
-        // 1. Сначала явно снимаем persistent-mapping, потом удаляем буфер.
-        // glDeleteBuffers на persistently-mapped буфере — UB на Mesa/Intel и
-        // утечка mapping'а на ряде других драйверов.
-        if (lightmapMapped != null && lightmapVboId != -1) {
-            try {
-                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboId);
-                GL15.glUnmapBuffer(GL15.GL_ARRAY_BUFFER);
-            } catch (Throwable ignored) {}
-        }
-        if (lightmapStagingMapped != null && lightmapStagingVboId != -1) {
-            try {
-                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapStagingVboId);
-                GL15.glUnmapBuffer(GL15.GL_ARRAY_BUFFER);
-            } catch (Throwable ignored) {}
-        }
-        if (lightmapVboId != -1) {
-            GL15.glDeleteBuffers(lightmapVboId);
-            lightmapVboId = -1;
-        }
-        if (lightmapStagingVboId != -1) {
-            GL15.glDeleteBuffers(lightmapStagingVboId);
-            lightmapStagingVboId = -1;
-        }
-        if (lightmapStagingFence != 0L) {
-            try {
-                GL32.glDeleteSync(lightmapStagingFence);
-            } catch (Throwable ignored) {}
-            lightmapStagingFence = 0L;
-        }
+        destroyLightmapBuffers();
 
-        // 2. Очищаем все ссылки на старую память
-        lightmapMapped = null;
-        lightmapPersistentMapped = false;
-        lightmapPersistentDirty = false;
-        lightmapShortView = null;
-
-        lightmapStagingMapped = null;
-        lightmapStagingShortView = null;
-        lightmapStagingAvailable = false;
-
-        if (lightmapCpuScratch != null) {
-            MemoryUtil.memFree(lightmapCpuScratch);
-            lightmapCpuScratch = null;
-        }
-
-        // 3. Генерируем абсолютно новый VBO
+        // 3. Generate a completely new VBO
         lightmapVboId = GL15.glGenBuffers();
+        com.hbm_m.client.render.debug.GlDebugMarkers.labelBuffer(lightmapVboId, "IrisComp_" + debugName + "_Lightmap_VBO");
         if (lightmapVboId == 0) {
             lightmapVboId = -1;
             MainRegistry.LOGGER.warn("IrisCompanionMesh: failed to allocate lightmap VBO; falling back to constant UV2");
@@ -722,7 +1017,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         try {
             var caps = GL.getCapabilities();
             canPersistentMap = caps != null && (caps.OpenGL44 || caps.GL_ARB_buffer_storage);
-        } catch (Throwable ignored) {
+        } catch (Exception ignored) {
             canPersistentMap = false;
         }
 
@@ -734,20 +1029,25 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 try {
                     int storageFlags = GL44.GL_MAP_WRITE_BIT | GL44.GL_MAP_PERSISTENT_BIT
                             | GL44.GL_MAP_COHERENT_BIT | GL44.GL_DYNAMIC_STORAGE_BIT;
-                    if (GL.getCapabilities().OpenGL44) {
-                        GL44.glBufferStorage(GL15.GL_ARRAY_BUFFER, (long) totalBytes, storageFlags);
-                    } else {
-                        // ARB_buffer_storage path (same entrypoint in LWJGL)
-                        GL44.glBufferStorage(GL15.GL_ARRAY_BUFFER, (long) totalBytes, storageFlags);
-                    }
+                    // Single entrypoint: caps.OpenGL44 and GL_ARB_buffer_storage expose the
+                    // identical LWJGL function, so no branch is needed here.
+                    GL44.glBufferStorage(GL15.GL_ARRAY_BUFFER, (long) ringTotalBytes, storageFlags);
+                    // The store is immutable from here on: a later glBufferData would raise
+                    // GL_INVALID_OPERATION, so the fallback below must skip it.
+                    lightmapImmutableStore = true;
                     int mapFlags = GL44.GL_MAP_WRITE_BIT | GL44.GL_MAP_PERSISTENT_BIT | GL44.GL_MAP_COHERENT_BIT;
-                    lightmapMapped = GL30.glMapBufferRange(GL15.GL_ARRAY_BUFFER, 0L, (long) totalBytes, mapFlags, lightmapMapped);
+                    lightmapMapped = GL30.glMapBufferRange(GL15.GL_ARRAY_BUFFER, 0L, (long) ringTotalBytes, mapFlags, lightmapMapped);
                     if (lightmapMapped != null) {
                         lightmapMapped.order(ByteOrder.nativeOrder());
+                        // Define the whole store up front (glBufferStorage content is
+                        // undefined): a ring-frozen pass can draw a never-written
+                        // slot for one pass, and (0,0) UV2 — dark — beats garbage.
+                        // One memset per (re)alloc, never per frame.
+                        MemoryUtil.memSet(MemoryUtil.memAddress(lightmapMapped), 0, (long) lightmapMapped.capacity());
                         lightmapShortView = lightmapMapped.asShortBuffer();
                         lightmapPersistentMapped = true;
                     }
-                } catch (Throwable t) {
+                } catch (Exception t) {
                     // Fall back below.
                     lightmapMapped = null;
                     lightmapShortView = null;
@@ -757,10 +1057,16 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             }
 
             if (!lightmapPersistentMapped) {
-                // Fallback: allocate CPU scratch and a classic DYNAMIC buffer.
+                // Fallback: allocate CPU scratch and a classic DYNAMIC buffer. If the
+                // immutable store above already exists (glBufferStorage succeeded but the
+                // map failed) glBufferData is GL_INVALID_OPERATION — the store is already
+                // allocated, so keep it; every used slot is (re)uploaded below via
+                // glBufferSubData, which is legal thanks to GL_DYNAMIC_STORAGE_BIT.
                 lightmapCpuScratch = MemoryUtil.memAlloc(totalBytes).order(ByteOrder.nativeOrder());
                 lightmapShortView = lightmapCpuScratch.asShortBuffer();
-                GL15.glBufferData(GL15.GL_ARRAY_BUFFER, (long) totalBytes, GL15.GL_DYNAMIC_DRAW);
+                if (!lightmapImmutableStore) {
+                    GL15.glBufferData(GL15.GL_ARRAY_BUFFER, (long) totalBytes, GL15.GL_DYNAMIC_DRAW);
+                }
             }
         } finally {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
@@ -772,6 +1078,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         if (!lightmapPersistentMapped && canPersistentMap) {
             try {
                 lightmapStagingVboId = GL15.glGenBuffers();
+                com.hbm_m.client.render.debug.GlDebugMarkers.labelBuffer(lightmapStagingVboId, "IrisComp_" + debugName + "_LightmapStaging_VBO");
                 if (lightmapStagingVboId != 0) {
                     GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapStagingVboId);
                     int storageFlags = GL44.GL_MAP_WRITE_BIT | GL44.GL_MAP_PERSISTENT_BIT
@@ -786,13 +1093,13 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                         lightmapStagingAvailable = true;
                     }
                 }
-            } catch (Throwable t) {
+            } catch (Exception t) {
                 // If staging allocation fails, just keep the normal fallback path.
                 lightmapStagingMapped = null;
                 lightmapStagingShortView = null;
                 lightmapStagingAvailable = false;
                 if (lightmapStagingVboId != -1) {
-                    try { GL15.glDeleteBuffers(lightmapStagingVboId); } catch (Throwable ignored) {}
+                    try { GL15.glDeleteBuffers(lightmapStagingVboId); } catch (Exception ignored) {}
                 }
                 lightmapStagingVboId = -1;
             } finally {
@@ -803,11 +1110,22 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                     // unbind copy targets instead (safe and fast).
                     GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, 0);
                     GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, 0);
-                } catch (Throwable ignored) {}
+                } catch (Exception ignored) {}
             }
         }
 
         lightmapInstanceCapacity = newCapacity;
+        // VRAM accounting: the persistent/immutable store holds the ring layout
+        // (DEPTH x capacity) even when the map failed; the plain fallback holds
+        // a single generation; staging is single-generation when present.
+        lightmapStoreBytes = 0L;
+        if (lightmapVboId != -1) {
+            lightmapStoreBytes = (lightmapPersistentMapped || lightmapImmutableStore)
+                    ? ringTotalBytes : totalBytes;
+        }
+        if (lightmapStagingVboId != -1) {
+            lightmapStoreBytes += totalBytes;
+        }
         // Re-binding the UV2 pointer against the freshly re-sized VBO is the
         // caller's responsibility on the next activatePerVertexLightmap().
         // Invalidate our cached "active" state so the next activate call
@@ -819,17 +1137,152 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         lightmapKeyToSlot.clear();
         lightmapSlotKey = new long[newCapacity];
         lightmapSlotLastUsed = new long[newCapacity];
+        lightmapSlotGen = new int[newCapacity];
         lightmapSlotAllocCounter = 0L;
         lightmapEvictCursor = 0;
         lightmapDirtyMinSlot = Integer.MAX_VALUE;
         lightmapDirtyMaxSlot = -1;
+
+        // Reset the ring (audit G1): drop outstanding generation fences and
+        // rewind so the first write phase lands in generation 0. A fresh
+        // buffer has no in-flight readers, so the initial state is fence-free
+        // and immediately writable.
+        for (int i = 0; i < LIGHTMAP_RING_DEPTH; i++) {
+            if (lightmapRingFences[i] != 0L) {
+                try {
+                    GL32.glDeleteSync(lightmapRingFences[i]);
+                } catch (Exception ignored) {}
+                lightmapRingFences[i] = 0L;
+            }
+            lightmapRingFencePending[i] = false;
+        }
+        lightmapRingGen = LIGHTMAP_RING_DEPTH - 1;
+        lightmapRingPhaseOpen = false;
+        lightmapRingPhaseWritable = true;
+    }
+
+    /**
+     * Unmap + delete the lightmap VBO/staging pair and free the CPU scratch
+     * (the tear-down half of {@link #reallocateLightmapBuffers}, shared with
+     * {@link #releaseLightmapBuffers}). glDeleteBuffers on a
+     * persistently-mapped buffer is UB on Mesa/Intel, so the mappings are
+     * removed first.
+     */
+    private void destroyLightmapBuffers() {
+        if (lightmapMapped != null && lightmapVboId != -1) {
+            try {
+                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboId);
+                GL15.glUnmapBuffer(GL15.GL_ARRAY_BUFFER);
+            } catch (Exception ignored) {}
+        }
+        if (lightmapStagingMapped != null && lightmapStagingVboId != -1) {
+            try {
+                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapStagingVboId);
+                GL15.glUnmapBuffer(GL15.GL_ARRAY_BUFFER);
+            } catch (Exception ignored) {}
+        }
+        if (lightmapVboId != -1) {
+            GL15.glDeleteBuffers(lightmapVboId);
+            lightmapVboId = -1;
+        }
+        if (lightmapStagingVboId != -1) {
+            GL15.glDeleteBuffers(lightmapStagingVboId);
+            lightmapStagingVboId = -1;
+        }
+        if (lightmapStagingFence != 0L) {
+            try {
+                GL32.glDeleteSync(lightmapStagingFence);
+            } catch (Exception ignored) {}
+            lightmapStagingFence = 0L;
+        }
+
+        // Clear all references to the old memory
+        lightmapMapped = null;
+        lightmapPersistentMapped = false;
+        lightmapPersistentDirty = false;
+        lightmapImmutableStore = false;
+        lightmapShortView = null;
+
+        lightmapStagingMapped = null;
+        lightmapStagingShortView = null;
+        lightmapStagingAvailable = false;
+
+        if (lightmapCpuScratch != null) {
+            MemoryUtil.memFree(lightmapCpuScratch);
+            lightmapCpuScratch = null;
+        }
+    }
+
+    /**
+     * Idle release: frees the lightmap ring entirely (unlike the shrink path,
+     * which always re-creates at >= 8 slots). Called from
+     * {@link #noteLightmapDemand} after {@link #LIGHTMAP_SHRINK_AFTER_FRAMES}
+     * consecutive zero-demand frames - a mesh owned by NucleusGpuBaker that
+     * never falls back to the legacy path should not pin VRAM at its old peak.
+     * All per-slot tracking is reset to the empty state; the next legacy
+     * demand re-grows through the normal {@link #ensureLightmapCapacity}
+     * route. VRAM accounting drops to zero with the buffers.
+     */
+    private void releaseLightmapBuffers() {
+        destroyLightmapBuffers();
+        lightmapInstanceCapacity = 0;
+        lightmapStoreBytes = 0L;
+        perVertexLightmapActive = false;
+        lightmapCurrentSlot = -1;
+        // Reset slot allocator + dirty tracking to the empty state (same fields
+        // reallocateLightmapBuffers resets for its new capacity).
+        lightmapKeyToSlot.clear();
+        lightmapSlotKey = new long[0];
+        lightmapSlotLastUsed = new long[0];
+        lightmapSlotGen = new int[0];
+        lightmapSlotAllocCounter = 0L;
+        lightmapEvictCursor = 0;
+        lightmapDirtyMinSlot = Integer.MAX_VALUE;
+        lightmapDirtyMaxSlot = -1;
+        // Drop outstanding ring fences and rewind so the first write phase after
+        // a re-growth lands in generation 0 (same reasoning as the realloc tail).
+        for (int i = 0; i < LIGHTMAP_RING_DEPTH; i++) {
+            if (lightmapRingFences[i] != 0L) {
+                try {
+                    GL32.glDeleteSync(lightmapRingFences[i]);
+                } catch (Exception ignored) {}
+                lightmapRingFences[i] = 0L;
+            }
+            lightmapRingFencePending[i] = false;
+        }
+        lightmapRingGen = LIGHTMAP_RING_DEPTH - 1;
+        lightmapRingPhaseOpen = false;
+        lightmapRingPhaseWritable = true;
     }
 
     /**
      * Allocates or reuses a slot for the given lightmap key.
+     * <p>
+     * Ring gate (audit G1): when this pass's ring generation is frozen (the
+     * generation fence has not signaled yet), a fresh allocation is returned
+     * <b>unregistered</b> — bit 32 clear but the key is NOT stored. Callers
+     * must treat the subsequent {@link #writeInstanceLightmap} as best-effort
+     * (it is skipped internally) and re-request the key on a later pass; the
+     * draw itself reads the slot's previous, still-coherent content.
      *
      * @return packed long: low 32 bits = slot, bit 32 = reused flag (1 means slot already contained key).
      */
+    /** FNV-1a offset basis of the per-vertex lightmap key. */
+    public static final long LIGHT_KEY_FNV_OFFSET = 1469598103934665603L;
+    /** FNV-1a prime of the per-vertex lightmap key. */
+    public static final long LIGHT_KEY_FNV_PRIME = 1099511628211L;
+
+    /**
+     * One FNV-1a combine step of the per-vertex lightmap key. Callers quantize
+     * corner-light values into 16-bit words (their staging formats differ:
+     * packed-u8 words in the instance buffer vs raw 0..240 floats) and feed
+     * them here in order - the quantization stays caller-side, the hashing
+     * contract is shared with {@link #allocLightmapSlot}.
+     */
+    public static long lightKeyStep(long key, int quantized) {
+        return (key ^ (quantized & 0xFFFFL)) * LIGHT_KEY_FNV_PRIME;
+    }
+
     public long allocLightmapSlot(long key) {
         if (!supportsPerVertexLightmap()) return 0L;
         if (key == 0L) key = 1L;
@@ -845,6 +1298,20 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         // cursor wrapped) clobbered a region the GPU may still be reading on the
         // coherent persistent-mapped path.
         slot = pickLruLightmapSlot();
+        // Registering key->slot BEFORE the write lands is only safe when this
+        // pass's ring generation is writable: the key-cached callers skip the
+        // write whenever alloc reports the slot as reused, so a registration
+        // made in a frozen (fence-unsignaled) pass would strand the key —
+        // every later pass would see reused=true, never retry the write, and
+        // the draw would vertex-fetch stale/undefined bytes indefinitely.
+        // Return the slot UNREGISTERED instead: the old key stays mapped and
+        // consistent with the content this pass's draw reads, and the new key
+        // is re-allocated (write retried) next pass. Deliberately no
+        // touchLightmapSlot here — keeping this slot the oldest-stamped one
+        // makes the retry land on the same slot.
+        if (lightmapPersistentMapped && !beginLightmapWritePhase()) {
+            return (slot & 0xFFFF_FFFFL);
+        }
         long oldKey = (slot < lightmapSlotKey.length) ? lightmapSlotKey[slot] : 0L;
         if (oldKey != 0L) {
             lightmapKeyToSlot.remove(oldKey);
@@ -857,6 +1324,9 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             long[] grownUsed = new long[newLen];
             System.arraycopy(lightmapSlotLastUsed, 0, grownUsed, 0, lightmapSlotLastUsed.length);
             lightmapSlotLastUsed = grownUsed;
+            int[] grownGen = new int[newLen];
+            System.arraycopy(lightmapSlotGen, 0, grownGen, 0, lightmapSlotGen.length);
+            lightmapSlotGen = grownGen;
         }
         lightmapSlotKey[slot] = key;
         lightmapKeyToSlot.put(key, slot);
@@ -910,6 +1380,89 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         return (int) (allocLightmapSlot(key) & 0xFFFF_FFFFL);
     }
 
+    // ------------------------------------------------------------------------
+    // Ring generation management (audit G1) — persistent coherent path only.
+    // ------------------------------------------------------------------------
+
+    /**
+     * Byte offset of a slot's UV2 data inside {@link #lightmapVboId}: plain
+     * {@code slot * vertexCount * 4} on the single-store fallback path, ring
+     * generation-scaled on the persistent coherent path so reads land exactly
+     * where the slot's content was written. Shared by
+     * {@link #activatePerVertexLightmap} and {@link #bindLightmapForInstance}.
+     */
+    private long lightmapSlotByteOffset(int slot) {
+        long perSlotBytes = (long) vertexCount * 4L;
+        if (lightmapPersistentMapped) {
+            int gen = (slot < lightmapSlotGen.length) ? lightmapSlotGen[slot] : 0;
+            return ((long) gen * lightmapInstanceCapacity + slot) * perSlotBytes;
+        }
+        return slot * perSlotBytes;
+    }
+
+    /**
+     * Opens the per-pass ring write phase on the persistent path: the first
+     * write after the previous pass's {@link #activatePerVertexLightmap()}
+     * advances to the next ring generation and checks (zero-timeout fence
+     * poll — never stalls the render thread) that the GPU has drained every
+     * draw that could still be reading the region about to be overwritten.
+     *
+     * @return {@code false} when the previous generation's draws have not
+     *         completed yet: the caller must skip its writes this pass. The
+     *         draws then keep vertex-fetching the previous generation's
+     *         coherent (if stale) content — one pass of stale light instead
+     *         of torn bytes, retried next pass.
+     */
+    private boolean beginLightmapWritePhase() {
+        if (lightmapRingPhaseOpen) return lightmapRingPhaseWritable;
+        lightmapRingPhaseOpen = true;
+        lightmapRingGen = (lightmapRingGen + 1) & LIGHTMAP_RING_MASK;
+        lightmapRingPhaseWritable = lightmapRingGenerationReady(lightmapRingGen);
+        return lightmapRingPhaseWritable;
+    }
+
+    /**
+     * Verifies the given ring generation is safe to overwrite. Draws reading
+     * it were all submitted in earlier passes (the render thread is strictly
+     * sequential), so a fence issued HERE is stream-ordered after every one
+     * of them. The fence is (re)armed whenever readers appeared since the
+     * last check — a signaled old fence says nothing about newer draws — and
+     * polled with a zero timeout: GL_TIMEOUT_EXPIRED keeps the generation
+     * frozen; any other result (signaled, or a driver hiccup — same policy
+     * as the staging fence) frees it.
+     */
+    private boolean lightmapRingGenerationReady(int gen) {
+        if (lightmapRingFencePending[gen]) {
+            if (lightmapRingFences[gen] != 0L) {
+                try {
+                    GL32.glDeleteSync(lightmapRingFences[gen]);
+                } catch (Exception ignored) {}
+            }
+            lightmapRingFences[gen] = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+            lightmapRingFencePending[gen] = false;
+        }
+        long fence = lightmapRingFences[gen];
+        if (fence == 0L) return true; // never drawn from — nothing in flight
+        int wait = GL32.glClientWaitSync(fence, 0, 0L);
+        if (wait == GL32.GL_TIMEOUT_EXPIRED) return false;
+        try {
+            GL32.glDeleteSync(fence);
+        } catch (Exception ignored) {}
+        lightmapRingFences[gen] = 0L;
+        return true;
+    }
+
+    /**
+     * Records that draws are about to vertex-fetch {@code slot}'s region, so
+     * its generation gets a fence before the ring reuses it. Called wherever
+     * the VAO's UV2 pointer is (re)pointed at a slot.
+     */
+    private void markRingGenerationRead(int slot) {
+        if (!lightmapPersistentMapped) return;
+        if (slot < 0 || slot >= lightmapSlotGen.length) return;
+        lightmapRingFencePending[lightmapSlotGen[slot] & LIGHTMAP_RING_MASK] = true;
+    }
+
     /** Marks a slot as dirty for the fallback upload path. */
     private void markSlotDirty(int slot) {
         if (lightmapPersistentMapped) {
@@ -927,14 +1480,15 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
     public void uploadDirtySlotsIfNeeded() {
         if (!supportsPerVertexLightmap()) return;
         if (lightmapPersistentMapped) {
-            // Make client writes visible to subsequent vertex fetches.
+            // A coherent persistent mapping makes client writes visible to
+            // subsequent vertex fetches with NO barrier — coherence keeps the
+            // CPU view and the GPU's view in sync automatically.
+            // GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT is the wrong direction: it
+            // orders SHADER writes for CLIENT reads, and nothing writes this
+            // buffer from a shader. (Cross-frame overwrite hazards on this
+            // store are handled by the ring + fence gates inside
+            // writeInstanceLightmap — audit G1.)
             if (lightmapPersistentDirty) {
-                try {
-                    var caps = GL.getCapabilities();
-                    if (caps != null && caps.OpenGL42) {
-                        GL42.glMemoryBarrier(GL44.GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
-                    }
-                } catch (Throwable ignored) {}
                 lightmapPersistentDirty = false;
             }
             return;
@@ -952,7 +1506,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
 
     /**
      * Convenience for callers that wrote into a set of slots and need the GPU-visible contents before drawing.
-     * (Persistent mapped path: barrier; fallback: upload dirty slots.)
+     * (Persistent mapped path: no-op — coherent mapping, no barrier needed; fallback: upload dirty slots.)
      */
     public void finishLightmapWrites() {
         uploadDirtySlotsIfNeeded();
@@ -962,12 +1516,21 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      * Computes per-vertex UV2 (blockU, skyV) for the given instance slot by
      * trilinearly combining the 8 corner lightmap samples with the baked
      * {@link #perVertexCornerWeights}, and writes the result as USHORT pairs
-     * into {@link #lightmapCpuScratch} at offset {@code slotIndex * vertexCount * 4}.
+     * at offset {@code slotIndex * vertexCount * 4} (ring-generation-scaled
+     * on the persistent coherent path; into {@link #lightmapCpuScratch} on
+     * the fallback path).
      * <p>
-     * Does NOT upload to the GPU; batch the uploads via
-     * {@link #uploadLightmapRange(int, int)} after all instances for a draw
-     * pass have been written (one {@code glBufferSubData} per pass is far
-     * cheaper than one per instance).
+     * On the persistent path a fenced ring gates the write (audit G1): if the
+     * GPU has not drained the previous generation's draws yet, the write is
+     * skipped entirely this pass rather than overwriting bytes in flight —
+     * the render thread is never stalled. Skipped writes are genuinely
+     * retried: for key-cached callers the matching
+     * {@link #allocLightmapSlot} freezes registrations in the same verdict,
+     * so the key re-allocates and rewrites on a later pass (direct writers
+     * such as the single-instance paths simply write every pass). The
+     * fallback path uploads later in a batch via
+     * {@link #uploadLightmapRange(int, int)} (one {@code glBufferSubData}
+     * per pass is far cheaper than one per instance).
      *
      * @param slotIndex  0-based slot, must be {@code < lightmapInstanceCapacity}
      * @param corner16   16 floats laid out as
@@ -981,7 +1544,8 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         if (corner16 == null || corner16.length < 16) return;
         if (lightmapShortView == null) return;
 
-        final float[] w = perVertexCornerWeights;
+        final float[] w = ensurePerVertexWeights();
+        if (w == null) return;
         final ShortBuffer dst = lightmapShortView;
 
         int requiredLength = vertexCount * 2;
@@ -989,12 +1553,27 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             lightmapTempArray = new short[requiredLength];
         }
 
-        int shortOffset = slotIndex * vertexCount * 2;
+        int shortOffset;
+        if (lightmapPersistentMapped) {
+            // Ring gate (audit G1): open this pass's write phase — advance to
+            // the next ring generation and fence-check the region being
+            // reused. On an unsignaled fence the write is SKIPPED (zero-
+            // timeout poll, never a stall): this pass's draws keep reading
+            // the previous generation's coherent content. The retry is
+            // guaranteed at the allocation side — allocLightmapSlot refuses
+            // to register keys under the same frozen verdict, so key-cached
+            // callers re-alloc (and rewrite) on a later pass.
+            if (!beginLightmapWritePhase()) return;
+            if (slotIndex >= lightmapSlotGen.length) return; // defensive; realloc sizes this to capacity
+            shortOffset = (lightmapRingGen * lightmapInstanceCapacity + slotIndex) * vertexCount * 2;
+        } else {
+            shortOffset = slotIndex * vertexCount * 2;
+        }
         if (shortOffset < 0 || shortOffset + requiredLength > dst.capacity()) return;
 
         for (int v = 0; v < vertexCount; v++) {
             int wBase = v * 8;
-            // Unroll цикла (процессор скажет вам спасибо)
+            // Unroll the loop (your CPU will thank you)
             float blockU = w[wBase] * corner16[0] +
                            w[wBase + 1] * corner16[2] +
                            w[wBase + 2] * corner16[4] +
@@ -1013,11 +1592,11 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                            w[wBase + 6] * corner16[13] +
                            w[wBase + 7] * corner16[15];
 
-            // Быстрое округление вместо Math.round()
+            // Fast rounding instead of Math.round()
             int bu = (int) (blockU + 0.5f);
             int sv = (int) (skyV + 0.5f);
 
-            // Быстрый clamp
+            // Fast clamp
             bu = bu < 0 ? 0 : (bu > 240 ? 240 : bu);
             sv = sv < 0 ? 0 : (sv > 240 ? 240 : sv);
 
@@ -1025,12 +1604,21 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             lightmapTempArray[v * 2 + 1] = (short) sv;
         }
 
-        // Массовая запись в DirectBuffer — это ОГРОМНЫЙ буст производительности
+        // Bulk writes into a DirectBuffer are a HUGE performance win
         int prevPos = dst.position();
         dst.position(shortOffset);
         dst.put(lightmapTempArray, 0, requiredLength);
         dst.position(prevPos);
-    
+
+        if (lightmapPersistentMapped) {
+            // The content now lives in this pass's ring generation: track it
+            // for the VAO pointer (lightmapSlotByteOffset) and force the next
+            // bind of this slot to repoint — the old pointer targets a
+            // different generation's bytes.
+            lightmapSlotGen[slotIndex] = lightmapRingGen;
+            if (lightmapCurrentSlot == slotIndex) lightmapCurrentSlot = -1;
+        }
+
         markSlotDirty(slotIndex);
     }
 
@@ -1053,8 +1641,21 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         int byteLen = slotCount * perSlotBytes;
         if (byteOffset < 0 || byteOffset + byteLen > lightmapCpuScratch.capacity()) return;
 
+        // DSA fast path (GL 4.5 / ARB_direct_state_access): upload via named-buffer
+        // calls without touching the GL_ARRAY_BUFFER binding at all — any glGet*
+        // (including the binding query the legacy path needs) can force a pipeline
+        // sync on threaded-dispatch drivers. Mac/old-GL keeps the classic
+        // bind + glBufferSubData flow with the save/restore query.
+        boolean dsaUpload;
+        try {
+            var caps = GL.getCapabilities();
+            dsaUpload = caps != null && (caps.OpenGL45 || caps.GL_ARB_direct_state_access);
+        } catch (Exception ignored) {
+            dsaUpload = false;
+        }
+
         // Carve a slice out of the CPU scratch so we only upload the dirty range.
-        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
+        int previousArrayBuffer = dsaUpload ? 0 : GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         try {
             lightmapCpuScratch.position(byteOffset);
             lightmapCpuScratch.limit(byteOffset + byteLen);
@@ -1068,7 +1669,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                     if (wait == GL32.GL_TIMEOUT_EXPIRED) {
                         stagingSafe = false;
                     } else {
-                        try { GL32.glDeleteSync(lightmapStagingFence); } catch (Throwable ignored) {}
+                        try { GL32.glDeleteSync(lightmapStagingFence); } catch (Exception ignored) {}
                         lightmapStagingFence = 0L;
                     }
                 }
@@ -1082,8 +1683,15 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                     dst.position(byteOffset).limit(byteOffset + byteLen);
                     dst.put(src);
                     try {
-                        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapStagingVboId);
-                        GL30.glFlushMappedBufferRange(GL15.GL_ARRAY_BUFFER, dstOffset, (long) byteLen);
+                        if (dsaUpload) {
+                            // Named flush avoids binding the staging buffer to
+                            // GL_ARRAY_BUFFER (whose external binding is not
+                            // saved/restored on this path).
+                            GL45.glFlushMappedNamedBufferRange(lightmapStagingVboId, dstOffset, (long) byteLen);
+                        } else {
+                            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapStagingVboId);
+                            GL30.glFlushMappedBufferRange(GL15.GL_ARRAY_BUFFER, dstOffset, (long) byteLen);
+                        }
                         GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, lightmapStagingVboId);
                         GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, lightmapVboId);
                         GL31.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER, dstOffset, dstOffset, (long) byteLen);
@@ -1092,17 +1700,23 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                         GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, 0);
                         GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, 0);
                     }
+                } else if (dsaUpload) {
+                    GL45.glNamedBufferSubData(lightmapVboId, (long) byteOffset, lightmapCpuScratch);
                 } else {
                     GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboId);
                     GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, byteOffset, lightmapCpuScratch);
                 }
+            } else if (dsaUpload) {
+                GL45.glNamedBufferSubData(lightmapVboId, (long) byteOffset, lightmapCpuScratch);
             } else {
                 GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboId);
                 GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, byteOffset, lightmapCpuScratch);
             }
         } finally {
             lightmapCpuScratch.clear();
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+            if (!dsaUpload) {
+                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+            }
         }
     }
 
@@ -1124,6 +1738,11 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
     public void activatePerVertexLightmap() {
         if (!supportsPerVertexLightmap()) return;
         if (lightmapVboId == -1) return;
+        // Every caller runs this once per draw pass, right after the write
+        // batch: close the ring write phase so the next writeInstanceLightmap
+        // advances to a fresh ring generation — the draws that follow read
+        // what was just written (audit G1).
+        lightmapRingPhaseOpen = false;
         if (perVertexLightmapActive) return;
         if (!ensureCompanionVaoBound()) return;
 
@@ -1132,13 +1751,16 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboId);
             // Stride 4 bytes = 2 × USHORT. Pack shaders declare vaUV2 as
             // ivec2, so we go through the INTEGER pipeline (see the long
-            // comment on isIntegerAttribute). Offset 0 for now —
-            // bindLightmapForInstance repoints it per draw.
-            GL30.glVertexAttribIPointer(uv2Location, 2, GL11.GL_UNSIGNED_SHORT, 4, 0L);
+            // comment on isIntegerAttribute). Slot 0's real offset (ring-
+            // scaled on the persistent path) — bindLightmapForInstance
+            // repoints it per draw; slot 0 binds early-return against
+            // lightmapCurrentSlot below, so this must already be exact.
+            GL30.glVertexAttribIPointer(uv2Location, 2, GL11.GL_UNSIGNED_SHORT, 4, lightmapSlotByteOffset(0));
             GL20.glEnableVertexAttribArray(uv2Location);
         } finally {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
         }
+        markRingGenerationRead(0);
         perVertexLightmapActive = true;
         lightmapCurrentSlot = 0;
     }
@@ -1160,7 +1782,10 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         if (slotIndex < 0 || slotIndex >= lightmapInstanceCapacity) return;
         if (!ensureCompanionVaoBound()) return;
 
-        long byteOffset = (long) slotIndex * vertexCount * 4L;
+        // Ring-scaled on the persistent path: a slot's content lives in the
+        // generation it was last written in (audit G1).
+        long byteOffset = lightmapSlotByteOffset(slotIndex);
+        markRingGenerationRead(slotIndex);
 
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         try {
@@ -1311,8 +1936,13 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      */
     private boolean ensureCompanionVaoBound() {
         if (!built || vaoId <= 0) return false;
+        // Unconditional bind without glGetInteger verification: glGet* in the hot loop
+        // forces a CPU-GPU sync (~1.5% of the frame on the farm). Correctness is not
+        // affected - the bind is always issued (the driver no-ops a matching VAO), and
+        // the "Embeddium may have re-bound via a raw call" concern is covered by the
+        // fact that we always send the bind instead of relying on a cache.
         GlStateManager._glBindVertexArray(vaoId);
-        return GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING) == vaoId;
+        return true;
     }
 
     private void bindIrisAttribute(int programId, String attributeName, int stride) {
@@ -1386,6 +2016,94 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         return indexCount;
     }
 
+    // -- GPU-bake access (NucleusGpuBaker) ------------------------------
+
+    /** Mesh VBO in BLOCK format - bound as the SSBO input of the compute baker. */
+    int getMeshVboId() {
+        return vboId;
+    }
+
+    /** Mesh EBO - reused as the baker's index source. */
+    int getMeshEboId() {
+        return eboId;
+    }
+
+    int getMeshVertexCount() {
+        return vertexCount;
+    }
+
+    int getMeshStrideBytes() {
+        return actualFormat != null ? RenderHooks.getVertexSize(actualFormat) : 0;
+    }
+
+    /** Mesh format (for mirroring attributes into the bake VAO). */
+    VertexFormat getMeshFormat() {
+        return actualFormat;
+    }
+
+    /** Byte offset of a named attribute (iris_Entity/mc_midTexCoord/at_tangent), or -1. */
+    int getMeshAttribByteOffset(String name) {
+        Integer o = elementOffsets.get(name);
+        return o != null ? o : -1;
+    }
+
+    /**
+     * Named-attribute offset with a fallback: on 1.21.1 the name map may not
+     * know the Iris names (dynamic element ids) - then a fallback is used
+     * (usually the usage+type offset from {@link #getMeshOffset}).
+     */
+    int getMeshAttribByteOffsetOr(String name, int fallback) {
+        Integer o = elementOffsets.get(name);
+        return (o != null && o >= 0) ? o : fallback;
+    }
+
+    /** Format element of a named attribute (type/components for the bake VAO), or null. */
+    VertexFormatElement getMeshAttribElement(String name) {
+        return elementByName.get(name);
+    }
+
+    /** Mesh indices (base, without instance offsets) for CPU EBO expansion. */
+    int[] getMeshIndices() {
+        return baseIndices;
+    }
+
+    /** Byte offsets of BLOCK-format components for the compute shader. */
+    int getMeshOffset(String usageName, int uvIndex) {
+        if (actualFormat == null) return -1;
+        Integer direct = switch (usageName) {
+            case "position" -> elementOffsets.get("position");
+            case "color" -> elementOffsets.get("color");
+            case "normal" -> elementOffsets.get("normal");
+            case "uv" -> elementOffsets.get("uv" + uvIndex);
+            default -> null;
+        };
+        if (direct != null && direct >= 0) return direct;
+        for (VertexFormatElement el : RenderHooks.getElements(actualFormat)) {
+            var usage = RenderHooks.getUsage(el);
+            boolean match = switch (usageName) {
+                case "position" -> usage == VertexFormatElement.Usage.POSITION;
+                case "color" -> usage == VertexFormatElement.Usage.COLOR;
+                case "normal" -> usage == VertexFormatElement.Usage.NORMAL;
+                case "uv" -> usage == VertexFormatElement.Usage.UV && RenderHooks.getIndex(el) == uvIndex;
+                // Fallback resolution of Iris-generic attributes by usage+type (no
+                // name map - on 1.21.1 element names are dynamic):
+                // mc_midTexCoord = GENERIC FLOAT×2, at_tangent = GENERIC BYTE×4.
+                case "genericFloat2" -> usage == VertexFormatElement.Usage.GENERIC
+                        && RenderHooks.getGlType(el) == org.lwjgl.opengl.GL11.GL_FLOAT;
+                case "genericByte4" -> usage == VertexFormatElement.Usage.GENERIC
+                        && RenderHooks.getGlType(el) == org.lwjgl.opengl.GL11.GL_BYTE
+                        && RenderHooks.getCount(el) == 4;
+                default -> false;
+            };
+            if (match) {
+                // Exact offset: on 1.21.1 paddings are not part of getElements() and
+                // accumulation would undercount field offsets after a padding by 1 byte.
+                return RenderHooks.getElementOffset(actualFormat, el);
+            }
+        }
+        return -1;
+    }
+
     /**
      * @return the GL attribute location for UV2 (lightmap) within this VAO, or
      *         {@code -1} if the format does not contain such an element.
@@ -1394,6 +2112,15 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      */
     public int getUv2Location() {
         return uv2Location;
+    }
+
+    /**
+     * @return the linker-resolved COLOR attribute location of the last bound
+     *         shader, or {@code -1}. Use with {@code glVertexAttrib4f(getColorLocation(), r, g, b, a)}
+     *         to inject a per-draw tint (the per-vertex array is disabled in this VAO).
+     */
+    public int getColorLocation() {
+        return colorLocation;
     }
 
     /**
@@ -1411,7 +2138,29 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         return vertexCount;
     }
 
+    /**
+     * Total GPU store bytes of this mesh: companion VBO + EBO + lightmap store
+     * (ring-inclusive on the persistent path) + staging. Pure field math for
+     * the F3 VRAM breakdown (MeshRenderCache.irisCompanionVramBytes) - no GL
+     * queries. 0 before build / after destroy.
+     */
+    public long getVramBytes() {
+        return vboStoreBytes + eboStoreBytes + lightmapStoreBytes;
+    }
+
     public void destroy() {
+        // Drop this mesh's shadow record (frees the
+        // collector's native FloatBuffer + the BY_MESH strong ref) BEFORE the
+        // GL deletes below, so a shadow flush later in the same frame can never
+        // dereference a half-dead mesh. BY_MESH is render-thread state, so
+        // off-thread callers route the hook the same way as the GL deletes
+        // (same shape as InstancedStaticPartRenderer.cleanup).
+        Runnable detachShadowRecord = () -> IrisShadowBatchCollector.onMeshDestroyed(this);
+        if (RenderSystem.isOnRenderThread()) {
+            detachShadowRecord.run();
+        } else {
+            RenderSystem.recordRenderCall(detachShadowRecord::run);
+        }
         final int vboToDelete = this.vboId;
         final int eboToDelete = this.eboId;
         final int vaoToDelete = this.vaoId;
@@ -1421,6 +2170,9 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         // buffer + a GLsync fence + a persistently-mapped native ByteBuffer.
         final int lightmapStagingVboToDelete = this.lightmapStagingVboId;
         final long lightmapStagingFenceToDelete = this.lightmapStagingFence;
+        // Ring generation fences (audit G1) — GLsync handles captured for the
+        // render-thread deleter below.
+        final long[] ringFencesToDelete = lightmapRingFences.clone();
         final ByteBuffer scratchToFree = this.lightmapCpuScratch;
         final ByteBuffer mappedToUnmap = this.lightmapMapped;
         final ByteBuffer stagingMappedToUnmap = this.lightmapStagingMapped;
@@ -1442,6 +2194,17 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         this.lightmapStagingMapped = null;
         this.lightmapStagingShortView = null;
         this.lightmapStagingAvailable = false;
+        for (int i = 0; i < LIGHTMAP_RING_DEPTH; i++) {
+            this.lightmapRingFences[i] = 0L;
+            this.lightmapRingFencePending[i] = false;
+        }
+        this.lightmapRingGen = LIGHTMAP_RING_DEPTH - 1;
+        this.lightmapRingPhaseOpen = false;
+        this.lightmapRingPhaseWritable = true;
+        this.lightmapSlotGen = new int[0];
+        this.vboStoreBytes = 0L;
+        this.eboStoreBytes = 0L;
+        this.lightmapStoreBytes = 0L;
         this.indexCount = 0;
         this.vertexCount = 0;
         this.built = false;
@@ -1459,23 +2222,30 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                     try {
                         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboToDelete);
                         GL15.glUnmapBuffer(GL15.GL_ARRAY_BUFFER);
-                    } catch (Throwable ignored) {}
+                    } catch (Exception ignored) {}
                 }
                 if (lightmapVboToDelete != -1) GL15.glDeleteBuffers(lightmapVboToDelete);
                 if (stagingMappedToUnmap != null && lightmapStagingVboToDelete != -1) {
                     try {
                         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapStagingVboToDelete);
                         GL15.glUnmapBuffer(GL15.GL_ARRAY_BUFFER);
-                    } catch (Throwable ignored) {}
+                    } catch (Exception ignored) {}
                 }
                 if (lightmapStagingVboToDelete != -1) GL15.glDeleteBuffers(lightmapStagingVboToDelete);
                 if (lightmapStagingFenceToDelete != 0L) {
                     try {
                         GL32.glDeleteSync(lightmapStagingFenceToDelete);
-                    } catch (Throwable ignored) {}
+                    } catch (Exception ignored) {}
+                }
+                for (long ringFence : ringFencesToDelete) {
+                    if (ringFence != 0L) {
+                        try {
+                            GL32.glDeleteSync(ringFence);
+                        } catch (Exception ignored) {}
+                    }
                 }
                 if (vaoToDelete != -1) GL30.glDeleteVertexArrays(vaoToDelete);
-            } catch (Throwable t) {
+            } catch (Exception t) {
                 MainRegistry.LOGGER.error("IrisCompanionMesh: cleanup failed", t);
             }
         };

@@ -11,22 +11,19 @@ import com.hbm_m.recipe.PressRecipe;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-//? if forge {
-import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import com.hbm_m.platform.ModItemStackHandler;
+//? if forge {
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+//?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Containers;
@@ -35,10 +32,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import com.hbm_m.platform.recipe.RecipeHooks;
@@ -53,6 +48,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     private static final int STAMP_SLOT = 1;
     private static final int MATERIAL_SLOT = 2;
     private static final int OUTPUT_SLOT = 3;
+    private static final int STORAGE_FIRST_SLOT = 4;
     
     // Константы как в 1.7.10
     private static final int MAX_SPEED = 400;
@@ -121,6 +117,11 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         return false;
     }
 
+    @Override
+    public boolean joinsEnergyNetwork() {
+        return false;
+    }
+
     //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
@@ -162,7 +163,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         return super.getHbmCapability(cap, side);
     }
 
-    /^* Original: alle Seiten {0, 1, 2, 3}, einfuegen nach isItemValidForSlot, entnehmen nur den Ausgang. ^/
+    // Original: alle Seiten {0, 1, 2, 3}, einfuegen nach isItemValidForSlot, entnehmen nur den Ausgang.
     private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
             new com.hbm_m.blockentity.SidedItemAccess.Rules() {
                 @Override public int[] accessibleSlots(Direction side) { return new int[] { 0, 1, 2, 3 }; }
@@ -193,10 +194,10 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return switch (slot) {
             // Original isItemValidForSlot: Stempel nur in Slot 1, Brennbares in Slot 0, alles andere in Slot 2
-            case FUEL_SLOT -> !(stack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp) && AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0) > 0;
+            case FUEL_SLOT -> !(stack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp) && com.hbm_m.platform.ItemHooks.getFuelBurnTime(stack) > 0;
             case STAMP_SLOT -> stack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp;
             case MATERIAL_SLOT -> !(stack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp);
-            case OUTPUT_SLOT -> false; // Выходной слот только для результатов
+            case OUTPUT_SLOT -> false;
             default -> false;
         };
     }
@@ -230,15 +231,14 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         int previousSpeed = this.speed;
         boolean previousRetracting = this.isRetracting;
 
-        // Добавление топлива (как у генератора)
+        // Добавление топлива (как у генератора); контейнер предмета возвращается (ведро и т.п.)
         ItemStack fuelStack = inventory.getStackInSlot(FUEL_SLOT);
         if (!fuelStack.isEmpty() && burnTime < FUEL_PER_OPERATION) {
-            // Original: TileEntityFurnace.getItemBurnTime in Ticks; ein letzter Eimer hinterlaesst den Behaelter
-            int fuelValue = AbstractFurnaceBlockEntity.getFuel().getOrDefault(fuelStack.getItem(), 0);
+            int fuelValue = com.hbm_m.platform.ItemHooks.getFuelBurnTime(fuelStack);
             if (fuelValue > 0) {
                 burnTime += fuelValue;
-                if (fuelStack.getCount() == 1 && fuelStack.getItem().hasCraftingRemainingItem()) {
-                    inventory.setStackInSlot(FUEL_SLOT, new ItemStack(fuelStack.getItem().getCraftingRemainingItem()));
+                if (fuelStack.getCount() == 1 && fuelStack.hasCraftingRemainingItem()) {
+                    inventory.setStackInSlot(FUEL_SLOT, fuelStack.getCraftingRemainingItem().copy());
                 } else {
                     fuelStack.shrink(1);
                 }
@@ -279,7 +279,6 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             if (isRetracting) {
                 press -= stampSpeed;
                 if (press <= 0) {
-                    press = 0;
                     isRetracting = false;
                     delay = 5;
                 }
@@ -320,9 +319,8 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             sendUpdateToClient();
         }
     }
-    //? if forge || neoforge {
     @OnlyIn(Dist.CLIENT)
-    //?}
+
     private void clientTick() {
         float target = convertPressToProgress();
         if (!clientPressInitialized) {
@@ -333,9 +331,8 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         prevVisualPressPosition = visualPressPosition;
         visualPressPosition = Mth.lerp(0.25F, visualPressPosition, target);
     }
-    //? if forge || neoforge {
     @OnlyIn(Dist.CLIENT)
-    //?}
+
     public float getPressAnimationProgress(float partialTick) {
         float interpolated = Mth.lerp(partialTick, prevVisualPressPosition, visualPressPosition);
         return Mth.clamp(interpolated, 0.0F, 1.0F);
@@ -376,7 +373,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         // Проверяем, что штамп не бесконечный (Desh штампы)
         if (stamp.isDamageableItem()) {
             stamp.setDamageValue(stamp.getDamageValue() + 1);
-            
+
             // Если штамп сломался - удаляем его
             if (stamp.getDamageValue() >= stamp.getMaxDamage()) {
                 // Original: der Stempel verschwindet ohne eigenes Geraeusch
@@ -407,28 +404,68 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
                outputSlot.getDamageValue() == result.getDamageValue();
     }
     
-    private Optional<PressRecipe> getCurrentRecipe() {
-        SimpleContainer container = new SimpleContainer(inventory.getSlots());
-        for (int i = 0; i < inventory.getSlots(); i++) {
-            container.setItem(i, inventory.getStackInSlot(i));
-        }
+    /**
+     * Кэшированный скан рецептов: подпись — фингерпринты всех 13 слотов (изменение любого
+     * слота, включая износ штампа, меняет подпись). SimpleContainer собирается ТОЛЬКО внутри
+     * сканера; output-headroom проверяется per-tick в canProcess — CachedRecipeResolver
+     * CONTRACT 1. craftItem использует тот же кэш через getCurrentRecipe().
+     */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<PressRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
 
-        RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
-        for (PressRecipe recipe : RecipeHooks.getAllRecipes(level, PressRecipe.Type.INSTANCE)) {
-            if (recipe.matchesRecipe(wrapper, level)) {
-                return Optional.of(recipe);
-            }
+    private Optional<PressRecipe> getCurrentRecipe() {
+        if (level == null) return Optional.empty();
+        long[] slotSigs = new long[inventory.getSlots()];
+        for (int i = 0; i < slotSigs.length; i++) {
+            slotSigs[i] = com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(i));
         }
-        return Optional.empty();
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(5, slotSigs);
+        PressRecipe cached = recipeResolver.resolve(level, PressRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            SimpleContainer container = new SimpleContainer(inventory.getSlots());
+            for (int i = 0; i < inventory.getSlots(); i++) {
+                container.setItem(i, inventory.getStackInSlot(i));
+            }
+
+            RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
+            for (PressRecipe recipe : all) {
+                if (recipe.matchesRecipe(wrapper, lvl)) {
+                    return recipe;
+                }
+            }
+            return null;
+        });
+        return Optional.ofNullable(cached);
     }
     
+    // ─────────────────────────── Автоматизация ───────────────────────────
+
+    /** Оригинал getAccessibleSlotsFromSide {0,1,2,3}: вставка в топливо/штамп/материал, извлечение только из выхода.
+     *  Слоты хранилища (4-12) автоматике недоступны. */
+    private com.hbm_m.platform.ModItemStackHandler automationHandler;
+
+    @Override
+    protected com.hbm_m.platform.ModItemStackHandler getAutomationItemHandler() {
+        if (automationHandler == null) {
+            automationHandler = new com.hbm_m.platform.ModItemStackHandler(SLOT_COUNT) {
+                @Override public int getSlots() { return SLOT_COUNT; }
+                @Override public ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
+                @Override public void setStackInSlot(int slot, ItemStack stack) { inventory.setStackInSlot(slot, stack); }
+                @Override public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+                    if (slot != FUEL_SLOT && slot != STAMP_SLOT && slot != MATERIAL_SLOT) return stack;
+                    return inventory.insertItem(slot, stack, simulate);
+                }
+                @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
+                    if (slot != OUTPUT_SLOT) return ItemStack.EMPTY;
+                    return inventory.extractItem(slot, amount, simulate);
+                }
+                @Override public int getSlotLimit(int slot) { return inventory.getSlotLimit(slot); }
+                @Override public boolean isItemValid(int slot, ItemStack stack) { return inventory.isItemValid(slot, stack); }
+            };
+        }
+        return automationHandler;
+    }
+
     // ==================== UTILITY ====================
-    
-    public int getBurnTime(Item item) {
-        int vanillaBurnTimeTicks = AbstractFurnaceBlockEntity.getFuel().getOrDefault(item, 0);
-        if (vanillaBurnTimeTicks <= 0) return 0;
-        return vanillaBurnTimeTicks / 20;
-    }
     
     public int getHeatState() {
         return heatState;
@@ -496,6 +533,10 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
 
     public ItemStack getStampStack() {
         return inventory.getStackInSlot(STAMP_SLOT);
+    }
+
+    public boolean isPressing() {
+        return this.press > 0 || this.isRetracting || this.speed > 0;
     }
 
     private float convertPressToProgress() {

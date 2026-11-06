@@ -39,6 +39,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code BlockCrashedBomb} ({@code crashed_bomb}, Untertypen als Bloecke {@code dud_balefire/conventional/nuke/
@@ -149,7 +150,7 @@ public class CrashedBombBlock extends BaseEntityBlock implements IBomb {
         IParticleCreator.sendPacket(world, x + 0.5, y + 0.5, z + 0.5, 250, data);
     }
     //? if >= 1.21.1 {
-    /*public static final com.mojang.serialization.MapCodec<CrashedBombBlock> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(CrashedBombBlock.class);
+    /*public static final com.mojang.serialization.MapCodec<CrashedBombBlock> CODEC = com.hbm_m.platform.BlockHooks.unsupportedCodec(CrashedBombBlock.class);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

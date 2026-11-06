@@ -32,7 +32,6 @@ public class ItemDigamma extends Item implements ITooltipProvider {
         this.digamma = digamma;
     }
 
-    //? if forge || neoforge {
     @Override
     public boolean hasCraftingRemainingItem(ItemStack stack) {
         return true;
@@ -42,7 +41,6 @@ public class ItemDigamma extends Item implements ITooltipProvider {
     public ItemStack getCraftingRemainingItem(ItemStack stack) {
         return new ItemStack(ModItems.PARTICLE_EMPTY.get());
     }
-    //?}
 
     @Override
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean selected) {

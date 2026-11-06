@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'amat.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Bolt
 v -0.625260 0.501309 -5.750000
 v -0.601343 0.443566 -5.937500

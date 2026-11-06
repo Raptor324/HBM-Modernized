@@ -3,7 +3,6 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.blockentity.machines.MachineCrucibleBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -13,10 +12,16 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1 {@code ContainerCrucible}: neun Schmelzplaetze (Platz 1-9 des Tiegels) im 3x3-Raster ab (107,18), je ein Stueck;
  * Spielerinventar ab (8,132). Shift-Klick verteilt in die Schmelzplaetze.
+ *
+ * <p>Merge note: resolved onto the machines-branch {@link MachineCrucibleBlockEntity}, which keeps the original
+ * 1.7.10 layout of a 10-slot inventory where slots 1-9 are the smelting places (slot 0 unused) — hence the
+ * {@code + 1} offset. Progress/heat/melt lists are read by the GUI directly from the (full-NBT synced) block
+ * entity, so this menu has no {@code ContainerData} slots.</p>
  */
 public class MachineCrucibleMenu extends AbstractContainerMenu {
 
@@ -31,7 +36,7 @@ public class MachineCrucibleMenu extends AbstractContainerMenu {
         this.crucible = crucible;
 
         var container = new ModItemStackHandlerContainer(
-                crucible != null ? crucible.getInventory() : new DummyItemStackHandler(10),
+                crucible != null ? crucible.getInventory() : new ModItemStackHandler.Dummy(10),
                 crucible != null ? crucible::setChanged : null);
 
         for (int i = 0; i < 3; i++) {
@@ -58,7 +63,7 @@ public class MachineCrucibleMenu extends AbstractContainerMenu {
         BlockEntity be = inventory.player.level().getBlockEntity(pos);
         if (be instanceof MachineCrucibleBlockEntity crucible) return crucible;
         if (inventory.player.level().isClientSide) return null;
-        throw new IllegalStateException("No MachineCrucibleBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":crucible_menu");
+        throw new MenuBlockEntityMissingException("No MachineCrucibleBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":crucible_menu");
     }
 
     public MachineCrucibleBlockEntity getBlockEntity() {
@@ -67,7 +72,6 @@ public class MachineCrucibleMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
         return MultiblockMenuReach.stillValidCore(crucible, player, 128.0D);
     }
 

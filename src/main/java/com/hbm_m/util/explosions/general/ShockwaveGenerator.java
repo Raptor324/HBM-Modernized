@@ -115,7 +115,9 @@ public class ShockwaveGenerator {
                         }
 
                     }
-                    else if (state.is(BlockTags.WOODEN_STAIRS) || state.is(BlockTags.WOODEN_SLABS) || state.is(BlockTags.LEAVES)  || state.is(BlockTags.WOODEN_TRAPDOORS) ||
+                    // LEAVES deliberately absent here: this chain runs for everything past ZONE_3, so listing
+                    // leaves made the dedicated zone-4 leaves branch below unreachable and removed them all.
+                    else if (state.is(BlockTags.WOODEN_STAIRS) || state.is(BlockTags.WOODEN_SLABS) || state.is(BlockTags.WOODEN_TRAPDOORS) ||
                             state.is(Blocks.TORCH) || state.is(BlockTags.WOOL_CARPETS) || state.is(BlockTags.WOOL) ||
                             state.is(BlockTags.WOODEN_FENCES) || state.is(Blocks.PUMPKIN) || state.is(Blocks.MELON) || state.is(BlockTags.WOODEN_DOORS)) {
                         level.removeBlock(checkPos, false);

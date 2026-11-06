@@ -25,10 +25,12 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * 1:1 port of {@code RenderRADBeast}. The original reuses the vanilla blaze model with its own
- * skin, so this does the same.
+ * skin, so this does the same - the leader is drawn slightly larger to match its bigger health
+ * bar, which is the only visual cue the original gives you before it starts hitting for sixteen.
  *
- * <p>Dazu wie im Original der gruene Strahl ({@code BeamPronter}, RANDOM/SOLID) zum aktuellen Opfer und die
- * M65-Gasmaske als zweiter Durchgang ({@code shouldRenderPass} Pass 0 mit {@code ModelM65Blaze}).</p>
+ * <p>Like the original it also draws the green beam ({@code BeamPronter}, RANDOM/SOLID) to the
+ * current victim and wears the M65 gas mask as a second pass ({@code ModelM65Blaze}, here as a
+ * {@link RenderLayer}).</p>
  */
 public class RADBeastRenderer extends MobRenderer<EntityRADBeast, BlazeModel<EntityRADBeast>> {
 
@@ -40,6 +42,14 @@ public class RADBeastRenderer extends MobRenderer<EntityRADBeast, BlazeModel<Ent
     public RADBeastRenderer(EntityRendererProvider.Context context) {
         super(context, new BlazeModel<>(context.bakeLayer(ModelLayers.BLAZE)), 0.5F);
         this.addLayer(new M65MaskLayer(this));
+    }
+
+    @Override
+    protected void scale(@NotNull EntityRADBeast beast, @NotNull PoseStack poseStack, float partialTick) {
+        if (beast.isLeader()) {
+            poseStack.scale(1.5F, 1.5F, 1.5F);
+        }
+        super.scale(beast, poseStack, partialTick);
     }
 
     @Override
@@ -65,7 +75,7 @@ public class RADBeastRenderer extends MobRenderer<EntityRADBeast, BlazeModel<Ent
             double sy = beast.getY() + 1.25;
             double sz = beast.getZ();
 
-            // Original: posY + height/2 (beim lokalen Spieler war posY die Augenhoehe, daher dort -1.5)
+            // Original: posY + height/2 (for local player posY was eye height, hence -1.5 there)
             double tX = victim.getX();
             double tY = victim.getY() + victim.getBbHeight() / 2;
             double tZ = victim.getZ();
@@ -82,8 +92,8 @@ public class RADBeastRenderer extends MobRenderer<EntityRADBeast, BlazeModel<Ent
     }
 
     /**
-     * 1:1 {@code ModelM65Blaze}: Maske (Texturgroesse 32x32) als Kind an Kopfposition und -winkeln, gezeichnet mit
-     * {@code glScaled(18/16)} und {@code glScaled(1.01)}.
+     * 1:1 {@code ModelM65Blaze}: mask (32x32 texture) as child at head position and rotation, drawn with
+     * {@code glScaled(18/16)} and {@code glScaled(1.01)}.
      */
     private static class M65MaskLayer extends RenderLayer<EntityRADBeast, BlazeModel<EntityRADBeast>> {
 
@@ -98,7 +108,7 @@ public class RADBeastRenderer extends MobRenderer<EntityRADBeast, BlazeModel<Ent
             MeshDefinition mesh = new MeshDefinition();
             PartDefinition mask = mesh.getRoot().addOrReplaceChild("mask", CubeListBuilder.create(), PartPose.ZERO);
             float yOffset = 4F;
-            // convertToChild: Gelenkpunkte relativ zur Maske (deren Gelenkpunkt 0,0,0 ist)
+            // convertToChild: pivot points relative to mask (whose pivot is 0,0,0)
             mask.addOrReplaceChild("shape1", CubeListBuilder.create().texOffs(0, 0).addBox(0F, 0F, 0F, 8, 8, 8),
                     PartPose.offset(-4F, -8F + yOffset, -4F));
             mask.addOrReplaceChild("shape2", CubeListBuilder.create().texOffs(0, 16).addBox(0F, 0F, 0F, 3, 3, 1),
@@ -125,7 +135,7 @@ public class RADBeastRenderer extends MobRenderer<EntityRADBeast, BlazeModel<Ent
         @Override
         public void render(@NotNull PoseStack pose, @NotNull MultiBufferSource buffer, int light, @NotNull EntityRADBeast beast,
                            float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
-            // setRotationAngles: Gelenkpunkt und Y/X-Winkel vom Bipedkopf (Gelenkpunkt 0,0,0)
+            // setRotationAngles: pivot point and Y/X angles from biped head (pivot 0,0,0)
             mask.setPos(0F, 0F, 0F);
             mask.yRot = netHeadYaw * ((float) Math.PI / 180F);
             mask.xRot = headPitch * ((float) Math.PI / 180F);

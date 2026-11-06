@@ -57,7 +57,6 @@ public class ItemDrop extends Item implements ITooltipProvider {
         this.container = container;
     }
 
-    //? if forge || neoforge {
     @Override
     public boolean hasCraftingRemainingItem(ItemStack stack) {
         return container != null;
@@ -67,7 +66,6 @@ public class ItemDrop extends Item implements ITooltipProvider {
     public ItemStack getCraftingRemainingItem(ItemStack stack) {
         return container != null ? new ItemStack(container.get()) : ItemStack.EMPTY;
     }
-    //?}
 
     @Override
     public boolean onEntityItemUpdate(ItemStack stack, ItemEntity entityItem) {

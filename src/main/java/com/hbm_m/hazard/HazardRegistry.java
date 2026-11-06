@@ -47,19 +47,15 @@ public class HazardRegistry {
     public static final HazardTypeBase HYDROACTIVE = new HazardTypeHydroactive();
     public static final HazardTypeBase EXPLOSIVE = new HazardTypeExplosive();
 
+    // Conventional tags live in the "c" namespace on 1.21+; build.neoforge.gradle.kts moves the
+    // generated forge: tag files there, so a runtime lookup on "forge" matched nothing.
+    public static final String CONVENTIONAL_NS = com.hbm_m.platform.PlatformHooks.conventionalTagNamespace();
+
     public static final TagKey<Item> URANIUM_INGOTS = TagKey.create(Registries.ITEM,
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation("forge", "ingots/uranium"));
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath("forge", "ingots/uranium"));
-            //?}
+                        ResourceLocation.fromNamespaceAndPath(CONVENTIONAL_NS, "ingots/uranium"));
 
     public static final TagKey<Item> ALKALI_METALS = TagKey.create(Registries.ITEM,
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation("forge", "ingots/sodium"));
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath("forge", "ingots/sodium"));
-            //?}
+                        ResourceLocation.fromNamespaceAndPath(CONVENTIONAL_NS, "ingots/sodium"));
 
     /** Original registerTrafos: NBT-Strahlung und Behaelterinhalt (LBSM "safe crates" gibt es im Port nicht). */
     public static void registerTrafos() {
@@ -179,7 +175,7 @@ public class HazardRegistry {
                 new HazardEntry(RADIATION, 10.5f)));
         HazardSystem.register(ModItems.FALLOUT.get(), new HazardData(
                 new HazardEntry(RADIATION, 30f)));
-        HazardSystem.register(ModBlocks.POLONIUM210_BLOCK.get(), new HazardData(
+        HazardSystem.register(ModBlocks.INGOT_BLOCKS.get(ModMaterials.POLONIUM).get(), new HazardData(
                 new HazardEntry(RADIATION, 750f),
                 new HazardEntry(HOT, 3f)));
 
@@ -293,15 +289,6 @@ public class HazardRegistry {
         registerOtherWastePair(ModItems.WASTE_SCHRABIDIUM.get(), "waste_schrabidium_cooling", 15f);
         registerOtherWastePair(ModItems.WASTE_ZFB_MOX.get(), "waste_zfb_mox_cooling", 5f);
 
-        // Platten-Abfall des Forschungsreaktors: wst * ingot * x, Ra/Pu-Be als Strahlenquelle (Original registerRadSourceWaste).
-        registerWasteBase(ModItems.WASTE_PLATE_U233.get(), "waste_plate_u233_cooling", 15f * 13F, false);
-        registerWasteBase(ModItems.WASTE_PLATE_U235.get(), "waste_plate_u235_cooling", 15f * 10F, false);
-        registerWasteBase(ModItems.WASTE_PLATE_MOX.get(), "waste_plate_mox_cooling", 15f * 16F, false);
-        registerWasteBase(ModItems.WASTE_PLATE_PU239.get(), "waste_plate_pu239_cooling", 15f * 13.5F, false);
-        registerWasteBase(ModItems.WASTE_PLATE_SA326.get(), "waste_plate_sa326_cooling", 15f * 10F, false);
-        registerWasteBase(ModItems.WASTE_PLATE_RA226BE.get(), "waste_plate_ra226be_cooling", 75F * 3F * 0.1F * 3, true);
-        registerWasteBase(ModItems.WASTE_PLATE_PU238BE.get(), "waste_plate_pu238be_cooling", 10F * 3F * 0.1F * 1, true);
-
         // ZIRNOX (Original: rod_dual = 1.0, wst = 15)
         registerZirnox(ModItems.ROD_ZIRNOX_NATURAL_URANIUM_FUEL.get(), 0.35F, 15F * 11.5F);
         registerZirnox(ModItems.ROD_ZIRNOX_URANIUM_FUEL.get(), 0.5F, 15F * 10F);
@@ -386,6 +373,20 @@ public class HazardRegistry {
         HazardSystem.register(ModItems.PLATE_FUEL_PU238BE.get(), new HazardData(
                 new HazardEntry(RADIATION, 15f)));
 
+        // waste_plate_* (GIT HazardRegistry.registerOtherWaste / registerRadSourceWaste, wst * ingot).
+        // The items were registered without any hazard at all, so spent fuel plates were safe to
+        // carry. Only the fresh variant exists in this port, so only the meta-0 value applies:
+        // base * 0.075 for the waste plates, the plain base for the two rad-source ones.
+        wastePlateHazard(ModItems.WASTE_PLATE_U233.get(), 13f);
+        wastePlateHazard(ModItems.WASTE_PLATE_U235.get(), 10f);
+        wastePlateHazard(ModItems.WASTE_PLATE_MOX.get(), 16f);
+        wastePlateHazard(ModItems.WASTE_PLATE_PU239.get(), 13.5f);
+        wastePlateHazard(ModItems.WASTE_PLATE_SA326.get(), 10f);
+        HazardSystem.register(ModItems.WASTE_PLATE_RA226BE.get(), new HazardData(
+                new HazardEntry(RADIATION, 75f * 3f * 0.1f * 3f)));
+        HazardSystem.register(ModItems.WASTE_PLATE_PU238BE.get(), new HazardData(
+                new HazardEntry(RADIATION, 10f * 3f * 0.1f)));
+
         // crystals (GIT HazardRegistry)
         HazardSystem.register(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.CRYSTAL), new HazardData(
                 new HazardEntry(RADIATION, 3.5f)));
@@ -448,13 +449,10 @@ public class HazardRegistry {
      * охлаждающееся (meta 1, предмет из PartTabMetaItems) = base + HOT 5,
      * где base = wst(15) * billet(0.5) * mult.
      */
-    /** Original registerOtherWaste / registerRadSourceWaste mit fertigem Basiswert. */
-    private static void registerWasteBase(Item fresh, String coolingId, float base, boolean radSource) {
-        HazardSystem.register(fresh, new HazardData(new HazardEntry(RADIATION, radSource ? base : base * 0.075F)));
-        Item cooling = com.hbm_m.item.PartTabMetaItems.itemOrNull(coolingId);
-        if (cooling != null) {
-            HazardSystem.register(cooling, new HazardData(new HazardEntry(RADIATION, base), new HazardEntry(HOT, 5F)));
-        }
+    /** GIT registerOtherWaste for a plate: wst * ingot * mult, meta 0 carries 7.5% of it. */
+    private static void wastePlateHazard(Item plate, float mult) {
+        if (plate == null) return;
+        HazardSystem.register(plate, new HazardData(new HazardEntry(RADIATION, 15f * mult * 0.075f)));
     }
 
     /** Original {@code registerBreedingRodRadiation}: rod = base, rod_dual = base * 1, rod_quad = base * 2. */
@@ -635,6 +633,9 @@ public class HazardRegistry {
         hazard(ModItems.CORDITE.get(), new HazardEntry(EXPLOSIVE, 2.0f));
         hazard(ModItems.BALLISTITE.get(), new HazardEntry(EXPLOSIVE, 1.0f));
         hazard(ModItems.BALL_DYNAMITE.get(), new HazardEntry(EXPLOSIVE, 2.0f));
+
+        // Лампа из заряда-демона: закрытый демонический заряд на подставке — полная доза заряда.
+        hazard(ModBlocks.LAMP_DEMON.get().asItem(), new HazardEntry(RADIATION, 100000f));
     }
 
     private static void hazard(Item item, HazardEntry... entries) {

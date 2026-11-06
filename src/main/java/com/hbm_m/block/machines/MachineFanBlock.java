@@ -37,6 +37,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code MachineFan}: per Redstone betriebener Ventilator, Ausrichtung wie ein Kolben, schiebt Wesen bis zu zehn
@@ -66,7 +67,7 @@ public class MachineFanBlock extends BaseEntityBlock implements IToolable {
     public static Direction determineOrientation(BlockPos pos, @Nullable LivingEntity player) {
         if (player == null) return Direction.UP;
         if (Mth.abs((float) player.getX() - pos.getX()) < 2.0F && Mth.abs((float) player.getZ() - pos.getZ()) < 2.0F) {
-            double d0 = player.getY() + 1.82D - PlatformHooks.getMyRidingOffset(player);
+            double d0 = player.getY() + 1.82D - MobHooks.getMyRidingOffset(player);
             if (d0 - pos.getY() > 2.0D) return Direction.UP;
             if (pos.getY() - d0 > 0.0D) return Direction.DOWN;
         }

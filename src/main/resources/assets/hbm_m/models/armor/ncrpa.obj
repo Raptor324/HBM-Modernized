@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'ncrpa_scaled.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o RightBoot
 v -3.687500 24.240002 -4.500000
 v -0.312500 24.240000 -4.500000

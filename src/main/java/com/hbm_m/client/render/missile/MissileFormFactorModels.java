@@ -86,7 +86,7 @@ public enum MissileFormFactorModels {
         if (com.hbm_m.entity.missile.MissilePantsirEntity.class.isAssignableFrom(entityClass)) {
             return PANTSIR;
         }
-        if (com.hbm_m.entity.missile.MissileABMEntity.class.isAssignableFrom(entityClass)) {
+        if (com.hbm_m.entity.missile.MissileAntiBallisticEntity.class.isAssignableFrom(entityClass)) {
             return ABM;
         }
         if (com.hbm_m.entity.missile.MissileTestEntity.class.isAssignableFrom(entityClass)) {

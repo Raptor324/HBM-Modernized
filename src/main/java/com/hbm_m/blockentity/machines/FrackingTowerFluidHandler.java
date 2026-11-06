@@ -1,12 +1,13 @@
 package com.hbm_m.blockentity.machines;
+
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+
 //? if forge {
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.ModFluids;
-
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /**
  * Обработчик жидкостей для Fracking Tower.
@@ -152,14 +153,11 @@ public class FrackingTowerFluidHandler implements IFluidHandler {
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.ModFluids;
 
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-
 /^*
  * Обработчик жидкостей для Fracking Tower.
  * Управляет тремя танками: нефть (выход), газ (выход), FrackSol (вход).
  ^/
-public class FrackingTowerFluidHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+public class FrackingTowerFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
 
     private final MachineFrackingTowerBlockEntity blockEntity;
 
@@ -174,27 +172,27 @@ public class FrackingTowerFluidHandler implements net.neoforged.neoforge.fluids.
 
     @NotNull
     @Override
-    public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+    public net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
         return switch (tank) {
             case 0 -> {
                 var t = blockEntity.getOilTank();
                 yield t.getFluidAmountMb() > 0
-                        ? new net.neoforged.neoforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb())
-                        : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+                        ? new net.minecraftforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb())
+                        : net.minecraftforge.fluids.FluidStack.EMPTY;
             }
             case 1 -> {
                 var t = blockEntity.getGasTank();
                 yield t.getFluidAmountMb() > 0
-                        ? new net.neoforged.neoforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb())
-                        : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+                        ? new net.minecraftforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb())
+                        : net.minecraftforge.fluids.FluidStack.EMPTY;
             }
             case 2 -> {
                 var t = blockEntity.getFracksolTank();
                 yield t.getFluidAmountMb() > 0
-                        ? new net.neoforged.neoforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb())
-                        : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+                        ? new net.minecraftforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb())
+                        : net.minecraftforge.fluids.FluidStack.EMPTY;
             }
-            default -> net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            default -> net.minecraftforge.fluids.FluidStack.EMPTY;
         };
     }
 
@@ -209,7 +207,7 @@ public class FrackingTowerFluidHandler implements net.neoforged.neoforge.fluids.
     }
 
     @Override
-    public boolean isFluidValid(int tank, @NotNull net.neoforged.neoforge.fluids.FluidStack stack) {
+    public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
         return switch (tank) {
             case 0 -> VanillaFluidEquivalence.sameSubstance(stack.getFluid(), ModFluids.CRUDE_OIL.getSource());
             case 1 -> VanillaFluidEquivalence.sameSubstance(stack.getFluid(), ModFluids.GAS.getSource());
@@ -219,7 +217,7 @@ public class FrackingTowerFluidHandler implements net.neoforged.neoforge.fluids.
     }
 
     @Override
-    public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+    public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
         if (resource.isEmpty()) return 0;
         int amountMb = resource.getAmount();
 
@@ -239,39 +237,39 @@ public class FrackingTowerFluidHandler implements net.neoforged.neoforge.fluids.
 
     @NotNull
     @Override
-    public net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
-        if (resource.isEmpty()) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+    public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+        if (resource.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
         int amountMb = resource.getAmount();
 
         // Можно выкачивать нефть из танка 0
         if (VanillaFluidEquivalence.sameSubstance(resource.getFluid(), ModFluids.CRUDE_OIL.getSource())) {
             int available = blockEntity.getOilTank().getFluidAmountMb();
             int planned = Math.min(amountMb, available);
-            if (planned <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            if (planned <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
             int drainedMb = action == FluidAction.EXECUTE
                     ? blockEntity.getOilTank().drainMb(planned)
                     : planned;
-            return drainedMb > 0 ? new net.neoforged.neoforge.fluids.FluidStack(ModFluids.CRUDE_OIL.getSource(), drainedMb) : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            return drainedMb > 0 ? new net.minecraftforge.fluids.FluidStack(ModFluids.CRUDE_OIL.getSource(), drainedMb) : net.minecraftforge.fluids.FluidStack.EMPTY;
         }
 
         // Можно выкачивать газ из танка 1
         if (VanillaFluidEquivalence.sameSubstance(resource.getFluid(), ModFluids.GAS.getSource())) {
             int available = blockEntity.getGasTank().getFluidAmountMb();
             int planned = Math.min(amountMb, available);
-            if (planned <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            if (planned <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
             int drainedMb = action == FluidAction.EXECUTE
                     ? blockEntity.getGasTank().drainMb(planned)
                     : planned;
-            return drainedMb > 0 ? new net.neoforged.neoforge.fluids.FluidStack(ModFluids.GAS.getSource(), drainedMb) : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            return drainedMb > 0 ? new net.minecraftforge.fluids.FluidStack(ModFluids.GAS.getSource(), drainedMb) : net.minecraftforge.fluids.FluidStack.EMPTY;
         }
 
         // FrackSol нельзя выкачивать (входной танк для потребления)
-        return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        return net.minecraftforge.fluids.FluidStack.EMPTY;
     }
 
     @NotNull
     @Override
-    public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+    public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
         int amountMb = Math.max(0, maxDrain);
 
         // Сначала пробуем нефть
@@ -280,7 +278,7 @@ public class FrackingTowerFluidHandler implements net.neoforged.neoforge.fluids.
             ? blockEntity.getOilTank().drainMb(oilPlanned)
             : oilPlanned;
         if (oilDrainedMb > 0) {
-            return new net.neoforged.neoforge.fluids.FluidStack(ModFluids.CRUDE_OIL.getSource(), oilDrainedMb);
+            return new net.minecraftforge.fluids.FluidStack(ModFluids.CRUDE_OIL.getSource(), oilDrainedMb);
         }
 
         // Потом газ
@@ -289,8 +287,8 @@ public class FrackingTowerFluidHandler implements net.neoforged.neoforge.fluids.
             ? blockEntity.getGasTank().drainMb(gasPlanned)
             : gasPlanned;
         return gasDrainedMb > 0
-                ? new net.neoforged.neoforge.fluids.FluidStack(ModFluids.GAS.getSource(), gasDrainedMb)
-                : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+                ? new net.minecraftforge.fluids.FluidStack(ModFluids.GAS.getSource(), gasDrainedMb)
+                : net.minecraftforge.fluids.FluidStack.EMPTY;
     }
 }
 *///?}

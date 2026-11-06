@@ -14,15 +14,19 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Gemeinsamer Bildschirm der grossen Bomben, je Typ 1:1 {@code GUINukeGadget}/{@code GUINukeBoy}/
  * {@code GUINukeMike}/{@code GUINukeTsar}: Schaltbild, Teile-Overlays, Bereitschaftsanzeige, Info-Panel.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUINukeLarge extends GuiInfoScreen<LargeNukeMenu> {
 
     /** Original {@code GUINukeTsar.textureMike}: die Tsar-Overlays liegen auf dem Ivy-Mike-Schaltbild. */
     private static final ResourceLocation TEXTURE_MIKE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/ivy_mike_schematic.png");
+
 
     private final LargeNukeBlockEntity be;
     private final LargeNukeType type;
@@ -112,9 +116,7 @@ public class GUINukeLarge extends GuiInfoScreen<LargeNukeMenu> {
 
     @Override
     protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // Original: Ivy Mike setzt den Titel auf y=4, alle anderen auf y=6
-        int titleY = type == LargeNukeType.MIKE ? 4 : 6;
-        guiGraphics.drawString(this.font, this.title, this.imageWidth / 2 - this.font.width(this.title) / 2, titleY, 4210752, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, type.inventoryX(), this.imageHeight - 96 + 2, 4210752, false);
+        guiGraphics.drawString(this.font, this.title, this.imageWidth / 2 - this.font.width(this.title) / 2, 6, 4210752, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, type.inventoryX(), type.inventoryY() - 11, 4210752, false);
     }
 }

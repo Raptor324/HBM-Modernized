@@ -46,6 +46,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code TileEntityMachineOreSlopper}: schlaemmt Grundgestein-Erz ({@code bedrock_ore_base}) mit Wasser zu den sechs
@@ -83,10 +84,12 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity impleme
     public float prevSlider;
     public float bucket;
     public float prevBucket;
-    public float blades;
-    public float prevBlades;
-    public float fan;
-    public float prevFan;
+    /** Client-seitige Animation (siehe MachineOreSlopperRenderer): 1:1 Pivot-/Achsenwerte aus
+     *  {@code RenderOreSlopper} (Original), Rotationsgeschwindigkeit nach FFA-Rework. */
+    public float bladesRotation;
+    public float prevBladesRotation;
+    public float fanRotation;
+    public float prevFanRotation;
     public int delay;
 
     private final FluidTank[] tanks = new FluidTank[] {
@@ -123,7 +126,7 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity impleme
 
     /** Original {@code ItemBedrockOreBase.getOreAmount}. */
     private static double getOreAmount(ItemStack stack, BedrockOreDensity.Type type) {
-        CompoundTag nbt = PlatformHooks.getItemTag(stack);
+        CompoundTag nbt = StackNbt.read(stack);
         if (nbt == null) return 0;
         return nbt.getDouble(type.name().toLowerCase(Locale.ROOT));
     }
@@ -279,22 +282,22 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity impleme
 
         this.prevSlider = this.slider;
         this.prevBucket = this.bucket;
-        this.prevBlades = this.blades;
-        this.prevFan = this.fan;
+        this.prevBladesRotation = this.bladesRotation;
+        this.prevFanRotation = this.fanRotation;
 
         if (this.processing) {
 
-            this.blades += 15F;
-            this.fan += 35F;
+            this.bladesRotation += 15F;
+            this.fanRotation += 35F;
 
-            if (blades >= 360) {
-                blades -= 360;
-                prevBlades -= 360;
+            if (bladesRotation >= 360) {
+                bladesRotation -= 360;
+                prevBladesRotation -= 360;
             }
 
-            if (fan >= 360) {
-                fan -= 360;
-                prevFan -= 360;
+            if (fanRotation >= 360) {
+                fanRotation -= 360;
+                prevFanRotation -= 360;
             }
 
             Player me = clientPlayer(level);
@@ -448,13 +451,13 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity impleme
         sided.clear();
     }
     //?} elif neoforge {
-    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
+    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
 
     /^* Original {@code slot_access {2..8}}: Slot 2 einfuegbar, 3-8 entnehmbar. ^/
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
-            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.minecraftforge.items.IItemHandler() {
                 @Override public int getSlots() { return 7; }
                 @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot + SLOT_INPUT); }
                 @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {

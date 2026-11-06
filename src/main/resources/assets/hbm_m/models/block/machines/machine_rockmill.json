@@ -1,17 +1,11 @@
 {
+  "loader": "hbm_m:machine_parts_loader",
+  "model": "hbm_m:models/block/machines/rockmill_item.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
   "textures": {
-    "particle": "hbm_m:block/machine/rockmill"
-  },
-  "loader": "forge:composite",
-  "children": {
-    "mill": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/machines/rockmill_item.obj",
-      "flip_v": true,
-      "render_type": "minecraft:cutout",
-      "textures": { "default": "hbm_m:block/machine/rockmill" },
-      "visibility": { "Frame": false }
-    }
+    "particle": "hbm_m:block/machine/rockmill",
+    "default": "hbm_m:block/machine/rockmill"
   },
   "transform": { "translation": [0.5, 0, 0.5], "rotation": [0, 0, 0], "scale": 1.0 },
   "display": {

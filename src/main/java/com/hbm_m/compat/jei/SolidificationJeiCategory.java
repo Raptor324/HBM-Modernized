@@ -14,7 +14,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
-//? if forge || neoforge {
 /**
  * JEI-Kategorie der Verfestigung (siehe {@link SolidificationRecipe}).
  *
@@ -36,7 +35,9 @@ public class SolidificationJeiCategory extends JeiFluidRecipeCategory<Solidifica
 
     @Override
     public Component getTitle() {
-        return Component.translatable("block.hbm_m.solidifier");
+        // Оригинал (NEI SolidificationHandler:9) брал tile.machine_solidifier.name,
+        // а не имя блока: "Industrial Solidification Machine".
+        return Component.translatable("jei.hbm_m.solidifier");
     }
 
     @Override
@@ -54,7 +55,4 @@ public class SolidificationJeiCategory extends JeiFluidRecipeCategory<Solidifica
         return List.of(recipe.getOutput());
     }
 }
-//?} else {
-/*public final class SolidificationJeiCategory {
-    private SolidificationJeiCategory() {}
-}*///?}
+

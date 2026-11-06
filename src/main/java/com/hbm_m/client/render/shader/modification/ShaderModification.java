@@ -7,14 +7,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.hbm_m.main.MainRegistry;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
-
 /**
  * Lightweight GLSL source modifier inspired by Veil's ShaderModification system,
  * but reimplemented from scratch (no glslprocessor dependency).
@@ -30,11 +24,7 @@ import net.fabricmc.api.Environment;*///?}
  * registration / load time, not during rendering. It also serves as a foundation for
  * future Iris {@code TransformPatcher} integration (Variant B).
  */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class ShaderModification {
 
     /**

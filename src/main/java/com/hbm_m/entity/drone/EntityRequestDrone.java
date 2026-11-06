@@ -95,7 +95,7 @@ public class EntityRequestDrone extends EntityDroneBase {
         Vec3 from = position();
         Vec3 to = from.subtract(0, 4, 0);
         //? if < 1.21.1 {
-        BlockHitResult hit = level().clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
+        BlockHitResult hit = level().clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
         //?} else {
         /*BlockHitResult hit = level().clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
         *///?}
@@ -153,9 +153,13 @@ public class EntityRequestDrone extends EntityDroneBase {
 
     @Override
     public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
-        if (!level().isClientSide && !this.isRemoved()) {
-            selfDestructAndReturnDrone();
+        // Same as EntityDeliveryDrone: the original only self-destructs on a player hit, never on
+        // environmental damage, so a drone no longer drops its cargo to fire or a stray arrow.
+        if (level().isClientSide || this.isRemoved()
+                || !(source.getEntity() instanceof net.minecraft.world.entity.player.Player)) {
+            return false;
         }
+        selfDestructAndReturnDrone();
         return true;
     }
 
@@ -164,9 +168,9 @@ public class EntityRequestDrone extends EntityDroneBase {
         super.readAdditionalSaveData(tag);
         
         //? if < 1.21.1 {
-        heldItem = tag.contains("held") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("held"), com.hbm_m.platform.PlatformHooks.bestEffortProvider()) : ItemStack.EMPTY;
+        heldItem = tag.contains("held") ? com.hbm_m.platform.StackNbt.parse(tag.getCompound("held"), com.hbm_m.platform.PlatformHooks.bestEffortProvider()) : ItemStack.EMPTY;
         //?} else {
-        /*heldItem = tag.contains("held") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("held"), this.registryAccess()) : ItemStack.EMPTY;
+        /*heldItem = tag.contains("held") ? com.hbm_m.platform.StackNbt.parse(tag.getCompound("held"), this.registryAccess()) : ItemStack.EMPTY;
         *///?}
         
         nextActionTimer = 5;
@@ -196,9 +200,9 @@ public class EntityRequestDrone extends EntityDroneBase {
         super.addAdditionalSaveData(tag);
         
         //? if < 1.21.1 {
-        if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.PlatformHooks.safeItemSave(heldItem, com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
+        if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.StackNbt.saveNew(heldItem, com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
         //?} else {
-        /*if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.PlatformHooks.safeItemSave(heldItem, this.registryAccess()));
+        /*if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.StackNbt.saveNew(heldItem, this.registryAccess()));
         *///?}
 
         ListTag list = new ListTag();

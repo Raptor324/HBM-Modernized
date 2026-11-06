@@ -35,6 +35,9 @@ public final class MissileTrackClient {
     private static int lockedRenderFrameId = -1;
     private static final Map<Integer, Boolean> frameUseTrack = new HashMap<>();
 
+    /** true = идёт экспорт Flashback (состояние на прошлом клиентском тике) — для диагностического лога. */
+    private static boolean flashbackExportActive = false;
+
     private MissileTrackClient() {}
 
     public static boolean isEnabled() {
@@ -89,25 +92,61 @@ public final class MissileTrackClient {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
-        // SP pause menu: client tick still runs; do not predict ahead of frozen server pose.
-        if (mc.isPaused()) {
-            return;
-        }
-        
+
         ClientLevel level = mc.level;
         if (level == null) {
             clear(); // Очищаем ракеты, чтобы они не переносились в другую сессию
             return;
         }
 
-        tickStale();
+        // Мир на паузе (пауза-меню SP, Flashback-реплей на паузе, /tick freeze):
+        // поток поз остановлен, но клиентские тики продолжаются. Экстраполяцию
+        // выключаем — иначе ракета улетает от записанной траектории, а tickStale
+        // заодно удаляет «протухший» трек. Детект общий с NT-частицами:
+        // com.hbm_m.client.ClientWorldFreeze. Экспорт Flashback — НЕ пауза:
+        // поток поз на всём его прогоне идёт, поэтому frozen здесь false.
+        boolean frozen = com.hbm_m.client.ClientWorldFreeze.isWorldFrozen();
+
+        logFlashbackExportStart();
+
+        tickStale(frozen);
 
         for (TrackEntry entry : TRACKS.values()) {
-            entry.tick(level);
+            entry.tick(level, frozen);
         }
     }
 
-    private static void tickStale() {
+    /**
+     * Диагностика старта экспорта Flashback: одним INFO-логом состояние всех
+     * треков на входе (поза, скорость, решённый путь рендера). Если ракета
+     * всё же не летит в конкретном экспорте, этот лог — первая точка, куда
+     * смотреть (признак — chunkBoundary=false при «залипшем» wasTrack).
+     */
+    private static void logFlashbackExportStart() {
+        boolean exporting = com.hbm_m.client.ClientWorldFreeze.isFlashbackExporting();
+        if (exporting == flashbackExportActive) {
+            return;
+        }
+        flashbackExportActive = exporting;
+        if (!exporting) {
+            return;
+        }
+        StringBuilder sb = new StringBuilder("[Flashback export] start: ").append(TRACKS.size()).append(" missile track(s)");
+        int logged = 0;
+        for (TrackEntry e : TRACKS.values()) {
+            if (e.curr == null) continue;
+            if (logged++ == 8) {
+                sb.append(" | ...");
+                break;
+            }
+            sb.append(String.format(" | #%d (%.0f,%.0f,%.0f) vy=%.1f chunkBoundary=%b wasTrack=%b launch=%b",
+                    e.entityId, e.curr.x(), e.curr.y(), e.curr.z(), e.curr.vy(),
+                    e.crossedChunkBoundary, e.wasTrackWorldRender, e.isLaunchPhase()));
+        }
+        com.hbm_m.main.MainRegistry.LOGGER.info(sb.toString());
+    }
+
+    private static void tickStale(boolean frozen) {
         long now = System.currentTimeMillis();
         ClientLevel level = Minecraft.getInstance().level;
         Iterator<Map.Entry<Integer, TrackEntry>> it = TRACKS.entrySet().iterator();
@@ -117,7 +156,16 @@ public final class MissileTrackClient {
                 it.remove();
                 continue;
             }
-            if (entry.curr != null && now - entry.lastPacketMillis > STALE_MS) {
+            if (entry.curr == null) {
+                continue;
+            }
+            if (frozen) {
+                // Пауза реплея: пакеты не идут, но данные трека считаем «свежими»
+                // сколько бы реального времени ни прошло — трек держим до разморозки.
+                entry.markFresh(now);
+                continue;
+            }
+            if (now - entry.lastPacketMillis > STALE_MS) {
                 it.remove();
             }
         }
@@ -253,8 +301,25 @@ public final class MissileTrackClient {
             return curr;
         }
 
-        void tick(ClientLevel level) {
+        /** Пока мир на паузе пакеты не идут: освежаем «свежесть», чтобы tickStale не удалил трек. */
+        void markFresh(long nowMillis) {
+            this.lastPacketMillis = nowMillis;
+        }
+
+        void tick(ClientLevel level, boolean frozen) {
             if (curr == null) {
+                return;
+            }
+
+            if (frozen) {
+                // Время не идёт: поза статична (xo = x ⇒ interpolate(partialTick) не двигает
+                // меш, экстраполяция не улетает), контрейл/факел не спавним — иначе в
+                // застывшей точке фонтан частиц.
+                xo = x;
+                yo = y;
+                zo = z;
+                yRotO = yaw;
+                xRotO = pitch;
                 return;
             }
 

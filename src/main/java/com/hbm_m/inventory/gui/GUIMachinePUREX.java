@@ -59,7 +59,7 @@ public class GUIMachinePUREX extends GuiInfoScreen<MachinePUREXMenu> {
             if (isPointInRect(7, 125, 18, 18, mouseX, mouseY)) {
                 PurexRecipe recipe = purex.getSelectedRecipe();
                 if (recipe != null) {
-                    g.renderTooltip(this.font, buildRecipeTooltip(recipe), Optional.empty(), mouseX, mouseY);
+                    com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(g, this.font, buildRecipeTooltip(recipe), mouseX, mouseY);
                 } else {
                     g.renderTooltip(this.font, Component.translatable("gui.recipe.setRecipe").withStyle(ChatFormatting.YELLOW), mouseX, mouseY);
                 }

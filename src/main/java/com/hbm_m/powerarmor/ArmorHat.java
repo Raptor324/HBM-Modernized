@@ -26,13 +26,11 @@ public class ArmorHat extends ArmorModel implements IAttackHandler, IDamageHandl
         super(material, type, properties);
     }
 
-    //? if !fabric {
     @Override
     public boolean onEntityItemUpdate(ItemStack stack, ItemEntity entityItem) {
         entityItem.discard();
         return true;
     }
-    //?}
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {

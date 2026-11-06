@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.Block;
 public class AnimatedBlockItem extends BlockItem {
 
     /** Registrierungsnamen der einfachen Bloecke mit animiertem Gegenstand. */
-    public static final Set<String> NAMES = Set.of("autosaw", "thresher", "turret_sentry"); // vJ: Sentry-Icon 1:1 RenderTurretSentry#getRenderer // Stirling ist jetzt Mehrblock (MultiblockBlockItem)
+    public static final Set<String> NAMES = Set.of("autosaw", "thresher", "pump_steam", "pump_electric", "turret_sentry"); // vJ: Sentry-Icon 1:1 RenderTurretSentry#getRenderer // Stirling ist jetzt Mehrblock (MultiblockBlockItem)
 
     public AnimatedBlockItem(Block block, Properties properties) {
         super(block, properties);
@@ -21,6 +21,7 @@ public class AnimatedBlockItem extends BlockItem {
 
     //? if forge {
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -31,6 +32,7 @@ public class AnimatedBlockItem extends BlockItem {
     }
     //?} elif neoforge {
     /*@Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             @Override

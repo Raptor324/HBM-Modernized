@@ -132,6 +132,9 @@ public class MachineDerrickBlock extends BaseEntityBlock implements IMultiblockC
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
+            // The drill keeps a battery and upgrades: destroying the structure without dropping
+            // them deleted the contents.
+            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
             structureHelper.destroyStructure(level, pos, state.getValue(FACING));
         }
         super.onRemove(state, level, pos, newState, isMoving);
@@ -178,13 +181,13 @@ public class MachineDerrickBlock extends BaseEntityBlock implements IMultiblockC
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide());
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
+if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide());
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}

@@ -113,7 +113,7 @@ public class LambdaRocketEntity extends Entity {
         ListTag list = tag.getList("items", 10);
         for (int i = 0; i < list.size(); i++) {
             CompoundTag itemTag = list.getCompound(i);
-            if (itemTag.getByte("slot") == 0) payload = com.hbm_m.platform.PlatformHooks.itemStackOf(itemTag, com.hbm_m.platform.PlatformHooks.bestEffortProvider());
+            if (itemTag.getByte("slot") == 0) payload = com.hbm_m.platform.StackNbt.parse(itemTag, com.hbm_m.platform.PlatformHooks.bestEffortProvider());
         }
     }
 
@@ -124,7 +124,7 @@ public class LambdaRocketEntity extends Entity {
         if (!payload.isEmpty()) {
             CompoundTag itemTag = new CompoundTag();
             itemTag.putByte("slot", (byte) 0);
-            com.hbm_m.platform.PlatformHooks.saveItemStack(payload, itemTag, com.hbm_m.platform.PlatformHooks.bestEffortProvider());
+            com.hbm_m.platform.StackNbt.save(payload, itemTag, com.hbm_m.platform.PlatformHooks.bestEffortProvider());
             list.add(itemTag);
         }
         tag.put("items", list);

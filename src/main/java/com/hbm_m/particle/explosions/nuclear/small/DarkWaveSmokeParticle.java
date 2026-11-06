@@ -9,7 +9,8 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  *  ВОЛНОВОЙ ДЫМ - НЕ ПРОХОДИТ СКВОЗЬ БЛОКИ
  *
@@ -19,6 +20,7 @@ import net.minecraft.world.phys.Vec3;
  * - Создаёт тряску камеры при касании игрока
  * - Сила тряски зависит от расстояния частицы от эпицентра
  */
+@OnlyIn(Dist.CLIENT)
 public class DarkWaveSmokeParticle extends AbstractExplosionParticle {
 
     private static final double LIFT_FORCE = 0.3;

@@ -24,6 +24,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.MobHooks;
 //? if < 1.21.1 {
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
 //?}

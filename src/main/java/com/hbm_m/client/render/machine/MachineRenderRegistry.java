@@ -1,37 +1,43 @@
 package com.hbm_m.client.render.machine;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import org.joml.Matrix4f;
 
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.world.level.block.state.BlockState;
+
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.LoaderHooks;
 
 /**
- * Реестр всех фабричных спек станков. Заменяет пер-renderer бойлерплейт:
+ * Registry of all factory machine specs. Replaces per-renderer boilerplate:
  * <ul>
- *   <li>{@link #flushAll(Matrix4f)} — единый instanced-flush (InstancedRenderFrame
- *       зовёт его в AFTER_BLOCK_ENTITIES вместо N хардкодов flushInstancedBatches);</li>
- *   <li>{@link #clearAll()} — единая инвалидация GPU-кешей (вызывается из
- *       {@code com.hbm_m.client.render.cache.RenderCacheManager} на reload/disconnect).</li>
+ *   <li>{@link #flushAll(Matrix4f)} - a single instanced flush (InstancedRenderFrame
+ *       calls it in AFTER_BLOCK_ENTITIES instead of N hardcoded flushInstancedBatches);</li>
+ *   <li>{@link #clearAll()} - a single GPU-cache invalidation (called from
+ *       {@code com.hbm_m.client.render.cache.RenderCacheManager} on reload/disconnect).</li>
  * </ul>
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public final class MachineRenderRegistry {
 
     private static final List<MachineSpec<?>> SPECS = new ArrayList<>();
+    private static final java.util.Map<net.minecraft.world.level.block.entity.BlockEntityType<?>, MachineSpec<?>> BY_TYPE = new java.util.concurrent.ConcurrentHashMap<>();
 
     private MachineRenderRegistry() {}
 
     static void register(MachineSpec<?> spec) {
         SPECS.add(spec);
+        if (spec.type() != null) {
+            BY_TYPE.put(spec.type(), spec);
+            com.hbm_m.client.render.retained.RetainedInstanceGraph.get().registerSpec(spec.type(), spec);
+        }
         MainRegistry.LOGGER.info("[MachineRenderers] registered '{}' ({} parts)", spec.id(), spec.parts().size());
     }
 
@@ -39,14 +45,137 @@ public final class MachineRenderRegistry {
         return Collections.unmodifiableList(SPECS);
     }
 
-    /** Единый instanced-flush всех фабричных станков (render thread, AFTER_BLOCK_ENTITIES). */
+    @org.jetbrains.annotations.Nullable
+    public static MachineSpec<?> getSpec(net.minecraft.world.level.block.entity.BlockEntityType<?> type) {
+        if (type == null) return null;
+        return BY_TYPE.get(type);
+    }
+
+    public static boolean isManaged(net.minecraft.world.level.block.entity.BlockEntityType<?> type) {
+        if (type == null) return false;
+        return BY_TYPE.containsKey(type);
+    }
+
+    // ==================== Stress command helpers (/nucleus stress) ====================
+
+    /**
+     * Registry ids of every block handled by a Nucleus machine spec, namespaced
+     * and sorted ("hbm_m:advanced_assembly_machine", ...) - the Brigadier
+     * suggestion source for stress spawn. Real block ids, not internal spec ids.
+     */
+    public static List<String> managedBlockIds() {
+        List<String> out = new ArrayList<>();
+        for (int i = 0; i < SPECS.size(); i++) {
+            MachineSpec<?> spec = SPECS.get(i);
+            for (net.minecraft.world.level.block.Block block : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+                if (!isValidFor(block, spec.type())) {
+                    continue;
+                }
+                var key = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block);
+                String id = key.getNamespace() + ":" + key.getPath();
+                if (!out.contains(id)) {
+                    out.add(id);
+                }
+            }
+        }
+        java.util.Collections.sort(out);
+        return out;
+    }
+
+    /** Whether this block is rendered through a Nucleus machine spec. */
+    public static boolean isManagedBlock(net.minecraft.world.level.block.Block block) {
+        for (int i = 0; i < SPECS.size(); i++) {
+            if (isValidFor(block, SPECS.get(i).type())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Single instanced flush of all factory machines (render thread, AFTER_BLOCK_ENTITIES). */
     public static void flushAll(Matrix4f projection) {
         for (int i = 0; i < SPECS.size(); i++) {
             SPECS.get(i).flush(projection);
         }
     }
 
-    /** Единая инвалидация GPU-кешей всех фабричных станков (render thread). */
+    /**
+     * Phase 2 (after the MDI dispatch): fading instances of the direct paths -
+     * GPU-bones chain parts (Ring / assembly machine arms) and MDI-fallback.
+     * The order "opaque of all paths -> fading MDI -> fading direct paths"
+     * eliminates opaque geometry being depth-rejected by translucent geometry.
+     */
+    public static void flushAllFading(Matrix4f projection) {
+        for (int i = 0; i < SPECS.size(); i++) {
+            SPECS.get(i).flushFading(projection);
+        }
+    }
+
+    /**
+     * Binds machine specs to their baked multipart models - called from
+     * ModelEvent.ModifyBakingResult (after baking, before the first render).
+     *
+     * <p>One pass over the bake map: every {@link ConfiguredMultipartBakedModel}
+     * is resolved to a spec by the entry key. For facing machines EACH blockstate
+     * variant (facing with y-rotation) and item model ("item/<id>") is a SEPARATE
+     * instance, and each receives the spec's config (berWorld + item parts +
+     * render types).
+     */
+    public static void bindBakedModels(java.util.Map<?, BakedModel> models) {
+        // block (by ns:path registry key) -> spec; block item -> spec
+        java.util.Map<String, MachineSpec<?>> byBlock = new java.util.HashMap<>();
+        java.util.Map<String, MachineSpec<?>> byItem = new java.util.HashMap<>();
+        for (int i = 0; i < SPECS.size(); i++) {
+            MachineSpec<?> spec = SPECS.get(i);
+            for (net.minecraft.world.level.block.Block block : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+                if (!isValidFor(block, spec.type())) {
+                    continue;
+                }
+                var blockKey = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block);
+                byBlock.put(blockKey.getNamespace() + ":" + blockKey.getPath(), spec);
+                net.minecraft.world.item.Item item = block.asItem();
+                if (item != net.minecraft.world.item.Items.AIR) {
+                    var itemKey = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item);
+                    byItem.put(itemKey.getNamespace() + ":" + itemKey.getPath(), spec);
+                }
+            }
+        }
+
+        java.util.Map<MachineSpec<?>, Integer> boundCount = new java.util.IdentityHashMap<>();
+        for (var entry : models.entrySet()) {
+            if (!(entry.getValue() instanceof com.hbm_m.client.model.ConfiguredMultipartBakedModel model)) {
+                continue;
+            }
+            net.minecraft.resources.ResourceLocation key = LoaderHooks.getModelId(entry.getKey());
+            String path = key.getPath();
+            MachineSpec<?> spec = path.startsWith("item/")
+                    ? byItem.get(key.getNamespace() + ":" + path.substring("item/".length()))
+                    : byBlock.get(key.getNamespace() + ":" + path);
+            if (spec != null) {
+                model.applyMachineConfig(spec.deriveItemParts(), spec.chunkRenderTypes());
+                boundCount.merge(spec, 1, Integer::sum);
+            }
+        }
+        for (int i = 0; i < SPECS.size(); i++) {
+            MachineSpec<?> spec = SPECS.get(i);
+            if (!boundCount.containsKey(spec)) {
+                MainRegistry.LOGGER.warn("[MachineRenderers] spec '{}' bound 0 baked models - "
+                        + "the world will render doubled, item without an item filter", spec.id());
+            }
+        }
+    }
+
+    private static boolean isValidFor(net.minecraft.world.level.block.Block block,
+                                      net.minecraft.world.level.block.entity.BlockEntityType<?> type) {
+        for (BlockState state : block.getStateDefinition().getPossibleStates()) {
+            if (type.isValid(state)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Single GPU-cache invalidation of all factory machines (render thread). */
     public static void clearAll() {
         for (int i = 0; i < SPECS.size(); i++) {
             SPECS.get(i).clear();

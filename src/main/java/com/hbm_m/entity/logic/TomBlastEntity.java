@@ -28,18 +28,34 @@ public class TomBlastEntity extends EntityExplosionChunkloading {
         super(type, level);
     }
 
+    /**
+     * Same override as EntityNukeExplosionMK3 / EntitySoliniumExplosion / EntityBalefireExplosion.
+     * It was missing here, so a Tom crater ran on the base radius of 3 chunks while ExplosionTom
+     * writes blocks far past it without a loaded check.
+     */
+    @Override
+    protected int getChunkLoadRadius() {
+        if (this.destructionRange <= 0) {
+            return super.getChunkLoadRadius();
+        }
+        return Math.min(12, Math.max(super.getChunkLoadRadius(), (this.destructionRange + 15) >> 4) + 1);
+    }
+
     //? if < 1.21.1 {
 
     @Override
     protected void defineSynchedData() {
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    *///?}
+
     
     }
-    *///?}
 
     @Override
     public void tick() {

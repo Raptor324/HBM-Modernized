@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.StackNbt;
 
 /** 1:1 {@code ItemStructureRandomized}: fillWithRandomizedBlocks-Zeile mit Platzhalter fuer den Blockselektor. */
 public class ItemStructureRandomized extends ItemStructureTool {
@@ -25,7 +26,7 @@ public class ItemStructureRandomized extends ItemStructureTool {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
     //?} else {
     /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
-        Level level = com.hbm_m.platform.PlatformHooks.tooltipLevel(hbmTooltipCtx);
+        Level level = com.hbm_m.platform.ItemHooks.tooltipLevel(hbmTooltipCtx);
     *///?}
         //? if < 1.21.1 {
         super.appendHoverText(stack, level, list, flag);
@@ -47,9 +48,9 @@ public class ItemStructureRandomized extends ItemStructureTool {
         BlockPos pos = getAnchor(stack);
         if (pos == null) return;
 
-        int savedX = PlatformHooks.getInt(stack, "x");
-        int savedY = PlatformHooks.getInt(stack, "y");
-        int savedZ = PlatformHooks.getInt(stack, "z");
+        int savedX = StackNbt.getInt(stack, "x");
+        int savedY = StackNbt.getInt(stack, "y");
+        int savedZ = StackNbt.getInt(stack, "z");
 
         int minX = Math.min(savedX, x) - pos.getX();
         int minY = Math.min(savedY, y) - pos.getY();

@@ -1,6 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
@@ -9,6 +10,7 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCrackingTowerMenu;
 import com.hbm_m.recipe.CrackingTowerRecipe;
+
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -47,9 +49,11 @@ public class MachineCrackingTowerBlockEntity extends BaseMachineBlockEntity impl
 
         be.setupTanks();
 
-        for (DirPos con : be.getConPos()) {
-            be.trySubscribe(be.tanks[0].getTankType(), level, con.pos, con.dir);
-            be.trySubscribe(be.tanks[1].getTankType(), level, con.pos, con.dir);
+        if (be.probeDue(20)) {
+            for (DirPos con : be.getConPos()) {
+                be.trySubscribe(be.tanks[0].getTankType(), level, con.pos, con.dir);
+                be.trySubscribe(be.tanks[1].getTankType(), level, con.pos, con.dir);
+            }
         }
 
         if (level.getGameTime() % 5 == 0) be.crack();
@@ -62,8 +66,19 @@ public class MachineCrackingTowerBlockEntity extends BaseMachineBlockEntity impl
             }
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        be.syncIfStateChanged(0L, be.tankSyncSignature());
+    }
+
+    /** Anti-Spam-Signatur: Typ + Fuellstand aller fuenf Tanks (Muster wie CatalyticReformer/VacuumDistill). */
+    private long tankSyncSignature() {
+        long h = 0L;
+        for (FluidTank tank : tanks) h = h * 31L + tankFingerprint(tank);
+        return h;
+    }
+
+    private static long tankFingerprint(FluidTank tank) {
+        Fluid type = tank.getTankType();
+        return (type == null ? 0L : type.hashCode() * 31L) + tank.getFill();
     }
 
     private record DirPos(BlockPos pos, Direction dir) { }
@@ -212,5 +227,9 @@ public class MachineCrackingTowerBlockEntity extends BaseMachineBlockEntity impl
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineCrackingTowerMenu.create(id, inventory, this);
+    }
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
     }
 }

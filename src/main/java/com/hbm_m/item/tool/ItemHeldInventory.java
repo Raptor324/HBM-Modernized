@@ -51,7 +51,10 @@ public class ItemHeldInventory extends Item {
      * sammeln sich pro Huelsentyp im NBT, jede volle Einheit legt eine Huelse in die Tasche.
      */
     public static boolean pushCasing(ItemStack bag, ItemStack casing, float amount) {
-        if (!StackNbt.has(bag)) StackNbt.set(bag, new net.minecraft.nbt.CompoundTag());
+        if (bag.isEmpty()) return false;
+        // orCreate вместо set(EMPTY): на 1.21.1 set() с пустым тегом удаляет компонент,
+        // и следующий read() вернул бы null
+        StackNbt.orCreate(bag);
         String name = casing.getDescriptionId() + "@0";
         boolean ret = false;
 

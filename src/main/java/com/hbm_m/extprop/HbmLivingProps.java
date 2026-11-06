@@ -1,6 +1,5 @@
 package com.hbm_m.extprop;
 
-import com.hbm_m.platform.AttributeOps;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.RadiationConfig;
@@ -13,6 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.AttributeHooks;
 
 /**
  * Данные живых сущностей (радиация). Порт {@link com.hbm.extprop.HbmLivingProps} (1.7.10), минимальный набор для радиации.
@@ -188,6 +188,8 @@ public final class HbmLivingProps {
         return livingTag(entity).getFloat(NBT_DIGAMMA);
     }
 
+    /** Максимум дигаммы, как в оригинале ({@code incrementDigamma} зажимает в [0, 10]). */
+    public static final float maxDigamma = 10F;
 
     // ------------------------------------------------------------------ Restport: fehlende Felder
 
@@ -295,7 +297,7 @@ public final class HbmLivingProps {
         if (attr != null) {
             com.hbm_m.platform.AttributeHooks.removeModifier(attr, DIGAMMA_UUID);
             attr.addTransientModifier(com.hbm_m.platform.AttributeHooks.modifier(DIGAMMA_UUID, "digamma", healthMod,
-                    AttributeOps.MULTIPLY_TOTAL));
+                    AttributeHooks.MULTIPLY_TOTAL));
         }
 
         if (entity.getHealth() > entity.getMaxHealth() && entity.getMaxHealth() > 0) {
@@ -329,11 +331,12 @@ public final class HbmLivingProps {
 
     /** 1:1-Port von {@code incrementDigamma}: auf 0..10 begrenzt, dann {@link #setDigamma}. */
     public static void incrementDigamma(LivingEntity entity, float amount) {
+        if (entity.level().isClientSide) {
+            return;
+        }
         if (isDuck(entity)) amount = 0.0F;
-        float dRad = getDigamma(entity) + amount;
-        if (dRad > 10) dRad = 10;
-        if (dRad < 0) dRad = 0;
-        setDigamma(entity, dRad);
+        float total = Math.max(0F, Math.min(maxDigamma, getDigamma(entity) + amount));
+        setDigamma(entity, total);
     }
 
     /** {@code EntityDuck} des Originals ({@code entity_fucc_a_ducc}); EntityQuackos erbt davon. */

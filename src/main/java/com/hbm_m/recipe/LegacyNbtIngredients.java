@@ -34,6 +34,10 @@ public final class LegacyNbtIngredients {
 
     public static final DeferredRegister<IngredientType<?>> FORGE_TYPES =
             DeferredRegister.create(NeoForgeRegistries.Keys.INGREDIENT_TYPES, "forge");
+    public static final DeferredRegister<IngredientType<?>> C_TYPES =
+            DeferredRegister.create(NeoForgeRegistries.Keys.INGREDIENT_TYPES, "c");
+    public static final DeferredRegister<IngredientType<?>> NEOFORGE_TYPES =
+            DeferredRegister.create(NeoForgeRegistries.Keys.INGREDIENT_TYPES, "neoforge");
 
     // "nbt": SNBT-String oder Objekt (beides in Forge 1.20.1 erlaubt)
     private static final Codec<CompoundTag> NBT = TagParser.LENIENT_CODEC;
@@ -48,15 +52,27 @@ public final class LegacyNbtIngredients {
             BuiltInRegistries.ITEM.byNameCodec().listOf().optionalFieldOf("items").forGetter(p -> p.items.size() == 1 ? Optional.empty() : Optional.of(p.items)),
             NBT.fieldOf("nbt").forGetter(p -> p.nbt)
     ).apply(i, (one, many, nbt) -> new Partial(one.map(List::of).orElseGet(() -> many.orElse(List.of())), nbt)))
-            .validate(p -> p.items.isEmpty() ? DataResult.error(() -> "forge:partial_nbt braucht item oder items") : DataResult.success(p));
+            .validate(p -> p.items.isEmpty() ? DataResult.error(() -> "partial_nbt braucht item oder items") : DataResult.success(p));
 
-    public static final java.util.function.Supplier<IngredientType<Strict>> STRICT =
+    public static final java.util.function.Supplier<IngredientType<Strict>> FORGE_STRICT =
             FORGE_TYPES.register("nbt", () -> new IngredientType<>(STRICT_CODEC));
-    public static final java.util.function.Supplier<IngredientType<Partial>> PARTIAL =
+    public static final java.util.function.Supplier<IngredientType<Partial>> FORGE_PARTIAL =
             FORGE_TYPES.register("partial_nbt", () -> new IngredientType<>(PARTIAL_CODEC));
+
+    public static final java.util.function.Supplier<IngredientType<Strict>> C_STRICT =
+            C_TYPES.register("nbt", () -> new IngredientType<>(STRICT_CODEC));
+    public static final java.util.function.Supplier<IngredientType<Partial>> C_PARTIAL =
+            C_TYPES.register("partial_nbt", () -> new IngredientType<>(PARTIAL_CODEC));
+
+    public static final java.util.function.Supplier<IngredientType<Strict>> NEOFORGE_STRICT =
+            NEOFORGE_TYPES.register("nbt", () -> new IngredientType<>(STRICT_CODEC));
+    public static final java.util.function.Supplier<IngredientType<Partial>> NEOFORGE_PARTIAL =
+            NEOFORGE_TYPES.register("partial_nbt", () -> new IngredientType<>(PARTIAL_CODEC));
 
     public static void register(IEventBus modBus) {
         FORGE_TYPES.register(modBus);
+        C_TYPES.register(modBus);
+        NEOFORGE_TYPES.register(modBus);
     }
 
     // Item-NBT, wie ihn 1.20.1 (getShareTag) gesehen haette.
@@ -120,7 +136,7 @@ public final class LegacyNbtIngredients {
 
         @Override
         public IngredientType<?> getType() {
-            return STRICT.get();
+            return C_STRICT.get();
         }
     }
 
@@ -151,7 +167,7 @@ public final class LegacyNbtIngredients {
 
         @Override
         public IngredientType<?> getType() {
-            return PARTIAL.get();
+            return C_PARTIAL.get();
         }
     }
 }

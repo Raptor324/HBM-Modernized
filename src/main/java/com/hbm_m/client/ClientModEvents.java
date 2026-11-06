@@ -21,6 +21,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
@@ -30,28 +31,25 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+//? if forge {
 import net.minecraftforge.fml.common.Mod;
 //?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
+/*import net.neoforged.fml.common.EventBusSubscriber;
 *///?}
 
 //? if forge {
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 //?} elif neoforge {
-/*@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+/*@EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
 *///?}
 @SuppressWarnings({"UnstableApiUsage", "removal"})
 public class ClientModEvents {
 
     private static boolean initialized = false;
-    
+
     public static void init() {
         if (initialized) return;
         initialized = true;
@@ -59,6 +57,10 @@ public class ClientModEvents {
         // Induced radioactivity from a neutron flux gets its own tooltip line; kept as its own
         // handler because - unlike the block below - it must also apply to armour.
         NeutronActivationTooltip.init();
+
+        dev.architectury.event.events.client.ClientLifecycleEvent.CLIENT_LEVEL_LOAD.register(level -> {
+            com.hbm_m.client.render.NucleusDispatcherBypass.clearPresence();
+        });
 
         // Версионно-зависимая регистрация тултипов: на 1.20.1 Architectury даёт 3-параметровый
         // callback (stack, lines, flag), на 1.21.1+ — 4-параметровый с Item.TooltipContext.
@@ -77,41 +79,29 @@ public class ClientModEvents {
         });
 
         ClientTickEvent.CLIENT_POST.register(client -> {
+            // Порт onClientTickLast (1.7.10): Leitstern-Raycast alle 200 мс, только Обызвездный мир.
+            if (client.level != null && client.level.dimension() == Level.OVERWORLD) {
+                com.hbm_m.client.render.world.RenderNTMSkybox.updateLodeStar(client, client.level);
+            }
             com.hbm_m.client.overlay.OverlayInfoToast.tick();
+            // Порт ModEventHandlerClient:919 (1.7.10): метка в статус-стеке (ID_FILTER),
+            // обновляемая каждый тик, пока надета маска без фильтра.
+            if (client.player != null && com.hbm_m.util.ArmorUtil.isWearingEmptyMask(client.player)) {
+                com.hbm_m.client.overlay.OverlayInfoToast.show(
+                        Component.translatable("hud.hbm_m.mask.noFilter").withStyle(ChatFormatting.RED),
+                        20, com.hbm_m.client.overlay.OverlayInfoToast.ID_FILTER,
+                        com.hbm_m.client.overlay.OverlayInfoToast.rgbFromFormatting(ChatFormatting.RED));
+            }
             DoorAnimationDelayHelper.processQueue();
             DoorChunkInvalidationHelper.processPendingInvalidations();
             ShaderCompatibilityDetector.processPendingChunkInvalidation();
+            com.hbm_m.client.stress.NucleusStressManager.clientTick(client);
             ClientRenderHandler.onClientTickEnd();
             if (client.player != null) {
                 ParticleEffectClient.tickRadiationAura(client.player);
             }
             DuckKeyHandler.tick(client);
         });
-
-        //? if fabric {
-        /*WorldRenderEvents.AFTER_ENTITIES.register(context -> {
-            ModClothConfig cfg = ModClothConfig.get();
-            if (!cfg.enableOcclusionCulling) {
-                OcclusionCullingHelper.captureBlockEntityPassFrustum(null);
-            } else {
-                OcclusionCullingHelper.captureBlockEntityPassFrustum(context.frustum());
-            }
-        });
-
-        // РЕГРЕССИЯ-СТОП: instanced flush ТОЛЬКО здесь. END — не рисовать batch (грязные texture units).
-        WorldRenderEvents.AFTER_BLOCK_ENTITIES.register(context -> {
-            var cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-            InstancedRenderFrame.presentAfterBlockEntities(context.projectionMatrix(), cameraPos);
-        });
-
-        WorldRenderEvents.END.register(context -> {
-            InstancedRenderFrame.flushDeferredPresent();
-        });
-
-        WorldRenderEvents.LAST.register(context -> {
-            com.hbm_m.client.render.shader.IrisRenderBatch.closePersistentIfActive();
-        });
-        *///?}
     }
 
     /**
@@ -124,6 +114,13 @@ public class ClientModEvents {
      */
     private static void handleItemTooltip(ItemStack stack, @Nullable Level level, List<Component> lines, TooltipFlag flag) {
         if (stack.isEmpty()) return;
+
+        // Completion status
+        com.hbm_m.util.CompletionStatus status = com.hbm_m.util.CompletionTracker.getStatus(
+                BuiltInRegistries.ITEM.getKey(stack.getItem()));
+        if (status != null) {
+            lines.add(status.getTooltip());
+        }
 
         // Версионно-независимые предметные тултипы.
         if (stack.getItem() instanceof ITooltipProvider provider) {
@@ -181,7 +178,6 @@ public class ClientModEvents {
         }
     }
 
-    //? if forge || neoforge {
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
         // KHR_debug-колбэк (первый кадр, render thread): ловит сообщения драйвера
@@ -212,37 +208,50 @@ public class ClientModEvents {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
             com.hbm_m.client.render.shader.ShaderBindResync.restoreVanillaTextureBindings();
             // Original RenderNTMSkyboxChainloader / RenderNTMSkyboxImpact: Zusaetze direkt nach dem Himmel
-            //? if < 1.21.1 {
-            com.hbm_m.client.render.world.RenderNTMSkybox.renderAfterSky(event.getPoseStack(), event.getPartialTick());
-            //?} else {
-            /*com.hbm_m.client.render.world.RenderNTMSkybox.renderAfterSky(event.getPoseStack(),
-                    event.getPartialTick().getGameTimeDeltaPartialTick(true));
-            *///?}
+            com.hbm_m.client.render.world.RenderNTMSkybox.renderAfterSky(event.getPoseStack(),
+                    com.hbm_m.platform.RenderHooks.getPartialTickRaw());
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
             com.hbm_m.client.compat.dh.DhClientState.onAfterSky();
             // Захват чистой ванильной проекции кадра (FOV/zoom/bob) — из неё
             // строится проекция дальнего И ближнего NT-проходов.
-            Minecraft mcCapture = Minecraft.getInstance();
-            //? if < 1.21.1 {
-            com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(mcCapture.getFrameTime());
-            //?} else {
-            /*com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(
-                    mcCapture.getTimer().getGameTimeDeltaPartialTick(true));
-            *///?}
+            com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(
+                    com.hbm_m.platform.RenderHooks.getPartialTickRaw());
             MissileTrackClient.beginRenderFrame();
             com.hbm_m.client.render.implementations.RebarRenderer.beginFrame();
             logShadowBerDiagnostics();
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
+            // Diagram capture pass (Simulated): the deferred Nucleus pipeline is
+            // fully disengaged there - no frame-basis stamping, no frame
+            // bookkeeping, no instanced collect; the vanilla BER + immediate
+            // per-part path serves the capture (see DiagramRenderCompat).
+            // Early return is safe: the stage ifs below cannot match this event.
+            if (com.hbm_m.compat.simulated.DiagramRenderCompat.isRenderingDiagram()) {
+                return;
+            }
             ModClothConfig cfg = ModClothConfig.get();
             Minecraft mc = Minecraft.getInstance();
+            // Level pose basis (R_cam*bob on 1.20.1): records are built bob-stripped,
+            // the bob is re-applied at draw time via FrameViewState.viewMatrix() -
+            // without this the roster asserts / bake memcmp freeze records at a
+            // stale bob phase and animated parts float while walking.
+            com.hbm_m.client.render.FrameViewState.noteFrameBasis(event.getPoseStack().last().pose());
             var cameraPos = mc.gameRenderer.getMainCamera().getPosition();
-            var frustum = cfg.enableOcclusionCulling ? event.getFrustum() : null;
+            var frustum = cfg.getEffectiveOcclusionCullingMode() == ModClothConfig.OcclusionCullingMode.CPU
+                    ? event.getFrustum() : null;
             InstancedRenderFrame.onBeforeBlockEntities(
                     event.getProjectionMatrix(), cameraPos, frustum);
+
+            // Байпас диспетчера: машины Nucleus рисуются плоским обходом ЗДЕСЬ
+            // (до обхода BE), диспетчер их потом только отменяет. poseStack
+            // события = базис диспетчера (R_cam без трансляции, 1.20.1).
+            com.hbm_m.client.render.NucleusDispatcherBypass.collectMain(
+                    event.getPoseStack(), mc.renderBuffers().bufferSource(),
+                    com.hbm_m.platform.RenderHooks.getPartialTick(),
+                    event.getFrustum());
 
             // РЕГРЕССИЯ-СТОП (двойная отрисовка): меши ракет рисуются ТОЛЬКО
             // в EngineHandler на AFTER_WEATHER (renderFiltered) — единый
@@ -258,9 +267,21 @@ public class ClientModEvents {
                     mc.renderBuffers().bufferSource(),
                     event.getPoseStack(),
                     cameraPos);
-            InstancedRenderFrame.presentAfterBlockEntities(event.getProjectionMatrix(), cameraPos);
+            // Retained instanced/MDI flush is main-pass-only: a diagram pass bound
+            // to its own FBO with an ortho projection must neither consume the main
+            // batch nor present records collected during the capture (none survive
+            // - collect is gated off for that pass).
+            if (!com.hbm_m.compat.simulated.DiagramRenderCompat.isRenderingDiagram()) {
+                InstancedRenderFrame.presentAfterBlockEntities(event.getProjectionMatrix(), cameraPos);
+            }
             com.hbm_m.client.RebarPlacerPreview.render(event.getPoseStack(), cameraPos);
             return;
+        }
+
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_WEATHER) {
+            if (!com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()) {
+                com.hbm_m.client.render.shader.PackAdditiveQueue.drainAndClear();
+            }
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
@@ -282,11 +303,29 @@ public class ClientModEvents {
             com.hbm_m.util.TooltipUtil.applyLegacyGray(event.getToolTip());
         }
     }
+
+    @SubscribeEvent
+    public static void onTooltipColor(net.minecraftforge.client.event.RenderTooltipEvent.Color event) {
+        int[] border = com.hbm_m.inventory.gui.element.GUIElements.ACTIVE_TOOLTIP_BORDER.get();
+        if (border != null) {
+            event.setBorderStart(border[0]);
+            event.setBorderEnd(border[1]);
+        }
+    }
     //?} elif neoforge {
     /*@SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
     public static void onItemTooltipLegacyGray(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent event) {
         if (com.hbm_m.util.TooltipUtil.isHbmStack(event.getItemStack())) {
             com.hbm_m.util.TooltipUtil.applyLegacyGray(event.getToolTip());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onTooltipColor(net.neoforged.neoforge.client.event.RenderTooltipEvent.Color event) {
+        int[] border = com.hbm_m.inventory.gui.element.GUIElements.ACTIVE_TOOLTIP_BORDER.get();
+        if (border != null) {
+            event.setBorderStart(border[0]);
+            event.setBorderEnd(border[1]);
         }
     }
     *///?}
@@ -296,15 +335,47 @@ public class ClientModEvents {
     public static void onRenderGuiPre(net.minecraftforge.client.event.RenderGuiEvent.Pre event) {
         // Виньетка использует multiply-блендинг (ZERO/ONE_MINUS_SRC_COLOR) и
         // молча ломается при расхождении кеша факторов блендинга с физикой
-        // (GlStateManager._blendFuncSeparate но-опится при «совпадении»).
+        // (GlStateManager._blendFuncSeparate но-опятся при «совпадении»).
         // Форсируем честный блендинг ДО Gui.render.
         com.hbm_m.client.render.shader.ShaderBindResync.forceHonestBlendState();
+    }
+
+    /** Прицельный HUD блоков {@link com.hbm_m.interfaces.ILookOverlay} (ориг. TooltipHandler). */
+    @SubscribeEvent
+    public static void onBlockLookOverlay(net.minecraftforge.client.event.RenderGuiEvent.Pre event) {
+        com.hbm_m.client.overlay.BlockLookOverlayHud.render(event.getGuiGraphics());
+    }
+
+    /** Секция движка рендера Nucleus на F3-экране (левая панель). */
+    @SubscribeEvent
+    public static void onNucleusDebugText(net.minecraftforge.client.event.CustomizeGuiOverlayEvent.DebugText event) {
+        if (!com.hbm_m.platform.RenderHooks.isDebugScreenVisible()) {
+            return;
+        }
+        com.hbm_m.client.render.NucleusDebug.appendDebugLines(event.getLeft());
     }
     //?} elif neoforge {
     /*@SubscribeEvent
     public static void onRenderGuiPre(net.neoforged.neoforge.client.event.RenderGuiEvent.Pre event) {
-        // wie Forge: ehrlicher Blend-Zustand vor Gui.render (Vignette mit multiply-Blending)
+        // Виньетка использует multiply-блендинг (ZERO/ONE_MINUS_SRC_COLOR) и
+        // молча ломается при расхождении кеша факторов блендинга с физикой
+        // (GlStateManager._blendFuncSeparate но-опятся при «совпадении»).
+        // Форсируем честный блендинг ДО Gui.render.
         com.hbm_m.client.render.shader.ShaderBindResync.forceHonestBlendState();
+    }
+
+    @SubscribeEvent
+    public static void onBlockLookOverlay(net.neoforged.neoforge.client.event.RenderGuiEvent.Pre event) {
+        // Паритет с Forge: прицельный HUD блоков ILookOverlay (раньше был только на 1.20.1).
+        com.hbm_m.client.overlay.BlockLookOverlayHud.render(event.getGuiGraphics());
+    }
+
+    @SubscribeEvent
+    public static void onNucleusDebugText(net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent.DebugText event) {
+        if (!com.hbm_m.platform.RenderHooks.isDebugScreenVisible()) {
+            return;
+        }
+        com.hbm_m.client.render.NucleusDebug.appendDebugLines(event.getLeft());
     }
     *///?}
 
@@ -312,7 +383,6 @@ public class ClientModEvents {
      * Instanced flush — только {@link com.hbm_m.client.render.culling.InstancedRenderFrame#presentAfterBlockEntities}
      * на {@code AFTER_BLOCK_ENTITIES}. {@code RenderTickEvent.END} / отложенный flush → белые модели.
      */
-    //?}
 
     // ── Диагностика shadow pass (1.21.1: машины не отбрасывают теней) ──
     /** Предыдущее значение счётчика; логируем только первое значение и смены 0↔N. */
@@ -329,9 +399,25 @@ public class ClientModEvents {
             com.hbm_m.main.MainRegistry.LOGGER.info(
                     "[HBM] Iris shadow pass: {} block-entity renderer invocations last frame{}",
                     count,
-                    zero ? " — BERs are NOT called in the shadow pass (empty shadow BE list / terrain-mod interop), shadows impossible"
-                         : " — shadow draw path active");
+                    zero ? " - BERs are NOT called in the shadow pass (empty shadow BE list / terrain-mod interop), shadows impossible"
+                         : " - shadow draw path active");
             lastLoggedShadowBerCount = count;
         }
     }
+
+    //? if forge {
+    @SubscribeEvent
+    public static void onClientLevelUnload(net.minecraftforge.event.level.LevelEvent.Unload event) {
+        if (event.getLevel() instanceof net.minecraft.client.multiplayer.ClientLevel) {
+            com.hbm_m.client.render.NucleusDispatcherBypass.clearPresence();
+        }
+    }
+    //?} elif neoforge {
+    /*@SubscribeEvent
+    public static void onClientLevelUnload(net.neoforged.neoforge.event.level.LevelEvent.Unload event) {
+        if (event.getLevel() instanceof net.minecraft.client.multiplayer.ClientLevel) {
+            com.hbm_m.client.render.NucleusDispatcherBypass.clearPresence();
+        }
+    }
+    *///?}
 }

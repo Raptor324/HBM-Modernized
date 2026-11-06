@@ -10,11 +10,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
 import net.minecraftforge.items.SlotItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.items.SlotItemHandler;
-*///?}
 
 /** Slot-Koordinaten 1:1 aus {@code ContainerMicrowave} (1.7.10 Original): Input (80,35),
  *  Output (140,35, extraktionsonly), Batterie (8,53). */
@@ -56,15 +52,14 @@ public class MachineMicrowaveMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof MachineMicrowaveBlockEntity m) return m;
-        throw new IllegalStateException("No MachineMicrowaveBlockEntity at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineMicrowaveBlockEntity at " + pos);
     }
 
     public MachineMicrowaveBlockEntity getBlockEntity() { return blockEntity; }
 
     @Override
     public boolean stillValid(Player player) {
-        return blockEntity.getLevel() == player.level()
-            && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

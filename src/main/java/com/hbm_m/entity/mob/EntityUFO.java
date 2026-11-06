@@ -2,6 +2,7 @@ package com.hbm_m.entity.mob;
 
 import com.hbm_m.advancement.ModAdvancements;
 import com.hbm_m.api.entity.IRadiationImmune;
+import com.hbm_m.entity.projectile.TurretBulletEntity;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.util.ContaminationUtil;
 import com.hbm_m.util.ContaminationUtil.ContaminationType;
@@ -39,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 port of {@code EntityUFO} - a 15x4 block flying fortress with 20000 HP.
@@ -49,9 +51,8 @@ import java.util.List;
  * the first 200 ticks, homing rockets for the last 100. Anything caught under it while the beam
  * is on takes 1000 damage, catches fire and is irradiated.</p>
  *
- * <p>Geschosse wie im Original: {@code EntityBulletBaseNT} (WORM_LASER, zielsuchende UFO_ROCKET).
- * Der Todesknall ist wie im Original Vanilla-Explosion plus
- * {@code ExplosionNukeSmall.PARAMS_MEDIUM}.</p>
+ * <p><b>Substitutions:</b> the projectiles are {@link TurretBulletEntity} rather than the
+ * unported {@code EntityBulletBaseNT}, so the rockets fly straight instead of homing.</p>
  */
 public class EntityUFO extends Mob implements Enemy, IRadiationImmune {
 
@@ -92,17 +93,16 @@ public class EntityUFO extends Mob implements Enemy, IRadiationImmune {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(BEAM, false);
-        this.entityData.define(WAYPOINT, BlockPos.ZERO);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
-        builder.define(BEAM, false);
-        builder.define(WAYPOINT, BlockPos.ZERO);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     *///?}
+        defs.define(BEAM, false);
+        defs.define(WAYPOINT, BlockPos.ZERO);
+    }
 
     public boolean getBeam()             { return this.entityData.get(BEAM); }
     public void setBeam(boolean beam)    { this.entityData.set(BEAM, beam); }
@@ -127,7 +127,7 @@ public class EntityUFO extends Mob implements Enemy, IRadiationImmune {
     }
 
     private boolean canAttack(Entity entity) {
-        return !(entity instanceof EntityUFO) && !(entity instanceof com.hbm_m.entity.projectile.EntityBulletBaseNT);
+        return !(entity instanceof EntityUFO) && !(entity instanceof TurretBulletEntity);
     }
 
     // ─── Behaviour ───────────────────────────────────────────────────────────
@@ -239,7 +239,7 @@ public class EntityUFO extends Mob implements Enemy, IRadiationImmune {
         for (Entity entity : this.level().getEntities(this, column)) {
             if (!canAttack(entity)) continue;
             entity.hurt(this.damageSources().mobAttack(this), 1000F);
-            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(entity, 5);
+            com.hbm_m.platform.MobHooks.setSecondsOnFire(entity, 5);
             if (entity instanceof LivingEntity living) {
                 ContaminationUtil.contaminate(living, HazardType.RADIATION, ContaminationType.CREATIVE, 5F);
             }
@@ -310,35 +310,30 @@ public class EntityUFO extends Mob implements Enemy, IRadiationImmune {
                 target.getY() + target.getBbHeight() / 2 - pivotY,
                 target.getZ() - pivotZ).normalize();
 
-        // Restport: 1:1 EntityBulletBaseNT mit WORM_LASER
-        com.hbm_m.entity.projectile.EntityBulletBaseNT bullet = com.hbm_m.entity.projectile.EntityBulletBaseNT.create(this.level(),
-                com.hbm_m.handler.BulletConfigSyncingUtil.WORM_LASER);
-        bullet.setThrower(this);
-        bullet.setPos(pivotX, pivotY, pivotZ);
-        bullet.setThrowableHeading(heading.x, heading.y, heading.z, 2F, 0.02F);
+        TurretBulletEntity bullet = TurretBulletEntity.create(this.level(), pivotX, pivotY, pivotZ,
+                heading.x * 2, heading.y * 2, heading.z * 2, 8F, ModItems.PARTICLE_DIGAMMA.get());
+        bullet.setOwner(this);
         this.level().addFreshEntity(bullet);
 
         this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                com.hbm_m.sound.HbmSoundsNT.get("hbm:weapon.ballsLaser"), SoundSource.HOSTILE, 5.0F, 1.0F);
+                SoundEvents.BEACON_POWER_SELECT, SoundSource.HOSTILE, 5.0F, 1.0F);
     }
 
-    /** Zielsuchende UFO-Rakete (EntityBulletBaseNT, UFO_ROCKET), Ziel vorbelegt wie im Original. */
+    /** The original's rockets home; {@link TurretBulletEntity} has no homing, so these fly true. */
     private void rocketAttack(Entity target) {
         Vec3 heading = new Vec3(
                 target.getX() - this.getX(),
                 target.getY() + target.getBbHeight() / 2 - this.getY() - 0.5D,
                 target.getZ() - this.getZ()).normalize();
 
-        com.hbm_m.entity.projectile.EntityBulletBaseNT rocket = com.hbm_m.entity.projectile.EntityBulletBaseNT.create(this.level(),
-                com.hbm_m.handler.BulletConfigSyncingUtil.UFO_ROCKET);
-        rocket.setThrower(this);
-        rocket.setPos(this.getX(), this.getY() - 0.5D, this.getZ());
-        rocket.setThrowableHeading(heading.x, heading.y, heading.z, 2F, 0.02F);
-        rocket.homingTarget = target.getId();
+        TurretBulletEntity rocket = TurretBulletEntity.create(this.level(),
+                this.getX(), this.getY() - 0.5D, this.getZ(),
+                heading.x * 2, heading.y * 2, heading.z * 2, 20F, ModItems.MISSILE_NUCLEAR.get());
+        rocket.setOwner(this);
         this.level().addFreshEntity(rocket);
 
         this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                com.hbm_m.sound.HbmSoundsNT.get("hbm:turret.richard_fire"), SoundSource.HOSTILE, 5.0F, 1.0F);
+                SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.HOSTILE, 5.0F, 1.0F);
     }
 
     /** Flies straight at the waypoint, faster when chasing a player, and stops if the way is blocked. */
@@ -387,7 +382,7 @@ public class EntityUFO extends Mob implements Enemy, IRadiationImmune {
 
         if (this.deathTime == 19 && !this.level().isClientSide) {
             this.level().explode(this, this.getX(), this.getY(), this.getZ(),
-                    10F, true, Level.ExplosionInteraction.MOB);
+                    10F, Level.ExplosionInteraction.MOB);
             com.hbm_m.explosion.ExplosionNukeSmall.explode(this.level(), this.getX(), this.getY(), this.getZ(),
                     com.hbm_m.explosion.ExplosionNukeSmall.PARAMS_MEDIUM);
 

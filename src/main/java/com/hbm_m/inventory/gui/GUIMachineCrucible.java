@@ -13,8 +13,8 @@ import com.hbm_m.inventory.menu.MachineCrucibleMenu;
 import com.hbm_m.inventory.recipes.CrucibleRecipes;
 import com.hbm_m.inventory.recipes.CrucibleRecipes.CrucibleRecipe;
 import com.hbm_m.lib.RefStrings;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -29,6 +29,10 @@ import net.minecraft.world.item.ItemStack;
 /**
  * 1:1 {@code GUICrucible}: Abfall- (links) und Rezeptstapel (Mitte) als farbige Saeulen je Material, Fortschritts- und
  * Hitzebalken mit TU-Tooltips, das Rezeptfeld (106,80) oeffnet den Rezeptwaehler und zeigt das gewaehlte Rezept.
+ *
+ * <p>Merge note: resolved onto the machines-branch {@link MachineCrucibleBlockEntity}; all read fields
+ * (progress, heat, recipeStack, wasteStack, recipe, processTime, maxHeat, recipeZCapacity, wasteZCapacity)
+ * exist there and are full-NBT synced every tick.</p>
  */
 public class GUIMachineCrucible extends GuiInfoScreen<MachineCrucibleMenu> {
 
@@ -58,7 +62,7 @@ public class GUIMachineCrucible extends GuiInfoScreen<MachineCrucibleMenu> {
             if (leftPos + 106 <= x && leftPos + 106 + 18 > x && topPos + 80 < y && topPos + 80 + 18 >= y) {
                 CrucibleRecipe recipe = CrucibleRecipes.get(this.crucible.recipe);
                 if (recipe != null) {
-                    g.renderComponentTooltip(this.font, recipe.print(Screen.hasShiftDown()), x, y);
+                    com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(g, this.font, recipe.print(Screen.hasShiftDown()), x, y);
                 } else {
                     g.renderTooltip(this.font, Component.translatable("gui.recipe.setRecipe").withStyle(ChatFormatting.YELLOW), x, y);
                 }

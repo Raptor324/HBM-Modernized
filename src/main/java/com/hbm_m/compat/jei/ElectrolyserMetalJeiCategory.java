@@ -1,88 +1,137 @@
 package com.hbm_m.compat.jei;
-//? if forge || neoforge {
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.Arrays;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.fluid.ModFluids;
-import com.hbm_m.inventory.recipes.ElectrolyserMetalRecipes;
-import com.hbm_m.inventory.recipes.ElectrolyserMetalRecipes.ElectrolysisMetalRecipe;
-import com.hbm_m.item.material.ItemScraps;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.recipe.ElectrolyserMetalRecipe;
 
+import dev.architectury.fluid.FluidStack;
+//? if forge {
+import mezz.jei.api.forge.ForgeTypes;
+import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
+//?} elif neoforge {
+/*import mezz.jei.api.neoforge.NeoForgeTypes;
+*///?}
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
-import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Original {@code ElectrolyserMetalRecipes.getRecipes()}: Eingabe plus 100 mB Salpetersaeure -> zwei Schmelzen
- * (als fluessiger Schrott) und feste Nebenprodukte.
+ * JEI category for Electrolyser metal-mode recipes - Kristall + 100mB Salpetersaeure -> 2 Metall-Ausgaenge +
+ * Byprodukt-Items (siehe {@link ElectrolyserMetalRecipe}).
+ *
+ * <p>Wie im 1.7.10-NEI ({@code ElectrolyserMetalRecipes.getRecipes}) wird die Salpetersaeure als zweiter
+ * Eingang gezeigt — die Maschine verbraucht 100mB pro Durchlauf (Tank 3).</p>
+ *
+ * <p>Data-driven: рецепты читаются напрямую aus {@code RecipeManager} (JSON {@code hbm_m:electrolyser_metal}),
+ * ранее — статический {@code ElectrolyserRecipes} (metal-mode).</p>
  */
-public class ElectrolyserMetalJeiCategory extends JeiUniversalRecipeCategory<ElectrolyserMetalJeiCategory.Entry> {
+public class ElectrolyserMetalJeiCategory extends JeiGenericRecipeCategory<ElectrolyserMetalRecipe> {
 
-    public record Entry(Item input, ElectrolysisMetalRecipe recipe) { }
+    public static final RecipeType<ElectrolyserMetalRecipe> RECIPE_TYPE =
+            RecipeType.create(RefStrings.MODID, "electrolyser_metal", ElectrolyserMetalRecipe.class);
 
-    public static final RecipeType<Entry> RECIPE_TYPE = RecipeType.create(RefStrings.MODID, "electrolyser_metal", Entry.class);
+    private static final int FLUID_RENDERER_CAPACITY = 4_000;
+    /** 100mB Salpetersaeure pro Durchlauf, wie im Original (NEI-Eingang 2 + Tank 3 der Maschine). */
+    private static final long NITRIC_ACID_PER_OPERATION = 100;
 
     public ElectrolyserMetalJeiCategory(IGuiHelper guiHelper) {
-        super(guiHelper, new ItemStack[] { new ItemStack(ModBlocks.ELECTROLYSER.get()) });
-    }
-
-    public static List<Entry> recipes() {
-        List<Entry> list = new ArrayList<>();
-        for (Map.Entry<Item, ElectrolysisMetalRecipe> e : ElectrolyserMetalRecipes.all().entrySet()) list.add(new Entry(e.getKey(), e.getValue()));
-        return list;
-    }
-
-    @Override public RecipeType<Entry> getRecipeType() { return RECIPE_TYPE; }
-    @Override public Component getTitle() { return Component.translatable("container.machineElectrolyser"); }
-
-    @Override protected int getInputCount(Entry e) { return 2; }
-    @Override protected int getOutputCount(Entry e) { return getOutputStacks(e).size(); }
-    @Override protected List<List<ItemStack>> getInputStacks(Entry e) { return List.of(List.of(new ItemStack(e.input()))); }
-
-    @Override
-    protected List<ItemStack> getOutputStacks(Entry e) {
-        List<ItemStack> outputs = new ArrayList<>();
-        if (e.recipe().output1 != null) outputs.add(ItemScraps.create(e.recipe().output1, true));
-        if (e.recipe().output2 != null) outputs.add(ItemScraps.create(e.recipe().output2, true));
-        for (ItemStack byproduct : e.recipe().byproduct) outputs.add(byproduct);
-        return outputs;
+        super(guiHelper, new ItemStack[]{
+                new ItemStack(ModBlocks.ELECTROLYSER.get())
+        });
     }
 
     @Override
-    public void setRecipe(IRecipeLayoutBuilder builder, Entry e, IFocusGroup focuses) {
-        int[][] inPos = JeiNeiLayout.getUniversalInputCoords(2);
-        List<ItemStack> outputs = getOutputStacks(e);
-        int[][] outPos = JeiNeiLayout.getUniversalOutputCoords(outputs.size());
+    public RecipeType<ElectrolyserMetalRecipe> getRecipeType() {
+        return RECIPE_TYPE;
+    }
 
-        builder.addSlot(RecipeIngredientRole.INPUT, inPos[0][0], inPos[0][1])
-                .setBackground(itemSlotBackground, -1, -1)
-                .addItemStack(new ItemStack(e.input()));
-        builder.addSlot(RecipeIngredientRole.INPUT, inPos[1][0], inPos[1][1])
-                .setBackground(itemSlotBackground, -1, -1)
-                .setCustomRenderer(JeiFluidTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                .addFluidStack(ModFluids.NITRIC_ACID.getSource(), 100);
+    @Override
+    public Component getTitle() {
+        return Component.translatable("container.hbm_m.electrolyser");
+    }
 
-        for (int i = 0; i < outputs.size(); i++) {
-            if (outputs.get(i).isEmpty()) continue;
-            builder.addSlot(RecipeIngredientRole.OUTPUT, outPos[i][0], outPos[i][1])
-                    .setBackground(itemSlotBackground, -1, -1)
-                    .addItemStack(outputs.get(i));
+    @Override
+    protected int getInputCount(ElectrolyserMetalRecipe recipe) {
+        // Kristall + 100mB Salpetersaeure — wie im 1.7.10-NEI (zwei Eingangs-Slots).
+        return 2;
+    }
+
+    @Override
+    protected int getOutputCount(ElectrolyserMetalRecipe recipe) {
+        int count = 0;
+        if (!recipe.getOutputA().isEmpty()) count++;
+        if (!recipe.getOutputB().isEmpty()) count++;
+        count += recipe.getByproducts().length;
+        return count;
+    }
+
+    @Override
+    protected boolean hasBlueprintTemplate(ElectrolyserMetalRecipe recipe) {
+        return false;
+    }
+
+    @Override
+    protected void addInputSlots(IRecipeLayoutBuilder builder, ElectrolyserMetalRecipe recipe, int inputXOffset) {
+        // ElectrolyserMetalHandler extends NEIUniversalHandler: dessen getInputCoords(2) setzt den
+        // Kristall auf {48,24} (direkt am Pfeil) und die Salpetersaeure auf {30,24} — wie in 1.7.10.
+        int[][] positions = JeiNeiLayout.getUniversalInputCoords(2);
+
+        // Ingredient-вход (кристалл): NEI чередовал все варианты ингредиента — показываем все.
+        ItemStack[] matching = recipe.getInput().getItems();
+        if (matching != null && matching.length > 0) {
+            addItemSlot(builder, RecipeIngredientRole.INPUT,
+                    positions[0][0] + inputXOffset, positions[0][1])
+                    .addItemStacks(Arrays.asList(matching));
         }
 
-        builder.addSlot(RecipeIngredientRole.CATALYST, 75, 31)
-                .addItemStacks(java.util.Arrays.asList(getMachines(e)));
+        addFluidSlot(builder, RecipeIngredientRole.INPUT,
+                positions[1][0] + inputXOffset, positions[1][1],
+                FluidStack.create(ModFluids.NITRIC_ACID.getSource(), NITRIC_ACID_PER_OPERATION));
+    }
+
+    private void addFluidSlot(IRecipeLayoutBuilder builder, RecipeIngredientRole role, int x, int y, FluidStack fluid) {
+        addItemSlot(builder, role, x, y)
+                .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
+                //? if forge {
+                .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
+                //?} elif neoforge {
+                /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                .addIngredient(NeoForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
+                *///?}
+    }
+
+    @Override
+    protected void addOutputSlots(IRecipeLayoutBuilder builder, ElectrolyserMetalRecipe recipe, int outputXOffset) {
+        int outputCount = getOutputCount(recipe);
+        int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(outputCount);
+        int slotIndex = 0;
+
+        if (!recipe.getOutputA().isEmpty()) {
+            addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
+                    .addItemStack(recipe.getOutputA());
+            slotIndex++;
+        }
+        if (!recipe.getOutputB().isEmpty()) {
+            addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
+                    .addItemStack(recipe.getOutputB());
+            slotIndex++;
+        }
+        for (ItemStack byproduct : recipe.getByproducts()) {
+            addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
+                    .addItemStack(byproduct);
+            slotIndex++;
+        }
+    }
+
+    @Override
+    protected void addBlueprintSlot(IRecipeLayoutBuilder builder, ElectrolyserMetalRecipe recipe, int machineXOffset) {
+        // Kein Blueprint-Slot fuer Electrolyser-Metal-Rezepte.
     }
 }
-//?} else {
-/*public final class ElectrolyserMetalJeiCategory {
-    private ElectrolyserMetalJeiCategory() {}
-}*///?}

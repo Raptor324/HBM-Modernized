@@ -16,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.block.Block;
+import com.hbm_m.platform.BlockEntityItemData;
 
 /**
  * 1:1-Port von {@code com.hbm.crafting.handlers.ContainerUpgradeCraftingHandler}: ein geformtes Rezept, dessen

@@ -33,7 +33,6 @@ public class ArmorTrenchmaster extends ModArmorFSB {
         return true;
     }
 
-    //? if !fabric {
     @Override
     public boolean isDamageable(ItemStack stack) {
         return false;
@@ -43,7 +42,6 @@ public class ArmorTrenchmaster extends ModArmorFSB {
     public int getMaxDamage(ItemStack stack) {
         return 0;
     }
-    //?}
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {

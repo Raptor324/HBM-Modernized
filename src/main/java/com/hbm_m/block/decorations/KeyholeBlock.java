@@ -20,6 +20,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * Порт {@code BlockKeyhole} / {@code BlockRedBrickKeyhole} (1.7.10) — потайная скважина.
@@ -102,7 +103,7 @@ public class KeyholeBlock extends Block {
             if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
                 net.minecraft.resources.ResourceLocation advId =
                         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "red_room");
-                PlatformHooks.awardAdvancementIfEligible(serverPlayer, advId, true);
+                MobHooks.awardAdvancementIfEligible(serverPlayer, advId, true);
             }
             level.playSound(null, pos, SoundEvents.ZOMBIE_ATTACK_WOODEN_DOOR, SoundSource.BLOCKS, 0.7F, 1.4F);
             return InteractionResult.CONSUME;

@@ -26,11 +26,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
 public class GUITemplateFolder extends Screen {
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(RefStrings.MODID, "textures/gui/gui_planner.png");
-    *///?} else {
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_planner.png");
-    //?}
 
     private final int imageWidth = 176;
     private final int imageHeight = 229;
@@ -219,7 +215,7 @@ public class GUITemplateFolder extends Screen {
                         }
                     }
 
-                    guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+                    com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(guiGraphics, this.font, tooltip, mouseX, mouseY);
                 } else {
                     guiGraphics.renderTooltip(this.font, outputStack, mouseX, mouseY);
                 }

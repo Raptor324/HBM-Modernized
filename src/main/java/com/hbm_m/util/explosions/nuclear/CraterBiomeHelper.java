@@ -1,5 +1,6 @@
 package com.hbm_m.util.explosions.nuclear;
 
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.world.biome.ModBiomes;
 
 import net.minecraft.core.BlockPos;
@@ -34,12 +35,12 @@ public class CraterBiomeHelper {
     public static void applyBiomesAsync(ServerLevel level, BlockPos center, double zone3Radius, double zone4Radius) {
         MinecraftServer server = level.getServer();
         if (server == null) {
-            System.err.println("[CraterBiomeHelper] ERROR: No MinecraftServer!");
+            MainRegistry.LOGGER.error("[CraterBiomeHelper] No MinecraftServer!");
             return;
         }
 
         long startTime = System.currentTimeMillis();
-        System.out.println("[CraterBiomeHelper] START: Applying crater biomes v7 (full coverage)");
+        MainRegistry.LOGGER.info("[CraterBiomeHelper] START: Applying crater biomes v7 (full coverage)");
 
         // Biomes from registry
         var biomeRegistry = level.registryAccess().registryOrThrow(Registries.BIOME);
@@ -49,7 +50,7 @@ public class CraterBiomeHelper {
         Optional<Holder.Reference<Biome>> outerOpt = biomeRegistry.getHolder(ModBiomes.OUTER_CRATER_KEY);
 
         if (innerOpt.isEmpty() || outerOpt.isEmpty()) {
-            System.err.println("[CraterBiomeHelper] ERROR: Biomes not registered!");
+            MainRegistry.LOGGER.error("[CraterBiomeHelper] Biomes not registered!");
             return;
         }
 
@@ -86,8 +87,8 @@ public class CraterBiomeHelper {
         sendAllChunkUpdatesImmediate(level, modifiedChunks);
 
         long endTime = System.currentTimeMillis();
-        System.out.println("[CraterBiomeHelper] COMPLETE: Modified " + modifiedCount + "/" + totalChunks +
-                " chunks in " + (endTime - startTime) + " ms");
+        MainRegistry.LOGGER.info("[CraterBiomeHelper] COMPLETE: Modified {}/{} chunks in {} ms",
+                modifiedCount, totalChunks, endTime - startTime);
     }
 
 
@@ -204,13 +205,21 @@ public class CraterBiomeHelper {
                         null
                 );
 
-                var players = level.getServer().getPlayerList().getPlayers();
-                for (var player : players) {
+                // Same filter as WorldUtil.flushChunk: right level AND within view distance. This
+                // used to send to every player on the server, so a nuke in the Overworld pushed
+                // Overworld chunk data into the client levels of players in other dimensions, and a
+                // large crater still shipped one full chunk packet per chunk to everyone far away.
+                int viewDistance = level.getServer().getPlayerList().getViewDistance();
+                var chunkPos = chunk.getPos();
+                for (var player : level.getServer().getPlayerList().getPlayers()) {
+                    if (player.level() != level) continue;
+                    var pc = player.chunkPosition();
+                    if (Math.abs(pc.x - chunkPos.x) > viewDistance + 1
+                            || Math.abs(pc.z - chunkPos.z) > viewDistance + 1) continue;
                     player.connection.send(packet);
                 }
             } catch (Exception e) {
-                System.err.println("[CraterBiomeHelper] Failed to send chunk update for " + chunk.getPos());
-                e.printStackTrace();
+                MainRegistry.LOGGER.error("[CraterBiomeHelper] Failed to send chunk update for {}", chunk.getPos(), e);
             }
         }
     }

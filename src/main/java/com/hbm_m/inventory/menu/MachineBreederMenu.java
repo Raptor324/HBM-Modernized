@@ -13,11 +13,11 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Two-slot menu (input/output) matching {@code gui_breeder.png}'s actual layout 1:1 - slot
@@ -82,7 +82,7 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
         if (be instanceof MachineBreederBlockEntity breeder) {
             return breeder;
         }
-        throw new IllegalStateException("BlockEntity is not a Breeder");
+        throw new MenuBlockEntityMissingException("BlockEntity is not a Breeder");
     }
 
     public MachineBreederBlockEntity getBlockEntity() {
@@ -169,12 +169,10 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
             if (!moveItemStackTo(stack, playerStart, playerEnd, true)) {
                 return ItemStack.EMPTY;
             }
-        } else if (stack.getItem() instanceof com.hbm_m.item.nuclear.ItemBreedingRod) {
+        } else {
             if (!moveItemStackTo(stack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
                 return ItemStack.EMPTY;
             }
-        } else {
-            return ItemStack.EMPTY;
         }
 
         if (stack.isEmpty()) {
@@ -188,7 +186,6 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.BREEDER.get());
     }
 }

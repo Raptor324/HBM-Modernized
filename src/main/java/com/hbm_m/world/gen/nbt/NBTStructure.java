@@ -50,6 +50,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code com.hbm.world.gen.nbt.NBTStructure}: .nbt-Strukturen speichern/laden/aufbauen und als Weltgen-Strukturen
@@ -239,7 +240,7 @@ public class NBTStructure {
 
                     BlockEntity te = world.getBlockEntity(pos);
                     if (te != null) {
-                        CompoundTag nbt = PlatformHooks.saveBlockEntityWithoutMetadata(te, world.registryAccess());
+                        CompoundTag nbt = BlockHooks.saveWithoutMetadata(te, world.registryAccess());
                         nbt.remove("x");
                         nbt.remove("y");
                         nbt.remove("z");
@@ -538,7 +539,7 @@ public class NBTStructure {
         /*legacyItemsToComponents(nbt);
         *///?}
 
-        PlatformHooks.loadBlockEntityTag(te, nbt, world.registryAccess());
+        BlockHooks.loadCustomOnly(te, nbt, world.registryAccess());
 
         if (te instanceof INBTTileEntityTransformable transformable) {
             transformable.transformTE(world, coordBaseMode);

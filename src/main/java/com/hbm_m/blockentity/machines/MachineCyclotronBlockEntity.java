@@ -16,6 +16,7 @@ import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.CyclotronRecipe;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -27,6 +28,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import com.hbm_m.platform.StackNbt;
 
 public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, com.hbm_m.interfaces.IConditionalInvAccess {
 
@@ -62,6 +64,13 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
     private int progress;
     /** Alte 5x5x5-Lagen schon geprueft (nicht gespeichert: einmal je Laden). */
     private boolean legacyCellsChecked;
+
+    /**
+     * Кэш скана рецептов, общий для всех трёх дорожек (CONTRACT 2 — value keying):
+     * подпись строится из фингерпринтов target+input стаков, одинаковые пары дорожек
+     * легитимно шарят закэшированный ответ.
+     */
+    private final CachedRecipeResolver<CyclotronRecipe> recipeResolver = new CachedRecipeResolver<>();
 
     public MachineCyclotronBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CYCLOTRON_BE.get(), pos, state, INVENTORY_SIZE, MAX_POWER, 5_000_000L);
@@ -199,7 +208,7 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
                 return true;
             }
 
-            if (!PlatformHooks.isSameItemSameTags(existing, out)) {
+            if (!StackNbt.sameItemSameTags(existing, out)) {
                 continue;
             }
 
@@ -235,7 +244,7 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
             if (existing.isEmpty()) {
                 inventory.setStackInSlot(outputSlot, out);
             } else {
-                if (!PlatformHooks.isSameItemSameTags(existing, out)) {
+                if (!StackNbt.sameItemSameTags(existing, out)) {
                     continue;
                 }
                 int max = Math.min(existing.getMaxStackSize(), inventory.getSlotLimit(outputSlot));
@@ -265,12 +274,18 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
         if (target == null || input == null || target.isEmpty() || input.isEmpty() || level == null) {
             return null;
         }
-        for (CyclotronRecipe r : RecipeHooks.getAllRecipes(level, CyclotronRecipe.Type.INSTANCE)) {
-            if (r.matches(target, input)) {
-                return r;
-            }
-        }
-        return null;
+        // Рецепты data-driven — поиск по двум стекам через RecipeManager (RecipeHooks),
+        // кэшированный на тик+подпись через CachedRecipeResolver.
+        return recipeResolver.resolve(level, CyclotronRecipe.Type.INSTANCE,
+                CachedRecipeResolver.sign(0L,
+                        StackNbt.fingerprint(target),
+                        StackNbt.fingerprint(input)),
+                (lvl, all) -> {
+                    for (CyclotronRecipe r : all) {
+                        if (r.matches(target, input)) return r;
+                    }
+                    return null;
+                });
     }
 
     private void chargeFromBattery() {
@@ -369,7 +384,6 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
         net.minecraft.core.Direction facing = state.getValue(com.hbm_m.block.machines.MachineCyclotronBlock.FACING);
         return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 0.0);
     }
-
     // ─── Original IConditionalInvAccess: je Ringseite drei Anschlusszellen fuer die drei Spuren ───────────
 
     //? if forge {
@@ -402,9 +416,8 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
         return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot < SLOT_OUTPUT_START && isItemValidForSlot(slot, stack), (slot, stack) -> slot >= SLOT_OUTPUT_START && slot < SLOT_OUTPUT_END_EXCLUSIVE);
     }
     //?} elif neoforge {
-    /*/^* Original: die drei Zellen jeder Seite fuehren Eingang/Ziel der Spur 0/1/2 plus alle Ausgaenge; sonst nur Ausgaenge. ^/
-    @Override
-    public net.neoforged.neoforge.items.IItemHandler getConditionalItemHandler(net.minecraft.core.BlockPos part, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+    /*@Override
+    public net.minecraftforge.items.IItemHandler getConditionalItemHandler(net.minecraft.core.BlockPos part, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         for (net.minecraft.core.Direction dir : new net.minecraft.core.Direction[] {
                 net.minecraft.core.Direction.NORTH, net.minecraft.core.Direction.SOUTH,
                 net.minecraft.core.Direction.WEST, net.minecraft.core.Direction.EAST }) {
@@ -421,14 +434,27 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
-            net.neoforged.neoforge.items.IItemHandler h = itemAccess(new int[] { });
+            net.minecraftforge.items.IItemHandler h = itemAccess(new int[] { });
             return com.hbm_m.platform.LazyCap.of(() -> h).cast();
         }
         return super.getHbmCapability(cap, side);
     }
 
-    private net.neoforged.neoforge.items.IItemHandler itemAccess(int[] slots) {
+    private net.minecraftforge.items.IItemHandler itemAccess(int[] slots) {
         return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot < SLOT_OUTPUT_START && isItemValidForSlot(slot, stack), (slot, stack) -> slot >= SLOT_OUTPUT_START && slot < SLOT_OUTPUT_END_EXCLUSIVE);
     }
     *///?}
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        //? if forge {
+        if (side == null) return this.inventory;
+        return itemAccess(new int[] { });
+        //?} elif neoforge {
+        /*if (side == null) return this.inventory;
+        return itemAccess(new int[] { });
+        *///?} else {
+        /*return this.inventory;
+        *///?}
+    }
 }

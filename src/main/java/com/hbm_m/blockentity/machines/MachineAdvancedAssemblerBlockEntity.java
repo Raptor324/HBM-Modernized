@@ -9,6 +9,7 @@ import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.interfaces.IClientTicker;
 import com.hbm_m.interfaces.IFrameSupportable;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -40,30 +41,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fml.DistExecutor;
 //?}
-//? if neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import team.reborn.energy.api.EnergyStorage;
-import com.hbm_m.client.machine.AdvancedAssemblerClientTicker;
-import com.hbm_m.platform.PlatformHooks;
-*///?}
 /**
  * Advanced Assembler Block Entity:
  * - Наследование от BaseMachineBlockEntity
@@ -119,16 +105,21 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     private boolean needsClientSync = false;
     private int ticksSinceLastSync = 0;
 
-    private static Object newAdvAssemblerClientTickerInstance() {
-        try {
-            return Class.forName("com.hbm_m.client.machine.AdvancedAssemblerClientTicker").getDeclaredConstructor().newInstance();
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
+    /**
+     * Клиентское состояние-тикер (звуки, кольцо, руки). Создаётся через
+     * {@link com.hbm_m.util.ClientTickerRegistry} (фабрика регистрируется в
+     * ClientSetup) — общий механизм фабрики, без рефлексии; на dedicated
+     * сервере реестр пуст и тикер null.
+     */
     @Nullable
-    private Object clientTicker = null;
+    private IClientTicker clientTicker = null;
+
+    /** Клиентский тикер для рендерера (null на сервере и до первого клиентского тика). */
+    @Nullable
+    @OnlyIn(Dist.CLIENT)
+    public IClientTicker getClientTicker() {
+        return clientTicker;
+    }
 
     // ContainerData: упаковываем long как два int через LongDataPacker
     protected final ContainerData data = new ContainerData() {
@@ -195,7 +186,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     protected void setupFluidCapability() {
-        //? if forge || neoforge {
+        //? if forge {
         // Экспонируем входной бак (inputTank) через базовый fluidHandlerOpt.
         setFluidHandler(inputTank);
         //?}
@@ -274,60 +265,17 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
         if (level.isClientSide) {
             if (entity.clientTicker == null) {
-                entity.clientTicker = newAdvAssemblerClientTickerInstance();
+                entity.clientTicker = com.hbm_m.util.ClientTickerRegistry.create(entity);
+                if (entity.clientTicker == null) {
+                    // Клиентский сетап ещё не добежал (или тип без тикера) —
+                    // NOOP, следующий тик повторит попытку.
+                    entity.clientTicker = IClientTicker.NOOP;
+                    return;
+                }
             }
-            invokeAdvAssemblerClientTick(entity.clientTicker, level, pos, state, entity);
+            entity.clientTicker.clientTick();
         } else {
             entity.serverTick();
-        }
-    }
-
-    private static final String ADV_ASM_CLIENT_TICKER = "com.hbm_m.client.machine.AdvancedAssemblerClientTicker";
-
-    private static volatile java.lang.reflect.Method cachedAdvAsmClientTick;
-    private static volatile java.lang.reflect.Method cachedAdvAsmOnRemoved;
-    private static volatile java.lang.reflect.Method cachedAdvAsmGetRingAngle;
-    private static volatile java.lang.reflect.Method cachedAdvAsmGetPrevRingAngle;
-    private static volatile java.lang.reflect.Method cachedAdvAsmGetArms;
-    private static volatile Class<?> cachedAdvAsmArmComponentType;
-
-    private static void ensureAdvAssemblerReflectCache() {
-        if (cachedAdvAsmGetRingAngle != null) {
-            return;
-        }
-        synchronized (MachineAdvancedAssemblerBlockEntity.class) {
-            if (cachedAdvAsmGetRingAngle != null) {
-                return;
-            }
-            try {
-                Class<?> cl = Class.forName(ADV_ASM_CLIENT_TICKER);
-                cachedAdvAsmClientTick = cl.getMethod("clientTick", Level.class, BlockPos.class, BlockState.class, MachineAdvancedAssemblerBlockEntity.class);
-                cachedAdvAsmOnRemoved = cl.getMethod("onRemoved");
-                cachedAdvAsmGetRingAngle = cl.getMethod("getRingAngle");
-                cachedAdvAsmGetPrevRingAngle = cl.getMethod("getPrevRingAngle");
-                cachedAdvAsmGetArms = cl.getMethod("getArms");
-                cachedAdvAsmArmComponentType = Class.forName(ADV_ASM_CLIENT_TICKER + "$AssemblerArm");
-            } catch (ReflectiveOperationException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    private static void invokeAdvAssemblerClientTick(Object ticker, Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
-        ensureAdvAssemblerReflectCache();
-        try {
-            cachedAdvAsmClientTick.invoke(ticker, level, pos, state, entity);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static void invokeAdvAssemblerClientTickerOnRemoved(Object ticker) {
-        ensureAdvAssemblerReflectCache();
-        try {
-            cachedAdvAsmOnRemoved.invoke(ticker);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -457,24 +405,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         });
         //?}
 
-        //? if fabric {
-        /*var itemEnergy = EnergyStorage.ITEM.find(energySourceStack, null);
-        if (itemEnergy == null) return;
-
-        long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-        if (energyNeeded <= 0) return;
-
-        long maxTransfer = Math.min(energyNeeded, this.getReceiveSpeed());
-        if (maxTransfer <= 0) return;
-
-        try (Transaction tx = Transaction.openOuter()) {
-            long extracted = itemEnergy.extract(maxTransfer, tx);
-            if (extracted > 0) {
-                setEnergyStored(getEnergyStored() + extracted);
-                tx.commit();
-            }
-        }
-        *///?}
 
         //? if neoforge {
         /*var itemEnergy = energySourceStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
@@ -696,7 +626,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     // Пакеты синхронизации
     // (кастомный onDataPacket сохранён: readNbtData с реальным Provider, если level доступен)
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        CompoundTag tag = PlatformHooks.getItemTag(pkt);
+        CompoundTag tag = pkt.getTag();
         if (tag != null) {
             readNbtData(tag, level != null ? level.registryAccess() : null);
         }
@@ -775,19 +705,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
     *///?}
 
-    //? if fabric {
-    /*@Nullable
-    public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
-        if (side != null) {
-            if (fluidSidesFromMultiblockStructure) {
-                if (!allowedFluidSides.contains(side)) return null;
-            } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) return null;
-        }
-        // По умолчанию: вниз = вход, вверх = выход, иначе вход
-        if (side == Direction.UP) return outputTank.getStorage();
-        return inputTank.getStorage();
-    }
-    *///?}
 
     @Override
     public void setAllowedEnergySides(java.util.Set<Direction> sides) {
@@ -842,7 +759,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         return this.allowedFluidSides;
     }
 
-    //? if forge || neoforge {
     @Override
     public void onLoad() {
         super.onLoad();
@@ -850,7 +766,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level).setFluidTanks(inputTank, outputTank);
         }
     }
-    //?}
 
     //? if forge {
     @Override
@@ -869,60 +784,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     public void setRemoved() {
         if (level != null && level.isClientSide && clientTicker != null) {
-            invokeAdvAssemblerClientTickerOnRemoved(clientTicker);
+            clientTicker.onRemoved();
         }
         super.setRemoved();
     }
 
-    //? if fabric {
-    /*@Environment(EnvType.CLIENT)
-    public float getRingAngle() {
-        return clientTicker != null ? clientTicker.getRingAngle() : 0;
-    }
 
-    @Environment(EnvType.CLIENT)
-    public float getPrevRingAngle() {
-        return clientTicker != null ? clientTicker.getPrevRingAngle() : 0;
-    }
-
-    @Environment(EnvType.CLIENT)
-    public AdvancedAssemblerClientTicker.AssemblerArm[] getArms() {
-        return clientTicker != null ? clientTicker.getArms() : new AdvancedAssemblerClientTicker.AssemblerArm[0];
-    }
-
-    @Environment(EnvType.CLIENT)
-    @Nullable
-    private ResourceLocation clientRecipeIconCacheId;
-
-    @Environment(EnvType.CLIENT)
-    private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
-
-    @Environment(EnvType.CLIENT)
-    public ItemStack getClientRecipeIcon() {
-        ResourceLocation id = selectedRecipeId;
-        if (id == null) {
-            clientRecipeIconCacheId = null;
-            clientRecipeIconCache = ItemStack.EMPTY;
-            return ItemStack.EMPTY;
-        }
-        if (id.equals(clientRecipeIconCacheId)) {
-            return clientRecipeIconCache;
-        }
-        clientRecipeIconCacheId = id;
-        Level level = getLevel();
-        if (level == null) {
-            clientRecipeIconCache = ItemStack.EMPTY;
-            return ItemStack.EMPTY;
-        }
-        clientRecipeIconCache = RecipeHooks.getRecipeByKey(level.getRecipeManager(), id)
-                .filter(r -> r instanceof AssemblerRecipe)
-                .map(r -> ((AssemblerRecipe) r).getResultItemSafe())
-                .orElse(ItemStack.EMPTY);
-        return clientRecipeIconCache;
-    }
-    *///?}
-
-    //? if forge || neoforge {
     @Nullable
     private ResourceLocation clientRecipeIconCacheId;
 
@@ -952,51 +819,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 .orElse(ItemStack.EMPTY);
         return clientRecipeIconCache;
     }
-
-    @OnlyIn(Dist.CLIENT)
-    public float getRingAngle() {
-        if (clientTicker == null) {
-            return 0f;
-        }
-        ensureAdvAssemblerReflectCache();
-        try {
-            return (Float) cachedAdvAsmGetRingAngle.invoke(clientTicker);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public float getPrevRingAngle() {
-        if (clientTicker == null) {
-            return 0f;
-        }
-        ensureAdvAssemblerReflectCache();
-        try {
-            return (Float) cachedAdvAsmGetPrevRingAngle.invoke(clientTicker);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public Object getArms() {
-        if (clientTicker == null) {
-            return emptyAssemblerArmsArray();
-        }
-        ensureAdvAssemblerReflectCache();
-        try {
-            return cachedAdvAsmGetArms.invoke(clientTicker);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static Object emptyAssemblerArmsArray() {
-        ensureAdvAssemblerReflectCache();
-        return java.lang.reflect.Array.newInstance(cachedAdvAsmArmComponentType, 0);
-    }
-    //?}
 
     @Override
     protected BlockPos[] getExtraEnergyPorts() {
@@ -1074,5 +896,11 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             return null;
         }
         return null;
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
     }
 }

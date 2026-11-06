@@ -1,0 +1,44 @@
+/**
+ * Compute scatter upload: batches many small staging-ring -> dest-VBO copies into
+ * a single dispatch (4 copy ops per 64-lane workgroup, 16 lanes strided over each
+ * op's words). The old one-workgroup-per-op shape idled 50% of the lanes on full
+ * 32-word records and ~92% on 4/5-word LIGHT/TRANSFORM slices; 16 lanes per op
+ * cover every current op size exactly (32 words = 2 strided iterations of 16).
+ * Replaces N per-span glCopyBufferSubData driver calls during mass-update bursts
+ * (TTL re-collect storms, mega-base rebuilds). Engaged by GpuSpanUploader only
+ * above span/byte thresholds on non-Intel GPUs; small transfers stay on the
+ * hardware DMA path (GL31.glCopyBufferSubData).
+ *
+ * @credit CrankShaft / fewizz / Jdb100 (scatter.glsl pattern)
+ */
+#version 430 core
+
+#define OPS_PER_WG 4u
+#define LANES_PER_OP 16u
+
+layout(local_size_x = OPS_PER_WG * LANES_PER_OP) in;
+
+struct CopyOp {
+    uint srcWord;   // word offset in the staging ring
+    uint dstWord;   // word offset in the destination VBO
+    uint words;     // copy length in words (4 bytes)
+    uint pad;
+};
+
+layout(std430, binding = 0) readonly buffer Ops { CopyOp ops[]; };
+layout(std430, binding = 1) readonly buffer Src { uint srcData[]; };
+layout(std430, binding = 2) writeonly buffer Dst { uint dstData[]; };
+
+uniform uint uNumOps;
+
+void main() {
+    // Tail workgroup: ops beyond the batch do nothing (workgroup order is
+    // undefined, but every op writes a disjoint dst range).
+    uint opIdx = gl_WorkGroupID.x * OPS_PER_WG + gl_LocalInvocationID.x / LANES_PER_OP;
+    if (opIdx >= uNumOps) return;
+    CopyOp op = ops[opIdx];
+    uint lane = gl_LocalInvocationID.x % LANES_PER_OP;
+    for (uint w = lane; w < op.words; w += LANES_PER_OP) {
+        dstData[op.dstWord + w] = srcData[op.srcWord + w];
+    }
+}

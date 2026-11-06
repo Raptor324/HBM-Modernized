@@ -1,5 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
+import com.hbm_m.client.render.weapon.WeaponJointRig;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.client.weapon.WeaponResources;
@@ -47,12 +50,11 @@ public class ItemRenderSPAS12 extends ItemRenderWeaponBase {
 		GunGL.rotate(equip[0], 1, 0, 0);
 
 		HbmAnimations.applyRelevantTransformation("MainBody");
-		GunGL.renderPart(WeaponResources.spas_12, "MainBody");
+		WeaponRenderRegistry.renderPart(WeaponResources.spas_12, "MainBody", GunGL.pose());
 
-		GunGL.pushMatrix();
-		HbmAnimations.applyRelevantTransformation("PumpGrip");
-		GunGL.renderPart(WeaponResources.spas_12, "PumpGrip");
-		GunGL.popMatrix();
+		WeaponJointRig rig = WeaponRenderRegistry.getRig(WeaponResources.spas_12);
+		double[] pumpAnim = HbmAnimations.getRelevantTransformation("PumpGrip");
+		WeaponKinematics.renderPartWithJoint(rig, "PumpGrip", GunGL.pose(), (float) pumpAnim[2]);
 
 		GunGL.pushMatrix();
 		GunGL.bindTexture(WeaponResources.casings_tex);
@@ -99,29 +101,17 @@ public class ItemRenderSPAS12 extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 1.75D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, -0.75, 0);
-
+		setupThirdPerson(stack, 1.75D, 0, -0.75, 0);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 2D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(4.25, -0.5, 0);
+		setupInv(stack, 2.0D, 4.25, -0.5, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -10D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, -0.5, -4.25);
+		setupModTable(stack, -10D, 0, -0.5, -4.25);
 	}
 
 	@Override

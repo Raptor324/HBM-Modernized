@@ -52,11 +52,12 @@ public class ItemAnchorRemote extends ModBatteryItem {
         if (ctx.getLevel().getBlockState(pos).is(ModBlocks.TELEANCHOR.get())) {
             ItemStack stack = ctx.getItemInHand();
             long charge = charge(stack);
-            if (!StackNbt.has(stack)) StackNbt.set(stack, new CompoundTag());
             setEnergy(stack, charge);
-            StackNbt.tag(stack).putInt("x", pos.getX());
-            StackNbt.tag(stack).putInt("y", pos.getY());
-            StackNbt.tag(stack).putInt("z", pos.getZ());
+            // orCreate вместо set(EMPTY)+tag(): на 1.21.1 set() с пустым тегом удаляет компонент
+            CompoundTag t = StackNbt.orCreate(stack);
+            t.putInt("x", pos.getX());
+            t.putInt("y", pos.getY());
+            t.putInt("z", pos.getZ());
             return InteractionResult.sidedSuccess(ctx.getLevel().isClientSide);
         }
         return InteractionResult.PASS;

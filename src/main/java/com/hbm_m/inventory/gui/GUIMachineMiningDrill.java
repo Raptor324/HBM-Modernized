@@ -4,14 +4,13 @@ import com.hbm_m.blockentity.machines.MachineMiningDrillBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineMiningDrillMenu;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.network.NBTControlPacket;
+import com.hbm_m.network.MiningDrillToggleC2SPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import net.minecraft.client.Minecraft;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -20,6 +19,7 @@ import net.minecraft.world.entity.player.Inventory;
  * 1:1 {@code GUIMachineExcavator} (242x204): fuenf Kippschalter (Bohrer, Brecher, Wand, Adernabbau, Behutsamkeit)
  * mit Statuslampen, Energiebalken + Betriebslampe, blinkender Bohrkopf-Hinweis, Saeuretank.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineMiningDrill extends GuiInfoScreen<MachineMiningDrillMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -67,10 +67,8 @@ public class GUIMachineMiningDrill extends GuiInfoScreen<MachineMiningDrillMenu>
         }
 
         if (toggle != null && drill != null) {
-            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(com.hbm_m.sound.HbmSoundsNT.get("hbm:block.leverLarge"), 1.0F));
-            CompoundTag data = new CompoundTag();
-            data.putBoolean(toggle, true);
-            NBTControlPacket.sendToServer(drill.getBlockPos(), data);
+            playClickSound();
+            MiningDrillToggleC2SPacket.sendToServer(drill.getBlockPos(), toggle);
             return true;
         }
 

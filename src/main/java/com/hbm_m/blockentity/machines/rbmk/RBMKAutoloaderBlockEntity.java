@@ -1,6 +1,5 @@
 package com.hbm_m.blockentity.machines.rbmk;
 
-import com.hbm_m.platform.StackNbt;
 
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.handler.rbmk.RBMKNeutronHandler.RBMKType;
@@ -22,7 +21,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Autoloader: stores fuel rods and automatically loads/unloads adjacent loadable RBMK columns.
  */
-public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements MenuProvider {
+public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements MenuProvider, com.hbm_m.interfaces.ICopiable {
 
     /**
      * 1:1 with {@code TileEntityRBMKAutoloader}: eighteen slots, split in two halves. Slots 0-8
@@ -178,7 +177,6 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
      * The piston travels four blocks <b>down</b> into the fuel channel, so the inherited column box
      * (which only ever grows upward) culls it away as soon as the block itself leaves the frustum.
      */
-    // Phase D: auf NeoForge ueber RenderBoundsProvider (HbmBerBounds), daher Methode auf beiden Loadern
     //? if forge {
     @Override
     @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
@@ -231,8 +229,24 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
             CompoundTag s = list.getCompound(i);
             int idx = s.getByte("s") & 0xFF;
             if (idx < SLOTS && s.contains("item"))
-                slots[idx] = StackNbt.parse(s.getCompound("item"));
+                slots[idx] = com.hbm_m.platform.StackNbt.parse(s.getCompound("item"), registries);
         }
     }
 
+    /* ── Устройство настройки: порог обогащения цикла (оригинал, clamp 5..95) ── */
+
+    @Override
+    public net.minecraft.nbt.CompoundTag getSettings(Level level, BlockPos pos) {
+        net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
+        data.putInt("cycle", cycle);
+        return data;
+    }
+
+    @Override
+    public void pasteSettings(net.minecraft.nbt.CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) {
+        if (nbt.contains("cycle")) {
+            this.cycle = net.minecraft.util.Mth.clamp(nbt.getInt("cycle"), 5, 95);
+        }
+        setChanged();
+    }
 }

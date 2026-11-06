@@ -13,33 +13,27 @@ import net.minecraft.world.inventory.InventoryMenu;
 import org.joml.Matrix4f;
 
 /**
- * 1:1-Port von {@code RenderFusionTorusMultiblock} (1.7.10) - der Bauplan des Fusionstorus.
+ * 1:1 port of {@code RenderFusionTorusMultiblock} (1.7.10) - blueprint overlay for fusion torus.
  *
- * <p>Der Toruskern zeichnet das komplette {@code MachineFusionTorus.layout} als durchscheinende
- * Miniwuerfel um sich herum: an jeder Stelle den Wuerfel in der Textur des Bauteils, das dort
- * hingehoert. Ohne diese Anzeige ist der Torus praktisch nicht baubar - es sind fuenf Ebenen mit
- * je 15x15 Zellen aus drei verschiedenen Bauteilen, und {@code StructTorusCoreBlockEntity} setzt
- * sich erst in den fertigen Reaktor um, wenn jede einzelne davon stimmt.</p>
+ * <p>The torus core renders the complete {@code MachineFusionTorus.layout} as semitransparent
+ * mini cubes around itself: each position displays the cube with the texture of the required component.
+ * Without this overlay the torus is impractical to construct - five layers of 15x15 cells consisting
+ * of three component types, converted into the complete reactor by {@code StructTorusCoreBlockEntity}
+ * only when every single position matches.</p>
  *
- * <p>Die Wuerfelgroesse (5/16 Block, mittig in der Zelle) und die Deckkraft (0.75) stammen aus dem
- * Original ({@code SmallBlockPronter.drawSmolBlockAt} zeichnet von {@code 11/32} bis {@code 21/32},
- * {@code startDrawing} setzt {@code glColor4f(1,1,1,0.75)}).</p>
+ * <p>Cube size (5/16 block, centered in cell) and opacity (0.75) match original
+ * ({@code SmallBlockPronter.drawSmolBlockAt} renders from {@code 11/32} to {@code 21/32},
+ * {@code startDrawing} sets {@code glColor4f(1,1,1,0.75)}).</p>
  */
-//? if forge {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class StructTorusCoreRenderer implements com.hbm_m.client.render.HbmBerBounds<StructTorusCoreBlockEntity> {
 
-    /** Original: von 11*pixel/2 bis 1 - 11*pixel/2, also ein 5/16 grosser Wuerfel in der Zellmitte. */
+    /** Original: from 11*pixel/2 to 1 - 11*pixel/2, a 5/16 cube centered in the cell. */
     private static final float MIN = 11F / 32F;
     private static final float MAX = 1F - MIN;
     private static final float ALPHA = 0.75F;
 
-    /** Bauteiltextur je Musterwert - dieselbe Zuordnung wie {@code componentForLayoutValue}. */
+    /** Component texture per template value - same mapping as {@code componentForLayoutValue}. */
     private static final String[] TEXTURE_BY_VALUE = {
             null,                              // 0 = Luft
             "block/fusion_component_bscco_welded",
@@ -66,9 +60,9 @@ public class StructTorusCoreRenderer implements com.hbm_m.client.render.HbmBerBo
                     if (texture == null) continue;
 
                     TextureAtlasSprite sprite = RBMKColumnRenderer.sprite(RefStrings.MODID, texture);
-                    // entityTranslucentCull statt RenderType.translucent(): der Bauplan soll
-                    // durchscheinend ueber den schon gesetzten Bauteilen liegen, und nur die
-                    // entity-Layer werten das Alpha der Vertexfarbe ueberhaupt aus.
+                    // entityTranslucentCull instead of RenderType.translucent(): blueprint overlay
+                    // renders semitransparently over placed components, and entity layers evaluate
+                    // vertex color alpha.
                     VertexConsumer vc = buffer.getBuffer(
                             RenderType.entityTranslucentCull(InventoryMenu.BLOCK_ATLAS));
 
@@ -78,7 +72,7 @@ public class StructTorusCoreRenderer implements com.hbm_m.client.render.HbmBerBo
         }
     }
 
-    /** Der Bauplan ist 15x15x5 gross - ohne das wird er weggeculled, sobald der Kern aus dem Bild faellt. */
+    /** Blueprint dimensions 15x15x5 - prevents culling when the core block entity leaves view. */
     @Override
     public int getViewDistance() {
         return 256;

@@ -1,6 +1,5 @@
 package com.hbm_m.item.tool;
 
-import com.hbm_m.platform.AttributeOps;
 
 import java.util.List;
 
@@ -28,6 +27,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.StackNbt;
+import com.hbm_m.platform.AttributeHooks;
 
 /**
  * 1:1 {@code ItemMirrorTool}: Klick auf den Solarkessel merkt dessen Position (Kern, y + 1), Klick auf einen
@@ -53,9 +54,9 @@ public class ItemMirrorTool extends Item implements ITooltipProvider {
 
             if (!world.isClientSide) {
 
-                PlatformHooks.putInt(stack, "posX", pos.getX());
-                PlatformHooks.putInt(stack, "posY", pos.getY() + 1);
-                PlatformHooks.putInt(stack, "posZ", pos.getZ());
+                StackNbt.putInt(stack, "posX", pos.getX());
+                StackNbt.putInt(stack, "posY", pos.getY() + 1);
+                StackNbt.putInt(stack, "posZ", pos.getZ());
 
                 if (player != null) player.sendSystemMessage(Component.translatable("item.hbm_m.mirror_tool.linked").withStyle(ChatFormatting.YELLOW));
             }
@@ -63,13 +64,13 @@ public class ItemMirrorTool extends Item implements ITooltipProvider {
             return InteractionResult.sidedSuccess(world.isClientSide);
         }
 
-        if (world.getBlockState(clicked).is(ModBlocks.SOLAR_MIRROR.get()) && PlatformHooks.hasItemTag(stack)) {
+        if (world.getBlockState(clicked).is(ModBlocks.SOLAR_MIRROR.get()) && StackNbt.has(stack)) {
 
             if (!world.isClientSide) {
                 int x = clicked.getX(), y = clicked.getY(), z = clicked.getZ();
-                int tx = PlatformHooks.getInt(stack, "posX");
-                int ty = PlatformHooks.getInt(stack, "posY");
-                int tz = PlatformHooks.getInt(stack, "posZ");
+                int tx = StackNbt.getInt(stack, "posX");
+                int ty = StackNbt.getInt(stack, "posY");
+                int tz = StackNbt.getInt(stack, "posZ");
 
                 boolean withinReach = Math.sqrt((double) (x - tx) * (x - tx) + (double) (y - ty) * (y - ty) + (double) (z - tz) * (z - tz)) <= 100;
                 boolean withinAngle = (x - tx) * (x - tx) + (z - tz) * (z - tz) <= (y - ty) * (y - ty);
@@ -108,6 +109,6 @@ public class ItemMirrorTool extends Item implements ITooltipProvider {
     private Multimap<net.minecraft.core.Holder<Attribute>, AttributeModifier> hbmSlotModifiers(EquipmentSlot slot) {
         if (slot != EquipmentSlot.MAINHAND) return ImmutableMultimap.of();
     *///?}
-        return ImmutableMultimap.of(Attributes.ATTACK_DAMAGE, com.hbm_m.platform.AttributeHooks.modifier(com.hbm_m.platform.AttributeHooks.BASE_ATTACK_DAMAGE_UUID, "Weapon modifier", 2, AttributeOps.ADDITION));
+        return ImmutableMultimap.of(Attributes.ATTACK_DAMAGE, com.hbm_m.platform.AttributeHooks.modifier(com.hbm_m.platform.AttributeHooks.BASE_ATTACK_DAMAGE_UUID, "Weapon modifier", 2, AttributeHooks.ADDITION));
     }
 }

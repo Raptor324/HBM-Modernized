@@ -93,8 +93,10 @@ public class MachineRTGBlockEntity extends BaseMachineBlockEntity implements IEn
                     be.getEnergyStored() + (long) be.heat * ENERGY_PER_HEAT));
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // P6: голый setChanged()+sendUpdateToClient убран — setEnergyStored больше не синхронизирует
+        // сам; пакет уходит только когда изменилась отрисовываемая пара (энергия, heat). Полный RTG
+        // с выгоревшими (heat == 0) и заполненным буфером полностью замолкает.
+        be.syncIfStateChanged(be.getEnergyStored(), be.heat);
     }
 
     public int getHeat() {

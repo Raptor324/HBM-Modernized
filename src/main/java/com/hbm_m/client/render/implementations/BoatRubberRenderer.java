@@ -22,9 +22,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 /**
- * 1:1 {@code com.hbm.render.entity.item.RenderBoatRubber}: das alte 1.7.10-{@code ModelBoat} (fuenf Quader,
- * 64x32-Textur) mit {@code textures/entity/boat_rubber.png}. Wie im Original dreht sich die Blickrichtung des
- * lokalen Fahrers mit dem Boot mit.
+ * 1:1 {@code com.hbm.render.entity.item.RenderBoatRubber}: legacy 1.7.10 {@code ModelBoat} (five boxes,
+ * 64x32 texture) with {@code textures/entity/boat_rubber.png}. Local rider view rotates with the boat as in original.
  */
 public class BoatRubberRenderer extends EntityRenderer<EntityBoatRubber> {
 
@@ -67,7 +66,7 @@ public class BoatRubberRenderer extends EntityRenderer<EntityBoatRubber> {
     @Override
     public void render(EntityBoatRubber entity, float yaw, float interp, PoseStack pose, MultiBufferSource buffers, int light) {
         pose.pushPose();
-        // Original rendert auf posY = Mitte der 0.6 hohen Hitbox
+        // Original renders at posY = center of 0.6 high hitbox
         pose.translate(0.0D, 0.3D, 0.0D);
         pose.mulPose(Axis.YP.rotationDegrees(180.0F - yaw));
         float f2 = (float) entity.getTimeSinceHit() - interp;

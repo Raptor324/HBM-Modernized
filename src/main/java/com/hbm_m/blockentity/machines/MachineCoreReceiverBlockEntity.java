@@ -36,7 +36,8 @@ import net.minecraft.world.level.block.state.BlockState;
  * <p>Wie der Strahler braucht auch er Cryogel: 20 mB je Tick, solange etwas ankommt. Geht der Tank
  * leer, wird der Block zu fliessender Lava.</p>
  */
-public class MachineCoreReceiverBlockEntity extends BaseMachineBlockEntity implements ILaserable {
+public class MachineCoreReceiverBlockEntity extends BaseMachineBlockEntity
+        implements ILaserable, com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
 
     /** Original: {@code power = joules * 5000}. */
     public static final long HE_PER_SPK = 5000L;
@@ -84,8 +85,16 @@ public class MachineCoreReceiverBlockEntity extends BaseMachineBlockEntity imple
 
     /** 1:1-Port von {@code updateEntity}. */
     public static void tick(Level level, BlockPos pos, BlockState state, MachineCoreReceiverBlockEntity be) {
-        if (level.isClientSide()) return;
+        if (level.isClientSide()) {
+            return;
+        }
 
+        // A receiver only joins a duct network by subscribing to the pipes next to it.
+        if (level.getGameTime() % 20 == 0) {
+            for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
+                be.trySubscribe(be.coolantTank, level, pos.relative(dir), dir);
+            }
+        }
         be.ensureNetworkInitialized();
 
         // Original: power = joules * 5000, jeden Tick neu gesetzt statt aufaddiert.
@@ -101,8 +110,16 @@ public class MachineCoreReceiverBlockEntity extends BaseMachineBlockEntity imple
         }
 
         be.joules = 0;
-        be.setChanged();
-        be.sendUpdateToClient();
+        // P6 sync gate: полный пакет только при реальном изменении видимого клиенту состояния
+        // (бак, energy; joules здесь всегда уже 0) — вместо безусловного спама каждый тик.
+        long sig = be.energy * 31L + be.joules;
+        be.syncIfStateChanged(tankFingerprint(be.coolantTank), sig);
+    }
+
+    /** 64-битный фингерпринт танка (тип жидкости + заполнение) для sync-подписи. */
+    private static long tankFingerprint(FluidTank tank) {
+        net.minecraft.world.level.material.Fluid f = tank.getTankType();
+        return (f == null ? 0L : f.hashCode()) * 31L + tank.getFill();
     }
 
     /**
@@ -124,6 +141,23 @@ public class MachineCoreReceiverBlockEntity extends BaseMachineBlockEntity imple
         level.explode(null, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 2.5F,
                 Level.ExplosionInteraction.BLOCK);
         return false;
+    }
+
+    // The tank used to be reachable only through a forge-gated getCapability override, so on
+    // NeoForge no pipe could ever fill it. The mod's own MK2 interface works on both.
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() {
+        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { coolantTank };
+    }
+
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getReceivingTanks() {
+        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { coolantTank };
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
     @Override

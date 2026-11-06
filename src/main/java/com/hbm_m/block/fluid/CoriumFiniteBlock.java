@@ -14,6 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1-Port von {@code CoriumFinite} ({@code corium_block}): endliche, extrem schwere Schmelze
@@ -45,7 +46,7 @@ public class CoriumFiniteBlock extends FiniteFluidBlock {
     @Override
     public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         entity.makeStuckInBlock(state, new Vec3(0.25D, 0.05D, 0.25D));
-        PlatformHooks.setSecondsOnFire(entity, 3);
+        MobHooks.setSecondsOnFire(entity, 3);
         entity.hurt(ModDamageSources.radiation(level), 2F);
         if (entity instanceof LivingEntity living) {
             ContaminationUtil.contaminate(living, ContaminationUtil.HazardType.RADIATION, ContaminationUtil.ContaminationType.CREATIVE, 1F);

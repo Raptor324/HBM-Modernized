@@ -9,8 +9,11 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /** GUI des Ziegelofens - Fortschrittspfeil + Brennstoffanzeige im Stil der Vanilla-Ofen-GUI. */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineFurnaceBrick extends AbstractContainerScreen<MachineFurnaceBrickMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -41,8 +44,8 @@ public class GUIMachineFurnaceBrick extends AbstractContainerScreen<MachineFurna
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(font, title, imageWidth / 2 - font.width(title) / 2, 6, 0xffffff, false);
-        guiGraphics.drawString(font, playerInventoryTitle, 8, inventoryLabelY, 0xffffff, false);
+        guiGraphics.drawString(font, title, imageWidth / 2 - font.width(title) / 2, 6, 0x404040, false);
+        guiGraphics.drawString(font, playerInventoryTitle, 8, inventoryLabelY, 4210752, false);
     }
 
     @Override

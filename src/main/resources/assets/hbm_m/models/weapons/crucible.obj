@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'crucible.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o GuardRight
 v 0.000000 3.500000 -0.000000
 v -0.000000 2.875000 0.000000

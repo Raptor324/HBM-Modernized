@@ -120,8 +120,8 @@ public class ItemBlueprints extends Item implements ITooltipProvider {
 
     public static ItemStack make(String pool) {
         ItemStack stack = new ItemStack(ModItems.BLUEPRINTS.get());
-        StackNbt.set(stack, new CompoundTag());
-        StackNbt.tag(stack).putString("pool", pool);
+        // orCreate вместо set(EMPTY)+tag(): на 1.21.1 set() с пустым тегом удаляет компонент
+        StackNbt.orCreate(stack).putString("pool", pool);
         return stack;
     }
 }

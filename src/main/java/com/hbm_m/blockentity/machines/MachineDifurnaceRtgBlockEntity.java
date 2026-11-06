@@ -73,8 +73,7 @@ public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
             level.setBlock(pos, state.setValue(MachineDifurnaceRtgBlock.LIT, lit), 3);
         }
 
-        setChanged();
-        sendUpdateToClient();
+        syncIfStateChanged(processSpeed, ((long) progress) | (((long) (sideUpper & 0xFF)) << 16) | (((long) (sideLower & 0xFF)) << 24));
     }
 
     public boolean canProcess() {
@@ -203,12 +202,12 @@ public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
         sided.clear();
     }
     //?} elif neoforge {
-    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
+    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
 
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
-            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.minecraftforge.items.IItemHandler() {
                 @Override public int getSlots() { return inventory.getSlots(); }
                 @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
                 @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {

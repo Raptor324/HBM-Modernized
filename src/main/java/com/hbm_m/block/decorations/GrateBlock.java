@@ -105,7 +105,6 @@ public class GrateBlock extends Block {
         BlockState s = level.getBlockState(neighborPos);
         return !s.isSolidRender(level, neighborPos);
     }
-
     /** Original {@code BlockGrate.addInformation}: eine Zeile {@code .desc} (Original zeigt bei steel_grate den rohen Schluessel - hier nur, wenn vorhanden). */
     @Override
     //? if < 1.21.1 {
@@ -118,4 +117,5 @@ public class GrateBlock extends Block {
         if (net.minecraft.client.resources.language.I18n.exists(key))
             list.add(net.minecraft.network.chat.Component.translatable(key).withStyle(net.minecraft.ChatFormatting.GRAY));
     }
+
 }

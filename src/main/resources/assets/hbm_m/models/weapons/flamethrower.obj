@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'flamethrower.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Tank
 v 0.000000 -1.125000 -0.500000
 v 0.437500 -1.242228 -0.500000

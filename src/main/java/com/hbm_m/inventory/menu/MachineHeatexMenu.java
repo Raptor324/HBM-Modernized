@@ -2,6 +2,7 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineHeatexBlockEntity;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -12,8 +13,18 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-/** 1:1 {@code ContainerHeaterHeatex}: Fluid-ID-Platz (80,72), Spielerinventar ab (8,122). */
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * Port of {@code ContainerHeaterHeatex} (1.7.10 Original):
+ * 1 machine slot at (80, 72) + player inventory (8, 122) / hotbar (8, 180).
+ * Shift-click: machine slot -> player inventory, player inventory -> machine slot (original transferStackInSlot).
+ */
 public class MachineHeatexMenu extends AbstractContainerMenu {
+
+    private static final int MACHINE_SLOTS = 1;
+    private static final int SLOT_HEATEX_X = 80;
+    private static final int SLOT_HEATEX_Y = 72;
 
     private final MachineHeatexBlockEntity blockEntity;
 
@@ -25,7 +36,14 @@ public class MachineHeatexMenu extends AbstractContainerMenu {
         super(ModMenuTypes.HEATEX_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        this.addSlot(new Slot(new com.hbm_m.inventory.ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged), 0, 80, 72));
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем заглушку
+        ModItemStackHandler handler = this.blockEntity != null
+                ? this.blockEntity.getInventory()
+                : new com.hbm_m.platform.ModItemStackHandler.Dummy(MACHINE_SLOTS);
+        HandlerContainer machineInventory = new HandlerContainer(handler);
+
+        // Оригинал: new Slot(tedf, 0, 80, 72)
+        this.addSlot(new Slot(machineInventory, 0, SLOT_HEATEX_X, SLOT_HEATEX_Y));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -55,38 +73,122 @@ public class MachineHeatexMenu extends AbstractContainerMenu {
         return blockEntity;
     }
 
-    @Override
-    public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
-    }
+    /** Vanilla-адаптер для {@link ModItemStackHandler}, чтобы использовать обычные {@link Slot}. */
+    private static final class HandlerContainer implements net.minecraft.world.Container {
+        private final ModItemStackHandler handler;
 
-    @Override
-    public ItemStack quickMoveStack(Player player, int par2) {
-        ItemStack var3 = ItemStack.EMPTY;
-        Slot var4 = this.slots.get(par2);
+        private HandlerContainer(ModItemStackHandler handler) {
+            this.handler = handler;
+        }
 
-        if (var4 != null && var4.hasItem()) {
-            ItemStack var5 = var4.getItem();
-            var3 = var5.copy();
+        @Override
+        public int getContainerSize() {
+            return handler.getSlots();
+        }
 
-            if (par2 == 0) {
-                if (!this.moveItemStackTo(var5, 1, this.slots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-                if (!this.moveItemStackTo(var5, 0, 1, false)) {
-                    return ItemStack.EMPTY;
+        @Override
+        public boolean isEmpty() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                if (!handler.getStackInSlot(i).isEmpty()) {
+                    return false;
                 }
             }
+            return true;
+        }
 
-            if (var5.isEmpty()) {
-                var4.set(ItemStack.EMPTY);
-            } else {
-                var4.setChanged();
+        @Override
+        public ItemStack getItem(int slot) {
+            return handler.getStackInSlot(slot);
+        }
+
+        @Override
+        public ItemStack removeItem(int slot, int amount) {
+            ItemStack existing = handler.getStackInSlot(slot);
+            if (existing.isEmpty() || amount <= 0) {
+                return ItemStack.EMPTY;
+            }
+
+            ItemStack split = existing.split(amount);
+            handler.setStackInSlot(slot, existing);
+            setChanged();
+            return split;
+        }
+
+        @Override
+        public ItemStack removeItemNoUpdate(int slot) {
+            ItemStack existing = handler.getStackInSlot(slot);
+            handler.setStackInSlot(slot, ItemStack.EMPTY);
+            return existing;
+        }
+
+        @Override
+        public void setItem(int slot, ItemStack stack) {
+            handler.setStackInSlot(slot, stack);
+            setChanged();
+        }
+
+        @Override
+        public void setChanged() {
+            // Изменения уже отслеживаются в handler, но Slot ожидает этот вызов.
+        }
+
+        @Override
+        public boolean stillValid(Player player) {
+            return true;
+        }
+
+        @Override
+        public void clearContent() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                handler.setStackInSlot(i, ItemStack.EMPTY);
             }
         }
 
-        return var3;
+        @Override
+        public boolean canPlaceItem(int slot, ItemStack stack) {
+            return handler.isItemValid(slot, stack);
+        }
+    }
+
+    @Override
+    public boolean stillValid(Player player) {
+        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
+            return false;
+        }
+        BlockPos pos = blockEntity.getBlockPos();
+        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+    }
+
+    @Override
+    public ItemStack quickMoveStack(Player player, int index) {
+        // Оригинал transferStackInSlot: индекс 0 -> игрок, иначе -> слот 0
+        ItemStack result = ItemStack.EMPTY;
+        Slot slot = this.slots.get(index);
+
+        if (slot != null && slot.hasItem()) {
+            ItemStack slotStack = slot.getItem();
+            result = slotStack.copy();
+
+            if (index == 0) {
+                if (!this.moveItemStackTo(slotStack, 1, this.slots.size(), true)) {
+                    return ItemStack.EMPTY;
+                }
+            } else {
+                if (!this.moveItemStackTo(slotStack, 0, 1, false)) {
+                    return ItemStack.EMPTY;
+                }
+            }
+
+            if (slotStack.isEmpty()) {
+                slot.set(ItemStack.EMPTY);
+            } else {
+                slot.setChanged();
+            }
+            if (slotStack.getCount() == result.getCount()) {
+                return ItemStack.EMPTY;
+            }
+            slot.onTake(player, slotStack);
+        }
+        return result;
     }
 }

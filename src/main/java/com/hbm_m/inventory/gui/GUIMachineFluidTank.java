@@ -27,13 +27,12 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import dev.architectury.fluid.FluidStack;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTankMenu> {
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
-     *///?} else {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
-    //?}
 
 
     private final int tankX = 71;
@@ -47,9 +46,8 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
     private static final int MODE_BUTTON_SIZE = 18;
 
     /**
-     * Строка спрайта в {@code gui_tank.png} (U=176, каждая высотой MODE_BUTTON_SIZE).
-     * В атласе первый и третий спрайты когда‑то совпали с перепутанными подписями режимов;
-     * логика BE: 0 — только вывод, 2 — только ввод — поэтому для иконки меняем местами 0↔2.
+     * Ряд иконки режима в текстуре = нумерация режимов 1.7.10 (0=input, 1=buffer,
+     * 2=output, 3=off), совпадающая с логической после выравнивания на оригинал.
      */
     private static int modeButtonSpriteRow(int logicalMode) {
         return logicalMode; // Original: Zeile = Modus

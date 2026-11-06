@@ -18,6 +18,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code ItemScraps} als Bruecke: im Original ein Metadaten-Item (Schaden = Material-ID) mit NBT {@code amount}
@@ -64,7 +65,7 @@ public final class ItemScraps {
     }
 
     public static boolean isLiquid(ItemStack stack) {
-        return PlatformHooks.contains(stack, "liquid") && PlatformHooks.getBoolean(stack, "liquid");
+        return StackNbt.contains(stack, "liquid") && StackNbt.getBoolean(stack, "liquid");
     }
 
     @Nullable
@@ -73,8 +74,8 @@ public final class ItemScraps {
         if (mat == null) return null;
 
         int amount = MaterialShapes.INGOT.q(1);
-        if (PlatformHooks.contains(stack, "amount")) {
-            amount = PlatformHooks.getInt(stack, "amount");
+        if (StackNbt.contains(stack, "amount")) {
+            amount = StackNbt.getInt(stack, "amount");
         }
         return new MaterialStack(mat, amount);
     }
@@ -89,7 +90,7 @@ public final class ItemScraps {
         Item item = matToItem.get(stack.material);
         if (item == null) return ItemStack.EMPTY;
         ItemStack scrap = new ItemStack(item);
-        PlatformHooks.editItemTag(scrap, t -> {
+        StackNbt.edit(scrap, t -> {
             t.putInt("amount", stack.amount);
             if (liquid) t.putBoolean("liquid", true);
         });

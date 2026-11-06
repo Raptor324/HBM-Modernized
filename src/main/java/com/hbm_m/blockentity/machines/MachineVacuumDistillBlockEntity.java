@@ -78,9 +78,11 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
 
         this.isOn = false;
 
-        for (DirPos con : getConPos()) {
-            this.trySubscribe(world, con.pos.getX(), con.pos.getY(), con.pos.getZ(), con.dir);
-            this.trySubscribe(tanks[0].getTankType(), world, con.pos, con.dir);
+        if (probeDue(20)) {
+            for (DirPos con : getConPos()) {
+                this.trySubscribe(world, con.pos.getX(), con.pos.getY(), con.pos.getZ(), con.dir);
+                this.trySubscribe(tanks[0].getTankType(), world, con.pos, con.dir);
+            }
         }
         chargeFromBatterySlot(SLOT_BATTERY);
 
@@ -103,8 +105,21 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
             }
         }
 
-        setChanged();
-        sendUpdateToClient();
+        syncIfStateChanged(this.energy, this.tankSyncSignature());
+    }
+
+    private long tankSyncSignature() {
+        long h = tankFingerprint(tanks[0]);
+        h = h * 31L + tankFingerprint(tanks[1]);
+        h = h * 31L + tankFingerprint(tanks[2]);
+        h = h * 31L + tankFingerprint(tanks[3]);
+        h = h * 31L + tankFingerprint(tanks[4]);
+        return h * 31L + (isOn ? 1L : 0L);
+    }
+
+    private static long tankFingerprint(FluidTank tank) {
+        Fluid type = tank.getTankType();
+        return (type == null ? 0L : type.hashCode() * 31L) + tank.getFill();
     }
 
     private void clientTick() {
@@ -165,8 +180,6 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
     @Override public FluidTank[] getAllTanks() { return tanks; }
     @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tanks[0] }; }
     @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[1], tanks[2], tanks[3], tanks[4] }; }
-
-    @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
@@ -178,7 +191,6 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
 
     public boolean isOn() { return isOn; }
     public FluidTank[] getTanks() { return tanks; }
-
     // ==================== NBT ====================
 
     @Override
@@ -197,11 +209,16 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         energy = tag.getLong("power");
-        tanks[0].readFromNBT(tag, "input");
-        tanks[1].readFromNBT(tag, "heavy");
-        tanks[2].readFromNBT(tag, "reformate");
-        tanks[3].readFromNBT(tag, "light");
-        tanks[4].readFromNBT(tag, "gas");
+        if (tag.contains("input")) tanks[0].readFromNBT(tag, "input");
+        else tanks[0].readFromNBT(tag, "tank0");
+        if (tag.contains("heavy")) tanks[1].readFromNBT(tag, "heavy");
+        else tanks[1].readFromNBT(tag, "tank1");
+        if (tag.contains("reformate")) tanks[2].readFromNBT(tag, "reformate");
+        else tanks[2].readFromNBT(tag, "tank2");
+        if (tag.contains("light")) tanks[3].readFromNBT(tag, "light");
+        else tanks[3].readFromNBT(tag, "tank3");
+        if (tag.contains("gas")) tanks[4].readFromNBT(tag, "gas");
+        else tanks[4].readFromNBT(tag, "tank4");
         isOn = tag.getBoolean("isOn");
     }
 
@@ -249,5 +266,10 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
         tanks[2].writeToNBT(nbt, "reformate");
         tanks[3].writeToNBT(nbt, "light");
         tanks[4].writeToNBT(nbt, "gas");
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
     }
 }

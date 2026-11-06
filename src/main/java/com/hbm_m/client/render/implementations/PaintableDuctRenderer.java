@@ -70,14 +70,13 @@ public class PaintableDuctRenderer implements com.hbm_m.client.render.HbmBerBoun
     private static void quad(VertexConsumer vc, Matrix4f m, Matrix3f n, TextureAtlasSprite s, float r, float g, float b, int light, int overlay,
                              float nx, float ny, float nz, float... p) {
         float[][] uv = { { 0, 0 }, { 0, 1 }, { 1, 1 }, { 1, 0 } };
+        org.joml.Vector3f tn = n.transform(new org.joml.Vector3f(nx, ny, nz));
         for (int i = 0; i < 4; i++) {
-            //? if < 1.21.1 {
-            vc.vertex(m, p[i * 3], p[i * 3 + 1], p[i * 3 + 2]).color(r, g, b, 1F).uv(s.getU(uv[i][0] * 16), s.getV(uv[i][1] * 16))
-                    .overlayCoords(overlay).uv2(light).normal(n, nx, ny, nz).endVertex();
-            //?} else {
-            /*// 1.21.1: getU/getV erwarten 0..1 statt 0..16
-            com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, p[i * 3], p[i * 3 + 1], p[i * 3 + 2]).setColor(r, g, b, 1F).setUv(s.getU(uv[i][0]), s.getV(uv[i][1])).setOverlay(overlay).setLight(light), n, nx, ny, nz);
-            *///?}
+            com.hbm_m.platform.RenderHooks.vertexFull(vc, m, p[i * 3], p[i * 3 + 1], p[i * 3 + 2],
+                    (int) (r * 255F), (int) (g * 255F), (int) (b * 255F), 255,
+                    com.hbm_m.platform.RenderHooks.spriteU(s, uv[i][0]),
+                    com.hbm_m.platform.RenderHooks.spriteV(s, uv[i][1]),
+                    overlay, light, tn.x(), tn.y(), tn.z());
         }
     }
 }

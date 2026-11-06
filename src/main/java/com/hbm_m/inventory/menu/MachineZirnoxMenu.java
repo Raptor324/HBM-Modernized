@@ -7,7 +7,6 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModTags;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.core.BlockPos;
@@ -20,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluid;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineZirnoxMenu extends AbstractContainerMenu {
 
@@ -39,7 +39,7 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         this.machineContainer = new ModItemStackHandlerContainer(
-                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOT_COUNT),
                 blockEntity != null ? blockEntity::setChanged : null);
 
         // Rods
@@ -100,7 +100,7 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineZirnoxBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":zirnox_menu");
+        throw new MenuBlockEntityMissingException("No MachineZirnoxBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":zirnox_menu");
     }
 
     public MachineZirnoxBlockEntity getBlockEntity() {
@@ -109,9 +109,14 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
+
+    // Menu indices, not handler indices: the slots are added in the order CO2 in, CO2 out, water in,
+    // water out, while the block entity numbers them CO2 in, water in, CO2 out, water out. Passing
+    // the handler constant put water into the CO2 output slot, where it could never be inserted.
+    private static final int MENU_CO2_IN = MachineZirnoxBlockEntity.ROD_SLOT_COUNT;
+    private static final int MENU_WATER_IN = MENU_CO2_IN + 2;
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
@@ -128,11 +133,11 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
                 }
             // Original-Menueindizes: 24/25 = CO2 rein/raus, 26/27 = Wasser rein/raus
             } else if (holdsFluid(stack, ModFluids.CARBONDIOXIDE.getSource())) {
-                if (!this.moveItemStackTo(stack, 24, 26, false)) {
+                if (!this.moveItemStackTo(stack, MENU_CO2_IN, MENU_CO2_IN + 1, false)) {
                     return ItemStack.EMPTY;
                 }
             } else if (holdsFluid(stack, ModFluids.WATER.getSource()) || stack.is(Items.WATER_BUCKET)) {
-                if (!this.moveItemStackTo(stack, 26, 28, false)) {
+                if (!this.moveItemStackTo(stack, MENU_WATER_IN, MENU_WATER_IN + 1, false)) {
                     return ItemStack.EMPTY;
                 }
             } else if (stack.getItem() instanceof com.hbm_m.item.industrial.ZirnoxRodItem) {

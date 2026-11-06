@@ -12,13 +12,7 @@ import net.minecraft.world.phys.Vec3;
  * <p>Im Modell des TEL sitzt an dieser Stelle nichts mehr - die aufgerichtete Rakete ist beim
  * Konvertieren herausgeschnitten worden, damit man einer geladenen Rampe ansieht, was drin steckt.
  */
-//? if forge {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class MobileLaunchPadMissileRenderer extends LaunchPadMissileRenderer {
 
     public MobileLaunchPadMissileRenderer(BlockEntityRendererProvider.Context context) {

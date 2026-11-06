@@ -14,6 +14,7 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1 {@code ContainerCounterTorch}: drei Musterplaetze (Geisterplaetze, 138/18+44*i) - ein Klick kopiert den Stapel in
@@ -105,6 +106,7 @@ public class RadioTorchCounterMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
+        // Original: kein Shift-Klick (Geisterplaetze)
         return ItemStack.EMPTY;
     }
 }

@@ -24,6 +24,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.block.IPersistentNBT, IFluidStandardSenderMK2 {
 
@@ -123,16 +124,25 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
         // Зарядка от батарейки (условный метод базы)
         entity.chargeFromBattery();
 
-        // 1.7.10 getConPos() → 1.20.1 MK2: подписываемся в трубы по разрешённым направлениям
-        // и провайдим обе жидкости (нефть/газ) в сети соответствующих типов.
-        for (Direction dir : entity.getConPos()) {
-            BlockPos pipePos = pos.relative(dir);
-            net.minecraft.world.level.block.entity.BlockEntity pipeBe = level.getBlockEntity(pipePos);
-            if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
+        // 1.7.10 getConPos() → 1.20.1 MK2: провайдим обе жидкости (нефть/газ) в трубы
+        // по разрешённым направлениям. tryProvide — каждый тик (гейт снят, Pump-паттерн):
+        // его вторая ветка — прямой пуш в соседний приёмник, гейт делит пропускную
+        // способность выкачивания. Обход коннекторов и fill-проверка не выполняются,
+        // пока все баки пусты.
+        boolean anyFluid = false;
+        for (FluidTank t : entity.tanks) {
+            if (t.getFill() > 0) { anyFluid = true; break; }
+        }
+        if (anyFluid) {
+            for (Direction dir : entity.getConPos()) {
+                BlockPos pipePos = pos.relative(dir);
+                net.minecraft.world.level.block.entity.BlockEntity pipeBe = level.getBlockEntity(pipePos);
+                if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
 
-            for (FluidTank t : entity.tanks) {
-                if (t.getFill() <= 0) continue;
-                entity.tryProvide(t, level, pipePos, dir);
+                for (FluidTank t : entity.tanks) {
+                    if (t.getFill() <= 0) continue;
+                    entity.tryProvide(t, level, pipePos, dir);
+                }
             }
         }
 
@@ -155,7 +165,12 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
                         break;
                     }
                     for (Direction hDir : Direction.Plane.HORIZONTAL) {
-                        if (entity.isColumnDeposit(level.getBlockState(colPos.relative(hDir)).getBlock())) {
+                        // The column itself sits in the drill's chunk, but horizontal neighbours on
+                        // the border cross into the next one - the scan pulled it in from the tick
+                        // thread.
+                        BlockPos sidePos = colPos.relative(hDir);
+                        if (!level.isLoaded(sidePos)) continue;
+                        if (entity.isColumnDeposit(level.getBlockState(sidePos).getBlock())) {
                             oilInColumn = true;
                             break outer;
                         }
@@ -196,8 +211,14 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
             entity.indicator = 2;
         }
 
-        entity.setChanged();
-        entity.sendUpdateToClient();
+        // Анти-спам синка: полный пакет только при изменении отрисовываемого состояния
+        // (энергия, индикатор, содержимое/уровень баков).
+        long tankFp = 0L;
+        for (FluidTank t : entity.tanks) {
+            tankFp = tankFp * 31L + (t.getTankType() == null ? 0L : t.getTankType().hashCode());
+            tankFp = tankFp * 31L + t.getFill();
+        }
+        entity.syncIfStateChanged(entity.energy, tankFp * 31L + entity.indicator);
     }
 
     private ItemStack[] getSlotsArray() {
@@ -299,7 +320,7 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
         Block b = level.getBlockState(pos).getBlock();
 
         // suck filled oil blocks directly
-        if (b == ModBlocks.ORE_OIL.get() || b == ModBlocks.BEDROCK_OIL.get()) {
+        if (b == ModBlocks.ORE_OIL.get() || b == ModBlocks.ORE_BEDROCK_OIL.get()) {
             doSuck(pos);
             return true;
         }

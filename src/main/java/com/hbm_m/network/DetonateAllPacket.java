@@ -1,9 +1,11 @@
 package com.hbm_m.network;
 
-import com.hbm_m.interfaces.IDetonatable;
+import com.hbm_m.api.bomb.IBomb.BombReturnCode;
+import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.item.grenades_and_activators.DetonatorItem;
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem.PointData;
-import com.hbm_m.network.C2SPacket;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.sound.ModSounds;
 
 import dev.architectury.networking.NetworkManager.PacketContext;
@@ -17,8 +19,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 
 public class DetonateAllPacket implements C2SPacket {
 
@@ -57,7 +57,7 @@ public class DetonateAllPacket implements C2SPacket {
         Level level = player.serverLevel();
 
         MultiDetonatorItem detonatorItem = null;
-        ItemStack detonatorStack         = ItemStack.EMPTY;
+        ItemStack detonatorStack = ItemStack.EMPTY;
 
         ItemStack mainItem = player.getMainHandItem();
         ItemStack offItem  = player.getOffhandItem();
@@ -71,69 +71,69 @@ public class DetonateAllPacket implements C2SPacket {
         }
 
         if (detonatorStack.isEmpty() || detonatorItem == null) {
-            player.displayClientMessage(
-                    Component.literal("Multi-Detonator не найден!").withStyle(ChatFormatting.RED), false);
+            player.sendSystemMessage(Component.translatable("message.hbm_m.multi_detonator.not_found")
+                    .withStyle(ChatFormatting.RED));
             return;
         }
 
-        int successCount  = 0;
-        int pointsCount   = detonatorItem.getMaxPoints();
+        int pointsCount = detonatorItem.getMaxPoints();
+        int totalTargets = 0;
+        for (int i = 0; i < pointsCount; i++) {
+            PointData pointData = detonatorItem.getPointData(detonatorStack, i);
+            if (pointData != null && pointData.hasTarget) {
+                totalTargets++;
+            }
+        }
+
+        if (totalTargets == 0) {
+            player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(detonatorItem,
+                    Component.translatable("desc.misc.noPos").withStyle(ChatFormatting.RED)));
+            return;
+        }
+
+        boolean hasValidBomb = false;
+        int successCount = 0;
 
         for (int i = 0; i < pointsCount; i++) {
             PointData pointData = detonatorItem.getPointData(detonatorStack, i);
             if (pointData == null || !pointData.hasTarget) continue;
 
-            BlockPos  targetPos = new BlockPos(pointData.x, pointData.y, pointData.z);
+            BlockPos targetPos = new BlockPos(pointData.x, pointData.y, pointData.z);
+            BombReturnCode ret = DetonatorItem.triggerDetonation(level, targetPos, player);
 
-            if (!level.isLoaded(targetPos)) {
-                player.displayClientMessage(
-                        Component.literal(pointData.name + " ❌ Позиция не загружена")
-                                .withStyle(ChatFormatting.RED), false);
-                continue;
-            }
+            if (ret != BombReturnCode.ERROR_NO_BOMB && ret != BombReturnCode.UNDEFINED) {
+                hasValidBomb = true;
+                if (ModClothConfig.get().enableExtendedLogging) {
+                    MainRegistry.LOGGER.info("[DET] Tried to detonate block at {} / {} / {} by {}!",
+                            targetPos.getX(), targetPos.getY(), targetPos.getZ(), player.getName().getString());
+                }
 
-            BlockState state = level.getBlockState(targetPos);
-            Block      block = state.getBlock();
-
-            if (!(block instanceof IDetonatable detonatable)) {
-                player.displayClientMessage(
-                        Component.literal(pointData.name + " Блок несовместим")
-                                .withStyle(ChatFormatting.RED), false);
-                continue;
-            }
-
-            try {
-                boolean success = detonatable.onDetonate(level, targetPos, state, player);
-                if (success) {
-                    player.displayClientMessage(
-                            Component.literal(pointData.name + " Успешно активировано")
-                                    .withStyle(ChatFormatting.GREEN), false);
-
-                    if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                        level.playSound(null,
-                                player.getX(), player.getY(), player.getZ(),
-                                soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                    }
+                if (ret.wasSuccessful()) {
+                    player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(detonatorItem,
+                            Component.translatable("message.hbm_m.multi_detonator.batch_success", pointData.name)
+                                    .withStyle(ChatFormatting.GREEN)));
                     successCount++;
                 } else {
-                    player.displayClientMessage(
-                            Component.literal(pointData.name + " Активация не удалась")
-                                    .withStyle(ChatFormatting.RED), false);
+                    player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(detonatorItem,
+                            Component.translatable("message.hbm_m.multi_detonator.batch_failed", pointData.name)
+                                    .withStyle(ChatFormatting.RED)));
                 }
-            } catch (Exception e) {
-                player.displayClientMessage(
-                        Component.literal(pointData.name + " Ошибка при активации")
-                                .withStyle(ChatFormatting.RED), false);
-                e.printStackTrace();
+            } else {
+                player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(detonatorItem,
+                        Component.translatable("message.hbm_m.multi_detonator.batch_incompatible", pointData.name)
+                                .withStyle(ChatFormatting.RED)));
             }
         }
 
-        player.displayClientMessage(
-                Component.literal("Успешно активировано: " + successCount + "/" + pointsCount)
-                        .withStyle(successCount == pointsCount
-                                ? ChatFormatting.GREEN : ChatFormatting.YELLOW),
-                false);
+        if (hasValidBomb && ModSounds.TOOL_TECH_BLEEP.isPresent()) {
+            SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
+            level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                    soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+        }
+
+        player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(detonatorItem,
+                Component.translatable("message.hbm_m.multi_detonator.batch_summary", successCount, totalTargets)
+                        .withStyle(successCount == totalTargets ? ChatFormatting.GREEN : ChatFormatting.YELLOW)));
     }
 
     // ── Send helper ───────────────────────────────────────────────────────────

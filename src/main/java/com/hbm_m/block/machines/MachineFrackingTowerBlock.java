@@ -170,6 +170,7 @@ public class MachineFrackingTowerBlock extends BaseEntityBlock implements IMulti
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
+            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
             Direction facing = state.getValue(FACING);
             getStructureHelper().destroyStructure(level, pos, facing);
         }
@@ -179,13 +180,13 @@ public class MachineFrackingTowerBlock extends BaseEntityBlock implements IMulti
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        if (pPlayer.isShiftKeyDown()) return InteractionResult.sidedSuccess(pLevel.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
+if (pPlayer.isShiftKeyDown()) return InteractionResult.sidedSuccess(pLevel.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return hbmOnUse(pState, pLevel, pPos, pPlayer, pHand, pHit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
-        if (pPlayer.isShiftKeyDown()) return InteractionResult.sidedSuccess(pLevel.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
+if (pPlayer.isShiftKeyDown()) return InteractionResult.sidedSuccess(pLevel.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return hbmOnUse(pState, pLevel, pPos, pPlayer, InteractionHand.MAIN_HAND, pHit);
     }
     *///?}
@@ -250,4 +251,14 @@ public class MachineFrackingTowerBlock extends BaseEntityBlock implements IMulti
         return CODEC;
     }
     *///?}
+    // Verbatim port of the original BlockDummyable.getAllPorts (core-face connection points).
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {0, 0, 0, Direction.EAST.get3DDataValue()},
+            {0, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {0, 0, 0, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

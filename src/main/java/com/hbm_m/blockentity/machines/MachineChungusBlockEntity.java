@@ -28,17 +28,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+//?}
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
 /**
  * Chungus / Leviathan Steam Turbine BlockEntity - das Endgame-Upgrade zur Industrial Turbine.
@@ -47,6 +45,7 @@ import net.neoforged.api.distmarker.OnlyIn;
  * ENERGY_CONNECTOR-Phantomblock raus. Verbraucht (anders als die Industrial Turbine) pro Tick
  * 100% des verfügbaren Dampfs; wie im Original ({@code TileEntityTurbineBase}) gibt es keinen Energiespeicher,
  * die Leistung eines Ticks wird im selben Tick abgegeben.
+
  * <p>
  * Dampfumsatz, Ausgabefluid und Energie kommen wie im Original ({@code TileEntityTurbineBase})
  * aus der {@code FT_Coolable}-Eigenschaft; der Ausgang ist die naechstniedrigere Dampfstufe.
@@ -101,7 +100,7 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     //? if forge {
     private LazyOptional<IFluidHandler> lazySpentHandler;
     //?} elif neoforge {
-    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.fluids.capability.IFluidHandler> lazySpentHandler;
+    /*private com.hbm_m.platform.LazyCap<net.minecraftforge.fluids.capability.IFluidHandler> lazySpentHandler;
     *///?}
 
     /**
@@ -149,6 +148,7 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
             if (wasTurning) { be.setChanged(); be.sendUpdateToClient(); }
             return;
         }
+
         be.processTurbine();
         be.onServerTick();
 
@@ -194,6 +194,7 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
 
         ClientSoundBootstrap.updateSound(this, this.fanAcceleration > 0,
                 () -> createLoopingSoundReflect(ModSounds.CHUNGUS_TURBINE.get()));
+
     }
 
     /**
@@ -271,6 +272,7 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
                 }
             }
         }
+
     }
 
     /**
@@ -448,19 +450,12 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         return fanAcceleration / 25F;
     }
 
-    private static final String CHUNGUS_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.ChungusLoopSoundFactory";
 
-    //? if forge || neoforge {
     @OnlyIn(Dist.CLIENT)
-    //?}
+
     private Object createLoopingSoundReflect(SoundEvent sound) {
-        try {
-            return Class.forName(CHUNGUS_LOOP_SOUND_FACTORY)
-                    .getMethod("create", MachineChungusBlockEntity.class, SoundEvent.class)
-                    .invoke(null, this, sound);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        // Клиентская loop-фабрика через звуковой мост (без рефлексии).
+        return com.hbm_m.sound.ClientSoundBootstrap.createChungusLoop(this, sound);
     }
 
     /** Rotorwinkel in Grad (Original {@code lastRotor + (rotor - lastRotor) * interp}). */
@@ -690,7 +685,7 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         lazySpentHandler.invalidate();
     }
 
-    private static class SteamInputHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+    private static class SteamInputHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
         private final MachineChungusBlockEntity be;
 
         SteamInputHandler(MachineChungusBlockEntity be) {
@@ -701,8 +696,8 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         public int getTanks() { return 1; }
 
         @Override
-        public @NotNull net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
-            return new net.neoforged.neoforge.fluids.FluidStack(be.steamTank.getTankType(), be.steamTank.getFill());
+        public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            return new net.minecraftforge.fluids.FluidStack(be.steamTank.getTankType(), be.steamTank.getFill());
         }
 
         @Override
@@ -711,12 +706,12 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         }
 
         @Override
-        public boolean isFluidValid(int tank, @NotNull net.neoforged.neoforge.fluids.FluidStack stack) {
+        public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
             return be.acceptsAsSteam(stack.getFluid());
         }
 
         @Override
-        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (resource.isEmpty() || !be.acceptsAsSteam(resource.getFluid())) return 0;
             if (be.steamTank.getFill() > 0 && be.steamTank.getTankType() != resource.getFluid()) return 0;
             int space = be.steamTank.getMaxFill() - be.steamTank.getFill();
@@ -730,17 +725,17 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         }
 
         @Override
-        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
-            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
         }
 
         @Override
-        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
         }
     }
 
-    private static class SpentSteamOutputHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+    private static class SpentSteamOutputHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
         private final MachineChungusBlockEntity be;
 
         SpentSteamOutputHandler(MachineChungusBlockEntity be) {
@@ -751,8 +746,8 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         public int getTanks() { return 1; }
 
         @Override
-        public @NotNull net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
-            return new net.neoforged.neoforge.fluids.FluidStack(be.spentSteamTank.getTankType(), be.spentSteamTank.getFill());
+        public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            return new net.minecraftforge.fluids.FluidStack(be.spentSteamTank.getTankType(), be.spentSteamTank.getFill());
         }
 
         @Override
@@ -761,21 +756,21 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         }
 
         @Override
-        public boolean isFluidValid(int tank, @NotNull net.neoforged.neoforge.fluids.FluidStack stack) {
+        public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
             return false;
         }
 
         @Override
-        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             return 0;
         }
 
         @Override
-        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || be.spentSteamTank.getFill() <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
-            if (resource.getFluid() != be.spentSteamTank.getTankType()) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || be.spentSteamTank.getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            if (resource.getFluid() != be.spentSteamTank.getTankType()) return net.minecraftforge.fluids.FluidStack.EMPTY;
             int toDrain = Math.min(resource.getAmount(), be.spentSteamTank.getFill());
-            net.neoforged.neoforge.fluids.FluidStack drained = new net.neoforged.neoforge.fluids.FluidStack(be.spentSteamTank.getTankType(), toDrain);
+            net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(be.spentSteamTank.getTankType(), toDrain);
             if (action.execute()) {
                 be.spentSteamTank.fill(be.spentSteamTank.getFill() - toDrain);
             }
@@ -783,10 +778,10 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         }
 
         @Override
-        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-            if (maxDrain <= 0 || be.spentSteamTank.getFill() <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (maxDrain <= 0 || be.spentSteamTank.getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
             int toDrain = Math.min(maxDrain, be.spentSteamTank.getFill());
-            net.neoforged.neoforge.fluids.FluidStack drained = new net.neoforged.neoforge.fluids.FluidStack(be.spentSteamTank.getTankType(), toDrain);
+            net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(be.spentSteamTank.getTankType(), toDrain);
             if (action.execute()) {
                 be.spentSteamTank.fill(be.spentSteamTank.getFill() - toDrain);
             }
@@ -835,3 +830,4 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         return null;
     }
 }
+

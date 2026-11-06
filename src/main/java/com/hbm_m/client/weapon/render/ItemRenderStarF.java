@@ -1,5 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
+import com.hbm_m.client.render.weapon.WeaponJointRig;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.client.weapon.WeaponResources;
@@ -61,26 +64,18 @@ public class ItemRenderStarF extends ItemRenderWeaponBase {
 
 		GunGL.translate(0, 0, recoil[2]);
 
-		GunGL.renderPart(WeaponResources.star_f, "Gun");
+		WeaponRenderRegistry.renderPart(WeaponResources.star_f, "Gun", GunGL.pose());
 
-		GunGL.pushMatrix();
-		GunGL.translate(0, 1.75, -4.25);
-		GunGL.rotate(60 * (hammer[0] - 1), 1, 0, 0);
-		GunGL.translate(0, -1.75, 4.25);
-		GunGL.renderPart(WeaponResources.star_f, "Hammer");
-		GunGL.popMatrix();
+		WeaponJointRig rig = WeaponRenderRegistry.getRig(WeaponResources.star_f);
+		WeaponKinematics.renderPartWithJoint(rig, "Hammer", GunGL.pose(), (float) (60 * (hammer[0] - 1)));
+		WeaponKinematics.renderPartWithJoint(rig, "Slide", GunGL.pose(), (float) (slide[2] * 2.3125));
 
-		GunGL.pushMatrix();
-		GunGL.translate(0, 0, slide[2] * 2.3125);
-		GunGL.renderPart(WeaponResources.star_f, "Slide");
-		GunGL.popMatrix();
-
-		GunGL.pushMatrix();
-		GunGL.translate(mag[0], mag[1], mag[2]);
-		GunGL.renderPart(WeaponResources.star_f, "Mag");
-		GunGL.translate(bullet[0], bullet[1], bullet[2]);
-		GunGL.renderPart(WeaponResources.star_f, "Bullet");
-		GunGL.popMatrix();
+		WeaponKinematics.scoped(GunGL.pose(), ps -> {
+			WeaponKinematics.applyVectorTranslate(ps, (float) mag[0], (float) mag[1], (float) mag[2]);
+			WeaponRenderRegistry.renderPart(WeaponResources.star_f, "Mag", ps);
+			WeaponKinematics.applyVectorTranslate(ps, (float) bullet[0], (float) bullet[1], (float) bullet[2]);
+			WeaponRenderRegistry.renderPart(WeaponResources.star_f, "Bullet", ps);
+		});
 
 		if(hasSilencer(stack)) {
 			GunGL.pushMatrix();
@@ -113,69 +108,37 @@ public class ItemRenderStarF extends ItemRenderWeaponBase {
 	public void setupThirdPerson(ItemStack stack) {
 		super.setupThirdPerson(stack);
 		GunGL.translate(0, -0.25, 1.75);
-		double scale = 0.75D;
-		GunGL.scale(scale, scale, scale);
+		GunGL.scale(0.75D, 0.75D, 0.75D);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 1.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(-1, -0.5, 0);
+		setupInv(stack, 1.5D, -1, -0.5, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -6.25D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, -0.25, -5);
+		setupModTable(stack, -6.25D, 0, -0.25, -5);
 	}
 
 	@Override
 	public void renderModTable(ItemStack stack, int index) {
 		GunGL.enableLighting();
-
 		renderStandardGun(stack);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		boolean silenced = hasSilencer(stack);
-
 		if(silenced && type == ItemRenderType.INVENTORY) {
 			double scale = 0.625D;
 			GunGL.scale(scale, scale, scale);
 			GunGL.translate(0, 0, -6);
 		}
-
 		renderStandardGun(stack);
-
-		if(type == ItemRenderType.EQUIPPED && !silenced) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 3, 6.25);
-			GunGL.scale(0.75, 0.75, 0.75);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(90 * shotRand, 1, 0, 0);
-			this.renderMuzzleFlash(shot, 75, 7.5);
-			GunGL.popMatrix();
+		if(!silenced) {
+			renderEquippedMuzzleFlash(type, stack, data, 0, 3, 6.25, 0.75D, 75, 7.5);
 		}
 	}
 

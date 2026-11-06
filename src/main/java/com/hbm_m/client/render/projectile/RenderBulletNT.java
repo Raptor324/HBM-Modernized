@@ -25,8 +25,8 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 /**
- * 1:1 {@code RenderBullet} (Altsystem) fuer {@link EntityBulletBaseNT}: Stil aus den synchronisierten Daten,
- * GL-Schritte ueber die {@link GunGL}-Fassade. {@code RenderSparks} (GL_LINE_STRIP, Breite 5/2) als einfache Linien.
+ * 1:1 {@code RenderBullet} (legacy system) for {@link EntityBulletBaseNT}: style from synced data,
+ * GL steps via {@link GunGL} facade. {@code RenderSparks} (GL_LINE_STRIP, width 5/2) as simple lines.
  */
 public class RenderBulletNT extends EntityRenderer<EntityBulletBaseNT> {
 
@@ -203,7 +203,7 @@ public class RenderBulletNT extends EntityRenderer<EntityBulletBaseNT> {
         GunGL.popMatrix();
     }
 
-    /** Dreieck mit je eigenem Alpha (a = 1 oder 0) pro Ecke wie im Original. */
+    /** Triangle with individual alpha (a = 1 or 0) per vertex as in original. */
     private static void tri(GunGL.Tess t, float r, float g, float b,
                             float a0, double x0, double y0, double z0,
                             float a1, double x1, double y1, double z1,
@@ -215,7 +215,7 @@ public class RenderBulletNT extends EntityRenderer<EntityBulletBaseNT> {
         t.draw();
     }
 
-    /** Schweif-Quad: die ersten zwei Ecken voll, die letzten zwei durchsichtig. */
+    /** Trail quad: first two vertices opaque, last two transparent. */
     private static void quad(GunGL.Tess t, float r, float g, float b,
                              double x0, double y0, double z0, double x1, double y1, double z1,
                              double x2, double y2, double z2, double x3, double y3, double z3) {
@@ -233,13 +233,13 @@ public class RenderBulletNT extends EntityRenderer<EntityBulletBaseNT> {
         GunGL.translate(0, -0.5, 0);
         GunGL.rotate(90, 0, 1, 0);
         GunGL.scale(1, 2, 1);
-        // Original: EntityItem(blade_titanium) mit renderInFrame
+        // Original: EntityItem(blade_titanium) with renderInFrame
         Minecraft.getInstance().getItemRenderer().renderStatic(new ItemStack(ModItems.BLADE_TITANIUM.get()), ItemDisplayContext.FIXED,
                 light, OverlayTexture.NO_OVERLAY, ps, buf, bullet.level(), bullet.getId());
         GunGL.popMatrix();
     }
 
-    /** 1:1 {@code RenderSparks.renderSpark}: Zickzack-Linie aus 'min + rand(max)' Segmenten, zwei Farben. */
+    /** 1:1 {@code RenderSparks.renderSpark}: zigzag line consisting of 'min + rand(max)' segments, two colors. */
     private static void renderSpark(PoseStack ps, MultiBufferSource buf, int seed, double x, double y, double z, float length, int min, int max, int color1, int color2) {
         VertexConsumer vc = buf.getBuffer(ClientRenderHandler.CustomRenderTypes.BEAM_LINES);
         Matrix4f m = ps.last().pose();

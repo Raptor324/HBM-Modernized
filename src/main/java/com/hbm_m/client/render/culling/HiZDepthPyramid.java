@@ -1,0 +1,356 @@
+package com.hbm_m.client.render.culling;
+
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import com.hbm_m.client.render.shader.GlShaderUtil;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
+
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL43;
+import org.slf4j.Logger;
+
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.logging.LogUtils;
+
+/**
+ * Forward-Z Hierarchical-Z (Hi-Z) Depth Pyramid generator.
+ * <p>
+ * Consumes raw Minecraft scene depth from {@code RenderTarget.getDepthTextureId()}
+ * and generates an immutable {@code GL_R32F} mipmapped depth pyramid using
+ * a Single Pass Downsampler (SPD) compute pipeline adapted to Forward-Z
+ * ($0.0 = \text{near}, 1.0 = \text{far}$, with {@code max()} conservative occluder reduction).
+ *
+ * @credit CrankShaft / fewizz / Jdb100
+ * Based on FidelityFX SPD v2.1 adapted for OpenGL 4.3 depth pyramids in CrankShaft/Flywheel.
+ */
+@OnlyIn(Dist.CLIENT)
+public final class HiZDepthPyramid {
+    private static final Logger LOGGER = LogUtils.getLogger();
+    private static HiZDepthPyramid INSTANCE;
+
+    private int pyramidTextureId = 0;
+    private int placeholderTextureId = 0;
+    private int lastWidth = -1;
+    private int lastHeight = -1;
+    private int mipLevels = 0;
+
+    private int downsampleFirstProgram = 0;
+    private int downsampleSecondProgram = 0;
+    private int uDepthTexLoc = -1;
+    private int uMipLevelsLoc = -1;
+    private int uBaseMipLevelLoc = -1;
+    private boolean initialized = false;
+
+    private HiZDepthPyramid() {}
+
+    public static synchronized HiZDepthPyramid get() {
+        if (INSTANCE == null) {
+            INSTANCE = new HiZDepthPyramid();
+        }
+        return INSTANCE;
+    }
+
+    /**
+     * GPU bytes of the R32F mip pyramid (full mip chain of the pow2-snapped
+     * mip-0 size). Pure field math for the F3 VRAM breakdown; 0 when no
+     * pyramid is allocated (recreated on resize only, so used == allocated).
+     */
+    public static synchronized long getPyramidVramBytes() {
+        HiZDepthPyramid inst = INSTANCE;
+        if (inst == null || inst.pyramidTextureId <= 0 || inst.lastWidth <= 0 || inst.lastHeight <= 0) {
+            return 0L;
+        }
+        long total = 0L;
+        int w = inst.lastWidth, h = inst.lastHeight;
+        for (int level = 0; level < inst.mipLevels; level++) {
+            total += (long) w * h * 4L; // GL_R32F
+            w = Math.max(1, w >> 1);
+            h = Math.max(1, h >> 1);
+        }
+        return total;
+    }
+
+    /**
+     * Computes the Mip 0 dimension snapped to the lower power of two of the screen dimension.
+     */
+    public static int mip0Size(int screenSize) {
+        int nextPot = screenSize <= 1 ? 1 : Integer.highestOneBit(screenSize - 1) << 1;
+        return Math.max(nextPot >> 1, 1);
+    }
+
+    /**
+     * Computes total mipmap levels down to 1x1.
+     */
+    public static int getImageMipLevels(int width, int height) {
+        int result = 1;
+        while (width > 1 && height > 1) {
+            result++;
+            width >>= 1;
+            height >>= 1;
+        }
+        return result;
+    }
+
+    private void ensureShaders() {
+        if (initialized) {
+            return;
+        }
+        initialized = true;
+        try {
+            downsampleFirstProgram = compileComputeShader("/assets/hbm_m/shaders/cull/downsample_first.comp");
+            com.hbm_m.client.render.debug.GlDebugMarkers.labelProgram(downsampleFirstProgram, "HBM_HiZ_DownsampleFirst_CS");
+            uDepthTexLoc = GL20.glGetUniformLocation(downsampleFirstProgram, "depth_tex");
+
+            downsampleSecondProgram = compileComputeShader("/assets/hbm_m/shaders/cull/downsample_second.comp");
+            com.hbm_m.client.render.debug.GlDebugMarkers.labelProgram(downsampleSecondProgram, "HBM_HiZ_DownsampleSecond_CS");
+            uMipLevelsLoc = GL20.glGetUniformLocation(downsampleSecondProgram, "mip_levels");
+            uBaseMipLevelLoc = GL20.glGetUniformLocation(downsampleSecondProgram, "base_mip_level");
+
+            LOGGER.info("[HBM-M] HiZDepthPyramid shaders compiled successfully (first={}, second={})",
+                    downsampleFirstProgram, downsampleSecondProgram);
+        } catch (Throwable t) {
+            LOGGER.error("[HBM-M] Failed to compile HiZDepthPyramid compute shaders", t);
+            destroy();
+        }
+    }
+
+    private static String loadShaderSource(String resourcePath) {
+        try (InputStream in = HiZDepthPyramid.class.getResourceAsStream(resourcePath)) {
+            if (in == null) {
+                throw new IllegalStateException("Shader resource not found: " + resourcePath);
+            }
+            String source = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            if (source.contains("#include \"downsample.glsl\"")) {
+                String include = loadShaderSource("/assets/hbm_m/shaders/cull/downsample.glsl");
+                source = source.replace("#include \"downsample.glsl\"", include);
+            }
+            return source;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read shader " + resourcePath, e);
+        }
+    }
+
+    private static int compileComputeShader(String resourcePath) {
+        String source = loadShaderSource(resourcePath);
+        int program = GlShaderUtil.createComputeProgram(source, "HiZDepthPyramid");
+        if (program == 0) {
+            throw new IllegalStateException("Failed to compile/link compute program for " + resourcePath);
+        }
+        return program;
+    }
+
+    private void ensurePyramidTexture(int targetMipLevels, int width, int height) {
+        if (pyramidTextureId > 0 && lastWidth == width && lastHeight == height && mipLevels == targetMipLevels) {
+            return;
+        }
+
+        if (pyramidTextureId > 0) {
+            deletePyramidTexture(pyramidTextureId);
+            pyramidTextureId = 0;
+        }
+
+        lastWidth = width;
+        lastHeight = height;
+        mipLevels = targetMipLevels;
+
+        pyramidTextureId = GL11.glGenTextures();
+        com.hbm_m.client.render.debug.GlDebugMarkers.labelTexture(pyramidTextureId, "HBM_HiZ_Pyramid_TEX");
+        // Texture setup binds go through GlStateManager (cache-coherent): a raw
+        // glBindTexture on the current unit would desync the per-unit bind cache.
+        GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+        GlStateManager._bindTexture(pyramidTextureId);
+        GL42.glTexStorage2D(GL11.GL_TEXTURE_2D, mipLevels, GL30.GL_R32F, width, height);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_COMPARE_MODE, GL11.GL_NONE);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+        GlStateManager._bindTexture(0);
+
+        // DEBUG: reallocation is expected on window resize only; INFO here
+        // would spam on every viewport change.
+        LOGGER.debug("[HBM-M] HiZDepthPyramid reallocated (texId={}, size={}x{}, mips={})",
+                pyramidTextureId, width, height, mipLevels);
+    }
+
+    private int ensurePlaceholder() {
+        if (placeholderTextureId <= 0) {
+            placeholderTextureId = GL11.glGenTextures();
+            com.hbm_m.client.render.debug.GlDebugMarkers.labelTexture(placeholderTextureId, "HBM_HiZ_Placeholder_TEX");
+            GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+            GlStateManager._bindTexture(placeholderTextureId);
+            GL42.glTexStorage2D(GL11.GL_TEXTURE_2D, 1, GL30.GL_R32F, 1, 1);
+            ByteBuffer buf = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder());
+            buf.putFloat(1.0f); // 1.0 = far plane/sky in Forward-Z
+            buf.flip();
+            GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 1, 1, GL11.GL_RED, GL11.GL_FLOAT, buf);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL14.GL_TEXTURE_COMPARE_MODE, GL11.GL_NONE);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+            GlStateManager._bindTexture(0);
+        }
+        return placeholderTextureId;
+    }
+
+    /**
+     * Regenerates the Hi-Z depth pyramid from the Minecraft main render target depth buffer.
+     *
+     * @param sourceDepthTextureId Native OpenGL depth texture ID from RenderTarget
+     * @param framebufferWidth Full framebuffer pixel width
+     * @param framebufferHeight Full framebuffer pixel height
+     */
+    public void regenerate(int sourceDepthTextureId, int framebufferWidth, int framebufferHeight) {
+        if (sourceDepthTextureId <= 0 || framebufferWidth <= 0 || framebufferHeight <= 0) {
+            return;
+        }
+
+        ensureShaders();
+        if (downsampleFirstProgram <= 0 || downsampleSecondProgram <= 0) {
+            return;
+        }
+
+        int width = mip0Size(framebufferWidth);
+        int height = mip0Size(framebufferHeight);
+        int targetMipLevels = getImageMipLevels(width, height);
+
+        ensurePyramidTexture(targetMipLevels, width, height);
+
+        // 1. Wait for preceding framebuffer rasterization writes
+        GL42.glMemoryBarrier(GL42.GL_FRAMEBUFFER_BARRIER_BIT);
+
+        // 2. Bind source depth texture to texture unit 10 through GlStateManager:
+        // raw binds desync the per-unit cache (the exact recipe for the stale-binding
+        // bug CrankShaft fixed in 1.5.2 — silently sampling a dead texture).
+        int previousProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+        GlStateManager._activeTexture(GL13.GL_TEXTURE10);
+        try {
+            GlStateManager._bindTexture(sourceDepthTextureId);
+
+            // 3. Dispatch first downsample pass (full framebuffer -> Mip 0)
+            // Save/restore the caller's program at the exit instead of binding 0:
+            // a leftover foreign program desyncs Iris's ExtendedShader.lastApplied
+            // skip-gate for every pack-shader apply that follows this pass.
+            GlStateManager._glUseProgram(downsampleFirstProgram);
+            if (uDepthTexLoc >= 0) {
+                GL20.glUniform1i(uDepthTexLoc, 10);
+            }
+
+            GL42.glBindImageTexture(1, pyramidTextureId, 0, false, 0, GL15.GL_WRITE_ONLY, GL30.GL_R32F);
+            GL43.glDispatchCompute((width * 2 + 63) / 64, (height * 2 + 63) / 64, 1);
+
+            // 4. Dispatch second downsample passes (Mip 0 -> Mip 1..N)
+            GlStateManager._glUseProgram(downsampleSecondProgram);
+            if (uMipLevelsLoc >= 0) {
+                GL30.glUniform1ui(uMipLevelsLoc, targetMipLevels);
+            }
+
+            for (int baseMipLevel = 0; baseMipLevel + 1 < targetMipLevels; baseMipLevel += 6) {
+                GL42.glMemoryBarrier(GL42.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+                if (uBaseMipLevelLoc >= 0) {
+                    GL30.glUniform1ui(uBaseMipLevelLoc, baseMipLevel);
+                }
+
+                for (int i = 0; i < Math.min(7, targetMipLevels - baseMipLevel); i++) {
+                    int access = (i == 0) ? GL15.GL_READ_ONLY : GL15.GL_WRITE_ONLY;
+                    GL42.glBindImageTexture(i, pyramidTextureId, baseMipLevel + i, false, 0, access, GL30.GL_R32F);
+                }
+
+                int mipW = Math.max(1, width >> baseMipLevel);
+                int mipH = Math.max(1, height >> baseMipLevel);
+                GL43.glDispatchCompute((mipW + 63) / 64, (mipH + 63) / 64, 1);
+            }
+
+            // 5. Memory barrier for subsequent texture sampling in compute cull shader
+            GL42.glMemoryBarrier(GL42.GL_TEXTURE_FETCH_BARRIER_BIT);
+        } finally {
+            // Explicitly unbind compute image load/store units 0..6 to eliminate GL image feedback loop hazards
+            for (int i = 0; i < 7; i++) {
+                GL42.glBindImageTexture(i, 0, 0, false, 0, GL15.GL_READ_ONLY, GL30.GL_R32F);
+            }
+
+            // Explicitly unbind source depth texture from unit 10 (cache-coherent with GlStateManager)
+            GlStateManager._activeTexture(GL13.GL_TEXTURE10);
+            GlStateManager._bindTexture(0);
+
+            // Restore OpenGL bindings
+            GlStateManager._glUseProgram(previousProgram);
+            GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+            // Downsample compute passes left a foreign program (0) bound: make the next
+            // ensureFreshBind force an honest shader rebind (recycled-id-safe).
+            com.hbm_m.client.render.shader.ShaderBindResync.markForeignProgramBind();
+        }
+    }
+
+    /**
+     * Deletes a texture with a GlStateManager cache sweep: the pyramid is
+     * glGenTextures'd outside GlStateManager accounting, so a raw delete would leave
+     * its id cached as "bound" on some unit and a later recreation could be skipped
+     * by {@code _bindTexture} (CrankShaft 1.5.2 stale-pyramid bug). {@code _deleteTexture}
+     * resets matching cache slots to -1 in both supported versions.
+     */
+    private static void deletePyramidTexture(int id) {
+        if (id > 0) {
+            GlStateManager._deleteTexture(id);
+        }
+    }
+
+    public int getPyramidTextureId() {
+        return pyramidTextureId > 0 ? pyramidTextureId : ensurePlaceholder();
+    }
+
+    public int getMipLevels() {
+        return mipLevels > 0 ? mipLevels : 1;
+    }
+
+    /**
+     * Whether a REAL (non-placeholder) pyramid texture exists, i.e. the last
+     * {@link #regenerate} call actually built (or had previously built) the
+     * pyramid. When the downsample shaders failed to compile (or their resources
+     * are missing), {@code ensureShaders} latches destroyed with NO GL error and
+     * {@code regenerate} silently early-returns - {@link #getPyramidTextureId}
+     * then serves the 1x1 placeholder (all 1.0) while a caller's screen-space
+     * coordinates describe the full viewport. Callers activating Hi-Z sampling
+     * MUST gate on this instead of inferring success from the absence of
+     * glGetError(): out-of-bounds texelFetches on the 1x1 placeholder are
+     * undefined (commonly 0.0) and would cull every instance.
+     */
+    public boolean isReady() {
+        return pyramidTextureId > 0;
+    }
+
+    public void destroy() {
+        if (pyramidTextureId > 0) {
+            deletePyramidTexture(pyramidTextureId);
+            pyramidTextureId = 0;
+        }
+        if (placeholderTextureId > 0) {
+            deletePyramidTexture(placeholderTextureId);
+            placeholderTextureId = 0;
+        }
+        if (downsampleFirstProgram > 0) {
+            GL20.glDeleteProgram(downsampleFirstProgram);
+            downsampleFirstProgram = 0;
+        }
+        if (downsampleSecondProgram > 0) {
+            GL20.glDeleteProgram(downsampleSecondProgram);
+            downsampleSecondProgram = 0;
+        }
+        lastWidth = -1;
+        lastHeight = -1;
+        mipLevels = 0;
+        initialized = false;
+    }
+}

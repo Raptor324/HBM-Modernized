@@ -34,7 +34,7 @@ import net.minecraft.world.phys.Vec3;
  * Хранит список подключённых пилонов (соединяется предметом-проводкой), красит кабель красителем
  * и создаёт PowerNode со связями по всем подключённым пилонам.
  */
-public abstract class PylonBaseBlockEntity extends BaseHbmBlockEntity implements PowerConductor {
+public abstract class PylonBaseBlockEntity extends BaseHbmBlockEntity implements PowerConductor, com.hbm_m.api.render.RenderBoundsProvider {
 
     public enum ConnectionType { SINGLE, TRIPLE, QUAD }
 
@@ -51,11 +51,9 @@ public abstract class PylonBaseBlockEntity extends BaseHbmBlockEntity implements
     }
 
     /** Кабели тянутся до 100 м — рендер-габарит бесконечный (как в оригинале). */
-    //? if forge {
     @Override
-    //?}
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
-        return new net.minecraft.world.phys.AABB(-1.0E7, -1.0E7, -1.0E7, 1.0E7, 1.0E7, 1.0E7);
+        return com.hbm_m.platform.RenderBounds.INFINITE;
     }
 
     public static void tick(Level level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, PylonBaseBlockEntity entity) {
@@ -88,6 +86,16 @@ public abstract class PylonBaseBlockEntity extends BaseHbmBlockEntity implements
         }
         setChanged();
         syncToClient();
+    }
+
+    // A conductor that keeps its node after the block is gone leaves the grid merged through a
+    // block that no longer exists, and any conductor placed there later inherits the ghost node.
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (level instanceof ServerLevel serverLevel) {
+            Nodespace.destroyNode(serverLevel, getBlockPos());
+        }
     }
 
     /** Порт disconnectAll из 1.7.10: разрывает все соединения и уничтожает узлы на обоих концах. */

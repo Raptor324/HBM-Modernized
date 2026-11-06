@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.powerarmor.overlay;
 
 import org.joml.Matrix4f;
@@ -18,17 +17,15 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-//? if forge {
+
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+//? if forge {
+import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.fml.common.Mod;
 //?} else {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.client.event.RenderLivingEvent;
-import net.neoforged.bus.api.SubscribeEvent;
+/*import net.neoforged.neoforge.client.event.RenderLivingEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 *///?}
 
@@ -36,7 +33,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 //? if forge {
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 //?} else {
-/*@EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
+/*@EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
 *///?}
 public class VATSRenderHandler {
 
@@ -84,7 +81,7 @@ public class VATSRenderHandler {
 
         ps.translate(0.0D, entity.getBbHeight() + 0.6D, 0.0D);
         ps.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
-        ps.scale(-0.025F, -0.025F, 0.025F);
+        com.hbm_m.platform.RenderHooks.scaleBillboardText(ps, 0.025F);
 
         Font font = mc.font;
         float x = -font.width(bar) / 2.0F;
@@ -112,4 +109,3 @@ public class VATSRenderHandler {
         return sb.toString();
     }
 }
-//?}

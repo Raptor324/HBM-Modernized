@@ -1,5 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
+import com.hbm_m.client.render.weapon.WeaponJointRig;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.client.weapon.WeaponResources;
@@ -21,8 +24,7 @@ public class ItemRenderMinigunDual extends ItemRenderWeaponBase {
 
 	@Override
 	public float getViewFOV(ItemStack stack, float fov) {
-		float aimingProgress = ItemGunBaseNT.prevAimingProgress + (ItemGunBaseNT.aimingProgress - ItemGunBaseNT.prevAimingProgress) * interp;
-		return  fov * (1 - aimingProgress * 0.33F);
+		return standardZoomFov(fov, 0.33F);
 	}
 
 	@Override
@@ -57,12 +59,10 @@ public class ItemRenderMinigunDual extends ItemRenderWeaponBase {
 
 			GunGL.translate(0, 0, recoil[2]);
 
-			GunGL.renderPart(WeaponResources.minigun, index == 0 ? "GunDual" : "Gun");
+			WeaponJointRig rig = WeaponRenderRegistry.getRig(WeaponResources.minigun);
+			WeaponRenderRegistry.renderPart(WeaponResources.minigun, WeaponKinematics.getAkimboReceiverPart(rig, index), GunGL.pose());
 
-			GunGL.pushMatrix();
-			GunGL.rotate(rotate[2] * i, 0, 0, 1);
-			GunGL.renderPart(WeaponResources.minigun, "Barrels");
-			GunGL.popMatrix();
+			WeaponKinematics.renderPartWithJoint(rig, "Barrels", GunGL.pose(), (float) (rotate[2] * i));
 
 			GunGL.pushMatrix();
 			GunGL.translate(0, 0, 12);
@@ -111,70 +111,25 @@ public class ItemRenderMinigunDual extends ItemRenderWeaponBase {
 
 	@Override
 	public void renderEquipped(ItemStack stack, Object... data) {
-
 		GunGL.bindTexture(WeaponResources.minigun_dual_tex);
-		GunGL.renderPart(WeaponResources.minigun, "Gun");
-		GunGL.renderPart(WeaponResources.minigun, "Barrels");
-
-		LivingEntity ent = (LivingEntity) data[1];
-		long shot;
-		double shotRand = 0;
-		if(ent == Minecraft.getInstance().player) {
-			ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-			shot = gun.lastShot[1];
-			shotRand = gun.shotRand;
-		} else {
-			shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-			if(shot < 0) return;
+		WeaponKinematics.renderRestParts(WeaponRenderRegistry.getRig(WeaponResources.minigun), 1, GunGL.pose());
+		if(data.length > 1 && data[1] instanceof LivingEntity ent) {
+			renderEquippedMuzzleFlash(stack, ent, 1, 0, 0.5, 12.25, 1.5D, 50, 7.5);
 		}
-
-		GunGL.pushMatrix();
-		GunGL.translate(0, 0, 12.25);
-		GunGL.rotate(90, 0, 1, 0);
-
-		GunGL.translate(0, 0.5, 0);
-		GunGL.rotate(shotRand * 90, 1, 0, 0);
-		GunGL.scale(1.5, 1.5, 1.5);
-		this.renderMuzzleFlash(shot, 50, 7.5);
-		GunGL.popMatrix();
 	}
 
 	@Override
 	public void renderEquippedAkimbo(ItemStack stack, LivingEntity ent) {
-
 		GunGL.bindTexture(WeaponResources.minigun_dual_tex);
-		GunGL.renderPart(WeaponResources.minigun, "GunDual");
-		GunGL.renderPart(WeaponResources.minigun, "Barrels");
-
-		long shot;
-		double shotRand = 0;
-		if(ent == Minecraft.getInstance().player) {
-			ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-			shot = gun.lastShot[0];
-			shotRand = gun.shotRand;
-		} else {
-			shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-			if(shot < 0) return;
-		}
-
-		GunGL.pushMatrix();
-		GunGL.translate(0, 0, 12.25);
-		GunGL.rotate(90, 0, 1, 0);
-
-		GunGL.translate(0, 0.5, 0);
-		GunGL.rotate(shotRand * 90, 1, 0, 0);
-		GunGL.scale(1.5, 1.5, 1.5);
-		this.renderMuzzleFlash(shot, 50, 7.5);
-		GunGL.popMatrix();
+		WeaponKinematics.renderRestParts(WeaponRenderRegistry.getRig(WeaponResources.minigun), 0, GunGL.pose());
+		renderEquippedMuzzleFlash(stack, ent, 0, 0, 0.5, 12.25, 1.5D, 50, 7.5);
 	}
 
 	@Override
 	public void renderModTable(ItemStack stack, int index) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(WeaponResources.minigun_dual_tex);
-		GunGL.renderPart(WeaponResources.minigun, index == 0 ? "GunDual" : "Gun");
-		GunGL.renderPart(WeaponResources.minigun, "Barrels");
+		WeaponKinematics.renderRestParts(WeaponRenderRegistry.getRig(WeaponResources.minigun), index, GunGL.pose());
 	}
 
 	@Override

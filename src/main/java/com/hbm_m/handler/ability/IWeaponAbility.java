@@ -34,6 +34,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.MobHooks;
 
 /** 1:1 {@code com.hbm.handler.ability.IWeaponAbility}. */
 public interface IWeaponAbility extends IBaseAbility {
@@ -140,7 +141,7 @@ public interface IWeaponAbility extends IBaseAbility {
         @Override
         public void onHit(int level, Level world, Player player, Entity victim, Item tool) {
             if (victim instanceof LivingEntity) {
-                PlatformHooks.setSecondsOnFire(victim, durationAtLevel[level]);
+                MobHooks.setSecondsOnFire(victim, durationAtLevel[level]);
             }
         }
     };

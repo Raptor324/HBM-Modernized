@@ -11,8 +11,11 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /** Port of {@code GUIRBMKStorage} (1.7.10 Original). */
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKStorage extends GuiInfoScreen<RBMKStorageMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -48,13 +51,5 @@ public class GUIRBMKStorage extends GuiInfoScreen<RBMKStorageMenu> {
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // Original drawGuiContainerForegroundLayer
-        String name = this.title.getString();
-        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 6, 4210752, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 92, 4210752, false);
     }
 }

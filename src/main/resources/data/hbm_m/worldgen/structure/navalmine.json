@@ -15,12 +15,9 @@
   "step": "surface_structures",
   "project_start_to_heightmap": "OCEAN_FLOOR",
   "start_height": {
-    "type": "minecraft:uniform",
-    "min_inclusive": {
+    "type": "minecraft:constant",
+    "value": {
       "absolute": 3
-    },
-    "max_inclusive": {
-      "above_bottom": 64
     }
   },
   "spawn_overrides": {},

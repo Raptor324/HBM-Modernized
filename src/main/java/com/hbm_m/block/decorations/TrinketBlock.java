@@ -38,6 +38,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code BlockBobble} ({@code bobblehead}), {@code BlockSnowglobe} ({@code snowglobe}) und {@code BlockPlushie}
@@ -191,7 +192,7 @@ public class TrinketBlock extends BaseEntityBlock {
         return state.setValue(ROTATION, mirror.mirror(state.getValue(ROTATION), 16));
     }
     //? if >= 1.21.1 {
-    /*public static final com.mojang.serialization.MapCodec<TrinketBlock> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(TrinketBlock.class);
+    /*public static final com.mojang.serialization.MapCodec<TrinketBlock> CODEC = com.hbm_m.platform.BlockHooks.unsupportedCodec(TrinketBlock.class);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

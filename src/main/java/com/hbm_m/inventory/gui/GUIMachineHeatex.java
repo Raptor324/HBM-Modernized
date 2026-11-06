@@ -1,31 +1,55 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineHeatexBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineHeatexMenu;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.network.SetHeatexControlC2SPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-/** 1:1 {@code GUIHeaterHeatex}: Tanks, dazu die Felder "Menge je Zyklus" und "Zyklusverzoegerung" (NBTControlPacket). */
+/**
+ * Port of {@code GUIHeaterHeatex} (1.7.10 Original).
+ * Texture 176x204; two tanks 16x52 rendered at (44,88)/(116,88) with info regions at (44,36)/(116,36);
+ * two borderless green EditBoxes ("amountToCool" at 73/31, "tickDelay" at 73/49) that send the
+ * control packet on EVERY change (original: per-keystroke NBTControlPacket via textboxKeyTyped).
+ */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineHeatex extends GuiInfoScreen<MachineHeatexMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_heatex.png");
 
-    private final MachineHeatexBlockEntity heater;
+    private final MachineHeatexBlockEntity be;
+
+    // Оригинальные координаты (в пикселях относительно левого верхнего угла GUI)
+    private static final int TANK_HOT_RENDER_X = 44;
+    private static final int TANK_COLD_RENDER_X = 116;
+    private static final int TANK_RENDER_Y = 36;
+    private static final int TANK_INFO_Y = 36;
+    private static final int TANK_W = 16;
+    private static final int TANK_H = 52;
+
+    private static final int FIELD_X = 73;
+    private static final int FIELD_CYCLES_Y = 31;
+    private static final int FIELD_DELAY_Y = 49;
+    private static final int FIELD_W = 30;
+    private static final int FIELD_H = 10;
+
     private EditBox fieldCycles;
     private EditBox fieldDelay;
 
     public GUIMachineHeatex(MachineHeatexMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-        this.heater = menu.getBlockEntity();
+        this.be = menu.getBlockEntity();
         this.imageWidth = 176;
         this.imageHeight = 204;
     }
@@ -33,42 +57,42 @@ public class GUIMachineHeatex extends GuiInfoScreen<MachineHeatexMenu> {
     @Override
     protected void init() {
         super.init();
-        this.fieldCycles = new EditBox(this.font, leftPos + 73, topPos + 31, 30, 10, Component.empty());
+
+        // amountToCool — оригинал: (73, 31), 30x10, зелёный текст, без фона, макс 5 символов
+        this.fieldCycles = new EditBox(this.font, this.leftPos + FIELD_X, this.topPos + FIELD_CYCLES_Y, FIELD_W, FIELD_H, Component.literal("Amount per cycle"));
         initText(this.fieldCycles);
-        this.fieldCycles.setValue(String.valueOf(heater != null ? heater.amountToCool : 24_000));
-        this.fieldCycles.setResponder(s -> send("toCool", s));
+        this.fieldCycles.setValue(String.valueOf(be.amountToCool));
+        this.fieldCycles.setResponder(text -> {
+            int cyc = Math.max(safeParseInt(text), 1);
+            SetHeatexControlC2SPacket.sendToServer(be.getBlockPos(), cyc, null);
+        });
+        this.addRenderableWidget(this.fieldCycles);
 
-        this.fieldDelay = new EditBox(this.font, leftPos + 73, topPos + 49, 30, 10, Component.empty());
+        // tickDelay — оригинал: (73, 49), 30x10
+        this.fieldDelay = new EditBox(this.font, this.leftPos + FIELD_X, this.topPos + FIELD_DELAY_Y, FIELD_W, FIELD_H, Component.literal("Cycle tick delay"));
         initText(this.fieldDelay);
-        this.fieldDelay.setValue(String.valueOf(heater != null ? heater.tickDelay : 1));
-        this.fieldDelay.setResponder(s -> send("delay", s));
-
-        this.addRenderableWidget(fieldCycles);
-        this.addRenderableWidget(fieldDelay);
+        this.fieldDelay.setValue(String.valueOf(be.tickDelay));
+        this.fieldDelay.setResponder(text -> {
+            int delay = Math.max(safeParseInt(text), 1);
+            SetHeatexControlC2SPacket.sendToServer(be.getBlockPos(), null, delay);
+        });
+        this.addRenderableWidget(this.fieldDelay);
     }
 
-    protected void initText(EditBox field) {
-        field.setTextColor(0x00ff00);
-        field.setTextColorUneditable(0x00ff00);
+    /** Оригинал initText(): зелёный текст, без фоновой рамки, макс 5 символов. */
+    private static void initText(EditBox field) {
+        field.setTextColor(0x00FF00);
         field.setBordered(false);
         field.setMaxLength(5);
     }
 
-    private void send(String key, String text) {
-        if (heater == null) return;
-        int v;
-        try { v = Integer.parseInt(text.trim()); } catch (NumberFormatException e) { v = 0; }
-        CompoundTag data = new CompoundTag();
-        data.putInt(key, Math.max(v, 1));
-        com.hbm_m.network.NBTControlPacket.sendToServer(heater.getBlockPos(), data);
-    }
-
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if ((fieldCycles.isFocused() || fieldDelay.isFocused()) && keyCode != 256) {
-            return (fieldCycles.isFocused() ? fieldCycles : fieldDelay).keyPressed(keyCode, scanCode, modifiers) || true;
+    /** Аналог NumberUtils.toInt (invalid -> 0). */
+    private static int safeParseInt(String text) {
+        try {
+            return Integer.parseInt(text.trim());
+        } catch (NumberFormatException e) {
+            return 0;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
@@ -77,9 +101,10 @@ public class GUIMachineHeatex extends GuiInfoScreen<MachineHeatexMenu> {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        if (heater != null) {
-            heater.tanks[0].renderTank(guiGraphics, leftPos + 44, topPos + 36, 16, 52);
-            heater.tanks[1].renderTank(guiGraphics, leftPos + 116, topPos + 36, 16, 52);
+        if (be != null) {
+            // Оригинал renderTank: (44, 88) и (116, 88), 16x52
+            be.getHotTank().renderTank(guiGraphics, leftPos + TANK_HOT_RENDER_X, topPos + TANK_RENDER_Y, TANK_W, TANK_H);
+            be.getColdTank().renderTank(guiGraphics, leftPos + TANK_COLD_RENDER_X, topPos + TANK_RENDER_Y, TANK_W, TANK_H);
         }
     }
 
@@ -92,21 +117,45 @@ public class GUIMachineHeatex extends GuiInfoScreen<MachineHeatexMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        this.renderTooltip(guiGraphics, mouseX, mouseY);
+    }
 
-        if (heater != null) {
-            heater.tanks[0].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, leftPos + 44, topPos + 36, 16, 52);
-            heater.tanks[1].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, leftPos + 116, topPos + 36, 16, 52);
+    @Override
+    protected void renderTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        super.renderTooltip(guiGraphics, mouseX, mouseY);
+
+        if (be != null) {
+            // Оригинал renderTankInfo: области (44, 36) и (116, 36), 16x52
+            be.getHotTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
+                    leftPos + TANK_HOT_RENDER_X, topPos + TANK_INFO_Y, TANK_W, TANK_H);
+            be.getColdTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
+                    leftPos + TANK_COLD_RENDER_X, topPos + TANK_INFO_Y, TANK_W, TANK_H);
         }
 
-        if (leftPos + 70 <= mouseX && leftPos + 70 + 36 > mouseX && topPos + 26 < mouseY && topPos + 26 + 18 >= mouseY) {
+        // Оригинальные tooltip-области текстовых полей: (70, 26) и (70, 44), 36x18
+        if (isInRegion(mouseX, mouseY, 70, 26, 36, 18)) {
             guiGraphics.renderTooltip(this.font, Component.literal("Amount per cycle"), mouseX, mouseY);
         }
-        if (leftPos + 70 <= mouseX && leftPos + 70 + 36 > mouseX && topPos + 44 < mouseY && topPos + 44 + 18 >= mouseY) {
+        if (isInRegion(mouseX, mouseY, 70, 44, 36, 18)) {
             guiGraphics.renderTooltip(this.font, Component.literal("Cycle tick delay"), mouseX, mouseY);
         }
+    }
 
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
+    private boolean isInRegion(int mouseX, int mouseY, int x, int y, int w, int h) {
+        int gx = mouseX - leftPos;
+        int gy = mouseY - topPos;
+        return gx >= x && gx < x + w && gy >= y && gy < y + h;
+    }
+
+    @Override
+    public void containerTick() {
+        super.containerTick();
+        // EditBox.tick() удалён на 1.21.1 (мигание курсора теперь handled-by-render).
+        //? if < 1.21.1 {
+        this.fieldCycles.tick();
+        this.fieldDelay.tick();
+        //?}
     }
 }

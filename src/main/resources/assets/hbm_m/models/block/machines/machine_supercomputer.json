@@ -1,25 +1,14 @@
 {
-  "textures": {
-    "particle": "hbm_m:block/machine/supercomputer"
+  "loader": "hbm_m:machine_parts_loader",
+  "model": "hbm_m:models/block/machines/supercomputer_item.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "parts": {
+    "Computer": { "group": "Computer" }
   },
-  "loader": "forge:composite",
-  "children": {
-    "computer": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/machines/supercomputer_item.obj",
-      "flip_v": true,
-      "render_type": "minecraft:cutout",
-      "textures": { "default": "hbm_m:block/machine/supercomputer" },
-      "visibility": { "Lights": false }
-    },
-    "lights": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/machines/supercomputer_item.obj",
-      "flip_v": true,
-      "render_type": "minecraft:cutout",
-      "textures": { "default": "hbm_m:block/machine/supercomputer_scan" },
-      "visibility": { "Computer": false }
-    }
+  "textures": {
+    "particle": "hbm_m:block/machine/supercomputer",
+    "default": "hbm_m:block/machine/supercomputer"
   },
   "transform": { "translation": [0.5, 0, 0.5], "rotation": [0, 0, 0], "scale": 1.0 },
   "display": {

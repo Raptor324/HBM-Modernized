@@ -32,6 +32,8 @@ public final class GeneralConfig {
     public static boolean enableGuideBook = true;
     /** Original 1.99_enableExpensiveMode: Rezeptfassungen ueber {@code recipe.condition.ConfigRecipeFlags} ("expensive"), HUD-Plakette. */
     public static boolean enableExpensiveMode = false;
+    /** Original 1.35_enableFluidContainerCompat: Fremd-Behaelter oredicten, TrainCraft-Diesel als gueltigen Diesel-Kanister (Compat.registerCompatFluidContainers). */
+    public static boolean enableFluidContainerCompat = true;
 
     // ── 528 ──
     /** Original X528_forceReasimBoilers. */
@@ -93,5 +95,16 @@ public final class GeneralConfig {
     }
 
     private GeneralConfig() {
+    }
+
+    /**
+     * Зеркалирует значения схемы (POJO {@link ModClothConfig}) в статические поля-фасады.
+     * Аналог NEXT {@code BalanceConfig.loadFrom(store)}: NEXT перегенерирует фасады после
+     * каждого применения конфига (NeoForgeHbmConfig.set/reload → NuclearTech.deriveConfigFacades);
+     * здесь то же самое — вызов из {@code ConfigSchema.applyAll}, через который проходят
+     * все пути применения (JSON-загрузка, GUI, C2S/S2C пакеты).
+     */
+    public static void syncFrom(ModClothConfig cfg) {
+        enable528 = cfg.enable528;
     }
 }

@@ -47,6 +47,11 @@ public class MachineKeyforgeBlockEntity extends BaseMachineBlockEntity {
             ItemKeyPin.setPins(cut, level.random.nextInt(900) + 100);
             be.setChanged();
         }
+
+        long fp = com.hbm_m.platform.StackNbt.fingerprint(source) * 31L
+                + com.hbm_m.platform.StackNbt.fingerprint(dupe);
+        fp = fp * 31L + com.hbm_m.platform.StackNbt.fingerprint(cut);
+        be.syncIfStateChanged(fp, 0L);
     }
 
     @Override
@@ -110,4 +115,10 @@ public class MachineKeyforgeBlockEntity extends BaseMachineBlockEntity {
         sidedItems.invalidate();
     }
     *///?}
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
+    }
 }

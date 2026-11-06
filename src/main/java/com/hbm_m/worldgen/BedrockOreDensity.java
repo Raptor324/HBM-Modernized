@@ -21,6 +21,7 @@ public final class BedrockOreDensity {
     }
 
     private static final double SCALE = 0.01;
+    private static final int OCTAVES = 4;
     private static final long LEVEL_SEED = 2114043L;
     private static final long TYPE_SEED_BASE = 2082127L;
 

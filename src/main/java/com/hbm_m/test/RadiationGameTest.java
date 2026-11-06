@@ -52,13 +52,8 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
 
 /**
  * Extensive cross-platform GameTest suite for the mod's radiation system.
@@ -230,7 +225,7 @@ public final class RadiationGameTest {
     //  ModClothConfig.radiationSystem). The exact set/get round-trips are RAPTOR semantics;
     //  under ADVANCED getRadiation returns the solver field (diffusion, delayed by a step), so
     //  the round-trip contract does not apply there and only the read path is checked.
-    // ════════════════════════════════════════════════════════════════════════
+    //  ════════════════════════════════════════════════════════════════════════
 
     /** Is the active world handler Raptor's simple chunk handler (exact round-trips)? */
     private static boolean simpleProxyActive() {
@@ -242,6 +237,7 @@ public final class RadiationGameTest {
         check(!Float.isNaN(rad) && !Float.isInfinite(rad) && rad >= 0f,
                 what + ": active handler returns a finite non-negative field (got " + rad + ")");
     }
+
 
     @GameTest(template = "empty5x5x5", batch = "radiation", timeoutTicks = 100)
     public static void manager_setGetRadiation(GameTestHelper helper) {
@@ -315,7 +311,7 @@ public final class RadiationGameTest {
     //  Raptor's handler is tested directly: the active proxy when RAPTOR is selected,
     //  otherwise a dedicated instance (it works on the chunk capability; under ADVANCED
     //  nothing else reads that capability, so the instance cannot interfere).
-    // ════════════════════════════════════════════════════════════════════════
+    //  ════════════════════════════════════════════════════════════════════════
 
     private static ChunkRadiationHandlerSimple standaloneSimple;
 
@@ -324,6 +320,7 @@ public final class RadiationGameTest {
         if (standaloneSimple == null) standaloneSimple = new ChunkRadiationHandlerSimple();
         return standaloneSimple;
     }
+
 
     @GameTest(template = "empty5x5x5", batch = "radiation", timeoutTicks = 100)
     public static void handlerSimple_setGetRadiation(GameTestHelper helper) {
@@ -1180,6 +1177,7 @@ public final class RadiationGameTest {
      * Writes a payload via writer and converts it to an outgoing S2C Packet —
      * the same sequence as in {@code ModPacketHandler.sendToPlayer} prior to sending.
      */
+    @SuppressWarnings("removal")
     private static Packet<?> buildS2CPacket(GameTestHelper helper, ResourceLocation id,
                                             java.util.function.Consumer<FriendlyByteBuf> writer) {
         //? if < 1.21.1 {

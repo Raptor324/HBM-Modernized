@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "hbm_m:lithium_ore",
+    "hbm_m:lithium_ore_deepslate",
+    "hbm_m:gneiss_lithium_ore"
+  ]
+}

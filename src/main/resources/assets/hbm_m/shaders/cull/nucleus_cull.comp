@@ -1,0 +1,335 @@
+/**
+ * GPU Compute Hierarchical-Z Occlusion Culling and Stream Compaction.
+ * Performs 6-plane view-frustum culling, bounding sphere projection, Forward-Z Hi-Z
+ * occlusion testing against the depth pyramid, and atomic stream compaction for MDI draws.
+ *
+ * Workgroup = 32 lanes = one tile of instances. Survivors are compacted two ways:
+ *  - Ballot path (NUCLEUS_BALLOT, injected by NucleusGpuCuller when
+ *    GL_KHR_shader_subgroup is present and subgroup size is 32): warp-level
+ *    subgroupBallot compaction — ONE atomicAdd per tile, no shared memory, no barriers.
+ *  - Fallback (hardware without a 1:1 subgroup/workgroup match, or no ballot
+ *    extension at all): per-visible-invocation atomicAdd on instanceCount.
+ *    A shared-memory Hillis-Steele scan was considered here but NOT implemented:
+ *    the fallback is cold-path, and per-thread atomicAdd keeps the code free of
+ *    LDS pressure and barriers. Slot order in the fallback is nondeterministic
+ *    across lanes, which is harmless - every slot of a command's window is
+ *    written exactly once and the draw reads the whole window.
+ * Both paths produce a dense window of survivors per command.
+ *
+ * @credit CrankShaft / fewizz / Jdb100
+ */
+#version 430 core
+// Instance record layout (float words) — injected at load time by NucleusGpuCuller
+// from the InstancedStaticPartRenderer offset constants (the literals below are only
+// a fallback so the file stays readable standalone; a drift here tore every GPU-culled
+// batch apart). Layout: pos @0, quat @3 (4 snorm16 halves packed in 2 words),
+// bboxMin @5, bboxSize @8 (32 words = 128 bytes per record).
+#define INST_STRIDE 32u
+#define INST_POS_WORD 0u
+#define INST_QUAT_WORD 3u
+#define INST_BMIN_WORD 5u
+#define INST_BSIZE_WORD 8u
+
+#if defined(SUBGROUP_SIZE) && SUBGROUP_SIZE == 64
+#define WORKGROUP_SIZE 64u
+layout(local_size_x = 64) in;
+#else
+#define WORKGROUP_SIZE 32u
+layout(local_size_x = 32) in;
+#endif
+
+struct DrawCommand {
+    uint count;
+    uint instanceCount;
+    uint firstIndex;
+    int  baseVertex;
+    uint baseInstance;
+    uint originalCount;
+    uint globalInstanceOffset;
+    uint pad2;
+};
+
+layout(std430, binding = 0) readonly buffer InInstances {
+    float inData[];
+};
+
+layout(std430, binding = 1) writeonly buffer OutInstances {
+    float outData[];
+};
+
+layout(std430, binding = 2) buffer DrawCommands {
+    DrawCommand commands[];
+};
+
+layout(binding = 10) uniform sampler2D uDepthPyramid;
+
+uniform uint uNumCommands;
+uniform uint uTotalInstances;
+uniform int uPyramidLevels;
+uniform vec2 uViewSize;
+// Actual mip-0 (pow2-snapped) pyramid dimensions - screen coords map to mip-0
+// texels through this, not through a fixed >>1 (R3-2.2.3: with a 1920px screen
+// the pow2 snap gives 1024 texels, so >>1 left a ~6% skew at the right/top edge).
+uniform vec2 uMip0Size;
+uniform mat4 uViewMat;
+uniform float uZNear;
+uniform float uZFar;
+uniform float uP00;
+uniform float uP11;
+uniform vec4 uFrustumPlanes[6];
+uniform uint uFrustumOnly;
+
+vec3 quatRotate(vec4 q, vec3 v) {
+    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+}
+
+// snorm16 decode (plain ALU): the record packs the quat as 4 signed 16-bit
+// halves in 2 float words (low half first) - the CPU encoder is
+// InstancedStaticPartRenderer.packSnorm16, the VAO reads the same bytes as
+// GL_SHORT normalized.
+float snorm16ToFloat(uint h) {
+    // int overload sign-extends the 16-bit field (mirrors the VAO's
+    // GL_SHORT normalized fetch).
+    return clamp(float(bitfieldExtract(int(h), 0, 16)) / 32767.0, -1.0, 1.0);
+}
+
+vec4 instQuat(uint base) {
+    uint wxy = floatBitsToUint(inData[base + INST_QUAT_WORD]);
+    uint wzw = floatBitsToUint(inData[base + INST_QUAT_WORD + 1u]);
+    return vec4(snorm16ToFloat(wxy), snorm16ToFloat(wxy >> 16u),
+                snorm16ToFloat(wzw), snorm16ToFloat(wzw >> 16u));
+}
+
+bool testFrustumAabb(vec3 viewCenter, vec3 viewHalfExt) {
+    for (int i = 0; i < 6; i++) {
+        vec3 n = uFrustumPlanes[i].xyz;
+        float d = dot(n, viewCenter) + uFrustumPlanes[i].w;
+        float r = dot(abs(n), viewHalfExt);
+        if (d + r < 0.0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool projectViewAabb(vec3 worldCenter, vec3 worldHe, float znear, float zfar, float P00, float P11,
+                     out vec4 aabb, out float minDepth) {
+    aabb = vec4(1.0e9, 1.0e9, -1.0e9, -1.0e9);
+    minDepth = 1.0;
+    for (int i = 0; i < 8; i++) {
+        vec3 sign3 = vec3(i & 1, (i >> 1) & 1, (i >> 2) & 1);
+        vec3 wp = worldCenter + mix(-worldHe, worldHe, sign3);
+        vec3 vp = (uViewMat * vec4(wp, 1.0)).xyz;
+        if (vp.z > -znear) {
+            return false;
+        }
+        float invW = -1.0 / vp.z;
+        vec2 ndc = vec2(vp.x * P00, vp.y * P11) * invW;
+        aabb.xy = min(aabb.xy, ndc);
+        aabb.zw = max(aabb.zw, ndc);
+        float winZ = (zfar / (zfar - znear)) + (zfar * znear) / ((zfar - znear) * vp.z);
+        minDepth = min(minDepth, winZ);
+    }
+    aabb = aabb * 0.5 + 0.5;
+    return true;
+}
+
+float hizOccluder(vec4 aabb) {
+    vec4 uv = clamp(vec4(min(aabb.xy, aabb.zw), max(aabb.xy, aabb.zw)), 0.0, 1.0);
+    // Map directly into actual mip-0 texels (uViewSize is the FULL framebuffer;
+    // the pyramid mip-0 is the pow2-snapped lower half). The +-0.5 bias is the
+    // standard round-to-nearest for a half-open rect; sub-pixel rects return
+    // the conservative VISIBLE below.
+    ivec4 rect = ivec4(uv * uMip0Size.xyxy + vec4(0.5, 0.5, -0.5, -0.5));
+    if (any(lessThan(rect.zw, rect.xy))) {
+        return 1.0;
+    }
+    rect = min(rect, ivec4(uMip0Size.xyxy) - 1);
+
+    ivec2 extent = rect.zw - rect.xy;
+    int level = max(findMSB(max(extent.x, extent.y)), 0);
+    if (any(greaterThan((rect.zw >> level) - (rect.xy >> level), ivec2(1)))) {
+        level += 1;
+    }
+    level = min(level, uPyramidLevels - 1);
+
+    ivec4 bounds = rect >> level;
+
+    float depth01 = texelFetch(uDepthPyramid, bounds.xw, level).r;
+    float depth11 = texelFetch(uDepthPyramid, bounds.zw, level).r;
+    float depth10 = texelFetch(uDepthPyramid, bounds.zy, level).r;
+    float depth00 = texelFetch(uDepthPyramid, bounds.xy, level).r;
+
+    return max(max(depth00, depth01), max(depth10, depth11));
+}
+
+bool testInstanceVisibility(uint inIdx) {
+    uint inFloatOff = inIdx * INST_STRIDE;
+
+    float fadeMode = inData[inFloatOff + 11u];
+    if (fadeMode < 0.0) {
+        return false;
+    }
+
+    vec3 instPos = vec3(inData[inFloatOff + INST_POS_WORD],
+                        inData[inFloatOff + INST_POS_WORD + 1u],
+                        inData[inFloatOff + INST_POS_WORD + 2u]);
+    vec4 instRot = instQuat(inFloatOff);
+    vec3 bboxMin = vec3(inData[inFloatOff + INST_BMIN_WORD],
+                        inData[inFloatOff + INST_BMIN_WORD + 1u],
+                        inData[inFloatOff + INST_BMIN_WORD + 2u]);
+    vec3 bboxSize = vec3(inData[inFloatOff + INST_BSIZE_WORD],
+                         inData[inFloatOff + INST_BSIZE_WORD + 1u],
+                         inData[inFloatOff + INST_BSIZE_WORD + 2u]);
+
+    vec3 ext = 0.5 * bboxSize;
+    vec3 localCenter = bboxMin + ext;
+    float unpaddedRadius = length(ext);
+    bool isAnimOrParam = (fadeMode < 0.99985) || (inData[inFloatOff + 27u] >= 0.0);
+
+    vec3 worldCenter = instPos + quatRotate(instRot, localCenter);
+    float xx = instRot.x * instRot.x, yy = instRot.y * instRot.y, zz = instRot.z * instRot.z;
+    float xy = instRot.x * instRot.y, xz = instRot.x * instRot.z, yz = instRot.y * instRot.z;
+    float wx = instRot.w * instRot.x, wy = instRot.w * instRot.y, wz = instRot.w * instRot.z;
+    vec3 worldHe;
+    worldHe.x = abs(1.0 - 2.0 * (yy + zz)) * ext.x + abs(2.0 * (xy - wz)) * ext.y + abs(2.0 * (xz + wy)) * ext.z;
+    worldHe.y = abs(2.0 * (xy + wz)) * ext.x + abs(1.0 - 2.0 * (xx + zz)) * ext.y + abs(2.0 * (yz - wx)) * ext.z;
+    worldHe.z = abs(2.0 * (xz - wy)) * ext.x + abs(2.0 * (yz + wx)) * ext.y + abs(1.0 - 2.0 * (xx + yy)) * ext.z;
+    // Word 27 is GradParams.w - the parametric joint chain base index (< 0 = not
+    // GPU-animated). Parametric parts sweep slightly beyond their static bbox:
+    // add a tight 0.15 block margin (over-inclusive is the safe direction).
+    if (inData[inFloatOff + 27u] >= 0.0) {
+        worldHe += vec3(0.15);
+    }
+
+    vec3 viewCenter = (uViewMat * vec4(worldCenter, 1.0)).xyz;
+    mat3 absView = mat3(abs(uViewMat[0].xyz), abs(uViewMat[1].xyz), abs(uViewMat[2].xyz));
+    vec3 viewHe = absView * worldHe;
+
+    // 1. 6-plane AABB frustum test in view space
+    bool isVisible = testFrustumAabb(viewCenter, viewHe);
+
+    // 1.5. Analytic Subpixel Culling:
+    if (isVisible) {
+        float depthZ = -viewCenter.z;
+        if (depthZ > unpaddedRadius + uZNear) {
+            float subpixelThresholdPx = (unpaddedRadius < 0.75 || isAnimOrParam) ? 1.35 : 0.75;
+            float screenDiameterPx = (unpaddedRadius * uP11 * uViewSize.y) / depthZ;
+            if (screenDiameterPx < subpixelThresholdPx) {
+                return false;
+            }
+        }
+    }
+
+    // 2. Forward-Z Hi-Z occlusion test using tight 8-corner AABB projection
+    if (isVisible && uFrustumOnly == 0u) {
+        vec4 aabb;
+        float minDepth;
+        if (projectViewAabb(worldCenter, worldHe, uZNear, uZFar, uP00, uP11, aabb, minDepth)) {
+            float occluderDepth = hizOccluder(aabb);
+            isVisible = minDepth <= occluderDepth;
+        }
+    }
+    return isVisible;
+}
+
+void copyInstance(uint inIdx, uint outIdx) {
+    uint inFloatOff = inIdx * INST_STRIDE;
+    uint outFloatOff = outIdx * INST_STRIDE;
+    for (uint f = 0u; f < INST_STRIDE; f++) {
+        outData[outFloatOff + f] = inData[inFloatOff + f];
+    }
+}
+
+uint findCommandIndex(uint globalInstIdx) {
+    uint low = 0u;
+    uint high = uNumCommands - 1u;
+    while (low < high) {
+        uint mid = (low + high + 1u) >> 1u;
+        if (commands[mid].globalInstanceOffset <= globalInstIdx) {
+            low = mid;
+        } else {
+            high = mid - 1u;
+        }
+    }
+    return low;
+}
+
+void main() {
+    uint globalInstIdx = gl_GlobalInvocationID.x;
+    bool isValid = (globalInstIdx < uTotalInstances);
+
+    uint cmdIdx = 0u;
+    uint inIdx = 0u;
+    bool isVisible = false;
+
+    if (isValid) {
+        cmdIdx = findCommandIndex(globalInstIdx);
+        uint localIdx = globalInstIdx - commands[cmdIdx].globalInstanceOffset;
+        inIdx = commands[cmdIdx].baseInstance + localIdx;
+        isVisible = testInstanceVisibility(inIdx);
+    }
+
+#if defined(NUCLEUS_BALLOT)
+#if defined(SUBGROUP_SIZE) && SUBGROUP_SIZE == 64
+    // AMD Wave64: workgroup is one 64-lane wavefront. Ballot mask spans two 32-bit words (uvec2).
+    uvec4 matchBallot = subgroupBallot(gl_SubgroupInvocationID == gl_LocalInvocationID.x);
+    bool useBallot = (matchBallot.xy == uvec2(0xFFFFFFFFu, 0xFFFFFFFFu));
+#else
+    // NVIDIA/Wave32: workgroup is one 32-lane warp. Ballot mask fits in one 32-bit word (uint).
+    uvec4 matchBallot = subgroupBallot(gl_SubgroupInvocationID == gl_LocalInvocationID.x);
+    bool useBallot = (matchBallot.x == 0xFFFFFFFFu);
+#endif
+
+    if (useBallot) {
+        uint firstCmd = subgroupBroadcastFirst(cmdIdx);
+        bool matchesFirst = (cmdIdx == firstCmd) && isValid;
+        uvec4 sameBallot = subgroupBallot(matchesFirst);
+        bool allSameCommand = (subgroupBallotBitCount(sameBallot) == gl_WorkGroupSize.x);
+
+        if (allSameCommand) {
+            uvec4 ballot = subgroupBallot(isVisible);
+            uint visCount = subgroupBallotBitCount(ballot);
+            uint scanBase = 0u;
+            // The lane doing the atomicAdd must be EXACTLY the lane
+            // subgroupBroadcastFirst reads - the FIRST ACTIVE invocation.
+            // subgroupElect() may elect ANY active lane; when it elected another
+            // one, the broadcast returned scanBase's initializer 0, every lane
+            // compacted to the window front and overwrote each other (parts
+            // displaced/vanished/duplicated, alternating frame to frame - the
+            // elected lane is the only per-frame variable on a static scene).
+            if (visCount != 0u
+                    && gl_SubgroupInvocationID == subgroupBallotFindLSB(subgroupBallot(true))) {
+                scanBase = atomicAdd(commands[cmdIdx].instanceCount, visCount);
+            }
+            scanBase = subgroupBroadcastFirst(scanBase);
+            if (isVisible) {
+                uint slot = scanBase + subgroupBallotExclusiveBitCount(ballot);
+                uint outIdx = commands[cmdIdx].baseInstance + slot;
+                copyInstance(inIdx, outIdx);
+            }
+        } else {
+            // Command boundary lane handling
+            if (isVisible) {
+                uint slot = atomicAdd(commands[cmdIdx].instanceCount, 1u);
+                uint outIdx = commands[cmdIdx].baseInstance + slot;
+                copyInstance(inIdx, outIdx);
+            }
+        }
+    } else {
+        // Fallback when hardware subgroup ballot didn't match 1:1 with workgroup
+        if (isVisible) {
+            uint slot = atomicAdd(commands[cmdIdx].instanceCount, 1u);
+            uint outIdx = commands[cmdIdx].baseInstance + slot;
+            copyInstance(inIdx, outIdx);
+        }
+    }
+#else
+    // Generic fallback without hardware subgroup ballot
+    if (isVisible) {
+        uint slot = atomicAdd(commands[cmdIdx].instanceCount, 1u);
+        uint outIdx = commands[cmdIdx].baseInstance + slot;
+        copyInstance(inIdx, outIdx);
+    }
+#endif
+}

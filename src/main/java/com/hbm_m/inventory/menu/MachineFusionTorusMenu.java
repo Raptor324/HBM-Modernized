@@ -9,11 +9,11 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1-Port von {@code ContainerFusionTorus} (1.7.10) - Slotpositionen unveraendert uebernommen:
@@ -83,7 +83,7 @@ public class MachineFusionTorusMenu extends AbstractContainerMenu {
             if (!moveItemStackTo(stack, MACHINE_SLOTS, slots.size(), true)) return ItemStack.EMPTY;
         } else {
             // Original: Blaupausen in den Blaupausenslot, Batterien in den Batterieslot, sonst nichts.
-            if (copy.is(ModItems.BLUEPRINTS.get())) {
+            if (copy.is(ModItems.BLUEPRINT_FOLDER.get())) {
                 if (!moveItemStackTo(stack, FusionTorusBlockEntity.SLOT_BLUEPRINT,
                         FusionTorusBlockEntity.SLOT_BLUEPRINT + 1, false)) return ItemStack.EMPTY;
             } else {
@@ -100,8 +100,6 @@ public class MachineFusionTorusMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // Not vanilla's stillValid: that one measures to the controller cell in the middle of
-        // the structure, which this machine is far too wide for - see MultiblockMenuReach.
-        return MultiblockMenuReach.stillValid(level, blockEntity.getBlockPos(), ModBlocks.TORUS.get(), player);
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.TORUS.get());
     }
 }

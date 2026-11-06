@@ -24,7 +24,7 @@ import net.minecraft.world.phys.Vec3;
  * 1:1 {@code TileEntityFoundryOutlet}: Ausguss am Ende einer Rinne. Nimmt nur von hinten auf und giesst direkt
  * in den Abnehmer bis vier Bloecke darunter. Filtermaterial (auch umkehrbar) und Redstone-Sperre (umkehrbar).
  */
-public class MachineFoundryOutletBlockEntity extends MachineFoundryBaseBlockEntity {
+public class MachineFoundryOutletBlockEntity extends MachineFoundryBaseBlockEntity implements com.hbm_m.interfaces.ICopiable {
 
     public NTMMaterial filter = null;
     public NTMMaterial lastFilter = null;
@@ -141,5 +141,41 @@ public class MachineFoundryOutletBlockEntity extends MachineFoundryBaseBlockEnti
         nbt.putBoolean("invert", this.invertRedstone);
         nbt.putBoolean("invertFilter", this.invertFilter);
         nbt.putShort("filter", this.filter == null ? -1 : (short) this.filter.id);
+    }
+
+    /* ── Устройство настройки: фильтр материала + инверсии (оригинал) ───── */
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putBoolean("invert", invertRedstone);
+        nbt.putBoolean("invertFilter", invertFilter);
+        if (filter != null) {
+            nbt.putIntArray("matFilter", new int[]{ filter.id });
+        }
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) {
+        if (nbt.contains("invert"))        invertRedstone = nbt.getBoolean("invert");
+        if (nbt.contains("invertFilter"))  invertFilter   = nbt.getBoolean("invertFilter");
+        if (nbt.contains("matFilter")) {
+            int[] ids = nbt.getIntArray("matFilter");
+            if (ids.length > 0 && index < ids.length) {
+                NTMMaterial mat = Mats.matById.get(ids[index]);
+                if (mat != null) filter = mat;
+            }
+        }
+        setChanged();
+    }
+
+    @Override
+    public String[] infoForDisplay(Level level, BlockPos pos) {
+        java.util.ArrayList<String> info = new java.util.ArrayList<>();
+        info.add("copytool.invertRedstone");
+        info.add("copytool.invertFilter");
+        if (filter != null && filter.names.length > 0) info.add("material.hbm_m." + filter.names[0]);
+        return info.toArray(new String[0]);
     }
 }

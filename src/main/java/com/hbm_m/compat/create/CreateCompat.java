@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.compat.create;
 //? if forge {
 import net.minecraftforge.fml.ModList;
@@ -43,4 +42,3 @@ public final class CreateCompat {
         });
     }
 }
-//?}

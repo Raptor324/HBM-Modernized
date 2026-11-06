@@ -23,6 +23,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * Die {@code onFoodEaten}-Zweige der Original-Nahrungsklassen ({@code ItemLemon},
@@ -145,7 +146,7 @@ public final class FoodBehaviors {
         eff(player, MobEffects.CONFUSION, 30 * 20, 0);
         eff(player, MobEffects.HUNGER, 3 * 60 * 20, 4);
         eff(player, MobEffects.WITHER, 3 * 20, 0);
-        PlatformHooks.setSecondsOnFire(player, 5 * 20);
+        MobHooks.setSecondsOnFire(player, 5 * 20);
         Vec3 m = player.getDeltaMovement();
         player.setDeltaMovement(m.x, 2, m.z);
         player.hurtMarked = true;

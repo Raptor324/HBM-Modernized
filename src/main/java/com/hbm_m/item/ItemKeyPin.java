@@ -11,6 +11,7 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code com.hbm.items.tool.ItemKeyPin}: Grundklasse fuer Schluessel ({@code ItemKey}) und Vorhaengeschloesser
@@ -37,11 +38,11 @@ public class ItemKeyPin extends Item implements com.hbm_m.item.ITooltipProvider 
     }
 
     public static int getPins(ItemStack stack) {
-        return PlatformHooks.contains(stack, "pins") ? PlatformHooks.getInt(stack, "pins") : 0;
+        return StackNbt.contains(stack, "pins") ? StackNbt.getInt(stack, "pins") : 0;
     }
 
     public static void setPins(ItemStack stack, int i) {
-        PlatformHooks.putInt(stack, "pins", i);
+        StackNbt.putInt(stack, "pins", i);
     }
 
     public boolean canTransfer() {

@@ -21,6 +21,19 @@ public class DaeCurve {
         this.stride = stride;
     }
 
+    public int keyFrameCount() {
+        return values.length;
+    }
+
+    /** Mutable reference to the raw stride-sized keyframe row at {@code index}. */
+    public float[] keyFrame(int index) {
+        return values[index];
+    }
+
+    public int stride() {
+        return stride;
+    }
+
     public float getStartTime() {
         return times.length > 0 ? times[0] : 0F;
     }

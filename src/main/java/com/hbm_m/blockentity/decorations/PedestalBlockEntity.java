@@ -9,6 +9,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Порт {@code BlockPedestal.TileEntityPedestal} (1.7.10).
@@ -52,12 +53,12 @@ public class PedestalBlockEntity extends BaseHbmBlockEntity {
     @Override
     protected void writeNbtData(CompoundTag tag, HolderLookup.Provider registries) {
         if (!item.isEmpty()) {
-            tag.put("item", PlatformHooks.saveItemStack(item, new net.minecraft.nbt.CompoundTag(), registries));
+            tag.put("item", StackNbt.save(item, new net.minecraft.nbt.CompoundTag(), registries));
         }
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, HolderLookup.Provider registries) {
-        item = tag.contains("item") ? PlatformHooks.itemStackOf(tag.getCompound("item"), registries) : ItemStack.EMPTY;
+        item = tag.contains("item") ? StackNbt.parse(tag.getCompound("item"), registries) : ItemStack.EMPTY;
     }
 }

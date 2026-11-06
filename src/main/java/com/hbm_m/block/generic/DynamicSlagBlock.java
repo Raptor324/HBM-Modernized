@@ -6,21 +6,21 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.SlagBlockEntity;
 import com.hbm_m.inventory.material.Mats.MaterialStack;
 import com.hbm_m.item.material.ItemScraps;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
@@ -41,7 +41,6 @@ public class DynamicSlagBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        // Hoehe und Materialtextur haengen am Block-Entity: gezeichnet von SlagRenderer
         return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
@@ -51,84 +50,45 @@ public class DynamicSlagBlock extends BaseEntityBlock {
         return new SlagBlockEntity(pos, state);
     }
 
+    @Nullable
     @Override
-    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext ctx) {
-        if (world.getBlockEntity(pos) instanceof SlagBlockEntity tile && tile.amount > 0) {
-            double h = Math.min(1D, Math.max(1D / 16D, (double) tile.amount / (double) SlagBlockEntity.maxAmount));
-            return Shapes.box(0, 0, 0, 1, h, 1);
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(type, ModBlockEntities.SLAG_BE.get(), SlagBlockEntity::tick);
+    }
+
+    //? if < 1.21.1 {
+    @Override
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        dropSlagScrap(level, pos, player);
+        super.playerWillDestroy(level, pos, state, player);
+    }
+    //?} else {
+    /*@Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        dropSlagScrap(level, pos, player);
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+    *///?}
+
+    private void dropSlagScrap(Level level, BlockPos pos, Player player) {
+        if (!level.isClientSide() && (player == null || !player.isCreative())) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof SlagBlockEntity tile && tile.mat != null && tile.amount > 0) {
+                ItemStack scrap = ItemScraps.create(new MaterialStack(tile.mat, tile.amount));
+                if (!scrap.isEmpty()) {
+                    popResource(level, pos, scrap);
+                }
+            }
         }
-        return Shapes.block();
     }
 
     @Override
-    public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource rand) {
-
-        BlockEntity s = world.getBlockEntity(pos);
-        BlockEntity b = world.getBlockEntity(pos.below());
-
-        /* Error here, delete the block */
-        if (!(s instanceof SlagBlockEntity self)) {
-            world.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-            return;
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext ctx) {
+        if (world.getBlockEntity(pos) instanceof SlagBlockEntity tile) {
+            double height = Math.max(1, tile.amount) / (double) SlagBlockEntity.MAX_AMOUNT;
+            return Shapes.box(0, 0, 0, 1, Math.min(1.0, height), 1);
         }
-
-        /* Flow down */
-        if (world.getBlockState(pos.below()).canBeReplaced() && pos.getY() > world.getMinBuildHeight()) {
-            world.setBlockAndUpdate(pos.below(), ModBlocks.SLAG_DYNAMIC.get().defaultBlockState());
-            if (world.getBlockEntity(pos.below()) instanceof SlagBlockEntity tile) {
-                tile.mat = self.mat;
-                tile.amount = self.amount;
-                tile.markForUpdate();
-            }
-            world.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-            return;
-
-        } else if (b instanceof SlagBlockEntity below) {
-
-            if (below.mat == self.mat && below.amount < SlagBlockEntity.maxAmount) {
-                int transfer = Math.min(SlagBlockEntity.maxAmount - below.amount, self.amount);
-                below.amount += transfer;
-                self.amount -= transfer;
-
-                if (self.amount <= 0) {
-                    world.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-                } else {
-                    self.markForUpdate();
-                }
-
-                below.markForUpdate();
-                world.scheduleTick(pos.below(), this, 1);
-                return;
-            }
-        }
-
-        /* Flow sideways, no neighbors */
-        Direction[] sides = new Direction[] { Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST };
-        int count = 0;
-        for (Direction dir : sides) {
-            if (world.getBlockState(pos.relative(dir)).canBeReplaced()) {
-                count++;
-            }
-        }
-
-        if (self.amount >= SlagBlockEntity.maxAmount / 5 && count > 0) {
-            int toSpread = Math.max(self.amount / (count * 2), 1);
-
-            for (Direction dir : sides) {
-                BlockPos side = pos.relative(dir);
-                if (world.getBlockState(side).canBeReplaced()) {
-                    world.setBlockAndUpdate(side, ModBlocks.SLAG_DYNAMIC.get().defaultBlockState());
-                    if (world.getBlockEntity(side) instanceof SlagBlockEntity tile) {
-                        tile.mat = self.mat;
-                        tile.amount = toSpread;
-                        tile.markForUpdate();
-                        world.scheduleTick(side, this, 1);
-                    }
-                    self.amount -= toSpread;
-                    self.markForUpdate();
-                }
-            }
-        }
+        return Shapes.box(0, 0, 0, 1, 0.0625, 1);
     }
 
     @Override

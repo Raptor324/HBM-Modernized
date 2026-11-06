@@ -47,7 +47,7 @@ public final class ModMaterialItems {
         // scraps_<материал> на каждый плавкий/присадочный материал Mats.java оригинала.
         for (ScrapEntry e : FOUNDRY_SCRAPS) {
             SCRAP_ITEMS.putIfAbsent(e.mat(), ModItems.ITEMS.register(
-                    "scraps_" + e.mat().getId(), () -> new ScrapItem(new Item.Properties())));
+                    "scraps_" + e.mat().getId(), () -> new ScrapItem(e.mat(), new Item.Properties())));
         }
     }
 
@@ -232,6 +232,14 @@ public final class ModMaterialItems {
         if (mat == ModMaterials.IRON && shape == MaterialShape.POWDER) {
             return new RadioactiveItem(props);
         }
+        // Топливо оригинального FuelHandler 1.7.10: угольная пыль 1600 тиков,
+        // кристаллизованный уголь (crystal_coal) 6400 тиков.
+        if (mat == ModMaterials.COAL && shape == MaterialShape.POWDER) {
+            return new com.hbm_m.item.industrial.FuelItem(props, 1600);
+        }
+        if (mat == ModMaterials.COAL && shape == MaterialShape.CRYSTAL) {
+            return new com.hbm_m.item.industrial.FuelItem(props, 6400);
+        }
         // Essbare Materialien des Originals: ingot_smore = ItemFood(10, 20F), ingot_semtex/ingot_c4 =
         // ItemLemon(4, 5, true), powder_cement = ItemLemon(2, 0.5F).
         if (mat == ModMaterials.SMORE && shape == MaterialShape.INGOT) {
@@ -358,7 +366,6 @@ public final class ModMaterialItems {
     public static ModMaterials ingotMaterial(ModMaterials mat) {
         return mat == ModMaterials.THORIUM ? ModMaterials.THORIUM232 : mat;
     }
-
     public static boolean has(ModMaterials mat, MaterialShape shape) {
         EnumMap<MaterialShape, RegistrySupplier<Item>> map = ITEMS_BY_MATERIAL.get(mat);
         return map != null && map.containsKey(shape);

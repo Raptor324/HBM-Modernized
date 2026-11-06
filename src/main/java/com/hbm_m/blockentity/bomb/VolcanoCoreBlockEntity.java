@@ -149,11 +149,13 @@ public class VolcanoCoreBlockEntity extends BaseHbmBlockEntity {
 
     @Override
     protected void readNbtData(@NotNull CompoundTag nbt, @Nullable HolderLookup.Provider registries) {
+        super.readNbtData(nbt, registries);
         volcanoTimer = nbt.getInt("timer");
     }
 
     @Override
     protected void writeNbtData(@NotNull CompoundTag nbt, @Nullable HolderLookup.Provider registries) {
+        super.writeNbtData(nbt, registries);
         nbt.putInt("timer", volcanoTimer);
     }
 }

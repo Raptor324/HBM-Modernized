@@ -30,6 +30,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
+
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -59,6 +60,7 @@ public class MachineStorageDrumBlockEntity extends BaseMachineBlockEntity implem
 
     /** Port: Activierungsabbau aus der 1.12-Linie fuer Stoffe ohne eigenen Zerfallspfad (zehn Sekunden Halbwertszeit). */
     private static final float DECAY_RATE = 0.9965402628F;
+
 
     public MachineStorageDrumBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_STORAGE_DRUM_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
@@ -282,13 +284,13 @@ public class MachineStorageDrumBlockEntity extends BaseMachineBlockEntity implem
         sided.clear();
     }
     //?} elif neoforge {
-    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
+    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
 
     /^* Original {@code canExtractItem}: nur abgereicherter Muell und Quecksilber. ^/
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
-            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.minecraftforge.items.IItemHandler() {
                 @Override public int getSlots() { return INVENTORY_SIZE; }
                 @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
                 @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
@@ -334,6 +336,7 @@ public class MachineStorageDrumBlockEntity extends BaseMachineBlockEntity implem
         super.writeNbtData(tag, registries);
         this.tanks[0].writeToNBT(tag, "liquid");
         this.tanks[1].writeToNBT(tag, "gas");
+
     }
 
     @Override
@@ -344,6 +347,7 @@ public class MachineStorageDrumBlockEntity extends BaseMachineBlockEntity implem
         // Aeltere Port-Welten speicherten die Tanks unter eigenen Schluesseln.
         if (tag.contains("liquidTank")) tanks[0].readNBT(tag.getCompound("liquidTank"));
         if (tag.contains("gasTank")) tanks[1].readNBT(tag.getCompound("gasTank"));
+
     }
 
     @Override

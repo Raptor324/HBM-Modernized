@@ -139,7 +139,12 @@ public class ForceFieldBlockEntity extends BaseMachineBlockEntity implements com
         }
 
         if (be.isOn && be.cooldown == 0 && be.health > 0 && be.getEnergyStored() >= be.powerCons) {
-            be.doField(level, pos, be.radius);
+            // PR-note: der radius+25 Entity-Query laeuft auf 4 Hz (probeDue(5)) statt 20 Hz -
+            // der Rueckstoss/damage-Scan ist der teuerste Teil des Ticks. Zwischen den Scans
+            // bleiben outside/inside erhalten, das Feld reagiert bis zu 4 Ticks versaetzt.
+            if (be.probeDue(5)) {
+                be.doField(level, pos, be.radius);
+            }
             be.setEnergyStored(be.getEnergyStored() - be.powerCons);
         } else {
             be.outside.clear();
@@ -149,8 +154,19 @@ public class ForceFieldBlockEntity extends BaseMachineBlockEntity implements com
         // Original: reicht die Energie nicht fuer einen Tick, verfaellt der ganze Rest.
         if (be.getEnergyStored() < be.powerCons) be.setEnergyStored(0L);
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        // Anti-sync-spam (P6): volle Paketwurst nur bei geaenderter Signatur. Signatur deckt
+        // ALLE in writeNbtData verschickten Felder ab (Energie, Inventar-Fingerprints, Radius-
+        // float, health/maxHealth/cooldown/isOn/muffled/blink/color).
+        long lo = com.hbm_m.recipe.index.CachedRecipeResolver.sign(1L,
+                be.getEnergyStored(),
+                Float.floatToIntBits(be.radius),
+                com.hbm_m.platform.StackNbt.fingerprint(be.getInventory().getStackInSlot(SLOT_BATTERY)),
+                com.hbm_m.platform.StackNbt.fingerprint(be.getInventory().getStackInSlot(SLOT_UPGRADE_RADIUS)),
+                com.hbm_m.platform.StackNbt.fingerprint(be.getInventory().getStackInSlot(SLOT_UPGRADE_HEALTH)));
+        long hi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(2L,
+                be.health, be.maxHealth, be.cooldown,
+                be.isOn ? 1L : 0L, be.muffled ? 1L : 0L, be.blink, be.color);
+        be.syncIfStateChanged(lo, hi);
     }
 
     /** Original: die Aufwertungen werden nach Stapelgroesse gewertet. */
@@ -179,9 +195,11 @@ public class ForceFieldBlockEntity extends BaseMachineBlockEntity implements com
         outside.clear();
         inside.clear();
 
-        double cx = pos.getX() + 0.5D;
-        double cy = pos.getY() + 0.5D;
-        double cz = pos.getZ() + 0.5D;
+        // Entities live in world space even when this block sits on a Sable ship (plot grid).
+        Vec3 centre = com.hbm_m.compat.sable.SableCompat.blockCenterInWorld(level, pos);
+        double cx = centre.x;
+        double cy = centre.y;
+        double cz = centre.z;
 
         // Original: der Suchbereich reicht 25 Bloecke ueber den Radius hinaus.
         AABB box = new AABB(cx - (rad + 25), cy - (rad + 25), cz - (rad + 25),
@@ -343,46 +361,4 @@ public class ForceFieldBlockEntity extends BaseMachineBlockEntity implements com
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return new ForceFieldMenu(id, inv, this);
     }
-
-    //? if forge {
-    /** Original {@code ISidedInventory}: alle Seiten {0}; nur Akkus hinein, nichts heraus. */
-    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
-            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
-                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0 }; }
-                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0 && isItemValidForSlot(slot, stack); }
-                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
-            });
-
-    @Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        sidedItems.invalidate();
-    }
-    //?} elif neoforge {
-    /*/^* Original {@code ISidedInventory}: alle Seiten {0}; nur Akkus hinein, nichts heraus. ^/
-    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
-            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
-                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0 }; }
-                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0 && isItemValidForSlot(slot, stack); }
-                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
-            });
-
-    @Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
-        return super.getHbmCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateHbmCaps() {
-        super.invalidateHbmCaps();
-        sidedItems.invalidate();
-    }
-    *///?}
 }

@@ -1,7 +1,7 @@
 package com.hbm_m.client.render.missile;
 
-import com.hbm_m.entity.missile.MissileABMEntity;
 import com.hbm_m.entity.missile.Missile9M723Entity;
+import com.hbm_m.entity.missile.MissileAntiBallisticEntity;
 import com.hbm_m.entity.missile.MissileBaseEntity;
 import com.hbm_m.entity.missile.MissileTestEntity;
 import com.hbm_m.entity.missile.MissileShuttleEntity;
@@ -85,7 +85,7 @@ public final class MissileTextures {
         if (item == ModItems.MISSILE_BUSTER.get()) return MISSILE_V2_BU;
         if (item == ModItems.MISSILE_DECOY.get()) return MISSILE_V2_DECOY;
 
-        if (item == ModItems.MISSILE_ABM.get()) return MISSILE_ABM;
+        if (item == ModItems.MISSILE_ANTI_BALLISTIC.get()) return MISSILE_ABM;
         if (item == ModItems.MISSILE_TEST.get()) return MISSILE_MICRO;
         if (item == ModItems.MISSILE_STEALTH.get()) return MISSILE_STEALTH;
 
@@ -124,7 +124,7 @@ public final class MissileTextures {
     public static ResourceLocation forEntity(MissileBaseEntity entity) {
         if (entity instanceof MissileTestEntity) return MISSILE_MICRO;
         if (entity instanceof com.hbm_m.entity.missile.MissilePantsirEntity) return MISSILE_57E6;
-        if (entity instanceof MissileABMEntity) return MISSILE_ABM;
+        if (entity instanceof MissileAntiBallisticEntity) return MISSILE_ABM;
 
         if (entity instanceof MissileTier0.MissileMicro) return MISSILE_MICRO;
         if (entity instanceof MissileTier0.MissileTaint) return MISSILE_MICRO_TAINT;

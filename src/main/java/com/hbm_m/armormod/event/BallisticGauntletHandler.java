@@ -1,6 +1,5 @@
 package com.hbm_m.armormod.event;
 
-//? if forge || neoforge {
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.entity.projectile.EntityBulletBaseMK4;
 import com.hbm_m.inventory.ComparableStack;
@@ -17,13 +16,14 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.AttributeHooks;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+
 //? if forge {
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 //?} else {
 /*import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
-import net.neoforged.bus.api.SubscribeEvent;
 *///?}
 
 /**
@@ -93,4 +93,3 @@ public class BallisticGauntletHandler {
         return false;
     }
 }
-//?}

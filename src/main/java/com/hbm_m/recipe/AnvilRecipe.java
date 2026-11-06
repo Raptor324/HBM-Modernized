@@ -33,6 +33,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.ItemHooks;
 
 /**
  * 1:1 {@code AnvilRecipes}: ein Rezepttyp fuer beide Original-Listen.
@@ -161,7 +162,7 @@ public class AnvilRecipe extends PlatformRecipe {
         switch (special) {
             case "cyanide":
                 // AnvilSmithingCyanideRecipe: rechts Plan C oder rote Pille, links beliebige Nahrung
-                return (doesStackMatch(r, right) || r.getItem() == itemById("pill_red")) && PlatformHooks.isEdible(l);
+                return (doesStackMatch(r, right) || r.getItem() == itemById("pill_red")) && ItemHooks.isEdible(l);
             case "rename":
                 // AnvilSmithingRenameRecipe: links beliebig, rechts ein benanntes Namensschild
                 return doesStackMatch(r, right) && StackNbt.hasCustomName(r);
@@ -207,7 +208,7 @@ public class AnvilRecipe extends PlatformRecipe {
             case "cyanide": {
                 ItemStack out = l.copy();
                 out.setCount(1);
-                PlatformHooks.putBoolean(out, r.getItem() == itemById("pill_red") ? "ntmRedPill" : "ntmCyanide", true);
+                StackNbt.putBoolean(out, r.getItem() == itemById("pill_red") ? "ntmRedPill" : "ntmCyanide", true);
                 return out;
             }
             case "rename": {

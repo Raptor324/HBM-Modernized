@@ -28,6 +28,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import com.hbm_m.platform.MobHooks;
+
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 //? if forge {
 import org.jetbrains.annotations.Nullable;
@@ -35,7 +38,6 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 //?} else {
 /*import org.jetbrains.annotations.Nullable;
 *///?}
@@ -108,7 +110,6 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     /** Original {@code repair}: nur die Beschaedigung, ein Brand brennt weiter. */
     @Override
     public void repair() {
-        this.hasExploded = false;
         this.setChanged();
         syncExplodedState();
     }
@@ -164,7 +165,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     //? if forge {
     private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
     //?} elif neoforge {
-    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.fluids.capability.IFluidHandler> fluidHandler = com.hbm_m.platform.LazyCap.empty();
+    /*private com.hbm_m.platform.LazyCap<net.minecraftforge.fluids.capability.IFluidHandler> fluidHandler = com.hbm_m.platform.LazyCap.empty();
     *///?}
 
     public MachineRefineryBlockEntity(BlockPos pos, BlockState state) {
@@ -333,6 +334,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
 
         isOn = true;
 
+
         getTank(TANK_INPUT).setFill(getTank(TANK_INPUT).getFill() - INPUT_CONSUMPTION_MB);
 
         for (int i = 0; i < 4; i++) {
@@ -369,7 +371,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
             int x = worldPosition.getX(), y = worldPosition.getY(), z = worldPosition.getZ();
             java.util.List<net.minecraft.world.entity.Entity> affected = level.getEntitiesOfClass(net.minecraft.world.entity.Entity.class,
                     new net.minecraft.world.phys.AABB(x - 1.5, y, z - 1.5, x + 2.5, y + 8, z + 2.5));
-            for (net.minecraft.world.entity.Entity e : affected) PlatformHooks.setSecondsOnFire(e, 5);
+            for (net.minecraft.world.entity.Entity e : affected) MobHooks.setSecondsOnFire(e, 5);
             net.minecraft.util.RandomSource rand = level.random;
             com.hbm_m.util.ParticleUtil.spawnGasFlame(level, x + rand.nextDouble(), y + 1.5 + rand.nextDouble() * 3, z + rand.nextDouble(),
                     rand.nextGaussian() * 0.05, 0.1, rand.nextGaussian() * 0.05);
@@ -436,6 +438,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
 
         return false;
     }
+
 
     private ItemStack[] getSlotsArray() {
         ItemStack[] slots = new ItemStack[INVENTORY_SIZE];
@@ -506,12 +509,10 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         return Component.translatable("container.hbm_m.refinery");
     }
 
-    //? if forge || neoforge {
     @Override
     protected void setupFluidCapability() {
         setFluidHandler(new RefineryFluidHandler(this));
     }
-    //?}
 
     public boolean isOn() {
         return isOn;
@@ -520,6 +521,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     public int getSulfurProgress() {
         return sulfurProgress;
     }
+
 
     // Энергопорты мультиблока: позиции фантомов структуры, ранее регистрировавшиеся блоком.
     // Ядро (worldPosition) подписывается в BaseMachineBlockEntity.ensureNetworkInitialized().
@@ -560,6 +562,12 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
             });
 
     @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
+    }
+
+    @Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
         return super.getCapability(cap, side);
@@ -571,13 +579,20 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         sidedItems.invalidate();
     }
     //?} elif neoforge {
-    /*/^* Original {@code ISidedInventory}: Slot {11}; nichts hinein, Schwefel heraus. ^/
+    
+    /*// Original {@code ISidedInventory}: Slot {11}; nichts hinein, Schwefel heraus.
     private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
             new com.hbm_m.blockentity.SidedItemAccess.Rules() {
                 @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 11 }; }
                 @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
                 @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 11; }
             });
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side).resolve().orElse(null);
+    }
 
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {

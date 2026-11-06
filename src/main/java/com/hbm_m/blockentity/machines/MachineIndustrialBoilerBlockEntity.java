@@ -43,6 +43,13 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     public static int maxHeat = 12_800_000;
     public static double diffusion = 0.1D;
 
+    /* Slots wie der Machines-Port des Originals: Wasser rein/raus, Dampf rein/raus (Kanister). */
+    public static final int SLOT_WATER_IN = 0;
+    public static final int SLOT_WATER_OUT = 1;
+    public static final int SLOT_STEAM_IN = 2;
+    public static final int SLOT_STEAM_OUT = 3;
+    public static final int INVENTORY_SIZE = 4;
+
     public int heat;
     public final FluidTank[] tanks = new FluidTank[] {
             new FluidTank(ModFluids.WATER.getSource(), 64_000),
@@ -52,7 +59,39 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     private int audioTime;
 
     public MachineIndustrialBoilerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.INDUSTRIAL_BOILER_BE.get(), pos, state, 0, 0L, 0L, 0L);
+        super(ModBlockEntities.INDUSTRIAL_BOILER_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
+    }
+
+    /** GUI: Wasserfuellung, Dampffuellung, Hitze, an (wie der Machines-Port; Energie = 0). */
+    protected final net.minecraft.world.inventory.ContainerData data = new net.minecraft.world.inventory.ContainerData() {
+        @Override
+        public int get(int index) {
+            return switch (index) {
+                case 0 -> tanks[0].getFill();
+                case 1 -> tanks[0].getMaxFill();
+                case 2 -> tanks[1].getFill();
+                case 3 -> tanks[1].getMaxFill();
+                case 4 -> heat;
+                case 5 -> isOn ? 1 : 0;
+                default -> 0;
+            };
+        }
+        @Override public void set(int index, int value) { }
+        @Override public int getCount() { return 8; }
+    };
+
+    /** Kanister-Slots wie im Original-Port: Wasser in den Tank fuellen, Dampf in Kanister abfuellen. */
+    private void processFluidContainers() {
+        ItemStack[] slots = new ItemStack[INVENTORY_SIZE];
+        for (int i = 0; i < INVENTORY_SIZE; i++) slots[i] = inventory.getStackInSlot(i);
+        if (tanks[0].loadTank(SLOT_WATER_IN, SLOT_WATER_OUT, slots)) {
+            for (int i = 0; i < INVENTORY_SIZE; i++) inventory.setStackInSlot(i, slots[i]);
+        }
+        slots = new ItemStack[INVENTORY_SIZE];
+        for (int i = 0; i < INVENTORY_SIZE; i++) slots[i] = inventory.getStackInSlot(i);
+        if (tanks[1].unloadTank(SLOT_STEAM_IN, SLOT_STEAM_OUT, slots)) {
+            for (int i = 0; i < INVENTORY_SIZE; i++) inventory.setStackInSlot(i, slots[i]);
+        }
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineIndustrialBoilerBlockEntity be) {
@@ -66,6 +105,7 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
         this.setupTanks();
         this.updateConnections(world);
         this.tryPullHeat();
+        this.processFluidContainers();
 
         int light = world.getBrightness(net.minecraft.world.level.LightLayer.SKY, worldPosition);
         if (light > 7 && com.hbm_m.saveddata.TomSaveData.forWorld(world).fire > 1e-5) {
@@ -83,8 +123,9 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
             world.setBlock(worldPosition, state.setValue(MachineIndustrialBoilerBlock.LIT, isOn), 3);
         }
 
-        setChanged();
-        sendUpdateToClient();
+        long lo = (isOn ? 1L : 0L) | (((long) heat) << 1);
+        long hi = (long) tanks[0].getFill() | (((long) tanks[1].getFill()) << 32);
+        syncIfStateChanged(lo, hi);
     }
 
     private void clientTick() {
@@ -200,6 +241,15 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
+        @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
+        return fromDir != null;
+    }
+
+    public int getHeat() {
+        return heat;
+    }
+
     // ==================== ROR ====================
 
     @Override
@@ -231,10 +281,14 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        tanks[0].readFromNBT(tag, "water");
-        tanks[1].readFromNBT(tag, "steam");
-        heat = tag.getInt("heat");
-        isOn = tag.getBoolean("isOn");
+        if (tag.contains("water")) tanks[0].readFromNBT(tag, "water");
+        else if (tag.contains("WaterTank")) tanks[0].readFromNBT(tag.getCompound("WaterTank"), "water");
+        if (tag.contains("steam")) tanks[1].readFromNBT(tag, "steam");
+        else if (tag.contains("SteamTank")) tanks[1].readFromNBT(tag.getCompound("SteamTank"), "steam");
+        if (tag.contains("heat")) heat = tag.getInt("heat");
+        else if (tag.contains("Heat")) heat = tag.getInt("Heat");
+        else if (tag.contains("ThermalUnits")) heat = tag.getInt("ThermalUnits");
+        isOn = tag.contains("isOn") ? tag.getBoolean("isOn") : tag.getBoolean("IsOn");
     }
 
     // ==================== Sonstiges ====================
@@ -257,7 +311,7 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return null; // Kein GUI im Original.
+        return new com.hbm_m.inventory.menu.MachineIndustrialBoilerMenu(containerId, playerInventory, this, data);
     }
 
     private AABB bb = null;

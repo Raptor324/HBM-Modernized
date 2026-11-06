@@ -7,14 +7,13 @@ import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
 
 import dev.architectury.fluid.FluidStack;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.function.Consumer;
-
-import net.minecraft.core.registries.BuiltInRegistries;
 
 /**
  * Генератор JSON-рецептов паяльной станции ({@code hbm_m:soldering_station}).
@@ -35,8 +34,7 @@ public final class SolderingRecipeGenerator {
     private static final Item CAP       = ModItems.CAPACITOR.get();
     private static final Item CAP_TAL   = ModItems.CAPACITOR_TANTALUM.get();
     private static final Item PCB       = ModItems.PCB.get();
-    /** Original {@code EnumCircuitType.CHIP} = Mikrochip ({@code SILICON} waere der Siliziumschaltkreis). */
-    private static final Item CHIP      = ModItems.MICROCHIP.get();
+    private static final Item CHIP      = ModItems.SILICON_CIRCUIT.get();
     private static final Item CHIP_BIS = ModItems.BISMOID_CHIP.get();
     private static final Item CHIP_Q    = ModItems.QUANTUM_CHIP.get();
     private static final Item CLOCK     = ModItems.ATOMIC_CLOCK.get();
@@ -77,7 +75,7 @@ public final class SolderingRecipeGenerator {
                 400, 10_000, fluid(ModFluids.SOLVENT, 1000),
                 new Pair[]{p(CHIP_BIS, 4), p(CHIP, 16), p(CAP, 24)},
                 new Pair[]{p(CHIP_BIS, 4), p(CHIP, 4), p(CAP, 8)}, false,
-                new Pair[]{p(PCB, 12), pOre("oredict/ingot/any_hard_plastic", 2)},
+                new Pair[]{p(PCB, 12), pTag("ingots/plastic", 2)},
                 new Pair[]{pTag("wires_fine/lead", 12)});
 
         // QUANTUM_CIRCUIT — helium4 1000 mB
@@ -85,7 +83,7 @@ public final class SolderingRecipeGenerator {
                 400, 100_000, fluid(ModFluids.HELIUM4, 1000),
                 new Pair[]{p(CHIP_Q, 4), p(CHIP_BIS, 16), p(CLOCK, 4)},
                 new Pair[]{p(CHIP_Q, 4), p(CHIP_BIS, 4), p(CLOCK, 1)}, false,
-                new Pair[]{p(PCB, 16), pOre("oredict/ingot/any_hard_plastic", 4)},
+                new Pair[]{p(PCB, 16), pTag("ingots/plastic", 4)},
                 new Pair[]{pTag("wires_fine/lead", 16)});
 
         // Computer (Original: nur ohne 528-Modus)
@@ -94,7 +92,7 @@ public final class SolderingRecipeGenerator {
                 400, 15_000, fluid(ModFluids.PERFLUOROMETHYL, 1000),
                 new Pair[]{p(CHIP, 32), p(CAP, 32), p(CAP_TAL, 16)},
                 new Pair[]{p(CHIP, 8), p(CAP, 8), p(CAP_TAL, 8)}, true,
-                new Pair[]{p(CHASSIS, 1), pOre("oredict/ingot/rubber", 4)},
+                new Pair[]{p(CHASSIS, 1), pTag("ingots/rubber", 4)},
                 new Pair[]{pTag("wires_fine/lead", 16)});
 
         // CONTROLLER_ADVANCED — perfluoromethyl 4000 mB
@@ -102,7 +100,7 @@ public final class SolderingRecipeGenerator {
                 600, 25_000, fluid(ModFluids.PERFLUOROMETHYL, 4000),
                 new Pair[]{p(CHIP_BIS, 16), p(CAP_TAL, 48), p(CLOCK, 1)},
                 new Pair[]{p(CHIP_BIS, 8), p(CAP_TAL, 16), p(CLOCK, 1)}, true,
-                new Pair[]{p(CHASSIS, 1), pOre("oredict/ingot/any_hard_plastic", 4)},
+                new Pair[]{p(CHASSIS, 1), pTag("ingots/plastic", 4)},
                 new Pair[]{pTag("wires_fine/lead", 24)});
 
         // CONTROLLER_QUANTUM — kaltes Perfluormethyl 6000 mB

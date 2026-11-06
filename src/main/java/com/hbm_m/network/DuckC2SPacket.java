@@ -3,7 +3,6 @@ package com.hbm_m.network;
 import com.hbm_m.config.MobConfig;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.mob.EntityDuck;
-import com.hbm_m.platform.PlayerPersistentData;
 import com.hbm_m.sound.HbmSoundsNT;
 
 import dev.architectury.networking.NetworkManager.PacketContext;
@@ -13,6 +12,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * Taste O: der Spieler wirft einmalig eine Ente. Im Original der {@code AuxButtonPacket(0, 0, 0, 999, 0)}
@@ -33,7 +33,7 @@ public class DuckC2SPacket implements C2SPacket {
         context.queue(() -> {
             if (!(context.getPlayer() instanceof ServerPlayer p)) return;
 
-            CompoundTag data = PlayerPersistentData.get(p);
+            CompoundTag data = MobHooks.getPersistentData(p);
             CompoundTag perDat = data.getCompound(net.minecraft.world.entity.player.Player.PERSISTED_NBT_TAG);
 
             if (MobConfig.enableDucks && !perDat.getBoolean("hasDucked")) {

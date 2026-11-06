@@ -11,7 +11,9 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -45,13 +47,13 @@ public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
             }
         }
 
-        drawInfoPanel(guiGraphics, 49, 85, PanelType.SMALL_BLUE_STAR);
+        drawInfoPanel(guiGraphics, 49, 85, PanelType.SMALL_BLUE_INFO);
 
         if (cyclotron != null) {
             var tanks = cyclotron.getAllTanks();
-            tanks[0].renderTank(guiGraphics, this.leftPos + 11, this.topPos + 81, 34, 7, 1);
-            tanks[1].renderTank(guiGraphics, this.leftPos + 11, this.topPos + 90, 34, 7, 1);
-            tanks[2].renderTank(guiGraphics, this.leftPos + 107, this.topPos + 81, 34, 16, 1);
+            tanks[0].renderTank(guiGraphics, this.leftPos + 11, this.topPos + 88, 34, 7, 1);
+            tanks[1].renderTank(guiGraphics, this.leftPos + 11, this.topPos + 97, 34, 7, 1);
+            tanks[2].renderTank(guiGraphics, this.leftPos + 107, this.topPos + 97, 34, 16, 1);
         }
     }
 
@@ -73,9 +75,9 @@ public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
                     cyclotron.getEnergyStored(), cyclotron.getMaxEnergyStored());
 
             var tanks = cyclotron.getAllTanks();
-            tanks[0].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 11, this.topPos + 81, 34, 7);
-            tanks[1].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 11, this.topPos + 90, 34, 7);
-            tanks[2].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 107, this.topPos + 81, 34, 16);
+            tanks[0].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 11, this.topPos + 88, 34, 7);
+            tanks[1].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 11, this.topPos + 97, 34, 7);
+            tanks[2].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 107, this.topPos + 97, 34, 16);
         }
 
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,

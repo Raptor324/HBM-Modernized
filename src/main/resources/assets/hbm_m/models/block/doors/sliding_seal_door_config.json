@@ -4,7 +4,10 @@
     "modern_model":{
         "model":"hbm_m:block/doors/sliding_seal_door_modern",
         "skins":[
-            {"id":"default","name":"Standard","texture":"hbm_m:block/doors/sliding_seal_door"}
+            {"id":"default","name":"Standard","texture":"hbm_m:block/doors/sliding_seal_door"},
+            {"id":"clean","name":"Clean","texture":"hbm_m:block/doors/sliding_seal_door_clean","model":"hbm_m:block/doors/sliding_seal_door_modern_clean"},
+            {"id":"trefoil","name":"Radiation","texture":"hbm_m:block/doors/sliding_seal_door_trefoil","model":"hbm_m:block/doors/sliding_seal_door_modern_trefoil"},
+            {"id":"skull","name":"Skull","texture":"hbm_m:block/doors/sliding_seal_door_skull","model":"hbm_m:block/doors/sliding_seal_door_modern_skull"}
         ]
     },
     "default":{"type":"modern","skin":"default"}

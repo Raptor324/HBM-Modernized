@@ -1,17 +1,18 @@
 package com.hbm_m.blockentity.network.radio;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.api.redstoneoverradio.IRORInteractive;
 import com.hbm_m.api.redstoneoverradio.RORFunctionException;
 import com.hbm_m.block.machines.radio.RadioTorchBaseBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
@@ -71,17 +72,18 @@ public class RadioTorchControllerBlockEntity extends com.hbm_m.blockentity.BaseH
     }
 
     @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+    protected void writeNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("polling", polling);
         tag.putString("channel", channel);
         tag.putString("prev", prev);
     }
 
     @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+    protected void readNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         polling = tag.getBoolean("polling");
         channel = tag.getString("channel");
         prev = tag.getString("prev");
     }
-
 }

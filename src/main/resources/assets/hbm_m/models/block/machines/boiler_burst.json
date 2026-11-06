@@ -1,19 +1,11 @@
 {
-  "__comment": "Wrecked variant, drawn when the blockstate has exploded=true. Plain forge:obj: a burst machine shows no fluid level, so it needs none of the dynamic model machinery the intact version uses.",
+  "loader": "hbm_m:machine_parts_loader",
+  "model": "hbm_m:models/block/machines/boiler_burst.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
   "textures": {
-    "particle": "hbm_m:block/machine/boiler"
-  },
-  "loader": "forge:composite",
-  "children": {
-    "model": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/machines/boiler_burst.obj",
-      "flip_v": true,
-      "render_type": "minecraft:cutout",
-      "textures": {
-        "default": "hbm_m:block/machine/boiler"
-      }
-    }
+    "particle": "hbm_m:block/machine/boiler",
+    "default": "hbm_m:block/machine/boiler"
   },
   "transform": {
     "translation": [

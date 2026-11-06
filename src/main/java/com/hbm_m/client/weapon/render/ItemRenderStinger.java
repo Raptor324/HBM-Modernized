@@ -6,8 +6,6 @@ import com.hbm_m.client.weapon.WeaponResources;
 import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
 import com.hbm_m.render.anim.HbmAnimations;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /** 1:1 {@code ItemRenderStinger}. */
@@ -125,31 +123,9 @@ public class ItemRenderStinger extends ItemRenderWeaponBase {
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.enableCull();
 		GunGL.bindTexture(WeaponResources.stinger_tex);
 		GunGL.renderAll(WeaponResources.stinger);
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 3.5, -10.3795);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(90 * shotRand, 1, 0, 0);
-			GunGL.scale(0.75, 0.75, 0.75);
-			this.renderMuzzleFlash(shot, 150, 10);
-			GunGL.popMatrix();
-		}
+		renderEquippedMuzzleFlash(type, stack, data, 0, 3.5, -10.3795, 0.75D, 150, 10);
 	}
 }

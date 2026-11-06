@@ -1,12 +1,12 @@
 package com.hbm_m.blockentity.machines;
 
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+
 //? if forge {
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 
 /**
  * Forge-Fluid-Capability-Bruecke fuer den Core Injector: Tank 0 = Deuterium, Tank 1 = Tritium
@@ -105,16 +105,13 @@ public class CoreInjectorFluidHandler implements IFluidHandler {
 
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-
 /^*
  * Forge-Fluid-Capability-Bruecke fuer den Core Injector: Tank 0 = Deuterium, Tank 1 = Tritium
  * (1:1 aus {@code TileEntityCoreInjector.tanks}). Erlaubt es Pumpen/Roehren, die beiden Tanks von
  * aussen zu befuellen; die eigentliche Weitergabe an ein Ziel entlang des Strahls erledigt
  * {@link MachineCoreInjectorBlockEntity#tick}.
  ^/
-public class CoreInjectorFluidHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+public class CoreInjectorFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
 
     private final MachineCoreInjectorBlockEntity blockEntity;
 
@@ -128,12 +125,12 @@ public class CoreInjectorFluidHandler implements net.neoforged.neoforge.fluids.c
     }
 
     @Override
-    public @NotNull net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+    public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
         FluidTank target = blockEntity.getTank(tank);
         if (target == null || target.getFill() <= 0) {
-            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
         }
-        return new net.neoforged.neoforge.fluids.FluidStack(target.getTankType(), target.getFill());
+        return new net.minecraftforge.fluids.FluidStack(target.getTankType(), target.getFill());
     }
 
     @Override
@@ -143,13 +140,13 @@ public class CoreInjectorFluidHandler implements net.neoforged.neoforge.fluids.c
     }
 
     @Override
-    public boolean isFluidValid(int tank, @NotNull net.neoforged.neoforge.fluids.FluidStack stack) {
+    public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
         FluidTank target = blockEntity.getTank(tank);
         return target != null && target.isFluidValid(stack.getFluid());
     }
 
     @Override
-    public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+    public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
         if (resource.isEmpty()) return 0;
 
         for (int i = 0; i < 2; i++) {
@@ -167,8 +164,8 @@ public class CoreInjectorFluidHandler implements net.neoforged.neoforge.fluids.c
     }
 
     @Override
-    public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
-        if (resource.isEmpty()) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+    public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+        if (resource.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
 
         for (int i = 0; i < 2; i++) {
             FluidTank target = blockEntity.getTank(i);
@@ -176,15 +173,15 @@ public class CoreInjectorFluidHandler implements net.neoforged.neoforge.fluids.c
 
             int planned = Math.min(resource.getAmount(), target.getFill());
             int drained = action == FluidAction.EXECUTE ? target.drainMb(planned) : planned;
-            return drained > 0 ? new net.neoforged.neoforge.fluids.FluidStack(target.getTankType(), drained) : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            return drained > 0 ? new net.minecraftforge.fluids.FluidStack(target.getTankType(), drained) : net.minecraftforge.fluids.FluidStack.EMPTY;
         }
 
-        return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        return net.minecraftforge.fluids.FluidStack.EMPTY;
     }
 
     @Override
-    public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-        if (maxDrain <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+    public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+        if (maxDrain <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
 
         for (int i = 0; i < 2; i++) {
             FluidTank target = blockEntity.getTank(i);
@@ -193,11 +190,11 @@ public class CoreInjectorFluidHandler implements net.neoforged.neoforge.fluids.c
             int planned = Math.min(maxDrain, target.getFill());
             int drained = action == FluidAction.EXECUTE ? target.drainMb(planned) : planned;
             if (drained > 0) {
-                return new net.neoforged.neoforge.fluids.FluidStack(target.getTankType(), drained);
+                return new net.minecraftforge.fluids.FluidStack(target.getTankType(), drained);
             }
         }
 
-        return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        return net.minecraftforge.fluids.FluidStack.EMPTY;
     }
 }
 *///?}

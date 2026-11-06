@@ -10,6 +10,7 @@ import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.block.machines.TransitionSealBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.CargoElevatorBlockEntity;
 import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
 import com.hbm_m.blockentity.machines.TransitionSealBlockEntity;
@@ -54,7 +55,8 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class UniversalMachinePartBlock extends BaseEntityBlock
-        implements IDetonatable, com.hbm_m.interfaces.ILookOverlay, com.hbm_m.api.block.IToolable {
+        implements IDetonatable, com.hbm_m.interfaces.ILookOverlay, com.hbm_m.api.block.IToolable,
+        com.hbm_m.api.bomb.IBomb, com.hbm_m.block.network.IConveyorBelt {
 
     /** Original {@code BlockDummyable}: Werkzeuge auf eine Dummy-Zelle wirken auf den Kern. */
     @Override
@@ -69,6 +71,43 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
         return false;
     }
 
+    // ==================== IConveyorBelt Forwarding ====================
+
+    @Override
+    public boolean canItemStay(Level level, BlockPos pos, net.minecraft.world.phys.Vec3 itemPos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof IMultiblockPart part && part.getControllerPos() != null) {
+            BlockState ctrlState = level.getBlockState(part.getControllerPos());
+            if (ctrlState.getBlock() instanceof com.hbm_m.block.network.IConveyorBelt belt) {
+                return belt.canItemStay(level, pos, itemPos);
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public net.minecraft.world.phys.Vec3 getTravelLocation(Level level, BlockPos pos, net.minecraft.world.phys.Vec3 itemPos, double speed) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof IMultiblockPart part && part.getControllerPos() != null) {
+            BlockState ctrlState = level.getBlockState(part.getControllerPos());
+            if (ctrlState.getBlock() instanceof com.hbm_m.block.network.IConveyorBelt belt) {
+                return belt.getTravelLocation(level, pos, itemPos, speed);
+            }
+        }
+        return itemPos;
+    }
+
+    @Override
+    public net.minecraft.world.phys.Vec3 getClosestSnappingPosition(Level level, BlockPos pos, net.minecraft.world.phys.Vec3 itemPos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof IMultiblockPart part && part.getControllerPos() != null) {
+            BlockState ctrlState = level.getBlockState(part.getControllerPos());
+            if (ctrlState.getBlock() instanceof com.hbm_m.block.network.IConveyorBelt belt) {
+                return belt.getClosestSnappingPosition(level, pos, itemPos);
+            }
+        }
+        return new net.minecraft.world.phys.Vec3(pos.getX() + 0.5, pos.getY() + 0.25, pos.getZ() + 0.5);
+    }
 
     /**
      * Fadenkreuz-Anzeige: Der Spieler schaut fast immer auf eine Dummy-Zelle, nicht auf das Kern-
@@ -201,7 +240,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
         if (!(controllerBlock instanceof IMultiblockController controller)) {
             return null;
         }
-        VoxelShape customShape = controller.getCustomMasterVoxelShape(controllerState);
+        VoxelShape customShape = controller.getCustomMasterVoxelShape(controllerState, level, controllerPos);
         if (customShape != null && !customShape.isEmpty()) {
             return customShape;
         }
@@ -210,12 +249,15 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
             if (decl != null && decl.isDynamicShape()) {
                 return doorBlock.getShape(controllerState, level, controllerPos, ctx);
             }
-            return controller.getStructureHelper().generateShapeFromParts(controllerState.getValue(DoorBlock.FACING));
+            Direction doorFacing = controllerState.hasProperty(DoorBlock.FACING) ? controllerState.getValue(DoorBlock.FACING) : Direction.NORTH;
+            MultiblockStructureHelper helper = controller.getStructureHelper();
+            return helper != null ? helper.generateShapeFromParts(doorFacing) : Shapes.block();
         }
-        if (controller.getStructureHelper() == null || !controllerState.hasProperty(HorizontalDirectionalBlock.FACING)) {
+        MultiblockStructureHelper helper = controller.getStructureHelper();
+        if (helper == null) {
             return null;
         }
-        return controller.getStructureHelper().generateShapeFromParts(controllerState.getValue(HorizontalDirectionalBlock.FACING));
+        return helper.generateShapeFromParts(resolveFacing(controllerState));
     }
 
     @Override
@@ -244,7 +286,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
             return Shapes.block();
         }
 
-        VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState);
+        VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState, pLevel, controllerPos);
 
         if (masterShape != null && !masterShape.isEmpty()) {
             BlockPos vecToController = controllerPos.subtract(pPos);
@@ -258,39 +300,30 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
             return Shapes.block();
         }
 
-        if (controllerBlock instanceof DoorBlock doorBlock) {
-            BlockEntity controllerBE = pLevel.getBlockEntity(controllerPos);
-
-            DoorDecl decl = DoorDeclRegistry.getById(doorBlock.getDoorDeclId());
-
-            if (decl != null && decl.getStructureDefinition() != null) {
-                DoorDecl.DoorStructureDefinition def = decl.getStructureDefinition();
-
-                Direction facing = controllerState.getValue(DoorBlock.FACING);
-                BlockPos worldOffset = pPos.subtract(controllerPos);
-                BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
-
-                boolean isOpen;
-                if (controllerBE instanceof DoorBlockEntity doorBE) {
-                    isOpen = doorBE.getState() != 0;
-                } else {
-                    isOpen = controllerState.getValue(DoorBlock.OPEN);
-                }
-
-                Map<BlockPos, VoxelShape> map = isOpen ? def.getOpenShapes() : def.getClosedShapes();
-
-                VoxelShape shape = map.get(localOffset);
-                if (shape != null) {
-                    if (!shape.isEmpty()) {
-                        return MultiblockStructureHelper.rotateShape(shape, facing);
+        if (controllerBlock instanceof DoorBlock) {
+            // Пошаговая коллизия (порт 1.7.10): ваниль опрашивает коллизию ПОКЛЕТОЧНО,
+            // поэтому фантом отдаёт форму СВОЕЙ клетки на текущий тик (контроллер —
+            // свою, см. DoorBlock.getCollisionShape). Клетка вне диапазона ретракции
+            // (рама) всегда solid, ретрактнувшаяся колонка створки — проходима.
+            // shapes == null (нет символьной схемы) — легаси-путь ниже; ПУСТАЯ карта =
+            // дверь полностью открыта, все клетки проходимы.
+            if (pLevel.getBlockEntity(controllerPos) instanceof DoorBlockEntity doorBE) {
+                Map<BlockPos, VoxelShape> shapes = doorBE.getProgressCollisionShapes();
+                if (shapes != null) {
+                    Direction facing = controllerState.getValue(DoorBlock.FACING);
+                    BlockPos localOffset = MultiblockStructureHelper.rotateBack(pPos.subtract(controllerPos), facing);
+                    VoxelShape cell = shapes.get(localOffset);
+                    if (cell != null && !cell.isEmpty()) {
+                        return MultiblockStructureHelper.rotateShape(cell, facing);
                     }
-                    return shape;
+                    return Shapes.empty();
                 }
             }
         }
 
         MultiblockStructureHelper helper = controller.getStructureHelper();
-        Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
+        if (helper == null) return Shapes.block();
+        Direction facing = resolveFacing(controllerState);
 
         BlockPos worldOffset = pPos.subtract(controllerPos);
         BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
@@ -343,18 +376,24 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
         }
     }
 
-    //? if < 1.21.1 {
+    @Override
     public boolean isLadder(BlockState pState, LevelReader pLevel, BlockPos pPos, LivingEntity pEntity) {
-        if (pLevel instanceof Level level && level.getBlockEntity(pPos) instanceof IMultiblockPart part) {
-            PartRole role = part.getPartRole();
-            
-            if (role == PartRole.LADDER) {
+        if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
+            if (part.getPartRole() == PartRole.LADDER) {
+                java.util.Set<Direction> climbSides = part.getAllowedClimbSides();
+                if (climbSides == null || climbSides.isEmpty()) return true;
+                for (Direction d : climbSides) {
+                    if (pEntity.getBoundingBox().intersects(new net.minecraft.world.phys.AABB(pPos).inflate(0.1D))) {
+                        return true;
+                    }
+                }
                 return true;
             }
         }
         return false;
     }
 
+    //? if < 1.21.1 {
     @Override
     public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
         if (level instanceof Level lvl && com.hbm_m.compat.ContraptionDoorState.isContraptionWorld(lvl)) {
@@ -370,7 +409,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                 }
                 // w16b (Wunsch N-Z): Teilform aus bounding-Liste -> Zelle verdeckt keine Nachbarflaechen
                 if (ctrlBlock instanceof IMultiblockController mc) {
-                    VoxelShape master = mc.getCustomMasterVoxelShape(level.getBlockState(ctrlPos));
+                    VoxelShape master = mc.getCustomMasterVoxelShape(level.getBlockState(ctrlPos), level, ctrlPos);
                     if (master != null && !master.isEmpty()) return Shapes.empty();
                 }
             }
@@ -381,9 +420,38 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
     //?} else {
     /*@Override
     protected VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return Shapes.empty();
+        if (level instanceof Level lvl && com.hbm_m.compat.ContraptionDoorState.isContraptionWorld(lvl)) {
+            return Shapes.empty();
+        }
+
+        if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
+            BlockPos ctrlPos = part.getControllerPos();
+            if (ctrlPos != null) {
+                Block ctrlBlock = level.getBlockState(ctrlPos).getBlock();
+                if (ctrlBlock instanceof DoorBlock || ctrlBlock instanceof TransitionSealBlock) {
+                    return Shapes.empty();
+                }
+                if (ctrlBlock instanceof IMultiblockController mc) {
+                    VoxelShape master = mc.getCustomMasterVoxelShape(level.getBlockState(ctrlPos), level, ctrlPos);
+                    if (master != null && !master.isEmpty()) return Shapes.empty();
+                }
+            }
+        }
+
+        return isFullBlockInGrid(level, pos) ? Shapes.block() : Shapes.empty();
     }
     *///?}
+
+    /**
+     * Поворотная ось контроллера для маппинга клетки в локальную сетку. Контроллеры без
+     * facing (неремонтируемые мультиблоки вроде Orbus/бочек) не вращаются - для них
+     * NORTH = тождественный поворот.
+     */
+    private static Direction resolveFacing(BlockState controllerState) {
+        return controllerState.hasProperty(HorizontalDirectionalBlock.FACING)
+                ? controllerState.getValue(HorizontalDirectionalBlock.FACING)
+                : Direction.NORTH;
+    }
 
     private boolean isFullBlockInGrid(BlockGetter level, BlockPos pos) {
         if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
@@ -392,7 +460,8 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                 BlockState controllerState = level.getBlockState(controllerPos);
                 if (controllerState.getBlock() instanceof IMultiblockController controller) {
                     MultiblockStructureHelper helper = controller.getStructureHelper();
-                    Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
+                    if (helper == null) return true;
+                    Direction facing = resolveFacing(controllerState);
                     
                     BlockPos worldOffset = pos.subtract(controllerPos);
                     BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
@@ -418,6 +487,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
     *///?}
 
     private InteractionResult hbmOnUse(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+        // Паритет 1.7.10: shift-клик не переключает дверь; PASS отдаёт ход useOn предметов
+        if (pPlayer.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
         if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
             BlockPos controllerPos = part.getControllerPos();
             if (controllerPos == null) {
@@ -430,7 +503,12 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
             BlockState controllerState = pLevel.getBlockState(controllerPos);
             if (controllerState.getBlock() instanceof IMultiblockController) {
                 BlockEntity ctrlBe = pLevel.getBlockEntity(controllerPos);
-                if (ctrlBe instanceof DoorBlockEntity door && hasScrewdriver(pPlayer) && !(door.isLocked() && !pPlayer.isShiftKeyDown())) {
+                // Отвёртка зарезервирована под GUI скинов, но на запертой двери клик уходит
+                // в tryToggle → canAccess → tryPick (взлом), как в 1.7.10.
+                // У blast door GUI скинов нет (NEXT parity) — отвёртка тогглит дверь:
+                // не перехватываем клик, отдаём его в use ядра.
+                if (ctrlBe instanceof DoorBlockEntity door && !(door instanceof com.hbm_m.block.entity.doors.BlastDoorBlockEntity)
+                        && !door.isLocked() && hasScrewdriver(pPlayer)) {
                     return InteractionResult.sidedSuccess(pLevel.isClientSide());
                 }
                 //? if < 1.21.1 {
@@ -455,28 +533,17 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                 || player.getItemInHand(net.minecraft.world.InteractionHand.OFF_HAND).getItem() == ModItems.SCREWDRIVER_DESH.get();
     }
 
-    /** audit10: Original {@code BlockDummyable} - Explosion auf einer Dummy-Zelle laeuft in die Kernlogik ({@code findCore}). */
-    @Override
-    public void onBlockExploded(BlockState state, Level level, BlockPos pos, net.minecraft.world.level.Explosion explosion) {
-        if (!level.isClientSide && level.getBlockEntity(pos) instanceof IMultiblockPart part && part.getControllerPos() != null) {
-            BlockPos controllerPos = part.getControllerPos();
-            BlockState controllerState = level.getBlockState(controllerPos);
-            if (controllerState.getBlock() instanceof IMultiblockController controller && controller.forwardPartExplosions()) {
-                controllerState.getBlock().onBlockExploded(controllerState, level, controllerPos, explosion);
-                return;
-            }
-        }
-        super.onBlockExploded(state, level, pos, explosion);
-    }
-
     @Override
     public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
         if (!pState.is(pNewState.getBlock())) {
+            com.hbm_m.multiblock.TeardownTrace.log("part onRemove: {} @ {} -> {} side={} moving={}",
+                    pState.getBlock(), pPos.toShortString(), pNewState.getBlock(),
+                    pLevel.isClientSide() ? "CLIENT" : "SERVER", pIsMoving);
             // Перенос блока движком сборки (Create/Sable): это НЕ разрушение.
             // Каскад destroyStructure + destroyBlock(controllerPos) здесь = дюп станка:
             // движок уже сохранил state+NBT и вернёт структуру на месте разборки.
             if (!pLevel.isClientSide() && com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
-                com.hbm_m.main.MainRegistry.LOGGER.info(
+                com.hbm_m.main.MainRegistry.LOGGER.debug(
                     "[HBM] каскад разрушения части подавлен (окно сборки контрапшена), часть {}",
                     pPos.toShortString());
                 super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
@@ -484,36 +551,161 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
             }
             if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart partBe) {
                 BlockPos controllerPos = partBe.getControllerPos();
-                if (controllerPos != null && !pLevel.isClientSide()) {
-                    BlockState controllerState = pLevel.getBlockState(controllerPos);
-                    if (controllerState.getBlock() instanceof IMultiblockController controller) {
-                        if (!MultiblockStructureHelper.isDestroying() && !MultiblockStructureHelper.isRepairing() && controller.shouldDestroyOnPartRemoved()) {
-                            if (controllerState.hasProperty(HorizontalDirectionalBlock.FACING)) {
-                                Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
-                                controller.getStructureHelper().destroyStructure(pLevel, controllerPos, facing);
+                com.hbm_m.multiblock.TeardownTrace.log("part onRemove: BE controllerPos={} localOffset={}",
+                        controllerPos, partBe.getLocalOffsetFromController());
+
+                // A part carried into a Sable sub-level (or back out of one) still names its
+                // pre-move controller until relink runs, and that position is usually air there.
+                // Breaking such a part used to do nothing at all - one casing broke and the rest of
+                // the machine stayed as phantoms - so re-resolve the controller before giving up.
+                // Not during a cascade: destroyStructure clears the controller first, so every
+                // part would land here and pay a radius search for a controller that is gone.
+                if (!pLevel.isClientSide()
+                        && !MultiblockStructureHelper.isDestroying()
+                        && !MultiblockStructureHelper.isRepairing()
+                        && (controllerPos == null
+                            || !(pLevel.getBlockState(controllerPos).getBlock() instanceof IMultiblockController))) {
+                    MultiblockStructureHelper.relinkOrphanedPartDeterministic(pLevel, pPos, partBe,
+                            !MultiblockStructureHelper.isOrphanCleanup(), pState);
+                    controllerPos = partBe.getControllerPos();
+                    com.hbm_m.multiblock.TeardownTrace.log("part onRemove: relink ran, controllerPos now={}", controllerPos);
+                }
+
+                if (controllerPos == null && partBe.getLocalOffsetFromController() != null) {
+                    Direction facing = pState.hasProperty(HorizontalDirectionalBlock.FACING)
+                            ? pState.getValue(HorizontalDirectionalBlock.FACING)
+                            : Direction.NORTH;
+                    controllerPos = pPos.subtract(MultiblockStructureHelper.rotate(partBe.getLocalOffsetFromController(), facing));
+                    com.hbm_m.multiblock.TeardownTrace.log("part onRemove: controllerPos fell back from localOffset -> {}",
+                            controllerPos.toShortString());
+                }
+
+                if (controllerPos != null) {
+                    if (pLevel.isClientSide()) {
+                        com.hbm_m.multiblock.TeardownTrace.trace("part onRemove: CLIENT channel B fire, part={} -> controller={}",
+                                pPos.toShortString(), controllerPos.toShortString());
+                        com.hbm_m.platform.CommonRenderHooks.onMultiblockPartRemoved(pLevel, pPos, controllerPos);
+                    } else {
+                        BlockState controllerState = pLevel.getBlockState(controllerPos);
+                        if (controllerState.getBlock() instanceof IMultiblockController controller) {
+                            if (!MultiblockStructureHelper.isDestroying() && !MultiblockStructureHelper.isRepairing() && controller.shouldDestroyOnPartRemoved()) {
+                                if (controllerState.hasProperty(HorizontalDirectionalBlock.FACING)) {
+                                    Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
+                                    controller.getStructureHelper().destroyStructure(pLevel, controllerPos, facing);
+                                }
+                                com.hbm_m.multiblock.TeardownTrace.log("server: destroyBlock(controller) at {}", controllerPos.toShortString());
+                                pLevel.destroyBlock(controllerPos, true);
+                            } else {
+                                com.hbm_m.multiblock.TeardownTrace.log(
+                                        "server: cascade SKIPPED destroying={} repairing={} shouldDestroyOnPartRemoved={}",
+                                        MultiblockStructureHelper.isDestroying(), MultiblockStructureHelper.isRepairing(),
+                                        controller.shouldDestroyOnPartRemoved());
                             }
-                            pLevel.destroyBlock(controllerPos, true);
+                        } else {
+                            com.hbm_m.multiblock.TeardownTrace.log("server: no live controller at {}, nothing to cascade",
+                                    controllerPos.toShortString());
                         }
                     }
+                } else {
+                    com.hbm_m.multiblock.TeardownTrace.trace(
+                            "part onRemove: controllerPos UNRESOLVED (BE field null AND localOffset null) - channels dead for this part, part={}",
+                            pPos.toShortString());
                 }
+            } else {
+                com.hbm_m.multiblock.TeardownTrace.trace("part onRemove: NO part BE at {} (BE already gone) - channels dead for this part",
+                        pPos.toShortString());
             }
         }
         super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
     }
 
-    //? if < 1.21.1 {
+    /**
+     * Hands a blast on a casing to the machine that owns it.
+     *
+     * <p>Upstream a machine is a single block with dummy metas, so an explosion on any of its
+     * cells runs the machine's own handler - a refinery catches fire and drops nothing
+     * (MachineRefinery.onBlockExploded, dropFromExplosion = false). Here the casings are a
+     * separate block, so a blast that happened to hit one instead of the core bypassed all of
+     * that and the cascade dropped the machine as a normal item.
+     */
+    /** Бомба на части = бомба на контроллере (паритет старых Dummy-блоков, напр. blast door). */
     @Override
-    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof IMultiblockPart partBe) {
-            BlockPos controllerPos = partBe.getControllerPos();
-            if (controllerPos != null) {
+    public com.hbm_m.api.bomb.IBomb.BombReturnCode explode(Level level, BlockPos pos) {
+        if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null && level.getBlockState(controllerPos).getBlock() instanceof com.hbm_m.api.bomb.IBomb bomb) {
+                return bomb.explode(level, controllerPos);
+            }
+        }
+        return com.hbm_m.api.bomb.IBomb.BombReturnCode.ERROR_INCOMPATIBLE;
+    }
+
+    @Override
+    public void onBlockExploded(BlockState state, Level level, BlockPos pos,
+                                net.minecraft.world.level.Explosion explosion) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null && !controllerPos.equals(pos)) {
                 BlockState controllerState = level.getBlockState(controllerPos);
                 if (controllerState.getBlock() instanceof IMultiblockController) {
-                    boolean dropController = !player.getAbilities().instabuild;
-                    level.destroyBlock(controllerPos, dropController);
+                    // The controller takes itself down and cascades the rest of the structure,
+                    // this casing included.
+                    controllerState.getBlock().onBlockExploded(controllerState, level, controllerPos, explosion);
+                    return;
                 }
             }
         }
+        super.onBlockExploded(state, level, pos, explosion);
+    }
+
+    /**
+     * Harvesting any casing takes the machine down with it, exactly like the original's
+     * BlockDummyable. Shared by both platform branches of playerWillDestroy.
+     */
+    private static void destroyControllerOnHarvest(Level level, BlockPos pos, Player player) {
+        if (level.isClientSide() || !(level.getBlockEntity(pos) instanceof IMultiblockPart partBe)) return;
+        BlockPos controllerPos = partBe.getControllerPos();
+
+        // Mirror the same fallback chain used in onRemove so that stale / null controllerPos
+        // (e.g. caused by the 1.20.1→1.21.1 NBT format mismatch) still find the real controller.
+        if (!MultiblockStructureHelper.isDestroying()
+                && !MultiblockStructureHelper.isRepairing()
+                && (controllerPos == null
+                    || !(level.getBlockState(controllerPos).getBlock() instanceof IMultiblockController))) {
+            MultiblockStructureHelper.relinkOrphanedPartDeterministic(level, pos, partBe,
+                    !MultiblockStructureHelper.isOrphanCleanup(), level.getBlockState(pos));
+            controllerPos = partBe.getControllerPos();
+        }
+
+        // Secondary fallback: reconstruct position from the local offset stored in the BE.
+        if (controllerPos == null && partBe.getLocalOffsetFromController() != null) {
+            Direction facing = level.getBlockState(pos).hasProperty(HorizontalDirectionalBlock.FACING)
+                    ? level.getBlockState(pos).getValue(HorizontalDirectionalBlock.FACING)
+                    : Direction.NORTH;
+            controllerPos = pos.subtract(MultiblockStructureHelper.rotate(partBe.getLocalOffsetFromController(), facing));
+        }
+
+        if (controllerPos == null) return;
+
+        BlockState controllerState = level.getBlockState(controllerPos);
+        // A controller that refuses to collapse on part removal (a destroyed ZIRNOX ruin) must
+        // not be destroyed here either - onRemove honours the flag, this path ignored it.
+        if (controllerState.getBlock() instanceof IMultiblockController controller
+                && controller.shouldDestroyOnPartRemoved()) {
+            if (player.getAbilities().instabuild) {
+                BlockEntity cbe = level.getBlockEntity(controllerPos);
+                if (cbe instanceof CargoElevatorBlockEntity elevator) {
+                    elevator.dropped = true;
+                }
+            }
+            level.destroyBlock(controllerPos, !player.getAbilities().instabuild);
+        }
+    }
+
+    //? if < 1.21.1 {
+    @Override
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        destroyControllerOnHarvest(level, pos, player);
         super.playerWillDestroy(level, pos, state, player);
     }
 
@@ -531,16 +723,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
     //?} else {
     /*@Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof IMultiblockPart partBe) {
-            BlockPos controllerPos = partBe.getControllerPos();
-            if (controllerPos != null) {
-                BlockState controllerState = level.getBlockState(controllerPos);
-                if (controllerState.getBlock() instanceof IMultiblockController) {
-                    boolean dropController = !player.getAbilities().instabuild;
-                    level.destroyBlock(controllerPos, dropController);
-                }
-            }
-        }
+        destroyControllerOnHarvest(level, pos, player);
         return super.playerWillDestroy(level, pos, state, player);
     }
 
@@ -624,6 +807,35 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
     @Override
     public boolean isSignalSource(BlockState state) {
         return true;
+    }
+
+    @Override
+    public boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+        return resolveComparatorPower(level, pos);
+    }
+
+    /**
+     * Компаратор у фантомной части мультиблока читает уровень ядра — как
+     * 1.7.10 {@code MachineFluidTank.getComparatorInputOverride} через прокси.
+     */
+    private static int resolveComparatorPower(Level level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof IMultiblockPart part)) {
+            return 0;
+        }
+        BlockPos controllerPos = part.getControllerPos();
+        if (controllerPos == null) {
+            return 0;
+        }
+        BlockEntity controller = level.getBlockEntity(controllerPos);
+        if (controller instanceof com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity tank) {
+            return tank.getComparatorPower();
+        }
+        return 0;
     }
 
     @Override

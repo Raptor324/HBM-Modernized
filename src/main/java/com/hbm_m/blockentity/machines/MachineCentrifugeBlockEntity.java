@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.platform.PlatformHooks;
-
+import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineCentrifugeMenu;
@@ -25,6 +25,7 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code TileEntityMachineCentrifuge}: 100000 HE Speicher, 200 Ticks pro Durchlauf, Grundverbrauch 200 HE/t.
@@ -60,6 +61,10 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
     /** Original: clientseitige Hochlaufzeit des Betriebsgeraeuschs (0-60). */
     private int audioDuration = 0;
 
+    /** Cached recipe-scan: keyed on the input stack fingerprint. */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<com.hbm_m.recipe.CentrifugeRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     private final ContainerData containerData = new ContainerData() {
         @Override
         public int get(int index) {
@@ -82,7 +87,7 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
     };
 
     public MachineCentrifugeBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.CENTRIFUGE_BE.get(), pos, state, TOTAL_SLOTS, MAX_POWER, MAX_POWER);
+        super(ModBlockEntities.MACHINE_CENTRIFUGE_BE.get(), pos, state, TOTAL_SLOTS, MAX_POWER, MAX_POWER);
     }
 
     @Override
@@ -172,8 +177,7 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             blockEntity.progress = 0;
         }
 
-        blockEntity.setChanged();
-        blockEntity.sendUpdateToClient();
+        blockEntity.syncIfStateChanged(blockEntity.energy, blockEntity.progress);
     }
 
     /** Original: {@code getLoopedSound(CENTRIFUGE_LOOP, 1F, 10F, 1F, 20)}, Tonhoehe {@code (audioDuration - 10) / 100 + 0.5}. */
@@ -205,7 +209,7 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
                 continue;
             }
 
-            if (!PlatformHooks.isSameItemSameTags(outputSlot, result)) {
+            if (!StackNbt.sameItemSameTags(outputSlot, result)) {
                 return false;
             }
 
@@ -233,7 +237,7 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             ItemStack outputSlot = inventory.getStackInSlot(slot);
             if (outputSlot.isEmpty()) {
                 inventory.setStackInSlot(slot, result.copy());
-            } else if (PlatformHooks.isSameItemSameTags(outputSlot, result)) {
+            } else if (StackNbt.sameItemSameTags(outputSlot, result)) {
                 outputSlot.grow(result.getCount());
             }
         }
@@ -248,15 +252,15 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             return null;
         }
 
-        // 1.21.1: getRecipeFor требует RecipeInput, а SimpleContainer им не является —
-        // используем устоявшийся в проекте паттерн: getAllRecipes + matchesRecipe(RecipeInputWrapper).
-        com.hbm_m.platform.recipe.RecipeInputWrapper wrapper =
-                new com.hbm_m.platform.recipe.RecipeInputWrapper(new net.minecraft.world.SimpleContainer(input));
-        return com.hbm_m.platform.recipe.RecipeHooks
-                .getAllRecipes(level, com.hbm_m.recipe.ModRecipes.CENTRIFUGE_TYPE.get()).stream()
-                .filter(r -> r.matchesRecipe(wrapper, level))
-                .findFirst()
-                .orElse(null);
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(2L, StackNbt.fingerprint(input));
+        return recipeResolver.resolve(level, com.hbm_m.recipe.ModRecipes.CENTRIFUGE_TYPE.get(), signature, (lvl, all) -> {
+            com.hbm_m.platform.recipe.RecipeInputWrapper wrapper =
+                    new com.hbm_m.platform.recipe.RecipeInputWrapper(new net.minecraft.world.SimpleContainer(input));
+            for (com.hbm_m.recipe.CentrifugeRecipe r : all) {
+                if (r.matchesRecipe(wrapper, lvl)) return r;
+            }
+            return null;
+        });
     }
 
     private void chargeFromBattery() {
@@ -311,13 +315,13 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
         sided.clear();
     }
     //?} elif neoforge {
-    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
+    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
 
     /^* Original {@code getAccessibleSlotsFromSide {Eingang, 2-5}}: nur der Eingang ist befuellbar, nur die Ausgaenge entnehmbar. ^/
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
-            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.minecraftforge.items.IItemHandler() {
                 @Override public int getSlots() { return TOTAL_SLOTS; }
                 @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
                 @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
@@ -340,6 +344,46 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
         super.invalidateHbmCaps();
         sided.values().forEach(com.hbm_m.platform.LazyCap::invalidate);
         sided.clear();
+    }
+    *///?}
+
+    //? if forge {
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sided.computeIfAbsent(side, d -> net.minecraftforge.common.util.LazyOptional.of(() -> new net.minecraftforge.items.IItemHandler() {
+            @Override public int getSlots() { return TOTAL_SLOTS; }
+            @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
+            @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                if (slot != INPUT_SLOT) return stack;
+                return inventory.insertItem(slot, stack, simulate);
+            }
+            @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                if (slot < OUTPUT_SLOT_START || slot >= OUTPUT_SLOT_START + OUTPUT_SLOTS) return ItemStack.EMPTY;
+                return inventory.extractItem(slot, amount, simulate);
+            }
+            @Override public int getSlotLimit(int slot) { return inventory.getSlotLimit(slot); }
+            @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return slot == INPUT_SLOT; }
+        })).resolve().orElse(null);
+    }
+    //?} elif neoforge {
+    /*@Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.minecraftforge.items.IItemHandler() {
+            @Override public int getSlots() { return TOTAL_SLOTS; }
+            @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
+            @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                if (slot != INPUT_SLOT) return stack;
+                return inventory.insertItem(slot, stack, simulate);
+            }
+            @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                if (slot < OUTPUT_SLOT_START || slot >= OUTPUT_SLOT_START + OUTPUT_SLOTS) return ItemStack.EMPTY;
+                return inventory.extractItem(slot, amount, simulate);
+            }
+            @Override public int getSlotLimit(int slot) { return inventory.getSlotLimit(slot); }
+            @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return slot == INPUT_SLOT; }
+        })).resolve().orElse(null);
     }
     *///?}
 }

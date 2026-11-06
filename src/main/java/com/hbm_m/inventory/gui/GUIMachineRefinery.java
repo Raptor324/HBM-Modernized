@@ -15,12 +15,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
 import org.jetbrains.annotations.NotNull;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+@OnlyIn(Dist.CLIENT)
 
-/**
- * 1:1-Port von {@code GUIMachineRefinery} (1.7.10): 182x240, Eingangssaeule (12, 18-88, 16x70),
- * vier Ausgangstanks (64/82/100/118, Unterkante 88), Energie (158, 18-106) und die vier in der
- * Produktfarbe getoenten Rohre (Textur 256x256, ab y 240).
- */
 public class GUIMachineRefinery extends GuiInfoScreen<MachineRefineryMenu> {
 
     private static final ResourceLocation TEXTURE =

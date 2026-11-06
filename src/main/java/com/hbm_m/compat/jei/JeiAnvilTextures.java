@@ -28,7 +28,9 @@ public final class JeiAnvilTextures {
     }
 
     public static IDrawable createRecipeBackground(IGuiHelper guiHelper) {
-        return guiHelper.createDrawable(GUI_NEI_ANVIL, 0, 0, RECIPE_WIDTH, RECIPE_HEIGHT);
+        // NEI TemplateRecipeHandler.drawBackground (1.7.10-1.0.3.74):
+        // drawTexturedModalRect(0, 0, 5, 11, 166, 65) — окно панели в текстуре лежит в (5,11).
+        return guiHelper.createDrawable(GUI_NEI_ANVIL, 5, 11, RECIPE_WIDTH, RECIPE_HEIGHT);
     }
 
     public static IDrawable createItemSlotBackground(IGuiHelper guiHelper) {

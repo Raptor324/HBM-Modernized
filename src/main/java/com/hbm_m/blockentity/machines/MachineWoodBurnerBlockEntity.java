@@ -180,8 +180,9 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity impleme
             level.setBlock(pos, state.setValue(MachineWoodBurnerBlock.LIT, be.isBurning()), 3);
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        long lo = (be.isBurning() ? 1L : 0L) | (be.enabled ? 2L : 0L) | (be.liquidBurn ? 4L : 0L) | (((long) be.burnTime) << 3);
+        long hi = be.energy | (((long) be.tank.getFill()) << 32);
+        be.syncIfStateChanged(lo, hi);
     }
 
     /** Original {@code processAsh}: legt bei erreichter Schwelle ein Aschehaeufchen in den Ascheplatz, falls es passt. */
@@ -238,6 +239,11 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity impleme
     }
 
 
+        @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
+        return fromDir != null;
+    }
+
     // --- NBT ---
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
@@ -258,13 +264,15 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity impleme
         super.readNbtData(tag, registries); // Загружает inventory и energy из базового класса
         burnTime = tag.getInt("burnTime");
         maxBurnTime = tag.getInt("maxBurnTime");
-        enabled = tag.getBoolean("enabled");
+        if (tag.contains("enabled")) enabled = tag.getBoolean("enabled");
+        else if (tag.contains("isOn")) enabled = tag.getBoolean("isOn");
         liquidBurn = tag.getBoolean("liquidBurn");
         powerGen = tag.getInt("powerGen");
         ashLevelWood = tag.getInt("ashWood");
         ashLevelCoal = tag.getInt("ashCoal");
         ashLevelMisc = tag.getInt("ashMisc");
-        tank.readFromNBT(tag, "t");
+        if (tag.contains("t")) tank.readFromNBT(tag, "t");
+        else if (tag.contains("tank")) tank.readFromNBT(tag, "tank");
     }
 
     // --- GUI ---
@@ -276,7 +284,7 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity impleme
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player p) {
-        return new MachineWoodBurnerMenu(id, inv, this, this.data);
+        return new MachineWoodBurnerMenu(id, inv, this);
     }
 
     public void drops() {
@@ -389,4 +397,11 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity impleme
         sidedItems.invalidate();
     }
     *///?}
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 2, worldPosition.getZ() + 2);
+    }
 }

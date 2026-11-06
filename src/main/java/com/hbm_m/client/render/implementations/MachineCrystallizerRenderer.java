@@ -11,6 +11,7 @@ import com.hbm_m.blockentity.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.cache.RenderCacheManager;
 import com.hbm_m.client.render.machine.MachineRenderApi;
+import com.hbm_m.client.render.machine.MachineRenderHook;
 import com.hbm_m.client.render.machine.MachineRenderers;
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
@@ -21,6 +22,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+
+import net.minecraft.util.Mth;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -33,49 +36,55 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 
-//? if forge {
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.fluids.FluidStack;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.fluids.FluidStack;
-*///?}
+import com.hbm_m.platform.ClientFluidHooks;
+import com.hbm_m.platform.LoaderHooks;
 
 /**
- * Кристаллизатор на фабрике {@link MachineRenderers}: корпус живёт в чанк-меше,
- * спиннер — динамическая часть из injected-модели crystallizer_spinner, жидкость —
- * immediate-хук с отложенной отрисовкой (draw в AFTER_BLOCK_ENTITIES после
- * instanced-flush, см. {@link #presentDeferredFluids()}).
+ * Crystallizer on the {@link MachineRenderers} factory: the body is a static part of the
+ * multipart model (Nucleus draws the whole machine), the spinner is a dynamic part from the
+ * injected crystallizer_spinner model, the fluid is an immediate hook with deferred drawing
+ * (drawn in AFTER_BLOCK_ENTITIES after the instanced flush, see {@link #presentDeferredFluids()}).
  */
 public final class MachineCrystallizerRenderer {
 
-    private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
     private static final RandomSource RANDOM = RandomSource.create(42L);
 
     public static void register() {
         MachineRenderers.machine("crystallizer", ModBlockEntities.CRYSTALLIZER.get(),
                 MachineCrystallizerBlockEntity.class)
-            .dynamicPart("Spinner", be -> spinnerQuads(), be -> "spinner")
+            .part("Body")
+            .rotateY("Spinner", 0.5f, 0.5f, be -> spinnerQuads(), be -> "spinner",
+                    (be, pt) -> (double) Mth.lerp(pt, be.prevAngle, be.angle))
             .blockTransform(MachineCrystallizerRenderer::applyBlockTransform)
-            .hook(MachineCrystallizerRenderer::scheduleFluid)
+            .hook(new MachineRenderHook<MachineCrystallizerBlockEntity>() {
+                @Override
+                public void render(MachineCrystallizerBlockEntity be, float partialTick,
+                                   PoseStack poseStack, MultiBufferSource bufferSource,
+                                   int packedLight, int packedOverlay, MachineRenderApi api) {
+                    MachineCrystallizerRenderer.scheduleFluid(be, partialTick, poseStack,
+                            bufferSource, packedLight, packedOverlay, api);
+                }
+
+                @Override
+                public boolean mayDrawContent(MachineCrystallizerBlockEntity be) {
+                    return !be.getTank().isEmpty();
+                }
+            })
             .register();
 
-        // Кеш квадов спиннера инвалидируется централизованно
+        // The spinner quad cache is invalidated centrally
         RenderCacheManager.register(reason -> cachedSpinnerQuads = null);
     }
 
     private MachineCrystallizerRenderer() {}
 
-    // ── Трансформы (вербатим из легаси applyFacingRotation + matSpinner) ──
+    // -- Transforms (verbatim from legacy applyFacingRotation + matSpinner) --
 
     private static void applyBlockTransform(MachineCrystallizerBlockEntity be, LegacyAnimator animator) {
         BlockState state = be.getBlockState();
@@ -94,17 +103,7 @@ public final class MachineCrystallizerRenderer {
         }
     }
 
-    private static boolean animateSpinner(MachineCrystallizerBlockEntity be, float partialTick,
-                                          long gameTime, PoseStack pose) {
-        float angle = Mth.lerp(partialTick, be.prevAngle, be.angle);
-        pose.last().pose().mul(new Matrix4f()
-                .translate(0.5f, 0f, 0.5f)
-                .rotateY(angle * DEG_TO_RAD)
-                .translate(-0.5f, 0f, -0.5f));
-        return true;
-    }
-
-    // ── Спиннер: injected-модель, квад-кеш ─────────────────────────────
+    // -- Spinner: injected model, quad cache -----------------------------
 
     private static final ResourceLocation SPINNER_MODEL_ID =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_spinner");
@@ -115,7 +114,7 @@ public final class MachineCrystallizerRenderer {
         List<BakedQuad> q = cachedSpinnerQuads;
         if (q == null) {
             var modelManager = Minecraft.getInstance().getModelManager();
-            BakedModel model = PlatformHooks.getModel(modelManager, SPINNER_MODEL_ID);
+            BakedModel model = LoaderHooks.getModel(modelManager, SPINNER_MODEL_ID);
             if (model == null || model == modelManager.getMissingModel()) return List.of();
             q = collectModelQuads(model, RenderType.cutout());
             if (q.isEmpty()) q = collectModelQuads(model, RenderType.solid());
@@ -126,19 +125,10 @@ public final class MachineCrystallizerRenderer {
 
     private static List<BakedQuad> collectModelQuads(BakedModel model, @Nullable RenderType renderType) {
         List<BakedQuad> quads = new ArrayList<>();
-        // NeoForge: gleiche API (vorher fehlten dort Spinner und Fluessigkeit)
-        //? if forge || neoforge {
-        quads.addAll(model.getQuads(null, null, RANDOM, ModelData.EMPTY, renderType));
+        quads.addAll(RenderHooks.getModelQuads(model, null, null, RANDOM, renderType));
         for (Direction dir : Direction.values()) {
-            quads.addAll(model.getQuads(null, dir, RANDOM, ModelData.EMPTY, renderType));
+            quads.addAll(RenderHooks.getModelQuads(model, null, dir, RANDOM, renderType));
         }
-        //?}
-        //? if fabric {
-        /*quads.addAll(model.getQuads(null, null, RANDOM));
-        for (Direction dir : Direction.values()) {
-            quads.addAll(model.getQuads(null, dir, RANDOM));
-        }
-        *///?}
         return quads;
     }
 
@@ -155,12 +145,12 @@ public final class MachineCrystallizerRenderer {
 
     private static final List<DeferredCrystallizerFluid> DEFERRED_FLUIDS = new ArrayList<>();
 
-    /** Сброс очереди жидкости в начале кадра (до BER). */
+    /** Clears the fluid queue at the start of the frame (before BERs). */
     public static void clearDeferredFluids() {
         DEFERRED_FLUIDS.clear();
     }
 
-    /** Хук: фиксируем pose/цвет, draw — позже. */
+    /** Hook: record pose/color now, draw later. */
     private static void scheduleFluid(MachineCrystallizerBlockEntity be, float partialTick,
                                       PoseStack poseStack, MultiBufferSource bufferSource,
                                       int packedLight, int packedOverlay, MachineRenderApi api) {
@@ -182,7 +172,7 @@ public final class MachineCrystallizerRenderer {
     }
 
     /**
-     * После flush instanced: depth уже содержит спиннеры, жидкость только depth-test.
+     * After the instanced flush: depth already contains the spinners, so the fluid only depth-tests.
      */
     public static void presentDeferredFluids() {
         if (DEFERRED_FLUIDS.isEmpty()) {
@@ -197,8 +187,8 @@ public final class MachineCrystallizerRenderer {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         PoseStack poseStack = new PoseStack();
 
-        // NeoForge: gleiche API (vorher fehlten dort Spinner und Fluessigkeit)
-        //? if forge || neoforge {
+        // Gate removed: this branch used to be Forge-only, and the crystallizer's deferred
+        // fluid was not drawn at all on NeoForge.
         try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
             for (DeferredCrystallizerFluid entry : DEFERRED_FLUIDS) {
                 poseStack.pushPose();
@@ -210,7 +200,6 @@ public final class MachineCrystallizerRenderer {
             }
             buffers.endBatch();
         }
-        //?}
         DEFERRED_FLUIDS.clear();
     }
 
@@ -234,7 +223,7 @@ public final class MachineCrystallizerRenderer {
         ResourceLocation fluidModelId =
                 ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_fluid");
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = PlatformHooks.getModel(modelManager, fluidModelId);
+        BakedModel model = LoaderHooks.getModel(modelManager, fluidModelId);
         if (model == null || model == modelManager.getMissingModel()) return List.of();
         List<BakedQuad> quads = collectModelQuads(model, RenderType.translucent());
         if (!quads.isEmpty()) return quads;
@@ -254,33 +243,11 @@ public final class MachineCrystallizerRenderer {
             return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(blockFluidTexture);
         }
 
-        //? if forge {
-        IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
-        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
-        ResourceLocation stillTexture = ext.getStillTexture(stack);
-        if (stillTexture == null) return null;
-        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
-        //?}
-        //? if neoforge {
-        /*IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
-        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
-        ResourceLocation stillTexture = ext.getStillTexture(stack);
-        if (stillTexture == null) return null;
-        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
-        *///?}
+        return ClientFluidHooks.stillSprite(fluid, be.getTank().getFluidAmountMb());
     }
 
     private static int getFluidTint(MachineCrystallizerBlockEntity be, Fluid fluid) {
-        //? if forge {
-        IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
-        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
-        return ext.getTintColor(stack);
-        //?}
-        //? if neoforge {
-        /*IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
-        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
-        return ext.getTintColor(stack);
-        *///?}
+        return ClientFluidHooks.tint(fluid, be.getTank().getFluidAmountMb());
     }
 
     private static List<BakedQuad> remapQuadsSprite(List<BakedQuad> source, TextureAtlasSprite newSprite) {

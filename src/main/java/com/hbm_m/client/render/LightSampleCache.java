@@ -1,13 +1,23 @@
 package com.hbm_m.client.render;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
+import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongIterator;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 
+import com.hbm_m.api.render.RenderDirtyTracker;
+
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -41,37 +51,69 @@ import net.minecraft.world.phys.AABB;
  * lifetime of one frame collapses that to ~6 lookups per machine per frame -
  * an 11–22× reduction.
  *
- * <p><b>Invalidation strategy.</b> The cache uses a render-frame counter that
- * is bumped from {@code ClientModEvents.onRenderLevelStage(AFTER_BLOCK_ENTITIES)}
- * - i.e. ONCE per fully-rendered frame, after both the shadow pass and the
- * main pass have drained their block-entity dispatches. So a sample taken
- * during the shadow pass is reused during the main pass of the same frame
- * (correct - the world hasn't changed between them) and a fresh sample is
- * taken on the next frame. There is no need for a stronger TTL because the
- * lightmap only changes over multiple ticks anyway.
+ * <p><b>Invalidation strategy.</b> Entries are stamped with the client game
+ * time (tick counter) and stay valid for {@link #LIGHT_TTL_TICKS} ticks.
+ * The lightmap UV coordinates stored here are raw sky/block light levels —
+ * they do NOT change with the day/night cycle (the lightmap texture applies
+ * that at draw time), so the only real change driver is block updates around
+ * the machine. Resampling each machine's 6+8 positions EVERY frame was pure
+ * CPU waste; a ≤0.75 s staleness after placing/breaking a nearby block is the
+ * deliberate trade-off. A sample taken during the shadow pass is reused by
+ * the main pass of the same frame (and by subsequent frames within the TTL).
  *
- * <p>Periodic pruning every 600 frames (~10 seconds) drops entries belonging
- * to BlockEntities that haven't been rendered recently - typical
+ * <p>Periodic pruning drops entries older than the TTL - typical
  * "I walked past a chunk and now it's behind me" case - keeping the cache
  * bounded in long sessions.
  *
  * <p>Single-threaded: lives entirely on the render thread.
  */
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public final class LightSampleCache {
 
     private static final Long2ObjectOpenHashMap<Entry> CACHE = new Long2ObjectOpenHashMap<>();
-    private static long currentFrame = 0L;
+
+    /**
+     * Record validity horizon in game ticks. Light around a standing machine
+     * changes only when nearby blocks change; resampling 6+8 positions every
+     * frame is a pure CPU cost. 80 ticks = 4.0 s - real light updates are handled
+     * event-driven via ClientChunkCache.onLightUpdate, so this TTL serves as an
+     * absolute safety horizon while eliminating CPU churn.
+     */
+    private static final int LIGHT_TTL_TICKS = 1200;
+
+    /**
+     * Client-side game time (tick counter), updated once per frame in {@link #onFrameStart}.
+     * 0, not MIN_VALUE: the difference {@code currentTick - lastTick} must not overflow,
+     * otherwise records set before the first onFrameStart would be considered valid forever.
+     */
+    private static long currentTick = 0L;
 
     public static final ThreadLocal<Matrix4f> BASE_POSE = ThreadLocal.withInitial(Matrix4f::new);
     public static final ThreadLocal<Boolean> BASE_POSE_SET = ThreadLocal.withInitial(() -> false);
+
+    /**
+     * Reconstructs the block-relative local pose matrix from a BER {@code worldPose}
+     * by stripping the level basis (camera rotation + view bob) and subtracting the
+     * camera-relative block offset. Zero heap allocations.
+     *
+     * <p>L^-1 (FrameViewState): strips R_cam AND the view bob — the local pose is
+     * static while walking, so light sample points stop jittering. (History: an
+     * early extra {@code .invert()} here rotated sample points by R_cam² and the
+     * light "crawled" over the machine on camera rotation.)
+     */
+    public static void computeLocalPose(Matrix4f worldPose, BlockPos anchor, Matrix4f outLocalPose) {
+        if (anchor == null) anchor = BlockPos.ZERO;
+        if (BASE_POSE_SET.get()) {
+            outLocalPose.set(BASE_POSE.get()).invert().mul(worldPose);
+        } else {
+            var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            outLocalPose.set(FrameViewState.poseToWorldRotation()).mul(worldPose);
+            outLocalPose.m30(outLocalPose.m30() - (float) (anchor.getX() - cam.x));
+            outLocalPose.m31(outLocalPose.m31() - (float) (anchor.getY() - cam.y));
+            outLocalPose.m32(outLocalPose.m32() - (float) (anchor.getZ() - cam.z));
+        }
+    }
 
     /**
      * Single-slot fast path. Stores the most recently sampled BE so the typical
@@ -83,14 +125,14 @@ public final class LightSampleCache {
      * weak-ish identity by holding it directly: BEs are render-thread-owned
      * during the dispatch window, so the reference is always live.
      * <p>
-     * Cleared by {@link #onFrameStart} (so a new frame can't read a stale
-     * entry whose contents would no longer match {@code currentFrame}) and by
-     * {@link #invalidateAll} (level swap).
+     * Valid until it expires by tick TTL (see {@link #LIGHT_TTL_TICKS}) -
+     * it survives frames while the light has not actually changed. Cleared by
+     * {@link #invalidateAll} (level change).
      */
     private static BlockEntity lastQueriedBE = null;
     private static float lastBlockU = 0f;
     private static float lastSkyV = 0f;
-    private static long lastFastFrame = -1L;
+    private static long lastFastTick = Long.MIN_VALUE;
 
     /** Reusable scratch position to avoid allocating per sample. */
     private static final BlockPos.MutableBlockPos SAMPLE_POS = new BlockPos.MutableBlockPos();
@@ -105,14 +147,13 @@ public final class LightSampleCache {
     private static final float[] PRECHECK_UV = new float[2];
 
     private static final int PRUNE_EVERY = 600;
-    private static final int STALE_AFTER_FRAMES = 60;
 
     private LightSampleCache() {}
 
     private static final class Entry {
         float blockU;
         float skyV;
-        long lastFrame;
+        long lastTick;
     }
 
     /**
@@ -122,33 +163,38 @@ public final class LightSampleCache {
      * position remains at blockLight=0. In that case we must sample anyway.
      */
     private static boolean shouldSkipSpatialSampling(@Nullable BlockEntity be, int packedLightFallback) {
-        int blockLight = (packedLightFallback & 0xFFFF);
-        if (blockLight != 0) return false;
         if (be == null) return true;
-        getOrSample(be, packedLightFallback, PRECHECK_UV, 0);
-        return Math.round(PRECHECK_UV[0]) <= 0;
+        // Never iterate all multiblock part positions here: this "skip check" ran
+        // 20-50 getLightColor calls to save the 8 corner lookups sample8 makes -
+        // 4-6x MORE work than the sampling it guarded (5.13 ms in Spark). The
+        // 8-corner sample is cheap and its result lives in CACHE8; real light
+        // changes invalidate it event-driven (onSectionLightUpdate/drainLightUpdates),
+        // so just always sample.
+        return false;
     }
 
     /**
-     * Bumps the frame counter; subsequent {@link #getOrSample} calls will
-     * resample once per BlockEntity rather than reusing the previous frame's
-     * value. Periodically prunes stale entries.
+     * Refreshes the tick stamp used for entry validity; runs once per rendered
+     * frame. Periodically prunes entries older than the TTL.
      */
     public static void onFrameStart() {
-        currentFrame++;
-        // Drop the fast-path slot - its frame stamp is now stale, and a new
-        // frame must re-sample anyway. Keeping the BE reference live across
-        // frames would also pin disposed BEs in memory.
-        lastQueriedBE = null;
-        lastFastFrame = -1L;
-        if ((currentFrame % PRUNE_EVERY) == 0) {
+        var level = Minecraft.getInstance().level;
+        if (level != null) {
+            currentTick = level.getGameTime();
+        }
+        if ((currentTick % PRUNE_EVERY) == 0) {
             CACHE.long2ObjectEntrySet().removeIf(e ->
-                e.getValue().lastFrame < currentFrame - STALE_AFTER_FRAMES);
-            // CACHE8 раньше не чистился вообще: ключи включают identityHashCode
-            // рендерера, который меняется на каждом reload/disconnect, — старые записи
-            // становились навсегда недостижимым мусором в map (неограниченный рост).
+                currentTick - e.getValue().lastTick > LIGHT_TTL_TICKS);
+            // CACHE8 keys include the renderer's identityHashCode, which changes
+            // on every reload/disconnect - without pruning, old entries became
+            // permanently unreachable garbage in the map (unbounded growth).
             CACHE8.long2ObjectEntrySet().removeIf(e ->
-                e.getValue().lastFrame < currentFrame - STALE_AFTER_FRAMES);
+                currentTick - e.getValue().lastTick > LIGHT_TTL_TICKS);
+            PACKED_CACHE.long2LongEntrySet().removeIf(e ->
+                currentTick - (e.getLongValue() >>> 32) > LIGHT_TTL_TICKS);
+            // The aux registries index exactly the entries above - prune their
+            // rows where that data died.
+            pruneRegistries();
         }
     }
 
@@ -173,18 +219,23 @@ public final class LightSampleCache {
      */
     public static void getOrSample(@Nullable BlockEntity be, int packedLightFallback,
                                    float[] outUV, int outBase) {
+        // Forced fullbright (part.lightOverride): ignore the world sample,
+        // otherwise glowing parts (crucible melt, InnerBurning) darken at night.
+        if (packedLightFallback == net.minecraft.client.renderer.LightTexture.FULL_BRIGHT) {
+            outUV[outBase]     = (float) (packedLightFallback & 0xFFFF);
+            outUV[outBase + 1] = (float) ((packedLightFallback >>> 16) & 0xFFFF);
+            return;
+        }
         if (be == null) {
             outUV[outBase]     = (float) (packedLightFallback & 0xFFFF);
             outUV[outBase + 1] = (float) ((packedLightFallback >>> 16) & 0xFFFF);
             return;
         }
 
-        // Fast path: same BE as the previous call within the same frame.
-        // Hits ~10/11 times for the Advanced Assembler's per-part dispatch
-        // and ~5/6 times for Chemical Plant - that's the bulk of the
-        // calls into this cache. We avoid `getBlockPos().asLong()` AND the
-        // hashmap lookup AND the Entry field reads.
-        if (be == lastQueriedBE && lastFastFrame == currentFrame) {
+        // Fast path: same BE as the previous call, entry not expired.
+        // Hits for the whole per-part dispatch burst of one machine and,
+        // with the tick TTL, for repeated frames while nothing changed.
+        if (be == lastQueriedBE && currentTick - lastFastTick <= LIGHT_TTL_TICKS) {
             outUV[outBase]     = lastBlockU;
             outUV[outBase + 1] = lastSkyV;
             return;
@@ -192,14 +243,14 @@ public final class LightSampleCache {
 
         long key = be.getBlockPos().asLong();
         Entry cached = CACHE.get(key);
-        if (cached != null && cached.lastFrame == currentFrame) {
+        if (cached != null && currentTick - cached.lastTick <= LIGHT_TTL_TICKS) {
             outUV[outBase]     = cached.blockU;
             outUV[outBase + 1] = cached.skyV;
-            // Promote into fast-path slot for the next 10× burst.
+            // Promote into fast-path slot for the next burst.
             lastQueriedBE = be;
             lastBlockU = cached.blockU;
             lastSkyV = cached.skyV;
-            lastFastFrame = currentFrame;
+            lastFastTick = currentTick;
             return;
         }
 
@@ -213,14 +264,15 @@ public final class LightSampleCache {
         }
         cached.blockU = outUV[outBase];
         cached.skyV   = outUV[outBase + 1];
-        cached.lastFrame = currentFrame;
+        cached.lastTick = currentTick;
+        registerMachineSection(be);
 
         // Same promotion - and since we sampled fresh, the fast-path slot
         // matches `cached` exactly.
         lastQueriedBE = be;
         lastBlockU = cached.blockU;
         lastSkyV = cached.skyV;
-        lastFastFrame = currentFrame;
+        lastFastTick = currentTick;
     }
 
     /**
@@ -241,11 +293,7 @@ public final class LightSampleCache {
 
         AABB bounds;
         try {
-            //? if forge {
-            bounds = be.getRenderBoundingBox();
-            //?} else {
-            /*bounds = new AABB(be.getBlockPos());
-            *///?}
+            bounds = com.hbm_m.client.render.RenderBoundsCache.get(be);
         } catch (Throwable t) {
             bounds = null;
         }
@@ -324,8 +372,12 @@ public final class LightSampleCache {
     public static void invalidateAll() {
         CACHE.clear();
         CACHE8.clear();
+        PACKED_CACHE.clear();
+        section2Machines.clear();
+        machine2Cache8Keys.clear();
+        dirtySections.clear();
         lastQueriedBE = null;
-        lastFastFrame = -1L;
+        lastFastTick = Long.MIN_VALUE;
     }
 
     // ========================================================================
@@ -340,12 +392,202 @@ public final class LightSampleCache {
      */
     private static final class Entry8 {
         final float[] cornerUV = new float[16]; // 8 x (blockU, skyV) interleaved
-        long lastFrame;
+        long lastTick;
     }
 
     private static final Long2ObjectOpenHashMap<Entry8> CACHE8 = new Long2ObjectOpenHashMap<>();
     private static final BlockPos.MutableBlockPos SAMPLE_POS_8 = new BlockPos.MutableBlockPos();
+
+    // ── Event-driven light (CrankShaft LightUpdatedVisualStorage pattern) ──
+    // ClientChunkCache.onLightUpdate mixin feeds dirty sections O(1); the frame
+    // drain invalidates the light caches of machines in those sections and marks
+    // them render-dirty - the next collect re-samples and the record span-diff
+    // uploads only the changed light floats (instead of waiting out the TTL).
+
+    private static final LongOpenHashSet dirtySections = new LongOpenHashSet();
+    /** Machine posKeys per {@code SectionPos.asLong()}. */
+    private static final Long2ObjectOpenHashMap<LongOpenHashSet> section2Machines = new Long2ObjectOpenHashMap<>();
+    /** CACHE8 keys (posKey ^ partHash) registered per machine posKey (CACHE/PACKED are posKey-keyed directly). */
+    private static final Long2ObjectOpenHashMap<LongArrayList> machine2Cache8Keys = new Long2ObjectOpenHashMap<>();
+
+    /** World-event hook (client {@code ClientChunkCache.onLightUpdate}). O(1), main thread. */
+    public static void onSectionLightUpdate(long sectionPosLong) {
+        dirtySections.add(sectionPosLong);
+    }
+
+    private static void registerMachineSection(BlockEntity be) {
+        // Register EVERY chunk section the machine's render bounds overlap, not
+        // just the controller's own section: a torch placed beside the far edge
+        // of a large multiblock crossing a chunk border must still trigger
+        // drainLightUpdates for this machine (mirrors
+        // RetainedInstanceGraph.registerSectionSlots).
+        long posKey = be.getBlockPos().asLong();
+        net.minecraft.world.phys.AABB bounds = RenderBoundsCache.get(be);
+        if (bounds == null) {
+            long sec = net.minecraft.core.SectionPos.of(be.getBlockPos()).asLong();
+            section2Machines.computeIfAbsent(sec, k -> new LongOpenHashSet()).add(posKey);
+            return;
+        }
+        int minSecX = (net.minecraft.util.Mth.floor(bounds.minX) - 1) >> 4;
+        int maxSecX = (net.minecraft.util.Mth.floor(bounds.maxX) + 1) >> 4;
+        int minSecY = Math.max(-4, (net.minecraft.util.Mth.floor(bounds.minY) - 1) >> 4);
+        int maxSecY = Math.min(20, (net.minecraft.util.Mth.floor(bounds.maxY) + 1) >> 4);
+        int minSecZ = (net.minecraft.util.Mth.floor(bounds.minZ) - 1) >> 4;
+        int maxSecZ = (net.minecraft.util.Mth.floor(bounds.maxZ) + 1) >> 4;
+        for (int sx = minSecX; sx <= maxSecX; sx++) {
+            for (int sy = minSecY; sy <= maxSecY; sy++) {
+                for (int sz = minSecZ; sz <= maxSecZ; sz++) {
+                    long sec = net.minecraft.core.SectionPos.asLong(sx, sy, sz);
+                    section2Machines.computeIfAbsent(sec, k -> new LongOpenHashSet()).add(posKey);
+                }
+            }
+        }
+    }
+
+    private static void registerLightUsage(BlockEntity be, long cache8Key) {
+        registerMachineSection(be);
+        LongArrayList keys = machine2Cache8Keys.computeIfAbsent(be.getBlockPos().asLong(), k -> new LongArrayList());
+        if (!keys.contains(cache8Key)) {
+            keys.add(cache8Key);
+        }
+    }
+
+    /**
+     * Drops the auxiliary registries' rows for machines whose entries all
+     * expired. Runs inside the TTL prune block: a
+     * machine still being rendered re-registers on every fresh sample
+     * (registerMachineSection / registerLightUsage), so a fully-expired row
+     * belongs to a machine that stopped rendering. Rows with ANY live entry are
+     * kept - drainLightUpdates routes future light invalidations through them,
+     * so dropping a row early would silently stop event-driven invalidation
+     * until the TTL.
+     */
+    private static void pruneRegistries() {
+        var sit = section2Machines.long2ObjectEntrySet().iterator();
+        while (sit.hasNext()) {
+            var row = sit.next();
+            row.getValue().removeIf(posKey -> !posKeyHasLiveEntry(posKey));
+            if (row.getValue().isEmpty()) {
+                sit.remove();
+            }
+        }
+        var mit = machine2Cache8Keys.long2ObjectEntrySet().iterator();
+        while (mit.hasNext()) {
+            var row = mit.next();
+            row.getValue().removeIf(k -> {
+                Entry8 e8 = CACHE8.get(k);
+                return e8 == null || currentTick - e8.lastTick > LIGHT_TTL_TICKS;
+            });
+            if (row.getValue().isEmpty()) {
+                mit.remove();
+            }
+        }
+    }
+
+    /** Whether the machine at posKey still has at least one live entry (CACHE/PACKED/CACHE8). */
+    private static boolean posKeyHasLiveEntry(long posKey) {
+        Entry e = CACHE.get(posKey);
+        if (e != null && currentTick - e.lastTick <= LIGHT_TTL_TICKS) {
+            return true;
+        }
+        long packed = PACKED_CACHE.get(posKey);
+        if (packed != PACKED_MISS && currentTick - (packed >>> 32) <= LIGHT_TTL_TICKS) {
+            return true;
+        }
+        LongArrayList keys = machine2Cache8Keys.get(posKey);
+        if (keys != null) {
+            for (int i = 0; i < keys.size(); i++) {
+                Entry8 e8 = CACHE8.get(keys.getLong(i));
+                if (e8 != null && currentTick - e8.lastTick <= LIGHT_TTL_TICKS) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Frame drain (frame start): for sections whose light changed - invalidate all
+     * light caches of the machines in them and mark the machines render-dirty.
+     */
+    public static void drainLightUpdates(@Nullable Level level) {
+        if (dirtySections.isEmpty()) {
+            return;
+        }
+        for (LongIterator it = dirtySections.iterator(); it.hasNext(); ) {
+            long sec = it.nextLong();
+            LongOpenHashSet machines = section2Machines.get(sec);
+            if (machines == null) {
+                continue;
+            }
+            for (long posKey : machines) {
+                CACHE.remove(posKey);
+                PACKED_CACHE.remove(posKey);
+                LongArrayList keys = machine2Cache8Keys.get(posKey);
+                if (keys != null) {
+                    for (int i = 0; i < keys.size(); i++) {
+                        CACHE8.remove(keys.getLong(i));
+                    }
+                }
+                if (level != null) {
+                    BlockEntity be = level.getBlockEntity(BlockPos.of(posKey));
+                    if (be instanceof RenderDirtyTracker tracker) {
+                        // Full collect on the next frame: re-samples light, the
+                        // record span-diff uploads only the changed floats.
+                        tracker.markRenderDirty();
+                    }
+                }
+            }
+        }
+        dirtySections.clear();
+        // The flat-light fast-path slot must not serve stale values past invalidation.
+        lastQueriedBE = null;
+    }
     private static final Vector4f CORNER_TMP = new Vector4f();
+
+    /**
+     * Per-BE cache of vanilla packedLight ({@code LevelRenderer.getLightColor}) with the
+     * same tick TTL. The value is packed as {@code (tick << 32) | packed} - no
+     * per-record object allocation. The dispatcher (NucleusDispatcherBypass.collectOne)
+     * used to query it for every machine every frame.
+     */
+    private static final Long2LongOpenHashMap PACKED_CACHE = new Long2LongOpenHashMap();
+    private static final long PACKED_MISS = Long.MIN_VALUE;
+
+    static {
+        PACKED_CACHE.defaultReturnValue(PACKED_MISS);
+    }
+
+    /**
+     * Vanilla packedLight at the BE position with a tick TTL. null/detached BE -
+     * no caching (caller's fallback).
+     */
+    public static int getOrSamplePacked(@Nullable BlockEntity be, int packedLightFallback) {
+        Level level = (be != null) ? be.getLevel() : null;
+        if (level == null) {
+            return packedLightFallback;
+        }
+        long key = be.getBlockPos().asLong();
+        long v = PACKED_CACHE.get(key);
+        if (v != PACKED_MISS && currentTick - (v >>> 32) <= LIGHT_TTL_TICKS) {
+            return (int) v;
+        }
+        int fresh = LevelRenderer.getLightColor(level, be.getBlockState(), be.getBlockPos());
+        if ((fresh & 0xFFFF) == 0) {
+            // Machine controller block is opaque/solid, so vanilla LevelRenderer reports 0 block light.
+            // Sample exterior face light so torches adjacent to the machine illuminate it!
+            // PRECHECK_UV is consumed synchronously below (not retained, not nested) -
+            // reuse it instead of allocating a 2-float array per miss.
+            float[] uv = PRECHECK_UV;
+            sampleSmoothLightUV(be, fresh, uv, 0);
+            int blockU = Math.round(uv[0]);
+            int skyV = Math.round(uv[1]);
+            fresh = (blockU & 0xFFFF) | ((skyV & 0xFFFF) << 16);
+        }
+        PACKED_CACHE.put(key, (currentTick << 32) | (fresh & 0xFFFFFFFFL));
+        registerMachineSection(be);
+        return fresh;
+    }
 
     /**
      * Distance to pull each corner sample toward the bbox interior before
@@ -428,40 +670,58 @@ public final class LightSampleCache {
                                     float[] objBbox, BlockPos blockPos, Matrix4f localPose,
                                     int packedLightFallback, float[] out16) {
 
+        // Forced fullbright (part.lightOverride): no 8-corner sample,
+        // otherwise glowing parts (crucible melt, InnerBurning) darken at night.
+        if (packedLightFallback == net.minecraft.client.renderer.LightTexture.FULL_BRIGHT) {
+            fillFallback8(packedLightFallback, out16);
+            return;
+        }
+
         if (com.hbm_m.client.render.SingleMeshVboRenderer.isWorldMissileOverlayDraw()) {
             fillFallback8(packedLightFallback, out16);
             return;
         }
 
-        // Preserve the cheap “no block light -> no spatial sampling” fast path,
-        // but make it adaptive for very large machines where remote block light
-        // can exist even if the controller position is dark.
-        if (shouldSkipSpatialSampling(be, packedLightFallback)) {
-            fillFallback8(packedLightFallback, out16);
-            return;
-        }
-        
-        Level level = (be != null) ? be.getLevel() : null;
-        if (level == null || blockPos == null || localPose == null || objBbox == null) {
+        if (be == null || blockPos == null || localPose == null || objBbox == null) {
             fillFallback8(packedLightFallback, out16);
             return;
         }
 
         long key = be.getBlockPos().asLong() ^ partIdentityHash;
         Entry8 cached = CACHE8.get(key);
-        if (cached != null && cached.lastFrame == currentFrame) {
+        if (cached != null && currentTick - cached.lastTick <= LIGHT_TTL_TICKS) {
             System.arraycopy(cached.cornerUV, 0, out16, 0, 16);
             return;
         }
 
-        sample8(level, objBbox, blockPos, localPose, packedLightFallback, out16);
+        // Ensure fallback includes exterior face light if controller block light is occluded
+        int effectiveFallback = packedLightFallback;
+        if ((effectiveFallback & 0xFFFF) == 0 && be != null) {
+            getOrSample(be, packedLightFallback, PRECHECK_UV, 0);
+            effectiveFallback = (Math.round(PRECHECK_UV[0]) & 0xFFFF) | ((Math.round(PRECHECK_UV[1]) & 0xFFFF) << 16);
+        }
+
+        // Preserve cheap fast path when there is genuinely zero block light on or around the machine
+        if (shouldSkipSpatialSampling(be, effectiveFallback)) {
+            fillFallback8(effectiveFallback, out16);
+            return;
+        }
+
+        Level level = be.getLevel();
+        if (level == null) {
+            fillFallback8(effectiveFallback, out16);
+            return;
+        }
+
+        sample8(level, be, objBbox, blockPos, localPose, effectiveFallback, out16);
 
         if (cached == null) {
             cached = new Entry8();
             CACHE8.put(key, cached);
         }
+        registerLightUsage(be, key);
         System.arraycopy(out16, 0, cached.cornerUV, 0, 16);
-        cached.lastFrame = currentFrame;
+        cached.lastTick = currentTick;
     }
 
     /**
@@ -478,7 +738,7 @@ public final class LightSampleCache {
         getOrSample8(be, partIdentityHash, objBbox, blockPos, localPose, packedLightFallback, out16);
     }
 
-    private static void sample8(Level level, float[] objBbox, BlockPos blockPos,
+    private static void sample8(Level level, @Nullable BlockEntity be, float[] objBbox, BlockPos blockPos,
                                 Matrix4f localPose, int packedLightFallback, float[] out16) {
         final float minX = objBbox[0], minY = objBbox[1], minZ = objBbox[2];
         final float maxX = objBbox[3], maxY = objBbox[4], maxZ = objBbox[5];
@@ -486,29 +746,21 @@ public final class LightSampleCache {
         final int bpy = blockPos.getY();
         final int bpz = blockPos.getZ();
 
-        // Pull each corner toward the bbox centre by SAMPLE_INSET so the
-        // floored block index is stable against float32 drift and lands in
-        // the block the model actually occupies on that side. See the constant's
-        // javadoc for the full rationale. Clamp to half-span so very thin
-        // bboxes don't produce insets that cross the centre.
-        float insetX = Math.min(SAMPLE_INSET, (maxX - minX) * 0.5f);
-        float insetY = Math.min(SAMPLE_INSET, (maxY - minY) * 0.5f);
-        float insetZ = Math.min(SAMPLE_INSET, (maxZ - minZ) * 0.5f);
-        final float minXs = minX + insetX, maxXs = maxX - insetX;
-        final float minYs = minY + insetY, maxYs = maxY - insetY;
-        final float minZs = minZ + insetZ, maxZs = maxZ - insetZ;
-
         for (int i = 0; i < 8; i++) {
-            float ox = ((i & 1) == 0) ? minXs : maxXs;
-            float oy = ((i & 2) == 0) ? minYs : maxYs;
-            float oz = ((i & 4) == 0) ? minZs : maxZs;
+            boolean isMaxX = (i & 1) != 0;
+            boolean isMaxY = (i & 2) != 0;
+            boolean isMaxZ = (i & 4) != 0;
 
-            // Transform the object-space corner through the BE-local pose.
-            // Result is small floats (typically within [-1..+N] for a BE of
-            // size N blocks), so float precision is more than sufficient and
-            // the floored value is stable frame-to-frame regardless of where
-            // the player stands in the world.
-            CORNER_TMP.set(ox, oy, oz, 1f);
+            // Probe outward past the corner to sample exterior air adjacent to the machine
+            float stepX = (maxX > minX) ? (isMaxX ? 0.1f : -0.1f) : 0.0f;
+            float stepY = (maxY > minY) ? (isMaxY ? 0.1f : -0.1f) : 0.0f;
+            float stepZ = (maxZ > minZ) ? (isMaxZ ? 0.1f : -0.1f) : 0.0f;
+
+            float ox = (isMaxX ? maxX : minX) + stepX;
+            float oy = (isMaxY ? maxY : minY) + stepY;
+            float oz = (isMaxZ ? maxZ : minZ) + stepZ;
+
+            CORNER_TMP.set(ox, oy, oz, 1.0f);
             localPose.transform(CORNER_TMP);
 
             int wx = bpx + Mth.floor(CORNER_TMP.x);
@@ -516,30 +768,83 @@ public final class LightSampleCache {
             int wz = bpz + Mth.floor(CORNER_TMP.z);
             SAMPLE_POS_8.set(wx, wy, wz);
 
-            int packed;
+            int packed = -1;
             try {
                 BlockState state = level.getBlockState(SAMPLE_POS_8);
-                if (state.isSolidRender(level, SAMPLE_POS_8)) {
-                    // Inside an opaque block: sampling there returns 0 which
-                    // would punch a dark corner into an otherwise lit model.
-                    // Use the fallback (BE's own packed light) instead.
-                    packed = packedLightFallback;
-                } else {
+                if (!state.isSolidRender(level, SAMPLE_POS_8)) {
                     packed = LevelRenderer.getLightColor(level, SAMPLE_POS_8);
+                } else {
+                    // Candidate 1 was solid (e.g. floor under the machine or a wall).
+                    // Candidate 2: for bottom corners, probe ground-level air (wy = bpy) above the floor
+                    if (!isMaxY || wy < bpy) {
+                        SAMPLE_POS_8.set(wx, bpy, wz);
+                        state = level.getBlockState(SAMPLE_POS_8);
+                        if (!state.isSolidRender(level, SAMPLE_POS_8)) {
+                            packed = LevelRenderer.getLightColor(level, SAMPLE_POS_8);
+                        }
+                    }
+                    // Candidate 3: relax X axis 1 block towards machine interior
+                    if (packed < 0) {
+                        int rx = wx + (CORNER_TMP.x > 0.0f ? -1 : 1);
+                        SAMPLE_POS_8.set(rx, (!isMaxY || wy < bpy) ? bpy : wy, wz);
+                        state = level.getBlockState(SAMPLE_POS_8);
+                        if (!state.isSolidRender(level, SAMPLE_POS_8)) {
+                            packed = LevelRenderer.getLightColor(level, SAMPLE_POS_8);
+                        }
+                    }
+                    // Candidate 4: relax Z axis 1 block towards machine interior
+                    if (packed < 0) {
+                        int rz = wz + (CORNER_TMP.z > 0.0f ? -1 : 1);
+                        SAMPLE_POS_8.set(wx, (!isMaxY || wy < bpy) ? bpy : wy, rz);
+                        state = level.getBlockState(SAMPLE_POS_8);
+                        if (!state.isSolidRender(level, SAMPLE_POS_8)) {
+                            packed = LevelRenderer.getLightColor(level, SAMPLE_POS_8);
+                        }
+                    }
+                    // Candidate 5: probe the machine's actual corner block cell (e.g. UniversalMachinePart or DoorBlock)
+                    if (packed < 0) {
+                        float cx = isMaxX ? (maxX - 0.5f) : (minX + 0.5f);
+                        float cy = isMaxY ? (maxY - 0.5f) : (minY + 0.5f);
+                        float cz = isMaxZ ? (maxZ - 0.5f) : (minZ + 0.5f);
+                        CORNER_TMP.set(cx, cy, cz, 1.0f);
+                        localPose.transform(CORNER_TMP);
+                        SAMPLE_POS_8.set(bpx + Mth.floor(CORNER_TMP.x), bpy + Mth.floor(CORNER_TMP.y), bpz + Mth.floor(CORNER_TMP.z));
+                        state = level.getBlockState(SAMPLE_POS_8);
+                        if (!state.isSolidRender(level, SAMPLE_POS_8)) {
+                            packed = LevelRenderer.getLightColor(level, SAMPLE_POS_8);
+                        }
+                    }
                 }
             } catch (Throwable t) {
                 packed = packedLightFallback;
             }
 
-            // Keep UV2 RAW here. Iris/Embeddium shader packs feed vaUV2 into the
-            // vanilla lightmap sampler, which already applies day/night sky
-            // attenuation. Pre-darkening sky light here makes the pack apply that
-            // attenuation twice, producing the "machines are too dark with shaders"
-            // regression. Our own block_lit shader now applies the sky scale
-            // explicitly on its path instead.
-            out16[i * 2]     = (float) (packed & 0xFFFF);
-            out16[i * 2 + 1] = (float) ((packed >>> 16) & 0xFFFF);
+            if (packed < 0) {
+                packed = packedLightFallback;
+            }
+
+            int blockU = packed & 0xFFFF;
+            int skyV = (packed >>> 16) & 0xFFFF;
+
+            // Non-darkening invariant: sky light must never collapse below fallback sky light
+            // when the machine is exposed to sky
+            int fallbackSky = (packedLightFallback >>> 16) & 0xFFFF;
+            if (fallbackSky > 0 && skyV < fallbackSky && (isMaxY || wy >= bpy)) {
+                skyV = Math.max(skyV, fallbackSky);
+            }
+
+            out16[i * 2]     = (float) blockU;
+            out16[i * 2 + 1] = (float) skyV;
         }
+
+        // NOTE: the former per-multiblock part-block aggregation (iterating ALL
+        // structure blocks with getLightColor per corner refresh) is gone: it made
+        // every cache miss 4-6x more expensive than the 8 corner samples it
+        // decorated. Corner samples now come purely from the bbox corner
+        // positions; light changes anywhere in the machine's overlapping chunk
+        // sections invalidate the cache event-driven
+        // (onSectionLightUpdate -> drainLightUpdates, sections registered by
+        // registerMachineSection over the full render bounds).
     }
 
     private static void fillFallback8(int packedLightFallback, float[] out16) {

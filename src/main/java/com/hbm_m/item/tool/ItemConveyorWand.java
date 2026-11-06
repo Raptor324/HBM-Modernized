@@ -221,16 +221,14 @@ public class ItemConveyorWand extends Item implements ILookOverlay {
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean inHand) {
         if (!(entity instanceof Player player)) return;
 
-        if (!inHand && StackNbt.has(stack)) {
-            ItemStack held = player.getMainHandItem();
-            if (held.isEmpty() || held.getItem() != this) {
-                StackNbt.set(stack, null);
-                if (world.isClientSide) com.hbm_m.client.render.ConveyorWandPreview.clear();
-            }
+        boolean isHeld = player.getMainHandItem() == stack || player.getOffhandItem() == stack;
+        if (!isHeld && StackNbt.has(stack)) {
+            StackNbt.set(stack, null);
+            if (world.isClientSide) com.hbm_m.client.render.ConveyorWandPreview.clear();
         }
 
         // clientside prediction only
-        if (world.isClientSide && inHand) {
+        if (world.isClientSide && isHeld) {
             com.hbm_m.client.render.ConveyorWandPreview.update(this, stack, world, player);
         }
     }

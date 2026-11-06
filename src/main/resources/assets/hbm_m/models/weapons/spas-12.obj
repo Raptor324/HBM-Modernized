@@ -1,5 +1,7 @@
 # Blender 4.0.1
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o MainBody
 v 0.363464 1.792314 0.108580
 v -0.371539 1.792314 0.108580

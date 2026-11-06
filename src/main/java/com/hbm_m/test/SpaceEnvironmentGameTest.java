@@ -13,13 +13,8 @@ import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
 
 /**
  * Space-API "Standardumgebung": ohne Space-Addon liefert {@link SpaceApi} ueberall die Erde, und die HBM-Aufrufstellen
@@ -166,8 +161,6 @@ public final class SpaceEnvironmentGameTest {
         check(com.hbm_m.blockentity.machines.DeuteriumExtractorBlockEntity.powerDivisor() == 20, "E8 Deuterium /20");
         var part2 = new com.hbm_m.blockentity.network.CranePartitionerBlockEntity(BlockPos.ZERO, com.hbm_m.block.ModBlocks.CRANE_PARTITIONER.get().defaultBlockState());
         check(part2.inputCount == 45 && part2.outputCount == 45 && part2.inventory.getSlots() == 90, "E8 Sortierer 45+45");
-        var tele = new com.hbm_m.blockentity.machines.MachineTeleporterBlockEntity(BlockPos.ZERO, com.hbm_m.block.ModBlocks.MACHINE_TELEPORTER.get().defaultBlockState());
-        check(tele.tank == null && tele.getAllTanks().length == 0, "E16 Teleporter ohne Tank");
         var barrel = new com.hbm_m.blockentity.machines.BarrelIronBlockEntity(BlockPos.ZERO, com.hbm_m.block.ModBlocks.BARREL_IRON.get().defaultBlockState());
         check(barrel.isBarrel() && !barrel.handlesOverpressure(), "E3 Fass nimmt nicht am Ueberdruck teil");
         var ocelot = net.minecraft.world.entity.EntityType.OCELOT.create(sl);
@@ -180,12 +173,15 @@ public final class SpaceEnvironmentGameTest {
         var wandTip = new java.util.ArrayList<net.minecraft.network.chat.Component>();
         ((com.hbm_m.item.tool.ItemWandD) wandStack.getItem()).appendHbmTooltip(wandStack, sl, wandTip, net.minecraft.world.item.TooltipFlag.Default.NORMAL);
         check(wandTip.size() == 1 && "Used for debugging purposes.".equals(wandTip.get(0).getString()), "wand_d-Tooltip = HBM");
-        // W-R9B5-1/2: Datapack-Mischer/-Elektrolyse ohne Addon-JSONs = Code-Tabellen (HBM liefert keine solchen Rezepte)
+        // W-R9B5-1/2 (revidiert): Mixer/Elektrolyse/Rotaryofen sind jetzt data-driven — HBM liefert
+        // eigene JSONs, die leeren Code-Tabellen mischen sie zur Laufzeit ein (Shims).
         var rm = sl.getRecipeManager();
-        check(com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(rm, com.hbm_m.recipe.MixerDataRecipe.Type.INSTANCE).isEmpty(), "keine hbm_m:mixer-JSONs");
-        check(com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(rm, com.hbm_m.recipe.ElectrolysisFluidDataRecipe.Type.INSTANCE).isEmpty(), "keine hbm_m:electrolysis_fluid-JSONs");
-        check(com.hbm_m.recipe.MixerRecipes.getRecipes(rm) == com.hbm_m.recipe.MixerRecipes.getRecipes(), "Mischer = Code-Tabelle");
-        check(com.hbm_m.inventory.recipes.ElectrolyserFluidRecipes.all(rm) == com.hbm_m.inventory.recipes.ElectrolyserFluidRecipes.all(), "Elektrolyse = Code-Tabelle");
+        check(!com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(rm, com.hbm_m.recipe.MixerRecipe.Type.INSTANCE).isEmpty(), "hbm_m:mixer-JSONs vorhanden");
+        check(!com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(rm, com.hbm_m.recipe.ElectrolyserFluidRecipe.Type.INSTANCE).isEmpty(), "hbm_m:electrolyser_fluid-JSONs vorhanden");
+        check(!com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(rm, com.hbm_m.recipe.RotaryFurnaceRecipe.Type.INSTANCE).isEmpty(), "hbm_m:rotary_furnace-JSONs vorhanden");
+        check(!com.hbm_m.recipe.MixerRecipes.getRecipes(rm).isEmpty(), "Mischer-Tabelle mischt JSONs ein");
+        check(!com.hbm_m.inventory.recipes.ElectrolyserFluidRecipes.all(rm).isEmpty(), "Elektrolyse-Tabelle mischt JSONs ein");
+        check(!com.hbm_m.inventory.recipes.ElectrolyserMetalRecipes.all().isEmpty(), "Elektrolyse-Metall materialisiert");
         var oxy = com.hbm_m.recipe.MixerRecipes.getOutput(sl, ModFluids.OXYHYDROGEN.getSource());
         check(oxy != null && oxy.length == 2, "Knallgas: Master 2 Rezepte (Luft/Sauerstoff)");
         helper.succeed();

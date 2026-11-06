@@ -9,22 +9,18 @@ import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.util.LongDataPacker; // <-- Убедись, что этот импорт есть
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if fabric {
-/*import team.reborn.energy.api.EnergyStorage;
-*///?}
+import com.hbm_m.platform.ModItemStackHandler;
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
@@ -55,21 +51,23 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
         // Добавляем слоты машины (без Forge-only SlotItemHandler).
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
-        var handler = this.blockEntity != null ? this.blockEntity.getInventory() : new DummyItemStackHandler(17);
+        var handler = this.blockEntity != null ? this.blockEntity.getInventory() : new ModItemStackHandler.Dummy(17);
         var container = new ModItemStackHandlerContainer(handler, this.blockEntity != null ? this.blockEntity::setChanged : null);
 
         this.addSlot(new Slot(container, 0, 152, 81) { // Energy
             @Override public boolean mayPlace(ItemStack stack) {
-                if (ItemEnergyAccess.getHbmProvider(stack).isPresent() || ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
-                //? if neoforge {
-                /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
-                *///?}
-                return false;
+                return ItemEnergyAccess.isEnergyItem(stack);
             }
         });
         this.addSlot(new Slot(container, 1, 35, 126)); // Blueprint
-        this.addSlot(new Slot(container, 2, 152, 108)); // Upgrade
-        this.addSlot(new Slot(container, 3, 152, 126)); // Upgrade
+        // Slots 2-3 are OUTPUT_SLOT_START..END in the BE (MachineAdvancedAssemblerBlockEntity):
+        // extract-only, same as slot 16.
+        this.addSlot(new Slot(container, 2, 152, 108) { // Output
+            @Override public boolean mayPlace(ItemStack stack) { return false; }
+        });
+        this.addSlot(new Slot(container, 3, 152, 126) { // Output
+            @Override public boolean mayPlace(ItemStack stack) { return false; }
+        });
         for (int i = 0; i < 4; ++i) for (int j = 0; j < 3; ++j) { // Input
             this.addSlot(new Slot(container, 4 + (i * 3) + j, 8 + j * 18, 18 + i * 18));
         }
@@ -97,7 +95,7 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
         if (playerInventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("BlockEntity не найден или имеет неверный тип!");
+        throw new MenuBlockEntityMissingException("BlockEntity не найден или имеет неверный тип!");
     }
 
     @Override
@@ -180,8 +178,10 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
 
     @Override
     public boolean stillValid(@NotNull Player pPlayer) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, pPlayer, 128.0D);
+        if (blockEntity == null) {
+            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
+        }
+        return MenuReach.stillValid(pPlayer, blockEntity, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get());
     }
 
     /** 1:1 {@code ContainerMachineAssemblyMachine.transferStackInSlot}. */
@@ -204,8 +204,6 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
                 if (!this.moveItemStackTo(slotStack, 0, 1, false)) return ItemStack.EMPTY;
             } else if (slotOriginal.getItem() instanceof com.hbm_m.item.industrial.ItemBlueprints) {
                 if (!this.moveItemStackTo(slotStack, 1, 2, false)) return ItemStack.EMPTY;
-            } else if (slotOriginal.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
-                if (!this.moveItemStackTo(slotStack, 2, 4, false)) return ItemStack.EMPTY;
             } else {
                 if (!this.moveItemStackTo(slotStack, 4, 16, false)) return ItemStack.EMPTY;
             }

@@ -106,7 +106,15 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
     }
 
     @Override
+    public boolean hasControllerEnergy() {
+        return true;
+    }
+
+    @Override
     public PartRole getPartRole(BlockPos localOffset) {
+        if (localOffset.equals(BlockPos.ZERO)) {
+            return PartRole.ENERGY_CONNECTOR;
+        }
         if (structureHelper != null) {
             return structureHelper.resolvePartRole(localOffset, this);
         }
@@ -136,7 +144,7 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override

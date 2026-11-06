@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import com.hbm_m.platform.ModItemStackHandler;
 public class MachineModuleChemplant extends MachineModuleBase<ChemicalPlantRecipe> {
 
     private final FluidTank[] inputTanks;
@@ -64,12 +65,24 @@ public class MachineModuleChemplant extends MachineModuleBase<ChemicalPlantRecip
 
         boolean wasProcessing = this.didProcess;
         super.update(speed, powerMul, extraCondition, blueprint);
-        if (wasProcessing && !this.didProcess) {
+        // didProcess drives the client-side anim/sound (see
+        // MachineChemicalPlantBlockEntity#isChemplantEffectsActive), so BOTH edges must
+        // reach the client: true->false (machine stalled) and false->true (machine resumed).
+        // Strictly edge-triggered: steady state syncs nothing extra.
+        if (wasProcessing != this.didProcess) {
             this.needsSync = true;
         }
         return needsSync;
     }
 
+    @Override
+    protected boolean requiresFullEnergyBufferToStart() {
+        // As the original 1.7.10 chemical plant: ModuleMachineBase.canProcess only checks
+        // power >= recipe.power for the current tick, never the whole cycle. Requiring the full
+        // cycle up front stalls the plant outright whenever energyPerTick * duration exceeds its
+        // buffer. MachineModuleChemFactoryLane, the same machine family, already returns false.
+        return false;
+    }
 
     @Override
     protected void onRecipeChanged(@Nullable ChemicalPlantRecipe previous, @Nullable ChemicalPlantRecipe current) {

@@ -11,8 +11,9 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-/** Direktport der Slot-/Tank-Koordinaten aus {@code GUILiquefactor} (1.7.10 Original), inkl. Lade-Symbol (176,52 / 9x12). */
 public class GUIMachineLiquefactor extends GuiInfoScreen<MachineLiquefactorMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -56,7 +57,7 @@ public class GUIMachineLiquefactor extends GuiInfoScreen<MachineLiquefactorMenu>
             guiGraphics.blit(TEXTURE, leftPos + ENERGY_X, topPos + ENERGY_Y + TANK_H - i, 176, TANK_H - i, TANK_W, i);
             // Original: Blitzsymbol, sobald Strom anliegt
             guiGraphics.blit(TEXTURE, leftPos + 138, topPos + 4, 176, 52, 9, 12);
-        }
+       }
 
         int progressWidth = be.getProgressScaled(PROGRESS_MAX_WIDTH);
         if (progressWidth > 0) {

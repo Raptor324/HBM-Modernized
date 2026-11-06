@@ -14,6 +14,7 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineCraneExtractorMenu extends AbstractContainerMenu {
 
@@ -85,7 +86,7 @@ public class MachineCraneExtractorMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineCraneExtractorBlockEntity extractorBlockEntity) {
             return extractorBlockEntity;
         }
-        throw new IllegalStateException("No MachineCraneExtractorBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":crane_extractor_menu");
+        throw new MenuBlockEntityMissingException("No MachineCraneExtractorBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":crane_extractor_menu");
     }
 
     public MachineCraneExtractorBlockEntity getBlockEntity() {
@@ -94,19 +95,7 @@ public class MachineCraneExtractorMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
-    }
-
-    /** Original {@code ContainerCraneExtractor.slotClick}: Filterplaetze als Geister. */
-    @Override
-    public void clicked(int slotId, int button, ClickType clickType, Player player) {
-        if (blockEntity != null && PatternSlot.handle(this, slotId, button, clickType, player, FILTER_START, FILTER_END,
-                blockEntity::nextMode, (i, s) -> blockEntity.getMatcher().initPattern(i, s))) return;
-        super.clicked(slotId, button, clickType, player);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

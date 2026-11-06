@@ -1,7 +1,5 @@
 package com.hbm_m.util;
 
-import com.hbm_m.platform.EffectHooks;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -75,8 +73,8 @@ public final class ContaminationUtil {
     public static boolean neutronActivateItem(net.minecraft.world.item.ItemStack stack, float rad, float decay) {
         if (stack == null || stack.isEmpty() || stack.getCount() != 1 || isRadItem(stack)) return false;
 
-        // NBT ueber PlatformHooks: 1.21 hat kein com.hbm_m.platform.PlatformHooks.getItemTag(ItemStack)/setTag() mehr.
-        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        // NBT ueber PlatformHooks: 1.21 hat kein com.hbm_m.platform.StackNbt.read(ItemStack)/setTag() mehr.
+        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.StackNbt.read(stack);
         float prevActivation = tag != null && tag.contains(NTM_NEUTRON_NBT_KEY)
                 ? tag.getFloat(NTM_NEUTRON_NBT_KEY) : 0F;
 
@@ -84,14 +82,14 @@ public final class ContaminationUtil {
 
         if (newActivation < 0.0001F) {
             if (prevActivation > 0 && tag != null) {
-                com.hbm_m.platform.PlatformHooks.remove(stack, NTM_NEUTRON_NBT_KEY);
+                com.hbm_m.platform.StackNbt.removeKey(stack, NTM_NEUTRON_NBT_KEY);
                 return true;
             }
             return false;
         }
 
         if (Math.abs(newActivation - prevActivation) > 1e-6F) {
-            com.hbm_m.platform.PlatformHooks.editItemTag(stack,
+            com.hbm_m.platform.StackNbt.edit(stack,
                     t -> t.putFloat(NTM_NEUTRON_NBT_KEY, newActivation));
             return true;
         }
@@ -101,13 +99,13 @@ public final class ContaminationUtil {
     /** The whole stack's induced dose (the stored per-item value times the count). */
     public static float getNeutronRads(net.minecraft.world.item.ItemStack stack) {
         if (stack == null || stack.isEmpty() || isRadItem(stack)) return 0F;
-        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.StackNbt.read(stack);
         if (tag == null || !tag.contains(NTM_NEUTRON_NBT_KEY)) return 0F;
         return tag.getFloat(NTM_NEUTRON_NBT_KEY) * stack.getCount();
     }
 
     public static boolean isContaminated(net.minecraft.world.item.ItemStack stack) {
-        net.minecraft.nbt.CompoundTag tag = stack == null ? null : com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        net.minecraft.nbt.CompoundTag tag = stack == null ? null : com.hbm_m.platform.StackNbt.read(stack);
         return tag != null && tag.contains(NTM_NEUTRON_NBT_KEY);
     }
 
@@ -149,7 +147,7 @@ public final class ContaminationUtil {
         }
 
         // Original: if(((EntityLivingBase)e).isPotionActive(HbmPotion.mutation)) return true;
-        if (living.hasEffect(EffectHooks.of(com.hbm_m.effect.ModEffects.MUTATION))) {
+        if (com.hbm_m.platform.EffectHooks.hasEffect(living, com.hbm_m.effect.ModEffects.MUTATION)) {
             return true;
         }
 
@@ -197,7 +195,7 @@ public final class ContaminationUtil {
             return;
         }
         // Original: if(entity.isPotionActive(HbmPotion.stability.id)) return;
-        if (living.hasEffect(EffectHooks.of(com.hbm_m.effect.ModEffects.STABILITY))) {
+        if (com.hbm_m.platform.EffectHooks.hasEffect(living, com.hbm_m.effect.ModEffects.STABILITY)) {
             return;
         }
         if (living instanceof Player player && ArmorUtil.checkForDigamma(player)) {

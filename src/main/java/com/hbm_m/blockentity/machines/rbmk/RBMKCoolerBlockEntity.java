@@ -95,7 +95,7 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity
      */
     private void exchangeFluids(Level level) {
         BlockPos pos = getBlockPos();
-        trySubscribe(coldTank.getTankType(), level, pos.below(), Direction.DOWN);
+        trySubscribe(coldTank, level, pos.below(), Direction.DOWN);
 
         if (hotTank.getFill() <= 0) return;
         for (com.mojang.datafixers.util.Pair<BlockPos, Direction> target : getOutputPos(level)) {
@@ -152,15 +152,13 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?} elif neoforge {
-    /*/^* Bottom face takes cold coolant, every other face hands out the warm coolant. ^/
-    @Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
-            if (side == Direction.DOWN || side == null) return com.hbm_m.platform.LazyCap.ofObj(coldTank.getCapability()).cast();
-            return com.hbm_m.platform.LazyCap.ofObj(hotTank.getCapability()).cast();
-        }
-        return super.getHbmCapability(cap, side);
+    //?}
+
+    //? if neoforge {
+    /*@Override
+    public @org.jetbrains.annotations.Nullable Object getFluidHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        if (side == Direction.DOWN || side == null) return coldTank.getCapability();
+        return hotTank.getCapability();
     }
     *///?}
 

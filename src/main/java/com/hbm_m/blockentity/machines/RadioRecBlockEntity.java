@@ -17,8 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Port of {@code TileEntityRadioRec} (1.7.10 Original) - "FM Radio". Listens on an RTTY channel
  * ({@link RTTYNetwork}) and, on receiving a fresh signal, plays a note-block sound at its position.
  * Das Signal wird wie im Original ueber {@link com.hbm_m.util.NoteBuilder} in Notenblock-Toene zerlegt
- * (harp/bd/snare/hat/bassattack), Tonhoehe {@code 2^((note + 12 * oktave - 12) / 12)}, Lautstaerke 3.
- */
+ * (harp/bd/snare/hat/bassattack), Tonhoehe {@code 2^((note + 12 * oktave - 12) / 12)}, Lautstaerke 3. */
 public class RadioRecBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IRadioTorchConfigurable {
 
     public String channel = "";
@@ -52,8 +51,7 @@ public class RadioRecBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntit
                 }
                 float f = (float) Math.pow(2.0D, (double) (noteId - 12) / 12.0D);
                 level.playSound(null, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, s, SoundSource.RECORDS, 3.0F, f);
-            }
-        }
+            }        }
     }
 
     @Override

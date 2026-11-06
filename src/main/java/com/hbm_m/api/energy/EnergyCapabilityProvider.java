@@ -7,6 +7,7 @@ import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.StackNbt;
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
@@ -41,7 +42,7 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
             return storage.cast();
         }
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY) {
-            return storage.lazyMap(s -> new LongEnergyWrapper(s, LongEnergyWrapper.BitMode.LOW)).cast();
+            return storage.lazyMap(s -> new LongEnergyWrapper(s)).cast();
         }
 
         return LazyOptional.empty();
@@ -78,7 +79,7 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
             if (isPoweredArmor()) {
                 return poweredArmor().getCharge(stack);
             }
-            return PlatformHooks.getLong(stack, "energy");
+            return StackNbt.getLong(stack, "energy");
         }
 
         @Override
@@ -88,7 +89,7 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
             if (isPoweredArmor()) {
                 poweredArmor().setCharge(stack, clamped);
             } else {
-                PlatformHooks.putLong(stack, "energy", clamped);
+                StackNbt.putLong(stack, "energy", clamped);
             }
         }
 

@@ -1,18 +1,18 @@
 package com.hbm_m.blockentity.machines;
 
-import com.hbm_m.platform.RenderBounds;
-
-import com.hbm_m.platform.PlatformHooks;
-
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
+import com.hbm_m.api.tile.IControlReceiver;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.interfaces.IFluidCopiable;
+import com.hbm_m.interfaces.IUpgradeInfoProvider;
 import com.hbm_m.inventory.UpgradeManager;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -24,6 +24,7 @@ import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous;
 import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous_ART;
 import com.hbm_m.inventory.menu.MachineFlareStackMenu;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -40,7 +41,9 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code TileEntityMachineGasFlare}: Gasfackel mit Durchflussventil ({@code isOn}) und Zuendung ({@code doesBurn}).
@@ -50,9 +53,9 @@ import net.minecraft.world.phys.AABB;
  * (+100 % Durchsatz je Stufe), Effizienz (+33 % Energie je Stufe). Anschluesse zwei Bloecke von der Mitte entfernt.
  */
 public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2,
-        com.hbm_m.api.tile.IControlReceiver, com.hbm_m.interfaces.IUpgradeInfoProvider {
+        IControlReceiver, IUpgradeInfoProvider, IFluidCopiable {
 
-    public static final long maxPower = 100000;
+    public static final long maxPower = 100_000L;
 
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_FLUID_IN = 1;
@@ -67,7 +70,7 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
         VALID_UPGRADES.put(UpgradeType.EFFECT, 3);
     }
 
-    public final FluidTank tank = new FluidTank(ModFluids.GAS.getSource(), 64000);
+    public final FluidTank tank = new FluidTank(ModFluids.GAS.getSource(), 64_000);
     public boolean isOn = false;
     public boolean doesBurn = false;
     protected int fluidUsed = 0;
@@ -84,6 +87,10 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
     public long getPowerScaled(long i) {
         return (energy * i) / maxPower;
     }
+
+    public boolean isOn() { return isOn; }
+    public boolean doesBurn() { return doesBurn; }
+    public long getLastOutput() { return output; }
 
     @Override
     public boolean hasPermission(Player player) {
@@ -185,7 +192,7 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
 
                     List<Entity> list = world.getEntitiesOfClass(Entity.class, new AABB(pos.getX() - 1, pos.getY() + 12, pos.getZ() - 2, pos.getX() + 2, pos.getY() + 17, pos.getZ() + 2));
                     for (Entity e : list) {
-                        PlatformHooks.setSecondsOnFire(e, 5);
+                        MobHooks.setSecondsOnFire(e, 5);
                         e.hurt(world.damageSources().onFire(), 5F);
                     }
 
@@ -202,12 +209,15 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
         // Original: Library.chargeItemsFromTE(slots, 0, power, maxPower)
         chargeItemInSlot(SLOT_BATTERY);
 
-        setChanged();
-        sendUpdateToClient();
+        // Anti-sync-spam hash gate
+        Fluid tankType = tank.getTankType();
+        long lo = (isOn ? 1L : 0L) | (doesBurn ? 2L : 0L)
+                | ((tankType == null ? 0L : (long) tankType.hashCode()) * 31L + tank.getFill()) << 2;
+        long hi = (fluidUsed > 0 ? 1L : 0L) | (((long) output) << 1) | (energy << 16);
+        syncIfStateChanged(lo, hi);
     }
 
     private void clientTick(Level world, BlockPos pos) {
-
         if (isOn && tank.getFill() > 0) {
             FluidType type = FluidType.forFluid(tank.getTankType());
 
@@ -275,6 +285,11 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
+    @Override
+    public boolean canConnect(Fluid fluid, Direction fromDir) {
+        return fromDir != null && fromDir.getAxis().isHorizontal();
+    }
+
     // ==================== Upgrades ====================
 
     @Override
@@ -318,7 +333,7 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("container.gasFlare");
+        return Component.translatable("container.hbm_m.flare_stack");
     }
 
     @Override
@@ -328,19 +343,45 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot == SLOT_BATTERY) return isEnergyReceiverItem(stack);
+        if (slot == SLOT_FLUID_IN) return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack);
+        if (slot == SLOT_FLUID_ID) return stack.getItem() instanceof com.hbm_m.item.liquids.FluidIdentifierItem;
+        if (slot == SLOT_UPGRADE_1 || slot == SLOT_UPGRADE_2) {
+            if (stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade up) {
+                return VALID_UPGRADES.containsKey(up.getUpgradeType());
+            }
+        }
         return false;
     }
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-        return MachineFlareStackMenu.create(id, inventory, this);
+        return new MachineFlareStackMenu(id, inventory, this);
     }
 
-    /** Original: {@code INFINITE_EXTENT_AABB}. */
-    //? if forge {
     @Override
-    //?}
     public AABB getRenderBoundingBox() {
-        return RenderBounds.INFINITE;
+        return new AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 14, worldPosition.getZ() + 2);
+    }
+
+    // ── IFluidCopiable ──
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("type", net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(tank.getTankType()).toString());
+        return tag;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, Player player, BlockPos pos) {
+        if (nbt.contains("type")) {
+            Fluid fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(
+                    net.minecraft.resources.ResourceLocation.tryParse(nbt.getString("type")));
+            if (fluid != null) {
+                tank.setTankType(fluid);
+                setChanged();
+            }
+        }
     }
 }

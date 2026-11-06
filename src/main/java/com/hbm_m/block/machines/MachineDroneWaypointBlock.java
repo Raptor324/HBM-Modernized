@@ -35,7 +35,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * <p>
  * Auswahlbox, fehlende Kollision und Abfallen ohne Halt wie im Original ({@link com.hbm_m.block.machines.radio.AttachedTorchShape}).
  */
-public class MachineDroneWaypointBlock extends BaseEntityBlock {
+public class MachineDroneWaypointBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
@@ -79,6 +79,26 @@ public class MachineDroneWaypointBlock extends BaseEntityBlock {
             return net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
         }
         return super.updateShape(state, dir, neighbor, level, pos, neighborPos);
+    }
+
+
+    /**
+     * Port of {@code DroneWaypoint.printHook}: "Waypoint distance: n" plus "Next waypoint:
+     * x / y / z" when a next waypoint is linked.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineDroneWaypointBlockEntity waypoint)) return;
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("Waypoint distance: " + waypoint.getHeight()));
+        BlockPos next = waypoint.getNextTarget();
+        if (next != null) {
+            text.add(net.minecraft.network.chat.Component.literal(
+                    "Next waypoint: " + next.getX() + " / " + next.getY() + " / " + next.getZ()));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Override

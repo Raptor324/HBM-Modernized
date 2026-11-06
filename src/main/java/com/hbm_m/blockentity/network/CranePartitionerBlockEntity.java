@@ -21,13 +21,15 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.platform.BlockHooks;
 
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
 //?}
+import net.minecraftforge.items.IItemHandler;
 
 /**
  * 1:1 {@code CranePartitioner.TileEntityCranePartitioner}: 45 Warteplaetze fuer Kristallisierer-Eingaben und 45
@@ -65,7 +67,7 @@ public class CranePartitionerBlockEntity extends BaseHbmBlockEntity {
         }
     });
     //?} elif neoforge {
-    /*private final com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> sided = com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+    /*private final com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> sided = com.hbm_m.platform.LazyCap.of(() -> new net.minecraftforge.items.IItemHandler() {
         @Override public int getSlots() { return inventory.getSlots(); }
         @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
         @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
@@ -163,11 +165,11 @@ public class CranePartitionerBlockEntity extends BaseHbmBlockEntity {
 
     @Override
     protected void writeNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, com.hbm_m.platform.BlockHooks.registriesOr(registries, this)));
+        tag.put("inventory", inventory.serialize( com.hbm_m.platform.BlockHooks.registriesOr(registries, this)));
     }
 
     @Override
     protected void readNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
-        if (tag.contains("inventory")) com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), com.hbm_m.platform.BlockHooks.registriesOr(registries, this));
+        if (tag.contains("inventory")) inventory.deserialize(tag.getCompound("inventory"), com.hbm_m.platform.BlockHooks.registriesOr(registries, this));
     }
 }

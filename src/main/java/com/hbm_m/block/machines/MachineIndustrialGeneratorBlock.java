@@ -28,12 +28,24 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import dev.architectury.registry.menu.MenuRegistry;
 
 /**
- * Industrial Generator - Einzelblock wie im Original (Multiblock dort deaktiviert, getDimensions alle 0).
- * Weltdarstellung wie {@code RenderIGenerator}: igen.obj auf 1/6 verkleinert, nach FACING gedreht;
- * {@code gold_block} ist nur Symbol-/Partikeltextur.
+ * Industrial Generator - Einzelblock-Port, orientierungslos (das Original hatte nie ein eigenes
+ * Modell - nur die Platzhalter-Textur {@code gold_block} und eine im Original deaktivierte
+ * Multiblock-Struktur, siehe Klassenkommentar in {@link MachineIndustrialGeneratorBlockEntity}).
  */
-public class MachineIndustrialGeneratorBlock extends BaseEntityBlock {
+public class MachineIndustrialGeneratorBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
     public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 16, 16);
+
+    /**
+     * Порт {@code MachineIGenerator.printHook}: мемориальный HUD — заголовок буквально
+     * "Industrial Generator Memorial" и единственная строка "In memory of all that we have lost".
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("In memory of all that we have lost"));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.literal("Industrial Generator Memorial"), 0xff8000, 0x804000, text);
+    }
 
     public MachineIndustrialGeneratorBlock(BlockBehaviour.Properties properties) {
         super(properties);

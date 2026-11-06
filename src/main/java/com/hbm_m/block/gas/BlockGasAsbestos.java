@@ -33,13 +33,13 @@ public class BlockGasAsbestos extends BlockGasBase {
     }
 
     @Override
-    public Direction getFirstDirection(ServerLevel level, BlockPos pos, RandomSource random) {
+    public Direction getFirstDirection(Level level, BlockPos pos, RandomSource random) {
         if (random.nextInt(5) == 0) return Direction.DOWN;
         return randomAny(random);
     }
 
     @Override
-    public Direction getSecondDirection(ServerLevel level, BlockPos pos, RandomSource random) {
+    public Direction getSecondDirection(Level level, BlockPos pos, RandomSource random) {
         return randomHorizontal(random);
     }
 
@@ -50,6 +50,7 @@ public class BlockGasAsbestos extends BlockGasBase {
 
     @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+        super.animateTick(state, level, pos, random);
         if (random.nextInt(5) == 0) {
             level.addParticle(ParticleTypes.MYCELIUM,
                     pos.getX() + random.nextFloat(), pos.getY() + random.nextFloat(), pos.getZ() + random.nextFloat(),

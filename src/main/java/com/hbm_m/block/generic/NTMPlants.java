@@ -20,8 +20,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -39,6 +37,7 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code BlockNTMFlower} ({@code plant_flower}), {@code BlockTallPlant} ({@code plant_tall}), {@code BlockReeds}
@@ -148,7 +147,7 @@ public final class NTMPlants {
             Block.popResource(world, pos, new ItemStack(this));
         }
         //? if >= 1.21.1 {
-        /*public static final com.mojang.serialization.MapCodec<Flower> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(Flower.class);
+        /*public static final com.mojang.serialization.MapCodec<Flower> CODEC = com.hbm_m.platform.BlockHooks.unsupportedCodec(Flower.class);
         @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BushBlock> codec() { return CODEC; }
         *///?}
     }

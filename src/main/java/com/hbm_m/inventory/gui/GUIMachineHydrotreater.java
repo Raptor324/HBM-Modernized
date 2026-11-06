@@ -13,8 +13,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-/** Direktport der Slot-/Tank-Koordinaten aus {@code GUIMachineHydrotreater} (1.7.10 Original). */
 public class GUIMachineHydrotreater extends GuiInfoScreen<MachineHydrotreaterMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -47,10 +48,9 @@ public class GUIMachineHydrotreater extends GuiInfoScreen<MachineHydrotreaterMen
         if (be != null) { // тайл может отсутствовать в реплее Flashback
             long power = be.getEnergyStored();
             long maxPower = Math.max(1L, be.getMaxEnergyStored());
-            // Original 1:1: Fuellhoehe auf 54 skaliert, Ziel guiTop + 70 - j, Quelle v = 52 - j (voll: 2 px ueber den Rahmen)
-            int j = (int) (power * 54 / maxPower);
+            int j = (int) (power * TANK_H / maxPower);
             if (j > 0) {
-                guiGraphics.blit(TEXTURE, leftPos + ENERGY_X, topPos + 70 - j, 176, 52 - j, TANK_W, j);
+                guiGraphics.blit(TEXTURE, leftPos + ENERGY_X, topPos + TANK_Y + TANK_H - j, 176, TANK_H - j, TANK_W, j);
             }
 
             var tanks = be.getTanks();

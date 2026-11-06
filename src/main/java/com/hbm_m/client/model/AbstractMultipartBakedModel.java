@@ -12,23 +12,30 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 
 public abstract class AbstractMultipartBakedModel implements BakedModel {
 
     protected final Map<String, BakedModel> parts;
     protected final ItemTransforms transforms;
     private TextureAtlasSprite cachedParticleIcon;
+    /**
+     * Спрайт "particle" из JSON модели (инжектируется загрузчиком семейства
+     * AbstractObjPartModelLoader при запекании). Приоритетнее авто-выбора части,
+     * потому что авто-выбор может взять парт без привязанных спрайтов (пустые
+     * алиасы/"Base"-фолбэки) и выдать missing-спрайт (фиолетовые частицы при
+     * ломании блока).
+     */
+    @Nullable private TextureAtlasSprite jsonParticleIcon;
 
     /**
      * Lazily-built per-cull-face quad merge for the default (non-dynamic)
@@ -77,14 +84,96 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         String[] getPartNames();
     }
 
+    /** Инжектирует спрайт "particle" из JSON модели (вызывается загрузчиком после запекания). */
+    public void setParticleIcon(@Nullable TextureAtlasSprite sprite) {
+        this.jsonParticleIcon = sprite;
+        this.cachedParticleIcon = null;
+    }
+
+    /**
+     * Спрайт НЕ считается missing-текстурой (фиолетовый/чёрный checkerboard).
+     * contents() бывает null у тестовых моков — тогда считаем спрайт пригодным.
+     */
+    private static boolean isUsableIcon(@Nullable TextureAtlasSprite sprite) {
+        if (sprite == null) {
+            return false;
+        }
+        try {
+            return sprite.contents() == null
+                || !net.minecraft.client.renderer.texture.MissingTextureAtlasSprite.getLocation()
+                    .equals(sprite.contents().name());
+        } catch (Throwable t) {
+            // Мок-спрайты без внутренностей: не блокируем выбор.
+            return true;
+        }
+    }
+
+    /**
+     * Общий выбор спрайта частиц: инжектированный "particle" из JSON, затем части
+     * по приоритетным именам, затем остальные части. Кандидаты с null/missing
+     * спрайтом ПРОПУСКАЮТСЯ (раньше первый же кандидат кэшировался даже если это
+     * был missing-спрайт пустой части — источник фиолетовых частиц при ломании).
+     */
+    @Nullable
+    private TextureAtlasSprite resolveParticleIcon(Function<BakedModel, TextureAtlasSprite> partIcon) {
+        if (isUsableIcon(jsonParticleIcon)) {
+            return jsonParticleIcon;
+        }
+        Set<BakedModel> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        // Сначала стандартные имена частей для иконки.
+        String[] iconParts = {"Base", "base", "frame", "Frame", "main", "Main"};
+        for (String partName : iconParts) {
+            BakedModel part = parts.get(partName);
+            if (part != null && seen.add(part)) {
+                TextureAtlasSprite sprite = partIcon.apply(part);
+                if (isUsableIcon(sprite)) {
+                    return sprite;
+                }
+            }
+        }
+        // Затем приоритетный порядок частей из getPartNames().
+        for (String partName : getPartNamesInternal()) {
+            BakedModel part = parts.get(partName);
+            if (part != null && seen.add(part)) {
+                TextureAtlasSprite sprite = partIcon.apply(part);
+                if (isUsableIcon(sprite)) {
+                    return sprite;
+                }
+            }
+        }
+        // Наконец — любая оставшаяся часть.
+        for (BakedModel part : parts.values()) {
+            if (part != null && seen.add(part)) {
+                TextureAtlasSprite sprite = partIcon.apply(part);
+                if (isUsableIcon(sprite)) {
+                    return sprite;
+                }
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private TextureAtlasSprite missingModelIcon(@Nullable ModelData data) {
+        // getMissingModel() ещё null во время запекания (ModifyBakingResult) — тогда
+        // возвращаем null и попробуем снова при следующем запросе после загрузки.
+        try {
+            return Minecraft.getInstance()
+                .getModelManager()
+                .getMissingModel()
+                .getParticleIcon(data);
+        } catch (NullPointerException | IllegalStateException e) {
+            return null;
+        }
+    }
+
     @Override
     @Deprecated
     public TextureAtlasSprite getParticleIcon() {
         if (cachedParticleIcon == null) {
-            if (!parts.isEmpty()) {
-                cachedParticleIcon = parts.values().iterator().next().getParticleIcon();
-            } else {
-                cachedParticleIcon = Minecraft.getInstance().getModelManager().getMissingModel().getParticleIcon();
+            cachedParticleIcon = resolveParticleIcon(BakedModel::getParticleIcon);
+            if (cachedParticleIcon == null && !parts.isEmpty()) {
+                cachedParticleIcon = missingModelIcon(null);
             }
         }
         return cachedParticleIcon;
@@ -94,39 +183,9 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     @Override
     public TextureAtlasSprite getParticleIcon(ModelData data) {
         if (cachedParticleIcon == null) {
-            // Используем getPartNamesInternal() для получения приоритетного порядка
-            String[] partNames = getPartNamesInternal();
-            
-            // Сначала пробуем стандартные имена частей для иконки
-            String[] iconParts = {"Base", "base", "frame", "Frame", "main", "Main"};
-            
-            for (String partName : iconParts) {
-                BakedModel part = parts.get(partName);
-                if (part != null) {
-                    cachedParticleIcon = part.getParticleIcon(data);
-                    break;
-                }
-            }
-            
-            // Если не нашли стандартные, используем первую часть из getPartNames()
-            if (cachedParticleIcon == null && partNames.length > 0) {
-                BakedModel part = parts.get(partNames[0]);
-                if (part != null) {
-                    cachedParticleIcon = part.getParticleIcon(data);
-                }
-            }
-            
-            // Если не нашли, берём первую доступную часть
+            cachedParticleIcon = resolveParticleIcon(part -> part.getParticleIcon(data));
             if (cachedParticleIcon == null && !parts.isEmpty()) {
-                cachedParticleIcon = parts.values().iterator().next().getParticleIcon(data);
-            }
-            
-            // Последний fallback - missing model
-            if (cachedParticleIcon == null) {
-                cachedParticleIcon = Minecraft.getInstance()
-                    .getModelManager()
-                    .getMissingModel()
-                    .getParticleIcon(data);
+                cachedParticleIcon = missingModelIcon(data);
             }
         }
         return cachedParticleIcon;
@@ -155,16 +214,22 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
             List<BakedQuad> cached = cache[idx];
             if (cached != null) return cached;
             List<BakedQuad> quads = new ArrayList<>();
+            Set<BakedModel> seen = Collections.newSetFromMap(new IdentityHashMap<>());
             for (BakedModel part : parts.values()) {
-                quads.addAll(part.getQuads(state, side, rand, modelData, renderType));
+                if (part != null && seen.add(part)) {
+                    quads.addAll(part.getQuads(state, side, rand, modelData, renderType));
+                }
             }
             List<BakedQuad> result = quads.isEmpty() ? List.of() : List.copyOf(quads);
             cache[idx] = result;
             return result;
         }
         List<BakedQuad> quads = new ArrayList<>();
+        Set<BakedModel> seen = Collections.newSetFromMap(new IdentityHashMap<>());
         for (BakedModel part : parts.values()) {
-            quads.addAll(part.getQuads(state, side, rand, modelData, renderType));
+            if (part != null && seen.add(part)) {
+                quads.addAll(part.getQuads(state, side, rand, modelData, renderType));
+            }
         }
         return quads;
     }
@@ -230,16 +295,22 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
             List<BakedQuad> cached = cache[idx];
             if (cached != null) return cached;
             List<BakedQuad> quads = new ArrayList<>();
+            Set<BakedModel> seen = Collections.newSetFromMap(new IdentityHashMap<>());
             for (BakedModel part : parts.values()) {
-                quads.addAll(part.getQuads(state, side, rand, modelData, renderType));
+                if (part != null && seen.add(part)) {
+                    quads.addAll(part.getQuads(state, side, rand, modelData, renderType));
+                }
             }
             List<BakedQuad> result = quads.isEmpty() ? List.of() : List.copyOf(quads);
             cache[idx] = result;
             return result;
         }
         List<BakedQuad> quads = new ArrayList<>();
+        Set<BakedModel> seen = Collections.newSetFromMap(new IdentityHashMap<>());
         for (BakedModel part : parts.values()) {
-            quads.addAll(part.getQuads(state, side, rand, modelData, renderType));
+            if (part != null && seen.add(part)) {
+                quads.addAll(part.getQuads(state, side, rand, modelData, renderType));
+            }
         }
         return quads;
     }
@@ -286,17 +357,20 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         String[] priorityParts = {"frame", "Frame", "doorLeft", "doorRight", "Base", "base", "main", "Main"};
         
         List<String> result = new java.util.ArrayList<>();
+        Set<BakedModel> seenModels = Collections.newSetFromMap(new IdentityHashMap<>());
         
         // Сначала добавляем приоритетные части в нужном порядке
         for (String priorityPart : priorityParts) {
-            if (parts.containsKey(priorityPart)) {
+            BakedModel model = parts.get(priorityPart);
+            if (model != null && seenModels.add(model)) {
                 result.add(priorityPart);
             }
         }
         
         // Затем добавляем остальные части
         for (String partName : allPartNames) {
-            if (!result.contains(partName) && parts.containsKey(partName)) {
+            BakedModel model = parts.get(partName);
+            if (model != null && !result.contains(partName) && seenModels.add(model)) {
                 result.add(partName);
             }
         }
@@ -340,7 +414,6 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
      */
 
     // NeoForge: gleiche Signatur in IBakedModelExtension
-    //? if forge || neoforge {
     @Override
     public BakedModel applyTransform(ItemDisplayContext transformType, PoseStack poseStack,
                                      boolean applyLeftHandTransform) {
@@ -350,7 +423,6 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         getTransforms().getTransform(transformType).apply(applyLeftHandTransform, poseStack);
         return this;
     }
-    //?}
 
     public void clearCaches() {
         cachedParticleIcon = null;

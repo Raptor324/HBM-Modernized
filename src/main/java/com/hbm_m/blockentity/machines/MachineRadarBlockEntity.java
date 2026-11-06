@@ -39,6 +39,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.StackNbt;
 //? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
@@ -400,10 +401,14 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        for (Direction dir : Direction.values()) {
-            tryPullEnergyFromPos(worldPosition.relative(dir), dir.getOpposite());
-            if (!canReceive()) {
-                return;
+        // 6 прямых соседей — раз в 20 тиков (probeDue, фаза размазана по позиции),
+        // как и прежний ежетиковый обход, гарантирующий подзарядку буфера.
+        if (probeDue(20)) {
+            for (Direction dir : Direction.values()) {
+                tryPullEnergyFromPos(worldPosition.relative(dir), dir.getOpposite());
+                if (!canReceive()) {
+                    return;
+                }
             }
         }
 
@@ -867,7 +872,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         if (linker.isEmpty()) {
             return null;
         }
-        net.minecraft.nbt.CompoundTag tag = PlatformHooks.getItemTag(linker);
+        net.minecraft.nbt.CompoundTag tag = StackNbt.read(linker);
         if (tag == null || !tag.contains("xCoord")) {
             return null;
         }
@@ -1016,6 +1021,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         setEnergyCapacity(100_000L); // alte Welten: frueher 250000
+
         progress = tag.getInt("progress");
         maxProgress = tag.getInt("max_progress");
         if (maxProgress <= 0) {
@@ -1293,8 +1299,8 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket pkt) {
-        if (PlatformHooks.getItemTag(pkt) != null) {
-            handleUpdateTag(PlatformHooks.getItemTag(pkt));
+        if (pkt.getTag() != null) {
+            handleUpdateTag(pkt.getTag());
         }
     }
     //?}
@@ -1340,9 +1346,6 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         //? if forge {
         return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent();
         //?}
-        //? if fabric {
-        /*return teamreborn.energy.api.EnergyStorage.ITEM.find(stack, null) != null;
-        *///?}
         //? if neoforge {
         /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
         *///?}

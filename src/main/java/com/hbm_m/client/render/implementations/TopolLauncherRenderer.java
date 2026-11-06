@@ -27,22 +27,16 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.joml.Matrix4f;
 
 /**
- * Zeichnet den Topol-M-Werfer: Fahrgestell fest, Startbehaelter drehbar.
+ * Renders the Topol-M launcher: stationary chassis, rotating launch canister.
  *
- * <p>Beides sind eigene OBJ-Dateien mit eigener Textur, weil sie sich gegeneinander bewegen. Der
- * Behaelter liegt im Modell laengs nach +Z und hat seinen Ursprung im Aufrichtgelenk - zum
- * Aufrichten genuegt darum eine Drehung um die X-Achse um bis zu -90 Grad.
+ * <p>Both parts use separate OBJ models and textures due to relative motion. In the model,
+ * the canister extends longitudinally toward +Z with its origin at the elevation hinge;
+ * elevation is achieved by rotating around the X axis up to -90 degrees.
  *
- * <p>Gezeichnet wird mit den UVs der Modelle direkt, nicht ueber den Blockatlas: die
- * Fahrzeugtextur misst 1024 Pixel im Quadrat und hat auf dem Atlas nichts verloren.
+ * <p>Rendered directly with model UVs rather than block atlas: vehicle texture is 1024x1024
+ * and belongs in its own texture sheet.
  */
-//? if forge {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class TopolLauncherRenderer implements HbmBerBounds<TopolLaunchPadBlockEntity> {
 
     private static final String CHASSIS_OBJ = "models/machines/topol_chassis.obj";
@@ -60,15 +54,15 @@ public class TopolLauncherRenderer implements HbmBerBounds<TopolLaunchPadBlockEn
     private static final ResourceLocation TEX_CANISTER = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/models/machines/topol_canister.png");
 
-    /** Seitlicher Versatz des Aufrichtgelenks; das Fahrzeug ist nicht ganz symmetrisch. */
+    /** Lateral offset of elevation hinge; chassis is slightly asymmetric. */
     private static final float PIVOT_X = (float) TopolLaunchPadBlockEntity.PIVOT_LATERAL;
 
-    /** Lage des Raketenhecks im Rohr, gemessen vom Aufrichtgelenk entlang der Behaelterachse. */
+    /** Position of missile tail inside tube, measured from elevation hinge along canister axis. */
     private static final float EJECT_START = 0.5F;
 
     /**
-     * Wohin das Heck bis zum Ende des Auswurfs wandert: einen halben Block ueber die Muendung
-     * hinaus, also genau dorthin, wo gleich die Raketenentitaet entsteht.
+     * Target position of tail at end of ejection: half a block past the muzzle, exactly where
+     * the missile entity spawns.
      */
     private static final float EJECT_END =
             (float) TopolLaunchPadBlockEntity.CANISTER_LENGTH + 0.5F;
@@ -108,9 +102,8 @@ public class TopolLauncherRenderer implements HbmBerBounds<TopolLaunchPadBlockEn
         });
 
         poseStack.pushPose();
-        // Gedreht wird um einen Punkt, der vor dem Rohrende liegt; der Behaelter wird davor
-        // entsprechend zurueckgeschoben. Dadurch sinkt er beim Aufrichten auf die Startplatte
-        // statt hinter das Fahrzeug zu schwenken - siehe HINGE_OFFSET.
+        // Rotation pivot lies forward of tube end; canister is shifted back accordingly beforehand.
+        // This lowers it onto the launch bed during elevation rather than swinging behind vehicle - see HINGE_OFFSET.
         poseStack.translate(PIVOT_X,
                 TopolLaunchPadBlockEntity.PIVOT_HEIGHT,
                 -TopolLaunchPadBlockEntity.PIVOT_FORWARD + TopolLaunchPadBlockEntity.HINGE_OFFSET);
@@ -131,8 +124,8 @@ public class TopolLauncherRenderer implements HbmBerBounds<TopolLaunchPadBlockEn
                 poseStack.last().pose(), chassis.get(RAIL_GROUP), packedLight);
         poseStack.popPose();
 
-        // Auswurf: die geladene Rakete faehrt entlang der Behaelterachse aus dem Rohr. Gezeichnet
-        // wird sie im Koordinatensystem des Behaelters, sie folgt also seiner Neigung mit.
+        // Ejection: loaded missile travels along canister axis out of the tube. Rendered in canister
+        // coordinate system so it follows elevation angle.
         drawEjectingMissile(be, partialTicks, poseStack, buffer, packedLight);
 
         poseStack.popPose();
@@ -140,11 +133,10 @@ public class TopolLauncherRenderer implements HbmBerBounds<TopolLaunchPadBlockEn
     }
 
     /**
-     * Zeichnet die Rakete waehrend des Auswurfs.
+     * Renders missile during ejection sequence.
      *
-     * <p>Der Weg ist quadratisch ueber der Zeit - der Gasgenerator schiebt sie an, sie wird also
-     * schneller, je weiter sie heraus ist. Im Rohr selbst sieht man von ihr nichts, weil sie erst
-     * bei einem Viertel des Auswurfs die Muendung erreicht.
+     * <p>Travel distance scales quadratically with time: gas generator acceleration increases
+     * speed as ejection progresses. Missile remains inside tube until reaching muzzle at ~25% progress.
      */
     private static void drawEjectingMissile(TopolLaunchPadBlockEntity be, float partialTicks,
                                             PoseStack poseStack, MultiBufferSource buffer, int light) {
@@ -162,23 +154,22 @@ public class TopolLauncherRenderer implements HbmBerBounds<TopolLaunchPadBlockEn
             return;
         }
 
-        // Beschleunigt, aber nicht so hart wie ein Quadrat: bei p² passiert vier Fuenftel der
-        // Bewegung in der letzten halben Sekunde, und der Auswurf sieht aus wie ein Aufploppen.
+        // Accelerated travel without excessive quadratic snapping at end of motion.
         float eased = (float) Math.pow(progress, 1.4D);
         float offset = Mth.lerp(eased, EJECT_START, EJECT_END);
 
         poseStack.pushPose();
-        // Auf die Rohrachse heben: der Behaelterursprung liegt an seiner Unterkante.
+        // Offset to tube centerline: canister origin lies at its bottom edge.
         poseStack.translate(0.0D, TopolLaunchPadBlockEntity.CANISTER_RADIUS, offset);
-        // Das Raketenmodell steht auf seiner Y-Achse; im Behaelterraum liegt die Achse auf +Z.
+        // Missile model stands upright on Y axis; in canister space axis points to +Z.
         poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
         data.render(poseStack, light, be.getBlockPos(), buffer, be);
         poseStack.popPose();
     }
 
     /**
-     * Wie {@code RBMKColumnRenderer.renderObjGroup}, aber ohne Atlas-Sprite: die UVs der Modelle
-     * gehen unveraendert durch, nur V wird gespiegelt (Blender zaehlt von unten, die PNG von oben).
+     * Like {@code RBMKColumnRenderer.renderObjGroup}, but without atlas sprite: model UVs pass
+     * through unchanged, with only V inverted.
      */
     private static void drawMesh(VertexConsumer vc, Matrix4f matrix,
                                  Map<String, List<float[]>> obj, int light) {

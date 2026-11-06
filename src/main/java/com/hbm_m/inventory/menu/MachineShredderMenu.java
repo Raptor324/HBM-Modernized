@@ -5,14 +5,12 @@ import com.hbm_m.blockentity.machines.MachineShredderBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.item.industrial.ItemBlades;
-import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -63,7 +61,7 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         ModItemStackHandler itemHandler = this.blockEntity != null
                 ? this.blockEntity.getInventory()
-                : new DummyItemStackHandler(BATTERY_SLOT + 1);
+                : new ModItemStackHandler.Dummy(BATTERY_SLOT + 1);
         this.machineInventory = new HandlerContainer(itemHandler);
 
         // Входные слоты (3x3 сетка) - верхняя левая часть GUI (0-8)
@@ -132,7 +130,7 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         if (playerInventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("BlockEntity is not a MachineShredder");
+        throw new MenuBlockEntityMissingException("BlockEntity is not a MachineShredder");
     }
 
     @Override
@@ -202,8 +200,7 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         if (blockEntity == null) {
             return false; // тайл может отсутствовать на клиенте (реплей Flashback)
         }
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
-                player, ModBlocks.SHREDDER.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.SHREDDER.get());
     }
 
     public MachineShredderBlockEntity getBlockEntity() {

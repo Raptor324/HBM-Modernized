@@ -13,7 +13,6 @@ public class ItemCraftingDegradation extends Item {
         super(durability > 0 ? properties.durability(durability).setNoRepair() : properties.stacksTo(1).setNoRepair());
     }
 
-    //? if forge || neoforge {
     @Override
     public boolean hasCraftingRemainingItem(ItemStack stack) {
         return true;
@@ -28,5 +27,4 @@ public class ItemCraftingDegradation extends Item {
         }
         return copy;
     }
-    //?}
 }

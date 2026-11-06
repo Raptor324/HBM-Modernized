@@ -27,9 +27,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 1:1 {@code RenderBobble}, {@code RenderSnowglobe}, {@code RenderPlushie}: gleiche Teile, Texturen und Matrizenfolgen.
- * GL-Zustaende sind auf RenderTypes abgebildet (Culling aus -> NoCull, Mischung -> translucent, Lichtkarte 240 ->
- * volle Helligkeit, additiv -> eyes). {@code renderItemIn2D} = flaches Itemmodell von (0,0) bis (1,1), 1/16 dick.
+ * 1:1 {@code RenderBobble}, {@code RenderSnowglobe}, {@code RenderPlushie}: identical parts, textures and matrix sequences.
+ * GL states mapped to RenderTypes (culling off -> NoCull, blend -> translucent, lightmap 240 ->
+ * fullbright, additive -> eyes). {@code renderItemIn2D} = flat item model from (0,0) to (1,1), 1/16 thick.
  */
 public class TrinketRenderer implements com.hbm_m.client.render.HbmBerBounds<TrinketBlockEntity> {
 
@@ -37,7 +37,7 @@ public class TrinketRenderer implements com.hbm_m.client.render.HbmBerBounds<Tri
 
     public static final int FULLBRIGHT = 0xF000F0;
 
-    // ---- Wackelkopf ----
+    // ---- Bobblehead ----
     public static final SimpleObjModel BOBBLE = new SimpleObjModel(rl("models/trinkets/bobble.obj"));
     public static final ResourceLocation SOCKET = rl("textures/models/trinkets/socket.png");
     public static final ResourceLocation GLOW = rl("textures/models/trinkets/glow.png");
@@ -59,13 +59,13 @@ public class TrinketRenderer implements com.hbm_m.client.render.HbmBerBounds<Tri
     public static final SimpleObjModel ARMOR_HAT = new SimpleObjModel(rl("models/armor/hat.obj"));
     public static final ResourceLocation HAT = rl("textures/armor/hat.png");
 
-    // ---- Schneekugel ----
+    // ---- Snowglobe ----
     public static final SimpleObjModel SNOWGLOBE = new SimpleObjModel(rl("models/trinkets/snowglobe.obj"));
     public static final ResourceLocation SNOW_SOCKET = rl("textures/models/trinkets/snowglobe.png");
     public static final ResourceLocation SNOW_GLASS = rl("textures/models/trinkets/snowglobe_glass.png");
     public static final ResourceLocation SNOW_FEATURES = rl("textures/models/trinkets/snowglobe_features.png");
 
-    // ---- Plueschtier ----
+    // ---- Plushie ----
     public static final SimpleObjModel YOMI = new SimpleObjModel(rl("models/trinkets/yomi.obj"));
     public static final SimpleObjModel HUNDUN = new SimpleObjModel(rl("models/trinkets/hundun.obj"));
     public static final SimpleObjModel DERG = new SimpleObjModel(rl("models/trinkets/derg.obj"));
@@ -115,7 +115,7 @@ public class TrinketRenderer implements com.hbm_m.client.render.HbmBerBounds<Tri
         ps.popPose();
     }
 
-    // =========================== Wackelkopf ===========================
+    // =========================== Bobblehead ===========================
 
     private static ResourceLocation skin(BobbleType type) {
         return switch (type) {
@@ -160,7 +160,7 @@ public class TrinketRenderer implements com.hbm_m.client.render.HbmBerBounds<Tri
         renderSocket(ps, buf, type, light);
     }
 
-    /** {@code setupFigurineRotation}: {leftArm, rightArm, leftLeg, rightLeg, head} je {x, y, z} und der Koerper. */
+    /** {@code setupFigurineRotation}: {leftArm, rightArm, leftLeg, rightLeg, head} each {x, y, z} and the body. */
     private static double[][] figurine(BobbleType type) {
         double[][] r = new double[6][3];
         double[] body = r[5];
@@ -341,7 +341,7 @@ public class TrinketRenderer implements com.hbm_m.client.render.HbmBerBounds<Tri
         font.drawInBatch(type.label, 0, 0, type == BobbleType.VT ? 0xff0000 : 0xffffff, false, ps.last().pose(), buf, Font.DisplayMode.POLYGON_OFFSET, 0, light);
     }
 
-    // =========================== Schneekugel ===========================
+    // =========================== Snowglobe ===========================
 
     public static void renderSnowglobe(PoseStack ps, MultiBufferSource buf, SnowglobeType type, int light) {
         double scale = 0.0625D;
@@ -370,7 +370,7 @@ public class TrinketRenderer implements com.hbm_m.client.render.HbmBerBounds<Tri
         font.drawInBatch(type.label, 0, 0, 0xffffff, false, ps.last().pose(), buf, Font.DisplayMode.POLYGON_OFFSET, 0, light);
     }
 
-    // =========================== Plueschtier ===========================
+    // =========================== Plushie ===========================
 
     public static void renderPlushie(PoseStack ps, MultiBufferSource buf, PlushieType type, boolean squish, int light) {
         switch (type) {
@@ -415,7 +415,7 @@ public class TrinketRenderer implements com.hbm_m.client.render.HbmBerBounds<Tri
         }
     }
 
-    /** {@code ItemRenderer.renderItemIn2D}: flaches Symbol von (0,0,0) bis (1,1,-1/16). */
+    /** {@code ItemRenderer.renderItemIn2D}: flat icon from (0,0,0) to (1,1,-1/16). */
     public static void renderItem2D(PoseStack ps, MultiBufferSource buf, ItemStack stack, int light) {
         ps.pushPose();
         ps.translate(0.5, 0.5, -0.03125);

@@ -1,5 +1,4 @@
 package com.hbm_m.blockentity;
-import com.hbm_m.api.energy.ConverterBlockEntity;
 import com.hbm_m.api.energy.SwitchBlockEntity;
 import com.hbm_m.api.energy.WireBlockEntity;
 import com.hbm_m.block.ModBlocks;
@@ -11,6 +10,7 @@ import com.hbm_m.blockentity.crates.IronCrateBlockEntity;
 import com.hbm_m.blockentity.crates.SteelCrateBlockEntity;
 import com.hbm_m.blockentity.crates.TemplateCrateBlockEntity;
 import com.hbm_m.blockentity.crates.TungstenCrateBlockEntity;
+import com.hbm_m.blockentity.machines.AnvilBlockEntity;
 import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
 import com.hbm_m.blockentity.machines.BlastFurnaceBlockEntity;
 import com.hbm_m.blockentity.machines.MachineBlastFurnaceBlockEntity;
@@ -64,11 +64,11 @@ import com.hbm_m.blockentity.machines.MachineElectricFurnaceBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFurnaceBrickBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFurnaceIronBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFurnaceSteelBlockEntity;
-import com.hbm_m.blockentity.machines.MachineGasCentrifugeBlockEntity;
+import com.hbm_m.blockentity.machines.MachineGasCentBlockEntity;
 import com.hbm_m.blockentity.machines.MachineHydrotreaterBlockEntity;
 import com.hbm_m.blockentity.machines.MachineIndustrialBoilerBlockEntity;
 import com.hbm_m.blockentity.machines.MachineIndustrialTurbineBlockEntity;
-import com.hbm_m.blockentity.machines.MachineLargePylonBlockEntity;
+import com.hbm_m.blockentity.machines.MachineTurbineBlockEntity;
 import com.hbm_m.blockentity.machines.MachineLiquefactorBlockEntity;
 import com.hbm_m.blockentity.machines.MachineMiningDrillBlockEntity;
 import com.hbm_m.blockentity.machines.MachineMixerBlockEntity;
@@ -153,14 +153,12 @@ public class ModBlockEntities {
 			BlockEntityType.Builder.of(com.hbm_m.block.machines.SealBlocks.HatchBlockEntity::new, ModBlocks.SEAL_HATCH.get()).build(null));
 
 	/** R7n: 1:1 TileEntityBlastDoor. */
-	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.BlastDoorBlockEntity>> BLAST_DOOR =
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.doors.BlastDoorBlockEntity>> BLAST_DOOR_ENTITY =
 		BLOCK_ENTITIES.register("blast_door", () ->
-			BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.BlastDoorBlockEntity::new, ModBlocks.BLAST_DOOR.get()).build(null));
+			BlockEntityType.Builder.of(com.hbm_m.block.entity.doors.BlastDoorBlockEntity::new, ModBlocks.BLAST_DOOR.get()).build(null));
 
-	/** R7n: 1:1 TileEntityDummy (dummy_block_blast). */
-	public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.machines.BlastDoorBlock.DummyBlockEntity>> DUMMY_BLOCK_BLAST =
-		BLOCK_ENTITIES.register("dummy_block_blast", () ->
-			BlockEntityType.Builder.of(com.hbm_m.block.machines.BlastDoorBlock.DummyBlockEntity::new, ModBlocks.DUMMY_BLOCK_BLAST.get()).build(null));
+	// dummy_block_blast BE упразднён вместе с блоком (рама — universal_machine_part).
+
 
 	/** R7k: 1:1 CranePartitioner.TileEntityCranePartitioner. */
 	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.CranePartitionerBlockEntity>> CRANE_PARTITIONER =
@@ -246,11 +244,6 @@ public class ModBlockEntities {
 	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.deco.VentBlockEntity>> VENT =
 		BLOCK_ENTITIES.register("vent", () ->
 			BlockEntityType.Builder.of(com.hbm_m.blockentity.deco.VentBlockEntity::new, ModBlocks.VENT_CHLORINE.get(), ModBlocks.VENT_CLOUD.get(), ModBlocks.VENT_PINK_CLOUD.get()).build(null));
-
-	/** R6d: 1:1 TileEntityDemonLamp. */
-	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.DemonLampBlockEntity>> DEMON_LAMP =
-		BLOCK_ENTITIES.register("demon_lamp", () ->
-			BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.DemonLampBlockEntity::new, ModBlocks.LAMP_DEMON.get()).build(null));
 
 	/** R6c: 1:1 BlockVolcano.TileEntityVolcanoCore. */
 	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.bomb.VolcanoCoreBlockEntity>> VOLCANO_CORE =
@@ -345,10 +338,6 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("breeder", () ->
                     BlockEntityType.Builder.of(MachineBreederBlockEntity::new, ModBlocks.BREEDER.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<MachineLargePylonBlockEntity>> LARGE_PYLON_BE =
-            BLOCK_ENTITIES.register("large_pylon", () ->
-                    BlockEntityType.Builder.of(MachineLargePylonBlockEntity::new, ModBlocks.LARGE_PYLON.get()).build(null));
-
     public static final RegistrySupplier<BlockEntityType<MachineCoolingTowerBlockEntity>> COOLING_TOWER_BE =
             BLOCK_ENTITIES.register("cooling_tower_be", () ->
                     BlockEntityType.Builder.of(MachineCoolingTowerBlockEntity::new, ModBlocks.COOLING_TOWER.get()).build(null));
@@ -373,7 +362,6 @@ public class ModBlockEntities {
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.RebarBlockEntity>> REBAR_BE =
             BLOCK_ENTITIES.register("rebar_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.RebarBlockEntity::new, ModBlocks.REBAR.get()).build(null));
-
     public static final RegistrySupplier<BlockEntityType<FusionKlystronBlockEntity>> FUSION_KLYSTRON_BE =
             BLOCK_ENTITIES.register("fusion_klystron_be", () ->
                     BlockEntityType.Builder.of(FusionKlystronBlockEntity::new, ModBlocks.KLYSTRON.get()).build(null));
@@ -551,6 +539,7 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("broadcaster_pc_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.BroadcasterPcBlockEntity::new, ModBlocks.BROADCASTER_PC.get()).build(null));
 
+
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.generic.GlyphidSpawnerBlockEntity>> GLYPHID_SPAWNER_BE =
             BLOCK_ENTITIES.register("glyphid_spawner_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.generic.GlyphidSpawnerBlockEntity::new, ModBlocks.GLYPHID_SPAWNER.get()).build(null));
@@ -620,6 +609,10 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("hephaestus_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineHephaestusBlockEntity::new, ModBlocks.HEPHAESTUS.get()).build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.bomb.VolcanoCoreBlockEntity>> VOLCANO_CORE_BE =
+            BLOCK_ENTITIES.register("volcano_core_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.bomb.VolcanoCoreBlockEntity::new,
+                            ModBlocks.VOLCANO_CORE.get(), ModBlocks.VOLCANO_RAD_CORE.get()).build(null));
     public static final RegistrySupplier<BlockEntityType<MachineRbmkConsoleBlockEntity>> RBMK_CONSOLE_BE =
             BLOCK_ENTITIES.register("rbmk_console_be", () ->
                     BlockEntityType.Builder.of(MachineRbmkConsoleBlockEntity::new, ModBlocks.RBMK_CONSOLE.get()).build(null));
@@ -735,6 +728,9 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("deco_loot_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.decorations.DecoLootBlockEntity::new, com.hbm_m.block.ModBlocks.DECO_LOOT.get()).build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.decorations.DemonLampBlockEntity>> DEMON_LAMP_BE =
+            BLOCK_ENTITIES.register("demon_lamp_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.decorations.DemonLampBlockEntity::new, com.hbm_m.block.ModBlocks.LAMP_DEMON.get()).build(null));
     public static final RegistrySupplier<BlockEntityType<DeconBlockEntity>> DECON_BE =
             BLOCK_ENTITIES.register("decon_be", () ->
                     BlockEntityType.Builder.of(DeconBlockEntity::new, ModBlocks.DECON.get()).build(null));
@@ -758,7 +754,6 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("machine_rtg_furnace_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineRtgFurnaceBlockEntity::new,
                             ModBlocks.MACHINE_RTG_FURNACE.get()).build(null));
-
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineTeleporterBlockEntity>> MACHINE_TELEPORTER_BE =
             BLOCK_ENTITIES.register("machine_teleporter_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineTeleporterBlockEntity::new,
@@ -775,6 +770,23 @@ public class ModBlockEntities {
                 return BlockEntityType.Builder.<MachineBatteryBlockEntity>of(MachineBatteryBlockEntity::new, validBlocks)
                         .build(null);
             });
+
+    public static final RegistrySupplier<BlockEntityType<AnvilBlockEntity>> ANVIL_BE =
+            BLOCK_ENTITIES.register("anvil_be", () ->
+                    BlockEntityType.Builder.<AnvilBlockEntity>of(AnvilBlockEntity::new,
+                            ModBlocks.ANVIL_IRON.get(),
+                            ModBlocks.ANVIL_LEAD.get(),
+                            ModBlocks.ANVIL_STEEL.get(),
+                            ModBlocks.ANVIL_DESH.get(),
+                            ModBlocks.ANVIL_FERROURANIUM.get(),
+                            ModBlocks.ANVIL_SATURNITE.get(),
+                            ModBlocks.ANVIL_BISMUTH_BRONZE.get(),
+                            ModBlocks.ANVIL_ARSENIC_BRONZE.get(),
+                            ModBlocks.ANVIL_SCHRABIDATE.get(),
+                            ModBlocks.ANVIL_DNT.get(),
+                            ModBlocks.ANVIL_OSMIRIDIUM.get(),
+                            ModBlocks.ANVIL_MURKY.get())
+                            .build(null));
 
     public static final RegistrySupplier<BlockEntityType<LandMineBlockEntity>> LANDMINE_BE =
             BLOCK_ENTITIES.register("landmine_be", () ->
@@ -907,7 +919,6 @@ public class ModBlockEntities {
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity>> PRECASS_BE =
             BLOCK_ENTITIES.register("precass_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity::new, ModBlocks.MACHINE_PRECASS.get()).build(null));
-
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachinePUREXBlockEntity>> PUREX_BE =
             BLOCK_ENTITIES.register("purex_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachinePUREXBlockEntity::new,
@@ -932,7 +943,6 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("rockmill_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineRockMillBlockEntity::new,
                             ModBlocks.MACHINE_ROCKMILL.get()).build(null));
-
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineCombustionEngineBlockEntity>> COMBUSTION_ENGINE_BE =
             BLOCK_ENTITIES.register("combustion_engine_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineCombustionEngineBlockEntity::new,
@@ -1093,6 +1103,30 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.pile.PileControlBlockEntity::new,
                             ModBlocks.PILE_CONTROL.get()).build(null));
 
+    // Registry-Name bewusst exakt wie NEXT ("pile_neutrondetector", ohne Projekt-_be-Suffix).
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.pile.BlockEntityPileNeutronDetector>> PILE_NEUTRONDETECTOR =
+            BLOCK_ENTITIES.register("pile_neutrondetector", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.pile.BlockEntityPileNeutronDetector::new,
+                            ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).build(null));
+
+    // Registry-Name bewusst exakt wie NEXT ("pile_fuel", ohne Projekt-_be-Suffix).
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.pile.BlockEntityPileFuel>> PILE_FUEL =
+            BLOCK_ENTITIES.register("pile_fuel", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.pile.BlockEntityPileFuel::new,
+                            ModBlocks.BLOCK_GRAPHITE_FUEL.get()).build(null));
+
+    // Registry-Name bewusst exakt wie NEXT ("pile_breedingfuel", ohne Projekt-_be-Suffix).
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.pile.BlockEntityPileBreedingFuel>> PILE_BREEDINGFUEL =
+            BLOCK_ENTITIES.register("pile_breedingfuel", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.pile.BlockEntityPileBreedingFuel::new,
+                            ModBlocks.BLOCK_GRAPHITE_LITHIUM.get()).build(null));
+
+    // Registry-Name bewusst exakt wie NEXT ("pile_source", ohne Projekt-_be-Suffix).
+    // NEXT legt beide Bloecke als valid ab: Quelle (Flux 1) + gebruetetes Plutonium (Flux 2).
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.pile.BlockEntityPileSource>> PILE_SOURCE =
+            BLOCK_ENTITIES.register("pile_source", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.pile.BlockEntityPileSource::new,
+                            ModBlocks.BLOCK_GRAPHITE_SOURCE.get(), ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get()).build(null));
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.ForceFieldBlockEntity>> FORCE_FIELD_BE =
             BLOCK_ENTITIES.register("force_field_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.ForceFieldBlockEntity::new,
@@ -1123,10 +1157,12 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachinePumpElectricBlockEntity::new,
                             ModBlocks.PUMP_ELECTRIC.get()).build(null));
 
+    // capacitor_bus is the original's TE-less orientation block - only the five real
+    // capacitors carry a MachineCapacitorBlockEntity.
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineCapacitorBlockEntity>> MACHINE_CAPACITOR_BE =
             BLOCK_ENTITIES.register("machine_capacitor_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineCapacitorBlockEntity::new,
-                            ModBlocks.CAPACITOR_BUS.get(), ModBlocks.CAPACITOR_COPPER.get(), ModBlocks.CAPACITOR_GOLD.get(),
+                            ModBlocks.CAPACITOR_COPPER.get(), ModBlocks.CAPACITOR_GOLD.get(),
                             ModBlocks.CAPACITOR_NIOBIUM.get(), ModBlocks.CAPACITOR_SCHRABIDATE.get(), ModBlocks.CAPACITOR_TANTALIUM.get())
                             .build(null));
 
@@ -1195,10 +1231,11 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineStirlingBlockEntity::new,
                             ModBlocks.STIRLING.get(), ModBlocks.STIRLING_STEEL.get(), ModBlocks.STIRLING_CREATIVE.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<MachineCentrifugeBlockEntity>> CENTRIFUGE_BE =
-            BLOCK_ENTITIES.register("centrifuge_be", () ->
+    public static final RegistrySupplier<BlockEntityType<MachineCentrifugeBlockEntity>> MACHINE_CENTRIFUGE_BE =
+            BLOCK_ENTITIES.register("machine_centrifuge_be", () ->
                     BlockEntityType.Builder.of(MachineCentrifugeBlockEntity::new,
-                            ModBlocks.CENTRIFUGE.get()).build(null));
+                            ModBlocks.MACHINE_CENTRIFUGE.get()).build(null));
+    public static final RegistrySupplier<BlockEntityType<MachineCentrifugeBlockEntity>> CENTRIFUGE_BE = MACHINE_CENTRIFUGE_BE;
 
     public static final RegistrySupplier<BlockEntityType<UniversalMachinePartBlockEntity>> UNIVERSAL_MACHINE_PART_BE =
         BLOCK_ENTITIES.register("universal_machine_part_be", () ->
@@ -1207,7 +1244,8 @@ public class ModBlockEntities {
 
 	public static final RegistrySupplier<BlockEntityType<WireBlockEntity>> WIRE_BE =
 		BLOCK_ENTITIES.register("wire_be", () ->
-			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get(), ModBlocks.RED_WIRE_COATED.get(), ModBlocks.RED_CABLE.get(), ModBlocks.RED_CABLE_CLASSIC.get())
+			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get(), ModBlocks.RED_WIRE_COATED.get(), ModBlocks.RED_CABLE.get(), ModBlocks.RED_CABLE_CLASSIC.get(),
+					ModBlocks.RED_CABLE_BOX.get(), ModBlocks.RED_CABLE_BOX_1.get(), ModBlocks.RED_CABLE_BOX_2.get(), ModBlocks.RED_CABLE_BOX_3.get(), ModBlocks.RED_CABLE_BOX_4.get())
 				.build(null));
 
 	// ══════════ Сеть длинной ЛЭП (порт TileEntityPylonBase-иерархии 1.7.10) ══════════
@@ -1249,10 +1287,6 @@ public class ModBlockEntities {
 			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedCablePaintableBlockEntity>of(com.hbm_m.blockentity.network.RedCablePaintableBlockEntity::new, ModBlocks.RED_CABLE_PAINTABLE.get())
 				.build(null));
 
-	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.PylonDummyBlockEntity>> PYLON_DUMMY_BE =
-		BLOCK_ENTITIES.register("pylon_dummy_be", () ->
-			BlockEntityType.Builder.<com.hbm_m.blockentity.network.PylonDummyBlockEntity>of(com.hbm_m.blockentity.network.PylonDummyBlockEntity::new, ModBlocks.PYLON_DUMMY.get())
-				.build(null));
 
 	public static final RegistrySupplier<BlockEntityType<LaunchPadBlockEntity>> LAUNCH_PAD_BE =
 		BLOCK_ENTITIES.register("launch_pad_be", () ->
@@ -1341,7 +1375,6 @@ public class ModBlockEntities {
 			BLOCK_ENTITIES.register("compressor_compact_be", () ->
 					BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineCompressorCompactBlockEntity::new,
 							ModBlocks.COMPRESSOR_COMPACT.get()).build(null));
-
 	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineSawmillBlockEntity>> SAWMILL_BE =
 			BLOCK_ENTITIES.register("sawmill_be", () ->
 					BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineSawmillBlockEntity::new,
@@ -1392,10 +1425,10 @@ public class ModBlockEntities {
                             BlockEntityType.Builder.of(MachineChemicalPlantBlockEntity::new,
                                     ModBlocks.CHEMICAL_PLANT.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<MachineGasCentrifugeBlockEntity>> GAS_CENTRIFUGE_BE =
-            BLOCK_ENTITIES.register("gas_centrifuge_be", () ->
-                    BlockEntityType.Builder.of(MachineGasCentrifugeBlockEntity::new,
-                            ModBlocks.GAS_CENTRIFUGE.get()).build(null));
+    public static final RegistrySupplier<BlockEntityType<MachineGasCentBlockEntity>> MACHINE_GASCENT_BE =
+            BLOCK_ENTITIES.register("machine_gascent_be", () ->
+                    BlockEntityType.Builder.of(MachineGasCentBlockEntity::new,
+                            ModBlocks.MACHINE_GASCENT.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<MachineCrucibleBlockEntity>> CRUCIBLE_BE =
             BLOCK_ENTITIES.register("crucible_be", () ->
@@ -1508,6 +1541,17 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.PWRControllerBlockEntity::new,
                             ModBlocks.PWR_CONTROLLER.get()).build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.PWRPartBlockEntity>> PWR_PART_BE =
+            BLOCK_ENTITIES.register("pwr_part_be", () ->
+                    BlockEntityType.Builder.of(
+                            (pos, state) -> new com.hbm_m.blockentity.machines.PWRPartBlockEntity(pos, state,
+                                    com.hbm_m.blockentity.machines.PWRPartBlockEntity.Kind.valueOf(
+                                            ((com.hbm_m.block.machines.PWRPartBlock) state.getBlock()).getKind().name())),
+                            ModBlocks.PWR_FUEL.get(), ModBlocks.PWR_CONTROL.get(), ModBlocks.PWR_CHANNEL.get(),
+                            ModBlocks.PWR_HEATEX.get(), ModBlocks.PWR_HEATSINK.get(), ModBlocks.PWR_NEUTRON_SOURCE.get(),
+                            ModBlocks.PWR_CASING.get(), ModBlocks.PWR_REFLECTOR.get(), ModBlocks.PWR_PORT.get())
+                            .build(null));
+
     /** R7r: 1:1 BlockPWR.TileEntityBlockPWR. */
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.PWRBlockEntity>> PWR_BLOCK_BE =
             BLOCK_ENTITIES.register("pwr_block", () ->
@@ -1598,6 +1642,11 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(MachineChungusBlockEntity::new,
                             ModBlocks.MACHINE_CHUNGUS.get()).build(null));
 
+    public static final RegistrySupplier<BlockEntityType<MachineTurbineBlockEntity>> TURBINE_BE =
+            BLOCK_ENTITIES.register("turbine_be", () ->
+                    BlockEntityType.Builder.of(MachineTurbineBlockEntity::new,
+                            ModBlocks.TURBINE.get()).build(null));
+
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineLargeTurbineBlockEntity>> LARGE_TURBINE_BE =
             BLOCK_ENTITIES.register("large_turbine_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineLargeTurbineBlockEntity::new,
@@ -1617,6 +1666,7 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("lpw2_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineLpw2BlockEntity::new,
                             ModBlocks.LPW2.get()).build(null));
+
 
     public static final RegistrySupplier<BlockEntityType<MachineSubstationBlockEntity>> SUBSTATION_BE =
             BLOCK_ENTITIES.register("substation_be", () ->
@@ -1641,10 +1691,11 @@ public class ModBlockEntities {
                         ModBlocks.SILO_HATCH.get(),
                         ModBlocks.SILO_HATCH_LARGE.get(),
                         ModBlocks.VAULT_DOOR.get(),
-                        ModBlocks.CARGO_DOOR.get())
+                        ModBlocks.CARGO_DOOR.get(),
+                        ModBlocks.BLAST_DOOR.get())
                     .build(null));
 
-    public static final RegistrySupplier<BlockEntityType<TransitionSealBlockEntity>> TRANSITION_SEAL_BE =
+public static final RegistrySupplier<BlockEntityType<TransitionSealBlockEntity>> TRANSITION_SEAL_BE =
             BLOCK_ENTITIES.register("transition_seal_be", () ->
                     BlockEntityType.Builder.of(TransitionSealBlockEntity::new,
                             ModBlocks.TRANSITION_SEAL.get()).build(null));
@@ -1689,18 +1740,6 @@ public class ModBlockEntities {
                             TemplateCrateBlockEntity::new,
                             ModBlocks.CRATE_TEMPLATE.get()
                     ).build(null));
-
-    public static final RegistrySupplier<BlockEntityType<ConverterBlockEntity>> CONVERTER_BE =
-            BLOCK_ENTITIES.register("converter_be",
-                    () -> BlockEntityType.Builder.of(ConverterBlockEntity::new, ModBlocks.CONVERTER_BLOCK.get()).build(null));
-
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineConverterHeRfBlockEntity>> MACHINE_CONVERTER_HE_RF_BE =
-            BLOCK_ENTITIES.register("machine_converter_he_rf_be",
-                    () -> BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineConverterHeRfBlockEntity::new, ModBlocks.MACHINE_CONVERTER_HE_RF.get()).build(null));
-
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineConverterRfHeBlockEntity>> MACHINE_CONVERTER_RF_HE_BE =
-            BLOCK_ENTITIES.register("machine_converter_rf_he_be",
-                    () -> BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineConverterRfHeBlockEntity::new, ModBlocks.MACHINE_CONVERTER_RF_HE.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<HeatingOvenBlockEntity>> HEATING_OVEN_BE =
             BLOCK_ENTITIES.register("heating_oven_be", () ->

@@ -1,6 +1,5 @@
 package com.hbm_m.client.weapon.render;
 
-import com.hbm_m.client.render.SimpleObjModel;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.item.ModItems;
@@ -18,7 +17,7 @@ import net.minecraft.world.item.ItemStack;
  */
 public class ItemRenderGavel extends ItemRenderWeaponBase {
 
-    public static final SimpleObjModel gavel = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/weapons/gavel.obj"));
+    public static final ResourceLocation gavel_loc = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/weapons/gavel.obj");
     public static final ResourceLocation gavel_wood = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/weapons/gavel_wood.png");
     public static final ResourceLocation gavel_lead = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/weapons/gavel_lead.png");
     public static final ResourceLocation gavel_diamond = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/weapons/gavel_diamond.png");
@@ -69,7 +68,7 @@ public class ItemRenderGavel extends ItemRenderWeaponBase {
             }
         }
 
-        GunGL.renderAll(gavel);
+        GunGL.renderAll(gavel_loc);
         GunGL.popMatrix();
     }
 }

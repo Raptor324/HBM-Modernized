@@ -1,6 +1,8 @@
 package com.hbm_m.armormod.item;
 
-import com.hbm_m.platform.AttributeOps;
+// Это мод, который увеличивает максимальное здоровье игрока при установке на броню.
+// Он подходит для всех типов брони и добавляет соответствующую строку в тултип
+import net.minecraft.world.entity.ai.attributes.Attributes;
 
 import java.util.List;
 
@@ -19,6 +21,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.AttributeHooks;
 
 /** 1:1 {@code ItemModHealth} (Herzteile, black_diamond): +Lebenspunkte. */
 public class ItemModHealth extends ItemArmorMod {
@@ -28,6 +31,15 @@ public class ItemModHealth extends ItemArmorMod {
     public ItemModHealth(float health) {
         super(new Properties().stacksTo(1), ArmorModificationHelper.extra, false, true, false, false);
         this.health = health;
+    }
+
+    @Override
+    public List<Component> getEffectTooltipLines() {
+        //? if < 1.21.1 {
+        return List.of(Component.literal("+" + this.health + " " + Component.translatable(Attributes.MAX_HEALTH.getDescriptionId()).getString()).withStyle(ChatFormatting.RED));
+        //?} else {
+        /*return List.of(Component.literal("+" + this.health + " " + Component.translatable(Attributes.MAX_HEALTH.value().getDescriptionId()).getString()).withStyle(ChatFormatting.RED));
+        *///?}
     }
 
     @Override
@@ -53,7 +65,7 @@ public class ItemModHealth extends ItemArmorMod {
     /*public com.google.common.collect.Multimap<net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>, net.minecraft.world.entity.ai.attributes.AttributeModifier> getModifiers(ItemStack armor) {
         com.google.common.collect.Multimap<net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>, net.minecraft.world.entity.ai.attributes.AttributeModifier> multimap = com.google.common.collect.HashMultimap.create();
     *///?}
-        multimap.put(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH, modifier(armor, "NTM Armor Mod Health", health, AttributeOps.ADDITION));
+        multimap.put(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH, modifier(armor, "NTM Armor Mod Health", health, AttributeHooks.ADDITION));
         return multimap;
     }
 }

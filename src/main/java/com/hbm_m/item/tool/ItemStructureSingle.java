@@ -24,7 +24,7 @@ public class ItemStructureSingle extends ItemStructureTool {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
     //?} else {
     /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
-        Level level = com.hbm_m.platform.PlatformHooks.tooltipLevel(hbmTooltipCtx);
+        Level level = com.hbm_m.platform.ItemHooks.tooltipLevel(hbmTooltipCtx);
     *///?}
         //? if < 1.21.1 {
         super.appendHoverText(stack, level, list, flag);

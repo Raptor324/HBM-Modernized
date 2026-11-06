@@ -22,9 +22,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-//? if forge {
 import net.minecraftforge.items.IItemHandler;
-//?}
 
 /**
  * 1:1 {@code TileEntityCraneExtractor}: 9 Filter, 9 Puffer, Stapel- und Auswurf-Upgrade. Zieht aus dem Inventar am Ausgang
@@ -142,7 +140,7 @@ public class MachineCraneExtractorBlockEntity extends CraneBaseBlockEntity imple
                 }
             }
             //?} elif neoforge {
-            /*net.neoforged.neoforge.items.IItemHandler inv = CraneInventoryUtil.inventoryAt(level, pos.relative(inputSide), inputSide.getOpposite());
+            /*net.minecraftforge.items.IItemHandler inv = CraneInventoryUtil.inventoryAt(level, pos.relative(inputSide), inputSide.getOpposite());
 
             /^ aus einem angeschlossenen Inventar senden ^/
             if (inv != null) {

@@ -76,7 +76,16 @@ public class MachineFractionTowerBlockEntity extends BaseMachineBlockEntity impl
         }
 
         be.setChanged();
-        be.sendUpdateToClient();
+        be.syncIfStateChanged(0L, tankFingerprints(be));
+    }
+
+    private static long tankFingerprints(MachineFractionTowerBlockEntity be) {
+        long h = 1L;
+        for (FluidTank tank : be.tanks) {
+            Fluid type = tank.getTankType();
+            h = 31L * h + (type == null ? 0L : type.hashCode()) + tank.getFill();
+        }
+        return h;
     }
 
     private void setupTanks() {

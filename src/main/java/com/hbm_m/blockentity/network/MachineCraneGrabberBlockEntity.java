@@ -27,9 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-//? if forge {
 import net.minecraftforge.items.IItemHandler;
-//?}
 
 /**
  * 1:1 {@code TileEntityCraneGrabber}: 9 Filter, Stapel- und Auswurf-Upgrade. Greift Teile vom Band vor dem Eingang
@@ -130,7 +128,7 @@ public class MachineCraneGrabberBlockEntity extends CraneBaseBlockEntity impleme
                     }
                 }
                 //?} elif neoforge {
-                /*net.neoforged.neoforge.items.IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputSide), outputSide.getOpposite());
+                /*net.minecraftforge.items.IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputSide), outputSide.getOpposite());
                 if (te != null) {
                     for (MovingConveyorItemEntity item : items) {
                         ItemStack stack = item.getItem();

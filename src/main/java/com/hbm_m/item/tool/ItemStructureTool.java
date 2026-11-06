@@ -28,6 +28,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code ItemStructureTool}: Basis der Strukturwerkzeuge (structure_single/solid/pattern/randomized/randomly).
@@ -83,16 +84,16 @@ public abstract class ItemStructureTool extends Item implements ILookOverlay {
 
     @Nullable
     public static BlockPos getAnchor(ItemStack stack) {
-        if (!PlatformHooks.hasItemTag(stack)) {
+        if (!StackNbt.has(stack)) {
             return null;
         }
-        return new BlockPos(PlatformHooks.getInt(stack, "anchorX"), PlatformHooks.getInt(stack, "anchorY"), PlatformHooks.getInt(stack, "anchorZ"));
+        return new BlockPos(StackNbt.getInt(stack, "anchorX"), StackNbt.getInt(stack, "anchorY"), StackNbt.getInt(stack, "anchorZ"));
     }
 
     public static void setAnchor(ItemStack stack, int x, int y, int z) {
-        PlatformHooks.putInt(stack, "anchorX", x);
-        PlatformHooks.putInt(stack, "anchorY", y);
-        PlatformHooks.putInt(stack, "anchorZ", z);
+        StackNbt.putInt(stack, "anchorX", x);
+        StackNbt.putInt(stack, "anchorY", y);
+        StackNbt.putInt(stack, "anchorZ", z);
     }
 
     @Override
@@ -115,16 +116,16 @@ public abstract class ItemStructureTool extends Item implements ILookOverlay {
             this.doTheThing(stack, world, x, y, z);
         } else {
 
-            if (!PlatformHooks.contains(stack, "x")) {
-                PlatformHooks.putInt(stack, "x", x);
-                PlatformHooks.putInt(stack, "y", y);
-                PlatformHooks.putInt(stack, "z", z);
+            if (!StackNbt.contains(stack, "x")) {
+                StackNbt.putInt(stack, "x", x);
+                StackNbt.putInt(stack, "y", y);
+                StackNbt.putInt(stack, "z", z);
             } else {
                 if (world.isClientSide)
                     this.doTheThing(stack, world, x, y, z);
-                PlatformHooks.remove(stack, "x");
-                PlatformHooks.remove(stack, "y");
-                PlatformHooks.remove(stack, "z");
+                StackNbt.removeKey(stack, "x");
+                StackNbt.removeKey(stack, "y");
+                StackNbt.removeKey(stack, "z");
             }
         }
 
@@ -172,10 +173,10 @@ public abstract class ItemStructureTool extends Item implements ILookOverlay {
             int dZ = pos.getZ() - anchor.getZ();
             text.add(Component.literal("Position: " + dX + " / " + dY + " / " + dZ).withStyle(ChatFormatting.YELLOW));
 
-            if (this.dualUse() && PlatformHooks.contains(stack, "x")) {
-                int sX = Math.abs(pos.getX() - PlatformHooks.getInt(stack, "x")) + 1;
-                int sY = Math.abs(pos.getY() - PlatformHooks.getInt(stack, "y")) + 1;
-                int sZ = Math.abs(pos.getZ() - PlatformHooks.getInt(stack, "z")) + 1;
+            if (this.dualUse() && StackNbt.contains(stack, "x")) {
+                int sX = Math.abs(pos.getX() - StackNbt.getInt(stack, "x")) + 1;
+                int sY = Math.abs(pos.getY() - StackNbt.getInt(stack, "y")) + 1;
+                int sZ = Math.abs(pos.getZ() - StackNbt.getInt(stack, "z")) + 1;
                 text.add(Component.literal("Selection: " + sX + " / " + sY + " / " + sZ).withStyle(ChatFormatting.GOLD));
             }
         }

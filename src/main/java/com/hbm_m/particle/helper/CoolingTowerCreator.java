@@ -22,12 +22,20 @@ public class CoolingTowerCreator implements IParticleCreator {
     public void makeParticle(ClientLevel level, Player player, RandomSource rand,
                              double x, double y, double z, CompoundTag data) {
 
+
+        // Гейтинг качества частиц (наша работа по contrail): ALL — всегда;
+        // DECREASED — шанс 1/2 и жизнь/2; MINIMAL — не спавним вовсе.
+        int particleSetting = net.minecraft.client.Minecraft.getInstance().options.particles().get().getId();
+        if (particleSetting == 2 || (particleSetting == 1 && !rand.nextBoolean())) {
+            return;
+        }
+        int lifeMod = particleSetting + 1;
         ParticleCoolingTowerNT fx = new ParticleCoolingTowerNT(level, x, y, z);
 
         if (data.contains("lift"))   fx.setLift(data.getFloat("lift"));
         if (data.contains("base"))   fx.setBaseScale(data.getFloat("base"));
         if (data.contains("max"))    fx.setMaxScale(data.getFloat("max"));
-        if (data.contains("life"))   fx.setLife(data.getInt("life"));
+        if (data.contains("life"))   fx.setLife(data.getInt("life") / lifeMod);
         if (data.contains("strafe")) fx.setStrafe(data.getFloat("strafe"));
         if (data.contains("alpha"))  fx.alphaMod(data.getFloat("alpha"));
         if (data.contains("noWind")) fx.noWind();

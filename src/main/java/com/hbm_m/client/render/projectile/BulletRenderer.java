@@ -19,8 +19,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 /**
- * 1:1 {@code RenderRocket} (Zweig EntityBullet): kleiner Quader, 1,5-fach, um die Flugachse zufaellig je Entity-ID
- * gedreht; Textur emplacer (Hubschrauber), tau (kritisch) oder bullet. Tau/Hubschrauber leuchten voll.
+ * 1:1 {@code RenderRocket} (EntityBullet branch): small cuboid, 1.5x scale, randomly rotated around flight axis
+ * per entity ID; texture emplacer (chopper), tau (critical), or bullet. Tau/chopper are fullbright.
  */
 public class BulletRenderer extends EntityRenderer<EntityBullet> {
 

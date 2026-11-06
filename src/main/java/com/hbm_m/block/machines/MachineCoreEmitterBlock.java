@@ -28,7 +28,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 import dev.architectury.registry.menu.MenuRegistry;
 
@@ -88,7 +87,7 @@ public class MachineCoreEmitterBlock extends BaseEntityBlock {
     *///?}
 
     private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
+        if (!level.isClientSide && level.getBlockEntity(pos) instanceof MenuProvider p) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
@@ -115,7 +114,6 @@ public class MachineCoreEmitterBlock extends BaseEntityBlock {
     public net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos) {
         return net.minecraft.world.phys.shapes.Shapes.empty();
     }
-
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineCoreEmitterBlock> CODEC = simpleCodec(MachineCoreEmitterBlock::new);
 

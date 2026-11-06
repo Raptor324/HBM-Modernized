@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.AmmoPressRecipe;
 
@@ -29,7 +30,7 @@ import net.minecraft.world.level.ItemLike;
 public class AmmoPressRecipeBuilder implements RecipeBuilder {
 
     private final ItemStack output;
-    private final com.google.gson.JsonElement[] slots = new com.google.gson.JsonElement[AmmoPressRecipe.GRID_SIZE];
+    private final JsonElement[] slots = new JsonElement[AmmoPressRecipe.GRID_SIZE];
     private final int[] counts = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
     private final Advancement.Builder advancement = Advancement.Builder.advancement();
 
@@ -115,7 +116,7 @@ public class AmmoPressRecipeBuilder implements RecipeBuilder {
         public void serializeRecipeData(@NotNull JsonObject pJson) {
             JsonArray jsonIngredients = new JsonArray();
             for (int i = 0; i < AmmoPressRecipe.GRID_SIZE; i++) {
-                com.google.gson.JsonElement slot = builder.slots[i];
+                JsonElement slot = builder.slots[i];
                 jsonIngredients.add(slot != null ? slot.deepCopy() : com.google.gson.JsonNull.INSTANCE);
             }
             pJson.add("ingredients", jsonIngredients);

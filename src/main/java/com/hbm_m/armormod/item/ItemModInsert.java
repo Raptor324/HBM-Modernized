@@ -1,6 +1,5 @@
 package com.hbm_m.armormod.item;
 
-import com.hbm_m.platform.AttributeOps;
 
 import java.util.List;
 
@@ -19,6 +18,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.AttributeHooks;
 
 /** 1:1 {@code ItemModInsert}: Schutzplatten mit Haltbarkeit, Schadens-/Projektil-/Explosionsfaktor, Tempo. */
 public class ItemModInsert extends ItemArmorMod {
@@ -119,7 +119,7 @@ public class ItemModInsert extends ItemArmorMod {
         //?} else {
         /*com.google.common.collect.Multimap<net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>, net.minecraft.world.entity.ai.attributes.AttributeModifier> multimap = com.google.common.collect.HashMultimap.create();
         *///?}
-        multimap.put(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED, modifier(armor, "NTM Armor Mod Speed", -1F + speed, AttributeOps.MULTIPLY_TOTAL));
+        multimap.put(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED, modifier(armor, "NTM Armor Mod Speed", -1F + speed, AttributeHooks.MULTIPLY_TOTAL));
         return multimap;
     }
 }

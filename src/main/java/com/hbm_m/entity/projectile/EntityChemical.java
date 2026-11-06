@@ -55,6 +55,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code EntityChemical}: Spruehgeschoss des Chemiewerfers und des Behemoth-Saeureatems. Das Verhalten haengt am
@@ -208,7 +209,7 @@ public class EntityChemical extends EntityThrowableNT {
             hurtIgnoreIFrame(e, getDamage(ModDamageTypes.BOIL), Math.min(0.25F + (type.temperature - 100) * 0.001F, 15F)); //.25 damage at 100°C with one extra damage every 1000°C
 
             if (type.temperature >= 500) {
-                PlatformHooks.setSecondsOnFire(e, 10); //afterburn for 10 seconds
+                MobHooks.setSecondsOnFire(e, 10); //afterburn for 10 seconds
             }
         }
 
@@ -248,7 +249,7 @@ public class EntityChemical extends EntityThrowableNT {
         if (style == ChemicalStyle.BURNING) {
             FT_Combustible trait = type.getTrait(FT_Combustible.class);
             hurtIgnoreIFrame(e, getDamage(ModDamageTypes.FLAMETHROWER), 0.2F + (trait != null ? (Math.min(trait.getCombustionEnergy() / 100_000F, 15F)) : 0));
-            PlatformHooks.setSecondsOnFire(e, 5);
+            MobHooks.setSecondsOnFire(e, 5);
         }
 
         if (style == ChemicalStyle.GASFLAME) {
@@ -258,7 +259,7 @@ public class EntityChemical extends EntityThrowableNT {
             float heat = Math.max(flammable != null ? flammable.getHeatEnergy() / 50_000F : 0, combustible != null ? Math.min(combustible.getCombustionEnergy() / 100_000F, 15F) : 0);
             heat *= intensity;
             hurtIgnoreIFrame(e, getDamage(ModDamageTypes.FLAMETHROWER), (0.2F + heat) * (float) intensity);
-            PlatformHooks.setSecondsOnFire(e, (int) Math.ceil(5 * intensity));
+            MobHooks.setSecondsOnFire(e, (int) Math.ceil(5 * intensity));
         }
 
         if (type.hasTrait(FT_Corrosive.class)) {

@@ -16,13 +16,13 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 
 /**
- * Gegenstueck zu 1.7.10 {@code RenderEntity}: der Rueckfall-Renderer fuer Entities ohne eigenen Renderer zeichnet
- * die Trefferbox als weissen Quader ({@code renderOffsetAABB}). Genutzt fuer Entities, denen das Original keinen
- * Renderer zuweist (z.B. EntityWastePearl).
+ * Counterpart to 1.7.10 {@code RenderEntity}: fallback renderer for entities without their own renderer,
+ * drawing the bounding box as a white box ({@code renderOffsetAABB}). Used for entities where the original
+ * assigns no renderer (e.g. EntityWastePearl).
  */
 public class WhiteBoxRenderer<T extends Entity> extends EntityRenderer<T> {
 
-    private static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("textures/misc/white.png");
+    private static final ResourceLocation WHITE = ResourceLocation.tryParse("hbm_m:textures/misc/white.png");
 
     public WhiteBoxRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);
@@ -58,11 +58,7 @@ public class WhiteBoxRenderer<T extends Entity> extends EntityRenderer<T> {
 
     private static void v(VertexConsumer vc, Matrix4f m, Matrix3f n, int light, float nx, float ny, float nz,
                           float x, float y, float z, float u, float vv) {
-        //? if < 1.21.1 {
-        vc.vertex(m, x, y, z).color(1F, 1F, 1F, 1F).uv(u, vv).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(n, nx, ny, nz).endVertex();
-        //?} else {
-        /*com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, x, y, z).setColor(1F, 1F, 1F, 1F).setUv(u, vv).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light), n, nx, ny, nz);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x, y, z, 1F, 1F, 1F, 1F, u, vv, OverlayTexture.NO_OVERLAY, light, n, nx, ny, nz);
     }
 
     @Override

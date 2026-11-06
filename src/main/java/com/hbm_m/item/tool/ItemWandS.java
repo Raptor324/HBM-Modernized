@@ -27,6 +27,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code ItemWandS} (wand_s, Strukturstab, nur Kreativ): zwei Klicks spannen einen Bereich auf und setzen darunter
@@ -50,10 +51,10 @@ public class ItemWandS extends Item {
         list.add(Component.literal("(Saves an area defined by two right-clicks,"));
         list.add(Component.literal("adds a block to the blacklist by crouch right-clicking!)"));
 
-        if (PlatformHooks.hasItemTag(stack)) {
-            int px = PlatformHooks.getInt(stack, "x");
-            int py = PlatformHooks.getInt(stack, "y");
-            int pz = PlatformHooks.getInt(stack, "z");
+        if (StackNbt.has(stack)) {
+            int px = StackNbt.getInt(stack, "x");
+            int py = StackNbt.getInt(stack, "y");
+            int pz = StackNbt.getInt(stack, "z");
 
             if (px != 0 || py != 0 || pz != 0) {
                 list.add(Component.literal("From: " + px + ", " + py + ", " + pz).withStyle(ChatFormatting.AQUA));
@@ -95,9 +96,9 @@ public class ItemWandS extends Item {
             setBlocks(stack, blocks);
 
         } else {
-            int px = PlatformHooks.getInt(stack, "x");
-            int py = PlatformHooks.getInt(stack, "y");
-            int pz = PlatformHooks.getInt(stack, "z");
+            int px = StackNbt.getInt(stack, "x");
+            int py = StackNbt.getInt(stack, "y");
+            int pz = StackNbt.getInt(stack, "z");
 
             if (px == 0 && py == 0 && pz == 0) {
                 setPosition(stack, x, y, z);
@@ -139,18 +140,18 @@ public class ItemWandS extends Item {
     }
 
     private void setPosition(ItemStack stack, int x, int y, int z) {
-        PlatformHooks.putInt(stack, "x", x);
-        PlatformHooks.putInt(stack, "y", y);
-        PlatformHooks.putInt(stack, "z", z);
+        StackNbt.putInt(stack, "x", x);
+        StackNbt.putInt(stack, "y", y);
+        StackNbt.putInt(stack, "z", z);
     }
 
     private Set<BlockState> getBlocks(ItemStack stack) {
         Set<BlockState> blocks = new HashSet<>();
-        if (!PlatformHooks.hasItemTag(stack)) {
+        if (!StackNbt.has(stack)) {
             return blocks;
         }
 
-        ListTag list = PlatformHooks.getItemTag(stack).getList("blocks", Tag.TAG_COMPOUND);
+        ListTag list = StackNbt.read(stack).getList("blocks", Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) {
             blocks.add(NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), list.getCompound(i)));
         }
@@ -161,7 +162,7 @@ public class ItemWandS extends Item {
     private void setBlocks(ItemStack stack, Set<BlockState> blocks) {
         ListTag list = new ListTag();
         for (BlockState state : blocks) list.add(NbtUtils.writeBlockState(state));
-        PlatformHooks.editItemTag(stack, t -> t.put("blocks", list));
+        StackNbt.edit(stack, t -> t.put("blocks", list));
     }
 
     @Override
@@ -169,7 +170,7 @@ public class ItemWandS extends Item {
         ItemStack stack = player.getItemInHand(hand);
 
         if (player.isShiftKeyDown()) {
-            PlatformHooks.editItemTag(stack, t -> t.put("blocks", new ListTag()));
+            StackNbt.edit(stack, t -> t.put("blocks", new ListTag()));
 
             if (world.isClientSide) {
                 player.sendSystemMessage(Component.literal("Cleared blacklist"));

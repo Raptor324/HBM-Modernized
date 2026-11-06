@@ -1,5 +1,6 @@
 //? if forge {
 package com.hbm_m.main;
+import com.hbm_m.platform.AttributeHooks;
 
 import com.hbm_m.platform.PlatformHooks;
 
@@ -590,7 +591,7 @@ public final class HbmForgeEvents {
             if (speed != null) {
                 speed.removeModifier(fopSpeed);
                 if (player.isSprinting()) {
-                    speed.addTransientModifier(PlatformHooks.attributeModifier(fopSpeed, "FOP SPEED", 0.5, AttributeModifier.Operation.MULTIPLY_BASE));
+                    speed.addTransientModifier(AttributeHooks.modifier(fopSpeed, "FOP SPEED", 0.5, AttributeModifier.Operation.MULTIPLY_BASE));
                 }
             }
         }

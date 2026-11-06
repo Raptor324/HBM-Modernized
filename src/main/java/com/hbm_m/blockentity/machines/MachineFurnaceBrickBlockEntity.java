@@ -242,7 +242,7 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
     private boolean canAcceptResult(ItemStack result) {
         ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
         if (current.isEmpty()) return true;
-        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)) return false;
+        if (!com.hbm_m.platform.StackNbt.sameItemSameTags(current, result)) return false;
         return current.getCount() + result.getCount() <= current.getMaxStackSize();
     }
 
@@ -264,9 +264,14 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
         }
     }
 
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<SmeltingRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     private java.util.Optional<SmeltingRecipe> getRecipe(Level level, ItemStack input) {
-        // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput) и возвращает RecipeHolder.
-        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(level, RecipeType.SMELTING, input);
+        SmeltingRecipe cached = recipeResolver.resolve(level, RecipeType.SMELTING,
+                com.hbm_m.platform.StackNbt.fingerprint(input),
+                (lvl, all) -> com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(lvl, RecipeType.SMELTING, input).orElse(null));
+        return java.util.Optional.ofNullable(cached);
     }
 
     public static boolean isFuel(ItemStack stack) {
@@ -287,19 +292,25 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
+        tag.put("inventory", inventory.serialize( registries));
         tag.putInt("litTime", litTime);
         tag.putInt("litDuration", litDuration);
         tag.putInt("progress", progress);
+        tag.putInt("ashWood", ashLevelWood);
+        tag.putInt("ashCoal", ashLevelCoal);
+        tag.putInt("ashMisc", ashLevelMisc);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
+        inventory.deserialize(tag.getCompound("inventory"), registries);
         litTime = tag.getInt("litTime");
         litDuration = tag.getInt("litDuration");
         progress = tag.getInt("progress");
+        ashLevelWood = tag.getInt("ashWood");
+        ashLevelCoal = tag.getInt("ashCoal");
+        ashLevelMisc = tag.getInt("ashMisc");
     }
 
     // ==================== GUI ====================
@@ -356,4 +367,10 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
         sidedItems.invalidate();
     }
     *///?}
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
+    }
 }

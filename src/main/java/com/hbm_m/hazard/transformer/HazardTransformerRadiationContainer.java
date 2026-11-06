@@ -14,6 +14,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.BlockEntityItemData;
 
 /**
  * 1:1 {@code HazardTransformerRadiationContainer}: Behaelter strahlen mit der Summe ihres Inhalts - Kisten

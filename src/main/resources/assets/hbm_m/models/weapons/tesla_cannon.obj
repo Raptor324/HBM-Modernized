@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'tesla_cannon.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Capacitor
 v 0.000000 -0.125000 2.000000
 v -0.176777 -0.198223 2.000000

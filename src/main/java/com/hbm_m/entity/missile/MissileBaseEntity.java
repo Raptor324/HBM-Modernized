@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.hbm_m.explosion.MissileWarheadEffects;
+import com.hbm_m.platform.PlatformHooks;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 
@@ -32,6 +33,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.LevelHooks;
 
 /**
  * Базовая сущность баллистической ракеты.
@@ -627,20 +629,22 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
-        this.entityData.define(DATA_LAUNCH_FACING, Direction.NORTH);
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    *///?}
+        defs.define(DATA_LAUNCH_FACING, Direction.NORTH);
     }
 
+    //? if < 1.21.1 {
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return new ClientboundAddEntityPacket(this, MobCategory.MISC.ordinal());
     }
     //?} else {
     /*@Override
-    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-        builder.define(DATA_LAUNCH_FACING, Direction.NORTH);
-    }
-
-    @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket(net.minecraft.server.level.ServerEntity serverEntity) {
         return new ClientboundAddEntityPacket(this, serverEntity);
     }
@@ -824,9 +828,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         if (this.loadedChunk == null) {
             return;
         }
-        if (this.level() instanceof ServerLevel server) {
-            server.getChunkSource().removeRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
-        }
+        LevelHooks.removeChunkTicket(this.level(), CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
         this.loadedChunk = null;
     }
 
@@ -853,14 +855,14 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
             // как он получит тикет/контрейл, иначе в воздухе появится вторая (и третья) ракета
             // и второй контакт на радаре.
             if (com.hbm_m.server.missile.MissileTrackBroadcaster.isDuplicateSpawn(server, this)) {
-                LOGGER.warn("Discarding duplicate missile {} (uuid={}) — a live missile with the same UUID already exists",
+                LOGGER.warn("Discarding duplicate missile {} (uuid={}) - a live missile with the same UUID already exists",
                         this.getId(), this.getUUID());
                 this.discard();
                 return;
             }
             if (this.loadedChunk == null) {
                 this.loadedChunk = new ChunkPos(this.blockPosition());
-                server.getChunkSource().addRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+                LevelHooks.addChunkTicket(this.level(), CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
             }
             com.hbm_m.server.missile.MissileTrackBroadcaster.onMissileSpawned(this);
         }

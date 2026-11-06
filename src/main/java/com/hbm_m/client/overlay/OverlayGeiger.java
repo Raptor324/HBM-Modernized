@@ -33,11 +33,7 @@ public class OverlayGeiger {
     private static float prevPlayerRadSample = 0.0f;
     private static float lastPlayerRadSample = 0.0f;
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation OVERLAY = new ResourceLocation(RefStrings.MODID, "textures/misc/overlay_misc.png");
-    *///?} else {
         private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/misc/overlay_misc.png");
-    //?}
 
 
     public static void render(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {

@@ -1,5 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
+import com.hbm_m.client.render.weapon.WeaponJointRig;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.client.weapon.WeaponResources;
@@ -71,28 +74,17 @@ public class ItemRenderMAS36 extends ItemRenderWeaponBase {
 
 		GunGL.translate(0, 0, recoil[2]);
 
-		GunGL.renderPart(WeaponResources.mas36, "Gun");
-		if(hasBayonet(stack))  GunGL.renderPart(WeaponResources.mas36, "Bayonet");
+		WeaponRenderRegistry.renderPart(WeaponResources.mas36, "Gun", GunGL.pose());
+		if(hasBayonet(stack)) WeaponRenderRegistry.renderPart(WeaponResources.mas36, "Bayonet", GunGL.pose());
 
-		GunGL.pushMatrix();
-		GunGL.translate(0, 0.3125, -2.125);
-		GunGL.rotate(stock[0], 1, 0, 0);
-		GunGL.translate(0, -0.3125, 2.125);
-		GunGL.renderPart(WeaponResources.mas36, "Stock");
-		GunGL.popMatrix();
+		WeaponJointRig rig = WeaponRenderRegistry.getRig(WeaponResources.mas36);
+		WeaponKinematics.renderPartWithJoint(rig, "Stock", GunGL.pose(), (float) stock[0]);
+		WeaponKinematics.renderPartWithChain(rig, "Bolt", GunGL.pose(), new float[]{(float) boltTurn[2], (float) boltPull[2]});
 
-		GunGL.pushMatrix();
-		GunGL.translate(0, 0.0625 * 18.5, 0);
-		GunGL.rotate(boltTurn[2], 0, 0, 1);
-		GunGL.translate(0, 0.0625 * -18.5, 0);
-		GunGL.translate(0, 0, boltPull[2]);
-		GunGL.renderPart(WeaponResources.mas36, "Bolt");
-		GunGL.popMatrix();
-
-		GunGL.pushMatrix();
-		GunGL.translate(bullet[0], bullet[1], bullet[2]);
-		GunGL.renderPart(WeaponResources.mas36, "Bullet");
-		GunGL.popMatrix();
+		WeaponKinematics.scoped(GunGL.pose(), ps -> {
+			WeaponKinematics.applyVectorTranslate(ps, (float) bullet[0], (float) bullet[1], (float) bullet[2]);
+			WeaponRenderRegistry.renderPart(WeaponResources.mas36, "Bullet", ps);
+		});
 
 		if(isScoped) GunGL.renderPart(WeaponResources.mas36, "Scope");
 
@@ -131,34 +123,22 @@ public class ItemRenderMAS36 extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 1.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, 0.5, 3);
+		setupThirdPerson(stack, 1.5D, 0, 0.5, 3);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 1.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(-0.5, 0.5, 0);
+		setupInv(stack, 1.5D, -0.5, 0.5, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -7.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, -0.25, -2.5);
+		setupModTable(stack, -7.5D, 0, -0.25, -2.5);
 	}
 
 	@Override
 	public void renderModTable(ItemStack stack, int index) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(WeaponResources.mas36_tex);
 		GunGL.renderPart(WeaponResources.mas36, "Gun");
 		GunGL.renderPart(WeaponResources.mas36, "Stock");
@@ -170,7 +150,6 @@ public class ItemRenderMAS36 extends ItemRenderWeaponBase {
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(WeaponResources.mas36_tex);
 		GunGL.renderPart(WeaponResources.mas36, "Gun");
 		GunGL.renderPart(WeaponResources.mas36, "Stock");
@@ -178,28 +157,7 @@ public class ItemRenderMAS36 extends ItemRenderWeaponBase {
 		if(isScoped(stack)) GunGL.renderPart(WeaponResources.mas36, "Scope");
 		if(type != ItemRenderType.EQUIPPED) GunGL.translate(0, -1, -6);
 		if(hasBayonet(stack)) GunGL.renderPart(WeaponResources.mas36, "Bayonet");
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 1, 8);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(90 * shotRand, 1, 0, 0);
-			GunGL.scale(0.5, 0.5, 0.5);
-			this.renderMuzzleFlash(shot, 75, 10);
-			GunGL.popMatrix();
-		}
+		renderEquippedMuzzleFlash(type, stack, data, 0, 1, 8, 0.5D, 75, 10);
 	}
 
 	public boolean isScoped(ItemStack stack) {

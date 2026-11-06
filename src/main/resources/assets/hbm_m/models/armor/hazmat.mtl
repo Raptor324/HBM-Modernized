@@ -1,0 +1,6 @@
+# HBM-Modernized hazmat suit - shared deferred material (anvil convention).
+# map_Kd "#default" means: resolve the texture from the item model JSON's
+# "default" key at bake time - this is how all three suit colors get their
+# own texture out of one shared mesh. Do not put a real texture path here.
+newmtl default
+map_Kd #default

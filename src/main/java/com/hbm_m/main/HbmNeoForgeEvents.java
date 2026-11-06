@@ -1,5 +1,11 @@
 //? if neoforge {
 /*package com.hbm_m.main;
+import com.hbm_m.platform.AttributeHooks;
+import com.hbm_m.platform.EffectHooks;
+import com.hbm_m.platform.ItemHooks;
+import com.hbm_m.platform.MobHooks;
+import com.hbm_m.platform.StackNbt;
+import com.hbm_m.powerarmor.IDamageHandler;
 
 import java.util.List;
 import java.util.Random;
@@ -22,13 +28,9 @@ import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.AttributeOps;
-import com.hbm_m.platform.EffectHooks;
 import com.hbm_m.platform.MobHooks;
-import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.platform.StackNbt;
 import com.hbm_m.powerarmor.IAttackHandler;
-import com.hbm_m.powerarmor.IDamageHandler;
 import com.hbm_m.powerarmor.ModArmorFSB;
 import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import com.hbm_m.sound.HbmSoundsNT;
@@ -77,10 +79,10 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerFlyableFallEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import com.hbm_m.platform.ItemHooks;
+import com.hbm_m.platform.AttributeHooks;
 
-// NeoForge-Gegenstueck zu HbmForgeEvents (gleiches Verhalten, NeoForge-21.1-Events).
 // Forge LivingAttackEvent + LivingHurtEvent -> LivingIncomingDamageEvent (vor Ruestung, abbrechbar),
-// Forge LivingTickEvent -> EntityTickEvent.Pre, Forge PlayerTickEvent (START/END) -> PlayerTickEvent.Pre/Post.
 @EventBusSubscriber(modid = RefStrings.MODID)
 public final class HbmNeoForgeEvents {
 
@@ -584,9 +586,9 @@ public final class HbmNeoForgeEvents {
         if (ShadyUtil.is(player, ShadyUtil.LePeeperSauvage, "LePeeperSauvage")) {
             AttributeInstance speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
             if (speed != null) {
-                MobHooks.removeModifier(speed, fopSpeed);
+                AttributeHooks.removeModifier(speed, fopSpeed);
                 if (player.isSprinting()) {
-                    speed.addTransientModifier(PlatformHooks.attributeModifier(fopSpeed, "FOP SPEED", 0.5, AttributeOps.MULTIPLY_BASE));
+                    speed.addTransientModifier(AttributeHooks.modifier(fopSpeed, "FOP SPEED", 0.5, AttributeHooks.MULTIPLY_BASE));
                 }
             }
         }
@@ -692,7 +694,7 @@ public final class HbmNeoForgeEvents {
         if (!(event.getEntity() instanceof Player player)) return;
         ItemStack stack = event.getItem();
 
-        if (!stack.isEmpty() && PlatformHooks.isEdible(stack) && StackNbt.has(stack)) {
+        if (!stack.isEmpty() && ItemHooks.isEdible(stack) && StackNbt.has(stack)) {
             CompoundTag tag = StackNbt.read(stack);
             if (tag.getBoolean("ntmCyanide")) for (int i = 0; i < 10; i++) {
                 player.hurt(ModDamageSources.create(player.level(), rand.nextBoolean() ? ModDamageTypes.EUTHANIZED_SELF : ModDamageTypes.EUTHANIZED_SELF_2), 1000);

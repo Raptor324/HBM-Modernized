@@ -57,6 +57,29 @@ public class MachineFractionTowerBlock extends DummyableMachineBlock implements 
         return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
+    /** Порт {@code MachineFractionTower.printHook}: список баков, первый зелёным {@code "-> "}, остальные красным {@code "<- "}. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineFractionTowerBlockEntity tower)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        com.hbm_m.inventory.fluid.tank.FluidTank[] tanks = tower.getTanks();
+        for (int i = 0; i < tanks.length; i++) {
+            com.hbm_m.inventory.fluid.tank.FluidTank tank = tanks[i];
+            text.add(net.minecraft.network.chat.Component.literal(i == 0 ? "-> " : "<- ")
+                    .withStyle(i == 0 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED)
+                    .append(net.minecraft.network.chat.Component.literal("")
+                            .append(com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType()).getLocalizedName())
+                            .withStyle(net.minecraft.ChatFormatting.WHITE))
+                    .append(net.minecraft.network.chat.Component.literal(
+                            ": " + tank.getFill() + "/" + tank.getMaxFill() + "mB")
+                            .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -102,21 +125,6 @@ public class MachineFractionTowerBlock extends DummyableMachineBlock implements 
             return InteractionResult.PASS;
         }
         return InteractionResult.SUCCESS;
-    }
-
-    @Override
-    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
-        if (!(world.getBlockEntity(pos) instanceof MachineFractionTowerBlockEntity cracker)) return;
-
-        List<Component> text = new ArrayList<>();
-        for (int i = 0; i < cracker.tanks.length; i++) {
-            text.add((i == 0 ? Component.literal("-> ").withStyle(ChatFormatting.GREEN) : Component.literal("<- ").withStyle(ChatFormatting.RED))
-                    .append(Component.literal("").withStyle(ChatFormatting.WHITE) /* 1.7 §r = Grundfarbe */
-                            .append(FluidType.forFluid(cracker.tanks[i].getTankType()).getLocalizedName())
-                            .append(": " + cracker.tanks[i].getFill() + "/" + cracker.tanks[i].getMaxFill() + "mB")));
-        }
-
-        com.hbm_m.interfaces.ILookOverlay.printGeneric(g, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     //? if >1.20.1 {

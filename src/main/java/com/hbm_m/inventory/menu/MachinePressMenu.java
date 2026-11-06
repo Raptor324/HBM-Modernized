@@ -14,6 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachinePressMenu extends AbstractContainerMenu {
 
@@ -41,11 +42,10 @@ public class MachinePressMenu extends AbstractContainerMenu {
         this.addSlot(new StampSlot(container, 1, 80, 17));
         this.addSlot(new MaterialSlot(container, 2, 80, 53));
         this.addSlot(new OutputSlot(container, 3, 140, 35));
-        // Original: Extra Storage (Slots 4-12) unter der Presse
-        if (handler.getSlots() >= 13) {
-            for (int i = 0; i < 9; i++) {
-                this.addSlot(new Slot(container, 4 + i, 8 + i * 18, 84));
-            }
+        // Original: Extra Storage (Slots 4-12) unter der Presse - das BE (SLOT_COUNT = 13) hat
+        // immer alle 13 Slots, also werden sie bedingungslos gespiegelt.
+        for (int i = 0; i < 9; i++) {
+            this.addSlot(new Slot(container, 4 + i, 8 + i * 18, 84));
         }
 
         addDataSlots(data);
@@ -108,7 +108,14 @@ public class MachinePressMenu extends AbstractContainerMenu {
     private static final int VANILLA_SLOT_COUNT = HOTBAR_SLOT_COUNT + PLAYER_INVENTORY_SLOT_COUNT;
     private static final int VANILLA_FIRST_SLOT_INDEX = 0;
     private static final int TE_INVENTORY_FIRST_SLOT_INDEX = VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT;
-    private static final int TE_INVENTORY_SLOT_COUNT = 4;
+    /** BE inventory layout (MachinePressBlockEntity SLOT_COUNT = 13): fuel, stamp, material and
+     * output plus the 9 "Extra Storage" slots 4-12 under the press. */
+    private static final int TE_INVENTORY_SLOT_COUNT = 13;
+    /** Fuel, stamp and material; the output sits between them and the storage row and must stay
+     * out of the insert range - vanilla moveItemStackTo ignores mayPlace when merging. */
+    private static final int TE_INSERTABLE_SLOT_COUNT = 3;
+    /** First of the 9 storage slots behind the output slot (BE slots 4-12). */
+    private static final int TE_STORAGE_FIRST_SLOT = 4;
 
     @Override
     public ItemStack quickMoveStack(Player playerIn, int index) {
@@ -120,10 +127,12 @@ public class MachinePressMenu extends AbstractContainerMenu {
 
         if (index < VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT) {
             if (!moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX
-                    + TE_INVENTORY_SLOT_COUNT, false)) {
+                    + TE_INSERTABLE_SLOT_COUNT, false)
+                    && !moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX + TE_STORAGE_FIRST_SLOT,
+                            TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT, false)) {
                 return ItemStack.EMPTY;
             }
-        } else if (index < slots.size()) {
+        } else if (index < TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT) {
             if (!moveItemStackTo(sourceStack, VANILLA_FIRST_SLOT_INDEX, VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT, false)) {
                 return ItemStack.EMPTY;
             }

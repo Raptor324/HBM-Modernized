@@ -90,7 +90,10 @@ public class PileBlock extends BaseEntityBlock {
             return;
         }
 
-        if (!PileCoreBlockEntity.meltingDown && !level.isClientSide()) {
+        // Create/Sable are moving the pile with its NBT: tearing it down here would leave a copy
+        // of it in graphite bricks at the old spot.
+        if (!PileCoreBlockEntity.meltingDown && !level.isClientSide()
+                && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
             BlockEntity tile = level.getBlockEntity(pos);
 
             if (tile instanceof PileCoreBlockEntity core) {
@@ -149,8 +152,12 @@ public class PileBlock extends BaseEntityBlock {
         return drill(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
-    //? if >= 1.21.1 {
+    //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<PileBlock> CODEC = simpleCodec(PileBlock::new);
-    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
     *///?}
 }

@@ -66,14 +66,17 @@ public class ICFPhantomBlock extends BaseEntityBlock {
     }
 
     /** Original: {@code getItemDropped} gibt null - der Platzhalter selbst faellt nie. */
-    @Override
     //? if < 1.21.1 {
+    @Override
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
-    //?} else {
-    /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
-    *///?}
         return ItemStack.EMPTY;
     }
+    //?} else {
+    /*@Override
+    public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+        return ItemStack.EMPTY;
+    }
+    *///?}
 
     /**
      * 1:1-Port von {@code breakBlock}: das gemerkte Bauteil kommt zurueck und der Laser gilt als
@@ -85,7 +88,10 @@ public class ICFPhantomBlock extends BaseEntityBlock {
      */
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        // Create/Sable are carrying the laser away with its NBT; restoring the part here would
+        // leave a second copy of it at the old spot.
         if (state.getBlock() != newState.getBlock() && !level.isClientSide()
+                && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()
                 && level.getBlockEntity(pos) instanceof ICFPhantomBlockEntity phantom
                 && phantom.getPart() != null) {
 
@@ -109,8 +115,13 @@ public class ICFPhantomBlock extends BaseEntityBlock {
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
-    //? if >= 1.21.1 {
+
+    //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<ICFPhantomBlock> CODEC = simpleCodec(ICFPhantomBlock::new);
-    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
     *///?}
 }

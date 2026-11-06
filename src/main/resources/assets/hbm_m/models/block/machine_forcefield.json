@@ -1,0 +1,18 @@
+{
+  "loader": "hbm_m:machine_parts_loader",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "parts": {
+    "Base": {
+      "model": "hbm_m:models/forcefield/forcefield_base.obj",
+      "texture": "hbm_m:block/machine/forcefield_base"
+    },
+    "Top": {
+      "model": "hbm_m:models/forcefield/forcefield_top.obj",
+      "texture": "hbm_m:block/machine/forcefield_top"
+    }
+  },
+  "textures": {
+    "particle": "hbm_m:block/machine/forcefield_base"
+  }
+}

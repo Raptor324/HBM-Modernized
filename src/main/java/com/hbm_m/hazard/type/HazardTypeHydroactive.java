@@ -15,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.FluidState;
+import com.hbm_m.platform.MobHooks;
 
 public class HazardTypeHydroactive extends HazardTypeBase {
 
@@ -27,7 +28,7 @@ public class HazardTypeHydroactive extends HazardTypeBase {
         Level levelWorld = target.level();
         if (target.isInWaterOrRain() && stack.getCount() > 0) {
             stack.shrink(stack.getCount());
-            levelWorld.explode(target, target.getX(), target.getY() + target.getEyeHeight() - com.hbm_m.platform.PlatformHooks.getMyRidingOffset(target),
+            levelWorld.explode(target, target.getX(), target.getY() + target.getEyeHeight() - com.hbm_m.platform.MobHooks.getMyRidingOffset(target),
                     target.getZ(), level, Level.ExplosionInteraction.TNT);
         }
     }

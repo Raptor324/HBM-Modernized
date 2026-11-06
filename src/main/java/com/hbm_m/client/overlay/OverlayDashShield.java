@@ -23,11 +23,7 @@ public final class OverlayDashShield {
 
     private OverlayDashShield() { }
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation MISC = new ResourceLocation(RefStrings.MODID, "textures/misc/overlay_misc.png");
-    *///?} else {
     private static final ResourceLocation MISC = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/misc/overlay_misc.png");
-    //?}
 
     private static float fadeOut = 0F;
 

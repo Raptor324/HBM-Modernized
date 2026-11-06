@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client;
 
 import com.hbm_m.item.BrokenItem;
@@ -34,4 +33,3 @@ public final class BrokenItemDecorator implements IItemDecorator {
         return false;
     }
 }
-//?}

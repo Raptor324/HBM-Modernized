@@ -153,7 +153,6 @@ public class PADipoleBlockEntity extends CooledMachineBlockEntity implements IPa
 
     /** Original {@code usage} - fuer die Bereitschaftsanzeige im GUI. */
     public static long getUsage() { return USAGE; }
-
     public void configure(Direction lower, Direction upper, Direction redstone, int threshold) {
         this.dirLower = lower;
         this.dirUpper = upper;
@@ -202,7 +201,6 @@ public class PADipoleBlockEntity extends CooledMachineBlockEntity implements IPa
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return new com.hbm_m.inventory.menu.PADipoleMenu(id, inv, this);
     }
-
     // ── Redstone-over-Radio (1:1 TileEntityPADipole) ──
 
     @Override

@@ -26,8 +26,8 @@ public class ItemChainsaw extends ItemToolAbilityFueled implements IAnimatedItem
         super(damage, movement, material, type, maxFuel, consumption, fillRate, acceptedFuels);
     }
 
-    @Override
-    public boolean onEntitySwing(ItemStack stack, LivingEntity entityLiving) {
+    /** Original {@code onEntitySwing}: Schwung-Animation bei jedem Schlag. */
+    private boolean doEntitySwing(ItemStack stack, LivingEntity entityLiving) {
 
         if (!(entityLiving instanceof ServerPlayer player))
             return false;
@@ -39,6 +39,18 @@ public class ItemChainsaw extends ItemToolAbilityFueled implements IAnimatedItem
 
         return false;
     }
+
+    //? if forge {
+    @Override
+    public boolean onEntitySwing(ItemStack stack, LivingEntity entity) {
+        return doEntitySwing(stack, entity);
+    }
+    //?} elif neoforge {
+    /*@Override
+    public boolean onEntitySwing(ItemStack stack, LivingEntity entity, net.minecraft.world.InteractionHand hand) {
+        return doEntitySwing(stack, entity);
+    }
+    *///?}
 
     @Override
     public BusAnimation getAnimation(ToolAnimation type, ItemStack stack) {
@@ -91,6 +103,7 @@ public class ItemChainsaw extends ItemToolAbilityFueled implements IAnimatedItem
     //? if forge {
     /** Original ClientProxy: eigener Itemrenderer (ItemRenderChainsaw) ueber den Waffen-BEWLR. */
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -102,6 +115,7 @@ public class ItemChainsaw extends ItemToolAbilityFueled implements IAnimatedItem
     //?} elif neoforge {
     /*/^* Original ClientProxy: eigener Itemrenderer (ItemRenderChainsaw) ueber den Waffen-BEWLR. ^/
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             @Override

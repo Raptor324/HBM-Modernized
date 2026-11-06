@@ -51,10 +51,8 @@ public class ItemHot extends Item {
         if (!(stack.getItem() instanceof ItemHot))
             return stack;
 
-        if (!StackNbt.has(stack))
-            StackNbt.set(stack, new CompoundTag());
-
-        StackNbt.tag(stack).putInt("heat", getMaxHeat(stack));
+        // orCreate вместо set(EMPTY)+tag(): на 1.21.1 set() с пустым тегом удаляет компонент
+        StackNbt.orCreate(stack).putInt("heat", getMaxHeat(stack));
         return stack;
     }
 
@@ -63,10 +61,7 @@ public class ItemHot extends Item {
         if (!(stack.getItem() instanceof ItemHot))
             return stack;
 
-        if (!StackNbt.has(stack))
-            StackNbt.set(stack, new CompoundTag());
-
-        StackNbt.tag(stack).putInt("heat", (int) (d * getMaxHeat(stack)));
+        StackNbt.orCreate(stack).putInt("heat", (int) (d * getMaxHeat(stack)));
         return stack;
     }
 

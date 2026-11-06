@@ -10,6 +10,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code ItemClayTablet}: beim ersten Benutzen wird ein Zufallssamen ({@code tabletSeed}) gesetzt, die
@@ -30,8 +31,8 @@ public class ItemClayTablet extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (!world.isClientSide && !PlatformHooks.hasItemTag(stack)) {
-            PlatformHooks.putLong(stack, "tabletSeed", player.getRandom().nextLong());
+        if (!world.isClientSide && !StackNbt.has(stack)) {
+            StackNbt.putLong(stack, "tabletSeed", player.getRandom().nextLong());
         }
         if (world.isClientSide) EnvExecutor.runInEnv(Env.CLIENT, () -> () -> ClientOnly.open(tabletMeta));
         return InteractionResultHolder.pass(stack);

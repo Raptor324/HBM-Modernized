@@ -5,25 +5,30 @@ layout(location = 1) in vec3 Normal;
 layout(location = 2) in vec2 UV0;
 
 #ifdef USE_INSTANCING
-// int bone_id: резерв под merged mesh / документация иерархии (см. OLD/render.md).
-// Полный pose части задаётся в InstPos/InstRot (CPU), UBO/SSBO в VS не используем — совместимость с Oculus/Iris.
+// int bone_id: reserved for merged mesh / hierarchy documentation (see OLD/render.md).
+// Full part pose comes via InstPos/InstRot (CPU); no UBO/SSBO in the VS - Oculus/Iris compatibility.
 #ifdef USE_VERTEX_BONE_ID
 layout(location = 3) in int BoneId;
 layout(location = 4) in vec3 InstPos;
+// Packed quat: 4 snorm16 halves in 2 record words, read as GL_SHORT normalized
+// ([-1,1] floats - no shader decode needed; CPU encoder packSnorm16).
 layout(location = 5) in vec4 InstRot;
 layout(location = 6) in vec3 InstBboxMin;
 // xyz = bbox extent; w = per-instance fade (keeps attrib count <= 16 with BoneId).
 layout(location = 7) in vec4 InstBboxSize;
-layout(location = 8)  in vec4 InstLightC01;  // corner0.uv, corner1.uv
+// Corner light, PACKED u8 (normalized 0..1; decode to the 0..240 texel grid by x240):
+layout(location = 8)  in vec4 InstLightC01;  // corner0.u, corner0.v, corner1.u, corner1.v
 layout(location = 9)  in vec4 InstLightC23;
 layout(location = 10) in vec4 InstLightC45;
 layout(location = 11) in vec4 InstLightC67;
 #else
 layout(location = 3)  in vec3 InstPos;
+// Packed quat: 4 snorm16 halves in 2 record words, read as GL_SHORT normalized.
 layout(location = 4)  in vec4 InstRot;
 layout(location = 5)  in vec3 InstBboxMin;
 layout(location = 6)  in vec3 InstBboxSize;
-layout(location = 7)  in vec4 InstLightC01;  // corner0.uv, corner1.uv
+// Corner light, PACKED u8 (normalized 0..1; decode to the 0..240 texel grid by x240):
+layout(location = 7)  in vec4 InstLightC01;  // corner0.u, corner0.v, corner1.u, corner1.v
 layout(location = 8)  in vec4 InstLightC23;
 layout(location = 9)  in vec4 InstLightC45;
 layout(location = 10) in vec4 InstLightC67;
@@ -50,10 +55,14 @@ out vec2 texCoord;
 out vec2 lightmapUV;
 out float vertexDistance;
 out vec3 fragNormal;
-// Мировая нормаль (поворот инстанса/модели без view-матрицы) для направленного затенения.
+// World normal (instance/model rotation without view matrix) for directional shading.
 out vec3 worldNormal;
 // Per-vertex fade: InstBboxSize.w when instancing (batched flush reads stale uniform otherwise).
 out float vFadeAlpha;
+// Per-instance tint: THIS program has no such attribute (old VAO layout) - always white.
+// The attribute path InstColor@13 lives in block_lit_instanced.vsh; the shared
+// block_lit.fsh multiplies by vColor in both cases.
+out vec4 vColor;
 
 #ifdef USE_INSTANCING
 mat4 quatToMat4(vec4 q) {
@@ -112,17 +121,25 @@ void main() {
     mat4 rotMatrix = quatToMat4(InstRot);
     mat4 translation = mat4(1.0);
     translation[3] = vec4(InstPos, 1.0);
+    // InstPos/InstRot are WORLD coordinates (FrameViewState): camera movement
+    // does not change the records (span diff yields zero upload for a static scene).
+    // Camera (R_cam*T(-cam)) comes via ModelViewMat, so viewPos stays view-space;
+    // fog/depth are unaffected.
     mat4 instBase = translation * rotMatrix;
-    modelView = instBase;
+    modelView = ModelViewMat * instBase;
     worldRot = rotMatrix;
     bboxMin = InstBboxMin;
     bboxSize = InstBboxSize.xyz;
-    lc01 = InstLightC01;
-    lc23 = InstLightC23;
-    lc45 = InstLightC45;
-    lc67 = InstLightC67;
+    // Corner light: packed u8, normalized fetch decodes to the 0..240 texel grid
+    // by x240 (byte x 240/255; CPU encoder InstancedStaticPartRenderer.packLightU8).
+    lc01 = InstLightC01 * 240.0;
+    lc23 = InstLightC23 * 240.0;
+    lc45 = InstLightC45 * 240.0;
+    lc67 = InstLightC67 * 240.0;
 
-    fragNormal = mat3(modelView) * Normal;
+    // Part world normal (no view rotation) - for shading; fragNormal keeps
+    // its previous semantics (instance rotation, camera-independent).
+    fragNormal = mat3(instBase) * Normal;
 #else
     modelView = ModelViewMat;
     bboxMin = BboxMin;
@@ -135,8 +152,8 @@ void main() {
     fragNormal = mat3(modelView) * Normal;
 #endif
 
-    // Мировая нормаль: только поворот инстанса (или identity для не-instanced пути),
-    // без view-матрицы — затенение не зависит от поворота камеры.
+    // World normal: instance rotation only (or identity for the non-instanced path),
+    // no view matrix - shading is camera-rotation independent.
     worldNormal = mat3(worldRot) * Normal;
 
     // Safeguard: when bboxSize has a zero axis the division below would NaN the
@@ -151,13 +168,20 @@ void main() {
     gl_Position = ProjMat * viewPos;
 
     texCoord = UV0;
-    // Center within the 16×16 lightmap cell like vanilla block UV2 → texcoord.
+    // Center within the 16x16 lightmap cell like vanilla block UV2 -> texcoord.
     lightmapUV = (uvLm + vec2(8.0)) / 256.0;
     vertexDistance = length(viewPos.xyz);
 
 #ifdef USE_INSTANCING
+#ifdef USE_VERTEX_BONE_ID
     vFadeAlpha = InstBboxSize.w;
+#else
+    // This file's USE_INSTANCING path has no InstBboxSize.w (vec3 attribute);
+    // the per-instance fade arrives as its own attribute (see :35).
+    vFadeAlpha = InstFadeAlpha;
+#endif
 #else
     vFadeAlpha = FadeAlpha;
 #endif
+    vColor = vec4(1.0);
 }

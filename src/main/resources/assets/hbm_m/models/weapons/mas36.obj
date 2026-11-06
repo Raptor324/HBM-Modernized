@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'mas36.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Gun
 v 0.312500 0.781250 6.187500
 v 0.125000 0.593750 6.187500

@@ -29,7 +29,8 @@ import java.util.function.Consumer;
  * <ul>
  *   <li>{@code BASE_TIME=600} — большинство рудных рецептов (addOreTag по умолчанию).</li>
  *   <li>{@code UTILITY_TIME=100} — лёгкая обработка (ROTTEN_FLESH→LEATHER, COBBLESTONE→REINFORCED_STONE).</li>
- *   <li>{@code MIXING_TIME=20} — смешивание (BONE→16 SLIME, BLACK_DYE→4 SLIME).</li>
+   *   <li>{@code MIXING_TIME=20} — смешивание (BONE→16 SLIME; «dye meta 15» = костная мука → 4 SLIME
+   *       живёт в OrigMachineRecipeGenerator как slime_ball_1).</li>
  *   <li>{@code peroxide=PEROXIDE@500}, {@code sulfur=SULFURIC_ACID@500}.</li>
  *   <li>{@code productivity=0.05} для всех рудных, 0.25 — для ROTTEN_FLESH→LEATHER.</li>
  * </ul>
@@ -60,7 +61,9 @@ public final class CrystallizerRecipeGenerator {
         ore(writer, "diamond",     "forge:ores/diamond",    ModMaterialItems.item(ModMaterials.DIAMOND, MaterialShape.CRYSTAL));
         ore(writer, "copper",      "forge:ores/copper",     ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.CRYSTAL));
         ore(writer, "sulfur",      "forge:ores/sulfur",     ModMaterialItems.item(ModMaterials.SULFUR, MaterialShape.CRYSTAL));
-        ore(writer, "niter",       "forge:ores/niter",      ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL));
+        // Оригинал: OreDictStack(KNO.ore()) -> crystal_niter (CrystallizerRecipes:72). Порт-ключ оригинала —
+        // hbm_m:oredict/ore/saltpeter (содержит hbm_m:niter_ore); forge:ores/niter не существует.
+        ore(writer, "niter",       "hbm_m:oredict/ore/saltpeter", ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL));
         ore(writer, "aluminum",    "forge:ores/aluminum",   ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.CRYSTAL));
         ore(writer, "fluorite",    "forge:ores/fluorite",   ModMaterialItems.item(ModMaterials.FLUORITE, MaterialShape.CRYSTAL));
         ore(writer, "beryllium",   "forge:ores/beryllium",  ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.CRYSTAL));
@@ -72,15 +75,24 @@ public final class CrystallizerRecipeGenerator {
         // ═══════════════════════════════════════════════════════════════════
         ore(writer, "uranium",     "forge:ores/uranium",     ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.CRYSTAL),     SULFUR);
         ore(writer, "thorium",     "forge:ores/thorium",     ModMaterialItems.item(ModMaterials.THORIUM, MaterialShape.CRYSTAL),     SULFUR);
-        ore(writer, "plutonium",   "forge:ores/plutonium",   ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.CRYSTAL),   SULFUR);
+        // Оригинал: OreDictStack(PU.ore()) (CrystallizerRecipes:69). Порт-ключ — hbm_m:oredict/ore/plutonium
+        // (содержит hbm_m:ore_nether_plutonium); forge:ores/plutonium не существует.
+        ore(writer, "plutonium",   "hbm_m:oredict/ore/plutonium", ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.CRYSTAL),   SULFUR);
         ore(writer, "titanium",    "forge:ores/titanium",    ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.CRYSTAL),     SULFUR);
         ore(writer, "tungsten",    "forge:ores/tungsten",    ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.CRYSTAL),     SULFUR);
+        // Оригинал: OreDictStack(LI.ore() = {ore_gneiss_lithium}) и CO.ore() = {ore_cobalt, ore_nether_cobalt}
+        // (CrystallizerRecipes:80/81). Теги forge:ores/lithium и forge:ores/cobalt заполняются
+        // статическими файлами src/main/resources/data/forge/tags/items/ores/{lithium,cobalt}.json
+        // (порт-руды: lithium_ore + lithium_ore_deepslate + gneiss_lithium_ore; cobalt_ore +
+        // cobalt_ore_deepslate + nether_cobalt_ore) — как уже сделано для lead/sulfur/coal и др.
         ore(writer, "lithium",     "forge:ores/lithium",     ModMaterialItems.item(ModMaterials.LITHIUM, MaterialShape.CRYSTAL),     SULFUR);
         ore(writer, "cobalt",      "forge:ores/cobalt",      ModMaterialItems.item(ModMaterials.COBALT, MaterialShape.CRYSTAL),      SULFUR);
         ore(writer, "schrabidium", "forge:ores/schrabidium", ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.CRYSTAL), SULFUR);
 
-        // Редкоземельные руды (forge:ores/rareground) — серная.
-        ore(writer, "rareground", "forge:ores/rareground", ModMaterialItems.item(ModMaterials.RARE, MaterialShape.CRYSTAL), SULFUR);
+        // Редкоземельные руды — серная. Оригинал: OreDictStack("oreRareEarth") (CrystallizerRecipes:86),
+        // порт-ключ — hbm_m:oredict/ore/rare_earth = {hbm_m:ore_rare, hbm_m:gneiss_rare_ore}.
+        // (crystal_rare_1 в OrigMachineRecipeGenerator удалён как дубликат этого рецепта.)
+        ore(writer, "rare_earth", "hbm_m:oredict/ore/rare_earth", ModMaterialItems.item(ModMaterials.RARE, MaterialShape.CRYSTAL), SULFUR);
 
         // ═══════════════════════════════════════════════════════════════════
         // УТИЛИТАРНЫЕ ПРЕОБРАЗОВАНИЯ
@@ -103,7 +115,35 @@ public final class CrystallizerRecipeGenerator {
                         new ItemStack(Items.SLIME_BALL, 16), MIXING_TIME, 0f)
                 .save(writer, "crystallizer/bone_to_slime");
 
-        // (Original dye:15 = Knochenmehl, nicht schwarzer Farbstoff - steht schon als orig_machines/crystallizer/slime_ball_1)
+        // (Рецепт «краситель → 4 слизи» — в OrigMachineRecipeGenerator как slime_ball_1:
+        //  оригинал CrystallizerRecipes:106 брал dye meta 15 = КОСТНУЮ МУКУ (minecraft:bone_meal),
+        //  а не чёрный краситель.)
+
+        // Смолы (GIT CrystallizerRecipes: три вида смолы уходят в воск хлором, воск и парафин
+        // дают заряженную гранулу и красную таблетку). Замыкает ветку нефтехимии: рафинёр
+        // теперь выдаёт смолу побочным продуктом.
+        CrystallizerRecipeBuilder.crystallizerRecipe(
+                        ModItems.OIL_TAR_CRUDE.get(), 1, fluid(ModFluids.CHLORINE, 250),
+                        new ItemStack(ModItems.OIL_TAR_WAX.get()), 20, 0f)
+                .save(writer, "crystallizer/tar_crude_to_wax");
+        CrystallizerRecipeBuilder.crystallizerRecipe(
+                        ModItems.OIL_TAR_CRACK.get(), 1, fluid(ModFluids.CHLORINE, 100),
+                        new ItemStack(ModItems.OIL_TAR_WAX.get()), 20, 0f)
+                .save(writer, "crystallizer/tar_crack_to_wax");
+        CrystallizerRecipeBuilder.crystallizerRecipe(
+                        ModItems.OIL_TAR_PARAFFIN.get(), 1, fluid(ModFluids.CHLORINE, 100),
+                        new ItemStack(ModItems.OIL_TAR_WAX.get()), 20, 0f)
+                .save(writer, "crystallizer/tar_paraffin_to_wax");
+        CrystallizerRecipeBuilder.crystallizerRecipe(
+                        ModItems.OIL_TAR_WAX.get(), 1, fluid(ModFluids.IONGEL, 500),
+                        new ItemStack(ModItems.PELLET_CHARGED.get()), 200, 0f)
+                .save(writer, "crystallizer/tar_wax_to_pellet_charged");
+        CrystallizerRecipeBuilder.crystallizerRecipe(
+                        ModItems.OIL_TAR_PARAFFIN.get(), 1, fluid(ModFluids.ESTRADIOL, 250),
+                        new ItemStack(ModItems.PILL_RED.get()), 200, 0f)
+                .save(writer, "crystallizer/tar_paraffin_to_pill_red");
+
+        // Bewehrung + 1000 mB Beton -> Bewehrter Beton (Zeit 1 wie im Original).
 
         // Bewehrung + 1000 mB Beton -> Bewehrter Beton (Zeit 1 wie im Original).
         CrystallizerRecipeBuilder.crystallizerRecipe(
@@ -145,6 +185,7 @@ public final class CrystallizerRecipeGenerator {
     private static FluidStack fluid(ModFluids.FluidEntry entry, int amountMb) {
         return FluidStack.create(entry.getSource(), (long) amountMb);
     }
+
     // ─── Neue Grundgestein-Erzkette (Original CrystallizerRecipes l.146-201) ──────────────
     // Fuer jeden der 6 Erztypen 37 Rezepte: Waschen (Wasser), Saeure-/Loesungsmittel-/Radiobad, Anreicherung
     // (Wasserstoff → primary_first, Chlor → primary_second) und Kruemel → Basis.

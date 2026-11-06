@@ -6,9 +6,7 @@ import com.hbm_m.client.weapon.WeaponResources;
 import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
 import com.hbm_m.render.anim.HbmAnimations;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /** 1:1 {@code ItemRenderAtlas}. */
@@ -109,48 +107,26 @@ public class ItemRenderAtlas extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 0.75D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, 1, 3);
+		setupThirdPerson(stack, 0.75D, 0, 1, 3);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 1.125D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(-0.5, 1.5, 0);
+		setupInv(stack, 1.125D, -0.5, 1.5, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, 1.5, 0);
+		setupModTable(stack, -5D, 0, 1.5, 0);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(texture);
 		GunGL.renderAll(WeaponResources.bio_revolver);
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
+		long shot = (type == ItemRenderType.EQUIPPED) ? getEquippedShotTime(stack, data, 0) : -1L;
+		if(shot >= 0) {
 			GunGL.pushMatrix();
 			GunGL.translate(0, 1.5, 9.25);
 			GunGL.rotate(90, 0, 1, 0);

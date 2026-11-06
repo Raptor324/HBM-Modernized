@@ -57,7 +57,6 @@ public final class RTTYNetwork {
     }
 
     public static final String TEST_CHANNEL = "2012-08-06";
-
     private static long lastProcessedTick = -1;
 
     /**
@@ -82,6 +81,24 @@ public final class RTTYNetwork {
         NEW_MESSAGES.clear();
     }
 
+    /** Drops the channels of a dimension that is going away, so they cannot outlive it. */
+    public static void onLevelUnload(Level level) {
+        ResourceKey<Level> dim = level.dimension();
+        BROADCAST.keySet().removeIf(key -> key.dimension().equals(dim));
+        NEW_MESSAGES.keySet().removeIf(key -> key.dimension().equals(dim));
+    }
+
+    /**
+     * Both maps and the tick guard are static, so without this a singleplayer world carried its
+     * channels into the next one: listeners compare timeStamp against the new world's gameTime and
+     * acted on signals broadcast in the previous save.
+     */
+    public static void onServerStop() {
+        BROADCAST.clear();
+        NEW_MESSAGES.clear();
+        lastProcessedTick = -1;
+    }
+
     private static boolean isNumber(Object o) {
         try {
             Long.parseLong(String.valueOf(o));
@@ -103,7 +120,6 @@ public final class RTTYNetwork {
         vnt.setSFX(new com.hbm_m.explosion.vanillant.standard.ExplosionEffectWeapon(10, 2.5F, 1F));
         vnt.explode();
     }
-
     public static class RttyChannel {
         /** The world's game-time at the moment of publishing (server tick PRE-phase). */
         public long timeStamp = -1;

@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'bio_revolver.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Barrel
 v -0.500000 1.500000 9.125000
 v 0.500000 1.500000 9.125000

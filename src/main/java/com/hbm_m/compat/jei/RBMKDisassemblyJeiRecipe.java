@@ -30,10 +30,10 @@ public record RBMKDisassemblyJeiRecipe(ItemStack rod, ItemStack pellets) {
             if (pellet == null) continue;
 
             for (int tier = 0; tier <= 4; tier++) {
-                recipes.add(new RBMKDisassemblyJeiRecipe(rodAt(rod, tier), pellet.withState(8, tier)));
+                recipes.add(new RBMKDisassemblyJeiRecipe(rodAt(rod, tier, false), pellet.withState(8, tier)));
 
                 if (pellet.isXenonEnabled())
-                    recipes.add(new RBMKDisassemblyJeiRecipe(rodAt(rod, tier), pellet.withState(8, tier + 5)));
+                    recipes.add(new RBMKDisassemblyJeiRecipe(rodAt(rod, tier, true), pellet.withState(8, tier + 5)));
             }
         }
         return recipes;
@@ -42,11 +42,14 @@ public record RBMKDisassemblyJeiRecipe(ItemStack rod, ItemStack pellets) {
     /**
      * A rod stack whose remaining yield matches the shown tier. Tier 0 is a fresh rod and tier 4 a
      * fully spent one, which is the inverse of the enrichment fraction the disassembly recipe
-     * reads back out.
+     * reads back out. Mirrors the original's {@code ComparableStackHeat.toStack()}: the yield is
+     * capped at 99 % so even the freshest tier still reads as very slightly depleted, and the
+     * xenon-poisoned variants carry 50 poison on the rod going in.
      */
-    private static ItemStack rodAt(RBMKRodItem rod, int tier) {
+    private static ItemStack rodAt(RBMKRodItem rod, int tier, boolean hasPoison) {
         ItemStack stack = new ItemStack(rod);
-        RBMKRodItem.setYield(stack, rod.yield * (1.0 - tier / 5.0));
+        RBMKRodItem.setYield(stack, Math.min(1.0 - tier / 5.0, 0.99) * rod.yield);
+        if (hasPoison) RBMKRodItem.setPoison(stack, 50);
         RBMKRodItem.setCoreHeat(stack, 20.0);
         RBMKRodItem.setHullHeat(stack, 20.0);
         return stack;

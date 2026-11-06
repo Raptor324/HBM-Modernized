@@ -2,7 +2,7 @@
 # www.blender.org
 o Belt
 mtllib conveyor_press.mtl
-usemtl default
+usemtl belt
 v -0.500000 1.000000 0.500000
 v -0.500000 1.000000 -0.500000
 v 0.500000 1.000000 0.500000

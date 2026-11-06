@@ -43,6 +43,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import com.hbm_m.platform.MobHooks;
 //? if < 1.21.1 {
 import net.minecraft.world.entity.MobType;
 //?}

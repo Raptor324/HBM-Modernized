@@ -27,6 +27,7 @@ import net.minecraft.world.level.block.BushBlock;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.MushroomBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.MobHooks;
 //? if forge {
 import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.common.PlantType;
@@ -68,7 +69,7 @@ public class WasteEarth extends Block {
                 living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 30 * 20, 3));
             }
             if (this == ModBlocks.BURNING_EARTH.get()) {
-                PlatformHooks.setSecondsOnFire(living, 5);
+                MobHooks.setSecondsOnFire(living, 5);
             }
         }
     }

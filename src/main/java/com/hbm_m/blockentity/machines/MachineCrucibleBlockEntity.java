@@ -42,6 +42,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code TileEntityCrucible}: Schmelztiegel, beheizt von einer {@link IHeatSource} darunter (Diffusion 0,25, max.
@@ -50,7 +51,7 @@ import net.minecraft.world.phys.AABB;
  * ausgefuehrt; der Rezeptstapel giesst nach vorne aus, der Abfall nach hinten. Gegenstaende ueber dem Tiegel werden
  * eingesammelt, Wesen darin verbrannt.
  */
-public class MachineCrucibleBlockEntity extends BaseMachineBlockEntity implements ICrucibleAcceptor, com.hbm_m.api.tile.IControlReceiver {
+public class MachineCrucibleBlockEntity extends BaseMachineBlockEntity implements ICrucibleAcceptor, com.hbm_m.api.tile.IControlReceiver, com.hbm_m.interfaces.IMetalCopiable {
 
     public int heat;
     public int progress;
@@ -144,7 +145,7 @@ public class MachineCrucibleBlockEntity extends BaseMachineBlockEntity implement
         List<LivingEntity> living = world.getEntitiesOfClass(LivingEntity.class, new AABB(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, pos.getX() + 0.5, pos.getY() + 0.5 + level, pos.getZ() + 0.5).inflate(1, 0, 1));
         for (LivingEntity entity : living) {
             entity.hurt(world.damageSources().lava(), 5F);
-            PlatformHooks.setSecondsOnFire(entity, 5);
+            MobHooks.setSecondsOnFire(entity, 5);
         }
 
         /* smelt items from buffer */
@@ -438,6 +439,20 @@ public class MachineCrucibleBlockEntity extends BaseMachineBlockEntity implement
         return sum;
     }
 
+    /**
+     * Доля заполнения расплавом, 0..1 — для рендера поверхности расплава
+     * ({@code CrucibleRenderer}). Стаканы синхронизируются на клиент через NBT-апдейт,
+     * поэтому уровень считается прямо из них (оригинал держал отдельное поле fillLevel).
+     */
+    public float getFillLevel() {
+        int totalCap = recipeZCapacity + wasteZCapacity;
+        if (totalCap <= 0) return 0f;
+        int totalMass = 0;
+        for (MaterialStack stack : recipeStack) totalMass += stack.amount;
+        for (MaterialStack stack : wasteStack) totalMass += stack.amount;
+        return (float) ((double) totalMass / (double) totalCap);
+    }
+
     // ── ICrucibleAcceptor ────────────────────────────────────────────────────
 
     @Override
@@ -586,13 +601,13 @@ public class MachineCrucibleBlockEntity extends BaseMachineBlockEntity implement
         sided.clear();
     }
     //?} elif neoforge {
-    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
+    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
 
     /^* Original {@code getAccessibleSlotsFromSide}: Plaetze 1-9, nur Schmelzbares hinein, nichts heraus. ^/
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
-            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.minecraftforge.items.IItemHandler() {
                 @Override public int getSlots() { return 9; }
                 @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot + 1); }
                 @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
@@ -639,5 +654,22 @@ public class MachineCrucibleBlockEntity extends BaseMachineBlockEntity implement
     public AABB getRenderBoundingBox() {
         return new AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
                 worldPosition.getX() + 2, worldPosition.getY() + 2, worldPosition.getZ() + 2);
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
+    }
+
+    @Override
+    public int[] getMatsToCopy() {
+        java.util.ArrayList<Integer> types = new java.util.ArrayList<>();
+        for (MaterialStack stack : recipeStack) {
+            types.add(stack.material.id);
+        }
+        for (MaterialStack stack : wasteStack) {
+            types.add(stack.material.id);
+        }
+        return types.stream().mapToInt(Integer::intValue).toArray();
     }
 }

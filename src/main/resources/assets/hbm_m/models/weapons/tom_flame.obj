@@ -1,5 +1,7 @@
 # Blender v2.76 (sub 0) OBJ File: 'tom_flame.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Cube.001_Cube.003
 v -0.000000 0.350000 -0.375000
 v -0.122139 0.850000 -0.511920

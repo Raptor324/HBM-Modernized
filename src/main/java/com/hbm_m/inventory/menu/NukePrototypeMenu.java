@@ -2,7 +2,6 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.bomb.NukePrototypeBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -11,6 +10,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class NukePrototypeMenu extends AbstractContainerMenu {
 
@@ -29,7 +29,7 @@ public class NukePrototypeMenu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
         // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
         if (playerInv.player.level().isClientSide) return null;
-        throw new IllegalStateException("BlockEntity is not a NukePrototypeBlockEntity");
+        throw new MenuBlockEntityMissingException("BlockEntity is not a NukePrototypeBlockEntity");
     }
 
     public NukePrototypeMenu(int id, Inventory inventory, NukePrototypeBlockEntity blockEntity) {
@@ -39,7 +39,7 @@ public class NukePrototypeMenu extends AbstractContainerMenu {
         // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
         var container = this.be != null
                 ? this.be
-                : new ModItemStackHandlerContainer(new DummyItemStackHandler(MACHINE_SLOTS), () -> {});
+                : new ModItemStackHandlerContainer(new ModItemStackHandler.Dummy(MACHINE_SLOTS), () -> {});
 
         addSlot(new Slot(container,  0,   8, 35));
         addSlot(new Slot(container,  1,  26, 35));

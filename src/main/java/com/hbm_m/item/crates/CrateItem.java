@@ -23,6 +23,8 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.platform.StackNbt;
+import com.hbm_m.platform.BlockEntityItemData;
 
 /**
  * Базовый Item для ящиков HBM с отображением содержимого в тултипе.
@@ -193,9 +195,13 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
         CompoundTag keyTag = stack.copy().save(new CompoundTag());
         //?} else {
         /*// Tooltip-path — клиентский; провайдер из клиентского Level (1.21.1 требует Provider для save).
-        CompoundTag keyTag = PlatformHooks.safeItemSave(stack.copy(), PlatformHooks.clientProvider());
+        CompoundTag keyTag = StackNbt.saveNew(stack.copy(), PlatformHooks.clientProvider());
         *///?}
+        // This line is outside the version branches, and the two branches spell the key
+        // differently: 1.20.1 ItemStack.save writes "Count", 1.21.1 ItemStack.CODEC writes "count".
+        // Clearing only one left equal items in different stack sizes as separate tooltip rows.
         keyTag.remove("Count");
+        keyTag.remove("count");
         return keyTag.toString();
     }
 

@@ -121,7 +121,7 @@ public class MachineSteamEngineBlockEntity extends BaseMachineBlockEntity implem
             this.tryProvide(tanks[1], world, con.pos, con.dir);
         }
 
-        sendUpdateToClient();
+        syncIfStateChanged((long) Float.floatToIntBits(rotor), (energy << 32) | (long) Float.floatToIntBits(acceleration));
     }
 
     private void clientTick() {
@@ -174,8 +174,10 @@ public class MachineSteamEngineBlockEntity extends BaseMachineBlockEntity implem
         super.readNbtData(tag, registries);
         energy = tag.getLong("powerBuffer");
         acceleration = tag.getFloat("acceleration");
-        tanks[0].readFromNBT(tag, "s");
-        tanks[1].readFromNBT(tag, "w");
+        if (tag.contains("s")) tanks[0].readFromNBT(tag, "s");
+        else if (tag.contains("tank_steam")) tanks[0].readFromNBT(tag, "tank_steam");
+        if (tag.contains("w")) tanks[1].readFromNBT(tag, "w");
+        else if (tag.contains("tank_spentsteam")) tanks[1].readFromNBT(tag, "tank_spentsteam");
     }
 
     @Override

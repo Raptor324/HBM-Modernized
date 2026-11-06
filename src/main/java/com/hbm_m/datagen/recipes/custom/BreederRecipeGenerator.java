@@ -29,7 +29,8 @@ public final class BreederRecipeGenerator {
     public static void generate(Consumer<FinishedRecipe> writer) {
         breed(writer, "cobalt_to_co60",            ModMaterials.COBALT,       ModMaterials.CO60,          100);
         breed(writer, "radium_to_actinium",        ModMaterials.RA226,        ModMaterials.ACTINIUM,      300);
-        breed(writer, "thorium232_to_thorium_fuel", ModMaterials.THORIUM232,  ModMaterials.THORIUM_FUEL,  500); // Original TH232 -> THF
+        // Original TH232 -> THF (ModMaterials.THORIUM has no INGOT shape).
+        breed(writer, "thorium232_to_thorium_fuel", ModMaterials.THORIUM232,  ModMaterials.THORIUM_FUEL,  500);
         breed(writer, "uranium235_to_neptunium",   ModMaterials.URANIUM235,   ModMaterials.NEPTUNIUM,     300);
         breed(writer, "neptunium_to_plutonium238", ModMaterials.NEPTUNIUM,    ModMaterials.PLUTONIUM238,  200);
         breed(writer, "plutonium238_to_239",       ModMaterials.PLUTONIUM238, ModMaterials.PLUTONIUM239, 1000);
@@ -42,7 +43,6 @@ public final class BreederRecipeGenerator {
                         new ItemStack(ModItems.NUCLEAR_WASTE.get()),
                         200)
                 .save(writer, "breeder/pu_mix_to_nuclear_waste");
-
         // Original BreederRecipes.registerDefaults: Brutstaebe (Einzel = flux, Doppel = flux * 2, Vierfach = flux * 3)
         rods(writer, BreedingRodType.LITHIUM, BreedingRodType.TRITIUM, 200);
         rods(writer, BreedingRodType.CO, BreedingRodType.CO60, 100);

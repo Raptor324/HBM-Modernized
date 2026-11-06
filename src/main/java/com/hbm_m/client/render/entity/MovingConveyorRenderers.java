@@ -55,7 +55,7 @@ public final class MovingConveyorRenderers {
                 }
             }
 
-            itemRenderer.render(stack, ItemDisplayContext.GROUND, false, pose, buffer, light, OverlayTexture.NO_OVERLAY, model);
+            itemRenderer.render(stack, ItemDisplayContext.FIXED, false, pose, buffer, light, OverlayTexture.NO_OVERLAY, model);
             pose.popPose();
             super.render(entity, yaw, pt, pose, buffer, light);
         }
@@ -83,7 +83,7 @@ public final class MovingConveyorRenderers {
             float scale = 2F;
             pose.scale(scale, scale, scale);
             BakedModel model = itemRenderer.getModel(dummy, entity.level(), null, entity.getId());
-            itemRenderer.render(dummy, ItemDisplayContext.GROUND, false, pose, buffer, light, OverlayTexture.NO_OVERLAY, model);
+            itemRenderer.render(dummy, ItemDisplayContext.FIXED, false, pose, buffer, light, OverlayTexture.NO_OVERLAY, model);
             pose.popPose();
             super.render(entity, yaw, pt, pose, buffer, light);
         }

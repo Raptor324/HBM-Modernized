@@ -29,10 +29,10 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Die OBJ-Ruestungsmodelle des Originals ({@code ModelArmorBJ}, {@code ModelArmorDesh}, {@code ModelArmorDiesel},
+ * Original OBJ armor models ({@code ModelArmorBJ}, {@code ModelArmorDesh}, {@code ModelArmorDiesel},
  * {@code ModelArmorDigamma}, {@code ModelArmorEnvsuit}, {@code ModelArmorHEV}, {@code ModelArmorNCRPA},
- * {@code ModelArmorRPA}, {@code ModelArmorTaurun}, {@code ModelArmorTrenchmaster}) als Render-Layer: jedes
- * Teil wird wie {@code ModelRendererObj.render} um den aktuellen Gelenkpunkt gedreht und mit 1/16 skaliert.
+ * {@code ModelArmorRPA}, {@code ModelArmorTaurun}, {@code ModelArmorTrenchmaster}) as render layers: each
+ * part is rotated around its current pivot point and scaled by 1/16 like {@code ModelRendererObj.render}.
  */
 public class ObjArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends RenderLayer<T, M> {
 
@@ -51,11 +51,11 @@ public class ObjArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> e
         return ResourceLocation.tryParse("hbm_m:models/armor/" + name + ".obj");
     }
 
-    private static final ResourceLocation WHITE = ResourceLocation.tryParse("minecraft:textures/misc/white.png");
+    private static final ResourceLocation WHITE = ResourceLocation.tryParse("hbm_m:textures/misc/white.png");
 
     private enum Mode { NORMAL, BLEND, GLOW }
 
-    /** Zeichenkontext eines Ruestungsteils (entspricht bindTexture + GL-Zustand + ModelRendererObj.render). */
+    /** Render context of an armor piece (corresponds to bindTexture + GL state + ModelRendererObj.render). */
     private final class Ctx {
         PoseStack pose;
         MultiBufferSource buffer;
@@ -139,7 +139,7 @@ public class ObjArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> e
         c.render(right, m.rightLeg, -1.9F, 12.0F, 0.0F);
     }
 
-    /** ModelArmorDesh / Diesel / HEV: Kopf, Rumpf+Arme, Beine, Fuesse mit je einer Textur. */
+    /** ModelArmorDesh / Diesel / HEV: head, body+arms, legs, feet each with one texture. */
     private void standard(Ctx c, M m, int type, String objName, String texPrefix, String head, String body, String leftFoot, String rightFoot) {
         c.model = ArmorObjModel.get(obj(objName));
         if (type == 0) {
@@ -312,7 +312,7 @@ public class ObjArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> e
         }
     }
 
-    /** ModelArmorTaurun / ModelArmorTrenchmaster (Beine leicht auseinandergeschoben). */
+    /** ModelArmorTaurun / ModelArmorTrenchmaster (legs spaced slightly apart). */
     private void trench(Ctx c, M m, int type, String name, boolean light) {
         c.model = ArmorObjModel.get(obj(name));
         if (type == 0) {

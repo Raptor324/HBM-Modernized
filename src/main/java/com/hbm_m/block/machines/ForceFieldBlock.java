@@ -29,8 +29,8 @@ import org.jetbrains.annotations.Nullable;
  * Ueber dem Block steigen Funken auf, solange das Feld laeuft, und Rauch, waehrend es abkuehlt.</p>
  *
  * <p>Der Block hat wie im Original <b>kein eigenes Modell</b> ({@code getRenderType() == -1}):
- * Sockel, Kopf und die Feldkugel zeichnet
- * {@link com.hbm_m.client.render.implementations.ForceFieldRenderer}.</p>
+ * Sockel, Kopf und die Feldkugel zeichnet die Nucleus-Spec in
+ * {@link com.hbm_m.client.render.implementations.MachineResearchFacilityRenderer}.</p>
  */
 public class ForceFieldBlock extends BaseEntityBlock {
 

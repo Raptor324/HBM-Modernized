@@ -3,6 +3,7 @@ package com.hbm_m.recipe;
 import org.jetbrains.annotations.NotNull;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.recipe.PlatformRecipe;
@@ -129,11 +130,7 @@ public class AmmoPressRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<AmmoPressRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "ammo_press");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ammo_press");
-        //?}
 
         @Override
         public AmmoPressRecipe readJson(ResourceLocation recipeId, JsonObject json) {
@@ -141,7 +138,7 @@ public class AmmoPressRecipe extends PlatformRecipe {
             NonNullList<Ingredient> inputs = NonNullList.withSize(AmmoPressRecipe.GRID_SIZE, Ingredient.EMPTY);
             for (int i = 0; i < AmmoPressRecipe.GRID_SIZE && i < ingredientsArray.size(); i++) {
                 // leere Felder stehen als JSON-null im Rezept (Datagen) -> Ingredient.EMPTY
-                com.google.gson.JsonElement el = ingredientsArray.get(i);
+                JsonElement el = ingredientsArray.get(i);
                 inputs.set(i, el == null || el.isJsonNull() ? Ingredient.EMPTY : RecipeHooks.ingredientFromJson(el));
             }
 

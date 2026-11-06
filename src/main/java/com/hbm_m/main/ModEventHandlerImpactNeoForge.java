@@ -1,5 +1,6 @@
 //? if neoforge {
 /*package com.hbm_m.main;
+import com.hbm_m.platform.MobHooks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +73,7 @@ public class ModEventHandlerImpactNeoForge {
                 for (Entity e : oList) {
                     if (e instanceof LivingEntity entity) {
                         if (world.getBrightness(LightLayer.SKY, BlockPos.containing((int) entity.getX(), (int) entity.getY(), (int) entity.getZ())) > 7) {
-                            PlatformHooks.setSecondsOnFire(entity, 5);
+                            MobHooks.setSecondsOnFire(entity, 5);
                             entity.hurt(world.damageSources().onFire(), 2);
                         }
                     }

@@ -8,6 +8,7 @@ import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
+import mezz.jei.api.gui.drawable.IDrawableAnimated;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
@@ -18,10 +19,12 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  * JEI port of {@code PressRecipeHandler}.
  */
+@OnlyIn(Dist.CLIENT)
 public class PressJeiCategory implements IRecipeCategory<PressRecipe> {
 
     public static final RecipeType<PressRecipe> RECIPE_TYPE =
@@ -41,12 +44,17 @@ public class PressJeiCategory implements IRecipeCategory<PressRecipe> {
 
     private final IDrawable background;
     private final IDrawable icon;
-    private final IDrawable itemSlotBackground;
+    /** NEI {@code drawExtras}: {@code drawProgressBar(47, 24, 0, 86, 18, 18, 20, 1)} — Richtung 1 = nach unten. */
+    private final IDrawableAnimated progress;
 
     public PressJeiCategory(IGuiHelper guiHelper) {
         this.background = JeiPressTextures.createRecipeBackground(guiHelper);
-        this.itemSlotBackground = JeiPressTextures.createItemSlotBackground(guiHelper);
         this.icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(ModItems.PRESS.get()));
+        this.progress = guiHelper.drawableBuilder(JeiPressTextures.GUI_NEI_PRESS,
+                        JeiPressTextures.PROGRESS_U, JeiPressTextures.PROGRESS_V,
+                        JeiPressTextures.PROGRESS_W, JeiPressTextures.PROGRESS_H)
+                .setTextureSize(JeiPressTextures.TEXTURE_WIDTH, JeiPressTextures.TEXTURE_HEIGHT)
+                .buildAnimated(20, IDrawableAnimated.StartDirection.TOP, false);
     }
 
     @Override
@@ -96,10 +104,15 @@ public class PressJeiCategory implements IRecipeCategory<PressRecipe> {
     @Override
     public void draw(PressRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics,
                      double mouseX, double mouseY) {
-        JeiPressRendering.drawProgressBar(guiGraphics);
+        this.progress.draw(guiGraphics, JeiPressTextures.PROGRESS_X, JeiPressTextures.PROGRESS_Y);
     }
 
+    /**
+     * NEI zeichnet keine eigenen Slot-Rahmen — die Slot-Umrandungen sind bereits in die
+     * Backing-Textur eingebacken (Screen-Positionen {@code (47,5)}, {@code (47,41)},
+     * {@code (110,23)}; Texturkoordinaten +{@code (5,11)} des NEI-Standard-Crops).
+     */
     private IRecipeSlotBuilder addItemSlot(IRecipeLayoutBuilder builder, RecipeIngredientRole role, int x, int y) {
-        return builder.addSlot(role, x, y).setBackground(itemSlotBackground, -1, -1);
+        return builder.addSlot(role, x, y);
     }
 }

@@ -2,8 +2,6 @@ package com.hbm_m.block.machines.dfc;
 
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.dfc.DFCCoreBlockEntity;
-
-import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -20,12 +18,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * 1:1-Port von {@code CoreCore} (1.7.10): der Block des Dunklen Fusionskerns.
- *
- * <p>Ein gewoehnlicher Wuerfel ohne Blickrichtung - der Kern wirkt nach allen Seiten gleich, die
- * Emitter und Stabilisatoren zielen auf ihn.</p>
- */
+import dev.architectury.registry.menu.MenuRegistry;
+
 public class DFCCoreBlock extends BaseEntityBlock {
 
     public DFCCoreBlock(Properties properties) {
@@ -51,18 +45,8 @@ public class DFCCoreBlock extends BaseEntityBlock {
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.DFC_CORE_BE.get(),
-                (lvl, pos, st, be) -> DFCCoreBlockEntity.tick(lvl, pos, st, (DFCCoreBlockEntity) be));
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (state.getBlock() != newState.getBlock()
-                && level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.BaseMachineBlockEntity machine) {
-            machine.dropInventoryContents();
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
+        return createTickerHelper(blockEntityType, ModBlockEntities.DFC_CORE_BE.get(), DFCCoreBlockEntity::tick);
     }
 
     //? if < 1.21.1 {
@@ -84,8 +68,13 @@ public class DFCCoreBlock extends BaseEntityBlock {
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
     *///?}
-    //? if >= 1.21.1 {
+
+    //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<DFCCoreBlock> CODEC = simpleCodec(DFCCoreBlock::new);
-    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
+    }
     *///?}
 }

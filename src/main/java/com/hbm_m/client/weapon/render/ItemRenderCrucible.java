@@ -1,6 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
-import com.hbm_m.client.render.SimpleObjModel;
+import com.hbm_m.client.render.weapon.WeaponJointRig;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.lib.RefStrings;
@@ -19,7 +21,7 @@ import net.minecraft.world.item.ItemStack;
  */
 public class ItemRenderCrucible extends ItemRenderWeaponBase {
 
-    public static final SimpleObjModel crucible = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/weapons/crucible.obj"));
+    public static final ResourceLocation crucible_loc = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/weapons/crucible.obj");
     public static final ResourceLocation crucible_hilt = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/weapons/crucible_hilt.png");
     public static final ResourceLocation crucible_guard = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/weapons/crucible_guard.png");
     public static final ResourceLocation crucible_blade = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/weapons/crucible_blade.png");
@@ -68,7 +70,7 @@ public class ItemRenderCrucible extends ItemRenderWeaponBase {
 
                 double[] rot = HbmAnimations.getRelevantTransformation("GUARD_ROT");
                 GunGL.bindTexture(crucible_hilt);
-                GunGL.renderPart(crucible, "Hilt");
+                WeaponRenderRegistry.renderPart(crucible_loc, "Hilt", GunGL.pose());
 
                 GunGL.bindTexture(crucible_guard);
                 double rotGuard = rot[0];
@@ -76,19 +78,9 @@ public class ItemRenderCrucible extends ItemRenderWeaponBase {
                 if (!isSwing && !isOn)
                     rotGuard = 90;
 
-                GunGL.pushMatrix();
-                GunGL.translate(0, 3, 0.5);
-                GunGL.rotate(rotGuard, -1, 0, 0);
-                GunGL.translate(0, -3, -0.5);
-                GunGL.renderPart(crucible, "GuardLeft");
-                GunGL.popMatrix();
-
-                GunGL.pushMatrix();
-                GunGL.translate(0, 3, -0.5);
-                GunGL.rotate(rotGuard, 1, 0, 0);
-                GunGL.translate(0, -3, 0.5);
-                GunGL.renderPart(crucible, "GuardRight");
-                GunGL.popMatrix();
+                WeaponJointRig rig = WeaponRenderRegistry.getRig(crucible_loc);
+                WeaponKinematics.renderPartWithJoint(rig, "GuardLeft", GunGL.pose(), (float) rotGuard);
+                WeaponKinematics.renderPartWithJoint(rig, "GuardRight", GunGL.pose(), (float) rotGuard);
 
                 if (rot[2] == 0 && (isSwing || isOn)) {
                     renderBlade();
@@ -124,7 +116,7 @@ public class ItemRenderCrucible extends ItemRenderWeaponBase {
                 GunGL.translate(0.005, 0, 0);
                 if (isOn) {
                     GunGL.bindTexture(crucible_blade);
-                    GunGL.renderPart(crucible, "Blade");
+                    GunGL.renderPart(crucible_loc, "Blade");
                 }
             }
 
@@ -136,20 +128,20 @@ public class ItemRenderCrucible extends ItemRenderWeaponBase {
 
     private static void renderHiltAndGuards(boolean isOn) {
         GunGL.bindTexture(crucible_hilt);
-        GunGL.renderPart(crucible, "Hilt");
+        GunGL.renderPart(crucible_loc, "Hilt");
         GunGL.bindTexture(crucible_guard);
         GunGL.pushMatrix();
         GunGL.translate(0, 3, 0.5);
         GunGL.rotate(isOn ? 0 : 90, -1, 0, 0);
         GunGL.translate(0, -3, -0.5);
-        GunGL.renderPart(crucible, "GuardLeft");
+        GunGL.renderPart(crucible_loc, "GuardLeft");
         GunGL.popMatrix();
 
         GunGL.pushMatrix();
         GunGL.translate(0, 3, -0.5);
         GunGL.rotate(isOn ? 0 : 90, 1, 0, 0);
         GunGL.translate(0, -3, 0.5);
-        GunGL.renderPart(crucible, "GuardRight");
+        GunGL.renderPart(crucible_loc, "GuardRight");
         GunGL.popMatrix();
     }
 
@@ -163,7 +155,7 @@ public class ItemRenderCrucible extends ItemRenderWeaponBase {
         GunGL.fullbright(true);
         GunGL.translate(0.005, 0, 0);
         GunGL.bindTexture(crucible_blade);
-        GunGL.renderPart(crucible, "Blade");
+        GunGL.renderPart(crucible_loc, "Blade");
 
         GunGL.popAttrib();
         GunGL.popMatrix();

@@ -16,8 +16,9 @@ import java.util.function.Consumer;
 /**
  * Генератор JSON-рецептов ликвейфактора ({@code hbm_m:liquefactor}).
  *
- * <p>Порт 24 рецептов из удалённого статического {@code LiquefactorRecipes} (static-блок;
- * оригинал 1.7.10 — {@code com.hbm.inventory.recipes.LiquefactionRecipes}): предмет → жидкость (mB),
+ * <p>Порт 37 рецептов из удалённого статического {@code LiquefactorRecipes} (static-блок;
+ * оригинал 1.7.10 — {@code com.hbm.inventory.recipes.LiquefactionRecipes}, там 34 записи —
+ * дикий-кард «любая рыба» развёрнут в 4 предметных рецепта): предмет → жидкость (mB),
  * 1 предмет за цикл. Жидкостные стаки создаются через {@link FluidStack#create} из {@link ModFluids}.
  * Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
  */

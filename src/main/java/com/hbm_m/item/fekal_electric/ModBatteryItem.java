@@ -19,6 +19,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.StackNbt;
 
 //? if forge {
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
@@ -77,7 +78,7 @@ public class ModBatteryItem extends Item implements ITooltipProvider {
         }
 
         long clampedEnergy = Math.max(0, Math.min(energy, battery.getCapacity()));
-        PlatformHooks.editItemTag(stack, t -> t.putLong("energy", clampedEnergy));
+        StackNbt.edit(stack, t -> t.putLong("energy", clampedEnergy));
     }
 
     /**
@@ -87,10 +88,10 @@ public class ModBatteryItem extends Item implements ITooltipProvider {
      * @return Количество энергии
      */
     public static long getEnergy(ItemStack stack) {
-        if (stack.isEmpty() || !PlatformHooks.hasItemTag(stack)) {
+        if (stack.isEmpty() || !StackNbt.has(stack)) {
             return 0;
         }
-        return PlatformHooks.getItemTag(stack).getLong("energy");
+        return StackNbt.read(stack).getLong("energy");
     }
 
     @Override

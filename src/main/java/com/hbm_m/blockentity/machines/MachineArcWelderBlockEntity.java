@@ -4,7 +4,6 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineArcWelderMenu;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.ArcWelderRecipe;
 
 import net.minecraft.core.BlockPos;
@@ -16,6 +15,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2, com.hbm_m.interfaces.IConditionalInvAccess {
 
@@ -107,7 +107,7 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity implemen
         be.tank.setType(SLOT_FLUID, slotArr);
 
         // Data-driven поиск рецепта: итерируем ArcWelderRecipe из RecipeManager (заменяет статику ArcWelderRecipes).
-        ArcWelderRecipe recipe = findArcWelderRecipe(level, be);
+        ArcWelderRecipe recipe = be.findArcWelderRecipe(level);
         // Original serialize: das Rezeptergebnis geht als display an den Client (Renderer zeigt es auf dem Tisch)
         be.display = recipe != null ? recipe.getOutput() : ItemStack.EMPTY;
         long intendedMaxPower;
@@ -132,7 +132,6 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity implemen
         }
         // Original: maxPower = max(intendedMaxPower, power)
         be.setEnergyCapacity(Math.max(intendedMaxPower, be.energy));
-
         // matchesFluid на ArcWelderRecipe заменяет прежний recipe.fluid.satisfiedBy(tank) (теперь FluidStack-based).
         boolean hasRecipe  = recipe != null && recipe.matchesFluid(be.tank);
         boolean canProcess = hasRecipe && be.energy >= be.consumption
@@ -171,7 +170,15 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity implemen
             be.progress = 0;
         }
 
-        level.sendBlockUpdated(pos, state, state, 3);
+        // Anti-sync-spam: полный BE-пакет только при изменении отрисовываемого состояния
+        // (энергия, прогресс/время крафта, бак). Подпись покрывает всё, что пишет writeNbtData.
+        long syncLo = be.energy;
+        syncLo = syncLo * 31L + be.progress;
+        long syncHi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(7,
+                be.processTime,
+                be.tank.getTankType() == null ? 0L : be.tank.getTankType().hashCode(),
+                be.tank.getFill());
+        be.syncIfStateChanged(syncLo, syncHi);
     }
 
     /** Verbraucht die passenden Eingangs-Slots + ggf. Fluid und legt das Ergebnis in SLOT_OUT ab. */
@@ -199,7 +206,7 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity implemen
         ItemStack existing = inventory.getStackInSlot(SLOT_OUT);
         if (existing.isEmpty()) {
             inventory.setStackInSlot(SLOT_OUT, result);
-        } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(existing, result)) {
+        } else if (com.hbm_m.platform.StackNbt.sameItemSameTags(existing, result)) {
             existing.grow(result.getCount());
         }
     }
@@ -213,19 +220,30 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity implemen
         ItemStack out = inventory.getStackInSlot(SLOT_OUT);
         if (out.isEmpty()) return true;
         if (result == null) return false;
-        return com.hbm_m.platform.PlatformHooks.isSameItemSameTags(out, result) && out.getCount() + result.getCount() <= out.getMaxStackSize();
+        return com.hbm_m.platform.StackNbt.sameItemSameTags(out, result) && out.getCount() + result.getCount() <= out.getMaxStackSize();
     }
+
+    /** Кэшированный скан рецептов: подпись — фингерпринты значений трёх входных стаков (P4, value-keyed). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<ArcWelderRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
 
     /** Data-driven поиск ArcWelderRecipe по 3 входным слотам (заменяет статический ArcWelderRecipes.getRecipe). */
     @org.jetbrains.annotations.Nullable
-    private static ArcWelderRecipe findArcWelderRecipe(Level level, MachineArcWelderBlockEntity be) {
-        ItemStack s0 = be.inventory.getStackInSlot(SLOT_IN1);
-        ItemStack s1 = be.inventory.getStackInSlot(SLOT_IN2);
-        ItemStack s2 = be.inventory.getStackInSlot(SLOT_IN3);
-        for (ArcWelderRecipe recipe : RecipeHooks.getAllRecipes(level, ArcWelderRecipe.Type.INSTANCE)) {
-            if (recipe.matchesInputs(s0, s1, s2)) return recipe;
-        }
-        return null;
+    private ArcWelderRecipe findArcWelderRecipe(Level level) {
+        ItemStack s0 = inventory.getStackInSlot(SLOT_IN1);
+        ItemStack s1 = inventory.getStackInSlot(SLOT_IN2);
+        ItemStack s2 = inventory.getStackInSlot(SLOT_IN3);
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(6,
+                com.hbm_m.platform.StackNbt.fingerprint(s0),
+                com.hbm_m.platform.StackNbt.fingerprint(s1),
+                com.hbm_m.platform.StackNbt.fingerprint(s2));
+        return recipeResolver.resolve(level, ArcWelderRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            // CONTRACT 1: сканер — только матч по входам; matchesFluid/canOutput/energy — per-tick вне сканера.
+            for (ArcWelderRecipe recipe : all) {
+                if (recipe.matchesInputs(s0, s1, s2)) return recipe;
+            }
+            return null;
+        });
     }
 
     // ─── Progress helpers (for GUI) ───────────────────────────────────────────
@@ -261,7 +279,7 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity implemen
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        if (!display.isEmpty()) tag.put("display", com.hbm_m.platform.PlatformHooks.saveItemStack(display, new CompoundTag(), registries));
+        if (!display.isEmpty()) tag.put("display", com.hbm_m.platform.StackNbt.save(display, new CompoundTag(), registries));
         tag.putInt("progress",    progress);
         tag.putInt("processTime", processTime);
         tank.writeToNBT(tag, "tank");
@@ -270,7 +288,7 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity implemen
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        display = tag.contains("display") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("display"), registries) : ItemStack.EMPTY;
+        display = tag.contains("display") ? com.hbm_m.platform.StackNbt.parse(tag.getCompound("display"), registries) : ItemStack.EMPTY;
         progress    = tag.getInt("progress");
         processTime = tag.getInt("processTime");
         if (processTime <= 0) processTime = 1;
@@ -365,7 +383,7 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity implemen
     //?} elif neoforge {
     /*/^* Original: rot Slot 0, gelb Slot 1, gruen Slot 2 (je plus Ausgang 3); alle anderen Zellen ohne Zugriff. ^/
     @Override
-    public net.neoforged.neoforge.items.IItemHandler getConditionalItemHandler(net.minecraft.core.BlockPos part, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+    public net.minecraftforge.items.IItemHandler getConditionalItemHandler(net.minecraft.core.BlockPos part, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         net.minecraft.world.level.block.state.BlockState state = getBlockState();
         net.minecraft.core.Direction dir = state.hasProperty(com.hbm_m.block.machines.MachineArcWelderBlock.FACING)
                 ? state.getValue(com.hbm_m.block.machines.MachineArcWelderBlock.FACING) : net.minecraft.core.Direction.NORTH;
@@ -388,13 +406,13 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity implemen
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
-            net.neoforged.neoforge.items.IItemHandler h = itemAccess(new int[] {1, 3});
+            net.minecraftforge.items.IItemHandler h = itemAccess(new int[] {1, 3});
             return com.hbm_m.platform.LazyCap.of(() -> h).cast();
         }
         return super.getHbmCapability(cap, side);
     }
 
-    private net.neoforged.neoforge.items.IItemHandler itemAccess(int[] slots) {
+    private net.minecraftforge.items.IItemHandler itemAccess(int[] slots) {
         return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot < 3, (slot, stack) -> slot == SLOT_OUT);
     }
     *///?}

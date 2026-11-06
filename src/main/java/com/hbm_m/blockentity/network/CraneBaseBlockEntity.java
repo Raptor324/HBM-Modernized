@@ -157,7 +157,7 @@ public abstract class CraneBaseBlockEntity extends BaseMachineBlockEntity implem
         }
     }
 
-    private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> automation = com.hbm_m.platform.LazyCap.empty();
+    private com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> automation = com.hbm_m.platform.LazyCap.empty();
 
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {

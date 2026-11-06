@@ -1,5 +1,4 @@
 package com.hbm_m.datagen.recipes.custom;
-//? if forge {
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -21,6 +20,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.crafting.PartialNBTIngredient;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Datagen fuer {@link AnvilRecipe}: {@link #construction} = {@code AnvilConstructionRecipe},
@@ -30,8 +30,8 @@ import net.minecraftforge.common.crafting.PartialNBTIngredient;
 public class AnvilRecipeBuilder extends BaseRecipeBuilder<AnvilRecipeBuilder> {
 
     private final AnvilRecipe.Kind kind;
-    private final int tier;
-    private final int sort;
+    private int tier;
+    private int sort;
     private int tierUpper = -1;
     private OverlayType overlay = OverlayType.NONE;
     private final List<AStack> inputs = new ArrayList<>();
@@ -150,6 +150,76 @@ public class AnvilRecipeBuilder extends BaseRecipeBuilder<AnvilRecipeBuilder> {
         return s;
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Port-Fassade für AnvilRecipeGenerator (machines-Skelett): gestattet die
+    //  ursprüngliche Kettenschreibweise (inventoryRecipe/anvilRecipe + withOrder/
+    //  withOverlay + addInventoryRequirement/addOutput) auf diesem Builder.
+    //  Reine Zusatzmethoden - der FFA-Satz (construction/smithing/input/output)
+    //  bleibt unverändert und wird von AnvilConstructionRecipeGenerator genutzt.
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /** Construction-Rezept mit einer Ausgabe; Stufe als {@link AnvilTier}, Sort/Overlay per Kette. */
+    public static AnvilRecipeBuilder inventoryRecipe(ItemStack output, AnvilTier tier) {
+        AnvilRecipeBuilder b = new AnvilRecipeBuilder(AnvilRecipe.Kind.CONSTRUCTION, tier.getLegacyId(), 0);
+        b.outputs.add(output.copy());
+        b.chances.add(1.0F);
+        return b;
+    }
+
+    /** Smithing-Rezept mit {@link AStack}-Zutaten (linke/rechte Maschinen-Slots); Overlay SMITHING wie im Original-Konstruktor. */
+    public static AnvilRecipeBuilder anvilRecipe(AStack left, AStack right, ItemStack output, AnvilTier tier) {
+        AnvilRecipeBuilder b = new AnvilRecipeBuilder(AnvilRecipe.Kind.SMITHING, tier.getLegacyId(), 0);
+        b.left = left;
+        b.right = right;
+        b.outputs.add(output.copy());
+        b.chances.add(1.0F);
+        b.overlay = OverlayType.SMITHING;
+        return b;
+    }
+
+    /** Registrierungsreihenfolge des Originals (GUI-Liste). */
+    public AnvilRecipeBuilder withOrder(int order) {
+        this.sort = order;
+        return this;
+    }
+
+    public AnvilRecipeBuilder withOverlay(OverlayType overlay) {
+        this.overlay = overlay;
+        return this;
+    }
+
+    /** Zutat aus dem Spielerinventar als fertiger {@link AStack}. */
+    public AnvilRecipeBuilder addInventoryRequirement(AStack stack) {
+        this.inputs.add(stack);
+        return this;
+    }
+
+    /** Zutat aus dem Spielerinventar als exakter Gegenstand mit der Stack-Menge. */
+    public AnvilRecipeBuilder addInventoryRequirement(ItemStack stack) {
+        this.inputs.add(new AStack(Ingredient.of(stack), Math.max(1, stack.getCount()), true));
+        return this;
+    }
+
+    public AnvilRecipeBuilder addOutput(ItemStack stack) {
+        return output(stack);
+    }
+
+    public AnvilRecipeBuilder addOutput(ItemStack stack, float chance) {
+        return output(stack, chance);
+    }
+
+    /** Für Disassemble-Rezepten: vorgesetzte (leere) Ausgabe verwerfen. */
+    public AnvilRecipeBuilder clearOutputs() {
+        this.outputs.clear();
+        this.chances.clear();
+        return this;
+    }
+
+    /** Maschinen-Schreibweise für {@link #keepLeft()}: inputA (linker Slot) wird nicht verbraucht. */
+    public AnvilRecipeBuilder keepInputA() {
+        return keepLeft();
+    }
+
     @Override
     public Item getResult() {
         return outputs.get(0).getItem();
@@ -160,7 +230,7 @@ public class AnvilRecipeBuilder extends BaseRecipeBuilder<AnvilRecipeBuilder> {
         JsonObject obj = new JsonObject();
         obj.addProperty("item", BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
         if (stack.getCount() > 1) obj.addProperty("count", stack.getCount());
-        if (PlatformHooks.hasItemTag(stack)) obj.addProperty("nbt", PlatformHooks.getItemTag(stack).toString());
+        if (StackNbt.has(stack)) obj.addProperty("nbt", StackNbt.read(stack).toString());
         return obj;
     }
 
@@ -209,4 +279,3 @@ public class AnvilRecipeBuilder extends BaseRecipeBuilder<AnvilRecipeBuilder> {
         return AnvilRecipe.Serializer.INSTANCE;
     }
 }
-//?}

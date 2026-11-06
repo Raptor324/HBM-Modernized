@@ -5,7 +5,7 @@
   },
   "children": {
     "barbed_wire_fire_model": {
-      "loader": "forge:obj",
+      "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/barbed_wire.obj",
       "flip_v": true,
       "render_type": "minecraft:cutout",

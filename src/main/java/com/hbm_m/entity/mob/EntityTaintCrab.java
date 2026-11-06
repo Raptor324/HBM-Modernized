@@ -21,6 +21,7 @@ import net.minecraft.world.entity.ai.goal.RangedAttackGoal;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code EntityTaintCrab}: entsteht, wenn eine Tesla-Krabbe Taint betritt (25 HP, keine Panik). Zappt im
