@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.block.decorations.SoyuzLauncherBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.SoyuzLauncherBlockEntity;
-import com.hbm_m.client.model.SoyuzLauncherBakedModel;
 import com.hbm_m.client.model.SoyuzRocketBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
@@ -55,10 +54,10 @@ public final class SoyuzLauncherRenderer {
         MachineRenderers.machine("soyuzlauncher", ModBlockEntities.SOYUZ_LAUNCHER_BE.get(),
                 SoyuzLauncherBlockEntity.class)
             .blockTransform((be, anim) -> anim.translate(0.5, -4.0, 0.5))
-            .part(SoyuzLauncherBakedModel.TABLE)
-            .part(SoyuzLauncherBakedModel.TOWER_BASE)
-            .part(SoyuzLauncherBakedModel.SUPPORT_BASE)
-            .part(SoyuzLauncherBakedModel.LEGS)
+            .part("Table")
+            .part("TowerBase")
+            .part("SupportBase")
+            .part("Legs")
             // Clamp arms: TRACKED rigs (ANIM TRACK FORMAT v2). Legacy:
             // rot = 0 (hasRocket) / 45 (launched), ramping 0 -> 45 over the last
             // 20 countdown ticks. The tracked segment classifier below maps
@@ -71,7 +70,7 @@ public final class SoyuzLauncherRenderer {
             // epoch-keyed AnimParams word cache in MachineBer hits while a
             // segment runs. The hermite stroke eases the ramp (legacy was
             // linear) - accepted shape deviation of the track format.
-            .trackedChainPart(SoyuzLauncherBakedModel.TOWER,
+            .trackedChainPart("Tower",
                     SoyuzLauncherRenderer::armSegmentStart,
                     SoyuzLauncherRenderer::armU0,
                     SoyuzLauncherRenderer::armDuration,
@@ -79,7 +78,7 @@ public final class SoyuzLauncherRenderer {
                             // Never called - the node is tracked (ARM_TRACK).
                             (be, pt, gt, out, off) -> true,
                             ARM_TRACK))
-            .trackedChainPart(SoyuzLauncherBakedModel.SUPPORT,
+            .trackedChainPart("Support",
                     SoyuzLauncherRenderer::armSegmentStart,
                     SoyuzLauncherRenderer::armU0,
                     SoyuzLauncherRenderer::armDuration,

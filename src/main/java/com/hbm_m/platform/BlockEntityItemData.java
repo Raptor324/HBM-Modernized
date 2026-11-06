@@ -26,7 +26,7 @@ public final class BlockEntityItemData {
      * (getAsString на NumericTag даёт суффиксы "1b", которые BlockItemStateProperties не парсит).
      */
     public static void putState(ItemStack stack, CompoundTag bst) {
-        StackNbt.orCreate(stack).put(STATE_KEY, bst);
+        StackNbt.edit(stack, tag -> tag.put(STATE_KEY, bst.copy()));
         //? if >= 1.21.1 {
         /*java.util.Map<String, String> props = new java.util.LinkedHashMap<>();
         for (String k : bst.getAllKeys()) props.put(k, StackNbt.scalarToString(bst.get(k)));

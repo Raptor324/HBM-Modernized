@@ -16,9 +16,9 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * vI: 1:1 {@code ItemRenderLibrary} gear_large / sawblade: Inventar
- * T(0,-7,0) S(6) Ry(-45) Rx(30) T(0,1.375,0) Rz(Zeit) T(0,-1.375,0), danach T(0,0,-0.875) und das Teil des Stirling-
- * bzw. Saegewerk-Modells ("Cog" / "Blade"). Ausserhalb des Inventars dasselbe Teil ohne Drehung in der Blockansicht.
+ * 1:1 {@code ItemRenderLibrary} gear_large / sawblade: inventory
+ * T(0,-7,0) S(6) Ry(-45) Rx(30) T(0,1.375,0) Rz(time) T(0,-1.375,0), followed by T(0,0,-0.875) and the Stirling
+ * or sawmill part ("Cog" / "Blade"). Outside inventory, same part without rotation in block view.
  */
 public class AnimatedPartItemRenderer extends BlockEntityWithoutLevelRenderer {
 
@@ -52,7 +52,7 @@ public class AnimatedPartItemRenderer extends BlockEntityWithoutLevelRenderer {
             ps.translate(0, -1.375, 0);
         } else {
             RBMKColumnItemRenderer.applyDisplay(stack, ctx, ps);
-            // Blockmitte, Teil (Durchmesser ~1.4) auf Blockgroesse
+            // Block center, part (diameter ~1.4) scaled to block size
             ps.translate(0.5, 0.5, 0.5);
             ps.scale(0.6F, 0.6F, 0.6F);
             ps.mulPose(Axis.YP.rotationDegrees(90));

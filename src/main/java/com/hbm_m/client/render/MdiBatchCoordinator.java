@@ -213,8 +213,7 @@ public final class MdiBatchCoordinator {
          * Min-fade cache validity: the scan is camera-dependent, so it reruns
          * when the records change (any dirty submit) OR the camera moves more
          * than a fraction of a block - a static camera on a static farm never
-         * rescans (the unconditional per-frame scan was 7% of the frame over
-         * ~50k instances, spark 2026-10-08).
+         * rescans (avoiding unconditional per-frame scans).
          */
         boolean minFadeValid;
         float minFadeCamX, minFadeCamY, minFadeCamZ;
@@ -359,7 +358,7 @@ public final class MdiBatchCoordinator {
             s.pending.clear();
             ACTIVE.remove();
         }
-        // Audit 2026-10-07 #9: no dispatch will follow this frame, so no
+        // No dispatch will follow this frame, so no
         // recordGpuCull will re-assert the overlay values - clear them so the
         // F3 "GPU Cull: Active" line cannot keep showing the discarded
         // session's numbers (the freshness stamp in NucleusDebug covers the

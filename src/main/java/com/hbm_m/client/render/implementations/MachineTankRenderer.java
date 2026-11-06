@@ -7,6 +7,7 @@ import com.hbm_m.blockentity.machines.MachineBigAssTankBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.blockentity.machines.OrbusBlockEntity;
 import com.hbm_m.client.ClientRenderHandler;
+import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.SimpleObjModel;
 import com.hbm_m.client.render.machine.MachineRenderApi;
 import com.hbm_m.client.render.machine.MachineRenderHook;
@@ -24,6 +25,7 @@ import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
@@ -33,13 +35,14 @@ import net.minecraft.world.phys.Vec3;
  * Modern Nucleus renderer implementation for large industrial fluid storage installations:
  * <ul>
  *   <li>Big Ass Tank (Bulk Storage Tank): 16M mB capacity, tilt compensation, NFPA diamond plates,
- *       and side-window fluid level gauges;</li>
- *   <li>Orbus Spherical Tank: Multiblock spherical vessel with levitating fluid orb and energy containment beams.</li>
+ *       and dual-sided scrolling liquid level indicators;</li>
+ *   <li>Orbus: Mystical spherical fluid vessel with pulsating fluid core and orbiting particle beams.</li>
  * </ul>
  */
 public final class MachineTankRenderer {
 
-    private static final SimpleObjModel SPHERE_UV = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/sphere_uv.obj"));
+    private static final SimpleObjModel SPHERE_UV =
+            new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/sphere_uv.obj"));
 
     public static void register() {
         registerBigAssTank();
@@ -56,10 +59,12 @@ public final class MachineTankRenderer {
     }
 
     private static void registerBigAssTank() {
-        // bigasstank.obj слит в одну группу "Circle"; окно уровня рисует hook.
+        // bigasstank.obj is merged into a single group "Circle"; the fluid level window is drawn by a hook.
         MachineRenderers.machine("bigasstank", ModBlockEntities.BIGASSTANK_BE.get(),
                 MachineBigAssTankBlockEntity.class)
             .part("Circle")
+            .blockTransform(MachineTankRenderer::applyBigAssTankTransform)
+            .animationEpoch(bat -> bat.tilted ? 1L : 0L)
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
             .itemParts("Circle")
@@ -67,13 +72,6 @@ public final class MachineTankRenderer {
                 @Override
                 public void render(MachineBigAssTankBlockEntity bat, float pt, PoseStack ps,
                                    MultiBufferSource buf, int light, int overlay, MachineRenderApi api) {
-                    ps.pushPose();
-                    if (bat.tilted) {
-                        ps.translate(0, -1, 0);
-                        ps.mulPose(Axis.ZP.rotationDegrees(10));
-                        ps.mulPose(Axis.YP.rotationDegrees(5));
-                    }
-
                     Fluid fluid = bat.getFluidTank().getTankType();
                     if (!isNone(fluid)) {
                         FluidType type = FluidType.forFluid(fluid);
@@ -110,8 +108,6 @@ public final class MachineTankRenderer {
                     v(vc, m, off, 1.75F + height, -0.25F, maxU, topV, light);
                     v(vc, m, off, 1.75F + height, 0.25F, minU, topV, light);
                     v(vc, m, off, 1.75F, 0.25F, minU, 0, light);
-
-                    ps.popPose();
                 }
 
                 @Override
@@ -120,6 +116,23 @@ public final class MachineTankRenderer {
                 }
             })
             .register();
+    }
+
+    private static void applyBigAssTankTransform(MachineBigAssTankBlockEntity bat, LegacyAnimator animator) {
+        animator.translate(0.5, 0.0, 0.5);
+        if (bat.tilted) {
+            animator.translate(0.0, -1.0, 0.0);
+            animator.rotate(10.0F, 0.0F, 0.0F, 1.0F);
+            animator.rotate(5.0F, 0.0F, 1.0F, 0.0F);
+        }
+        Direction facing = ObjBerHelper.facing(bat);
+        switch (facing) {
+            case NORTH -> animator.rotate(270, 0, 1, 0);
+            case WEST  -> animator.rotate(0, 0, 1, 0);
+            case SOUTH -> animator.rotate(90, 0, 1, 0);
+            case EAST  -> animator.rotate(180, 0, 1, 0);
+            default    -> {}
+        }
     }
 
     private static void v(VertexConsumer vc, Matrix4f m, float x, float y, float z, float u, float vv, int light) {

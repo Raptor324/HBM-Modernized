@@ -1,6 +1,7 @@
 package com.hbm_m.item;
 
 import com.hbm_m.platform.EffectHooks;
+import com.hbm_m.util.CompletionStatus;
 
 import static com.hbm_m.lib.RefStrings.MODID;
 
@@ -99,6 +100,7 @@ import com.hbm_m.item.nuclear.WatzPelletType;
 
 import com.hbm_m.item.tools_and_armor.ScrewdriverItem;
 import com.hbm_m.multiblock.DoorBlockItem;
+import com.hbm_m.multiblock.FluidTankBlockItem;
 import com.hbm_m.item.machine.ItemRTGPellet;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.powerarmor.AJRArmor;
@@ -1625,15 +1627,17 @@ public class ModItems {
 	public static final RegistrySupplier<Item> BREEDER = ITEMS.register("breeder",
         () -> new MultiblockBlockItem(ModBlocks.BREEDER.get(), new Item.Properties()));
 
-	public static final RegistrySupplier<Item> LARGE_PYLON = ITEMS.register("large_pylon",
-        () -> new MultiblockBlockItem(ModBlocks.LARGE_PYLON.get(), new Item.Properties()));
+
 
 	public static final RegistrySupplier<Item> MACHINE_CENTRIFUGE = ITEMS.register("machine_centrifuge",
         () -> new MultiblockBlockItem(ModBlocks.MACHINE_CENTRIFUGE.get(), new Item.Properties()));
     public static final RegistrySupplier<Item> CENTRIFUGE = MACHINE_CENTRIFUGE;
 
+	// FluidTankBlockItem (не MultiblockBlockItem): только он подключает BEWLR-рендер предмета
+	// по типу жидкости (IClientItemExtensions.getCustomRenderer). Без него builtin/entity-модель
+	// рисуется ванильным BuiltInModel'ом без квадов — предмет невидим (forge и neoforge).
 	public static final RegistrySupplier<Item> FLUID_TANK = ITEMS.register("fluid_tank",
-        () -> new MultiblockBlockItem(ModBlocks.FLUID_TANK.get(), new Item.Properties()));
+        () -> new FluidTankBlockItem(ModBlocks.FLUID_TANK.get(), new Item.Properties()));
 
 	public static final RegistrySupplier<Item> BAT9000 = ITEMS.register("bat9000",
         () -> new MultiblockBlockItem(ModBlocks.BAT9000.get(), new Item.Properties()));
@@ -1916,6 +1920,9 @@ public class ModItems {
 
     public static final RegistrySupplier<Item> CARGO_DOOR = ITEMS.register("cargo_door",
         () -> new DoorBlockItem(ModBlocks.CARGO_DOOR.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> BLAST_DOOR = ITEMS.register("blast_door",
+        () -> new DoorBlockItem(ModBlocks.BLAST_DOOR.get(), new Item.Properties()));
 
 
 
@@ -3306,12 +3313,13 @@ public class ModItems {
     public static final RegistrySupplier<Item> FUSE = ITEMS.register("fuse", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FUSION_CORE = ITEMS.register("fusion_core", () -> new com.hbm_m.item.tool.ItemFusionCore(2500000, new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> FUSION_CORE_INFINITE = ITEMS.register("fusion_core_infinite", () -> new Item(new Item.Properties()));
+    /** Порт {@code ModItems.hev_battery} ({@code new ItemFusionCore(150000)}, Stapel 4) - Original-Item neben dem Block (jetzt {@code hev_battery_block}). */
+    public static final RegistrySupplier<Item> HEV_BATTERY = ITEMS.register("hev_battery", () -> new com.hbm_m.item.tool.ItemFusionCore(150000, new Item.Properties().stacksTo(4)));
     public static final RegistrySupplier<Item> FUSION_SHIELD_CHLOROPHYTE = ITEMS.register("fusion_shield_chlorophyte", () -> new com.hbm_m.item.special.ItemFusionShield(60L * 60 * 60 * 15, 9000, new Item.Properties()));
     public static final RegistrySupplier<Item> FUSION_SHIELD_DESH = ITEMS.register("fusion_shield_desh", () -> new com.hbm_m.item.special.ItemFusionShield(60L * 60 * 60 * 10, 4500, new Item.Properties()));
     public static final RegistrySupplier<Item> FUSION_SHIELD_TUNGSTEN = ITEMS.register("fusion_shield_tungsten", () -> new com.hbm_m.item.special.ItemFusionShield(60L * 60 * 60 * 5, 3500, new Item.Properties()));
     public static final RegistrySupplier<Item> FUSION_SHIELD_VAPORWAVE = ITEMS.register("fusion_shield_vaporwave", () -> new com.hbm_m.item.special.ItemFusionShield(60L * 60 * 60 * 10, 1916169, new Item.Properties()));
     public static final RegistrySupplier<Item> GADGET_CORE = ITEMS.register("gadget_core", () -> new Item(new Item.Properties().stacksTo(1).rarity(net.minecraft.world.item.Rarity.UNCOMMON)));
-    public static final RegistrySupplier<Item> GADGET_EXPLOSIVE = ITEMS.register("gadget_explosive", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> GADGET_KIT = ITEMS.register("gadget_kit", () -> new com.hbm_m.item.special.ItemStarterKit("gadget_kit", new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> GADGET_WIREING = ITEMS.register("gadget_wireing", () -> new Item(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> GAS_MASK = ITEMS.register("gas_mask", () -> new ArmorGasMaskItem(Variant.GAS_MASK, new Item.Properties()));
@@ -3347,6 +3355,20 @@ public class ModItems {
     /** Restport: 1:1 GunB92 / GunB92Cell / WeaponizedCell (Altwaffe "Star Blaster", Strahl EntityB92Beam). */
     public static final RegistrySupplier<Item> GUN_B92 = ITEMS.register("gun_b92", () -> new com.hbm_m.item.weapon.GunB92Item(new Item.Properties()));
     public static final RegistrySupplier<Item> GUN_B92_AMMO = ITEMS.register("gun_b92_ammo", () -> new com.hbm_m.item.weapon.GunB92CellItem(new Item.Properties()));
+    public static final RegistrySupplier<Item> GUN_FLIEGERFAUST = registerItem("gun_fliegerfaust", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> NUGGET_TITANIUM = registerItem("nugget_titanium", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> NUGGET_COPPER = registerItem("nugget_copper", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> NUGGET_TUNGSTEN = registerItem("nugget_tungsten", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> NUGGET_ALUMINIUM = registerItem("nugget_aluminium", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> NUGGET_BORON = registerItem("nugget_boron", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> NUGGET_LITHIUM = registerItem("nugget_lithium", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> NUGGET_SODIUM = registerItem("nugget_sodium", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> NUGGET_STRONTIUM = registerItem("nugget_strontium", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> POWDER_FIRE = registerItem("powder_fire", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> DEMOSHAPE_IRON = registerItem("demoshape_iron", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> DEMOSHAPE_STEEL = registerItem("demoshape_steel", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> DEMOSHAPE_CUSTOM = registerItem("demoshape_custom", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_DEMOSHAPE = registerItem("mold_demoshape", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WEAPONIZED_STARBLASTER_CELL = ITEMS.register("weaponized_starblaster_cell", () -> new com.hbm_m.item.weapon.WeaponizedCellItem(new Item.Properties()));
     /** Restport: achievement_icon (ItemEnumMulti EnumAchievementType) - je Meta ein Icon-Gegenstand ohne Creative-Tab. */
     public static final RegistrySupplier<Item> ACHIEVEMENT_ICON_GOFISH = ITEMS.register("achievement_icon_gofish", () -> new Item(new Item.Properties()));
@@ -4048,6 +4070,7 @@ public class ModItems {
     }
     public static final RegistrySupplier<Item> RTG_UNIT = ITEMS.register("rtg_unit", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> RTTY_PAGER = ITEMS.register("rtty_pager", () -> new com.hbm_m.item.tool.ItemRTTYPager(new Item.Properties().stacksTo(1)));
+    public static final RegistrySupplier<Item> RTTY_DESIGNATOR = registerItem("rtty_designator", CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties().stacksTo(1)));
     // Runes (Catalyst Matrix): ориг. ItemCustomLore().setEffect().setMaxStackSize(1) —
     // зачарованный блеск (isFoil) и стак в 1 предмет.
     public static final RegistrySupplier<Item> RUNE_BLANK = ITEMS.register("rune_blank", () -> new FoilItem(new Item.Properties().stacksTo(1)));

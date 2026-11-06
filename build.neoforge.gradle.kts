@@ -603,9 +603,12 @@ tasks.register("compileNucleusMeshes") {
             root.walkTopDown().filter { it.isFile && it.extension == "obj" }.forEach { obj ->
                 val rel = obj.absolutePath.replace('\\', '/').removePrefix("$rootNorm/")
                 val out = File(outDir, rel.removeSuffix(".obj") + ".nmesh")
-                // Грубая инкрементальность: пропуск если .nmesh новее .obj (Gradle up-to-date
+                val mtlFile = File(obj.parentFile, obj.nameWithoutExtension + ".mtl")
+                val mtlTime = if (mtlFile.isFile) mtlFile.lastModified() else 0L
+                val srcTime = maxOf(obj.lastModified(), mtlTime)
+                // Грубая инкрементальность: пропуск если .nmesh новее .obj/.mtl (Gradle up-to-date
                 // скипает весь таск по inputs/outputs; здесь per-file фолбэк).
-                if (out.exists() && out.lastModified() >= obj.lastModified() && nmeshVersionMatches(out)) {
+                if (out.exists() && out.lastModified() >= srcTime && nmeshVersionMatches(out)) {
                     upToDate++
                     return@forEach
                 }
@@ -698,7 +701,7 @@ dependencies {
 	"compileOnly"("dev.engine-room.flywheel:flywheel-neoforge-api-$mcVer:${prop("deps.flywheel")}")
 	// Distant Horizons: compileOnly для официального API (см. DhRenderBridge).
 	// Класс моста грузится только при установленном DH.
-	"compileOnly"("maven.modrinth:distanthorizons:3.3.2-1.21.1") // 3.3.2-1.21.1 (latest 2026-09-21)
+	"compileOnly"("maven.modrinth:distanthorizons:3.3.3-1.21.1") // 3.3.3-1.21.1
 	// "runtimeOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.21.1")
 
 	"compileOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")
@@ -866,7 +869,8 @@ tasks.named<ProcessResources>("processResources") {
 		recipeRoots.forEach { root ->
 			root.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { file ->
 				val tree = slurper.parse(file) as? Map<*, *> ?: return@forEach
-				if ((tree["type"] as? String)?.startsWith("minecraft:") != true) return@forEach
+				val type = tree["type"] as? String ?: return@forEach
+				if (!type.startsWith("minecraft:") && type != "hbm_m:container_upgrade") return@forEach
 				val result = tree["result"]
 				val normalized: Any? = when (result) {
 					is String -> mapOf("id" to result)
@@ -892,21 +896,58 @@ tasks.named<ProcessResources>("processResources") {
 		// их таблицы тоже исключаем. У TE-less capacitor_bus таблица остаётся (обычный dropSelf).
 		listOf("loot_table", "loot_tables").forEach { dirName ->
 			File(File(dataDir, "hbm_m"), dirName).walkTopDown()
-				// machine_fensu is a MachineBatteryBlock too - its name just does not start with
-				// machine_battery, so it kept its loot table and dropped a second copy of itself.
-				.filter { it.isFile && (it.name.startsWith("machine_battery") || it.name == "machine_fensu.json"
-						|| (it.name.startsWith("capacitor_") && it.name != "capacitor_bus.json")) }
+				// Batteries (MachineBatteryBlock/MachineCapacitorBlock): vanilla copy_nbt ist seit
+				// 1.20.5 weg, Ladung wandert per playerWillDestroy#saveToItemStack in den Drop -
+				// deren Tabellen sind deshalb auf 1.21.1 ueberfluessig.
+				// block_graphite_* tables rely on old shrouded property; drops are handled in code via GraphitePileBlocks#getDrops.
+				// machine_battery_socket / machine_battery_redd - не батареи с зарядом,
+				// а мультиблок-станки; machine_fensu - DummyableMachineBlock без кодового
+				// дропа. Их таблицы используют hbm_m:persistent_nbt (работает и на 1.21),
+				// поэтому должны остаться, иначе блоки не выпадают при ломании в выживании.
+				.filter { it.isFile && ((it.name.startsWith("machine_battery") || it.name == "machine_fensu.json")
+						&& it.name != "machine_battery_socket.json" && it.name != "machine_battery_redd.json" && it.name != "machine_fensu.json"
+						|| (it.name.startsWith("capacitor_") && it.name != "capacitor_bus.json")
+						|| it.name.startsWith("block_graphite_")) }
 				.forEach { it.delete() }
 		}
 
+		// minecraft:set_nbt -> minecraft:set_custom_data in 1.20.5+
 		// minecraft:grass переименован в short_grass в 1.20.3+ (датаген 1.20.1 пишет старое имя).
 		dataDir.walkTopDown()
 			.filter { it.isFile && it.extension == "json" }.forEach { file ->
-				val text = file.readText()
+				var text = file.readText()
+				var changed = false
+				if (text.contains("\"minecraft:set_nbt\"")) {
+					text = text.replace("\"minecraft:set_nbt\"", "\"minecraft:set_custom_data\"")
+					changed = true
+				}
 				if (text.contains("\"minecraft:grass\"")) {
-					file.writeText(text.replace("\"minecraft:grass\"", "\"minecraft:short_grass\""))
+					text = text.replace("\"minecraft:grass\"", "\"minecraft:short_grass\"")
+					changed = true
+				}
+				if (changed) {
+					file.writeText(text)
 				}
 			}
+
+		// Нормализация ассетов под NeoForge 1.21.1:
+		// forge:separate_transforms -> neoforge:separate_transforms, forge_data -> neoforge_data.
+		val assetsDir = File(destinationDir, "assets")
+		if (assetsDir.isDirectory) {
+			assetsDir.walkTopDown()
+				.filter { it.isFile && it.extension == "json" }
+				.forEach { file ->
+					val text = file.readText()
+					var out = text
+					if (out.contains("\"forge:separate_transforms\"")) {
+						out = out.replace("\"forge:separate_transforms\"", "\"neoforge:separate_transforms\"")
+					}
+					if (out.contains("\"forge_data\":")) {
+						out = out.replace("\"forge_data\":", "\"neoforge_data\":")
+					}
+					if (out != text) file.writeText(out)
+				}
+		}
 	}
 }
 
@@ -950,19 +991,24 @@ tasks.matching { it.name == "runGameTestServer" }.configureEach {
 	}
 }
 
-// ── Автономный HotSwap v2 (с фильтрацией по SHA-256 байткода против пересборок Stonecutter) ──
+// ── Автономный HotSwap v3 (SHA-256 + защита от бага G1GC/DCEVM при изменении инстанс-полей) ──
 fun buildAutoHotswapAgentJar(): File {
-	val dir = layout.buildDirectory.dir("hotswap-agent").get().asFile
-	val jarFile = File(dir, "hbm-auto-hotswap-agent-v12.jar")
-	if (jarFile.exists()) return jarFile
+    val dir = layout.buildDirectory.dir("hotswap-agent").get().asFile
+    val jarFile = File(dir, "hbm-auto-hotswap-agent-v14.jar")
+    if (jarFile.exists()) return jarFile
 
-	val srcDir = File(dir, "src").apply { mkdirs() }
-	val classesDir = File(dir, "classes").apply { deleteRecursively(); mkdirs() }
-	val javaFile = File(srcDir, "HbmAutoHotswapAgent.java")
-	javaFile.writeText("""
+    val srcDir = File(dir, "src").apply { mkdirs() }
+    val classesDir = File(dir, "classes").apply { deleteRecursively(); mkdirs() }
+    val javaFile = File(srcDir, "HbmAutoHotswapAgent.java")
+    javaFile.writeText("""
+		import java.io.ByteArrayInputStream;
+		import java.io.DataInputStream;
 		import java.io.File;
 		import java.lang.instrument.ClassDefinition;
 		import java.lang.instrument.Instrumentation;
+		import java.lang.reflect.Field;
+		import java.lang.reflect.Method;
+		import java.lang.reflect.Modifier;
 		import java.nio.file.*;
 		import java.security.MessageDigest;
 		import java.util.*;
@@ -971,6 +1017,9 @@ fun buildAutoHotswapAgentJar(): File {
 		public class HbmAutoHotswapAgent {
 		    private static final Map<Path, Long> timestamps = new HashMap<>();
 		    private static final Map<Path, byte[]> bytecodeHashes = new HashMap<>();
+		    private static final boolean ALLOW_SCHEMA_CHANGE =
+		            Boolean.getBoolean("hbm.hotswap.allowSchemaChange");
+		    private static Instrumentation s_inst;
 
 		    public static void premain(String agentArgs, Instrumentation inst) {
 		        if (agentArgs == null || agentArgs.isEmpty()) return;
@@ -979,11 +1028,11 @@ fun buildAutoHotswapAgentJar(): File {
 		            if (!part.isBlank()) roots.add(Paths.get(part));
 		        }
 		        s_inst = inst;
-			        scan(roots, false);
+		        scan(roots, false);
 		        Thread watcher = new Thread(() -> loop(roots, inst), "HBM-AutoHotSwap");
 		        watcher.setDaemon(true);
 		        watcher.start();
-		        System.out.println("[HBM-HotSwap v6] Autonomous SHA-256 watcher started: " + roots);
+		        System.out.println("[HBM-HotSwap v14] Autonomous SHA-256 watcher started: " + roots);
 		    }
 
 		    private static byte[] sha256(byte[] data) {
@@ -994,22 +1043,67 @@ fun buildAutoHotswapAgentJar(): File {
 		        }
 		    }
 
+		    // Используем java.io.File.exists() вместо Files.exists(), чтобы не триггерить
+		    // выброс sun.nio.fs.WindowsException внутри JNI на каждую проверку .compiling
+		    private static boolean isCompiling(List<Path> roots) {
+		        for (Path root : roots) {
+		            File rf = root.toFile();
+		            if (!rf.isDirectory()) continue;
+		            if (new File(rf, ".compiling").exists()) return true;
+		            File p1 = rf.getParentFile();
+		            if (p1 != null && new File(p1, ".compiling").exists()) return true;
+		            File p2 = p1 != null ? p1.getParentFile() : null;
+		            if (p2 != null && new File(p2, ".compiling").exists()) return true;
+		        }
+		        return false;
+		    }
+
+		    // Быстрая проверка без обновления timestamps: есть ли кандидаты на чтение
+		    private static boolean hasModifiedFiles(List<Path> roots) {
+		        if (isCompiling(roots)) return false;
+		        for (Path root : roots) {
+		            if (!root.toFile().isDirectory()) continue;
+		            try (Stream<Path> stream = Files.walk(root)) {
+		                boolean found = stream
+		                        .filter(p -> p.toString().endsWith(".class"))
+		                        .anyMatch(p -> {
+		                            File f = p.toFile();
+		                            if (!f.isFile()) return false;
+		                            long mod = f.lastModified();
+		                            Long prevMod = timestamps.get(p);
+		                            return prevMod == null || mod > prevMod;
+		                        });
+		                if (found) return true;
+		            } catch (Exception ignored) {}
+		        }
+		        return false;
+		    }
+
 		    private static Map<Path, byte[]> scan(List<Path> roots, boolean collectChanged) {
+		        if (isCompiling(roots)) return Collections.emptyMap();
 		        Map<Path, byte[]> changedBytes = new LinkedHashMap<>();
 		        for (Path root : roots) {
-		            if (!Files.isDirectory(root)) continue;
+		            if (!root.toFile().isDirectory()) continue;
 		            try (Stream<Path> stream = Files.walk(root)) {
-		                stream.filter(p -> p.toString().endsWith(".class") && Files.isRegularFile(p)).forEach(p -> {
+		                stream.filter(p -> p.toString().endsWith(".class")).forEach(p -> {
 		                    try {
-		                        long mod = Files.getLastModifiedTime(p).toMillis();
+		                        File f = p.toFile();
+		                        if (!f.isFile()) return;
+		                        long mod = f.lastModified();
 		                        Long prevMod = timestamps.get(p);
 		                        if (prevMod == null || mod > prevMod) {
 		                            byte[] bytes = Files.readAllBytes(p);
-		                            if (bytes.length == 0) return;
+		                            // Защита от обрезанного .class файла (минимум magic 0xCAFEBABE)
+		                            if (bytes.length < 10
+		                                    || (bytes[0] & 0xFF) != 0xCA
+		                                    || (bytes[1] & 0xFF) != 0xFE
+		                                    || (bytes[2] & 0xFF) != 0xBA
+		                                    || (bytes[3] & 0xFF) != 0xBE) {
+		                                return;
+		                            }
 		                            byte[] hash = sha256(bytes);
 		                            byte[] prevHash = bytecodeHashes.put(p, hash);
 		                            timestamps.put(p, mod);
-		                            // Перезагружаем ТОЛЬКО если реально изменился байткод класса!
 		                            if (collectChanged && (prevHash == null || !MessageDigest.isEqual(hash, prevHash))) {
 		                                changedBytes.put(p, bytes);
 		                            }
@@ -1021,168 +1115,192 @@ fun buildAutoHotswapAgentJar(): File {
 		        return changedBytes;
 		    }
 
-			    private static Object findMemberByReturn(Object owner, String returnSimpleName, String debugTag) {
-			        // Walk the WHOLE class hierarchy: at runtime Minecraft uses ForgeGui (a Gui
-			        // subclass), and getDeclaredMethods/getDeclaredFields see only per-class members.
-			        for (Class<?> cls = owner.getClass(); cls != null && cls != Object.class; cls = cls.getSuperclass()) {
-			        // Methods first: zero-arg methods whose return type matches. Each member is
-			        // guarded individually - one unresolvable type anywhere in the class must not
-			        // abort the whole scan before the wanted member is reached.
-			        java.lang.reflect.Method[] methods = null;
-			        try {
-			            methods = cls.getDeclaredMethods();
-			        } catch (Throwable t) {
-			            System.out.println("[HBM-HotSwap] postChat: " + debugTag + ": getDeclaredMethods failed on " + cls.getName() + ": " + t);
-			        }
-			        if (methods != null) {
-			            for (java.lang.reflect.Method m : methods) {
-			                if (m.getParameterCount() != 0) continue;
-			                String rt;
-			                try {
-			                    rt = m.getReturnType().getSimpleName();
-			                } catch (Throwable t) {
-			                    continue;
-			                }
-			                if (rt.equals(returnSimpleName)) {
-			                    try {
-			                        m.setAccessible(true);
-			                        Object r = m.invoke(owner);
-			                        if (r != null) return r;
-			                    } catch (Throwable ignored) {}
-			                }
-			            }
-			        }
-			        // Then fields of the wanted type (getChat may be absent under SRG names).
-			        try {
-			            for (java.lang.reflect.Field f : cls.getDeclaredFields()) {
-			                String ft;
-			                try {
-			                    ft = f.getType().getSimpleName();
-			                } catch (Throwable t) {
-			                    continue;
-			                }
-			                if (ft.equals(returnSimpleName)) {
-			                    try {
-			                        f.setAccessible(true);
-			                        Object r = f.get(owner);
-			                        if (r != null) return r;
-			                    } catch (Throwable ignored) {}
-			                }
-			            }
-			        } catch (Throwable t) {
-			            System.out.println("[HBM-HotSwap] postChat: " + debugTag + ": field scan failed on " + cls.getName() + ": " + t);
-			        }
-			        }
-			        StringBuilder sb = new StringBuilder();
-			        try {
-			            for (Class<?> c = owner.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
-			                for (java.lang.reflect.Method m : c.getDeclaredMethods()) {
-			                    if (m.getParameterCount() == 0 && m.getReturnType() != void.class) {
-			                        sb.append(m.getName()).append("->").append(m.getReturnType().getSimpleName()).append(" ");
-			                    }
-			                }
-			            }
-			        } catch (Throwable ignored) {}
-			        System.out.println("[HBM-HotSwap] postChat: " + debugTag + ": no member of type " + returnSimpleName
-			                + " on " + owner.getClass().getName() + "; no-arg methods: " + sb);
-			        return null;
-			    }
+		    // Извлекает сигнатуры всех НЕСТАТИЧЕСКИХ полей из .class байткода (JVMS §4.1).
+		    // Позволяет отловить изменение размера/раскладки инстанса до вызова багнутого
+		    // G1FullCollector в JBR 21, сохраняя полный DCEVM-хотсвап для новых методов и лямбд.
+		    private static List<String> extractInstanceFieldsFromBytecode(byte[] bytes) throws Exception {
+		        DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes));
+		        if (in.readInt() != 0xCAFEBABE) throw new IllegalArgumentException("Bad magic");
+		        in.readUnsignedShort(); // minor
+		        in.readUnsignedShort(); // major
+		        int cpCount = in.readUnsignedShort();
+		        String[] utf8 = new String[cpCount];
+		        for (int i = 1; i < cpCount; i++) {
+		            int tag = in.readUnsignedByte();
+		            switch (tag) {
+		                case 1 -> utf8[i] = in.readUTF();
+		                case 3, 4, 9, 10, 11, 12, 17, 18 -> in.skipBytes(4);
+		                case 5, 6 -> { in.skipBytes(8); i++; }
+		                case 7, 8, 16, 19, 20 -> in.skipBytes(2);
+		                case 15 -> in.skipBytes(3);
+		                default -> throw new IllegalArgumentException("Unknown CP tag: " + tag);
+		            }
+		        }
+		        in.readUnsignedShort(); // access_flags
+		        in.readUnsignedShort(); // this_class
+		        in.readUnsignedShort(); // super_class
+		        int ifaceCount = in.readUnsignedShort();
+		        in.skipBytes(ifaceCount * 2);
+		        int fieldsCount = in.readUnsignedShort();
+		        List<String> instanceFields = new ArrayList<>(fieldsCount);
+		        for (int i = 0; i < fieldsCount; i++) {
+		            int access = in.readUnsignedShort();
+		            int nameIdx = in.readUnsignedShort();
+		            int descIdx = in.readUnsignedShort();
+		            int attrCount = in.readUnsignedShort();
+		            for (int a = 0; a < attrCount; a++) {
+		                in.readUnsignedShort();
+		                int len = in.readInt();
+		                in.skipBytes(len);
+		            }
+		            if ((access & Modifier.STATIC) == 0) {
+		                instanceFields.add(utf8[nameIdx] + ":" + utf8[descIdx]);
+		            }
+		        }
+		        return instanceFields;
+		    }
 
-			    private static Instrumentation s_inst;
+		    private static boolean hasInstanceFieldLayoutChanged(Class<?> target, byte[] newBytes) {
+		        if (ALLOW_SCHEMA_CHANGE) return false;
+		        try {
+		            List<String> newFields = extractInstanceFieldsFromBytecode(newBytes);
+		            List<String> oldFields = new ArrayList<>();
+		            for (Field f : target.getDeclaredFields()) {
+		                if (!Modifier.isStatic(f.getModifiers())) {
+		                    oldFields.add(f.getName() + ":" + f.getType().descriptorString());
+		                }
+		            }
+		            return !oldFields.equals(newFields);
+		        } catch (Throwable t) {
+		            return false;
+		        }
+		    }
 
-			    private static void sendChatLine(Object chat, Class<?> component, String text) {
-			        try {
-			            Object msg = component.getMethod("literal", String.class).invoke(null, text);
-			            for (java.lang.reflect.Method m : chat.getClass().getMethods()) {
-			                if (m.getParameterCount() == 1
-			                        && m.getParameterTypes()[0].getName().equals(component.getName())) {
-			                    m.invoke(chat, msg);
-			                    return;
-			                }
-			            }
-			            System.out.println("[HBM-HotSwap] postChat: addMessage(Component) not found");
-			        } catch (Throwable t) {
-			            System.out.println("[HBM-HotSwap] postChat line failed: " + t);
-			        }
-			    }
+		    private static Object findMemberByReturn(Object owner, String returnSimpleName, String debugTag) {
+		        for (Class<?> cls = owner.getClass(); cls != null && cls != Object.class; cls = cls.getSuperclass()) {
+		            // 1. Сначала сканируем ПОЛЯ (чтение поля не имеет сайд-эффектов в отличие от вызова методов)
+		            try {
+		                for (Field f : cls.getDeclaredFields()) {
+		                    String ft;
+		                    try {
+		                        ft = f.getType().getSimpleName();
+		                    } catch (Throwable t) {
+		                        continue;
+		                    }
+		                    if (ft.equals(returnSimpleName)) {
+		                        try {
+		                            f.setAccessible(true);
+		                            Object r = f.get(owner);
+		                            if (r != null) return r;
+		                        } catch (Throwable ignored) {}
+		                    }
+		                }
+		            } catch (Throwable t) {
+		                System.out.println("[HBM-HotSwap] postChat: " + debugTag + ": field scan failed on " + cls.getName() + ": " + t);
+		            }
+		            // 2. Только если поле не нашлось — ищем zero-arg геттеры
+		            Method[] methods = null;
+		            try {
+		                methods = cls.getDeclaredMethods();
+		            } catch (Throwable t) {
+		                System.out.println("[HBM-HotSwap] postChat: " + debugTag + ": getDeclaredMethods failed on " + cls.getName() + ": " + t);
+		            }
+		            if (methods != null) {
+		                for (Method m : methods) {
+		                    if (m.getParameterCount() != 0) continue;
+		                    String rt;
+		                    try {
+		                        rt = m.getReturnType().getSimpleName();
+		                    } catch (Throwable t) {
+		                        continue;
+		                    }
+		                    if (rt.equals(returnSimpleName)) {
+		                        try {
+		                            m.setAccessible(true);
+		                            Object r = m.invoke(owner);
+		                            if (r != null) return r;
+		                        } catch (Throwable ignored) {}
+		                    }
+		                }
+		            }
+		        }
+		        return null;
+		    }
 
-			    private static void postChat(String text) {
-			        try {
-			            if (s_inst == null) {
-			                System.out.println("[HBM-HotSwap] postChat: no instrumentation, skipping");
-			                return;
-			            }
-			            Class<?> mcClass = null;
-			            for (Class<?> c : s_inst.getAllLoadedClasses()) {
-			                if (c.getName().equals("net.minecraft.client.Minecraft")) {
-			                    mcClass = c;
-			                    break;
-			                }
-			            }
-			            if (mcClass == null) {
-			                System.out.println("[HBM-HotSwap] postChat: Minecraft class is not loaded yet");
-			                return;
-			            }
-			            Object mc = null;
-			            Throwable lastErr = null;
-			            for (java.lang.reflect.Method m : mcClass.getDeclaredMethods()) {
-			                if (java.lang.reflect.Modifier.isStatic(m.getModifiers())
-			                        && m.getParameterCount() == 0 && m.getReturnType() == mcClass) {
-			                    try {
-			                        m.setAccessible(true);
-			                        mc = m.invoke(null);
-			                    } catch (Throwable t) {
-			                        lastErr = t;
-			                    }
-			                    if (mc != null) break;
-			                }
-			            }
-			            if (mc == null) {
-			                System.out.println("[HBM-HotSwap] postChat: no working Minecraft accessor, loader="
-			                        + mcClass.getClassLoader() + (lastErr != null ? ", last error: " + lastErr : ""));
-			                return;
-			            }
-			            final Object mcRef = mc;
-			            Runnable task = () -> {
-			                try {
-			                    Object gui = findMemberByReturn(mcRef, "Gui", "Gui");
-			                    if (gui == null) {
-			                        System.out.println("[HBM-HotSwap] postChat: Gui accessor not found");
-			                        return;
-			                    }
-			                    Object chat = findMemberByReturn(gui, "ChatComponent", "chat");
-			                    if (chat == null) {
-			                        System.out.println("[HBM-HotSwap] postChat: ChatComponent accessor not found");
-			                        return;
-			                    }
-			                    Class<?> component = Class.forName("net.minecraft.network.chat.Component",
-			                            true, chat.getClass().getClassLoader());
-			                    sendChatLine(chat, component, text);
-			                } catch (Throwable t) {
-			                    System.out.println("[HBM-HotSwap] postChat task failed: " + t);
-			                }
-			            };
-			            for (java.lang.reflect.Method m : mcClass.getMethods()) {
-			                if (m.getName().equals("execute") && m.getParameterCount() == 1
-			                        && m.getParameterTypes()[0] == Runnable.class) {
-			                    m.invoke(mcRef, task);
-			                    return;
-			                }
-			            }
-			            task.run();
-			        } catch (Throwable t) {
-			            System.out.println("[HBM-HotSwap] postChat failed: " + t);
-			        }
-			    }
+		    private static void sendChatLine(Object chat, Class<?> component, String text) {
+		        try {
+		            Object msg = component.getMethod("literal", String.class).invoke(null, text);
+		            for (Method m : chat.getClass().getMethods()) {
+		                if (m.getParameterCount() == 1
+		                        && m.getParameterTypes()[0].getName().equals(component.getName())) {
+		                    m.invoke(chat, msg);
+		                    return;
+		                }
+		            }
+		        } catch (Throwable t) {
+		            System.out.println("[HBM-HotSwap] postChat line failed: " + t);
+		        }
+		    }
 
-			    private static void loop(List<Path> roots, Instrumentation inst) {
+		    private static void postChat(String text) {
+		        try {
+		            if (s_inst == null) return;
+		            Class<?> mcClass = null;
+		            for (Class<?> c : s_inst.getAllLoadedClasses()) {
+		                if (c.getName().equals("net.minecraft.client.Minecraft")) {
+		                    mcClass = c;
+		                    break;
+		                }
+		            }
+		            if (mcClass == null) return;
+		            Object mc = null;
+		            for (Method m : mcClass.getDeclaredMethods()) {
+		                if (Modifier.isStatic(m.getModifiers())
+		                        && m.getParameterCount() == 0 && m.getReturnType() == mcClass) {
+		                    try {
+		                        m.setAccessible(true);
+		                        mc = m.invoke(null);
+		                    } catch (Throwable ignored) {}
+		                    if (mc != null) break;
+		                }
+		            }
+		            if (mc == null) return;
+		            final Object mcRef = mc;
+		            Runnable task = () -> {
+		                try {
+		                    Object gui = findMemberByReturn(mcRef, "Gui", "Gui");
+		                    if (gui == null) return;
+		                    Object chat = findMemberByReturn(gui, "ChatComponent", "chat");
+		                    if (chat == null) return;
+		                    Class<?> component = Class.forName("net.minecraft.network.chat.Component",
+		                            true, chat.getClass().getClassLoader());
+		                    sendChatLine(chat, component, text);
+		                } catch (Throwable t) {
+		                    System.out.println("[HBM-HotSwap] postChat task failed: " + t);
+		                }
+		            };
+		            for (Method m : mcClass.getMethods()) {
+		                if (m.getName().equals("execute") && m.getParameterCount() == 1
+		                        && m.getParameterTypes()[0] == Runnable.class) {
+		                    m.invoke(mcRef, task);
+		                    return;
+		                }
+		            }
+		            task.run();
+		        } catch (Throwable t) {
+		            System.out.println("[HBM-HotSwap] postChat failed: " + t);
+		        }
+		    }
+
+		    private static void loop(List<Path> roots, Instrumentation inst) {
 		        while (true) {
 		            try {
 		                Thread.sleep(500);
+		                if (!hasModifiedFiles(roots)) continue;
+		                // Ждем завершения записи всех .class файлов компилятором ПЕРЕД чтением и хешированием
+		                Thread.sleep(250);
 		                Map<Path, byte[]> changed = new LinkedHashMap<>(scan(roots, true));
 		                if (changed.isEmpty()) continue;
-		                Thread.sleep(250); // Ждем завершения записи javac
-		                changed.putAll(scan(roots, true));
 
 		                Map<String, List<Class<?>>> loadedByName = new HashMap<>();
 		                for (Class<?> c : inst.getAllLoadedClasses()) {
@@ -1193,6 +1311,7 @@ fun buildAutoHotswapAgentJar(): File {
 
 		                List<ClassDefinition> defs = new ArrayList<>();
 		                List<String> names = new ArrayList<>();
+		                List<String> skippedSchema = new ArrayList<>();
 		                for (Map.Entry<Path, byte[]> entry : changed.entrySet()) {
 		                    Path file = entry.getKey();
 		                    byte[] bytes = entry.getValue();
@@ -1202,46 +1321,64 @@ fun buildAutoHotswapAgentJar(): File {
 		                            String className = rel.substring(0, rel.length() - 6);
 		                            List<Class<?>> targets = loadedByName.get(className);
 		                            if (targets != null && !targets.isEmpty()) {
+		                                boolean layoutChanged = false;
 		                                for (Class<?> target : targets) {
-		                                    defs.add(new ClassDefinition(target, bytes));
+		                                    if (hasInstanceFieldLayoutChanged(target, bytes)) {
+		                                        layoutChanged = true;
+		                                        break;
+		                                    }
 		                                }
-		                                if (!names.contains(className)) names.add(className);
+		                                if (layoutChanged) {
+		                                    if (!skippedSchema.contains(className)) skippedSchema.add(className);
+		                                } else {
+		                                    for (Class<?> target : targets) {
+		                                        defs.add(new ClassDefinition(target, bytes));
+		                                    }
+		                                    if (!names.contains(className)) names.add(className);
+		                                }
 		                            }
 		                            break;
 		                        }
 		                    }
 		                }
 
-			                if (!defs.isEmpty()) {
-			                    long t0 = System.currentTimeMillis();
-			                    try {
-			                        inst.redefineClasses(defs.toArray(new ClassDefinition[0]));
-			                        long dt = System.currentTimeMillis() - t0;
-			                        System.out.println("[HBM-HotSwap] Reloaded changed classes: " + names.size() + " in " + dt + " ms -> " + names);
-			                        				                        StringBuilder chatMsg = new StringBuilder("\u00a76\u00a7l[HBM-HotSwap]\u00a7r \u00a7aReloaded \u00a7e"
-				                                + names.size() + " class(es)\u00a7a in \u00a7e" + dt + " ms\u00a7r");
-				                        for (String n : names) chatMsg.append("\n  \u00a77\u2022\u00a7r ").append(n);
-				                        postChat(chatMsg.toString());
-			                    } catch (Throwable batchErr) {
-			                        List<String> ok = new ArrayList<>();
-			                        for (ClassDefinition def : defs) {
-			                            try {
-			                                inst.redefineClasses(def);
-			                                ok.add(def.getDefinitionClass().getName());
-			                                System.out.println("[HBM-HotSwap] Reloaded: " + def.getDefinitionClass().getName());
-			                            } catch (Throwable singleErr) {
-			                                System.err.println("[HBM-HotSwap] Redefine failed for " + def.getDefinitionClass().getName() + ": " + singleErr);
-			                                postChat("\u00a7c[HBM-HotSwap] Redefine failed: " + def.getDefinitionClass().getName());
-			                            }
-			                        }
-			                        if (!ok.isEmpty()) {
-			                            				                            StringBuilder chatMsg = new StringBuilder("\u00a76\u00a7l[HBM-HotSwap]\u00a7r \u00a7aReloaded \u00a7e"
-				                                    + ok.size() + " class(es)\u00a7r \u00a77(fallback mode)");
-				                            for (String n : ok) chatMsg.append("\n  \u00a77\u2022\u00a7r ").append(n);
-				                            postChat(chatMsg.toString());
-			                        }
-			                    }
-			                }
+		                if (!skippedSchema.isEmpty()) {
+		                    System.out.println("[HBM-HotSwap] Skipped classes with instance field changes (G1/DCEVM crash guard): " + skippedSchema);
+		                    StringBuilder warnMsg = new StringBuilder("\u00a76\u00a7l[HBM-HotSwap]\u00a7r \u00a7eSkipped (instance fields changed, restart required):");
+		                    for (String n : skippedSchema) warnMsg.append("\n  \u00a7c\u2022\u00a7r ").append(n);
+		                    postChat(warnMsg.toString());
+		                }
+
+		                if (!defs.isEmpty()) {
+		                    long t0 = System.currentTimeMillis();
+		                    try {
+		                        inst.redefineClasses(defs.toArray(new ClassDefinition[0]));
+		                        long dt = System.currentTimeMillis() - t0;
+		                        System.out.println("[HBM-HotSwap] Reloaded changed classes: " + names.size() + " in " + dt + " ms -> " + names);
+		                        StringBuilder chatMsg = new StringBuilder("\u00a76\u00a7l[HBM-HotSwap]\u00a7r \u00a7aReloaded \u00a7e"
+		                                + names.size() + " class(es)\u00a7a in \u00a7e" + dt + " ms\u00a7r");
+		                        for (String n : names) chatMsg.append("\n  \u00a77\u2022\u00a7r ").append(n);
+		                        postChat(chatMsg.toString());
+		                    } catch (Throwable batchErr) {
+		                        List<String> ok = new ArrayList<>();
+		                        for (ClassDefinition def : defs) {
+		                            try {
+		                                inst.redefineClasses(def);
+		                                ok.add(def.getDefinitionClass().getName());
+		                                System.out.println("[HBM-HotSwap] Reloaded: " + def.getDefinitionClass().getName());
+		                            } catch (Throwable singleErr) {
+		                                System.err.println("[HBM-HotSwap] Redefine failed for " + def.getDefinitionClass().getName() + ": " + singleErr);
+		                                postChat("\u00a7c[HBM-HotSwap] Redefine failed: " + def.getDefinitionClass().getName());
+		                            }
+		                        }
+		                        if (!ok.isEmpty()) {
+		                            StringBuilder chatMsg = new StringBuilder("\u00a76\u00a7l[HBM-HotSwap]\u00a7r \u00a7aReloaded \u00a7e"
+		                                    + ok.size() + " class(es)\u00a7r \u00a77(fallback mode)");
+		                            for (String n : ok) chatMsg.append("\n  \u00a77\u2022\u00a7r ").append(n);
+		                            postChat(chatMsg.toString());
+		                        }
+		                    }
+		                }
 		            } catch (Throwable t) {
 		                t.printStackTrace();
 		            }
@@ -1250,22 +1387,22 @@ fun buildAutoHotswapAgentJar(): File {
 		}
 	""".trimIndent())
 
-	val compiler = javax.tools.ToolProvider.getSystemJavaCompiler()
-		?: error("SystemJavaCompiler not found (run Gradle on a JDK, not JRE)")
-	val rc = compiler.run(null, null, null, "--release", "17", "-d", classesDir.absolutePath, javaFile.absolutePath)
-	if (rc != 0) error("Failed to compile HbmAutoHotswapAgent")
+    val compiler = javax.tools.ToolProvider.getSystemJavaCompiler()
+        ?: error("SystemJavaCompiler not found (run Gradle on a JDK, not JRE)")
+    val rc = compiler.run(null, null, null, "--release", "17", "-d", classesDir.absolutePath, javaFile.absolutePath)
+    if (rc != 0) error("Failed to compile HbmAutoHotswapAgent")
 
-	val manifestFile = File(dir, "MANIFEST.MF")
-	manifestFile.writeText(
-		"Manifest-Version: 1.0\n" +
-				"Premain-Class: HbmAutoHotswapAgent\n" +
-				"Can-Redefine-Classes: true\n" +
-				"Can-Retransform-Classes: true\n\n"
-	)
-	ant.withGroovyBuilder {
-		"jar"("destfile" to jarFile, "basedir" to classesDir, "manifest" to manifestFile)
-	}
-	return jarFile
+    val manifestFile = File(dir, "MANIFEST.MF")
+    manifestFile.writeText(
+        "Manifest-Version: 1.0\n" +
+                "Premain-Class: HbmAutoHotswapAgent\n" +
+                "Can-Redefine-Classes: true\n" +
+                "Can-Retransform-Classes: true\n\n"
+    )
+    ant.withGroovyBuilder {
+        "jar"("destfile" to jarFile, "basedir" to classesDir, "manifest" to manifestFile)
+    }
+    return jarFile
 }
 
 tasks.withType<JavaExec>().matching { it.name == "runClient" }.configureEach {

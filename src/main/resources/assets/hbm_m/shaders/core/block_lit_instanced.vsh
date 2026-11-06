@@ -155,17 +155,11 @@ float fadeRamp(float dist, float start, float end) {
 // CrankShaft parity: a single continuous ramp (linear_fade.glsl), no pinned zone.
 float gpuFadeAlpha(float modeW, vec3 instPos) {
     if (modeW < 0.0) return 0.0;
-    float mode = (1.0 - modeW) * 10000.0;
-    if (mode < 0.5) return 1.0;
-    // Guard (parity with the Iris vsh): unconfigured fade uniforms leave the
-    // instance fully opaque instead of ramping against the 1e9 JSON defaults.
+    if (modeW > 0.99995) return 1.0;
     if (uStaticFadeEnd <= uStaticFadeStart || uStaticFadeEnd <= 0.0) return 1.0;
-    // View-space instance origin: ModelViewMat = R_cam * T(-relCam), so its
-    // length is the distance from the camera to the instance origin (anchor-
-    // relative record pos) - the same distance the CPU membership split uses.
     float dist = length((ModelViewMat * vec4(instPos, 1.0)).xyz);
     float sf = fadeRamp(dist, uStaticFadeStart, uStaticFadeEnd);
-    if (mode < 1.5) return sf;
+    if (modeW > 0.99985) return sf;
     if (uAnimFadeEnd <= uAnimFadeStart || uAnimFadeEnd <= 0.0) return sf;
     return min(sf, fadeRamp(dist, uAnimFadeStart, uAnimFadeEnd));
 }
@@ -328,16 +322,9 @@ void main() {
     // bit-for-bit the pre-v2 walk. PoseStack ops compose M = N1*N2*...*Nk (ops
     // declared first act on the vertex last), so node 0 is the LEFTMOST matrix
     // factor.
-    //
-    // Array-free evaluation: every chain input (GradParams.w, AnimParams, the
-    // uJointSpecs texels) is per-instance, so the old version recomputed it in
-    // every vertex AND staged specA[8]/specB[8]/offs[8] locals indexed by the
-    // loop variable - register pressure (possible spilling). Length-1 chains
-    // (all current rigs: press head, assembler slider/arm/cogs) keep the
-    // pre-chain single-joint block verbatim (bit-identical); longer chains
-    // compose each node's rigid transform into one mat4 in a single forward
-    // pass and apply it to vPos/vNrm once - mathematically identical, not
-    // bit-identical (no shipped rig takes that path yet).
+    // Array-free evaluation: length-1 chains keep the single-joint path;
+    // longer chains compose each node's rigid transform into one mat4 in a single
+    // forward pass and apply it to vPos/vNrm once.
     if (GradParams.w >= 0.0 && BoneId >= 0) {
         int base = int(GradParams.w) + BoneId;
         float countW = texelFetch(uJointSpecs, ivec2(base * 3 + 1, 0), 0).w;

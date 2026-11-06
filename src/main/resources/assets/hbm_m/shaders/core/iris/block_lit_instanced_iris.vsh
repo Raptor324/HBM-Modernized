@@ -4,8 +4,7 @@
 // resolves vanilla names via "iris_" + name (see Iris pipeline/programs/ExtendedShader).
 // Output conventions are vanilla parity: a single fragColor in the FSH
 // (like the iris-fallback ShaderSynthesizer).
-//
-// @credit Spark Profiler Remediation / Rodrigues GPU Animation Parity
+
 
 layout(location = 0) in vec3 Position;
 layout(location = 1) in vec3 Normal;
@@ -204,11 +203,11 @@ float gpuFadeAlpha(float modeW, vec3 instPos) {
     if (modeW < 0.0) {
         return 0.0;
     }
-    // FADE_MODE_NONE_DIVIDER = 0.99995 (режим FADE_MODE_NONE = 1.0)
+    // FADE_MODE_NONE_DIVIDER = 0.99995 (mode FADE_MODE_NONE = 1.0)
     if (modeW > 0.99995) {
         return 1.0;
     }
-    // Защита: если юниформы не настроены, остаемся полностью непрозрачными
+    // Guard: if uniforms are not configured, remain fully opaque
     if (iris_uStaticFadeEnd <= iris_uStaticFadeStart || iris_uStaticFadeEnd <= 0.0) {
         return 1.0;
     }
@@ -216,12 +215,12 @@ float gpuFadeAlpha(float modeW, vec3 instPos) {
     float dist = length((iris_ModelViewMat * vec4(instPos, 1.0)).xyz);
     float sf = fadeRamp(dist, iris_uStaticFadeStart, iris_uStaticFadeEnd);
 
-    // FADE_MODE_MIN_ANIM_DIVIDER = 0.99985 (режим FADE_MODE_STATIC = 0.9999)
+    // FADE_MODE_MIN_ANIM_DIVIDER = 0.99985 (mode FADE_MODE_STATIC = 0.9999)
     if (modeW > 0.99985) {
         return sf;
     }
 
-    // Режим FADE_MODE_MIN_ANIM = 0.9998
+    // Mode FADE_MODE_MIN_ANIM = 0.9998
     if (iris_uAnimFadeEnd <= iris_uAnimFadeStart || iris_uAnimFadeEnd <= 0.0) {
         return sf;
     }
@@ -443,12 +442,12 @@ void main() {
     lightmapUV = (uvLm + vec2(8.0)) / 256.0;
     vertexDistance = length(viewPos.xyz);
 
-    // Вычисляем честный фейд по коду режима из InstBboxSize.w
+    // Compute distance fade from mode encoded in InstBboxSize.w
     float instFade = gpuFadeAlpha(InstBboxSize.w, InstPos);
     vFadeAlpha = instFade;
 
-    // Клиппинг: выполняется ПОСЛЕ Shadow Distortion!
-    // Невидимые объекты не пишут глубину в основном проходе и не отбрасывают фантомные тени в shadow pass.
+    // Clipping: performed AFTER shadow distortion.
+    // Culled instances write no depth in main pass and cast no phantom shadows in shadow pass.
     if (instFade <= 0.0) {
         gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
     }

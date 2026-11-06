@@ -3,6 +3,7 @@ package com.hbm_m.client;
 import com.hbm_m.block.UniversalMachinePartBlock;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IMultiblockPart;
+import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
@@ -44,9 +45,14 @@ public final class MultiblockOutlineForge {
 
     @SubscribeEvent
     public static void onHighlight(RenderHighlightEvent.Block event) {
+        if (event.isCanceled()) return;
         Minecraft mc = Minecraft.getInstance();
         Level level = mc.level;
         if (level == null || mc.player == null) return;
+        if (mc.player.getMainHandItem().getItem() instanceof MultiblockBlockItem
+                || mc.player.getOffhandItem().getItem() instanceof MultiblockBlockItem) {
+            return;
+        }
         BlockHitResult target = event.getTarget();
         if (target.getType() == BlockHitResult.Type.MISS) return;
         if (com.hbm_m.compat.ContraptionDoorState.isContraptionWorld(level)) return;

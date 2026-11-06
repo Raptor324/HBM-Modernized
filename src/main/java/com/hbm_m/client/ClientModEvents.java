@@ -303,11 +303,29 @@ public class ClientModEvents {
             com.hbm_m.util.TooltipUtil.applyLegacyGray(event.getToolTip());
         }
     }
+
+    @SubscribeEvent
+    public static void onTooltipColor(net.minecraftforge.client.event.RenderTooltipEvent.Color event) {
+        int[] border = com.hbm_m.inventory.gui.element.GUIElements.ACTIVE_TOOLTIP_BORDER.get();
+        if (border != null) {
+            event.setBorderStart(border[0]);
+            event.setBorderEnd(border[1]);
+        }
+    }
     //?} elif neoforge {
     /*@SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
     public static void onItemTooltipLegacyGray(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent event) {
         if (com.hbm_m.util.TooltipUtil.isHbmStack(event.getItemStack())) {
             com.hbm_m.util.TooltipUtil.applyLegacyGray(event.getToolTip());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onTooltipColor(net.neoforged.neoforge.client.event.RenderTooltipEvent.Color event) {
+        int[] border = com.hbm_m.inventory.gui.element.GUIElements.ACTIVE_TOOLTIP_BORDER.get();
+        if (border != null) {
+            event.setBorderStart(border[0]);
+            event.setBorderEnd(border[1]);
         }
     }
     *///?}

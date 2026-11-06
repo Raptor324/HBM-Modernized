@@ -194,4 +194,20 @@ public class MachineArcWelderBlock extends BaseEntityBlock implements IMultibloc
         return CODEC;
     }
     *///?}
+    // Verbatim port of the original MachineArcWelder.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {0, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {1, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {-1, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {1, 0, 0, Direction.EAST.get3DDataValue()},
+            {-1, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, -1, Direction.NORTH.get3DDataValue()},
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {1, 0, -1, Direction.EAST.get3DDataValue()},
+            {-1, 0, -1, Direction.WEST.get3DDataValue()}
+        }, facing);
+    }
 }

@@ -216,44 +216,44 @@ public class MeshRenderCache {
         MainRegistry.LOGGER.debug("MeshRenderCache: renderer for part '{}', {} vertices",
             partName, prebuiltData.byteBuffer.remaining() / prebuiltData.bytesPerVertex);
 
-            final List<BakedQuad> quadsForIris = geo.solidQuads();
-            return new SingleMeshVboRenderer() {
-                // One-shot owner: holds VboData until initVbo consumes it, then nulled out.
-                // initVbo() is only ever called once per renderer (gated by `initialized`),
-                // but if a future bug causes a re-init after cleanup(), throwing here is
-                // safer than returning already-freed native buffers.
-                private SingleMeshVboRenderer.VboData pendingData = prebuiltData;
+        return new SingleMeshVboRenderer() {
+            // One-shot owner: holds VboData until initVbo consumes it, then nulled out.
+            // initVbo() is only ever called once per renderer (gated by `initialized`),
+            // but if a future bug causes a re-init after cleanup(), throwing here is
+            // safer than returning already-freed native buffers.
+            private SingleMeshVboRenderer.VboData pendingData = prebuiltData;
 
-                @Override
-                protected SingleMeshVboRenderer.VboData buildVboData() {
-                    SingleMeshVboRenderer.VboData data = pendingData;
-                    if (data == null) {
-                        throw new IllegalStateException(
-                                "buildVboData() called twice for part '" + partName + "'; VboData is one-shot");
-                    }
+            @Override
+            protected SingleMeshVboRenderer.VboData buildVboData() {
+                SingleMeshVboRenderer.VboData data = pendingData;
+                if (data == null) {
+                    throw new IllegalStateException(
+                            "buildVboData() called twice for part '" + partName + "'; VboData is one-shot");
+                }
+                pendingData = null;
+                return data;
+            }
+
+            @Override
+            public void cleanup() {
+                // If initVbo() never ran (the part was cached but not rendered
+                // before reload/disconnect), super.cleanup() exits early on
+                // !initialized - while pendingData still holds native memAlloc
+                // vertex/index buffers. Close them explicitly; close() is
+                // idempotent (consumed flag).
+                if (pendingData != null) {
+                    pendingData.close();
                     pendingData = null;
-                    return data;
                 }
+                super.cleanup();
+            }
 
-                @Override
-                public void cleanup() {
-                    // If initVbo() never ran (the part was cached but not rendered
-                    // before reload/disconnect), super.cleanup() exits early on
-                    // !initialized - while pendingData still holds native memAlloc
-                    // vertex/index buffers. Close them explicitly; close() is
-                    // idempotent (consumed flag).
-                    if (pendingData != null) {
-                        pendingData.close();
-                        pendingData = null;
-                    }
-                    super.cleanup();
-                }
-
-                @Override
-                protected List<BakedQuad> getQuadsForIrisPath() {
-                    return quadsForIris;
-                }
-            };
+            @Override
+            protected List<BakedQuad> getQuadsForIrisPath() {
+                // Deferred: BakedQuads are only built when an Iris/Oculus path asks.
+                return geo.solidQuads();
+            }
+        };
     }
 
     /**

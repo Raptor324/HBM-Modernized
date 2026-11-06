@@ -119,7 +119,9 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
             // shadow (empty shadow BE list, terrain-mod interop) - then the
             // problem is not in our draw path.
             SHADOW_BER_INVOCATIONS++;
-        } else if (!isInViewFrustum(blockEntity)) {
+        } else if (!com.hbm_m.client.render.ClientRenderFlags.guiRenderFrame() && !isInViewFrustum(blockEntity)) {
+            // WIAJ demo screen: fake BEs at virtual coordinates are exempt from the
+            // real camera's frustum test.
             return;
         }
 

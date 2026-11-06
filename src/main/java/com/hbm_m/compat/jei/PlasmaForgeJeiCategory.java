@@ -58,7 +58,9 @@ public class PlasmaForgeJeiCategory extends JeiGenericRecipeCategory<PlasmaForge
 
     @Override
     protected int getOutputCount(PlasmaForgeRecipe recipe) {
-        return recipe.getOutput().isEmpty() ? 0 : 1;
+        int count = recipe.getOutput().isEmpty() ? 0 : 1;
+        for (FluidStack fluid : recipe.getFluidOutputs()) if (!fluid.isEmpty()) count++;
+        return count;
     }
 
     @Override
@@ -123,15 +125,42 @@ public class PlasmaForgeJeiCategory extends JeiGenericRecipeCategory<PlasmaForge
         }
     }
 
+    /**
+     * Original NEI: erst die Item-Ausgaenge, dahinter die Fluid-Ausgaenge als Icon
+     * ({@code NEIGenericRecipeHandler.RecipeSet}, {@code outputItem} dann {@code outputFluid}).
+     */
     @Override
     protected void addOutputSlots(IRecipeLayoutBuilder builder, PlasmaForgeRecipe recipe, int outputXOffset) {
-        ItemStack output = recipe.getOutput();
-        if (output.isEmpty()) return;
+        int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(getOutputCount(recipe));
+        int slotIndex = 0;
 
-        int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(1);
-        addItemSlot(builder, RecipeIngredientRole.OUTPUT,
-                positions[0][0] + outputXOffset, positions[0][1])
-                .addItemStack(output);
+        ItemStack output = recipe.getOutput();
+        if (!output.isEmpty()) {
+            addItemSlot(builder, RecipeIngredientRole.OUTPUT,
+                    positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
+                    .addItemStack(output);
+            slotIndex++;
+        }
+
+        for (FluidStack fluid : recipe.getFluidOutputs()) {
+            if (fluid.isEmpty()) continue;
+            //? if forge {
+            addItemSlot(builder, RecipeIngredientRole.OUTPUT,
+                    positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
+                    .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
+                    .setCustomRenderer(mezz.jei.api.forge.ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    .addIngredient(mezz.jei.api.forge.ForgeTypes.FLUID_STACK,
+                            new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount(), fluid.getTag()));
+            //?} elif neoforge {
+            /*addItemSlot(builder, RecipeIngredientRole.OUTPUT,
+                    positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
+                    .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
+                    .setCustomRenderer(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    .addIngredient(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK,
+                            new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
+            *///?}
+            slotIndex++;
+        }
     }
 
     @Override

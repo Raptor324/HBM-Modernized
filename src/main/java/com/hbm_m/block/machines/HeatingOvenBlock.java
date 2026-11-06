@@ -97,6 +97,13 @@ public class HeatingOvenBlock extends BaseEntityBlock implements IMultiblockCont
     }
 
     @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            {1, 1, 0.5, -0.3, 0.4, -0.4, 1}
+        };
+    }
+
+    @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);
     }

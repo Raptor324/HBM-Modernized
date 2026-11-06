@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.PrecAssRecipe;
 import com.hbm_m.recipe.PrecAssRecipe.CountedIngredient;
@@ -76,28 +75,11 @@ public class PrecAssJeiCategory extends JeiGenericRecipeCategory<PrecAssRecipe> 
         return recipe.isPooled();
     }
 
-    @Override
-    protected int getInputXOffset(PrecAssRecipe recipe, int inputCount) {
-        if (inputCount > 12) return -9;
-        if (inputCount > 9) return 18;
-        return 0;
-    }
-
-    @Override
-    protected int getOutputXOffset(PrecAssRecipe recipe, int outputCount) {
-        return getOffset(getInputCount(recipe));
-    }
-
-    @Override
-    protected int getMachineXOffset(PrecAssRecipe recipe) {
-        return getOffset(getInputCount(recipe));
-    }
-
-    private static int getOffset(int inputCount) {
-        if (inputCount > 12) return 27;
-        if (inputCount > 9) return 18;
-        return 0;
-    }
+    /**
+     * Keine X-Offsets: das Original {@code PrecAssRecipeHandler} ueberschreibt weder
+     * {@code getInputXOffset} noch {@code getOutputXOffset}/{@code getMachineXOffset} -
+     * anders als der Assembler-Handler bleiben alle Slots auf ihren Grundpositionen.
+     */
 
     @Override
     protected void addInputSlots(IRecipeLayoutBuilder builder, PrecAssRecipe recipe, int inputXOffset) {

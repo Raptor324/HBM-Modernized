@@ -124,8 +124,7 @@ public final class MissileRenderHelper {
         }
     }
 
-    // Phase C (mechanisch): Forge-Pfade mit ItemTransformHelperCompat gelten jetzt auch fuer NeoForge,
-    // weil die Anzeige-Waechter dort ebenfalls installiert werden (else = nur noch Fabric).
+    // Forge paths with ItemTransformHelperCompat also apply to NeoForge where display wrappers are installed.
     @Nullable
     public static MissileBakedModel resolveMissileModel(ResourceLocation itemId) {
         BakedModel model = resolveBakedModel(itemId);

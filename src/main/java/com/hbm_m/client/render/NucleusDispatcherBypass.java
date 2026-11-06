@@ -32,11 +32,10 @@ import net.minecraft.world.phys.Vec3;
  * machines ({@code MachineRenderers}) — and ONLY for them; all other mod BEs
  * go through the normal path.
  * <p>
- * The shadow pass was historically NOT bypassed (profile 0914 04:04: a naive skip
- * broke shadows). SHADOW-EPOCH (2026-10-07) now replaces the BER for provably
+ * The shadow pass replaces the BER for provably
  * covered machines only: records are produced in MAIN and the shadow pass
  * consumes them through a per-machine fail-closed gate - see
- * {@code IrisShadowBatchCollector} (SHADOW-EPOCH section) for the mechanism.
+ * {@code IrisShadowBatchCollector} for the mechanism.
  * <p>
  * Scheme:
  * <ol>
@@ -257,10 +256,9 @@ public final class NucleusDispatcherBypass {
                 tracked.hbm_m$setNucleusRegistered(false);
                 tracked.hbm_m$setRenderState(null);
             }
-            MachineBer<?> ber = BER_FAST_CACHE.get(be.getType());
-            if (ber != null) {
-                ber.dropPerPositionCaches(be.getBlockPos().asLong());
-            }
+            long posKey = be.getBlockPos().asLong();
+            dropMachineCaches(be.getType(), posKey, be);
+            com.hbm_m.client.render.retained.RetainedInstanceGraph.get().onMachineRemoved(be);
         }
         bucket.machines.clear();
     }
@@ -320,11 +318,8 @@ public final class NucleusDispatcherBypass {
             tracked.hbm_m$setNucleusRegistered(false);
             tracked.hbm_m$setRenderState(null);
         }
-        // Render-thread safe cache eviction
-        MachineBer<?> ber = BER_FAST_CACHE.get(be.getType());
-        if (ber != null) {
-            ber.dropPerPositionCaches(be.getBlockPos().asLong());
-        }
+        long posKey = be.getBlockPos().asLong();
+        dropMachineCaches(be.getType(), posKey, be);
         com.hbm_m.client.render.retained.RetainedInstanceGraph.get().onMachineRemoved(be);
     }
 
@@ -345,15 +340,13 @@ public final class NucleusDispatcherBypass {
         if (be == null || be.isRemoved() || be.getLevel() == null || !be.getLevel().isClientSide()) {
             return;
         }
-        // Tombstone очищается, когда на этой позиции снова легитимно появляется
-        // управляемая машина (PENDING_ADD всё равно проверит isDemolished в
-        // addMachine). Раньше проверялся только БЛОК-контроллер
-        // (IMultiblockController): одиночная машина или дверь, переставленная на
-        // место сноса, оставалась затомбстоунной навсегда — addMachine/RIG
-        // отказывали в регистрации, а shouldBypass гасил ванильный рендер
-        // (невидимость до перезахода в мир). BE, реально доставленный через
-        // setBlockEntity, означает, что сервер действительно держит блок на этой
-        // позиции — гонка resurrection каскада сноса сюда не попадает.
+        // Tombstone is cleared when a managed machine legitimately reappears at this position
+        // (PENDING_ADD will still check isDemolished in addMachine). Previously only multiblock
+        // controller blocks (IMultiblockController) were checked; a single-block machine or door
+        // placed at a demolished spot remained tombstoned permanently — addMachine/RIG refused
+        // registration and shouldBypass suppressed vanilla render (invisibility until rejoin).
+        // A BlockEntity delivered via setBlockEntity confirms the server truly has a block at
+        // this position, so resurrection races from demolition cascades do not enter here.
         if (isDemolished(be.getBlockPos().asLong())) {
             boolean controllerBlock = be.getLevel() != null
                     && be.getLevel().getBlockState(be.getBlockPos()).getBlock() instanceof com.hbm_m.interfaces.IMultiblockController;
@@ -426,10 +419,7 @@ public final class NucleusDispatcherBypass {
         long posKey = be.getBlockPos().asLong();
         if (com.mojang.blaze3d.systems.RenderSystem.isOnRenderThread()) {
             com.hbm_m.client.render.retained.RetainedInstanceGraph.get().onMachineRemoved(be);
-            MachineBer<?> ber = BER_FAST_CACHE.get(be.getType());
-            if (ber != null) {
-                ber.dropPerPositionCaches(posKey);
-            }
+            dropMachineCaches(be.getType(), posKey, be);
         } else {
             com.hbm_m.client.render.retained.RetainedInstanceGraph.get().onMachineRemovedAsync(be);
         }
@@ -500,11 +490,11 @@ public final class NucleusDispatcherBypass {
             net.minecraft.client.Minecraft.getInstance().execute(() -> {
                 if (!evictControllerPresence(level, corePos)) {
                     // Neither a live BE nor a bucket entry: evict by position so the
-                    // GPU slots for this key are still freed.
+                    // GPU slots for this key are still freed across all specs.
                     for (MachineBer<?> ber : snapshotBers()) {
                         ber.dropPerPositionCaches(coreKey);
                     }
-                    com.hbm_m.client.render.retained.RetainedInstanceGraph.get().onMachineRemoved(coreKey, true);
+                    com.hbm_m.client.render.retained.RetainedInstanceGraph.get().onMachineRemoved(coreKey, false);
                 }
             });
             return;
@@ -514,12 +504,11 @@ public final class NucleusDispatcherBypass {
         }
 
         // 3. Fallback: the controller was neither a live BE nor in a bucket, evict
-        // from RetainedInstanceGraph by position; dropPerPositionCaches frees the spec
-        // slots for this key, so the RIG all-specs sweep is skipped via the flag.
+        // from RetainedInstanceGraph by position across all registered specs.
         for (MachineBer<?> ber : snapshotBers()) {
             ber.dropPerPositionCaches(coreKey);
         }
-        com.hbm_m.client.render.retained.RetainedInstanceGraph.get().onMachineRemoved(coreKey, true);
+        com.hbm_m.client.render.retained.RetainedInstanceGraph.get().onMachineRemoved(coreKey, false);
     }
 
     /**
@@ -610,19 +599,10 @@ public final class NucleusDispatcherBypass {
                         tracked.hbm_m$setNucleusRegistered(false);
                         tracked.hbm_m$setRenderState(null);
                     }
-                    MachineBer<?> ber = BER_FAST_CACHE.get(b.getType());
-                    if (ber != null) {
-                        ber.dropPerPositionCaches(b.getBlockPos().asLong());
-                    }
+                    dropMachineCaches(b.getType(), b.getBlockPos().asLong(), b);
                     com.hbm_m.client.render.retained.RetainedInstanceGraph.get().onMachineRemoved(b);
                 }
             }
-            // Amortized fail-safe against missed teardown hooks (any target): a
-            // retained handle whose BE is gone while its chunk is loaded gets
-            // evicted here, so a missed hook costs at most ~128 frames of ghost,
-            // never a permanent one. See RetainedInstanceGraph.reconcileStaleHandles.
-            com.hbm_m.client.render.retained.RetainedInstanceGraph.get()
-                    .reconcileStaleHandles(mc.level);
         }
     }
 
@@ -660,6 +640,32 @@ public final class NucleusDispatcherBypass {
 
     public static void registerBer(BlockEntityType<?> type, MachineBer<?> ber) {
         BER_FAST_CACHE.put(type, ber);
+    }
+
+    /**
+     * Authoritative per-position teardown: drops BER caches and frees GPU instance slots
+     * across both static and dynamic part renderers.
+     */
+    public static void dropMachineCaches(BlockEntityType<?> type, long posKey, @Nullable BlockEntity be) {
+        if (type == null) return;
+        MachineBer<?> ber = BER_FAST_CACHE.get(type);
+        if (ber == null && be != null) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null && mc.getBlockEntityRenderDispatcher() != null) {
+                BlockEntityRenderer<?> r = mc.getBlockEntityRenderDispatcher().getRenderer(be);
+                if (r instanceof MachineBer<?> mb) {
+                    ber = mb;
+                    BER_FAST_CACHE.put(type, mb);
+                }
+            }
+        }
+        if (ber != null) {
+            ber.dropPerPositionCaches(posKey);
+        }
+        com.hbm_m.client.render.machine.MachineSpec<?> spec = com.hbm_m.client.render.machine.MachineRenderRegistry.getSpec(type);
+        if (spec != null) {
+            spec.freeMachineSlots(posKey);
+        }
     }
 
     public static void clearBerCache() {
@@ -939,7 +945,9 @@ public final class NucleusDispatcherBypass {
 
     /** Flag read on the duck interface (see NucleusManagedType) - no hash probe. */
     private static boolean isManagedType(BlockEntityType<?> type) {
-        return ((NucleusManagedType) type).hbm_m$isNucleusManaged();
+        if (type == null) return false;
+        return (type instanceof NucleusManagedType duck && duck.hbm_m$isNucleusManaged())
+                || com.hbm_m.client.render.machine.MachineRenderRegistry.isManaged(type);
     }
 
     /** One machine: distance check -> renderer -> pose = base * T(be-cam) -> MachineBer.collectRender. */

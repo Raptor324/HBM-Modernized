@@ -91,14 +91,24 @@ public final class RawDhDepthCopy {
             GL20.glUniform1f(uDhFar, dhFar);
             GL20.glUniform1f(uOutNear, com.hbm_m.client.compat.dh.DhClientCompat.extendedNear());
             GL20.glUniform1f(uOutFar, com.hbm_m.client.compat.dh.DhClientCompat.extendedFar());
-            GL20.glUniform1f(uFadeMaskDist, com.hbm_m.client.compat.dh.DhOcclusionGpu.ditherFadeMaskDistance());
-            GL20.glUniform1f(uReverseZ,
-                    com.hbm_m.client.compat.dh.DhClientState.dhReverseZ() ? 1.0F : 0.0F);
+            float fadeMaskDist = com.hbm_m.client.compat.dh.DhOcclusionGpu.ditherFadeMaskDistance();
+            GL20.glUniform1f(uFadeMaskDist, fadeMaskDist);
+            boolean reverseZ = com.hbm_m.client.compat.dh.DhClientState.dhReverseZ();
+            GL20.glUniform1f(uReverseZ, reverseZ ? 1.0F : 0.0F);
             GlStateManager._activeTexture(GL13.GL_TEXTURE0);
             GlStateManager._bindTexture(depthTextureId);
             GL20.glUniform1i(uSampler, 0);
 
             RawFullscreenQuad.draw();
+
+            // Iris path: the blit wrote dh_depth_blit-encoded depth (extended
+            // projection) into the bound pipeline FB, which IS what the main
+            // RT depth texture holds at TAIL. Signal RawScreenSpaceLight so its
+            // isBlittedDhDepth guard re-routes those pixels to the DH layer
+            // instead of decoding them with the (pack) frame projection.
+            RawScreenSpaceLight.markDhBlittedInDepth0();
+            // One-frame diagnostic: silent no-op detector (same fsh logic).
+            DhDepthBlitDiag.onBlitRan(depthTextureId, dhNear, dhFar, reverseZ, fadeMaskDist);
 
             // Restore: put back the PREVIOUS unit-0 texture (feedback), then state -
             // all through the managed API so the cache stays honest.

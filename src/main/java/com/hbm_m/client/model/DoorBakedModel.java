@@ -114,17 +114,14 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand,
                                           ModelData modelData,
                                           @Nullable net.minecraft.client.renderer.RenderType renderType) {
+        if (side != null) {
+            return Collections.emptyList();
+        }
         int skinIndex = getCyclingSkinIndex();
         if (!itemQuadsCached || cachedItemSkinIndex != skinIndex) {
             buildItemQuads(rand, modelData, renderType, skinIndex);
             cachedItemSkinIndex = skinIndex;
             itemQuadsCached = true;
-        }
-        
-        if (side != null) {
-            return cachedItemQuads.stream()
-                .filter(quad -> quad.getDirection() == side)
-                .toList();
         }
         
         return cachedItemQuads;
@@ -156,18 +153,53 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         Map<String, BakedModel> partsToUse = getPartsForSkinIndex(skinIndex);
         List<String> itemRenderParts = getItemRenderPartNames();
 
+        // 1.7.10 ItemRenderLibraryDoors: silo_hatch и silo_hatch_large в item-рендере (GUI, рука, земля)
+        // рендерятся с открытой створкой люка и базовыми трансформами из renderCommon()
+        String doorType = extractDoorTypeFromPath(doorId.getPath());
+        boolean isSiloHatch = "silo_hatch".equals(doorType);
+        boolean isSiloHatchLarge = "silo_hatch_large".equals(doorType);
+
+        Matrix4f siloFrameTransform = null;
+        Matrix4f siloHatchTransform = null;
+        if (isSiloHatch) {
+            siloFrameTransform = new Matrix4f().rotateY((float) Math.toRadians(90));
+            siloHatchTransform = new Matrix4f(siloFrameTransform)
+                    .translate(0, 0.875f, -1.875f)
+                    .rotateX((float) Math.toRadians(-120))
+                    .translate(0, -0.875f, 1.875f)
+                    .translate(0, 0.25f, 0);
+        } else if (isSiloHatchLarge) {
+            siloFrameTransform = new Matrix4f().translate(1, 0, 0).rotateY((float) Math.toRadians(90));
+            siloHatchTransform = new Matrix4f(siloFrameTransform)
+                    .translate(0, 0.875f, -2.875f)
+                    .rotateX((float) Math.toRadians(-120))
+                    .translate(0, -0.875f, 2.875f)
+                    .translate(0, 0.25f, 0);
+        }
+
         for (String partName : itemRenderParts) {
             BakedModel part = partsToUse.get(partName);
             if (part != null) {
+                List<BakedQuad> partQuads = new ArrayList<>();
                 for (Direction dir : Direction.values()) {
-                    allQuads.addAll(part.getQuads(null, dir, rand, modelData, renderType));
+                    partQuads.addAll(part.getQuads(null, dir, rand, modelData, renderType));
                 }
-                allQuads.addAll(part.getQuads(null, null, rand, modelData, renderType));
+                partQuads.addAll(part.getQuads(null, null, rand, modelData, renderType));
+
+                if (isSiloHatch || isSiloHatchLarge) {
+                    Matrix4f transform = "Hatch".equalsIgnoreCase(partName) ? siloHatchTransform : siloFrameTransform;
+                    if (transform != null) {
+                        partQuads = ModelHelper.transformQuadsByMatrix(partQuads, transform);
+                    }
+                }
+
+                allQuads.addAll(partQuads);
             }
         }
 
         this.cachedItemQuads = allQuads;
     }
+
 
     /**
      * Для варианта (0=LEGACY, 1..N=скины) возвращает запечённую модель напрямую,

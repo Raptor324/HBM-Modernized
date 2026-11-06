@@ -251,8 +251,7 @@ public class GUIScreenRecipeSelector extends Screen {
 
                 appendRecipeTooltipLines(entry.recipe, tooltip);
                 
-                guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(),
-                    mouseX, mouseY);
+                com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(guiGraphics, this.font, tooltip, mouseX, mouseY);
                 return;
             }
         }
@@ -264,7 +263,7 @@ public class GUIScreenRecipeSelector extends Screen {
                 List<Component> tooltip = new ArrayList<>();
                 tooltip.add(recipeHeader(entry));
                 appendRecipeTooltipLines(entry.recipe, tooltip);
-                guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+                com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(guiGraphics, this.font, tooltip, mouseX, mouseY);
             }
             return;
         }

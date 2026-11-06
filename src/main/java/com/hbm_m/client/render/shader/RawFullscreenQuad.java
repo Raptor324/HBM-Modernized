@@ -22,6 +22,19 @@ public final class RawFullscreenQuad {
             }
             """;
 
+    public static final String VERTEX_SHADER_SOURCE = """
+            #version 150
+            in vec3 Position;
+            out vec2 vTexCoord;
+            out vec2 uv;
+            void main() {
+                gl_Position = vec4(Position, 1.0);
+                vTexCoord = Position.xy * 0.5 + 0.5;
+                uv = vTexCoord;
+            }
+            """;
+
+
     private static int vao = -1;
     private static int vbo = -1;
 
@@ -69,6 +82,12 @@ public final class RawFullscreenQuad {
         GlStateManager._glBindVertexArray(vao);
         GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, 4);
     }
+
+    /** Alias for {@link #draw()} used by screen-space shaders. */
+    public static void render() {
+        draw();
+    }
+
 
     public static synchronized void destroy() {
         if (vbo != -1) {

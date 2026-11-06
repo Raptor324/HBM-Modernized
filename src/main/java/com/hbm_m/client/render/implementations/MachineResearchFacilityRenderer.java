@@ -5,6 +5,9 @@ import java.util.Random;
 
 import org.joml.Matrix4f;
 
+import net.minecraft.core.Direction;
+import com.hbm_m.block.machines.MachineFelBlock;
+import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.ForceFieldBlockEntity;
 import com.hbm_m.blockentity.machines.MachineExposureChamberBlockEntity;
@@ -162,21 +165,37 @@ public final class MachineResearchFacilityRenderer {
         MachineRenderers.machine("fel",
                 ModBlockEntities.FEL_BE.get(),
                 MachineFelBlockEntity.class)
-            .part("Cube_Cube.001")
-            .itemParts("Cube_Cube.001")
+            .part("Cube.018")
+            .itemParts("Cube.018")
+            .blockTransform(MachineResearchFacilityRenderer::applyFelTransform)
             .hook(new MachineRenderHook<MachineFelBlockEntity>() {
                 @Override
                 public void render(MachineFelBlockEntity fel, float pt, PoseStack ps,
                                    MultiBufferSource buf, int light, int overlay, MachineRenderApi api) {
-                    long time = fel.getLevel() != null ? fel.getLevel().getGameTime() : 0;
-                    int color = (fel.mode.renderedBeamColor == 0)
+                    // Level-less BEs (WIAJ demo screen) animate off the client level's time
+                    // instead of freezing at 0.
+                    long time;
+                    if (fel.getLevel() != null) {
+                        time = fel.getLevel().getGameTime();
+                    } else {
+                        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                        time = mc.level != null ? mc.level.getGameTime() : 0L;
+                    }
+                    // The 1.7.10 cannery demo drew its beam with wave.guiColor, while the
+                    // in-world renderer uses renderedBeamColor - preserve both looks. A
+                    // level-less BE is by definition the demo's fake (keyed on the BE state,
+                    // not on a global flag).
+                    boolean demoFidelity = fel.getLevel() == null;
+                    int baseColor = demoFidelity ? fel.mode.guiColor : fel.mode.renderedBeamColor;
+                    int color = (baseColor == 0)
                             ? (Color.HSBtoRGB(time / 50.0F, 0.5F, 0.1F) & 0xFFFFFF)
-                            : fel.mode.renderedBeamColor;
+                            : baseColor;
                     int length = fel.distance - 3;
 
                     if (fel.getEnergyStored() > MachineFelBlockEntity.powerReq * Math.pow(2, fel.mode.tier)
                             && fel.isOn && fel.mode != EnumWavelengths.NULL && length > 0) {
                         ps.pushPose();
+                        ps.translate(0.5, 0.0, 0.5);
                         ps.translate(0, 1.5, -1.5);
                         BeamPronter.prontBeamwithDepth(ps, buf, new Vec3(0, 0, -length - 1),
                                 EnumWaveType.SPIRAL, EnumBeamType.SOLID, color, color, 0, 1, 0F, 2, 0.0625F,
@@ -288,6 +307,19 @@ public final class MachineResearchFacilityRenderer {
     private static Vec3 rotateZ(Vec3 v, float a) {
         float c = (float) Math.cos(a), s = (float) Math.sin(a);
         return new Vec3(v.x * c - v.y * s, v.x * s + v.y * c, v.z);
+    }
+
+    private static void applyFelTransform(MachineFelBlockEntity fel, LegacyAnimator animator) {
+        Direction facing = fel.getBlockState().getValue(MachineFelBlock.FACING);
+        float facingYRot = switch (facing) {
+            case SOUTH -> 180F;
+            case WEST  -> 90F;
+            case EAST  -> 270F;
+            default    -> 0F; // NORTH
+        };
+        animator.translate(0.5, 0.0, 0.5);
+        animator.rotate(facingYRot, 0, 1, 0);
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private MachineResearchFacilityRenderer() {}

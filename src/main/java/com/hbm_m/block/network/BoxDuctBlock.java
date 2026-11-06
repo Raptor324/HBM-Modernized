@@ -164,9 +164,21 @@ public class BoxDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     public static int metaOf(ItemStack stack) {
-        CompoundTag t = StackNbt.tag(stack);
-        if (t == null || !t.contains("BlockStateTag")) return 0;
-        try { return Integer.parseInt(t.getCompound("BlockStateTag").getString("meta")); } catch (NumberFormatException e) { return 0; }
+        if (stack == null || stack.isEmpty()) return 0;
+        //? if >= 1.21.1 {
+        /*net.minecraft.world.item.component.BlockItemStateProperties bs = stack.get(net.minecraft.core.component.DataComponents.BLOCK_STATE);
+        if (bs != null) {
+            String m = bs.properties().get("meta");
+            if (m != null) {
+                try { return Integer.parseInt(m); } catch (NumberFormatException ignored) {}
+            }
+        }
+        *///?}
+        CompoundTag t = StackNbt.read(stack);
+        if (t != null && t.contains("BlockStateTag")) {
+            try { return Integer.parseInt(t.getCompound("BlockStateTag").getString("meta")); } catch (NumberFormatException ignored) {}
+        }
+        return 0;
     }
 
     @Override

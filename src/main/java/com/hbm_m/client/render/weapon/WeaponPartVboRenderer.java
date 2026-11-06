@@ -152,7 +152,7 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
     private static int irisBatchPrevDrawFbo = -1;
     private static int irisBatchPrevReadFbo = -1;
     private static int irisBatchVao = -1;
-    /** COLOR-атрибут, которому батч задавал константный тинт (для сброса в белый). */
+    /** COLOR attribute given constant tint by the batch (for resetting to white). */
     private static int irisBatchColorLoc = -1;
     private static boolean irisBatchShadow;
     private static ResourceLocation batchTexture;
@@ -326,16 +326,16 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
                 GL30.glVertexAttribI2i(uv2Loc, blockU, skyV);
             }
 
-            // Пер-частный тинт (GunGL.color): компаньон-меш несёт в вершинах (1,1,1,1),
-            // без инжекта под паком тинт терялся — ч/б casings.png + белый vaColor давали
-            // полностью белые гильзы. Константный COLOR-атрибут повторно на каждый draw:
-            // его текущее значение — глобальное состояние, между батчами его затирают другие.
+            // Per-part tint (GunGL.color): companion mesh carries (1,1,1,1) in vertices;
+            // without this injection under a pack, tint was lost (monochrome casings.png +
+            // white vaColor resulted in all-white bullet casings). Re-apply constant
+            // COLOR attribute on every draw: its value is global GL state modified by other draws.
             int colorLoc = companion.getColorLocation();
             if (colorLoc != -1) {
                 GL20.glVertexAttrib4f(colorLoc, r, g, b, a);
                 irisBatchColorLoc = colorLoc;
             }
-            // Страховка для паков, умножающих на ColorModulator вместо vaColor.
+            // Fallback for shaderpacks multiplying by ColorModulator instead of vaColor.
             if (shader.COLOR_MODULATOR != null) {
                 shader.COLOR_MODULATOR.set(r, g, b, a);
                 shader.COLOR_MODULATOR.upload();
@@ -386,8 +386,8 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
                 GlStateManager._bindTexture(weaponTex.getId());
             }
 
-            // Шейдер партиклов Oculus может менять физический glBlendFunc в обход кэша
-            // GlStateManager (см. [BLEND_FUNC_DESYNC] перед casings.png) — синхронизируем.
+            // Oculus particle shader can modify physical glBlendFunc bypassing GlStateManager
+            // cache (see [BLEND_FUNC_DESYNC] before casings.png) - resynchronize state.
             ShaderBindResync.forceHonestBlendState();
             if (mode != 0) {
                 RenderSystem.enableBlend();
@@ -433,10 +433,10 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
     private static void closeIrisBatchGuards() {
         if (irisBatchShader != null) {
             try {
-                // Тинт GunGL.color (гильзы и т.п.) был загружен в ColorModulator и константный
-                // COLOR-атрибут ОБЩЕЙ Iris-блок-программы, которой рисуются и GPU-бейк машины.
-                // Без сброса в белый последний цвет гильзы красит все последующие батчи кадра.
-                // Программа ещё привязана (сброс до закрытия гвардов) — upload() валиден.
+                // GunGL.color tint (bullet casings, etc.) was uploaded into ColorModulator and constant
+                // COLOR attribute of the SHARED Iris block program used by GPU-baked machines.
+                // Reset to white so casing color does not bleed into subsequent batches.
+                // Program is still bound (reset before closing guards), upload() is valid.
                 com.mojang.blaze3d.shaders.Uniform modulator = irisBatchShader.COLOR_MODULATOR;
                 if (modulator != null) {
                     modulator.set(1.0F, 1.0F, 1.0F, 1.0F);
@@ -466,9 +466,9 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
             } catch (Throwable ignored) {}
             irisBatchStateGuard = null;
         }
-        // irisBatchShader.clear() внутри Oculus делает bindWrite(MAIN_RT) - во время
-        // теневого прохода это отвязывает теневой FBO пака посреди рендера теней.
-        // Принудительно возвращаем FBO, захваченные на входе в батч.
+        // irisBatchShader.clear() inside Oculus calls bindWrite(MAIN_RT) - during
+        // shadow pass this unbinds the pack's shadow FBO mid-pass.
+        // Force restore of FBOs captured on batch entry.
         if (irisBatchPrevDrawFbo > 0) {
             GlStateManager._glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, irisBatchPrevDrawFbo);
             irisBatchPrevDrawFbo = -1;
@@ -694,9 +694,9 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
         }
         // Always reset BlendMode.lastApplied to vanilla default and unlock Oculus BlendModeStorage.
         ShaderBindResync.resetBlendModeToOpaque();
-        // Трассеры/вспышки рисуются с depthMask(false); vanilla COLOR_DEPTH_WRITE
-        // не восстанавливает glDepthMask при writeDepth == true — принудительно
-        // возвращаем запись цвета и глубины, чтобы следующие батчи кадра не теряли Z.
+        // Tracers and muzzle flashes render with depthMask(false); vanilla COLOR_DEPTH_WRITE
+        // does not restore glDepthMask when writeDepth == true - force restore
+        // color and depth writes so subsequent batches do not lose Z buffer writes.
         RenderSystem.depthMask(true);
         RenderSystem.colorMask(true, true, true, true);
         if (hadQuads && com.hbm_m.client.render.debug.NucleusFrameCapture.isCapturing()) {

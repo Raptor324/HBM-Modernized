@@ -90,7 +90,7 @@ public class ConfiguredMultipartBakedModel extends AbstractMultipartBakedModel i
     @Override
     protected boolean shouldSkipWorldRendering(@Nullable BlockState state) {
         // Мир — геометрия в BER/VBO (конфиг фабричной спеки).
-        return state != null && berWorld;
+        return state != null && berWorld && !com.hbm_m.client.render.ClientRenderFlags.guiRenderFrame();
     }
 
     private static boolean isFramePart(String name) {

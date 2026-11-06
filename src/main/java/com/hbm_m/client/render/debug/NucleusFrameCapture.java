@@ -209,14 +209,19 @@ public final class NucleusFrameCapture {
             ensureReflection();
             GlSnapshot snap = captureGlSnapshot();
             boolean expectedVanillaBlendMode = "opaque=false (SRC_ALPHA -> ONE_MINUS_SRC_ALPHA)".equals(snap.mojangBlendModeLastApplied);
+            boolean blendCacheDesync = snap.gsmBlendEnabled != null && snap.gsmBlendEnabled != snap.glBlendEnabled;
             boolean broken = isPost
-                    ? (!snap.glBlendEnabled || !expectedVanillaBlendMode)
+                    ? (blendCacheDesync || !expectedVanillaBlendMode)
                     : (!expectedVanillaBlendMode
+                       || blendCacheDesync
                        || Boolean.TRUE.equals(snap.irisBlendLocked)
                        || Boolean.TRUE.equals(snap.irisDepthColorLocked));
             if (broken) {
                 autoWatchdog = false;
-                beginCaptureSession("AUTO_WATCHDOG: Vignette state corruption detected (" + (isPost ? "POST" : "PRE") + ")");
+                triggerReason = "AUTO_WATCHDOG: Vignette state corruption detected (" + (isPost ? "POST" : "PRE") + ")";
+                // Arm capture for the start of the NEXT frame so the report captures
+                // all 3D world stages that caused the corruption, not just the GUI tail.
+                state = CaptureState.ARMED;
             }
         }
         if (state == CaptureState.CAPTURING) {
@@ -511,10 +516,11 @@ public final class NucleusFrameCapture {
             }
         }
         if ("GUI_VIGNETTE_POST".equals(ev.name)) {
-            if (!g.glBlendEnabled || !isVanillaDefaultBlendMode) {
-                flagAnomaly(ev, "[VIGNETTE_DREW_CORRUPTED] Gui.renderVignette() finished with physical GL_BLEND="
-                        + g.glBlendEnabled + " and BlendMode.lastApplied=" + g.mojangBlendModeLastApplied
-                        + "! Culprit blend mutator: " + lastBlendMutatorEvent);
+            boolean blendDesync = g.gsmBlendEnabled != null && g.gsmBlendEnabled != g.glBlendEnabled;
+            if (blendDesync || !isVanillaDefaultBlendMode) {
+                flagAnomaly(ev, "[VIGNETTE_DREW_CORRUPTED] Gui.renderVignette() finished with GL_BLEND="
+                        + g.glBlendEnabled + " (GSM=" + g.gsmBlendEnabled + ") and BlendMode.lastApplied="
+                        + g.mojangBlendModeLastApplied + "! Culprit blend mutator: " + lastBlendMutatorEvent);
             }
         }
 

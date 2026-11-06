@@ -215,7 +215,7 @@ public class GUITemplateFolder extends Screen {
                         }
                     }
 
-                    guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+                    com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(guiGraphics, this.font, tooltip, mouseX, mouseY);
                 } else {
                     guiGraphics.renderTooltip(this.font, outputStack, mouseX, mouseY);
                 }

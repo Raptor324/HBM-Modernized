@@ -193,7 +193,7 @@ public final class LightSampleCache {
             PACKED_CACHE.long2LongEntrySet().removeIf(e ->
                 currentTick - (e.getLongValue() >>> 32) > LIGHT_TTL_TICKS);
             // The aux registries index exactly the entries above - prune their
-            // rows where that data died (audit 2026-10-05 §3.23).
+            // rows where that data died.
             pruneRegistries();
         }
     }
@@ -454,7 +454,7 @@ public final class LightSampleCache {
 
     /**
      * Drops the auxiliary registries' rows for machines whose entries all
-     * expired (audit 2026-10-05 §3.23). Runs inside the TTL prune block: a
+     * expired. Runs inside the TTL prune block: a
      * machine still being rendered re-registers on every fresh sample
      * (registerMachineSection / registerLightUsage), so a fully-expired row
      * belongs to a machine that stopped rendering. Rows with ANY live entry are

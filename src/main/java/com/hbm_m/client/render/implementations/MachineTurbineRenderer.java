@@ -6,8 +6,10 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineIndustrialTurbineBlockEntity;
 import com.hbm_m.blockentity.machines.MachineLargeTurbineBlockEntity;
 import com.hbm_m.blockentity.machines.MachineTurbineGasBlockEntity;
+import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.machine.MachineRenderers;
 
+import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 
 /**
@@ -52,7 +54,7 @@ public final class MachineTurbineRenderer {
     private static void registerLargeTurbine() {
         MachineRenderers.machine("large_turbine", ModBlockEntities.LARGE_TURBINE_BE.get(),
                 MachineLargeTurbineBlockEntity.class)
-            .blockTransform((be, anim) -> anim.translate(0.5, 0.0, -0.5))
+            .blockTransform(MachineTurbineRenderer::applyLargeTurbineTransform)
             .part("Body")
             .rotatingPart("Blades", new Vector3f(0.0F, 0.0F, 1.0F), new Vector3f(0.0F, 1.0F, 0.0F),
                     (be, pt) -> Mth.lerp(pt, be.lastRotor, be.rotor))
@@ -60,6 +62,19 @@ public final class MachineTurbineRenderer {
             .viewDistance(256)
             .itemParts("Body", "Blades")
             .register();
+    }
+
+    private static void applyLargeTurbineTransform(MachineLargeTurbineBlockEntity turbine, LegacyAnimator animator) {
+        animator.translate(0.5, 0.0, 0.5);
+        Direction facing = ObjBerHelper.facing(turbine);
+        switch (facing) {
+            case NORTH -> animator.rotate(180, 0, 1, 0);
+            case WEST  -> animator.rotate(270, 0, 1, 0);
+            case SOUTH -> animator.rotate(0, 0, 1, 0);
+            case EAST  -> animator.rotate(90, 0, 1, 0);
+            default    -> {}
+        }
+        animator.translate(0.0, 0.0, -1.0);
     }
 
     private MachineTurbineRenderer() {}

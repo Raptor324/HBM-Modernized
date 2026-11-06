@@ -26,13 +26,16 @@ public enum PipeRenderShape implements StringRepresentable {
         if (mask == 0) {
             return ISOLATED;
         }
-        if (mask == 32 || mask == 16) {
+        // THROUGH_* means a full straight pipe spanning BOTH directions (the through_*_base
+        // models enable the two opposing faces): only true straight runs qualify. A
+        // single-sided connection must be COMPLEX so the multipart draws just the one arm.
+        if (mask == 48) { // east + west
             return THROUGH_X;
         }
-        if (mask == 8 || mask == 4) {
+        if (mask == 24) { // up + down
             return THROUGH_Y;
         }
-        if (mask == 2 || mask == 1) {
+        if (mask == 3) { // north + south
             return THROUGH_Z;
         }
         return COMPLEX;

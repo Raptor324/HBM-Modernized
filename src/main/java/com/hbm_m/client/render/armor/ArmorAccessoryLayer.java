@@ -33,9 +33,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Zubehoer-Modelle des Originals: {@code ModelGoggles} (goggles), {@code ModelGlasses} (ashglasses),
- * {@code ModelHat} (nossy_hat), {@code ModelNo9} (mit Lampe bei "isOn"), {@code ModelCloak} (Umhaenge),
- * {@code ModelJetPack} (Jetpacks, auch als eingebaute Brustplatten-Mod) und {@code ModelArmorWings}.
+ * Original accessory models: {@code ModelGoggles} (goggles), {@code ModelGlasses} (ashglasses),
+ * {@code ModelHat} (nossy_hat), {@code ModelNo9} (with lamp when "isOn"), {@code ModelCloak} (cloaks),
+ * {@code ModelJetPack} (jetpacks, also as built-in chestplate mod), and {@code ModelArmorWings}.
  */
 public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends RenderLayer<T, M> {
 
@@ -101,13 +101,13 @@ public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel
                 *///?}
             }
 
-            // Original ItemModTesla.modRender -> ModelBackTesla (Rueckenspule, folgt dem Koerper)
+            // Original ItemModTesla.modRender -> ModelBackTesla (back coil, follows body)
             ItemStack plateMod = ArmorModificationHelper.pryMods(chest)[ArmorModificationHelper.plate_only];
             if (plateMod != null && plateMod.getItem() instanceof com.hbm_m.armormod.item.ItemModTesla) {
                 objOnBody(pose, buffer, light, m, "mod_tesla", null, "hbm_m:textures/armor/mod_tesla.png");
             }
 
-            // Allein getragen oder als Brustplatten-Mod (Original JetpackBase.modRender)
+            // Worn standalone or as a chestplate mod (original JetpackBase.modRender)
             ItemStack jet = chest.getItem() instanceof JetpackBase ? chest : ArmorModificationHelper.pryMods(chest)[ArmorModificationHelper.plate_only];
             if (jet != null && !jet.isEmpty() && jet.getItem() instanceof JetpackBase pack) {
                 if (pack instanceof WingsMurk) {
@@ -121,7 +121,7 @@ public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel
             }
         }
 
-        // Original ModEventHandlerClient.onRenderArmorEvent: Spielerzubehoer nur ohne Brustplatte und ohne Unsichtbarkeit
+        // Original ModEventHandlerClient.onRenderArmorEvent: player accessories only without chestplate and without invisibility
         if (chest.isEmpty() && entity instanceof net.minecraft.world.entity.player.Player player
                 && !player.hasEffect(net.minecraft.world.effect.MobEffects.INVISIBILITY)) {
             if (com.hbm_m.util.ShadyUtil.is(player, com.hbm_m.util.ShadyUtil.HbMinecraft, "HbMinecraft"))
@@ -135,7 +135,7 @@ public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel
         }
     }
 
-    /** ModelRendererObj mit den Koerperwinkeln ({@code body.copyTo(obj)}, dann {@code obj.render(0.0625)}). */
+    /** ModelRendererObj with body rotation angles ({@code body.copyTo(obj)}, then {@code obj.render(0.0625)}). */
     private void objOnBody(PoseStack pose, MultiBufferSource buffer, int light, M m, String obj, String part, String tex) {
         pose.pushPose();
         headTransform(pose, m.body);
@@ -147,8 +147,8 @@ public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel
     }
 
     /**
-     * Original {@code ModelArmorWingsPheo.render}: Axtrucksack am Koerper, dazu sechs additive Duesenflammen
-     * (vollhell, ohne Textur) im Modellraum, beim Schleichen um 0.5 rad (28.6479 Grad) gekippt.
+     * Original {@code ModelArmorWingsPheo.render}: jetpack on body, plus six additive nozzle flames
+     * (fullbright, untextured) in model space, tilted by 0.5 rad (28.6479 deg) when sneaking.
      */
     private void renderAxePack(PoseStack pose, MultiBufferSource buffer, int light, T entity, M m) {
         objOnBody(pose, buffer, light, m, "wings_pheo", "Wings", "hbm_m:textures/armor/axepack.png");
@@ -212,7 +212,7 @@ public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel
         pose.popPose();
     }
 
-    /** Original {@code ModelArmorWingsPheo.renderFlame}: achtseitiger Doppelkegel, Fuss grau, Mitte tuerkis, Spitze schwarz. */
+    /** Original {@code ModelArmorWingsPheo.renderFlame}: eight-sided double cone; base gray, middle cyan, tip black. */
     private static void renderFlame(PoseStack pose, com.mojang.blaze3d.vertex.VertexConsumer vc) {
         org.joml.Matrix4f mat = pose.last().pose();
         float b = 0.125F;
@@ -232,7 +232,7 @@ public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel
         }
     }
 
-    /** ModelRendererObj mit den Kopfwinkeln (Gelenkpunkt 0,0,0). */
+    /** ModelRendererObj with head rotation angles (pivot point 0,0,0). */
     private static void headTransform(PoseStack pose, ModelPart head) {
         pose.translate(head.x * PX, head.y * PX, head.z * PX);
         if (head.zRot != 0.0F || head.yRot != 0.0F || head.xRot != 0.0F)
@@ -250,9 +250,9 @@ public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel
         pose.popPose();
     }
 
-    /** Original ModelCloak.render (samt der Interpolation mit dem Skalierungsfaktor 0,0625 als Gewicht). */
+    /** Original ModelCloak.render (including interpolation with scale factor 0.0625 as weight). */
     //? if neoforge {
-    /*/^* Auf NeoForge hat ArmorModel kein String-getArmorTexture mehr; gleiche Zuordnung wie ArmorModel (forge). ^/
+    /*/^* On NeoForge ArmorModel lacks String-getArmorTexture; same mapping as ArmorModel (forge). ^/
     private static String cloakTexture(ItemStack stack) {
         if (stack.getItem() == ModItems.CAPE_RADIATION.get()) return "hbm_m:textures/models/capes/caperadiation.png";
         if (stack.getItem() == ModItems.CAPE_GASMASK.get()) return "hbm_m:textures/models/capes/capegasmask.png";
@@ -319,7 +319,7 @@ public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel
         if (body.zRot != 0.0F || body.yRot != 0.0F || body.xRot != 0.0F)
             pose.mulPose(new Quaternionf().rotationZYX(body.zRot, body.yRot, body.xRot));
 
-        // E11 (Fork, nur mit Space-Addon): Fluegel entspannen auch beim Reiten (relaxWings = onGround || ridingEntity)
+        // E11 (fork, space-addon only): wings relax when riding as well (relaxWings = onGround || ridingEntity)
         boolean relaxWings = entity.onGround() || (com.hbm_m.api.space.SpaceApi.forkActive() && entity.isPassenger());
 
         if (type != 1 && relaxWings) {

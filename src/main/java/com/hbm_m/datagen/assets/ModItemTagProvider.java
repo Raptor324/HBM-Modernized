@@ -6,6 +6,7 @@ import com.hbm_m.item.tags_and_tiers.ModTags;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
 
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
@@ -402,6 +403,14 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.MUSIC_DISC_BUNKER.get())
                 .add(ModItems.MUSIC_DISC_GLASS.get())
                 .add(ModItems.MUSIC_DISC_CH.get());
+
+        // Fences
+        this.tag(ItemTags.FENCES)
+                .add(ModBlocks.FENCE_METAL.get().asItem())
+                .add(ModBlocks.FENCE_METAL_POST.get().asItem());
+        this.tag(Tags.Items.FENCES)
+                .add(ModBlocks.FENCE_METAL.get().asItem())
+                .add(ModBlocks.FENCE_METAL_POST.get().asItem());
 
         // Forge dye tags used by assembler recipes (JEI + crafting)
         this.tag(Tags.Items.DYES_GREEN).add(Items.GREEN_DYE);

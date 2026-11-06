@@ -302,4 +302,14 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
+    // Verbatim port of the original MachineChungus.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {0, 2, 4, Direction.SOUTH.get3DDataValue()},
+            {0, 0, -10, Direction.NORTH.get3DDataValue()},
+            {2, 0, 0, Direction.EAST.get3DDataValue()},
+            {-2, 0, 0, Direction.WEST.get3DDataValue()}
+        }, facing);
+    }
 }

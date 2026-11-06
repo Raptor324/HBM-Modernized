@@ -32,9 +32,8 @@ public final class GlDebugProbe {
 
     /**
      * Rate limit for HIGH-severity storms. A stuck uniform-push desync can raise
-     * the same error ~18k times per second (1.7M lines in one 90 s session,
-     * 2026-10-05) without the rendering being wrong; the log volume alone makes
-     * the game unplayable. Per id: at most one line per second, suppressed
+     * the same error thousands of times per second without the rendering being wrong;
+     * the log volume alone makes the game unplayable. Per id: at most one line per second, suppressed
      * repeats counted, one summary line per 5 s window while suppressed.
      * Index = error id (only a handful of distinct ids exist per session).
      */
@@ -91,7 +90,7 @@ public final class GlDebugProbe {
                     // generated the error. Printed for the first occurrence of an id and
                     // then for the first sampled line of every 5 s rate-limit window: a
                     // storm's call SITE can change over time (per-shader, per-path), and
-                    // the first-hit-only stack hid that (2026-10-05 session).
+                    // the first-hit-only stack hid that.
                     if (high && (verdict == 2 || seenIds.add(id))) {
                         MainRegistry.LOGGER.error("HBM GLDebug call site (id=" + id + "):",
                                 new RuntimeException("GL error " + id));

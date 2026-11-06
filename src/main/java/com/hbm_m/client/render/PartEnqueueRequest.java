@@ -18,7 +18,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
  * InstancedStaticPartRenderer (animParams, fadeMode, staticPose, lightBbox)
  * that were armed before the call and consumed inside it. Statics leaked into
  * an UNRELATED record whenever an exception fired between the setters and
- * addInstance - the 2026-10-09 "parts teleport away" bug. With an explicit
+ * addInstance. With an explicit
  * request there is nothing to leak: a degraded/throwing enqueue simply leaves
  * the request unread, and the next {@link #obtain()} resets every field.
  * <p>

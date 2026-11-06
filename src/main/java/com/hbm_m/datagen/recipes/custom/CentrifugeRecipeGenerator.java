@@ -50,8 +50,8 @@ public final class CentrifugeRecipeGenerator {
         //         stack(Items.REDSTONE, 3), stack(Items.REDSTONE, 3), ingot(ModMaterials.MERCURY, 1), gravel());
         tagRecipe(writer, "lapis_ore", "forge:ores/lapis",
                 modPowderCount(ModMaterials.LAPIS, 6), ingotPowderCount(ModMaterials.COBALT, 1), stack(ModItems.GEM_SODALITE.get(), 1), gravel());
-        tagRecipe(writer, "quartz_ore", "forge:ores/quartz",
-                modPowder(ModMaterials.QUARTZ), modPowder(ModMaterials.QUARTZ), modPowderTiny(ModMaterials.LITHIUM), stack(Items.NETHERRACK, 1));
+        // NETHERQUARTZ.ore() (CentrifugeRecipes l.96-100) laeuft 1:1 ueber orig_machines/centrifuge/quartz_powder_1
+        // (Eingabe hbm_m:oredict/ore_nether/quartz = minecraft:nether_quartz_ore) - hier keine Tag-Kopie, sonst Duplikat in JEI.
 
         // HBM Ores
         tagRecipe(writer, "uranium_ore", "forge:ores/uranium",
@@ -72,18 +72,11 @@ public final class CentrifugeRecipeGenerator {
                 ingotPowder(ModMaterials.BERYLLIUM), ingotPowder(ModMaterials.BERYLLIUM), stack(Items.EMERALD, 1), gravel());
         tagRecipe(writer, "fluorite_ore", "forge:ores/fluorite",
                 stack(ModItems.FLUORITE.get(), 3), stack(ModItems.FLUORITE.get(), 3), stack(ModItems.RAREGROUND_ORE_CHUNK.get(), 1), gravel());
+        // Original CentrifugeRecipes l.114-118: Kryolith-Chunks (chunk_ore:CRYOLITE -> cryolite_chunk), Titanstaub, Eisenstaub, Kies
         tagRecipe(writer, "aluminum_ore", "forge:ores/aluminum",
-                ingotPowder(ModMaterials.ALUMINUM), ingotPowder(ModMaterials.ALUMINUM), ingotPowder(ModMaterials.TITANIUM), gravel());
-        tagRecipe(writer, "sulfur_ore", "forge:ores/sulfur",
-                stack(ModItems.SULFUR.get(), 4), stack(ModItems.SULFUR.get(), 4), stack(ModItems.SULFUR.get(), 4), gravel());
+                stack(ModItems.CRYOLITE_CHUNK.get(), 2), modPowder(ModMaterials.TITANIUM), modPowder(ModMaterials.IRON), gravel());
         tagRecipe(writer, "lignite_ore", "forge:ores/lignite",
                 stack(ModItems.LIGNITE.get(), 2), stack(ModItems.LIGNITE.get(), 2), stack(ModItems.LIGNITE.get(), 2), gravel());
-        tagRecipe(writer, "asbestos_ore", "forge:ores/asbestos",
-                ingotPowder(ModMaterials.ASBESTOS), ingotPowder(ModMaterials.ASBESTOS), ingotPowder(ModMaterials.ASBESTOS), gravel());
-        tagRecipe(writer, "cinnabar_ore", "forge:ores/cinnabar",
-                stack(ModItems.CINNABAR.get(), 2), stack(ModItems.CINNABAR.get(), 2), stack(ModItems.SULFUR.get(), 1), gravel());
-        tagRecipe(writer, "rareground_ore", "forge:ores/rareground",
-                stack(ModItems.RAREGROUND_ORE_CHUNK.get(), 1), stack(ModItems.RAREGROUND_ORE_CHUNK.get(), 1), stack(ModItems.DUST.get(), 2), gravel());
         tagRecipe(writer, "cobalt_ore", "forge:ores/cobalt",
                 ingotPowderCount(ModMaterials.COBALT, 2), modPowder(ModMaterials.IRON), modPowder(ModMaterials.COPPER), gravel());
     }
@@ -115,8 +108,9 @@ public final class CentrifugeRecipeGenerator {
                 modPowderCount(ModMaterials.COPPER, 2), modPowderCount(ModMaterials.COPPER, 2), stack(ModItems.SULFUR.get(), 1), ingotPowder(ModMaterials.COBALT));
         itemRecipe(writer, "crystal_tungsten", ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.CRYSTAL),
                 ingotPowderCount(ModMaterials.TUNGSTEN, 2), ingotPowderCount(ModMaterials.TUNGSTEN, 2), modPowder(ModMaterials.IRON), modPowderTiny(ModMaterials.LITHIUM));
+        // Original CentrifugeRecipes l.319: Kryolith-Chunks (chunk_ore:CRYOLITE -> cryolite_chunk), Titanstaub, Eisenstaub, Lithiumstaub (tiny)
         itemRecipe(writer, "crystal_aluminium", ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.CRYSTAL),
-                ingotPowderCount(ModMaterials.ALUMINUM, 2), ingotPowder(ModMaterials.TITANIUM), modPowder(ModMaterials.IRON), modPowderTiny(ModMaterials.LITHIUM));
+                stack(ModItems.CRYOLITE_CHUNK.get(), 3), modPowder(ModMaterials.TITANIUM), modPowder(ModMaterials.IRON), modPowderTiny(ModMaterials.LITHIUM));
         itemRecipe(writer, "crystal_fluorite", ModMaterialItems.item(ModMaterials.FLUORITE, MaterialShape.CRYSTAL),
                 stack(ModItems.FLUORITE.get(), 4), stack(ModItems.FLUORITE.get(), 4), stack(ModItems.GEM_SODALITE.get(), 2), modPowderTiny(ModMaterials.LITHIUM));
         itemRecipe(writer, "crystal_beryllium", ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.CRYSTAL),

@@ -45,8 +45,8 @@ public final class MachineMiningDrillRenderer {
     public static void register() {
         MachineRenderers.machine("miningdrill", ModBlockEntities.MINING_DRILL_BE.get(),
                 MachineMiningDrillBlockEntity.class)
-            // Статичный корпус бура из multipart-модели; "Shaft" не объявлен —
-            // штангу рисует hook (стек shaft-моделей по глубине).
+            // Static drill housing from multipart model; "Shaft" is not declared -
+            // the shaft is drawn by a hook (stack of shaft models along depth).
             .part("Main")
             .rotatingPart("Crusher1", -1f, 0f, 0f, 0.5f, 2.0f, 3.3125f, 0f, 0f, 0f,
                     be -> partQuads("drill/crusher1", CRUSHER1_MODEL_ID), be -> "c1",
@@ -141,15 +141,15 @@ public final class MachineMiningDrillRenderer {
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/chute_gravel.png");
 
     /**
-     * Оригинальный RenderExcavator: пока работает жёлоб, из-под дробилок падает поток камня —
-     * бегущая текстура на 4 стенках шахты (гравий, если включена дробилка).
+     * Original RenderExcavator: while the chute operates, crushed stone streams down from under the crushers -
+     * scrolling texture along 4 shaft walls (gravel if crusher is active).
      */
     private static void renderCrushChute(MachineMiningDrillBlockEntity be, float partialTick,
                                          PoseStack ps, MultiBufferSource buf,
                                          int packedLight, int packedOverlay, MachineRenderApi api) {
         if (be.chuteTimer <= 0) return;
 
-        // Базовый трансформ FFA-BER: центр блока + поворот по FACING + подъём модели на 3.
+        // Base transform: block center + FACING rotation + model lift by 3.
         Direction facing = be.getBlockState().getValue(MachineMiningDrillBlock.FACING);
         float facingYRot = switch (facing) {
             case EAST -> 90F;

@@ -42,13 +42,8 @@ public class ItemWiring extends Item {
         if (player == null || player.isShiftKeyDown()) {
             return InteractionResult.PASS;
         }
-        // Original: BlockDummyable -> findCore (Umspannwerk-Teile, Pylon-Dummies)
-        BlockPos clicked = com.hbm_m.multiblock.MultiblockInteractionHelper.resolveControllerPos(level, context.getClickedPos());
-        if (level.getBlockState(clicked).getBlock() instanceof com.hbm_m.block.network.PylonDummyBlock) {
-            BlockPos core = com.hbm_m.block.network.PylonDummyBlock.findCore(level, clicked);
-            if (core != null) clicked = core;
-        }
-        final BlockPos pos = clicked;
+        // Multiblock controller resolution (UniversalMachinePartBlock -> Core)
+        final BlockPos pos = com.hbm_m.multiblock.MultiblockInteractionHelper.resolveControllerPos(level, context.getClickedPos());
         BlockEntity te = level.getBlockEntity(pos);
         if (!(te instanceof PylonBaseBlockEntity pylon)) {
             return InteractionResult.PASS;

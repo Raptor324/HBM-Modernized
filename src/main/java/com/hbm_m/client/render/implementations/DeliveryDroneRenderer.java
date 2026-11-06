@@ -22,12 +22,12 @@ import java.util.*;
 import com.hbm_m.platform.RenderHooks;
 
 /**
- * Port von {@code RenderDeliveryDrone} (1.7.10 Original). Rendert das gemeinsame {@code drone.obj}
- * Multi-Part-Modell (Gruppen "Drone"/"Crate"/"Barrel", per {@code o}-Statement getrennt - im
- * Original per einfachem Ein-/Ausblenden der 3 Teile je nach {@code getAppearance()}), mit der
- * Textur abhaengig vom Drohnentyp (normal/express/request). Laed-/Parse-Logik uebernommen vom
- * bereits etablierten Trophaeen-Renderer-Muster, hier nach Objektname statt Materialname
- * gruppiert, da alle drei Teile im Original dasselbe Material nutzen.
+ * Port of {@code RenderDeliveryDrone} (1.7.10 original). Renders the shared {@code drone.obj}
+ * multi-part model (groups "Drone"/"Crate"/"Barrel", separated by {@code o} statements - in
+ * the original by simply toggling the 3 parts depending on {@code getAppearance()}), with the
+ * texture depending on drone type (normal/express/request). Loading and parsing logic adapted from
+ * the trophy renderer pattern, grouped by object name instead of material name since all three
+ * parts share the same material in the original.
  */
 public class DeliveryDroneRenderer extends EntityRenderer<EntityDroneBase> {
 
@@ -69,7 +69,7 @@ public class DeliveryDroneRenderer extends EntityRenderer<EntityDroneBase> {
         tm.register(TEX_REQUEST, new SimpleTexture(TEX_REQUEST));
     }
 
-    /** Nmesh-first: бинарный .nmesh (raw .obj — только resourcepack-fallback внутри NMeshLoader), части по objectName/groupName. */
+    /** Nmesh-first: binary .nmesh (raw .obj is resourcepack-fallback inside NMeshLoader), parts keyed by objectName/groupName. */
     private static void loadObj() {
         NMeshData nmesh = NMeshLoader.load(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, OBJ_PATH));
         if (nmesh == null) return;
@@ -87,7 +87,7 @@ public class DeliveryDroneRenderer extends EntityRenderer<EntityDroneBase> {
                     t[c * 8 + 0] = verts[b + 0];
                     t[c * 8 + 1] = verts[b + 1];
                     t[c * 8 + 2] = verts[b + 2];
-                    // u,v сырые: render() применяет (1 - v) при выводе.
+                    // raw u,v: render() applies (1 - v) on output.
                     t[c * 8 + 3] = verts[b + 6];
                     t[c * 8 + 4] = verts[b + 7];
                     t[c * 8 + 5] = verts[b + 3];

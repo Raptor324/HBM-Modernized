@@ -10,7 +10,7 @@ import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
 
-/** 1:1 {@code ModelB92} (Techne, 21 Quader, Textur 64x64, alle gespiegelt); {@code renderAnim} schiebt die Pumpe um {@code tran} Bloecke. */
+/** 1:1 {@code ModelB92} (Techne, 21 boxes, 64x64 texture, mirrored); {@code renderAnim} offsets pump by {@code tran} blocks. */
 public class ModelB92 {
 
     private static final String[] NAMES = { "Muzzle1", "Barrel1", "Barrel2", "Grip", "Front1", "Front2", "Body", "Top", "GripBottom", "Handle", "HandleBack", "Frame1", "Frame2", "Frame3", "Trigger", "BackPlate1", "Back", "BackPlate2", "Pump1", "Pump2", "BodyPlate" };
@@ -48,9 +48,9 @@ public class ModelB92 {
     }
 
     /**
-     * Original renderAnim(..., 0.0625F, tran): der 1.7.10-Renderer addiert {@code tran} direkt auf
-     * {@code offsetX} und rendert mit dem Faktor 0,0625, d.h. {@code tran} ist in Modelpixeln gemessen.
-     * ModelPart rendert x als x/16 - daher exakt derselbe Wert, KEINE 16er-Skalierung.
+     * Original renderAnim(..., 0.0625F, tran): 1.7.10 renderer adds {@code tran} directly to
+     * {@code offsetX} with 0.0625 scale factor, i.e. {@code tran} is measured in model pixels.
+     * ModelPart renders x as x/16 - identical unit, no 16x scaling required.
      */
     public void renderAnim(PoseStack ps, VertexConsumer vc, int light, int overlay, float tran) {
         pump1.x += tran;

@@ -264,8 +264,7 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
                         // Р”РћР‘РђР’Р›РЇР•Рњ РџР РћР”Р’РРќРЈРўР«Р™ РўРЈР›РўРРџ РЎ Р”Р•РўРђР›РЇРњР Р Р•Р¦Р•РџРўРђ
                         com.hbm_m.util.TemplateTooltipUtil.buildRecipeTooltip(assemblerRecipe, tooltip);
                         
-                        guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(),
-                                                pMouseX, pMouseY);
+                        com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(guiGraphics, this.font, tooltip, pMouseX, pMouseY);
                     }
                 });
             } else {

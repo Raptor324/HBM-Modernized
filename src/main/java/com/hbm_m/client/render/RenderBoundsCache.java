@@ -29,7 +29,7 @@ public final class RenderBoundsCache {
     static {
         // Central teardown: the cache pins BEs by strong identity keys (each key
         // pins its whole Level through BlockEntity.level), so it must not survive
-        // a world exit or resource reload (audit 2026-10-05 §3.1).
+        // a world exit or resource reload.
         com.hbm_m.client.render.cache.RenderCacheManager.register(reason -> clear());
     }
 
@@ -60,7 +60,7 @@ public final class RenderBoundsCache {
     }
 
     /**
-     * Per-frame sweep (audit 2026-10-13 R2-2.1): entries are otherwise evicted
+     * Per-frame sweep: entries are otherwise evicted
      * only on touch, so BEs of unloaded chunks / destroyed machines stayed
      * pinned by the strong identity key (each key pins its whole Level) until
      * a worldGen bulk clear. Evicts removed BEs and BEs whose chunk is no
@@ -101,7 +101,7 @@ public final class RenderBoundsCache {
      * ({@code translate(0.5, 0, 0.5)} in {@code LegacyAnimator.setupBlockTransform}),
      * so a single block is (-0.5, 0, -0.5)..(0.5, 1, 0.5) - matching the
      * enqueueUpdate hardcode in SparseUpdateQueue. Grid-space (0..N) boxes are
-     * converted via {@link #gridToModelSpace} (audit 2026-10-13 R2-2.2).
+     * converted via {@link #gridToModelSpace}.
      */
     public static net.minecraft.world.phys.AABB getLocalPhysicalBounds(net.minecraft.world.level.block.entity.BlockEntity be) {
         Entry e = getOrCreateEntry(be);
@@ -178,6 +178,14 @@ public final class RenderBoundsCache {
     public static net.minecraft.world.phys.AABB computePhysicalBounds(net.minecraft.world.level.block.entity.BlockEntity be) {
         if (be == null) return null;
         try {
+            if (be instanceof com.hbm_m.blockentity.machines.CargoElevatorBlockEntity elevator) {
+                net.minecraft.core.BlockPos bp = be.getBlockPos();
+                double maxY = Math.max(elevator.height + 1.0, elevator.extension + 1.25) + 0.5;
+                return new net.minecraft.world.phys.AABB(
+                    bp.getX() - 1.0, bp.getY(), bp.getZ() - 1.0,
+                    bp.getX() + 2.0, bp.getY() + maxY, bp.getZ() + 2.0
+                );
+            }
             var state = be.getBlockState();
             if (state != null && state.getBlock() instanceof com.hbm_m.interfaces.IMultiblockController ctrl) {
                 var helper = ctrl.getStructureHelper();
@@ -209,6 +217,10 @@ public final class RenderBoundsCache {
     public static net.minecraft.world.phys.AABB computeLocalPhysicalBounds(net.minecraft.world.level.block.entity.BlockEntity be) {
         if (be == null) return null;
         try {
+            if (be instanceof com.hbm_m.blockentity.machines.CargoElevatorBlockEntity elevator) {
+                double maxY = Math.max(elevator.height + 1.0, elevator.extension + 1.25) + 0.5;
+                return new net.minecraft.world.phys.AABB(-1.5, 0.0, -1.5, 1.5, maxY, 1.5);
+            }
             var state = be.getBlockState();
             if (state != null && state.getBlock() instanceof com.hbm_m.interfaces.IMultiblockController ctrl) {
                 var helper = ctrl.getStructureHelper();

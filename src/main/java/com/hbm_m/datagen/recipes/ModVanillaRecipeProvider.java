@@ -278,8 +278,14 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/pile_control"));
     }
 
-    /** 1:1 CraftingManager 632/633: pink_slab x6 "WWW", pink_stairs x6 "W  ","WW ","WWW" aus pink_planks. */
+    /** 1:1 CraftingManager 632/633/634: pink_planks x4 aus pink_log ("W"), pink_slab x6 "WWW", pink_stairs x6 "W  ","WW ","WWW". */
     private void registerPinkWoodRecipes(Consumer<FinishedRecipe> writer) {
+        // CraftingManager 632: pink_planks x4 aus 1x pink_log ("W") - Grundrezept der Saegewerk-Ausbeute (x6/4).
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.BUILDING_BLOCKS, ModBlocks.PINK_PLANKS.get(), 4)
+                .requires(ModBlocks.PINK_LOG.get())
+
+                .unlockedBy(getHasName(ModBlocks.PINK_LOG.get()), has(ModBlocks.PINK_LOG.get()))
+                .save(writer, recipeId("crafting/pink_planks"));
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.PINK_SLAB.get(), 6)
                 .pattern("WWW")
                 .define('W', ModBlocks.PINK_PLANKS.get())

@@ -89,13 +89,6 @@ public final class MachineCraftingRecipeGenerator {
                 'C', ModItems.COIL_COPPER.get(),
                 'B', ModBlocks.BRICK_CONCRETE.get());
 
-        shaped(writer, "large_pylon", ModBlocks.LARGE_PYLON.get(), 1,
-                new String[]{"SCS", "SPS", "SBS"},
-                'S', ModBlocks.STEEL_SCAFFOLD.get(),
-                'C', ModItems.COIL_COPPER.get(),
-                'P', polymer(MaterialShape.PLATE),
-                'B', ModBlocks.BRICK_CONCRETE.get());
-
         // Kondensatoren: im Original ueber die Baugruppen, hier als einfache Werkbankstufe,
         // damit Energiepufferung ueberhaupt erreichbar ist.
         capacitor(writer, "capacitor_copper", ModBlocks.CAPACITOR_COPPER.get(),

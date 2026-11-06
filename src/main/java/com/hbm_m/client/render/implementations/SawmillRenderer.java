@@ -14,8 +14,8 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * 1:1 {@code RenderSawmill}: Gehaeuse, das Blatt (doppelt so schnell, nur wenn eingebaut) und die zwei
- * gegenlaeufigen Zahnraeder, Drehung aus der Hitze des letzten Ticks.
+ * 1:1 {@code RenderSawmill}: housing, blade (2x speed, only when installed) and two counter-rotating
+ * gears, rotation driven by last tick heat.
  */
 public class SawmillRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineSawmillBlockEntity> {
 
@@ -29,7 +29,7 @@ public class SawmillRenderer implements com.hbm_m.client.render.HbmBerBounds<Mac
         ps.pushPose();
         ps.translate(0.5D, 0D, 0.5D);
 
-        // Original: Metadaten 3/5/2/4 -> 0/90/180/270 Grad
+        // Original: metadata 3/5/2/4 -> 0/90/180/270 degrees
         switch (sawmill.getBlockState().getValue(DummyableMachineBlock.FACING)) {
             case EAST -> ps.mulPose(Axis.YP.rotationDegrees(90));
             case NORTH -> ps.mulPose(Axis.YP.rotationDegrees(180));

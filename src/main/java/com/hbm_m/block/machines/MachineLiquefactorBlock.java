@@ -12,6 +12,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -101,4 +102,16 @@ public class MachineLiquefactorBlock extends DummyableMachineBlock {
     /*public static final com.mojang.serialization.MapCodec<MachineLiquefactorBlock> CODEC = simpleCodec(MachineLiquefactorBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
+    // Verbatim port of the original MachineLiquefactor.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {0, 3, 0, Direction.UP.get3DDataValue()},
+            {0, 0, 0, Direction.DOWN.get3DDataValue()},
+            {1, 1, 0, Direction.EAST.get3DDataValue()},
+            {-1, 1, 0, Direction.WEST.get3DDataValue()},
+            {0, 1, 1, Direction.SOUTH.get3DDataValue()},
+            {0, 1, -1, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

@@ -43,8 +43,6 @@ import net.minecraft.world.item.ItemStack;
  * Difference from legacy: the idle-combined mesh (merging Body+Slider+Arm+4xCog into one VBO
  * for idle machines) is not ported -- with automatic MDI the parts of all machines of a type
  * already coalesce into a single multi-draw, so the extra merge no longer pays off.
- *
- * @credit Spark Profiler Remediation / Idle Animation Epoch
  */
 public final class MachineAssemblerRenderer {
 

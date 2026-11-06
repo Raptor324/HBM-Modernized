@@ -167,14 +167,9 @@ float trackedValue(uint iBase, vec4 specC) {
     return trackSample(int(specC.z), int(specC.w), u);
 }
 
-void evaluateInstanceJointChain(uint iBase) {
+void evaluateJointChainForBone(uint iBase, int boneOffset, out mat3 outRot, out vec3 outTrans) {
     float gradW = instData[iBase + INST_GRAD_WORD + 3u];
-    if (gradW < 0.0) {
-        s_hasJoint = 0u;
-        return;
-    }
-    s_hasJoint = 1u;
-    int base = int(gradW);
+    int base = int(gradW) + boneOffset;
     float countW = texelFetch(uJointSpecs, ivec2(base * 3 + 1, 0), 0).w;
     int n = (countW >= 0.5) ? min(int(countW), 8) : 1;
     mat4 chain = mat4(1.0);
@@ -221,8 +216,18 @@ void evaluateInstanceJointChain(uint iBase) {
         }
         chain = chain * node;
     }
-    s_jointRot = mat3(chain);
-    s_jointTrans = chain[3].xyz;
+    outRot = mat3(chain);
+    outTrans = chain[3].xyz;
+}
+
+void evaluateInstanceJointChain(uint iBase) {
+    float gradW = instData[iBase + INST_GRAD_WORD + 3u];
+    if (gradW < 0.0) {
+        s_hasJoint = 0u;
+        return;
+    }
+    s_hasJoint = 1u;
+    evaluateJointChainForBone(iBase, 0, s_jointRot, s_jointTrans);
 }
 
 void main() {
@@ -324,9 +329,18 @@ void main() {
     // Parametric joint chain animation (evaluated once per workgroup into shared memory;
     // vertices with vBoneId < 0 are static hull vertices and bypass the joint transform)
     if (s_hasJoint != 0u && vBoneId >= 0) {
-        pos = s_jointRot * pos + s_jointTrans;
-        nrm = s_jointRot * nrm;
-        tng = s_jointRot * tng;
+        if (vBoneId == 0) {
+            pos = s_jointRot * pos + s_jointTrans;
+            nrm = s_jointRot * nrm;
+            tng = s_jointRot * tng;
+        } else {
+            mat3 bRot;
+            vec3 bTrans;
+            evaluateJointChainForBone(iBase, vBoneId, bRot, bTrans);
+            pos = bRot * pos + bTrans;
+            nrm = bRot * nrm;
+            tng = bRot * tng;
+        }
     }
 
     // Dynamic skeletal bone animation support
@@ -377,18 +391,7 @@ void main() {
     outData[o + 1u] = outPos.y;
     outData[o + 2u] = outPos.z;
 
-    if (uBakeMode == 0) {
-        // Slim shadow layout (24 bytes): pos@0..2, uv0@3..4, normal@5.
-        // UV0 through the atlas remap rect (identity {0,0,1,1} on
-        // regular machines, so this is a no-op there).
-        outData[o + 3u] = s_uvRect.x + ldFloat(mBase, uOffUv0) * s_uvRect.z;
-        outData[o + 4u] = s_uvRect.y + ldFloat(mBase, uOffUv0 + 4) * s_uvRect.w;
-        uint nSlim = uint(int(round(clamp(nOut.x, -1.0, 1.0) * 127.0)) & 255)
-                | (uint(int(round(clamp(nOut.y, -1.0, 1.0) * 127.0)) & 255) << 8)
-                | (uint(int(round(clamp(nOut.z, -1.0, 1.0) * 127.0)) & 255) << 16);
-        outData[o + 5u] = uintBitsToFloat(nSlim);
-        return;
-    }
+    // Note: Shadow and Main passes share the unified 48-byte (12-word) output buffer in POOL_MAIN.
 
     // Main 48-byte dense layout, 12 words per vertex - the write indices
     // below MUST stay in lockstep with OUT_STRIDE_BYTES / OUT_OFF_* and the

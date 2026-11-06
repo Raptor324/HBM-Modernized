@@ -60,11 +60,11 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
     // ─── OBJ loading ─────────────────────────────────────────────────────────
 
     /**
-     * Nmesh-backed geometry chokepoint: читает бинарный {@code .nmesh} через {@link NMeshLoader}
-     * (raw .obj остаётся только как runtime resourcepack-fallback внутри самого NMeshLoader) и
-     * раскладывает сабмеши по именам объектов/групп в прежнем формате
-     * {@code groupName → [x,y,z, u,v, nx,ny,nz] × 3} (raw V — потребители сами инвертируют).
-     * Ключ — objectName, при его отсутствии groupName (как в SimpleObjModel.ensureLoaded).
+     * Nmesh-backed geometry chokepoint: reads binary {@code .nmesh} via {@link NMeshLoader}
+     * (raw .obj is runtime resourcepack-fallback inside NMeshLoader) and splits
+     * submeshes by object/group names in the format
+     * {@code groupName -> [x,y,z, u,v, nx,ny,nz] * 3} (raw V - callers invert as needed).
+     * Key is objectName, falling back to groupName (matching SimpleObjModel.ensureLoaded).
      */
     public static Map<String, List<float[]>> getObj(String resourcePath) {
         return OBJ_CACHE.computeIfAbsent(resourcePath, path -> {
@@ -86,7 +86,7 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
                         t[c * 8 + 0] = verts[b + 0];
                         t[c * 8 + 1] = verts[b + 1];
                         t[c * 8 + 2] = verts[b + 2];
-                        // u,v сырые: renderObjGroup применяет (1 - v) при выводе.
+                        // raw u,v: renderObjGroup applies (1 - v) on output.
                         t[c * 8 + 3] = verts[b + 6];
                         t[c * 8 + 4] = verts[b + 7];
                         t[c * 8 + 5] = verts[b + 3];

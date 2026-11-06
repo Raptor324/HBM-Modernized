@@ -254,4 +254,16 @@ public class MachineCatalyticReformerBlock extends BaseEntityBlock implements IM
         return CODEC;
     }
     *///?}
+    // Verbatim port of the original MachineCatalyticReformer.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {2, 0, 0, Direction.EAST.get3DDataValue()},
+            {-2, 0, 0, Direction.WEST.get3DDataValue()},
+            {1, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {-1, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-1, 0, -1, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

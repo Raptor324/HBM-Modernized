@@ -1,5 +1,6 @@
 package com.hbm_m.inventory.gui;
 
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineAshpitMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -12,6 +13,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineAshpit extends GuiInfoScreen<MachineAshpitMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -35,5 +37,12 @@ public class GUIMachineAshpit extends GuiInfoScreen<MachineAshpitMenu> {
         Component title = this.title;
         guiGraphics.drawString(this.font, title, this.imageWidth / 2 - this.font.width(title) / 2, 6, 0x404040, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
+    }
+
+    @Override
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 }

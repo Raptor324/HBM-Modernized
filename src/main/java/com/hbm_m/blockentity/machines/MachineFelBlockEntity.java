@@ -67,7 +67,7 @@ public class MachineFelBlockEntity extends BaseMachineBlockEntity implements com
     private void serverTick(ServerLevel world, BlockPos pos) {
 
         Direction dir = getBlockState().getValue(DummyableMachineBlock.FACING);
-        BlockPos sub = pos.relative(dir, -5).above();
+        BlockPos sub = pos.relative(dir, -4).above();
         this.trySubscribe(world, sub.getX(), sub.getY(), sub.getZ(), dir.getOpposite());
         chargeFromBatterySlot(0);
 
@@ -81,6 +81,8 @@ public class MachineFelBlockEntity extends BaseMachineBlockEntity implements com
         } else {
             this.mode = EnumWavelengths.NULL;
         }
+
+        this.missingValidSilex = true;
 
         int range = 24;
         boolean silexSpacing = false;
@@ -117,6 +119,8 @@ public class MachineFelBlockEntity extends BaseMachineBlockEntity implements com
             }
 
             energy -= req;
+            this.distance = range;
+            MachineSilexBlockEntity lastSilex = null;
             for (int i = 3; i < range; i++) {
 
                 BlockPos p = new BlockPos(pos.getX() + dir.getStepX() * i, pos.getY() + 1, pos.getZ() + dir.getStepZ() * i);
@@ -129,28 +133,28 @@ public class MachineFelBlockEntity extends BaseMachineBlockEntity implements com
                 if (silexAtBeam == null && !bs.canOcclude() && b != Blocks.TNT) {
                     this.distance = range;
                     silexSpacing = false;
+                    lastSilex = null;
                     continue;
                 }
 
                 if (silexAtBeam != null) {
+                    if (silexAtBeam == lastSilex) {
+                        continue;
+                    }
+                    lastSilex = silexAtBeam;
 
-                    // Original: die SILEX muss genau einen Block hinter dem getroffenen Teil auf Laserhoehe sitzen
-                    BlockPos corePos = new BlockPos(p.getX() + dir.getStepX(), pos.getY(), p.getZ() + dir.getStepZ());
-                    if (world.getBlockEntity(corePos) instanceof MachineSilexBlockEntity silex) {
-                        Direction silexDir = silex.getBlockState().getValue(DummyableMachineBlock.FACING);
-                        if ((silexDir == dir || silexDir == dir.getOpposite()) && i >= 5 && !silexSpacing) {
-                            if (silex.mode != this.mode) {
-                                silex.mode = this.mode;
-                                this.missingValidSilex = false;
-                                silexSpacing = true;
-                                continue;
-                            }
-                        } else {
-                            // Original: falsch gestellte SILEX wird abgebaut und faellt heraus
-                            world.destroyBlock(silex.getBlockPos(), false);
-                            world.addFreshEntity(new ItemEntity(world, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5,
-                                    new ItemStack(ModBlocks.SILEX.get())));
-                        }
+                    Direction silexDir = silexAtBeam.getBlockState().getValue(DummyableMachineBlock.FACING);
+                    if ((silexDir == dir || silexDir == dir.getOpposite()) && i >= 5 && !silexSpacing) {
+                        silexAtBeam.mode = this.mode;
+                        this.missingValidSilex = false;
+                        silexSpacing = true;
+                        continue;
+                    } else {
+                        // Original: falsch gestellte SILEX wird abgebaut und faellt heraus
+                        world.destroyBlock(silexAtBeam.getBlockPos(), false);
+                        world.addFreshEntity(new ItemEntity(world, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5,
+                                new ItemStack(ModBlocks.SILEX.get())));
+                        break;
                     }
 
                 } else {
@@ -266,7 +270,7 @@ public class MachineFelBlockEntity extends BaseMachineBlockEntity implements com
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("block.hbm_m.fel");
+        return Component.translatable("container.hbm_m.fel");
     }
 
     @Override
@@ -274,10 +278,14 @@ public class MachineFelBlockEntity extends BaseMachineBlockEntity implements com
         return getDefaultName();
     }
 
+    public static boolean isEnergyItem(ItemStack stack) {
+        return isEnergyProviderItem(stack);
+    }
+
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == 0) return isEnergyProviderItem(stack);
-        return slot == 1;
+        return slot == 1 && stack.getItem() instanceof ItemFELCrystal;
     }
 
     @Override

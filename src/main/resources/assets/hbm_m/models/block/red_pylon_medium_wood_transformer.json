@@ -5,6 +5,7 @@
   "render_type": "minecraft:solid",
   "textures": {
     "particle": "hbm_m:block/red_pylon_medium",
+    "default": "hbm_m:block/red_pylon_medium",
     "surface": "hbm_m:block/red_pylon_medium"
   },
   "transform": {
@@ -17,5 +18,6 @@
   "visibility": {
     "Pylon": true,
     "Transformer": true
-  }
+  },
+  "ao": false
 }

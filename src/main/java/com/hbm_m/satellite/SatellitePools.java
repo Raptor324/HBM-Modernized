@@ -26,6 +26,9 @@ public final class SatellitePools {
 
     private record Entry(String id, int min, int max, int weight) { }
 
+    /** Ein Pool-Eintrag fuer die Anzeige (Original {@code WeightedRandomChestContent}: Stapel Menge 1 + Gewicht). */
+    public record WeightedEntry(ItemStack stack, int weight) { }
+
     private static final Map<String, List<Entry>> POOLS = new HashMap<>();
 
     static {
@@ -77,6 +80,19 @@ public final class SatellitePools {
         for (Entry e : POOLS.getOrDefault(pool, List.of())) {
             Item item = resolve(e.id);
             if (item != Items.AIR) out.add(new ItemStack(item, e.min));
+        }
+        return out;
+    }
+
+    /**
+     * Original {@code ItemPool.getPool(poolName)} fuer die Satellitenpools: die gewichteten Eintraege eines Pools.
+     * Die Stapel zeigen wie {@code WeightedRandomChestContent.theItemId} Menge 1, das Gewicht liegt einzeln bei.
+     */
+    public static List<WeightedEntry> getPool(String pool) {
+        List<WeightedEntry> out = new ArrayList<>();
+        for (Entry e : POOLS.getOrDefault(pool, List.of())) {
+            Item item = resolve(e.id);
+            if (item != Items.AIR) out.add(new WeightedEntry(new ItemStack(item), e.weight));
         }
         return out;
     }

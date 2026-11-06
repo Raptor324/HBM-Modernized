@@ -29,7 +29,7 @@ public final class MachineReactorResearchRenderer {
 
     public static void register() {
         // ── Breeder Reactor ──────────────────────────────────────────────────
-        // breeder.obj слит в одну группу "Cube_Cube.001"
+        // breeder.obj is merged into a single group "Cube_Cube.001"
         MachineRenderers.machine("breeder",
                 ModBlockEntities.BREEDER_BE.get(),
                 MachineBreederBlockEntity.class)

@@ -22,6 +22,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.armortrim.TrimMaterial;
 import net.minecraft.world.item.armortrim.TrimMaterials;
 import net.minecraft.world.level.block.Block;
@@ -1057,7 +1058,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         }
         blockItemFromBlockModelMachine(ModBlocks.CRYSTALLIZER, "crystallizer_item");
         blockItemFromBlockModelMachine(ModBlocks.BREEDER);
-        blockItemFromBlockModelMachine(ModBlocks.LARGE_PYLON);
         blockItemFromBlockModelMachine(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
         blockItemFromBlockModelMachine(ModBlocks.COOLING_TOWER);
         blockItemFromBlockModelMachine(ModBlocks.TOWER_SMALL);
@@ -1175,9 +1175,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.BEAMLINE);
         blockItemFromBlockModelMachine(ModBlocks.BOILER);
         withExistingParent(ModBlocks.PUMP_STEAM.getId().getPath(),
-                modLoc("block/" + ModBlocks.PUMP_STEAM.getId().getPath()));
+                modLoc("item/" + ModBlocks.PUMP_STEAM.getId().getPath() + "_anim")); // Audit 7: animiertes Item (RenderPump#ItemRenderBase, AnimatedMachineItemRenderer)
         withExistingParent(ModBlocks.PUMP_ELECTRIC.getId().getPath(),
-                modLoc("block/" + ModBlocks.PUMP_ELECTRIC.getId().getPath()));
+                modLoc("item/" + ModBlocks.PUMP_ELECTRIC.getId().getPath() + "_anim")); // Audit 7: animiertes Item (RenderPump#ItemRenderBase, AnimatedMachineItemRenderer)
         blockItemFromBlockModelMachine(ModBlocks.BOILER_FUSION);
         blockItemFromBlockModelMachine(ModBlocks.BREEDER_FUSION);
         blockItemFromBlockModelMachine(ModBlocks.CHIMNEY_BRICK);
@@ -1261,15 +1261,16 @@ public class ModItemModelProvider extends ItemModelProvider {
         itemModelFromBlockResourcePath(ModBlocks.CRANE_BOXER.getId().getPath(), "block/crane_boxer_inventory");
         itemModelFromBlockResourcePath(ModBlocks.CRANE_UNBOXER.getId().getPath(), "block/crane_unboxer_inventory");
         blockItemFromBlockModelMachine(ModBlocks.SOURCE);
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_BIGASSTANK);
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_LARGE_TURBINE);
         // Alias: ModItems.TURBINE ist ein MultiblockBlockItem auf ModBlocks.TURBINE (= MACHINE_LARGE_TURBINE),
         // seine Item-ID "turbine" weicht vom Block-ID ab -> eigene Item-Modell auf das Block-Modell.
-        withExistingParent("turbine", modLoc("block/machines/machine_large_turbine"));
+        copyBlockModelDisplay(withExistingParent("turbine", modLoc("block/machines/machine_large_turbine")), "block/machines/machine_large_turbine");
         blockItemFromBlockModelMachine(ModBlocks.LPW2);
         blockItemFromBlockModelMachine(ModBlocks.STEAM_ENGINE);
-        blockItemFromBlockModelMachine(ModBlocks.STIRLING);
-        blockItemFromBlockModelMachine(ModBlocks.STIRLING_CREATIVE);
-        blockItemFromBlockModelMachine(ModBlocks.STIRLING_STEEL);
+        withExistingParent("stirling", modLoc("item/stirling_anim"));
+        withExistingParent("stirling_creative", modLoc("item/stirling_creative_anim"));
+        withExistingParent("stirling_steel", modLoc("item/stirling_steel_anim"));
         blockItemFromBlockModelMachine(ModBlocks.STRAND_CASTER);
         blockItemFromBlockModelMachine(ModBlocks.THRESHER);
         blockItemFromBlockModelMachine(ModBlocks.TORUS);
@@ -1283,6 +1284,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.FLUID_VALVE);
         blockItemFromBlockModelMachine(ModBlocks.FLUID_PUMP);
         blockItemFromBlockModel(ModBlocks.FLUID_EXHAUST);
+        // Cargo elevator: 3D-модель (Nucleus machine_parts_loader), не спрайт —
+        // старая item/generated + layer0=elevator.png рисовала весь спрайт-лист.
+        blockItemFromBlockModel(ModBlocks.CARGO_ELEVATOR);
 
         // Ранее: assets/.../models/item/*.json с parent = блок или простая generated/handheld-текстура
         blockItemFromBlockModelBomb(ModBlocks.AIRBOMB);
@@ -1318,6 +1322,20 @@ public class ModItemModelProvider extends ItemModelProvider {
         getBuilder("gun_b92").parent(new ModelFile.UncheckedModelFile("minecraft:builtin/entity")).guiLight(net.minecraft.client.renderer.block.model.BlockModel.GuiLight.FRONT);
         simpleItemModelByName("gun_b92_icon", "gun_b92");
         simpleItem(ModItems.GUN_B92_AMMO);
+        simpleItem(ModItems.GUN_FLIEGERFAUST);
+        simpleItem(ModItems.NUGGET_TITANIUM);
+        simpleItem(ModItems.NUGGET_COPPER);
+        simpleItem(ModItems.NUGGET_TUNGSTEN);
+        simpleItem(ModItems.NUGGET_ALUMINIUM);
+        simpleItem(ModItems.NUGGET_BORON);
+        simpleItem(ModItems.NUGGET_LITHIUM);
+        simpleItem(ModItems.NUGGET_SODIUM);
+        simpleItem(ModItems.NUGGET_STRONTIUM);
+        simpleItem(ModItems.POWDER_FIRE);
+        simpleItem(ModItems.DEMOSHAPE_IRON);
+        simpleItem(ModItems.DEMOSHAPE_STEEL);
+        simpleItem(ModItems.DEMOSHAPE_CUSTOM);
+        simpleItem(ModItems.MOLD_DEMOSHAPE);
         simpleItem(ModItems.WEAPONIZED_STARBLASTER_CELL);
         for (RegistrySupplier<Item> ach : java.util.List.of(ModItems.ACHIEVEMENT_ICON_GOFISH, ModItems.ACHIEVEMENT_ICON_ACID, ModItems.ACHIEVEMENT_ICON_BALLS,
                 ModItems.ACHIEVEMENT_ICON_DIGAMMASEE, ModItems.ACHIEVEMENT_ICON_DIGAMMAFEEL, ModItems.ACHIEVEMENT_ICON_DIGAMMAKNOW,
@@ -1877,7 +1895,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.COIN_TOKEN,
                 ModItems.COIN_UFO,
                 ModItems.COIN_WORM,
-                ModMaterialItems.get(ModMaterials.COMBINE_SCRAP, MaterialShape.SCRAP),
                 ModItems.COMPONENT_EMITTER,
                 ModItems.COMPONENT_LIMITER,
                 ModItems.CONTAINMENT_BOX,
@@ -1983,12 +2000,12 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.FUSE,
                 ModItems.FUSION_CORE,
                 ModItems.FUSION_CORE_INFINITE,
+                ModItems.HEV_BATTERY,
                 ModItems.FUSION_SHIELD_CHLOROPHYTE,
                 ModItems.FUSION_SHIELD_DESH,
                 ModItems.FUSION_SHIELD_TUNGSTEN,
                 ModItems.FUSION_SHIELD_VAPORWAVE,
                 ModItems.GADGET_CORE,
-                ModItems.GADGET_EXPLOSIVE,
                 ModItems.GADGET_KIT,
                 ModItems.GADGET_WIREING,
                 ModItems.GAS_MASK,
@@ -2359,6 +2376,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.RPA_PLATE,
                 ModItems.RTG_UNIT,
                 ModItems.RTTY_PAGER,
+                ModItems.RTTY_DESIGNATOR,
                 ModItems.RUNE_BLANK,
                 ModItems.RUNE_DAGAZ,
                 ModItems.RUNE_HAGALAZ,
@@ -2385,8 +2403,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.SCHRABIDIUM_PLATE,
                 ModItems.SCHRABIDIUM_SHOVEL,
                 ModItems.SCHRABIDIUM_SWORD,
-                ModMaterialItems.get(ModMaterials.SCRAP_NUCLEAR, MaterialShape.SCRAP),
-                ModMaterialItems.get(ModMaterials.SCRAP_OIL, MaterialShape.SCRAP),
                 ModMaterialItems.get(ModMaterials.SCRAP_PLASTIC, MaterialShape.SCRAP),
                 ModItems.SCRAPS,
                 ModItems.SCREWDRIVER_DESH,
@@ -2642,7 +2658,73 @@ public class ModItemModelProvider extends ItemModelProvider {
     }
 
     private ItemModelBuilder blockItemFromBlockModelMachine(RegistrySupplier<Block> block, String machineModelFileName) {
-        return withExistingParent(block.getId().getPath(), modLoc("block/machines/" + machineModelFileName));
+        ItemModelBuilder builder = withExistingParent(block.getId().getPath(), modLoc("block/machines/" + machineModelFileName));
+        copyBlockModelDisplay(builder, "block/machines/" + machineModelFileName);
+        return builder;
+    }
+
+    /**
+     * Forge не наследует секцию "display" item-моделью от parent-блок-модели с кастомным лоадером:
+     * BlockGeometryBakingContext.getTransforms() читает только собственный "display" модели
+     * (в отличие от геометрии и root-"transform", которые наследуются). Без копии item станка
+     * рендерится с ItemTransforms.NO_TRANSFORMS — дефолтный GUI-масштаб 0.625, и крупные
+     * OBJ-модели (bat9000 ≈ 5 блоков, chungus ≈ 15, coker = 23...) перекрывают весь слот в GUI.
+     * Копируем настроенный "display" из блок-модели в сгенерированную item-модель.
+     */
+    private void copyBlockModelDisplay(ItemModelBuilder builder, String blockModelPath) {
+        try (var in = getClass().getResourceAsStream("/assets/hbm_m/models/" + blockModelPath + ".json")) {
+            if (in == null) {
+                return;
+            }
+            JsonObject json = com.google.gson.JsonParser.parseReader(
+                    new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+            if (!json.has("display")) {
+                return;
+            }
+            var transformsBuilder = builder.transforms();
+            for (var entry : json.getAsJsonObject("display").entrySet()) {
+                ItemDisplayContext context = displayContext(entry.getKey());
+                if (context == null || !entry.getValue().isJsonObject()) {
+                    continue;
+                }
+                JsonObject tr = entry.getValue().getAsJsonObject();
+                var b = transformsBuilder.transform(context);
+                if (tr.has("rotation") && tr.getAsJsonArray("rotation").size() == 3) {
+                    JsonArray a = tr.getAsJsonArray("rotation");
+                    b.rotation(a.get(0).getAsFloat(), a.get(1).getAsFloat(), a.get(2).getAsFloat());
+                }
+                if (tr.has("translation") && tr.getAsJsonArray("translation").size() == 3) {
+                    JsonArray a = tr.getAsJsonArray("translation");
+                    b.translation(a.get(0).getAsFloat(), a.get(1).getAsFloat(), a.get(2).getAsFloat());
+                }
+                if (tr.has("scale")) {
+                    if (tr.get("scale").isJsonArray() && tr.getAsJsonArray("scale").size() == 3) {
+                        JsonArray a = tr.getAsJsonArray("scale");
+                        b.scale(a.get(0).getAsFloat(), a.get(1).getAsFloat(), a.get(2).getAsFloat());
+                    } else if (tr.get("scale").isJsonPrimitive()) {
+                        float s = tr.get("scale").getAsFloat();
+                        b.scale(s, s, s);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            MainRegistry.LOGGER.warn("[ItemModels] failed to copy display from {}: {}", blockModelPath, e.toString());
+        }
+    }
+
+    @javax.annotation.Nullable
+    private static ItemDisplayContext displayContext(String jsonKey) {
+        return switch (jsonKey) {
+            case "thirdperson_righthand" -> ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
+            case "thirdperson_lefthand" -> ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
+            case "firstperson_righthand" -> ItemDisplayContext.FIRST_PERSON_RIGHT_HAND;
+            case "firstperson_lefthand" -> ItemDisplayContext.FIRST_PERSON_LEFT_HAND;
+            case "head" -> ItemDisplayContext.HEAD;
+            case "gui" -> ItemDisplayContext.GUI;
+            case "ground" -> ItemDisplayContext.GROUND;
+            case "fixed" -> ItemDisplayContext.FIXED;
+            default -> null;
+        };
     }
 
     /** Модель предмета с parent = hbm_m:&lt;путь&gt; (без отдельного ModBlocks, если id не совпадает с блоком). */
@@ -2751,7 +2833,9 @@ public class ModItemModelProvider extends ItemModelProvider {
     }
 
     private ItemModelBuilder blockItemFromBlockModel(RegistrySupplier<Block> block) {
-        return withExistingParent(block.getId().getPath(), modLoc("block/" + block.getId().getPath()));
+        ItemModelBuilder builder = withExistingParent(block.getId().getPath(), modLoc("block/" + block.getId().getPath()));
+        copyBlockModelDisplay(builder, "block/" + block.getId().getPath());
+        return builder;
     }
     
     private void ingotItem(RegistrySupplier<Item> itemObject) {

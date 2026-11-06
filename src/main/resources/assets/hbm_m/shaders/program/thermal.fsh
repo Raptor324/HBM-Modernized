@@ -86,8 +86,8 @@ void main() {
     // Luminance quantization - "stepped" gray like a thermal imager
     float quantized = floor(luminance * 12.0) / 12.0;
 
-    // Increased contrast around the middle
-    quantized = 0.5 + (quantized - 0.5) * 1.0;
+    // Mid-tone contrast enhancement
+    quantized = clamp(0.5 + (quantized - 0.5) * 1.2, 0.0, 1.0);
 
     // Highlight "hot" zones by scene brightness
     float heat = pow(quantized, 0.45);

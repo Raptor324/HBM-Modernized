@@ -24,6 +24,8 @@ public final class BlueprintPools {
     public static final String POOL_PREFIX_DISCOVER = "discover.";
     public static final String POOL_PREFIX_SECRET = "secret.";
     public static final String POOL_PREFIX_528 = "528.";
+    /** Original {@code PrecAssRecipes}: {@code POOL_PREFIX_DISCOVER + ".rpa"} (discoverbare RPA-Panzerrezepte). */
+    public static final String RPA_DISCOVER_POOL = POOL_PREFIX_DISCOVER + ".rpa";
 
     private BlueprintPools() {}
 
@@ -43,6 +45,8 @@ public final class BlueprintPools {
             add(pools, r.getBlueprintPool(), r.getResultItem(access).getHoverName());
         for (com.hbm_m.recipe.RockMillRecipe r : RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.RockMillRecipe.Type.INSTANCE))
             add(pools, r.getBlueprintPool(), r.getResultItem(access).getHoverName());
+        for (com.hbm_m.recipe.PrecAssRecipe r : RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.PrecAssRecipe.Type.INSTANCE))
+            add(pools, r.getBlueprintPool(), r.getResultItemSafe().getHoverName());
         return pools;
     }
 

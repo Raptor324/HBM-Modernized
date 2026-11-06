@@ -42,10 +42,10 @@ public final class MachineOreSlopperRenderer {
     public static void register() {
         MachineRenderers.machine("oreslopper", ModBlockEntities.ORE_SLOPPER_BE.get(),
                 MachineOreSlopperBlockEntity.class)
-            // Статичный корпус из multipart-модели; подвижные части — dynamic parts
-            // из отдельных моделей (как в legacy-рендере).
-            // FFA merge loss restore: Slider/Hydraulics/Bucket снова анимированы (1:1 RenderOreSlopper),
-            // плюс парящий кусок руды в ковше при LIFTING (hook).
+            // Static body from multipart model; moving parts are dynamic parts
+            // from separate models (matching legacy renderer).
+            // Slider/Hydraulics/Bucket are animated (1:1 RenderOreSlopper),
+            // plus floating bedrock ore chunk in the bucket during LIFTING (hook).
             .part("Base")
             .part("Slider", MachineOreSlopperRenderer::animateSlider)
             .part("Hydraulics", MachineOreSlopperRenderer::animateHydraulics)
@@ -102,7 +102,7 @@ public final class MachineOreSlopperRenderer {
         return true;
     }
 
-    // --- FFA merge loss restore: 1:1 RenderOreSlopper анимации ковша и кусок руды ---
+    // --- Bucket animations (1:1 RenderOreSlopper) and ore chunk ---
 
     private static float sliderPos(MachineOreSlopperBlockEntity be, float pt) {
         return Mth.lerp(pt, be.prevSlider, be.slider);
@@ -112,20 +112,20 @@ public final class MachineOreSlopperRenderer {
         return (Mth.lerp(pt, be.prevBucket, be.bucket)) * 1.5F;
     }
 
-    /** Слайд едет на 3 блока вперёд по мере цикла. */
+    /** Slider moves forward by 3 blocks during the cycle. */
     private static boolean animateSlider(MachineOreSlopperBlockEntity be, float pt, long gt, PoseStack pose) {
         pose.translate(0, 0, sliderPos(be, pt) * -3);
         return true;
     }
 
-    /** Гидравлика опускается до 1.25 (с зазором 0.25), поверх трансформа слайда. */
+    /** Hydraulics lower down to 1.25 (with 0.25 gap), on top of slider transform. */
     private static boolean animateHydraulics(MachineOreSlopperBlockEntity be, float pt, long gt, PoseStack pose) {
         pose.translate(0, 0, sliderPos(be, pt) * -3);
         pose.translate(0, -Mth.clamp(bucketExt(be, pt) - 0.25F, 0, 1.25F), 0);
         return true;
     }
 
-    /** Ковш опускается до 1.25, поверх трансформа гидравлики. */
+    /** Bucket lowers down to 1.25, on top of hydraulics transform. */
     private static boolean animateBucket(MachineOreSlopperBlockEntity be, float pt, long gt, PoseStack pose) {
         pose.translate(0, 0, sliderPos(be, pt) * -3);
         pose.translate(0, -Mth.clamp(bucketExt(be, pt) - 0.25F, 0, 1.25F), 0);
@@ -134,8 +134,8 @@ public final class MachineOreSlopperRenderer {
     }
 
     /**
-     * 1:1 RenderOreSlopper: во время LIFTING в ковше висит кусок бедроковой руды
-     * (оригинал: ItemStack(ModItems.bedrock_ore, 1, 0) = BASE/LIGHT).
+     * 1:1 RenderOreSlopper: during LIFTING, a piece of bedrock ore is suspended in the bucket
+     * (original: ItemStack(ModItems.bedrock_ore, 1, 0) = BASE/LIGHT).
      */
     private static void renderOreChunk(MachineOreSlopperBlockEntity be, float pt,
                                        PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buf,

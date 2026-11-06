@@ -10,6 +10,7 @@ import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.block.machines.TransitionSealBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.CargoElevatorBlockEntity;
 import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
 import com.hbm_m.blockentity.machines.TransitionSealBlockEntity;
@@ -55,7 +56,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class UniversalMachinePartBlock extends BaseEntityBlock
         implements IDetonatable, com.hbm_m.interfaces.ILookOverlay, com.hbm_m.api.block.IToolable,
-        com.hbm_m.api.bomb.IBomb {
+        com.hbm_m.api.bomb.IBomb, com.hbm_m.block.network.IConveyorBelt {
 
     /** Original {@code BlockDummyable}: Werkzeuge auf eine Dummy-Zelle wirken auf den Kern. */
     @Override
@@ -68,6 +69,44 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
             return toolable.onScrew(world, player, controllerPos, side, fX, fY, fZ, hand, tool);
         }
         return false;
+    }
+
+    // ==================== IConveyorBelt Forwarding ====================
+
+    @Override
+    public boolean canItemStay(Level level, BlockPos pos, net.minecraft.world.phys.Vec3 itemPos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof IMultiblockPart part && part.getControllerPos() != null) {
+            BlockState ctrlState = level.getBlockState(part.getControllerPos());
+            if (ctrlState.getBlock() instanceof com.hbm_m.block.network.IConveyorBelt belt) {
+                return belt.canItemStay(level, pos, itemPos);
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public net.minecraft.world.phys.Vec3 getTravelLocation(Level level, BlockPos pos, net.minecraft.world.phys.Vec3 itemPos, double speed) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof IMultiblockPart part && part.getControllerPos() != null) {
+            BlockState ctrlState = level.getBlockState(part.getControllerPos());
+            if (ctrlState.getBlock() instanceof com.hbm_m.block.network.IConveyorBelt belt) {
+                return belt.getTravelLocation(level, pos, itemPos, speed);
+            }
+        }
+        return itemPos;
+    }
+
+    @Override
+    public net.minecraft.world.phys.Vec3 getClosestSnappingPosition(Level level, BlockPos pos, net.minecraft.world.phys.Vec3 itemPos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof IMultiblockPart part && part.getControllerPos() != null) {
+            BlockState ctrlState = level.getBlockState(part.getControllerPos());
+            if (ctrlState.getBlock() instanceof com.hbm_m.block.network.IConveyorBelt belt) {
+                return belt.getClosestSnappingPosition(level, pos, itemPos);
+            }
+        }
+        return new net.minecraft.world.phys.Vec3(pos.getX() + 0.5, pos.getY() + 0.25, pos.getZ() + 0.5);
     }
 
     /**
@@ -201,7 +240,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
         if (!(controllerBlock instanceof IMultiblockController controller)) {
             return null;
         }
-        VoxelShape customShape = controller.getCustomMasterVoxelShape(controllerState);
+        VoxelShape customShape = controller.getCustomMasterVoxelShape(controllerState, level, controllerPos);
         if (customShape != null && !customShape.isEmpty()) {
             return customShape;
         }
@@ -247,7 +286,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
             return Shapes.block();
         }
 
-        VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState);
+        VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState, pLevel, controllerPos);
 
         if (masterShape != null && !masterShape.isEmpty()) {
             BlockPos vecToController = controllerPos.subtract(pPos);
@@ -370,7 +409,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                 }
                 // w16b (Wunsch N-Z): Teilform aus bounding-Liste -> Zelle verdeckt keine Nachbarflaechen
                 if (ctrlBlock instanceof IMultiblockController mc) {
-                    VoxelShape master = mc.getCustomMasterVoxelShape(level.getBlockState(ctrlPos));
+                    VoxelShape master = mc.getCustomMasterVoxelShape(level.getBlockState(ctrlPos), level, ctrlPos);
                     if (master != null && !master.isEmpty()) return Shapes.empty();
                 }
             }
@@ -393,7 +432,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                     return Shapes.empty();
                 }
                 if (ctrlBlock instanceof IMultiblockController mc) {
-                    VoxelShape master = mc.getCustomMasterVoxelShape(level.getBlockState(ctrlPos));
+                    VoxelShape master = mc.getCustomMasterVoxelShape(level.getBlockState(ctrlPos), level, ctrlPos);
                     if (master != null && !master.isEmpty()) return Shapes.empty();
                 }
             }
@@ -466,7 +505,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                 BlockEntity ctrlBe = pLevel.getBlockEntity(controllerPos);
                 // Отвёртка зарезервирована под GUI скинов, но на запертой двери клик уходит
                 // в tryToggle → canAccess → tryPick (взлом), как в 1.7.10.
-                if (ctrlBe instanceof DoorBlockEntity door && !door.isLocked() && hasScrewdriver(pPlayer)) {
+                // У blast door GUI скинов нет (NEXT parity) — отвёртка тогглит дверь:
+                // не перехватываем клик, отдаём его в use ядра.
+                if (ctrlBe instanceof DoorBlockEntity door && !(door instanceof com.hbm_m.block.entity.doors.BlastDoorBlockEntity)
+                        && !door.isLocked() && hasScrewdriver(pPlayer)) {
                     return InteractionResult.sidedSuccess(pLevel.isClientSide());
                 }
                 //? if < 1.21.1 {
@@ -650,6 +692,12 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
         // not be destroyed here either - onRemove honours the flag, this path ignored it.
         if (controllerState.getBlock() instanceof IMultiblockController controller
                 && controller.shouldDestroyOnPartRemoved()) {
+            if (player.getAbilities().instabuild) {
+                BlockEntity cbe = level.getBlockEntity(controllerPos);
+                if (cbe instanceof CargoElevatorBlockEntity elevator) {
+                    elevator.dropped = true;
+                }
+            }
             level.destroyBlock(controllerPos, !player.getAbilities().instabuild);
         }
     }

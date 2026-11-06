@@ -82,8 +82,6 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineBreederMenu>> BREEDER_MENU =
             MENUS.register("breeder_menu", () -> MenuRegistry.ofExtended(MachineBreederMenu::new));
 
-    public static final RegistrySupplier<MenuType<MachineLargePylonMenu>> LARGE_PYLON_MENU =
-            MENUS.register("large_pylon_menu", () -> MenuRegistry.ofExtended(MachineLargePylonMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineAssemblerMenu>> MACHINE_ASSEMBLER_MENU =
             MENUS.register("machine_assembler_menu", () -> MenuRegistry.ofExtended(MachineAssemblerMenu::new));

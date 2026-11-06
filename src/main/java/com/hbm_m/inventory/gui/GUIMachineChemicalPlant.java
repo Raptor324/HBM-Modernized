@@ -151,7 +151,7 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         if (isMouseOver(mouseX, mouseY, 7, 125, 18, 18)) {
             ChemicalPlantRecipe recipe = getSelectedRecipe();
             if (recipe != null) {
-                guiGraphics.renderTooltip(this.font, buildRecipeTooltip(recipe), Optional.empty(), mouseX, mouseY);
+                com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(guiGraphics, this.font, buildRecipeTooltip(recipe), mouseX, mouseY);
             } else {
                 guiGraphics.renderTooltip(this.font,
                         Component.translatable("gui.recipe.setRecipe").withStyle(ChatFormatting.YELLOW),

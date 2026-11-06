@@ -57,8 +57,8 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
     }
     // The per-machine delta arrays live in {@link MachineRenderState}, keyed by
     // posKey in the same map as the roster/epoch/param state - no slot ring, no
-    // collisions by construction (the 32768-slot ring see-sawed owners every
-    // frame on a 5000-machine farm, spark 2026-10-07).
+    // collisions by construction.
+
     // Scratch (rendering is single-threaQTESTded): S/Sinv of the current BE for the
     // duration of the parts pass.
     private final Matrix4f animBase = new Matrix4f();
@@ -204,6 +204,11 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
      * (~7.5 updates/s at 400+ blocks).
      */
     private boolean isAnimationThrottled(T be) {
+        // WIAJ demo BEs sit at offset virtual coordinates: the real-camera distance is
+        // meaningless there, and throttling would freeze the demo's animated parts.
+        if (com.hbm_m.client.render.ClientRenderFlags.guiRenderFrame()) {
+            return false;
+        }
         double distSq = frameDistSq(be);
         int band = (int) (distSq / 4096.0);
         if (band <= 0) {
@@ -310,7 +315,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // worldGen bump, and BER_FAST_CACHE keeps serving the pre-reload BER
         // instance, so stale rosters (with hollowed renderer refs after the
         // renderer-cache wipe) would otherwise survive into the next session
-        // (audit 2026-10-05 §3.24). Snapshot first, then clearBerCache so
+        // Snapshot first, then clearBerCache so
         // collectMain re-fetches the fresh instances via the dispatcher
         // fallback.
         com.hbm_m.client.render.cache.RenderCacheManager.register(reason -> {
@@ -374,6 +379,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             if (!rends[i].instanced().assertCleanSlot(slot)) {
                 return false;
             }
+            rends[i].markUsed(com.hbm_m.client.render.IrisShadowBatchCollector.renderFrame());
         }
         return true;
     }
@@ -389,7 +395,8 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
     private static boolean canUseGpuParametrics() {
         if (!parametricAnimOn()
                 || ShaderCompatibilityDetector.isRenderingShadowPass()
-                || ClientRenderFlags.forceVanillaImmediate()) {
+                || ClientRenderFlags.forceVanillaImmediate()
+                || ClientRenderFlags.guiRenderFrame()) {
             return false;
         }
         if (!ShaderCompatibilityDetector.isExternalShaderActive()) {
@@ -530,7 +537,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // then reports "unstable" for the REST of that tick - the next frame
         // full-pathed again and stored again, and the fleet oscillated
         // stable/unstable frame by frame (the F3 "Frozen" line flickering
-        // 0/100, spark 2026-10-08) with the parametric branch never
+        // 0/100) with the parametric branch never
         // converging into the frozen walk. A stale tick with a matching value
         // is exactly the converged state the walk needs.
         if (s.epochStored && s.epochValue == cur) {
@@ -841,9 +848,9 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
     private void doCollectRender(BlockEntity be, float partialTick, PoseStack poseStack,
                                  MultiBufferSource bufferSource, int packedLight, boolean applyFrustum) {
         T blockEntity = (T) be;
-        // Двери: per-frame детект flip'а share-состояния (Iris on/off, конфиг-тумблер,
-        // момент загрузки шейдера) -> shareEpoch++ и полная инвалидация PART/VBO/dae
-        // кешей ДО чтения любых кеш-ключей этого кадра (детерминизм share, рев.2).
+        // Doors: per-frame detection of share-state flips (Iris on/off, config toggle,
+        // shader load timing) -> shareEpoch++ and full invalidation of PART/VBO/dae
+        // caches BEFORE reading any cache keys this frame (deterministic skin sharing).
         if (blockEntity instanceof com.hbm_m.block.entity.doors.DoorBlockEntity) {
             com.hbm_m.client.render.implementations.MachineDoorRenderer.syncShareState();
         }
@@ -911,8 +918,8 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         if (!ClientRenderFlags.nucleusDirtySkip()) {
             return false;
         }
-        // Двери: per-frame sync share-состояния ДО фазы 1 (roster-assert читает кеш-ключи,
-        // зависящие от shareEpoch). Frame-stamped -- один расчёт на кадр.
+        // Doors: per-frame sync of share-state BEFORE phase 1 (roster-assert reads cache keys
+        // dependent on shareEpoch). Frame-stamped -- one evaluation per frame.
         if (beRaw instanceof com.hbm_m.block.entity.doors.DoorBlockEntity) {
             com.hbm_m.client.render.implementations.MachineDoorRenderer.syncShareState();
         }
@@ -921,11 +928,12 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // phase 1 below - they fall back to the PARTIAL fast path, so their
         // animator keeps running in the parts loop while the instanced parts
         // around them assert. (This used to be a spec-level veto that
-        // disabled the fast path for EVERY machine of the spec - the
-        // 5000-idle-assembler profile, spark 2026-10-07: the spec's constant
-        // -animator Frame part alone cost the fleet the whole roster assert.)
+        // disabled the fast path for every machine of the spec).
+
+
         if (ShaderCompatibilityDetector.isRenderingShadowPass()
-                || ClientRenderFlags.forceVanillaImmediate()) {
+                || ClientRenderFlags.forceVanillaImmediate()
+                || ClientRenderFlags.guiRenderFrame()) {
             return false;
         }
         // Visibility on the assert path:
@@ -971,8 +979,8 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // Specs with per-state dynamic geometry or tinted parts can never be
         // FULLY fast-asserted (their draw lives in the parts loop) - go
         // straight to the partial path instead of re-resolving every part
-        // renderer per machine per frame (that walk was 7% of the frame on the
-        // 5000-machine farm, spark 2026-10-08). The frozen walk in renderAll
+        // renderer per machine per frame. The frozen walk in renderAll
+
         // asserts everything assertable; the parts loop draws the rest.
         if (spec.hasNonAssertableParts()) {
             partialAssertBE = beRaw;
@@ -985,12 +993,12 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // in renderAll (no matrices/light/float comparison), removing most of the
         // per-frame cost of the zone.
         // Exception - frozen animation (epoch): animated parts are confirmed too,
-        // no full collection needed at all. Since 2026-10-07 a QUIET hook (one
+        // no full collection needed at all. A QUIET hook (one
         // reporting no content via MachineRenderHook.mayDrawContent) no longer
-        // vetoes the full assert: on a 5000-machine idle assembler farm the
-        // recipe-icon hook forced the full path for every machine inside the
-        // zone (56% of the frame in collectMain, spark 2026-10-07). The epoch
-        // covers the content state (contract in mayDrawContent), so the frame
+        // vetoes the full assert. The epoch
+
+
+        // covers the content state (contract in mayDrawContent), so when
         // content appears the epoch flips and the full path draws it.
         double distSq;
         if (precomputedDistSq >= 0.0) {
@@ -1011,7 +1019,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         MachineRenderState cachedState = getState(beRaw, posKey);
 
         double animDist = RenderDistanceHelper.getAnimatedDistanceBlocks();
-        boolean epochFullAssert = false;
+        boolean epochFullAssert = spec.animationEpoch() != null && epochStable(beRaw, gameTick, posKey);
         if (animDist > 0 && distSq <= animDist * animDist) {
             if (!spec.hooks().isEmpty() || hasAnimatedParts() || hasParametricParts()) {
                 boolean hooksQuiet = true;
@@ -1025,24 +1033,13 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                     partialAssertBE = beRaw;
                     return false;
                 }
-                if (epochStable(beRaw, gameTick, posKey)) {
-                    epochFullAssert = true;
-                } else if (cachedState != null && cachedState.allAsserted(true)) {
-                    // Actively animating parametric machine (epoch rolling) with
-                    // quiet hooks: every part is static (ASSERT) or GPU-parametric
-                    // (ASSERT_EPOCH) - static pose/bbox/light are already in the
-                    // buffer, so only the 4-float AnimParams tail changes per
-                    // frame. Update it in place per cached slot: NO collectRender,
-                    // setupBlockTransform, light sampling, getPartModels or
-                    // addInstance (that loop was 10.62 ms/frame on the animated
-                    // 5000-assembler farm, spark 2026-10-15).
-                    float partialTick = com.hbm_m.platform.RenderHooks.getPartialTick();
-                    if (tryFastParametricRosterUpdate((T) beRaw, cachedState, posKey, gameTick, partialTick)) {
-                        return true;
+                if (!epochFullAssert) {
+                    if (cachedState != null && cachedState.allAsserted(true)) {
+                        float partialTick = com.hbm_m.platform.RenderHooks.getPartialTick();
+                        if (tryFastParametricRosterUpdate((T) beRaw, cachedState, posKey, gameTick, partialTick)) {
+                            return true;
+                        }
                     }
-                    partialAssertBE = beRaw;
-                    return false;
-                } else {
                     partialAssertBE = beRaw;
                     return false;
                 }
@@ -1067,8 +1064,8 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // cannot be confirmed falls back to the PARTIAL fast path (the roster
         // walk in renderAll asserts the confirmable parts, the parts loop
         // rebuilds the rest). A bare refusal would rebuild EVERY part of the
-        // machine every frame - on the idle assembler farm one non-instanced
-        // Frame part did exactly that to all 5000 machines (spark 2026-10-07).
+        // machine every frame.
+
         fastAssertScratchCount = 0;
         boolean partialFallback = false;
         java.util.List<MachineSpec.PartDef<T>> specParts = spec.parts();
@@ -1080,7 +1077,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             // Parametric parts: their record words are provably stable ONLY under
             // the epoch gate (epochFullAssert). Outside it a segment edge would
             // never reach the buffer - a crafting ring/arm rig would keep the
-            // stale segment phase forever (latent freeze, 2026-10-07).
+            // stale segment phase forever.
             if (part.parametric() != null && !epochFullAssert) {
                 partialFallback = true;
                 break;
@@ -1089,6 +1086,10 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             // their draw lives in the parts loop - the partial path runs it
             // while the instanced parts around them assert.
             if (part.animator() != null && part.dynamic() && !epochFullAssert) {
+                partialFallback = true;
+                break;
+            }
+            if (part.uvRectResolver() != null && !epochFullAssert) {
                 partialFallback = true;
                 break;
             }
@@ -1156,7 +1157,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                     continue;
                 }
                 if (r != null && r.instanced() != null) {
-                    st.rosterCategory[pIdx] = (part.parametric() != null || part.animated())
+                    st.rosterCategory[pIdx] = (part.parametric() != null || part.animated() || part.uvRectResolver() != null)
                             ? MachineRenderState.ASSERT_EPOCH
                             : MachineRenderState.ASSERT;
                     st.rosterRenderers[pIdx] = r;
@@ -1367,16 +1368,31 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         // Caveat: BE.getLevel() is a VirtualRenderWorld; shouldRender() skips
         // frustum/ray-march culling (see AbstractPartBasedRenderer).
         net.minecraft.world.phys.AABB bounds = frameBounds(blockEntity);
-        double distSq = frameDistSq(blockEntity);
-        float staticFade = applyCullingAndStaticFade(blockEntity, bounds, distSq);
-        if (staticFade < 0) return;
-        // Beyond the animation distance (modelUpdateDistance) only statics are shown.
-        float animFade = RenderDistanceHelper.computeAnimatedFade(blockEntity, distSq);
-        boolean animatedVisible = animFade >= 0;
-        // fade for animated content (min of both zones); statics fade out ONLY by
-        // the static zone - purely static machines must not flicker in the
-        // animation fade ring and come back after it (fade = staticFade = 1).
-        float fade = animatedVisible ? Math.min(staticFade, animFade) : staticFade;
+        float staticFade;
+        boolean animatedVisible;
+        float fade;
+        if (com.hbm_m.client.render.ClientRenderFlags.guiRenderFrame()) {
+            // WIAJ demo screen: the fake BE sits at virtual coordinates, so the
+            // real camera's frustum/distance/occlusion gates do not apply - the
+            // presentation must render unconditionally (1.7.10 drew its actors
+            // with no culling either). Alpha comes from ClientRenderFlags.guiFadeAlpha:
+            // 1 for a plain demo frame, the smooth-placement ramp while the demo's
+            // actor wrapper (ActorTileEntity) lowers a machine into place.
+            staticFade = com.hbm_m.client.render.ClientRenderFlags.guiFadeAlpha();
+            animatedVisible = true;
+            fade = staticFade;
+        } else {
+            double distSq = frameDistSq(blockEntity);
+            staticFade = applyCullingAndStaticFade(blockEntity, bounds, distSq);
+            if (staticFade < 0) return;
+            // Beyond the animation distance (modelUpdateDistance) only statics are shown.
+            float animFade = RenderDistanceHelper.computeAnimatedFade(blockEntity, distSq);
+            animatedVisible = animFade >= 0;
+            // fade for animated content (min of both zones); statics fade out ONLY by
+            // the static zone - purely static machines must not flicker in the
+            // animation fade ring and come back after it (fade = staticFade = 1).
+            fade = animatedVisible ? Math.min(staticFade, animFade) : staticFade;
+        }
 
         BlockPos blockPos = blockEntity.getBlockPos();
 
@@ -1405,7 +1421,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             ctx.captureBasis(poseStack.last().pose());
         }
 
-        if (ShaderCompatibilityDetector.isExternalShaderActive()) {
+        if (ShaderCompatibilityDetector.isExternalShaderActive() && !com.hbm_m.client.render.ClientRenderFlags.guiRenderFrame()) {
             boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
             // In shadow, begin(true)+close = apply()/clear() of the pack ON EVERY
             // BER - on assembler farms that is ~14% of the frame. When the global
@@ -1602,7 +1618,11 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             }
             if (part.animated() && part.parametric() == null
                     && !ShaderCompatibilityDetector.isRenderingShadowPass()
-                    && !com.hbm_m.client.render.culling.GpuCullCoverage.isActive()) {
+                    && !com.hbm_m.client.render.culling.GpuCullCoverage.isActive()
+                    // WIAJ demo BEs sit at offset virtual coordinates: the distance to the
+                    // real camera is meaningless there, and a subpixel freeSlot under the
+                    // fake rosterKey could hit a real machine's slot at the same world pos.
+                    && !com.hbm_m.client.render.ClientRenderFlags.guiRenderFrame()) {
                 MachinePartRenderer existingR = !part.dynamic() ? spec.findExistingRenderer(partIdx, part, null) : null;
                 InstancedStaticPartRenderer subInst = existingR != null ? existingR.instanced() : null;
                 if (subInst != null && RenderDistanceHelper.isSubpixelPart(subInst.getObjBbox(), frameDistSq(blockEntity), 1.1f)) {
@@ -1655,15 +1675,19 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             }
 
             boolean canAssertParametric = part.parametric() != null && spec.animationEpoch() != null;
+            boolean hasEpochGatedUv = part.uvRectResolver() != null && spec.animationEpoch() != null;
             if (buildRoster
                     && (!part.animated() || canAssertParametric)
                     && !(part.animator() != null && part.dynamic() && !canAssertParametric)
                     && (part.parametric() == null || spec.animationEpoch() != null)
+                    && (part.uvRectResolver() == null || hasEpochGatedUv)
                     && part.tintOverride() == null
                     && part.clipPlanesResolver() == null
                     && renderer.instanced() != null) {
                 state.rosterCategory[partIdx] =
-                        part.parametric() != null ? MachineRenderState.ASSERT_EPOCH : MachineRenderState.ASSERT;
+                        (part.parametric() != null || hasEpochGatedUv)
+                                ? MachineRenderState.ASSERT_EPOCH
+                                : MachineRenderState.ASSERT;
                 state.rosterRenderers[partIdx] = renderer;
             }
 
@@ -1859,6 +1883,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                 boolean fastAsserted = false;
                 if (partialAssert && !part.animated()
                         && !(part.animator() != null && part.dynamic())
+                        && (part.uvRectResolver() == null || epochStableNow)
                         && part.tintOverride() == null
                         && part.clipPlanesResolver() == null) {
                     InstancedStaticPartRenderer inst = renderer.instanced();
@@ -1898,9 +1923,8 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                         fastAsserted = inst.assertCleanInstance(blockPos);
                     }
                 }
-                if (!fastAsserted && part.animated()) {
-                    // The part went through the animator - the pose was recomputed
-                    // this frame, the epoch can be stored at the end of renderAll.
+                if (!fastAsserted && (part.animated() || part.uvRectResolver() != null)) {
+                    // The part's pose or uvRect was recomputed this frame - store the epoch at the end of renderAll.
                     anyAnimatedRebuilt = true;
                 }
                 if (!fastAsserted && part.animator() != null) {

@@ -69,7 +69,10 @@ public class CrackingTowerJeiCategory extends JeiGenericRecipeCategory<CrackingT
 
     @Override
     protected void addInputSlots(IRecipeLayoutBuilder builder, CrackingTowerRecipe recipe, int inputXOffset) {
-        int[][] positions = JeiNeiLayout.getGenericInputSlotPositions(2);
+        // CrackingHandler extends NEIUniversalHandler: dessen getInputCoords(2) legt das
+        // Eingangsfluid auf {48,24} (direkt am Pfeil) und den Dampf auf {30,24} — genau
+        // umgekehrt zur NEIGenericRecipeHandler-Reihenfolge. getUniversalInputCoords spiegelt das.
+        int[][] positions = JeiNeiLayout.getUniversalInputCoords(2);
         addFluidSlot(builder, RecipeIngredientRole.INPUT,
                 positions[0][0] + inputXOffset, positions[0][1],
                 FluidStack.create(recipe.getInputFluid(), recipe.getInputMb()));

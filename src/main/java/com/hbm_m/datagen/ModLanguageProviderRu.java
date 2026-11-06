@@ -143,6 +143,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         RestportLang.addAll(this::add, true);
         restportActive = false;
         addConfigTranslations();
+        addCanneryTranslations();
 
         // Автоматическая локализация слитков
         // Оверрайды формата ориг. item.ingot_raw.name = "Слиток (%s)" (автоген MAT_STRONTIUM/MAT_NEODYMIUM).
@@ -397,6 +398,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.assembler_recipe_selector", "Выбор рецепта");
         add("gui.hbm_m.fluid_identifier", "Идентификатор жидкости");
         add("jei.hbm_m.crucible_smelting", "Плавка в тигле");
+        add("jei.hbm_m.cyclotron", "Циклотрон");
+        add("jei.hbm_m.solidifier", "Промышленный отвердитель");
         add("container.hbm_m.book", "Книга Вагонов");
         add("container.hbm_m.book.extended_crafting", "Расширенный крафт на 4 слота");
         add("container.hbm_m.book.standard_inventory", "Обычный инвентарь");
@@ -417,7 +420,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tooltip.hbm_m.satchip.freq", "Частота: %s");
         add("message.hbm_m.satchip.freq_set", "Частота установлена: %s");
         add("jei.hbm_m.crucible_alloying", "Сплавы в тигле");
-        add("jei.hbm_m.crucible_casting", "Литьё");
+        add("jei.hbm_m.crucible_casting", "Литьё в тигле");
         // gas_centrifuge.info / info_high_speed уже добавлены выше — дубль удалён
         add("gui.launchPad.notReady", "Не готова");
         add("gui.launchPad.loading", "Загрузка...");
@@ -1971,7 +1974,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.crate_metal", "Металлический ящик");
         add("block.hbm_m.crate_weapon", "Ящик с оружием");
         add("block.hbm_m.plutonium_fuel_block", "Блок плутониевого топлива");
-        add("block.hbm_m.polonium210_block", "Блок полония-210");
+        add("block.hbm_m.block_polonium", "Блок полония-210");
         add("block.hbm_m.armor_table", "Стол модификации брони");
         add("block.hbm_m.machine_assembler", "Сборочная машина (LEGACY)");
         add("block.hbm_m.advanced_assembly_machine", "Сборочная машина");
@@ -2001,9 +2004,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.CHEMICAL_FACTORY.get(), "Химический завод (WIP)");
         add(ModBlocks.STEAM_TURBINE.get(), "Паровая турбина (WIP)");
         add(ModBlocks.LIQUEFACTOR.get(), "Сжижитель (WIP)");
-        add(ModBlocks.CORE_EMITTER.get(), "Эмиттер ядра (WIP)");
-        add(ModBlocks.CORE_INJECTOR.get(), "Инжектор ядра (WIP)");
-        add(ModBlocks.CORE_RECEIVER.get(), "Приемник ядра (WIP)");
+        add(ModBlocks.CORE_EMITTER.get(), "Излучатель (РТС)");
+        add(ModBlocks.CORE_INJECTOR.get(), "Топливный инжектор (РТС)");
+        add(ModBlocks.CORE_RECEIVER.get(), "Приёмник (РТС)");
         add(ModBlocks.VACUUM_DISTILL.get(), "Вакуумная дистилляция (WIP)");
         add(ModBlocks.TURBOFAN.get(), "Турбовентилятор");
         add("desc.hbm_m.turbofan.efficiency", "Расход топлива:");
@@ -2128,6 +2131,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.ORE_SLOPPER.get(), "Рудный шлаппер");
         add("container.hbm_m.ore_slopper", "Рудный шлаппер");
         add(ModBlocks.PLASMA_FORGE.get(), "Плазменная кузница (WIP)");
+        add("container.hbm_m.plasma_forge", "Плазменная кузница (WIP)");
         add(ModBlocks.PYROOVEN.get(), "Пиролизная печь");
         add(ModBlocks.QUADRUPOLE.get(), "Квадрупольный магнит (WIP)");
         add(ModBlocks.RADGEN.get(), "Радиоизотопный генератор (WIP)");
@@ -2145,7 +2149,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.ARC_ELECTRODE_BURNT_DESH.get(), "Расплавленный электрод из деш");
         add(ModItems.ARC_ELECTRODE_BURNT_SATURNITE.get(), "Расплавленный сатурнитовый электрод");
         add("container.hbm_m.rotary_furnace", "Вращающаяся печь");
-        add(ModBlocks.SAWMILL.get(), "Лесопилка");
+        add(ModBlocks.SAWMILL.get(), "Лесопилка на генераторе Стирлинга");
         add(ModBlocks.SOLIDIFIER.get(), "Затвердитель");
         add(ModBlocks.ASHPIT.get(), "Зольник");
         add(ModBlocks.REACTOR_RESEARCH.get(), "Исследовательский реактор");
@@ -2169,10 +2173,31 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.PUREX.get(), "PUREX");
         add("container.hbm_m.purex", "PUREX");
         add(ModBlocks.TORUS.get(), "Тор (WIP)");
+        add("container.hbm_m.fusion_torus", "Основная камера (Термоядерный реактор)");
         add(ModBlocks.TURBINEGAS.get(), "Газовая турбина");
         add(ModBlocks.WATZ_PUMP.get(), "Насос WATZ (WIP)");
         add(ModBlocks.MACHINE_SUPERCOMPUTER.get(), "Суперкомпьютер");
         add("container.hbm_m.machine_supercomputer", "Суперкомпьютер");
+        add("block.hbm_m.network_separator", "Сетевой разделитель");
+        add("block.hbm_m.flow_control_pump", "Помпа контроля потока");
+        add("block.hbm_m.deco_computer", "Персональный компьютер IBM 300PL");
+        add(ModItems.GUN_FLIEGERFAUST.get(), "HIMRAAL");
+        add(ModItems.NUGGET_TITANIUM.get(), "Титановый самородок");
+        add(ModItems.NUGGET_COPPER.get(), "Медный самородок");
+        add(ModItems.NUGGET_TUNGSTEN.get(), "Вольфрамовый самородок");
+        add(ModItems.NUGGET_ALUMINIUM.get(), "Алюминиевый самородок");
+        add(ModItems.NUGGET_BORON.get(), "Борный самородок");
+        add(ModItems.NUGGET_LITHIUM.get(), "Литиевый самородок");
+        add(ModItems.NUGGET_SODIUM.get(), "Натриевый самородок");
+        add(ModItems.NUGGET_STRONTIUM.get(), "Стронциевый самородок");
+        add(ModItems.POWDER_FIRE.get(), "Красный фосфор");
+        add(ModItems.DEMOSHAPE_IRON.get(), "Демонстрация особой формы (Железо)");
+        add(ModItems.DEMOSHAPE_STEEL.get(), "Демонстрация особой формы (Сталь)");
+        add(ModItems.DEMOSHAPE_CUSTOM.get(), "Демонстрация особой формы (Особый металл)");
+        add(ModMaterialItems.item(ModMaterials.COMBINE_SCRAP, MaterialShape.SCRAP), "Металлолом Альянса");
+        add(ModMaterialItems.item(ModMaterials.SCRAP_OIL, MaterialShape.SCRAP), "Маслянистые отходы");
+        add(ModMaterialItems.item(ModMaterials.SCRAP_NUCLEAR, MaterialShape.SCRAP), "Радиоактивный шлак");
+        add(ModItems.MOLD_DEMOSHAPE.get(), "Литейная форма (Демонстрация особой формы)");
         add(ModBlocks.LAUNCHPAD_LAMBDA.get(), "Пусковая площадка Лямбды");
         add("container.hbm_m.launchpad_lambda", "Пусковая площадка Лямбды");
         add(ModItems.MISSILE_LAMBDA.get(), "Лямбда-98");
@@ -2798,7 +2823,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.hadron_coil_schrabidate", "Плотная шрабидатавая катушка");
         add("block.hbm_m.hadron_coil_schrabidium", "Плотная шрабидиевая катушка");
         add("block.hbm_m.hadron_coil_starmetal", "Плотная звёзднометаллическая катушка");
-        add("block.hbm_m.hev_battery", "Батарея костюма");
+        add("block.hbm_m.hev_battery_block", "Батарея костюма");
+        add("item.hbm_m.hev_battery", "Батарея костюма");
+        add(ModBlocks.BOOK_GUIDE.get(), "Книга знаний");
         add("block.hbm_m.icf_block", "Лазер ICF");
         add("block.hbm_m.icf_component", "Стабилизатор ICF");
         add("block.hbm_m.icf_controller", "Контроллер лазера ICF");
@@ -3160,7 +3187,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.designator.set_z", "Установить текущую позицию Z...");
         add(ModBlocks.CRYSTALLIZER.get(), "Рудный окислитель");
         add(ModBlocks.BREEDER.get(), "Реактор-размножитель (WIP)");
-        add(ModBlocks.LARGE_PYLON.get(), "Большой пилон (WIP)");
         add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Башня гидроразрыва пласта");
         add(ModBlocks.COOLING_TOWER.get(), "Градирня");
         add(ModBlocks.TOWER_SMALL.get(), "Градирня (малая)");
@@ -3169,13 +3195,16 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("info.hbm_m.cooling_tower.active", "Охлаждение");
         add("info.hbm_m.cooling_tower.idle", "Простой");
         add(ModBlocks.CYCLOTRON.get(), "Циклотрон (WIP)");
+        add(ModBlocks.PA_SOURCE.get(), "Источник частиц");
+        add(ModBlocks.PA_DETECTOR.get(), "Детектор частиц");
+        add("container.hbm_m.particle_accelerator", "Ускоритель частиц");
         add(ModItems.PART_LITHIUM.get(),   "Частица лития");
         add(ModItems.PART_BERYLLIUM.get(), "Частица бериллия");
         add(ModItems.PART_CARBON.get(),    "Частица углерода");
         add(ModItems.PART_COPPER.get(),    "Частица меди");
         add(ModItems.PART_PLUTONIUM.get(), "Частица плутония");
         add(ModBlocks.ZIRNOX.get(), "Зирнокс (WIP)");
-        add(ModBlocks.ARC_WELDER.get(), "Дуговой сварщик (WIP)");
+        add(ModBlocks.ARC_WELDER.get(), "Дуговой сварщик");
         add(ModBlocks.SOLDERING_STATION.get(), "Паяльная станция (WIP)");
         add(ModBlocks.MIXER.get(), "Промышленный миксер (WIP)");
         add(ModBlocks.DERRICK.get(), "Деррик (WIP)");
@@ -3247,8 +3276,20 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.CRACKING_TOWER.get(), "Крекинг башня (WIP)");
         add(ModBlocks.FRACTION_TOWER.get(), "Фракционная башня (WIP)");
         add(ModBlocks.MINING_DRILL.get(), "Large Mining Drill");
-        add(ModBlocks.FEL.get(), "FEL (WIP)");
-        add(ModBlocks.SILEX.get(), "Silex (WIP)");
+        add(ModBlocks.FEL.get(), "Лазер на свободных электронах (FEL)");
+        add("container.hbm_m.fel", "FEL");
+        add(ModBlocks.SILEX.get(), "Камера лазерного разделения изотопов (SILEX)");
+        add("container.hbm_m.silex", "SILEX");
+        add("desc.hbm_m.pellet.recycling", "Пеллета для переработки");
+        add("desc.hbm_m.pellet.brand_new", "Совершенно новая");
+        add("desc.hbm_m.pellet.barely_depleted", "Едва истощена");
+        add("desc.hbm_m.pellet.moderately_depleted", "Умеренно истощена");
+        add("desc.hbm_m.pellet.highly_depleted", "Сильно истощена");
+        add("desc.hbm_m.pellet.fully_depleted", "Полностью истощена");
+        add("desc.hbm_m.pellet.xenon", "Сильное ксеноновое отравление");
+        add("jei.hbm_m.radiolysis", "Радиолиз");
+        add("jei.hbm_m.silex", "SILEX");
+        add("jei.hbm_m.silex.fluid_alternative", "Альтернатива: %s (%s мБ)");
         add(ModBlocks.CHEMICAL_PLANT.get(), "Химическая установка");
         add(ModBlocks.MACHINE_CENTRIFUGE.get(), "Центрифуга");
         add(ModBlocks.INDUSTRIAL_TURBINE.get(), "Промышленная турбина");
@@ -3449,9 +3490,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("container.hbm_m.steam_turbine", "Паровая турбина");
         add("container.hbm_m.steam_condenser", "Паровой конденсатор");
         add("container.hbm_m.liquefactor", "Сжижитель");
-        add("container.hbm_m.core_emitter", "Эмиттер ядра");
-        add("container.hbm_m.core_injector", "Инжектор ядра");
-        add("container.hbm_m.core_receiver", "Приемник ядра");
+        add("container.hbm_m.core_emitter", "Излучатель");
+        add("container.hbm_m.core_injector", "Топливный инжектор");
+        add("container.hbm_m.core_receiver", "Приёмник");
         add("container.hbm_m.vacuum_distill", "Вакуумная дистилляция");
         add("container.hbm_m.turbofan", "Турбовентилятор");
         add("container.hbm_m.industrial_turbine", "Промышленная турбина");
@@ -3496,7 +3537,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("container.hbm_m.crate_template", "Шаблонный ящик");
         add("container.hbm_m.crystallizer", "Кристаллизатор");
         add("container.hbm_m.breeder", "Бридер");
-        add("container.hbm_m.large_pylon", "Большой пилон");
         add("container.hbm_m.chemical_plant", "Химическая установка");
         add("container.hbm_m.centrifuge", "Центрифуга");
 
@@ -3561,7 +3601,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.UNDEFINED.get(), "Undefined");
 
         add(ModItems.SCREWDRIVER.get(), "Отвёртка");
-        add("tooltip.hbm_m.screwdriver", "Клик ПКМ - настройка конвертера энергии или смена скина двери");
+        add("tooltip.hbm_m.screwdriver", "Клик ПКМ - настройка машин или смена скина двери\nShift-клик - разобрать этаж грузового лифта");
         add("tooltip.hbm_m.door_skin", "Используй отвёртку, чтобы сменить скин!");
 
         add("gui.hbm_m.battery.mode.both", "Режим: Приём и Передача");
@@ -3696,6 +3736,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("message.hbm_m.button_boosty", "[Boosty]");
         add("message.hbm_m.button_crypto", "[Crypto]");
 
+        add("message.hbm_m.tip_of_the_day", "Подсказка дня:");
+
         add("item.hbm_m.meter.rads_over_limit", ">%s RAD/s");
         add("tooltip.hbm_m.hold_shift_for_details", "<Зажмите SHIFT для деталей>");
         
@@ -3751,6 +3793,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.enableRadiation", "Включить радиацию");
         add("text.autoconfig.hbm_m.option.enableChunkRads", "Включить радиацию в чанках");
         add("text.autoconfig.hbm_m.option.enableMOTD", "Сообщение при входе в мир (MOTD)");
+        add("text.autoconfig.hbm_m.option.enableTips", "Подсказки на экране загрузки");
         add("text.autoconfig.hbm_m.option.enable528", "Включить режим 528");
         add("text.autoconfig.hbm_m.option.enable528.@Tooltip", "Главный переключатель режима 528; для большинства последующих тумблеров требуется TRUE.");
 
@@ -3925,6 +3968,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.enableRadiation.@Tooltip", "Если выключено, вся радиация отключается (чанки, предметы)");
         add("text.autoconfig.hbm_m.option.enableChunkRads.@Tooltip", "Если выключено, радиация в чанках всегда 0");
         add("text.autoconfig.hbm_m.option.enableMOTD.@Tooltip", "Приветствие при входе в мир и уведомление, если на Modrinth есть более новая версия мода");
+        add("text.autoconfig.hbm_m.option.enableTips.@Tooltip", "Жёлтая «подсказка дня» на экране загрузки мира; текст берётся с GitHub мода");
 
         add("text.autoconfig.hbm_m.option.maxPlayerRad.@Tooltip", "Максимальная радиация, которую может накопить игрок");
         add("text.autoconfig.hbm_m.option.radDecay.@Tooltip", "Скорость распада радиации у игрока за тик");
@@ -4201,6 +4245,91 @@ public class ModLanguageProviderRu extends LanguageProvider {
             }
         }
         deferredLangKeys.clear();
+    }
+
+    /** WIAJ cannery demo texts (original {@code cannery.*} keys from ru_RU.lang). */
+    private void addCanneryTranslations() {
+        add("cannery.f1", "[ Нажмите %s для презентации ]");
+
+        add("cannery.silex", "Лазер на свободных электронах и камера лазерного разделения изотопов");
+        add("cannery.silex.0", "Лазер на свободных электронах (FEL) создаёт мощный лазерный луч с помощью лазерного кристалла и энергии.");
+        add("cannery.silex.1", "Будьте осторожны! Лазер прожигает слабые блоки насквозь...");
+        add("cannery.silex.2", "...однако, взрывоустойчивые блоки этому не подвержены.");
+        add("cannery.silex.3", "FEL предназначен для питания камеры лазерного разделения изотопов (SILEX).  FEL и SILEX должны быть на расстоянии хотя бы 2 блоков.");
+        add("cannery.silex.4", "Лазер должен проходить через стеклянные проёмы на SILEX. При неправильном выборе направления он просто сломается.");
+        add("cannery.silex.5", "Через разъёмы по бокам в SILEX можно подавать жидкости. Для всех рецептов разделения нужен §eпероксид §eводорода§r.");
+        add("cannery.silex.6", "Ещё один скрытый разъём находится снизу; из него можно вынимать предметы.");
+        add("cannery.silex.7", "Каждый рецепт требует определённого кристалла. Если кристалл лучше нужного, процесс ускорится.");
+        add("cannery.silex.8", "Один FEL может питать до 5 SILEX. SILEX нужно ставить минимум в одном блоке друг от друга.");
+
+        add("cannery.firebox", "Топка");
+        add("cannery.firebox.0", "Топка сжигает топливо для печи, создавая тепло.");
+        add("cannery.firebox.1", "Она может сжечь любое топливо для печи, но топливо более высокого качества, вроде угля, кокса или твёрдого топлива, будет гореть дольше и лучше.");
+        add("cannery.firebox.2", "Тепло передаётся через контакт сверху. Машины с таким же контактом снизу будут принимать это тепло, если поставить их на топку.");
+        add("cannery.firebox.3", "Если тепло не используется, а буфер тепла полон, топка отключится, чтобы не тратить топливо.");
+        add("cannery.firebox.4", "Одна машина, принимающая тепло–двигатель Стерлинга, превращающий его в электричество.");
+
+        add("cannery.stirling", "Генератор Стирлинга");
+        add("cannery.stirling.0", "Генератор Стирлинга создаёт энергию с помощью внешних источников тепла.");
+        add("cannery.stirling.1", "Он ставится на машины, создающие тепло – например, топку.");
+        add("cannery.stirling.2", "Однако, количество тепла, которое он может принять, ограничено. Если тепла будет слишком много, генератор сломается.");
+        add("cannery.stirling.3", "Улучшенный вариант может выдержать намного больше тепла.");
+
+        add("cannery.centrifuge", "Газовая цетрифуга");
+        add("cannery.centrifuge.0", "В газовые центрифуги можно подать жидкость обычными жидкостными трубами.");
+        add("cannery.centrifuge.1", "Большинство рецептов требуют несколько центрифуг. Промежуточные продукты нельзя передать по трубам.");
+        add("cannery.centrifuge.2", "Из этой стороны промежуточный продукт идёт в следующую центрифугу.");
+        add("cannery.centrifuge.3", "Гексафторид урана можно обрабатывать двумя центрифугами, но вы получите только U-238 и урановое топливо.");
+        add("cannery.centrifuge.4", "Для его разделения на уран-235 и уран-238 вам понадобится 4 центрифуги.");
+        add("cannery.centrifuge.5", "Некоторые рецепты требуют улучшение \"Разгон газовой центрифуги\".");
+
+        add("cannery.crucible", "Литейный тигель");
+        add("cannery.crucible.0", "Литейный тигель используется для того, чтобы плавить руды, слитки, или другие металлические предметы с целью создания сплавов и литья.");
+        add("cannery.crucible.1", "Он требует внешний источник тепла, который должен быть подключён снизу, например, топку.");
+        add("cannery.crucible.2", "После нагрева тигель может быть использован двумя способами: с шаблоном или без.");
+        add("cannery.crucible.3", "Тигель имеет два буферных хранилища для материалов:");
+        add("cannery.crucible.4", "Буфер слева предназначен для §aпобочных продуктов§r, все материалы, расплавленные без шаблона, окажутся здесь.");
+        add("cannery.crucible.5", "Если рецепт установлен, материалы, не совпадающие с рецептом, также будут храниться здесь.");
+        add("cannery.crucible.6", "Материалы в этом буфере не взаимодействуют друг с другом, они могут быть только выведены через зелёный выход для отливки.");
+        add("cannery.crucible.7", "Буфер справа предназначен для §cрецептов§r, если рецепт установлен и этот конкретный материал соответствует выходу рецепта, он окажется здесь.");
+        add("cannery.crucible.8", "Материалы будут медленно смешиваться, результат автоматически выльется из красного спуска.");
+        add("cannery.crucible.9", "Обратите внимание, что только этот буфер поддерживает создание рецептов. Если шаблон был установлен после расплавления предметов, материалы в буфере для побочки не смешаются или не переместятся в буфер рецептов.");
+        add("cannery.crucible.10", "Спуск будет выливать материал автоматически, если есть куда, например, литейный канал или форма.");
+        add("cannery.crucible.11", "Как и с другими литейными блоками, можно использовать лопату для очистки тигеля.");
+
+        add("cannery.foundryChannel", "Литейный канал");
+        add("cannery.foundryChannel.0", "Литейные каналы используются для перемещения расплавленных материалов от тигеля или хранилища к формам.");
+        add("cannery.foundryChannel.1", "Каналы могут принимать материалы сверху при помощи спуска или напрямую от тигеля. Также каналы могут принимать материалы сбоку от других каналов.");
+        add("cannery.foundryChannel.2", "При транспортировке материалов каналы будут отдавать приоритет литейным спускам или малым формам.");
+        add("cannery.foundryChannel.3", "Когда материал не может попасть в приоритетный блок, он потечёт в соседний канал.");
+        add("cannery.foundryChannel.4", "Остатки материала могут быть убраны лопатой.");
+
+        add("cannery.willow", "Горчичная ива");
+        add("cannery.willow.0", "Горчичная ива - это растение, которое позволяет собирать металлический кадмий.");
+        add("cannery.willow.1", "Ивы можно сажать на землю, траву или даже мёртвую/нефтяную землю, но для роста им требуется вода.");
+        add("cannery.willow.2", "Ивы можно удобрять костной мукой или промышленным удобрением. Им не нужен свет, чтобы расти.");
+        add("cannery.willow.3", "После второго этапа роста им понадобится дополнительный блок пространства над ними, чтобы расти дальше.");
+        add("cannery.willow.4", "После четвертой стадии роста им требуется мёртвая или нефтяная земля под ними.");
+        add("cannery.willow.5", "Это можно сделать либо вручную посадив ивы на мёртвую/нефтяную землю, либо установив поблизости башню гидроразрыва, которая постоянно загрязняет почву.");
+        add("cannery.willow.6", "После достижения заключительной стадии ива удалит загрязнения с земли, превращая мёртвую/нефтяную землю обратно в обычную.");
+        add("cannery.willow.7", "Теперь листья ивы можно собирать. Сломав верхний блок, вы уроните небольшое ивовое растение с 3-6 листьями и сохраните нижнюю часть растения неповрежденной.");
+        add("cannery.willow.8", "Вскоре растение снова начнет расти, давая больше листьев, если землю заменить на нефтяную. Листья могут быть переработаны в порошок кадмия с помощью рудного окислителя.");
+        add("cannery.willow.9", "Сбор ивовых листьев можно автоматизировать с помощью автоматической бензопилы, она будет ломать только те растения, которые готовы к сбору урожая.");
+
+        add("cannery.cargo_elevator", "Грузовой лифт");
+        add("cannery.cargo_elevator.0", "Грузовой лифт — это промышленный подъёмник 3×3, предназначенный для вертикального перемещения грузов и игроков.");
+        add("cannery.cargo_elevator.1", "Его основание состоит из центрального блока-контроллера и 8 окружающих блоков-частей.");
+        add("cannery.cargo_elevator.2", "Клик ПКМ блоком лифта по любой части уже установленного лифта добавляет дополнительный этаж.");
+        add("cannery.cargo_elevator.3", "Шахта удлиняется этаж за этажом, автоматически наращивая направляющие стойки и поршень.");
+        add("cannery.cargo_elevator.4", "Клик ПКМ пустой рукой переключает платформу между верхним и нижним этажом.");
+        add("cannery.cargo_elevator.5", "Платформа движется со скоростью 2 блока/с и поднимает игроков, мобов, вагонетки и выпавшие предметы.");
+        add("cannery.cargo_elevator.6", "Повторный клик во время движения немедленно меняет направление движения платформы на противоположное.");
+        add("cannery.cargo_elevator.7", "Shift + ПКМ отвёрткой демонтирует верхний этаж. Блок лифта выпадает на землю.");
+        add("cannery.cargo_elevator.8", "Поддерживает беспроводное радиоуправление (ROR): команда 'setextension <этаж>' отправляет платформу на заданную высоту.");
+        add("cannery.cargo_elevator.ror.0", "Обычный клик ПКМ перемещает платформу только между крайними этажами (1-м и 3-м).");
+        add("cannery.cargo_elevator.ror.1", "Установите у шахты Radio Torch Controller для приёма беспроводных команд Редстоун-по-радио (ROR).");
+        add("cannery.cargo_elevator.ror.2", "Команда 'setextension!5' отправляет платформу на 2-й этаж, останавливая её вровень с промежуточной площадкой!");
+        add("cannery.cargo_elevator.ror.3", "Команда 'setextension!10' поднимает платформу на 3-й этаж. ROR позволяет создавать полноценные многоэтажные системы вызова!");
     }
 }
 //?}

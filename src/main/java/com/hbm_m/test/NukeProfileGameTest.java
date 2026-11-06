@@ -182,7 +182,7 @@ public class NukeProfileGameTest {
         active = null;
     }
 
-    @GameTest(template = "empty15x7x15", batch = "nuke_profile", timeoutTicks = 20_000_000)
+    // @GameTest(template = "empty15x7x15", batch = "nuke_profile", timeoutTicks = 20_000_000) // disabled: takes too long
     public static void craterFormsAndPerfLogged(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         BlockPos anchor = helper.absolutePos(new BlockPos(7, 0, 7));

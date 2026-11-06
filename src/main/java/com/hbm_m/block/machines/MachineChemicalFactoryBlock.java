@@ -253,4 +253,40 @@ public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMul
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
+    // Verbatim port of the original MachineChemicalFactory.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {-2, 0, -2, Direction.WEST.get3DDataValue()},
+            {-2, 0, -2, Direction.NORTH.get3DDataValue()},
+            {-1, 0, -2, Direction.NORTH.get3DDataValue()},
+            {0, 0, -2, Direction.NORTH.get3DDataValue()},
+            {1, 0, -2, Direction.NORTH.get3DDataValue()},
+            {2, 0, -2, Direction.NORTH.get3DDataValue()},
+            {2, 0, -2, Direction.EAST.get3DDataValue()},
+            {-2, 0, -1, Direction.WEST.get3DDataValue()},
+            {2, 0, -1, Direction.EAST.get3DDataValue()},
+            {-2, 0, 0, Direction.WEST.get3DDataValue()},
+            {2, 0, 0, Direction.EAST.get3DDataValue()},
+            {-2, 0, 1, Direction.WEST.get3DDataValue()},
+            {2, 0, 1, Direction.EAST.get3DDataValue()},
+            {-2, 0, 2, Direction.WEST.get3DDataValue()},
+            {-2, 0, 2, Direction.SOUTH.get3DDataValue()},
+            {-1, 0, 2, Direction.SOUTH.get3DDataValue()},
+            {0, 0, 2, Direction.SOUTH.get3DDataValue()},
+            {1, 0, 2, Direction.SOUTH.get3DDataValue()},
+            {2, 0, 2, Direction.SOUTH.get3DDataValue()},
+            {2, 0, 2, Direction.EAST.get3DDataValue()},
+            {-2, 2, -2, Direction.UP.get3DDataValue()},
+            {-2, 2, -1, Direction.UP.get3DDataValue()},
+            {-2, 2, 0, Direction.UP.get3DDataValue()},
+            {-2, 2, 1, Direction.UP.get3DDataValue()},
+            {-2, 2, 2, Direction.UP.get3DDataValue()},
+            {2, 2, -2, Direction.UP.get3DDataValue()},
+            {2, 2, -1, Direction.UP.get3DDataValue()},
+            {2, 2, 0, Direction.UP.get3DDataValue()},
+            {2, 2, 1, Direction.UP.get3DDataValue()},
+            {2, 2, 2, Direction.UP.get3DDataValue()}
+        }, facing);
+    }
 }

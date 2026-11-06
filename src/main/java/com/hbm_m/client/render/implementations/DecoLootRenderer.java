@@ -26,10 +26,10 @@ import com.hbm_m.powerarmor.ArmorTrenchmaster;
 /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 *///?}
 /**
- * 1:1 {@code RenderLoot}: jeder Gegenstand der Lootkiste an seiner gespeicherten Stelle (ab Blockecke). Sonderfaelle
- * wie im Original: Mini-Nuke-Munition (NUKE_STANDARD..NUKE_HIVE) als Mini-Nuke-Modell, die Maresleg als Waffenmodell,
- * Trenchmaster-/NCR-Powerruestung als Ruestungsmodell auf unsichtbarer Figur; alles andere flach liegend
- * ({@code renderItemIn2D}). GL-Zustaende: Mischung -> translucent, Lichtkarte 240 -> volle Helligkeit.
+ * 1:1 {@code RenderLoot}: each item in the loot chest rendered at its stored position (relative to block corner). Special cases
+ * match original: mini nuke ammo (NUKE_STANDARD..NUKE_HIVE) as mini nuke model, maresleg as weapon model,
+ * Trenchmaster / NCR Power Armor as armor model on invisible stand; all other items rendered flat
+ * ({@code renderItemIn2D}). GL states: blend -> translucent, lightmap 240 -> fullbright.
  */
 public class DecoLootRenderer implements HbmBerBounds<DecoLootBlockEntity> {
 
@@ -48,8 +48,7 @@ public class DecoLootRenderer implements HbmBerBounds<DecoLootBlockEntity> {
     public static final ResourceLocation NCRPA_ARM = rl("textures/armor/ncrpa_arm.png");
     public static final ResourceLocation NCRPA_LEG = rl("textures/armor/ncrpa_leg.png");
 
-    // FFA merge loss restore (адаптация): в HEAD armor_ncr/maresleg — ResourceLocation,
-    // здесь оборачиваем их в SimpleObjModel локально.
+    // Wrap weapon ResourceLocations in SimpleObjModel locally.
     private static final com.hbm_m.client.render.SimpleObjModel MARESLEG = new com.hbm_m.client.render.SimpleObjModel(WeaponResources.maresleg);
     private static final com.hbm_m.client.render.SimpleObjModel ARMOR_NCR = new com.hbm_m.client.render.SimpleObjModel(WeaponResources.armor_ncr);
 
@@ -81,7 +80,7 @@ public class DecoLootRenderer implements HbmBerBounds<DecoLootBlockEntity> {
         }
     }
 
-    /** Original: ammo_standard mit Meta zwischen NUKE_STANDARD und NUKE_HIVE (je Meta eine eigene ID im Port). */
+    /** Original: ammo_standard with metadata between NUKE_STANDARD and NUKE_HIVE (each meta has its own ID in the port). */
     private static boolean isMiniNuke(ItemStack stack) {
         for (int i = EnumAmmo.NUKE_STANDARD.ordinal(); i <= EnumAmmo.NUKE_HIVE.ordinal(); i++) {
             if (stack.getItem() == WeaponItems.ammo(EnumAmmo.values()[i])) return true;
@@ -186,7 +185,7 @@ public class DecoLootRenderer implements HbmBerBounds<DecoLootBlockEntity> {
         pose.translate(0.25, 0, 0.25);
         pose.scale(0.5F, 0.5F, 0.5F);
         pose.mulPose(Axis.XP.rotationDegrees(90));
-        // renderItemIn2D mit allen Renderdurchgaengen und Faerbung: flaches Itemmodell (0,0)-(1,1), 1/16 dick
+        // renderItemIn2D with all render passes and tinting: flat item model (0,0)-(1,1), 1/16 thick
         TrinketRenderer.renderItem2D(pose, buf, stack, light);
     }
 }

@@ -199,7 +199,12 @@ public final class RenderHooks {
         //? if < 1.21.1 {
         com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buffer.end());
         //?} else {
-        /*com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buffer.buildOrThrow());
+        /*// buildOrThrow() кидает IllegalStateException на пустом буфере (например, оверлей
+        // не добавил ни одного квада) — 1.20.1 end() такое допускал, поэтому тихо пропускаем.
+        com.mojang.blaze3d.vertex.MeshData meshData = buffer.build();
+        if (meshData != null) {
+            com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(meshData);
+        }
         *///?}
     }
 

@@ -19,8 +19,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 1:1-Port von {@code LegoClient.RENDER_GRAPHITE}: der Graphitbrocken des Uranmeilers benutzt
- * dieselbe Form wie der RBMK-Trueummerbrocken, nur doppelt so gross ({@code glScalef(2F, 2F, 2F)}).
+ * 1:1 port of {@code LegoClient.RENDER_GRAPHITE}: graphite debris of uranium pile uses
+ * the same shape as RBMK debris, rendered at 2x scale ({@code glScalef(2F, 2F, 2F)}).
  */
 public class PileDebrisRenderer extends EntityRenderer<PileDebrisEntity> {
 
@@ -44,7 +44,7 @@ public class PileDebrisRenderer extends EntityRenderer<PileDebrisEntity> {
         ps.pushPose();
         ps.scale(2F, 2F, 2F);
 
-        // Wie beim RBMK-Schutt: ein fester Versatz je Entitaet, damit nicht alle gleich taumeln.
+        // Fixed offset per entity so they do not tumble in unison.
         ps.mulPose(Axis.YP.rotationDegrees(entity.getId() % 360));
         float spin = Mth.lerp(pt, entity.lastRot, entity.rot);
         ps.mulPose(Axis.XP.rotationDegrees(spin));

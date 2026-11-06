@@ -1,7 +1,5 @@
 package com.hbm_m.client.render;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,15 +13,17 @@ import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Einfaches Gegenstueck zu {@code AdvancedModelLoader.loadModel(...).renderAll()/renderPart()} der 1.7.10: liest
- * eine .obj-Datei beim ersten Zeichnen (nach Objekt-/Gruppennamen getrennt) und gibt die Dreiecke ueber einen
- * {@link VertexConsumer} aus. UV-v wird wie beim Forge-OBJ-Lader der 1.7.10 gespiegelt.
+ * Simple counterpart to 1.7.10 {@code AdvancedModelLoader.loadModel(...).renderAll()/renderPart()}: loads
+ * model geometry on first draw (grouped by object/group names) and emits triangles through a
+ * {@link VertexConsumer}. UV-v is flipped when rendering, matching the 1.7.10 Forge OBJ loader.
+ *
+ * @deprecated Use {@link com.hbm_m.client.model.nmesh.NMeshPartBakedModel} or {@link SingleMeshVboRenderer} instead.
  */
+@Deprecated
 public class SimpleObjModel {
 
     // Reusable render-thread scratch buffers (rendering is single-threaded);
@@ -42,7 +42,7 @@ public class SimpleObjModel {
         this.location = location;
     }
 
-    /** Naechster erlaubter Ladeversuch nach einem Fehlschlag (ms); verhindert Dateizugriffe in jedem Frame. */
+    /** Next allowed load attempt after a failure (ms); prevents file access every frame. */
     private long retryAt = 0L;
     private boolean warned = false;
 
@@ -51,104 +51,49 @@ public class SimpleObjModel {
         long now = System.currentTimeMillis();
         if (now < retryAt) return;
 
-        // nmesh-first: kompilierte .nmesh-Daten (oder NMeshLoader-Resourcepack-Fallback) statt eigenem .obj-Parser.
+        // Load geometry via NMeshLoader (handles both compiled .nmesh and fallback .obj).
         var nmesh = com.hbm_m.client.model.nmesh.NMeshLoader.load(location);
-        if (nmesh != null) {
-            try {
-                parts.clear();
-                for (var sm : nmesh.subMeshes()) {
-                    String key = sm.objectName != null && !sm.objectName.isEmpty() ? sm.objectName
-                            : (sm.groupName != null && !sm.groupName.isEmpty() ? sm.groupName : "default");
-                    float[] verts = sm.vertices;
-                    int[] idx = sm.indices;
-                    List<float[]> tris = parts.computeIfAbsent(key, k -> new ArrayList<>());
-                    for (int i = 0; i + 2 < idx.length; i += 3) {
-                        float[] t = new float[24];
-                        for (int c = 0; c < 3; c++) {
-                            int b = idx[i + c] * 8;
-                            // SimpleObjModel legt u,v VOR den Normalen ab und spiegelt V erst beim Zeichnen
-                            // (1 - v): hier deshalb u,v roh uebernehmen, Normalen aus Index 3..5.
-                            t[c * 8 + 0] = verts[b + 0];
-                            t[c * 8 + 1] = verts[b + 1];
-                            t[c * 8 + 2] = verts[b + 2];
-                            t[c * 8 + 3] = verts[b + 6];
-                            t[c * 8 + 4] = verts[b + 7];
-                            t[c * 8 + 5] = verts[b + 3];
-                            t[c * 8 + 6] = verts[b + 4];
-                            t[c * 8 + 7] = verts[b + 5];
-                        }
-                        tris.add(t);
-                    }
-                }
-                loaded = true;
-                return;
-            } catch (Exception e) {
-                org.slf4j.LoggerFactory.getLogger("hbm_m").warn("SimpleObjModel: nmesh-Konvertierung von {} fehlgeschlagen: {}", location, e.toString());
-                // Weiter zum klassischen .obj-Pfad.
-            }
-        }
-
-        // Fehlschlag nicht dauerhaft merken: fehlte die Datei beim ersten Zeichnen kurz (Ressourcen-Neuladen,
-        // build/resources im Dev-Client gerade neu kopiert), blieb das Modell bis zum Neustart unsichtbar
-        // (Spieltest: Mini-UFO nur als Hitbox sichtbar). Jetzt: erneuter Versuch nach einer Sekunde.
-        var res = Minecraft.getInstance().getResourceManager().getResource(location).orElse(null);
-        if (res == null) {
+        if (nmesh == null) {
             retryAt = now + 1000L;
             if (!warned) {
                 warned = true;
-                org.slf4j.LoggerFactory.getLogger("hbm_m").warn("SimpleObjModel: {} nicht gefunden, neuer Versuch folgt", location);
+                org.slf4j.LoggerFactory.getLogger("hbm_m").warn("SimpleObjModel: {} not found, will retry", location);
             }
             return;
         }
-        parts.clear();
 
-        List<float[]> pos = new ArrayList<>(), uv = new ArrayList<>(), nrm = new ArrayList<>();
-        String curPart = "default";
-
-        try (var r = new BufferedReader(new InputStreamReader(res.open()))) {
-            String line;
-            while ((line = r.readLine()) != null) {
-                line = line.trim();
-                if (line.startsWith("v ")) {
-                    String[] p = line.split("\\s+");
-                    pos.add(new float[] {Float.parseFloat(p[1]), Float.parseFloat(p[2]), Float.parseFloat(p[3])});
-                } else if (line.startsWith("vt ")) {
-                    String[] p = line.split("\\s+");
-                    uv.add(new float[] {Float.parseFloat(p[1]), Float.parseFloat(p[2])});
-                } else if (line.startsWith("vn ")) {
-                    String[] p = line.split("\\s+");
-                    nrm.add(new float[] {Float.parseFloat(p[1]), Float.parseFloat(p[2]), Float.parseFloat(p[3])});
-                } else if (line.startsWith("o ") || line.startsWith("g ")) {
-                    curPart = line.substring(2).trim();
-                } else if (line.startsWith("f ")) {
-                    String[] verts = line.substring(2).trim().split("\\s+");
-                    List<float[]> vs = new ArrayList<>();
-                    for (String v : verts) {
-                        String[] idx = v.split("/");
-                        int vi = Integer.parseInt(idx[0]) - 1;
-                        int ti = idx.length > 1 && !idx[1].isEmpty() ? Integer.parseInt(idx[1]) - 1 : -1;
-                        int ni = idx.length > 2 && !idx[2].isEmpty() ? Integer.parseInt(idx[2]) - 1 : -1;
-                        float[] p = pos.get(vi);
-                        float u = ti >= 0 ? uv.get(ti)[0] : 0, v2 = ti >= 0 ? uv.get(ti)[1] : 0;
-                        float nx = ni >= 0 ? nrm.get(ni)[0] : 0, ny = ni >= 0 ? nrm.get(ni)[1] : 1, nz = ni >= 0 ? nrm.get(ni)[2] : 0;
-                        vs.add(new float[] {p[0], p[1], p[2], u, v2, nx, ny, nz});
+        try {
+            parts.clear();
+            for (var sm : nmesh.subMeshes()) {
+                String key = sm.objectName != null && !sm.objectName.isEmpty() ? sm.objectName
+                        : (sm.groupName != null && !sm.groupName.isEmpty() ? sm.groupName : "default");
+                float[] verts = sm.vertices;
+                int[] idx = sm.indices;
+                List<float[]> tris = parts.computeIfAbsent(key, k -> new ArrayList<>());
+                for (int i = 0; i + 2 < idx.length; i += 3) {
+                    float[] t = new float[24];
+                    for (int c = 0; c < 3; c++) {
+                        int b = idx[i + c] * 8;
+                        // SimpleObjModel stores u,v BEFORE normals and flips V when rendering (1 - v):
+                        // take raw u,v from index 6..7, normals from index 3..5.
+                        t[c * 8 + 0] = verts[b + 0];
+                        t[c * 8 + 1] = verts[b + 1];
+                        t[c * 8 + 2] = verts[b + 2];
+                        t[c * 8 + 3] = verts[b + 6];
+                        t[c * 8 + 4] = verts[b + 7];
+                        t[c * 8 + 5] = verts[b + 3];
+                        t[c * 8 + 6] = verts[b + 4];
+                        t[c * 8 + 7] = verts[b + 5];
                     }
-                    List<float[]> tris = parts.computeIfAbsent(curPart, k -> new ArrayList<>());
-                    for (int i = 1; i < vs.size() - 1; i++) {
-                        float[] t = new float[24];
-                        System.arraycopy(vs.get(0), 0, t, 0, 8);
-                        System.arraycopy(vs.get(i), 0, t, 8, 8);
-                        System.arraycopy(vs.get(i + 1), 0, t, 16, 8);
-                        tris.add(t);
-                    }
+                    tris.add(t);
                 }
             }
             loaded = true;
         } catch (Exception e) {
-            loaded = true; // Datei vorhanden, aber fehlerhaft: Teilstand behalten wie bisher, nicht jede Sekunde neu parsen
+            loaded = true;
             if (!warned) {
                 warned = true;
-                org.slf4j.LoggerFactory.getLogger("hbm_m").warn("SimpleObjModel: {} nicht lesbar: {}", location, e.toString());
+                org.slf4j.LoggerFactory.getLogger("hbm_m").warn("SimpleObjModel: Failed to load mesh from {}: {}", location, e.toString());
             }
         }
     }
@@ -164,7 +109,7 @@ public class SimpleObjModel {
         if (tris != null) render(pose, vc, light, tris);
     }
 
-    /** renderPart mit Farbfaktor (Original glColor4f vor renderPart). */
+    /** renderPart with color tint (equivalent to glColor4f before renderPart). */
     public void renderPartTinted(String part, PoseStack pose, VertexConsumer vc, int light, float r, float g, float b) {
         ensureLoaded();
         List<float[]> tris = parts.get(part);
@@ -176,21 +121,21 @@ public class SimpleObjModel {
         return location;
     }
 
-    /** Namen aller Teile ({@code o}/{@code g}-Gruppen) in Dateireihenfolge. */
+    /** Names of all parts ({@code o}/{@code g} groups) in file order. */
     public java.util.Set<String> getPartNames() {
         ensureLoaded();
         return parts.keySet();
     }
 
-    /** Wie {@link #renderPartEntity}, fuer alle Teile. */
+    /** Like {@link #renderPartEntity}, for all parts. */
     public void renderAllEntity(PoseStack pose, VertexConsumer vc, int light, int overlay, float r, float g, float b, float a) {
         ensureLoaded();
         for (String part : parts.keySet()) renderPartEntity(part, pose, vc, light, overlay, r, g, b, a);
     }
 
     /**
-     * Teil mit verschobener Texturkoordinate u (Original {@code glMatrixMode(GL_TEXTURE); glTranslatef(du, 0, 0)}),
-     * fuer Lauflichter. Die Textur muss wiederholend gesampelt werden (normale Modelltexturen tun das).
+     * Part with shifted texture coordinate u (equivalent to {@code glMatrixMode(GL_TEXTURE); glTranslatef(du, 0, 0)}),
+     * for animated scrolling indicators. The texture must use repeat wrapping.
      */
     public void renderPartShiftedU(String part, PoseStack pose, VertexConsumer vc, int light, float r, float g, float b, float du) {
         ensureLoaded();
@@ -210,7 +155,7 @@ public class SimpleObjModel {
         }
     }
 
-    /** Fuer Wesenmodelle: Teil mit Overlay (Treffer-Rot) und Farbe samt Alpha. */
+    /** For entity models: part with overlay (hurt red) and color with alpha. */
     public void renderPartEntity(String part, PoseStack pose, VertexConsumer vc, int light, int overlay, float r, float g, float b, float a) {
         ensureLoaded();
         List<float[]> tris = parts.get(part);
@@ -229,7 +174,7 @@ public class SimpleObjModel {
         }
     }
 
-    /** Ein Teil nur mit Position + Farbe (POSITION_COLOR/TRIANGLES). */
+    /** A part rendered only with position + color (POSITION_COLOR/TRIANGLES). */
     public void renderPartColor(String part, PoseStack pose, VertexConsumer vc, float r, float g, float b, float a) {
         ensureLoaded();
         List<float[]> tris = parts.get(part);
@@ -243,8 +188,8 @@ public class SimpleObjModel {
     }
 
     /**
-     * Wie {@link #renderPartColor}, aber um {@code dy} verschoben und an der Ebene {@code y >= clipY} beschnitten
-     * (Ersatz fuer {@code GL_CLIP_PLANE0} mit {@code {0, 1, 0, -clipY}}, gesetzt vor der Verschiebung).
+     * Like {@link #renderPartColor}, but offset by {@code dy} and clipped at the plane {@code y >= clipY}
+     * (replacement for {@code GL_CLIP_PLANE0} with {@code {0, 1, 0, -clipY}}, set before translation).
      */
     public void renderPartColorClippedY(String part, PoseStack pose, VertexConsumer vc, float r, float g, float b, float a, float dy, float clipY) {
         ensureLoaded();
@@ -288,9 +233,9 @@ public class SimpleObjModel {
     }
 
     /**
-     * Texturiertes Teil mit Schnittebene (Ersatz fuer {@code glClipPlane(GL_CLIP_PLANE0, {a, b, c, d})}): Die Ebene
-     * gilt im Koordinatensystem von {@code pose} (dort, wo das Original {@code glClipPlane} aufruft); {@code local} ist
-     * die danach folgende Verschiebung/Drehung des Teils. Erhalten bleibt alles mit {@code a*x + b*y + c*z + d >= 0}.
+     * Textured part with clipping plane (replacement for {@code glClipPlane(GL_CLIP_PLANE0, {a, b, c, d})}):
+     * The plane applies in the coordinate space of {@code pose}; {@code local} is the subsequent
+     * part transformation. Preserves geometry where {@code a*x + b*y + c*z + d >= 0}.
      */
     public void renderPartClipped(String part, PoseStack pose, Matrix4f local, VertexConsumer vc, int light,
                                   float a, float b, float c, float d) {
@@ -336,7 +281,7 @@ public class SimpleObjModel {
             }
             if (polyCount < 3) continue;
             for (int k = 1; k + 1 < polyCount; k++) {
-                // Dreieck als entartetes Viereck (letzter Punkt doppelt) fuer QUADS-Puffer
+                // Triangle as degenerate quad (duplicate last vertex) for QUADS buffer
                 for (int f = 0; f < 4; f++) {
                     float[] p = poly[f == 0 ? 0 : (f == 1 ? k : k + 1)];
                     nv.set(p[5], p[6], p[7]).mul(n);
@@ -347,7 +292,7 @@ public class SimpleObjModel {
         }
     }
 
-    /** Nur Position + Farbe (fuer POSITION_COLOR/TRIANGLES-Puffer, Original: untexturiertes renderAll). */
+    /** Position + color only (for POSITION_COLOR/TRIANGLES buffer, original untextured renderAll). */
     public void renderAllColor(PoseStack pose, VertexConsumer vc, float r, float g, float b, float a) {
         ensureLoaded();
         Matrix4f m = pose.last().pose();
@@ -369,7 +314,7 @@ public class SimpleObjModel {
         Matrix3f n = pose.last().normal();
         Vector3f normal = SCRATCH_NORMAL;
         for (float[] tri : tris) {
-            // Dreiecke als entartete Vierecke (letzter Punkt doppelt) fuer QUADS-Puffer
+            // Triangles as degenerate quads (duplicate last vertex) for QUADS buffer
             for (int pass = 0; pass < 4; pass++) {
                 int base = Math.min(pass, 2) * 8;
                 normal.set(tri[base + 5], tri[base + 6], tri[base + 7]).mul(n);

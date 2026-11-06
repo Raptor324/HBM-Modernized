@@ -337,10 +337,7 @@ public final class MdiGeometryAtlas {
      *         caller must skip the MDI draw (the atlas was reset).
      */
     public boolean ensureVaoAlive() {
-        if (!ready || vaoId <= 0) {
-            return false;
-        }
-        return true;
+        return ready && vaoId > 0 && GL30.glIsVertexArray(vaoId);
     }
 
     public int getVaoId() { return vaoId; }

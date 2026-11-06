@@ -75,29 +75,6 @@ public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
     }
 
     @Override
-    protected int getInputXOffset(PurexRecipe recipe, int inputCount) {
-        if (inputCount > 12) return -9;
-        if (inputCount > 9) return 18;
-        return 0;
-    }
-
-    @Override
-    protected int getOutputXOffset(PurexRecipe recipe, int outputCount) {
-        return getOffset(getInputCount(recipe));
-    }
-
-    @Override
-    protected int getMachineXOffset(PurexRecipe recipe) {
-        return getOffset(getInputCount(recipe));
-    }
-
-    private static int getOffset(int inputCount) {
-        if (inputCount > 12) return 27;
-        if (inputCount > 9) return 18;
-        return 0;
-    }
-
-    @Override
     protected void addInputSlots(IRecipeLayoutBuilder builder, PurexRecipe recipe, int inputXOffset) {
         int inputCount = getInputCount(recipe);
         int[][] positions = JeiNeiLayout.getGenericInputSlotPositions(inputCount);
@@ -179,9 +156,16 @@ public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
                 .addItemStack(folder);
     }
 
+    /**
+     * Port of {@code PUREXRecipe#printNEIExtras}: one combined line "X ticks   Y HE/t" in green,
+     * right-aligned to x=164 at y=57 (overrides the generic two-line gray extras of the base recipe class).
+     */
     @Override
     protected void drawRecipeExtras(PurexRecipe recipe, GuiGraphics graphics) {
-        JeiNeiRendering.drawGenericRecipeExtras(graphics, recipe.getDuration(), recipe.getPowerConsumption());
+        var font = net.minecraft.client.Minecraft.getInstance().font;
+        String line = JeiNeiRendering.formatShortNumber(recipe.getDuration()) + " ticks   "
+                + JeiNeiRendering.formatShortNumber(recipe.getPowerConsumption()) + "HE/t";
+        graphics.drawString(font, line, 164 - font.width(line), 57, 0x306030, false);
     }
 
     private static int countItemInputs(PurexRecipe recipe) {

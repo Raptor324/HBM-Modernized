@@ -146,6 +146,18 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
         if (!fluidsAllow(recipe)) return false;
 
         ItemStack outputSlot = itemHandler.getStackInSlot(outputSlots[0]);
+
+        // Zufallsausgabe (Original ChanceOutputMulti, ass.nitra): was herausrollt, steht vor dem
+        // Craft noch nicht fest — es darf nur gestartet werden, wenn ALLE Varianten in den
+        // Ausgangsslot passen (konservativ; im Original blockiert der volle Ausgangsslot ebenso).
+        if (!recipe.getChanceOutputs().isEmpty()) {
+            if (outputSlot.isEmpty()) return true;
+            for (ItemStack possible : recipe.getPossibleOutputs()) {
+                if (!canMergeOutput(outputSlot, possible)) return false;
+            }
+            return true;
+        }
+
         ItemStack result = recipe.getResultItem(level.registryAccess());
 
         if (outputSlot.isEmpty()) return true;
@@ -156,6 +168,17 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
         /*if (!ItemStack.isSameItemSameComponents(outputSlot, result)) return false;
         *///?}
 
+        return outputSlot.getCount() + result.getCount() <= outputSlot.getMaxStackSize();
+    }
+
+    /** Output-Slot kann den Stack komplett aufnehmen (leer oder gleiche Ware mit Platz). */
+    private static boolean canMergeOutput(ItemStack outputSlot, ItemStack result) {
+        if (result.isEmpty()) return true;
+        //? if < 1.21.1 {
+        if (!StackNbt.sameItemSameTags(outputSlot, result)) return false;
+        //?} else {
+        /*if (!ItemStack.isSameItemSameComponents(outputSlot, result)) return false;
+        *///?}
         return outputSlot.getCount() + result.getCount() <= outputSlot.getMaxStackSize();
     }
 
@@ -173,21 +196,14 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
             }
         }
 
-        ItemStack result = recipe.getResultItem(level.registryAccess()).copy();
-
-        // insertItem goes through isItemValid, and the assembler's isItemValidForSlot returns false
-        // for output slots (so hoppers cannot push into them). That refused every craft result and
-        // dropped it on the floor of the JVM while the ingredients had already been consumed.
-        // Internal writes have to bypass the filter, exactly as MachineModuleBase.OutputPlacement
-        // does. canProcess has already checked that the result fits.
-        int out = outputSlots[0];
-        ItemStack current = itemHandler.getStackInSlot(out);
-        if (current.isEmpty()) {
-            itemHandler.setStackInSlot(out, result);
+        // Zufallsausgabe: aus jeder Gruppe eine Variante nach Gewicht ziehen
+        // (Original ChanceOutputMulti.collapse).
+        if (!recipe.getChanceOutputs().isEmpty()) {
+            for (ItemStack rolled : recipe.rollChanceOutputs(level.random)) {
+                insertOutput(rolled);
+            }
         } else {
-            ItemStack merged = current.copy();
-            merged.grow(result.getCount());
-            itemHandler.setStackInSlot(out, merged);
+            insertOutput(recipe.getResultItem(level.registryAccess()).copy());
         }
 
         // FFA: consume input fluid / produce output fluid for fluid recipes.
@@ -198,6 +214,25 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
             var fs = recipe.getFluidOutputs().get(0);
             outputTank.conform(fs.getFluid());
             outputTank.setFill(outputTank.getFill() + (int) fs.getAmount());
+        }
+    }
+
+    /**
+     * insertItem goes through isItemValid, and the assembler's isItemValidForSlot returns false
+     * for output slots (so hoppers cannot push into them). That refused every craft result and
+     * dropped it on the floor of the JVM while the ingredients had already been consumed.
+     * Internal writes have to bypass the filter, exactly as MachineModuleBase.OutputPlacement
+     * does. canProcess has already checked that the result fits.
+     */
+    private void insertOutput(ItemStack result) {
+        int out = outputSlots[0];
+        ItemStack current = itemHandler.getStackInSlot(out);
+        if (current.isEmpty()) {
+            itemHandler.setStackInSlot(out, result);
+        } else {
+            ItemStack merged = current.copy();
+            merged.grow(result.getCount());
+            itemHandler.setStackInSlot(out, merged);
         }
     }
 

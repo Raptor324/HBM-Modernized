@@ -70,9 +70,16 @@ public final class PressRecipeGenerator {
 
     private static void generateFlat(Consumer<FinishedRecipe> writer) {
         // Ported from 1.7.10 PressRecipes.java (StampType.FLAT).
-        // Only recipes whose input AND output items both exist in this port were ported;
-        // remaining skips: meteorite sword chain (no "reforged" stage here), C9/C50 casings
-        // (no casing variants).
+        // Biomass/ball_resin/sawdust hier (ComparableStack-Eingaben des Originals — konkrete Items);
+        // die OreDict-Eingaben liegen in OrigMachineRecipeGenerator, Meteoriten-Schwert-Kette in
+        // AnvilRecipeGenerator, C9/C50-Hülsen in OrigMachineRecipeGenerator.
+        //
+        // Die OreDictStack-Eingaben des Originals (NETHERQUARTZ/LAPIS/DIAMOND/EMERALD dust,
+        // COAL/LIGNITE dust, ANY_COKE gem) sind bewusst NICHT hier item-spezifisch portiert:
+        // OrigMachineRecipeGenerator legt sie als tag-basierte Rezepte (orig_machines/press/*)
+        // an — der Original-OreDictStack entspricht dem Tag, nicht dem Einzelitem. Item-Duplikate
+        // wurden entfernt, damit JEI genau einen Eintrag je Original-Rezept zeigt
+        // (Original: HashMap<Pair<AStack, StampType>, ItemStack> — keine Duplikate).
 
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.BIOMASS_COMPRESSED.get()))
                 .stamp(ModTags.Items.STAMPS_FLAT)
@@ -84,58 +91,11 @@ public final class PressRecipeGenerator {
                 .material(net.minecraft.world.level.block.Blocks.JUNGLE_LOG)
                 .save(writer, "ball_resin");
 
-        // Пыли -> самоцветы (ориг.: netherquartz/lapis/diamond/emerald dust)
-        PressRecipeBuilder.pressRecipe(new ItemStack(Items.QUARTZ))
-                .stamp(ModTags.Items.STAMPS_FLAT)
-                .material(ModMaterialItems.item(ModMaterials.QUARTZ, MaterialShape.POWDER))
-                .save(writer, "quartz");
-
-        PressRecipeBuilder.pressRecipe(new ItemStack(Items.LAPIS_LAZULI))
-                .stamp(ModTags.Items.STAMPS_FLAT)
-                .material(ModMaterialItems.item(ModMaterials.LAPIS, MaterialShape.POWDER))
-                .save(writer, "lapis");
-
-        PressRecipeBuilder.pressRecipe(new ItemStack(Items.DIAMOND))
-                .stamp(ModTags.Items.STAMPS_FLAT)
-                .material(ModMaterialItems.item(ModMaterials.DIAMOND, MaterialShape.POWDER))
-                .save(writer, "diamond");
-
-        PressRecipeBuilder.pressRecipe(new ItemStack(Items.EMERALD))
-                .stamp(ModTags.Items.STAMPS_FLAT)
-                .material(ModMaterialItems.item(ModMaterials.EMERALD, MaterialShape.POWDER))
-                .save(writer, "emerald");
-
-        // Брикеты (ориг.: coal/lignite dust, sawdust)
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.COAL_BRIQUETTE.get()))
-                .stamp(ModTags.Items.STAMPS_FLAT)
-                .material(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER))
-                .save(writer, "coal_briquette");
-
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.LIGNITE_BRIQUETTE.get()))
-                .stamp(ModTags.Items.STAMPS_FLAT)
-                .material(ModItems.LIGNITE_POWDER.get())
-                .save(writer, "lignite_briquette");
-
+        // Брикет из опилок (ориг.: ComparableStack(powder_sawdust) — конкретный предмет, не OreDict)
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.SAWDUST_BRIQUETTE.get()))
                 .stamp(ModTags.Items.STAMPS_FLAT)
                 .material(ModItems.POWDER_SAWDUST.get())
                 .save(writer, "sawdust_briquette");
-
-        // Кокс -> графитовый слиток (ориг.: ANY_COKE.gem -> ingot_graphite)
-        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.GRAPHITE, MaterialShape.INGOT, 1))
-                .stamp(ModTags.Items.STAMPS_FLAT)
-                .material(ModItems.COAL_COKE.get())
-                .save(writer, "graphite_coal_coke");
-
-        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.GRAPHITE, MaterialShape.INGOT, 1))
-                .stamp(ModTags.Items.STAMPS_FLAT)
-                .material(ModItems.LIGNITE_COKE.get())
-                .save(writer, "graphite_lignite_coke");
-
-        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.GRAPHITE, MaterialShape.INGOT, 1))
-                .stamp(ModTags.Items.STAMPS_FLAT)
-                .material(ModItems.COKE_PETROLEUM.get())
-                .save(writer, "graphite_petroleum_coke");
     }
 
     private static void generatePlates(Consumer<FinishedRecipe> writer) {
@@ -164,10 +124,8 @@ public final class PressRecipeGenerator {
                 .material(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .save(writer, "plate_lead");
 
-        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.ADVANCED_ALLOY, MaterialShape.PLATE, 1))
-                .stamp(ModTags.Items.STAMPS_PLATE)
-                .material(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.INGOT))
-                .save(writer, "plate_advanced_alloy");
+        // ADVANCED_ALLOY bewusst NICHT pressbar: Original PressRecipes hat keinen PLATE-Eintrag
+        // dafür — MAT_ALLOY ist im Original (Mats.java:155) auskommentiert.
 
         PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.SATURNITE, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
@@ -189,10 +147,8 @@ public final class PressRecipeGenerator {
                 .material(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.INGOT))
                 .save(writer, "plate_aluminium");
 
-        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.GUNSTEEL, MaterialShape.PLATE, 1))
-                .stamp(ModTags.Items.STAMPS_PLATE)
-                .material(ModMaterialItems.item(ModMaterials.GUNSTEEL, MaterialShape.INGOT))
-                .save(writer, "plate_gunsteel");
+        // GUNSTEEL bewusst NICHT pressbar: ein GUNSTEEL-Material existiert im 1.7.10-Original
+        // nicht („gunsteel" ist nur der Texturname der Weaponsteel-Items) — kein Rezept dort.
 
         PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.COMBINE_STEEL, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
@@ -221,19 +177,19 @@ public final class PressRecipeGenerator {
                 .material(Items.GOLD_INGOT)
                 .save(writer, "wire_gold");
 
-        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.ADVANCED_ALLOY, MaterialShape.WIRE, 8))
-                .stamp(ModTags.Items.STAMPS_WIRE)
-                .material(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.INGOT))
-                .save(writer, "wire_advanced_alloy");
-
         PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.ALUMINIUM, MaterialShape.WIRE, 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)
                 .material(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.INGOT))
                 .save(writer, "wire_aluminium");
 
+        // ADVANCED_ALLOY bewusst NICHT zu WIRE verpresst: MAT_ALLOY im Original auskommentiert
+        // (Mats.java:155), daher auch kein WIRE-Autogen — siehe Kommentar in generatePlates.
+
+        // Ориг. автоген: MAT_CARBON hat WIRE-autogen (Mats.java:67), CARBON.ingot = ingot_graphite
+        // (OreDictManager:404) — Eingabe ist der Graphitbarren, nicht Blei.
         PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.CARBON, MaterialShape.WIRE, 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)
-                .material(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
+                .material(ModMaterialItems.item(ModMaterials.GRAPHITE, MaterialShape.INGOT))
                 .save(writer, "wire_carbon");
 
         // Original PressRecipes Drahtschleife: Pb hat WIRE-Autogen + Barren
@@ -242,10 +198,9 @@ public final class PressRecipeGenerator {
                 .material(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .save(writer, "wire_lead");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_FINE.get(), 8))
-                .stamp(ModTags.Items.STAMPS_WIRE)
-                .material(Items.IRON_INGOT)
-                .save(writer, "wire_fine");
+        // Eisen -> WIRE bewusst NICHT portiert: die WIRE-Autogen-Materialien der Original-
+        // Drahtschleife (PressRecipes.java:93-97; Mats.java:67,76,111,119-122,134,153,154,165)
+        // enthalten kein Eisen — das Item wire_fine wird hier nur für MAT_STEEL/MINGRADE genutzt.
 
         PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.MAGNETIZED_TUNGSTEN, MaterialShape.WIRE, 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)

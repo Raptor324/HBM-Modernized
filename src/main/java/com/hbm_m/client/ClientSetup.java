@@ -19,16 +19,12 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.client.loader.BoxCableModelLoader;
-import com.hbm_m.client.loader.CargoElevatorModelLoader;
 import com.hbm_m.client.loader.DoorModelLoader;
 import com.hbm_m.client.loader.DaeModelLoader;
 import com.hbm_m.client.loader.MachinePartsModelLoader;
 import com.hbm_m.client.model.ConfiguredMultipartBakedModel;
 import com.hbm_m.client.render.machine.MachineRenderRegistry;
-import com.hbm_m.client.loader.MachineBatterySocketModelLoader;
 import com.hbm_m.client.loader.MissileModelLoader;
-import com.hbm_m.client.loader.MachineRadarModelLoader;
-import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
 // import com.hbm_m.client.loader.TestModelLoader;
 import com.hbm_m.client.model.ConnectedDecoBlockBakedModel;
@@ -56,6 +52,7 @@ import com.hbm_m.client.render.implementations.MachineFluidTankRenderer;
 import com.hbm_m.client.render.implementations.MachineFoundryRenderer;
 import com.hbm_m.client.render.implementations.MachineFoundryTankRenderer;
 import com.hbm_m.client.render.implementations.BarrelTankRenderer;
+import com.hbm_m.client.render.implementations.MachineCargoElevatorRenderer;
 import com.hbm_m.client.render.implementations.MachinePumpjackRenderer;
 import com.hbm_m.client.render.implementations.MachinePetrochemRenderer;
 import com.hbm_m.client.render.implementations.MachineTankRenderer;
@@ -138,7 +135,6 @@ import com.hbm_m.inventory.gui.GUIMachineFlareStack;
 import com.hbm_m.inventory.gui.GUIMachineGasCent;
 import com.hbm_m.inventory.gui.GUIMachineIndustrialBoiler;
 import com.hbm_m.inventory.gui.GUIMachineFractionTower;
-import com.hbm_m.inventory.gui.GUIMachineLargePylon;
 import com.hbm_m.inventory.gui.GUIMachineMixer;
 import com.hbm_m.inventory.gui.GUIMachineMiningDrill;
 import com.hbm_m.inventory.gui.GUIMachinePumpjack;
@@ -322,6 +318,9 @@ public class ClientSetup {
 
         // MOTD при входе в мир — решение принимает клиент (client.json -> enableMOTD).
         com.hbm_m.client.ClientMotdHandler.register();
+
+        // Подсказки «tip of the day» для экрана загрузки (tips/<lang>.txt с нашего GitHub).
+        com.hbm_m.client.ClientTipsHandler.fetchAsync();
 
         // Debug-дамп клиентских параметров при входе в мир (серверные приходят отдельно,
         // с первым ConfigSyncS2CPacket — см. ConfigDebugLogger).
@@ -523,7 +522,6 @@ public class ClientSetup {
     private static void registerScreens() {
         MenuRegistry.registerScreenFactory(ModMenuTypes.CRYSTALLIZER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCrystallizer::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BREEDER_MENU.get(), GUIMachineBreeder::new);
-        MenuRegistry.registerScreenFactory(ModMenuTypes.LARGE_PYLON_MENU.get(), GUIMachineLargePylon::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.CYCLOTRON_MENU.get(), GUIMachineCyclotron::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.ZIRNOX_MENU.get(), GUIMachineZirnox::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.WATZ_POWERPLANT_MENU.get(), com.hbm_m.inventory.gui.GUIMachineWatzPowerplant::new);
@@ -721,8 +719,8 @@ public class ClientSetup {
         ModEntities.SOYUZ_CAPSULE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.SoyuzCapsuleEntityRenderer::new));
         ModEntities.ZIRNOX_DEBRIS.ifPresent(entityType -> EntityRenderers.register(entityType, ZirnoxDebrisRenderer::new));
         ModEntities.RBMK_DEBRIS.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.rbmk.RBMKDebrisRenderer::new));
-        ModEntities.MOVING_CONVEYOR_ITEM.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
-        ModEntities.MOVING_CONVEYOR_PACKAGE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.MOVING_CONVEYOR_ITEM.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.entity.MovingConveyorRenderers.Item::new));
+        ModEntities.MOVING_CONVEYOR_PACKAGE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.entity.MovingConveyorRenderers.Package::new));
         ModEntities.DELIVERY_DRONE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.DeliveryDroneRenderer::new));
         ModEntities.REQUEST_DRONE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.DeliveryDroneRenderer::new));
         ModEntities.TURRET_BULLET.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
@@ -841,23 +839,14 @@ public class ClientSetup {
         MachineCrystallizerRenderer.register();
         MachineFluidTankRenderer.register();
         BarrelTankRenderer.register();
+        MachineCargoElevatorRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
         MachineCoolingTowerRenderer.register();
         MachineMiningDrillRenderer.register();
         MachineOreSlopperRenderer.register();
         MachineArcFurnaceRenderer.register();
-        BlockEntityRenderers.register(ModBlockEntities.TURRET_SENTRY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.TURRET_CHEKHOV_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.TURRET_FRIENDLY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.TURRET_JEREMY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.TURRET_TAUON_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.TURRET_RICHARD_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.TURRET_HOWARD_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.TURRET_MAXWELL_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.TURRET_FRITZ_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.TURRET_ARTY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.TURRET_HIMARS_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        com.hbm_m.client.render.implementations.MachineTurretRenderer.register();
         MachineRadarRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.RADAR_SCREEN_BE.get(), com.hbm_m.client.render.implementations.MachineRadarScreenRenderer::new);
         CrucibleRenderer.register();
@@ -879,11 +868,10 @@ public class ClientSetup {
         MachineRBMKPanelRenderers.register();
         // Steam inlet/outlet are floor blocks (not columns) — rendered via MODEL + JSON
 
-        // Renderer registrations restored after the FFA merge (2026-10-24)
-        // BARREL_*_BE: kein Legacy-TankRenderers.Barrel hier - es ueberschriebe den
-        // Nucleus-BER aus BarrelTankRenderer.register() (Spec zeichnet Korpus per VBO,
-        // der Legacy-BER nur Stutzen/Rauten => Fass unsichtbar).
-        BlockEntityRenderers.register(ModBlockEntities.CARGO_ELEVATOR_BE.get(), com.hbm_m.client.render.implementations.CargoElevatorRenderer::new);
+        // Renderer registrations restored after merge:
+        // BARREL_*_BE: no legacy TankRenderers.Barrel here - it would overwrite the
+        // Nucleus BER from BarrelTankRenderer.register() (spec draws body via VBO,
+        // legacy BER only draws nozzles/diamonds => barrel would be invisible).
         BlockEntityRenderers.register(ModBlockEntities.CHARGE.get(), com.hbm_m.client.render.implementations.ChargeRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.COMPACT_LAUNCHER_BE.get(), com.hbm_m.client.render.implementations.CustomLauncherRenderers.Compact::new);
         BlockEntityRenderers.register(ModBlockEntities.CRASHED_BOMB.get(), com.hbm_m.client.render.implementations.CrashedBombRenderer::new);
@@ -1319,13 +1307,16 @@ public class ClientSetup {
         LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket"));
 
         for (String part : new String[] {
+                "chekhov_base", "chekhov_base_friendly", "chekhov_base_rusted", "chekhov_connectors",
                 "chekhov_carriage", "chekhov_carriage_friendly", "chekhov_body", "chekhov_barrels",
                 "jeremy_gun", "tauon_cannon", "tauon_rotor", "richard_launcher",
                 "howard_carriage", "howard_body", "howard_barrelstop", "howard_barrelsbottom",
+                "howard_damaged_carriage", "howard_damaged_body", "howard_damaged_barrelstop", "howard_damaged_barrelsbottom",
                 "fritz_gun", "maxwell_microwave",
-                "arty_carriage", "arty_cannon", "arty_barrel",
+                "arty_base", "arty_carriage", "arty_cannon", "arty_barrel",
                 "himars_carriage", "himars_launcher", "himars_crane",
-                "sentry_pivot", "sentry_body", "sentry_drum", "sentry_barrell", "sentry_barrelr"
+                "sentry_base", "sentry_pivot", "sentry_body", "sentry_drum", "sentry_barrell", "sentry_barrelr",
+                "sentry_damaged_base", "sentry_damaged_pivot", "sentry_damaged_body", "sentry_damaged_drum", "sentry_damaged_barrell", "sentry_damaged_barrelr"
         }) {
             LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/turret_parts/" + part));
         }
@@ -1397,14 +1388,11 @@ public class ClientSetup {
         MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
 
         // Станки используют единый machine_parts_loader; конфиг — в JSON модели.
-        LoaderHooks.registerGeometryLoader(event, "battery_socket_loader", new MachineBatterySocketModelLoader());
         LoaderHooks.registerGeometryLoader(event, "battery_pack", new com.hbm_m.client.loader.BatteryPackModelLoader());
         LoaderHooks.registerGeometryLoader(event, "door", new DoorModelLoader());
-        LoaderHooks.registerGeometryLoader(event, "cargo_elevator", new CargoElevatorModelLoader());
         LoaderHooks.registerGeometryLoader(event, "dae", new DaeModelLoader());
         LoaderHooks.registerGeometryLoader(event, "template_loader", new TemplateModelLoader());
         LoaderHooks.registerGeometryLoader(event, "box_cable", new BoxCableModelLoader());
-        LoaderHooks.registerGeometryLoader(event, "press_loader", new PressModelLoader());
         LoaderHooks.registerGeometryLoader(event, "missile_loader", new MissileModelLoader());
         LoaderHooks.registerGeometryLoader(event, "machine_parts_loader", new MachinePartsModelLoader<ConfiguredMultipartBakedModel>());
         // LoaderHooks.registerGeometryLoader(event, "test", new TestModelLoader());
@@ -1425,8 +1413,6 @@ public class ClientSetup {
         event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "obj"), net.minecraftforge.client.model.obj.ObjLoader.INSTANCE);
         *///?}
         
-        LoaderHooks.registerGeometryLoader(event, "radar_loader", new MachineRadarModelLoader());
-        LoaderHooks.registerGeometryLoader(event, "soyuz_launcher_loader", new com.hbm_m.client.loader.SoyuzLauncherModelLoader());
         LoaderHooks.registerGeometryLoader(event, "soyuz_rocket_loader", new com.hbm_m.client.loader.SoyuzRocketModelLoader());
 
         // Power armor OBJ loaders
@@ -1472,10 +1458,36 @@ public class ClientSetup {
             if (tintIndex == 0) return opaqueTint(0xFFFFFF);
             return opaqueTint(com.hbm_m.item.liquids.FluidIdentifierItem.getTintColor(stack));
         }, ModItems.FLUID_IDENTIFIER);
+        // Жидкостные ёмкости (ItemFluidTank: канистры, газовые баллоны, баки, бочки, упакованные контейнеры, распылители)
         ColorHandlerRegistry.registerItemColors((stack, tintIndex) -> {
-            if (tintIndex == 0) return opaqueTint(0xFFFFFF);
-            return opaqueTint(com.hbm_m.item.liquids.FluidBarrelItem.getTintColor(stack));
-        }, ModItems.FLUID_BARREL);
+            if (tintIndex < 0) return opaqueTint(0xFFFFFF);
+            if (stack.getItem() instanceof com.hbm_m.item.liquids.ItemFluidTank tank) {
+                return opaqueTint(tank.getColor(stack, tintIndex));
+            }
+            if (stack.getItem() instanceof com.hbm_m.item.liquids.FluidBarrelItem) {
+                if (tintIndex == 0) return opaqueTint(0xFFFFFF);
+                return opaqueTint(com.hbm_m.item.liquids.FluidBarrelItem.getTintColor(stack));
+            }
+            return opaqueTint(0xFFFFFF);
+        }, ModItems.CANISTER_FULL, ModItems.GAS_FULL, ModItems.FLUID_TANK_FULL, ModItems.FLUID_TANK_LEAD_FULL,
+           ModItems.FLUID_BARREL_FULL, ModItems.FLUID_PACK_FULL, ModItems.DISPERSER_CANISTER, ModItems.GLYPHID_GLAND);
+
+        // Пипетки (ItemPipette: слой 1 окрашивается в цвет жидкости при заполнении)
+        ColorHandlerRegistry.registerItemColors((stack, tintIndex) -> {
+            if (tintIndex <= 0) return opaqueTint(0xFFFFFF);
+            if (stack.getItem() instanceof com.hbm_m.item.tool.ItemPipette pipette) {
+                return opaqueTint(pipette.getColor(stack, tintIndex));
+            }
+            return opaqueTint(0xFFFFFF);
+        }, ModItems.PIPETTE, ModItems.PIPETTE_BORON, ModItems.PIPETTE_LABORATORY);
+
+        // Топливные капсулы термоядерного реактора (ItemICFPellet: слой 0 — фоновое кольцо с цветом смеси)
+        ColorHandlerRegistry.registerItemColors((stack, tintIndex) -> {
+            if (tintIndex == 0) {
+                return opaqueTint(com.hbm_m.item.machine.ItemICFPellet.getMixedColor(stack));
+            }
+            return opaqueTint(0xFFFFFF);
+        }, ModItems.ICF_PELLET);
         // Fluid Duct - tint overlay layer with fluid color
         ColorHandlerRegistry.registerItemColors((stack, tintIndex) -> {
             if (tintIndex == 0) return opaqueTint(0xFFFFFF);
@@ -1594,7 +1606,7 @@ public class ClientSetup {
         EntityRendererRegistry.register(ModEntities.ENTITY_MOB_GOLD_CREEPER, RenderCreeperUniversal::goldCreeper);
         EntityRendererRegistry.register(ModEntities.ENTITY_MOB_NUCLEAR_CREEPER, RenderCreeperUniversal::nuclear);
 
-        // Renderer registrations restored after the FFA merge (2026-10-24)
+        // Renderer registrations restored after merge:
         EntityRendererRegistry.register(ModEntities.MISSILE_9M723, MissileEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.MISSILE_TOPOL, MissileEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.CHLORINE_FX, ctx -> new com.hbm_m.client.render.entity.MultiCloudRenderer<>(ctx, "chlorine"));

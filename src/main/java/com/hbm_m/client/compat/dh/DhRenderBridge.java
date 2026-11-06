@@ -103,7 +103,7 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
             // факт DH-кадра и его проекцию; весь дальний контент рисует
             // EngineHandler (AFTER_WEATHER) в главный FBO.
             boolean irisLod = isIrisLodOverrideActive();
-            boolean reverseDepth = isReverseZDepthActive();
+            boolean reverseDepth = isReverseZDepthActive(rp);
             // Клип-плоскости декода: нативный рендер — точная репликация
             // RenderUtil.setDhProjectionMatrix (с клампом near до 7.5 без
             // height-override); под Iris-override — сырые rp-значения (Iris
@@ -221,12 +221,26 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
      * true, если DH 3.3.1+ рендерит LOD-глубину в конвенции REVERSE_Z
      * (близко=1, даль/небо=0, glClearDepth = EDhRenderDepth.farDepth = 0).
      *
-     * ИСТОЧНИК ИСТИНЫ — сама DH: приватное поле RenderUtil.RENDER_DEF
-     * хранит забинденный AbstractDhRenderApiDefinition, и его запрос
-     * направления глубины — ровно то, чем DH сам выбирает конвенцию
-     * (REVERSE_Z везде, кроме «Iris-пак активен и пак не reverse-Z»;
-     * байткод GlDhRenderApiDefinition 3.3.2 подтверждает). Опрашивается
-     * каждый DH-кадр: пользователь может включать/выключать шейдеры на лету.
+     * ИСТОЧНИКИ ИСТИНЫ (по убыванию приоритета), опрашиваются каждый
+     * DH-кадр — пользователь может включать/выключать шейдеры на лету:
+     *
+     *  1. rp.renderDefinition (поле DhApiRenderParam, DH API 7.3.0+):
+     *     активное определение рендера едет В САМОМ СОБЫТИИ моста, и DH
+     *     сам решает конвенцию ровно через renderDefinition
+     *     .getDepthDirection() (GlDhMetaRenderer выбирает glDepthFunc/
+     *     glClearDepth по этому же объекту). Критично для СВЕЖИХ сборок DH:
+     *     коммит 1537c29 «Allow hot swapping Rendering Definitions»
+     *     (2026-10-02) удалил RenderUtil.RENDER_DEF — у RenderUtil остались
+     *     только LOGGER/MC/MC_RENDER/IRIS_ACCESSOR, а определение стало
+     *     параметром рендера и поля события.
+     *
+     *  2. Статическое RenderUtil.RENDER_DEF / RENDER_API_DEF (DH 3.3.1-3.3.4):
+     *     приватное поле хранит забинденное AbstractDhRenderApiDefinition.
+     *
+     *  3. Фолбэк по ВЕРСИИ DH: >= 3.3.1 и нативный рендер (без пака) =>
+     *     REVERSE_Z. DH 3.2.x и старше — FORWARD_Z. Под активным паком у
+     *     DH 3.3.x форвард (GlDhRenderApiDefinition.getDepthDirection:
+     *     реверс только когда пак не активен или сам реверсивный).
      *
      * ИМЯ МЕТОДА ЗАВИСИТ ОТ ВЕРСИИ DH (оба возвращают енум с name()=="REVERSE_Z"):
      *  - DH <= 3.3.1: getRenderDepth();
@@ -236,6 +250,10 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
      *   (близкий LOD → «дальний» depth ≈ 1.0) — гриб просвечивал сквозь
      *   LOD-рельеф.
      *
+     * СРАВНЕНИЕ ЧЕРЕЗ name(): класс енума EDhApiDepthDirection между
+     * версиями DH переезжал (api.enums.config ↔ api.enums.rendering) —
+     * строковое сравнение исключает коллизии версий/загрузчиков.
+     *
      * ПОЧЕМУ НЕ МАТРИЦА ИЗ СОБЫТИЯ: rp.dhProjectionMatrix — это ФОРВАРД-копия
      * с сырыми клип-плоскостями (проверено логом 3.3.1: декод матрицы даёт
      * ровно rp.near/far, признаков реверса нет), реальную реверс-матрицу DH
@@ -243,10 +261,85 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
      * другой экземпляр). Детект по знаку m32 события давал ложно-FORWARD и
      * реверс-глубина декодировалась форвард-формулой — вся копия глубины
      * уходила под fade-маску («гриб сквозь блоки», DH 3.3.1 без пака).
-     *
-     * Фолбэк (рефлексия не удалась): false — семантика DH <= 3.2.x.
      */
-    private static boolean isReverseZDepthActive() {
+    private static boolean isReverseZDepthActive(DhApiRenderParam rp) {
+        Boolean fromParam = reverseZFromEventParam(rp);
+        if (fromParam != null) {
+            return logDepthConvention(fromParam, "eventParam.renderDefinition");
+        }
+        Boolean fromStatic = reverseZFromRenderUtilStatic();
+        if (fromStatic != null) {
+            return logDepthConvention(fromStatic, "RenderUtil.RENDER_DEF");
+        }
+        boolean fallback = isDhVersionAtLeast(3, 3, 1)
+                && !com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive();
+        return logDepthConvention(fallback, "version>=3.3.1 fallback");
+    }
+
+    /** Смена конвенции ИЛИ источника детекта — диагностически важное событие. */
+    private static boolean logDepthConvention(boolean reverse, String source) {
+        if (reverse != lastReverseDepth || !source.equals(lastReverseSource)) {
+            lastReverseDepth = reverse;
+            lastReverseSource = source;
+            MainRegistry.LOGGER.info("HBM DH depth convention: {} (source: {})",
+                    reverse ? "REVERSE_Z" : "FORWARD_Z", source);
+        }
+        return reverse;
+    }
+
+    private static String lastReverseSource = "(none)";
+
+    // ── 1) rp.renderDefinition (DH API 7.3.0+, сборки после 1537c29) ────────
+    // Кешируются ТОЛЬКО Field/Method и классы-хозяева (паттерн
+    // isIrisLodOverrideActive): сами определения DH горячо заменяет
+    // («hot swapping Rendering Definitions») — инстансы не кешируем.
+    private static Class<?> lastParamClass;
+    private static java.lang.reflect.Field renderDefinitionField;
+    private static Class<?> lastDefinitionClass;
+    private static java.lang.reflect.Method definitionDepthMethod;
+
+    /** null = источник недоступен на этой сборке/в этом кадре (не ошибка). */
+    private static Boolean reverseZFromEventParam(DhApiRenderParam rp) {
+        if (rp == null) {
+            return null;
+        }
+        try {
+            Class<?> rpCls = rp.getClass();
+            if (rpCls != lastParamClass) {
+                lastParamClass = rpCls;
+                renderDefinitionField = null;
+                // DH <= 3.3.4: у параметра события поля renderDefinition ещё нет.
+                try {
+                    renderDefinitionField = rpCls.getField("renderDefinition");
+                } catch (NoSuchFieldException ignored) {}
+            }
+            if (renderDefinitionField == null) {
+                return null;
+            }
+            Object def = renderDefinitionField.get(rp);
+            if (def == null) {
+                return null;
+            }
+            Class<?> defCls = def.getClass();
+            if (defCls != lastDefinitionClass) {
+                lastDefinitionClass = defCls;
+                try {
+                    definitionDepthMethod = defCls.getMethod("getDepthDirection");
+                } catch (NoSuchMethodException ignored) {
+                    definitionDepthMethod = defCls.getMethod("getRenderDepth");
+                }
+            }
+            Object depth = definitionDepthMethod.invoke(def);
+            return depth instanceof Enum<?> e ? (Boolean) "REVERSE_Z".equals(e.name()) : null;
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    // ── 2) Статическое RenderUtil.RENDER_DEF / RENDER_API_DEF (3.3.1-3.3.4) ─
+
+    /** null = источник недоступен на этой сборке/в этом кадре (не ошибка). */
+    private static Boolean reverseZFromRenderUtilStatic() {
         try {
             if (reverseDefField == null) {
                 Class<?> renderUtil = Class.forName("com.seibel.distanthorizons.core.util.RenderUtil");
@@ -259,7 +352,7 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
                     } catch (NoSuchFieldException ignored) {}
                 }
                 if (reverseDefField == null) {
-                    return false;
+                    return null; // поля нет: DH 3.2.x или сборки после 1537c29
                 }
                 reverseDefField.setAccessible(true);
                 Class<?> defClass = Class.forName(
@@ -273,22 +366,44 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
             }
             Object def = reverseDefField.get(null);
             if (def == null) {
-                return false; // DH ещё не инициализирован — форвард по умолчанию
+                return null; // DH ещё не инициализирован — пусть сработает следующий источник
             }
             Object depth = reverseDepthMethod.invoke(def);
-            boolean reverse = depth instanceof Enum<?> e && "REVERSE_Z".equals(e.name());
-            if (reverse != lastReverseDepth) {
-                lastReverseDepth = reverse;
-                MainRegistry.LOGGER.info("HBM DH depth convention: {}", reverse ? "REVERSE_Z" : "FORWARD_Z");
-            }
-            return reverse;
-        } catch (Throwable ignored) {}
-        return false;
+            return depth instanceof Enum<?> e ? (Boolean) "REVERSE_Z".equals(e.name()) : null;
+        } catch (Throwable ignored) {
+            return null;
+        }
     }
 
     private static java.lang.reflect.Field reverseDefField;
     private static java.lang.reflect.Method reverseDepthMethod;
     private static boolean lastReverseDepth;
+
+    // ── 3) Версионный фолбэк ────────────────────────────────────────────────
+
+    /**
+     * true, если версия мода DH >= указанной. Парсит ведущие числа
+     * ("3.3.5-dev" → [3,3,5], "2.3.2-b" → [2,3,2], "3.3.1" → [3,3,1]).
+     */
+    private static boolean isDhVersionAtLeast(int major, int minor, int patch) {
+        try {
+            String version = dev.architectury.platform.Platform.getMod("distanthorizons").getVersion();
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?").matcher(version);
+            if (!m.find()) {
+                return false;
+            }
+            int[] v = {
+                    Integer.parseInt(m.group(1)),
+                    m.group(2) != null ? Integer.parseInt(m.group(2)) : 0,
+                    m.group(3) != null ? Integer.parseInt(m.group(3)) : 0
+            };
+            if (v[0] != major) return v[0] > major;
+            if (v[1] != minor) return v[1] > minor;
+            return v[2] >= patch;
+        } catch (Throwable ignored) {}
+        return false;
+    }
 
     // ── Нативные клип-плоскости рендера DH ──────────────────────────────────
 

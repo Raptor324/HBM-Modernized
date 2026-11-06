@@ -7,6 +7,7 @@ import com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -42,6 +43,23 @@ public class MachinePrecAssBlock extends DummyableMachineBlock {
     }
 
     @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            { -1, 0, -1, Direction.WEST.get3DDataValue() },
+            { -1, 0, -1, Direction.NORTH.get3DDataValue() },
+            { -1, 0,  0, Direction.WEST.get3DDataValue() },
+            { -1, 0,  1, Direction.WEST.get3DDataValue() },
+            { -1, 0,  1, Direction.SOUTH.get3DDataValue() },
+            {  0, 0, -1, Direction.NORTH.get3DDataValue() },
+            {  0, 0,  1, Direction.SOUTH.get3DDataValue() },
+            {  1, 0, -1, Direction.EAST.get3DDataValue() },
+            {  1, 0, -1, Direction.NORTH.get3DDataValue() },
+            {  1, 0,  0, Direction.EAST.get3DDataValue() },
+            {  1, 0,  1, Direction.EAST.get3DDataValue() },
+            {  1, 0,  1, Direction.SOUTH.get3DDataValue() }
+        }, facing);
+    }
+
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.ENTITYBLOCK_ANIMATED;
     }

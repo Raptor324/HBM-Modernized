@@ -53,7 +53,7 @@ public final class ShaderBindResync {
      * whose program was destroyed by a pipeline rebuild can numerically match
      * whatever live program we left bound; the re-bind is then skipped and Iris's
      * {@code ExtendedShader.apply()} pushes every uniform into the foreign
-     * program (observed 2026-10-05 under BSL with GPU bake on: ~23k
+     * program (observed under BSL with GPU bake on: ~23k
      * GL_INVALID_OPERATION per session, machines textured with a compute
      * program, bake multi-draw dying with GL_INVALID_OPERATION). Recycled ids
      * are caught by the fingerprint probe in
@@ -109,8 +109,8 @@ public final class ShaderBindResync {
                 if (GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM) != shader.getId()) {
                     // Safety net only: on the audited stack (Forge 1.20.1 47.4.10/47.4.20)
                     // _glUseProgram is an UNCONDITIONAL pass-through - no static program
-                    // cache exists (verified in bytecode and in the 47.4.20 patch set,
-                    // 2026-10-06). The caches that actually diverge from the real bind
+                    // cache exists (verified in bytecode and in the 47.4.20 patch set).
+                    // The caches that actually diverge from the real bind
                     // state are the VANILLA static ShaderInstance.lastProgramId and Iris's
                     // static ExtendedShader.lastApplied - and a forced real bind here
                     // satisfies both, because each gate only skips when the REAL program
@@ -143,7 +143,7 @@ public final class ShaderBindResync {
      * <p>The numeric-match path is also the HEALTHY steady state (bound program
      * genuinely is this shader's), so only the FIRST sample per shader id logs at
      * INFO - every 5 s repetition of a known id goes to DEBUG to keep a clean log
-     * clean (2026-10-07: users read the repeated INFO line as an error report).</p>
+     * clean.</p>
      */
     private static void sampleSkipBind(ShaderInstance shader) {
         long now = System.currentTimeMillis();

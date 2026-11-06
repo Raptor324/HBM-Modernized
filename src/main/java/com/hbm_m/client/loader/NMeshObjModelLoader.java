@@ -202,6 +202,9 @@ public class NMeshObjModelLoader implements IGeometryLoader<NMeshObjModelLoader.
             if (context.hasMaterial("default")) {
                 return context.getMaterial("default");
             }
+            if (context.hasMaterial("surface")) {
+                return context.getMaterial("surface");
+            }
             if (context.hasMaterial("texture")) {
                 return context.getMaterial("texture");
             }

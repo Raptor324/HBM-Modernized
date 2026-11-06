@@ -69,8 +69,8 @@ public final class FleijaSphereMesh {
     }
 
     /**
-     * Nmesh-first: binary {@code .nmesh} (или runtime resourcepack .obj через NMeshLoader).
-     * UV/нормали игнорируются — облако рисуется плоским цветом с жёсткой нормалью (0,1,0).
+     * Nmesh-first: binary {@code .nmesh} (or runtime resourcepack .obj via NMeshLoader).
+     * UV and normals are ignored - the cloud renders with flat color and fixed normal (0,1,0).
      */
     private static List<Tri> loadTriangles(ResourceManager rm) {
         NMeshData nmesh = NMeshLoader.load(SPHERE_OBJ);

@@ -70,7 +70,7 @@ public final class IrisCompanionMesh {
     private int eboId = -1;
     private int indexCount = 0;
     private int vertexCount = 0;
-    // VRAM accounting (2026-10-07 ledger [B](3)): store sizes captured at each
+    // VRAM accounting: store sizes captured at each
     // allocation, so MeshRenderCache.irisCompanionVramBytes() can total the
     // per-part companion footprint for the F3 breakdown without GL queries.
     /** Companion VBO store bytes (set in ensureBuilt). */
@@ -240,7 +240,7 @@ public final class IrisCompanionMesh {
      * {@link #lightmapCpuScratch} can hold. Grown by
      * {@link #ensureLightmapCapacity(int)} as the peak instance count per
      * frame rises, and decayed back toward the recent peak after a sustained
-     * lull ({@link #lightmapRecentPeakSlots}; audit 2026-10-05 §3.4).
+     * lull ({@link #lightmapRecentPeakSlots}).
      */
     private int lightmapInstanceCapacity = 0;
 
@@ -698,10 +698,10 @@ public final class IrisCompanionMesh {
                 GL20.glDisableVertexAttribArray(detectedUv2Location);
             }
             this.uv2Location = detectedUv2Location;
-            // COLOR отключается по той же схеме: putBulkData печёт в вершины (1,1,1,1),
-            // а пер-частный тинт (GunGL.color — гильзы красятся именно им, текстура
-            // casings.png ч/б) инжектится константой на каждый draw. Без этого под
-            // паком тинт терялся и гильзы становились полностью белыми.
+            // COLOR is disabled using the same pattern: putBulkData bakes (1,1,1,1) into vertices,
+            // while per-part tint (GunGL.color, used for cartridge casing coloring with grayscale
+            // casings.png) is injected as a constant per draw. Without this under shaderpacks,
+            // tint was lost and casings rendered completely white.
             if (detectedColorLocation != -1) {
                 GL20.glDisableVertexAttribArray(detectedColorLocation);
             }
@@ -877,7 +877,7 @@ public final class IrisCompanionMesh {
      * Ensures the auxiliary lightmap VBO + CPU scratch can hold at least
      * {@code requiredInstances} concurrent instance slots. Grows to the next
      * power-of-two; after a sustained lull the capacity decays back to the
-     * next power-of-two of the recent peak (audit 2026-10-05 §3.4). No-op if
+     * next power-of-two of the recent peak. No-op if
      * already large enough.
      * <p>
      * Each slot holds {@code vertexCount} pairs of 16-bit lightmap values
@@ -913,7 +913,7 @@ public final class IrisCompanionMesh {
     }
 
     /**
-     * Watermark decay (audit 2026-10-05 §3.4): without it the lightmap VBO
+     * Watermark decay: without it the lightmap VBO
      * stays at the all-time peak instance count until teardown, even after
      * the machines that produced the peak have despawned. Growth resets both
      * trackers; while demand fits, {@link #noteLightmapDemand} tracks the
@@ -2149,7 +2149,7 @@ public final class IrisCompanionMesh {
     }
 
     public void destroy() {
-        // Audit 2026-10-05 §3.2: drop this mesh's shadow record (frees the
+        // Drop this mesh's shadow record (frees the
         // collector's native FloatBuffer + the BY_MESH strong ref) BEFORE the
         // GL deletes below, so a shadow flush later in the same frame can never
         // dereference a half-dead mesh. BY_MESH is render-thread state, so

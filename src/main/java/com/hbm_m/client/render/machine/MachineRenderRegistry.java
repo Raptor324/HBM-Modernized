@@ -28,16 +28,32 @@ import com.hbm_m.platform.LoaderHooks;
 public final class MachineRenderRegistry {
 
     private static final List<MachineSpec<?>> SPECS = new ArrayList<>();
+    private static final java.util.Map<net.minecraft.world.level.block.entity.BlockEntityType<?>, MachineSpec<?>> BY_TYPE = new java.util.concurrent.ConcurrentHashMap<>();
 
     private MachineRenderRegistry() {}
 
     static void register(MachineSpec<?> spec) {
         SPECS.add(spec);
+        if (spec.type() != null) {
+            BY_TYPE.put(spec.type(), spec);
+            com.hbm_m.client.render.retained.RetainedInstanceGraph.get().registerSpec(spec.type(), spec);
+        }
         MainRegistry.LOGGER.info("[MachineRenderers] registered '{}' ({} parts)", spec.id(), spec.parts().size());
     }
 
     public static List<MachineSpec<?>> specs() {
         return Collections.unmodifiableList(SPECS);
+    }
+
+    @org.jetbrains.annotations.Nullable
+    public static MachineSpec<?> getSpec(net.minecraft.world.level.block.entity.BlockEntityType<?> type) {
+        if (type == null) return null;
+        return BY_TYPE.get(type);
+    }
+
+    public static boolean isManaged(net.minecraft.world.level.block.entity.BlockEntityType<?> type) {
+        if (type == null) return false;
+        return BY_TYPE.containsKey(type);
     }
 
     // ==================== Stress command helpers (/nucleus stress) ====================

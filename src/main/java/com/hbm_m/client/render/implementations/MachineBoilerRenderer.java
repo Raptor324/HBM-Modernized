@@ -34,7 +34,7 @@ public final class MachineBoilerRenderer {
     }
 
     private static void registerIndustrialBoiler() {
-        // Объект boiler.obj слит в одну группу "Plane" — пульсация давления идёт по всей модели.
+        // boiler.obj is merged into a single group "Plane" - pressure pulsation applies to the entire model.
         MachineRenderers.machine("boiler", ModBlockEntities.BOILER_BE.get(),
                 MachineBoilerBlockEntity.class)
             .part("Plane", (be, pt, gt, ps) -> {

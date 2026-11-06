@@ -217,7 +217,7 @@ public class GUIMachineChemicalFactory extends AbstractContainerScreen<MachineCh
             if (!isMouseOver(mouseX, mouseY, 74, 19 + lane * 22, 18, 18)) continue;
             ChemicalPlantRecipe recipe = getLaneRecipe(lane);
             if (recipe != null) {
-                guiGraphics.renderTooltip(this.font, buildRecipeTooltip(recipe), Optional.empty(), mouseX, mouseY);
+                com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(guiGraphics, this.font, buildRecipeTooltip(recipe), mouseX, mouseY);
             } else {
                 guiGraphics.renderTooltip(this.font,
                         Component.translatable("gui.recipe.setRecipe").withStyle(ChatFormatting.YELLOW),

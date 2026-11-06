@@ -22,8 +22,7 @@ public interface HbmBerBounds<T extends BlockEntity> extends BlockEntityRenderer
     default AABB getRenderBoundingBox(T be) {
         // Route through the cross-frame cache: vanilla calls this per BE per
         // frame, and multiblock providers (e.g. the advanced assembler) build
-        // their AABB + structure lookup on every call - 2.6% of the frame on
-        // the 5000-machine fleet, 1.21.1 spark 2026-10-07 (1.20.1 is covered
+        // their AABB + structure lookup on every call (1.20.1 is covered
         // by the Sodium/Embeddium mixin instead, which already consults the
         // cache). The cache dispatches to RenderHooks.getRenderBoundingBox
         // (provider AABB or the 1-block default) with a 40-tick TTL and

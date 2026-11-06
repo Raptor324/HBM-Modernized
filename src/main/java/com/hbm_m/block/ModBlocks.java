@@ -13,6 +13,7 @@ import com.hbm_m.api.energy.SwitchBlock;
 import com.hbm_m.api.energy.WireBlock;
 import com.hbm_m.block.bomb.BlockTaint;
 import com.hbm_m.block.generic.BlockAbsorber;
+import com.hbm_m.block.generic.GuideBlock;
 import com.hbm_m.block.generic.BlockOre;
 import com.hbm_m.block.generic.BlockSellafieldOre;
 import com.hbm_m.block.generic.BlockSellafieldSlaked;
@@ -102,7 +103,6 @@ import com.hbm_m.block.machines.MachineGasCentBlock;
 import com.hbm_m.block.machines.MachineHydrotreaterBlock;
 import com.hbm_m.block.machines.MachineIndustrialBoilerBlock;
 import com.hbm_m.block.machines.MachineIndustrialTurbineBlock;
-import com.hbm_m.block.machines.MachineLargePylonBlock;
 import com.hbm_m.block.machines.MachineLiquefactorBlock;
 import com.hbm_m.block.machines.MachineMiningDrillBlock;
 import com.hbm_m.block.machines.MachineMixerBlock;
@@ -156,7 +156,6 @@ import com.hbm_m.block.machines.crates.SteelCrateBlock;
 import com.hbm_m.block.machines.crates.TemplateCrateBlock;
 import com.hbm_m.block.machines.crates.TungstenCrateBlock;
 import com.hbm_m.block.nature.DepthOreBlock;
-import com.hbm_m.block.network.PylonDummyBlock;
 import com.hbm_m.block.network.RedCableGaugeBlock;
 import com.hbm_m.block.network.RedCablePaintableBlock;
 import com.hbm_m.block.network.RedConnectorBlock;
@@ -586,8 +585,6 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BREEDER = registerBlockWithoutItem("breeder",
             () -> new MachineBreederBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
-    public static final RegistrySupplier<Block> LARGE_PYLON = registerBlockWithoutItem("large_pylon",
-            () -> new MachineLargePylonBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> CHEMICAL_PLANT = registerBlockWithoutItem("chemical_plant",
             () -> new MachineChemicalPlantBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((state, world, pos) -> false).strength(5.0F, 18.0F).sound(SoundType.STONE)));
@@ -2459,7 +2456,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BATTERY_SCHRABIDIUM_BLOCK = registerBlock("battery_schrabidium_block", () -> new Block(BlockHooks.copy(Blocks.STONE)));
     /** R7n: 1:1 BlastDoor. */
     public static final RegistrySupplier<Block> BLAST_DOOR = registerBlock("blast_door",
-            () -> new com.hbm_m.block.machines.BlastDoorBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(10.0F, 600.0F).requiresCorrectToolForDrops().noOcclusion().sound(SoundType.STONE)));
+            () -> new com.hbm_m.block.decorations.BlastDoorBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(10.0F, 600.0F).requiresCorrectToolForDrops().noOcclusion().sound(SoundType.STONE), "blast_door"));
     // dummy_block_blast упразднён: рама blast door — universal_machine_part (см. BlastDoorBlockEntity.placeDummy).
     /** Original block_aluminium = Materialblock ALUMINUM (Registry-ID block_aluminium, siehe MaterialShape.itemId). */
     public static final RegistrySupplier<Block> BLOCK_ALUMINIUM = INGOT_BLOCKS.get(com.hbm_m.item.material.ModMaterials.ALUMINUM);
@@ -2711,9 +2708,8 @@ public class ModBlocks {
             () -> new com.hbm_m.block.bomb.TNTBlocks.Dynamite(BlockHooks.copy(Blocks.TNT).instabreak().sound(SoundType.GRASS)));
     public static final RegistrySupplier<Block> FACTORY_ADVANCED_HULL = registerBlock("factory_advanced_hull", () -> new Block(BlockHooks.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FACTORY_TITANIUM_HULL = registerBlock("factory_titanium_hull", () -> new Block(BlockHooks.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> FENCE_METAL = registerBlock("fence_metal", () -> new com.hbm_m.block.decorations.MetalFenceBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(15.0F, 0.15F).sound(SoundType.STONE)));
-    public static final RegistrySupplier<Block> FENCE_METAL_POST = registerBlock("fence_metal_post", () -> new DecorShapeBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F),
-            Shapes.box(0.375, 0, 0.375, 0.625, 1.0, 0.625), false, false));
+    public static final RegistrySupplier<Block> FENCE_METAL = registerBlock("fence_metal", () -> new com.hbm_m.block.generic.BlockMetalFence(BlockHooks.copy(Blocks.IRON_BLOCK).strength(15.0F, 0.15F).sound(SoundType.STONE), false));
+    public static final RegistrySupplier<Block> FENCE_METAL_POST = registerBlock("fence_metal_post", () -> new com.hbm_m.block.generic.BlockMetalFence(BlockHooks.copy(Blocks.IRON_BLOCK).strength(15.0F, 0.15F).sound(SoundType.STONE), true));
     /** R7d: 1:1 MachineFieldDisturber. */
     public static final RegistrySupplier<Block> FIELD_DISTURBER = registerBlock("field_disturber",
             () -> new com.hbm_m.block.machines.FieldDisturberBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(5.0F, 120.0F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
@@ -2856,8 +2852,13 @@ public class ModBlocks {
             () -> new com.hbm_m.block.machines.HadronCoilBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops(), 250));
     public static final RegistrySupplier<Block> HADRON_COIL_STARMETAL = registerBlock("hadron_coil_starmetal",
             () -> new com.hbm_m.block.machines.HadronCoilBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops(), 1000));
-    public static final RegistrySupplier<Block> HEV_BATTERY = registerBlock("hev_battery",
+    public static final RegistrySupplier<Block> HEV_BATTERY = registerBlock("hev_battery_block",
             () -> new com.hbm_m.block.generic.HevBatteryBlock(BlockHooks.copy(Blocks.STONE).noOcclusion().noCollission().strength(0.5F, 0.15F).lightLevel(s -> 10)));
+    public static final RegistrySupplier<Block> HEV_BATTERY_BLOCK = HEV_BATTERY;
+    /** 1:1 порт tile.book_guide ({@link GuideBlock}). */
+    public static final RegistrySupplier<Block> BOOK_GUIDE = registerBlock("book_guide_block",
+            () -> new GuideBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(5.0F, 10.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> BOOK_GUIDE_BLOCK = BOOK_GUIDE;
     public static final RegistrySupplier<Block> ICF_COMPONENT = registerBlock("icf_component",
             () -> new com.hbm_m.block.machines.icf.ICFComponentBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(5.0F, 36.0F).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> ICF_COMPONENT_STRUCTURE = registerBlock("icf_component_structure",
@@ -3200,9 +3201,6 @@ public class ModBlocks {
             () -> new RedPylonMediumBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE), false));
     public static final RegistrySupplier<Block> RED_PYLON_MEDIUM_STEEL_TRANSFORMER = registerBlock("red_pylon_medium_steel_transformer",
             () -> new RedPylonMediumBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE), true));
-    /** Невидимая часть корпуса пилона (аналог dummy-блоков BlockDummyable): без предмета и лута, как в оригинале. */
-    public static final RegistrySupplier<Block> PYLON_DUMMY = registerBlockWithoutItem("pylon_dummy",
-            () -> new PylonDummyBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 10.0F).noLootTable()));
     public static final RegistrySupplier<Block> RED_WIRE_COATED = registerBlock("red_wire_coated",
             () -> new RedWireCoatedBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> REINFORCED_BRICK = registerBlock("reinforced_brick",
@@ -4277,9 +4275,9 @@ public class ModBlocks {
                     || b instanceof com.hbm_m.block.machines.MachineRbmkConsoleBlock) {
                 return new com.hbm_m.item.rbmk.RBMKColumnBlockItem(b, new Item.Properties());
             }
-            // hev_battery: Original-Item (ItemFusionCore 150000, Stapel 4) und Block teilen sich im Port die ID.
+            // hev_battery_block: BlockItem fuer das Ladepad (ItemFusionCore hev_battery ist eigenes Item in ModItems)
             if (b instanceof com.hbm_m.block.generic.HevBatteryBlock) {
-                return new com.hbm_m.item.tool.ItemHevBattery(b, new Item.Properties().stacksTo(4));
+                return new BlockItem(b, new Item.Properties().stacksTo(4));
             }
             // Sammelfiguren: Untertyp als NBT, Darstellung ueber den Figuren-Renderer.
             if (b instanceof com.hbm_m.block.decorations.TrinketBlock) {
@@ -4301,7 +4299,8 @@ public class ModBlocks {
             // ueberschrieben, was im Weg stand, statt die Platzierung abzulehnen.
             if (b instanceof com.hbm_m.block.machines.albion.PAMultiblockBlock
                     || b instanceof com.hbm_m.block.machines.DummyableMachineBlock
-                    || b instanceof com.hbm_m.block.machines.fusion.FusionMultiblockBlock) {
+                    || b instanceof com.hbm_m.block.machines.fusion.FusionMultiblockBlock
+                    || (b instanceof com.hbm_m.interfaces.IMultiblockController ctrl && ctrl.getStructureHelper() != null)) {
                 return new com.hbm_m.multiblock.MultiblockBlockItem(b, new Item.Properties());
             }
             // Der Orbus ist ein Fass mit Struktur - die uebrigen Faesser sind Einzelbloecke.

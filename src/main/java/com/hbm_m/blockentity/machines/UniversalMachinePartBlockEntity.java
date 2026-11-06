@@ -191,7 +191,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        if (fromDir == null) return false;
+        if (fromDir == null || fromDir == Direction.DOWN) return false;
         if (!isFluidConnector(this.role)) return false;
         // Если grid-side ограничен у коннектора, проверяем разрешённые стороны.
         if (allowedFluidSides != null && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(fromDir)) {
@@ -430,6 +430,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         //    (provideSendingTanksPerTick): гейт делит пропускную способность прямой выдачи.
         if (ctrlMk2 && mk2 != null) {
             for (Direction dir : Direction.values()) {
+                if (dir == Direction.DOWN) continue;
                 if (allowedFluidSides != null && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(dir)) {
                     continue;
                 }
@@ -485,6 +486,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         if (!hasFill) return;
 
         for (Direction dir : Direction.values()) {
+            if (dir == Direction.DOWN) continue;
             if (allowedFluidSides != null && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(dir)) {
                 continue;
             }
@@ -590,14 +592,13 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
                     new NodeDirPos(worldPosition.relative(Direction.EAST),  Direction.EAST),
                     new NodeDirPos(worldPosition.relative(Direction.WEST),  Direction.WEST),
                     new NodeDirPos(worldPosition.relative(Direction.UP),    Direction.UP),
-                    new NodeDirPos(worldPosition.relative(Direction.DOWN),  Direction.DOWN),
                     new NodeDirPos(worldPosition.relative(Direction.SOUTH), Direction.SOUTH),
                     new NodeDirPos(worldPosition.relative(Direction.NORTH), Direction.NORTH),
             };
         }
         java.util.ArrayList<NodeDirPos> cons = new java.util.ArrayList<>();
         for (Direction d : Direction.values()) {
-            if (allowedFluidSides.contains(d)) {
+            if (d != Direction.DOWN && allowedFluidSides.contains(d)) {
                 cons.add(new NodeDirPos(worldPosition.relative(d), d));
             }
         }
@@ -716,6 +717,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
     @Override
     public void setAllowedEnergySides(java.util.Set<Direction> sides) {
         this.allowedEnergySides = copyDirectionSet(sides);
+        this.allowedEnergySides.remove(Direction.DOWN);
         this.setChanged();
         if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
@@ -734,6 +736,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
     @Override
     public void setAllowedFluidSides(java.util.Set<Direction> sides) {
         this.allowedFluidSides = copyDirectionSet(sides);
+        this.allowedFluidSides.remove(Direction.DOWN);
         this.setChanged();
         if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
@@ -862,6 +865,9 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
      */
     @Override
     public boolean canConnectEnergy(@Nullable Direction side) {
+        if (side == Direction.DOWN) {
+            return false;
+        }
         if (!this.role.canReceiveEnergy() && !this.role.canSendEnergy()) {
             return false;
         }
@@ -906,6 +912,9 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
     @NotNull
     @Override
     public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (side == Direction.DOWN) {
+            return super.getCapability(cap, side);
+        }
         var level = this.level;
         if (this.controllerPos == null || level == null) {
             return super.getCapability(cap, side);
@@ -996,6 +1005,9 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
     /*@NotNull
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == net.minecraft.core.Direction.DOWN) {
+            return super.getHbmCapability(cap, side);
+        }
         var level = this.level;
         if (this.controllerPos == null || level == null) {
             return super.getHbmCapability(cap, side);
@@ -1190,6 +1202,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
 
     @Override
     public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        if (side == net.minecraft.core.Direction.DOWN) return null;
         if (level == null || controllerPos == null) return null;
         if (this.role != PartRole.ITEM_INPUT && this.role != PartRole.ITEM_OUTPUT
                 && this.role != PartRole.UNIVERSAL_CONNECTOR) return null;
@@ -1210,6 +1223,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
 
     @Override
     public @Nullable Object getFluidHandler(@Nullable net.minecraft.core.Direction side) {
+        if (side == net.minecraft.core.Direction.DOWN) return null;
         if (level == null || controllerPos == null) return null;
         if (this.role != PartRole.FLUID_CONNECTOR && this.role != PartRole.UNIVERSAL_CONNECTOR) return null;
         if (allowedFluidSides != null && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) return null;
@@ -1233,6 +1247,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
 
     @Override
     public @Nullable Object getEnergyStorage(@Nullable net.minecraft.core.Direction side) {
+        if (side == net.minecraft.core.Direction.DOWN) return null;
         if (level == null || controllerPos == null) return null;
         if (!this.role.canReceiveEnergy() && !this.role.canSendEnergy()) return null;
         if (allowedEnergySides != null && !allowedEnergySides.isEmpty() && !allowedEnergySides.contains(side)) return null;

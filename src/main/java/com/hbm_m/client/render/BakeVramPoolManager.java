@@ -123,9 +123,6 @@ public final class BakeVramPoolManager {
         }
     }
 
-    public static boolean poolRelayoutDeferred(int mode) {
-        return false;
-    }
 
     public static long frameStamp() {
         return IrisShadowBatchCollector.renderFrame();

@@ -27,14 +27,13 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Audit 7: Gegenstaende, deren Original-Itemrenderer ({@code ItemRenderBase}) mit der Uhr animiert
- * ({@code System.currentTimeMillis()}): Stirling-Zahnrad, Saegewerk, Dampfmaschine, Pumpen, Autosaege, Dreschwerk,
- * Kompressor, Klystron, MHD-Turbine, Torus, Industrieturbine, Laterne, Grossradar.
+ * Items animated via system time ({@code System.currentTimeMillis()}) matching original {@code ItemRenderBase}:
+ * Stirling gear, sawmill, steam engine, pumps, auto-saw, thresher, compressor, klystron, MHD turbine, torus,
+ * industrial turbine, lantern, large radar.
  *
- * <p>Gezeichnet wird in den Koordinaten des bisherigen statischen Itemmodells (gleiche Wurzel-Transformation), damit
- * die Display-Werte der Kontexte gleich bleiben; die GUI-Werte der {@code item/<id>_anim.json} sind aus der
- * Original-Inventarkette errechnet (Audit-7-Skript a7_anim_items.py). Danach folgen die Teile und Bewegungen genau
- * wie im Original nach dem ersten Zeichenaufruf.</p>
+ * <p>Rendered in coordinates of the static item model (same root transform) to preserve display values across contexts;
+ * GUI values in {@code item/<id>_anim.json} are calculated from the original inventory matrix chain. Subsequent parts
+ * and animations match the original renderer after its initial call.</p>
  */
 public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer {
 
@@ -64,7 +63,7 @@ public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer
     @Override
     public void renderByItem(ItemStack stack, ItemDisplayContext ctx, PoseStack ps, MultiBufferSource buf, int light, int overlay) {
         String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
-        // vJ: Geschuetztuerme 1:1 ItemRenderLibrary (eigene Inventarkette, daher vor der Display-Transformation)
+        // Turrets: 1:1 ItemRenderLibrary (custom inventory chain, applied prior to display transform)
         if (TurretItemRenderer.handles(id)) {
             TurretItemRenderer.render(id, stack, ctx, ps, buf, light);
             return;
@@ -72,9 +71,9 @@ public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer
         double time = System.currentTimeMillis();
 
         ps.pushPose();
-        // vI: Der Anzeige-Waechter (ItemTransformHelperCompat.HbmItemDisplayWrapper) unterdrueckt fuer builtin/entity-
-        // Modelle die Display-Transformation vor renderByItem -> hier selbst anwenden, in derselben Reihenfolge wie
-        // ItemRenderer (T(.5) * display * T(-.5)); sonst wird das Modell im Inventar unskaliert/ungedreht gezeichnet.
+        // Display wrapper (ItemTransformHelperCompat.HbmItemDisplayWrapper) suppresses display transforms
+        // for builtin/entity models prior to renderByItem -> apply explicitly here in standard ItemRenderer order
+        // (T(.5) * display * T(-.5)) so inventory models are properly scaled and oriented.
         net.minecraft.client.resources.model.BakedModel displayModel = Minecraft.getInstance().getItemRenderer().getModel(stack, null, null, 0);
         boolean leftHand = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND || ctx == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
         ps.translate(0.5F, 0.5F, 0.5F);
@@ -84,7 +83,7 @@ public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer
         ps.translate(-0.5F, -0.5F, -0.5F);
         switch (id) {
             case "stirling", "stirling_steel", "stirling_creative" -> {
-                // RenderStirling#renderCommonWithStack: cog = Schaden != 1; Textur 0 normal, 1 Stahl, 2 kreativ
+                // RenderStirling#renderCommonWithStack: cog = damage != 1; texture 0 normal, 1 steel, 2 creative
                 boolean cog = !MachineStirlingBlock.isNoCog(stack);
                 ResourceLocation tex = id.equals("stirling") ? STIRLING : id.equals("stirling_creative") ? STIRLING_CREATIVE : STIRLING_STEEL;
                 ps.translate(0.5, 0, 0.5);
@@ -132,7 +131,7 @@ public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer
                 ps.popPose();
             }
             case "klystron", "klystron_creative" -> {
-                // Wurzel des Blockmodells: (0.5, 0, 1.5), 90 Grad
+                // Root of block model: (0.5, 0, 1.5), 90 degrees
                 ps.translate(0.5, 0, 1.5);
                 ps.mulPose(Axis.YP.rotationDegrees(90));
                 VertexConsumer vc = buf.getBuffer(RenderType.entityCutout(rl("textures/block/machine/" + id + ".png")));
@@ -166,7 +165,7 @@ public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer
                 ps.popPose();
             }
             case "industrial_turbine" -> {
-                // Wurzel des Blockmodells (forge:obj, Ursprung gegenueberliegende Ecke): (0.5, 0, 2.5), 90 Grad
+                // Root of block model (forge:obj, origin at opposite corner): (0.5, 0, 2.5), 90 degrees
                 ps.translate(0.5, 0, 2.5);
                 ps.mulPose(Axis.YP.rotationDegrees(90));
                 VertexConsumer vc = buf.getBuffer(RenderType.entityCutout(IndustrialTurbineRenderer.TEX));

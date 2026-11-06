@@ -220,11 +220,8 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.MOTOR_BISMUTH.get(), 2)
                 .save(writer, "rotary_furnace");
 
-        // Conveyor belts — the original obtains these exclusively via the "Conveyor Wand" tool
-        // (right-click placement, ItemConveyorWand, hidden from NEI), which this port doesn't have;
-        // ported instead as ordinary placeable blocks (matching this port's existing convention for
-        // the other machine blocks), so a plausible Assembler recipe is invented here to make them
-        // obtainable in survival.
+        // Conveyor belts — ported as placeable blocks matching 1.7.10 BlockConveyor
+        // (which had ItemBlockBase and could be placed directly as blocks).
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR.get(), 4), 80, 40)
                 .addIngredient(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 4)
                 .addIngredient(Ingredient.of(Items.REDSTONE), 2)
@@ -1696,23 +1693,6 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "centrifuge_element");
     }
     private static void registerBombRecipes(Consumer<FinishedRecipe> writer) {
-        // TODO: временные заглушки — заменить на ass.explosivelenses2 / ass.manigniter
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.FAT_MAN_EXPLOSIVE.get(), 1), 400, 100)
-                .addIngredient(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE), 8)
-                .addIngredient(ModItems.BALL_TNT.get(), 8)
-                .addIngredient(Ingredient.of(
-                        ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT),
-                        ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT)), 4)
-                .addIngredient(ModItems.NEUTRON_REFLECTOR.get(), 2)
-                .save(writer, "assembler/fat_man_explosive");
-
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.FAT_MAN_IGNITER.get(), 1), 200, 100)
-                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 3)
-                .addIngredient(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE), 24)
-                .save(writer, "assembler/fat_man_igniter");
-
         AssemblerRecipeBuilder.assemblerRecipe(  //TODO: WIP RECIPES, NEEDS REWORK WHEN FULL PROCESSING IS PORTED
                         new ItemStack(ModItems.BALL_TNT.get(), 10), 80, 150)
                 .addIngredient(Ingredient.of(ModBlocks.FREAKY_ALIEN_BLOCK.get()), 1)
@@ -1735,24 +1715,6 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE), 10)
                 .addIngredient(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.POWDER), 4)
                 .save(writer, "nuke_prototype");
-
-        // ─── Компоненты больших бомб ───
-
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.FAT_MAN_EXPLOSIVE.get(), 1), 300, 100)
-                .addIngredient(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE), 6)
-                .addIngredient(ModItems.BALL_TNT.get(), 4)
-                .addIngredient(Ingredient.of(
-                        ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT),
-                        ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT)), 2)
-                .save(writer, "assembler/early_explosive_lenses");
-
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.EXPLOSIVE_LENSES.get(), 1), 400, 100)
-                .addIngredient(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE), 8)
-                .addIngredient(ModItems.BALL_TNT.get(), 6)
-                .addIngredient(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.PLATE), 2)
-                .save(writer, "assembler/explosive_lenses");
 
         // ─── Большие ядерные бомбы ───
 

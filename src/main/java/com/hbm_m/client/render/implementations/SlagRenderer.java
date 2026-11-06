@@ -22,10 +22,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 
 /**
- * Ersatz fuer das Blockrendering von {@code BlockDynamicSlag}: ein Quader mit der Hoehe {@code amount / maxAmount}.
- * Hat das Material verschiedene Hell-/Dunkelfarben, wird die Schlackentextur wie im Original per
- * {@code RGBMutatorInterpolatedComponentRemap(0xFFFFFF, 0x505050, light, dark)} umgefaerbt, sonst wird die
- * Grundtextur mit der Schmelzfarbe eingefaerbt ({@code colorMultiplier}).
+ * Replacement for {@code BlockDynamicSlag} block rendering: cuboid with height {@code amount / maxAmount}.
+ * If the material has distinct light/dark colors, slag texture is remapped as in original via
+ * {@code RGBMutatorInterpolatedComponentRemap(0xFFFFFF, 0x505050, light, dark)}; otherwise base texture
+ * is tinted with molten color ({@code colorMultiplier}).
  */
 public class SlagRenderer implements com.hbm_m.client.render.HbmBerBounds<SlagBlockEntity> {
 
@@ -59,11 +59,11 @@ public class SlagRenderer implements com.hbm_m.client.render.HbmBerBounds<SlagBl
         BlockPos pos = tile.getBlockPos();
         var level = tile.getLevel();
 
-        // Oben
+        // Top
         if (h < 1F || level == null || !level.getBlockState(pos.above()).isSolidRender(level, pos.above())) {
             quad(vc, m, n, 0, h, 0, 0, h, 1, 1, h, 1, 1, h, 0, 0, 0, 0, 1, 1, 1, 1, 0, r, g, b, light, 0, 1, 0);
         }
-        // Unten
+        // Bottom
         if (level == null || !level.getBlockState(pos.below()).isSolidRender(level, pos.below())) {
             quad(vc, m, n, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, r, g, b, light, 0, -1, 0);
         }
@@ -92,7 +92,7 @@ public class SlagRenderer implements com.hbm_m.client.render.HbmBerBounds<SlagBl
         com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x3, y3, z3, r, g, b, 1F, u3, v3, OverlayTexture.NO_OVERLAY, light, n, nx, ny, nz);
     }
 
-    /** Erzeugt einmalig je Material die umgefaerbte Textur (Original: {@code TextureAtlasSpriteMutatable}). */
+    /** Creates remapped texture once per material (original: {@code TextureAtlasSpriteMutatable}). */
     private static ResourceLocation remapped(NTMMaterial mat) {
         ResourceLocation cached = ICONS.get(mat);
         if (cached != null) return cached;
@@ -123,7 +123,7 @@ public class SlagRenderer implements com.hbm_m.client.render.HbmBerBounds<SlagBl
         }
     }
 
-    /** 1:1 {@code shiftComponent}: lineare Abbildung der Quellspanne auf die Zielspanne, Ergebnis &amp; 0xFF. */
+    /** 1:1 {@code shiftComponent}: linear mapping of source range onto destination range, result &amp; 0xFF. */
     private static int shift(int lighter, int darker, int boundLighter, int boundDarker, int component) {
         double pos = (component - (double) boundLighter) / ((double) boundDarker - boundLighter);
         return ((int) (lighter + pos * (darker - lighter))) & 0xFF;

@@ -46,8 +46,8 @@ public class ShaderCompatibilityDetector {
      * Without it the Tier-1 bake path's GPU state (bake pools at 1.5x headroom,
      * per-cache SSBOs, shared stores) plus the Iris companion meshes and their
      * lightmap rings stayed allocated after the pack was switched off - the
-     * VRAM bar stayed pinned right under its peak until F3+T (audit 2026-10-07
-     * VRAM ledger [C]). Both transition directions use the same teardown; every
+     * VRAM bar stayed pinned right under its peak until F3+T.
+     * Both transition directions use the same teardown; every
      * subsystem it releases rebuilds lazily on the next use, so nothing that a
      * re-enabled pack still needs is lost.
      */

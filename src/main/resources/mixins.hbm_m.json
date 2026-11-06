@@ -64,7 +64,8 @@
     "client.MixinClientLevelChunkLifecycle",
     "client.ClientLevelImpactMixin",
     "client.DimensionSpecialEffectsImpactMixin",
-    "client.LevelRendererImpactMixin"
+    "client.LevelRendererImpactMixin",
+    "client.LoadingScreenTipMixin"
   ],
   "injectors": {
     "defaultRequire": 1

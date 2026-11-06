@@ -8,7 +8,8 @@ import com.hbm_m.particle.nt.ParticleEngineNT;
  *
  * <p>Implements continuous nanosecond timer tracking ({@link System#nanoTime()}),
  * bridging discrete 20 TPS server ticks into fluid rendering without frame-time
- * stepping. Computes Sedov-Taylor shockwave expansion and continuous heat curves.</p>
+ * stepping. Computes Sedov-Taylor shockwave expansion, dynamic fireball ascent,
+ * and continuous heat curves.</p>
  */
 public final class NukeLightTracker {
 
@@ -29,7 +30,7 @@ public final class NukeLightTracker {
     /** Base vertical lift for the light source, blocks. */
     public static final float LIGHT_SOURCE_LIFT = 42.0F;
 
-    /** Current frame light sources: 4-tuples (x, y + LIFT, z, heat). */
+    /** Current frame light sources: 4-tuples (x, y + dynamicLift, z, heat). */
     private static final float[] sources = new float[MAX_SOURCES * 4];
 
     /** Mushroom cloud scales of sources (NukeTorex.getScale). */
@@ -41,7 +42,12 @@ public final class NukeLightTracker {
     /** Continuous shockwave parameters: pairs (radius blocks, fade [0..1]). */
     private static final float[] srcShock = new float[MAX_SOURCES * 2];
 
+    /** Extra per-source parameters: 4-tuples (ageSec, scale, groundY, flashPulse). */
+    private static final float[] srcExtra = new float[MAX_SOURCES * 4];
+
     private static int sourceCount;
+    private static float timeSeconds;
+    private static final long trackerStartNanos = System.nanoTime();
 
     // Continuous nanosecond timer tracking
     private static final float[] trackedX = new float[MAX_SOURCES];
@@ -72,20 +78,20 @@ public final class NukeLightTracker {
     }
 
     /**
-     * Updates continuous heat and Sedov-Taylor shockwave expansion per frame.
+     * Updates continuous heat, fireball ascent, and Sedov-Taylor 3D shockwave expansion per frame.
      */
     private static void updateContinuousSources() {
         long now = System.nanoTime();
+        timeSeconds = (float) ((now - trackerStartNanos) * 1.0e-9);
         boolean[] matchedSlot = new boolean[MAX_SOURCES];
 
         for (int i = 0; i < sourceCount; i++) {
             float sx = sources[i * 4];
+            float groundY = sources[i * 4 + 1];
             float sz = sources[i * 4 + 2];
             float rawHeat = sources[i * 4 + 3];
             float scale = Math.max(0.5F, srcScale[i]);
 
-            float lift = LIGHT_SOURCE_LIFT * Math.max(0.75F, scale);
-            sources[i * 4 + 1] += lift;
             srcRadius[i] = R_UNIT * scale * radiusScale();
 
             // Total lifetime of NukeTorex: getMaxAge() = 45 * 20 * scale ticks.
@@ -131,19 +137,39 @@ public final class NukeLightTracker {
                 ageSec = serverAgeSec;
             }
 
-            float continuousHeat = Math.max(0.0F, HEAT_SCALE * (1.0F - ageSec / maxAgeSec));
+            // Dynamic fireball ascent: starts low at detonation (~12 * scale) and rises into
+            // the mushroom cap (~50 * scale) over the first 10 seconds.
+            float ascentProgress = 1.0F - (float) Math.exp(-ageSec / (4.2F * Math.max(0.75F, scale)));
+            float dynamicLift = (12.0F + (LIGHT_SOURCE_LIFT + 8.0F - 12.0F) * ascentProgress) * Math.max(0.75F, scale);
+            sources[i * 4 + 1] = groundY + dynamicLift;
+
+            float lifeFrac = Math.min(1.0F, ageSec / maxAgeSec);
+            float scaleClamped = Math.max(0.75F, scale);
+            float flashDecay = (float) Math.exp(-ageSec / (3.5F * scaleClamped));
+            float afterglow = (float) Math.pow(1.0F - lifeFrac, 1.35);
+            float continuousHeat = HEAT_SCALE * Math.min(1.0F, flashDecay * 0.45F + afterglow * 0.75F);
             sources[i * 4 + 3] = continuousHeat;
 
-            // Sedov-Taylor shockwave non-linear expansion
-            float waveDuration = 5.5F * (float) Math.pow(scale, 0.65F);
-            float u = Math.min(1.35F, ageSec / Math.max(0.5F, waveDuration));
-            float progress = (float) Math.pow(u + 0.015F, 0.72F) - (float) Math.pow(0.015F, 0.72F);
-            float shockR = srcRadius[i] * 1.05F * progress;
-            float shockFade = Math.max(0.0F, 1.0F - u * 0.78F);
-            shockFade = shockFade * shockFade * Math.min(1.0F, ageSec * 6.0F);
+            // Double-pulse nuclear flash factor: intense initial spike (0..0.4s) + secondary thermal maximum (0.5..2.8s)
+            float pulse1 = (float) Math.exp(-ageSec * 7.5F);
+            float pulse2 = (float) Math.exp(-Math.pow((ageSec - 0.85F) / (1.35F * Math.sqrt(scale)), 2.0));
+            float flashPulse = Math.min(1.0F, pulse1 * 0.85F + pulse2 * 0.95F);
+
+            // Sedov-Taylor 3D shockwave expansion: longer duration so the 3D dome visibly sweeps across the world
+            float waveDuration = 9.5F * (float) Math.pow(scale, 0.65F);
+            float u = Math.min(1.45F, ageSec / Math.max(0.5F, waveDuration));
+            float progress = (float) Math.pow(u + 0.012F, 0.68F) - (float) Math.pow(0.012F, 0.68F);
+            float shockR = srcRadius[i] * 1.08F * progress;
+            float shockFade = Math.max(0.0F, 1.0F - u * 0.72F);
+            shockFade = shockFade * shockFade * Math.min(1.0F, ageSec * 8.0F);
 
             srcShock[i * 2] = shockR;
             srcShock[i * 2 + 1] = shockFade;
+
+            srcExtra[i * 4] = ageSec;
+            srcExtra[i * 4 + 1] = scale;
+            srcExtra[i * 4 + 2] = groundY;
+            srcExtra[i * 4 + 3] = flashPulse;
         }
 
         for (int j = 0; j < MAX_SOURCES; j++) {
@@ -167,6 +193,14 @@ public final class NukeLightTracker {
 
     public static float[] getSrcShock() {
         return srcShock;
+    }
+
+    public static float[] getSrcExtra() {
+        return srcExtra;
+    }
+
+    public static float getTimeSeconds() {
+        return timeSeconds;
     }
 
     public static void reset() {

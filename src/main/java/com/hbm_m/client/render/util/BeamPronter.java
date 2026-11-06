@@ -79,8 +79,13 @@ public final class BeamPronter {
         ps.mulPose(Axis.XP.rotationDegrees(sPitch - 90));
 
         Matrix4f m = ps.last().pose();
+        // WIAJ demo screen: BEAM_SOLID_DEPTH writes depth into the GUI depth buffer and would
+        // occlude every later 2D draw (panels/text) across the beam's near pixels - use the
+        // no-depth-write glow type there; in-scene ordering is preserved by the block/machine depth.
         VertexConsumer vc = buffers.getBuffer(beam == EnumBeamType.SOLID
-                ? (depth ? ClientRenderHandler.CustomRenderTypes.BEAM_SOLID_DEPTH : ClientRenderHandler.CustomRenderTypes.DETONATOR_LASER_GLOW)
+                ? (depth && !com.hbm_m.client.render.ClientRenderFlags.guiRenderFrame()
+                        ? ClientRenderHandler.CustomRenderTypes.BEAM_SOLID_DEPTH
+                        : ClientRenderHandler.CustomRenderTypes.DETONATOR_LASER_GLOW)
                 : ClientRenderHandler.CustomRenderTypes.BEAM_LINES);
 
         rand.setSeed(start);

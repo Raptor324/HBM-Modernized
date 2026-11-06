@@ -354,7 +354,7 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("block.hbm_m.silex");
+        return Component.translatable("container.hbm_m.silex");
     }
 
     @Override
@@ -417,4 +417,5 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
         sidedItems.invalidate();
     }
     *///?}
+
 }

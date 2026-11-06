@@ -1,16 +1,19 @@
 {
-  "loader": "hbm_m:press_loader",
-  "base_model": "hbm_m:models/block/machines/press.obj",
-  "head_model": "hbm_m:models/block/machines/press_head.obj",
+  "loader": "hbm_m:machine_parts_loader",
   "flip_v": true,
-  "head_transform": {
-    "translation": [0.0, 0.8, 0.0],
-    "travel": 0.8
+  "render_type": "minecraft:cutout",
+  "parts": {
+    "Base": {
+      "model": "hbm_m:models/block/machines/press.obj",
+      "texture": "hbm_m:block/machine/press"
+    },
+    "Head": {
+      "model": "hbm_m:models/block/machines/press_head.obj",
+      "texture": "hbm_m:block/machine/press_head"
+    }
   },
   "textures": {
-    "particle": "hbm_m:block/machine/press",
-    "default": "hbm_m:block/machine/press",
-    "press_head": "hbm_m:block/machine/press_head"
+    "particle": "hbm_m:block/machine/press"
   },
   "transform": {
     "translation": [0.0, 0.0, 0.0],

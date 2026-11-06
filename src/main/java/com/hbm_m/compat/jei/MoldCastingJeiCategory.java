@@ -23,27 +23,46 @@ import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 @OnlyIn(Dist.CLIENT)
 /**
- * Литьё в форму: расплав из ковша плюс форма дают предмет. Расплав рисуется свотчем,
- * форма и результат — обычными слотами.
+ * Литьё в форму ({@code hbm_m:mold_casting}) — 1:1 порт NEI-хендлера {@code CrucibleCastingHandler}:
+ * <ul>
+ *   <li>фон — {@code textures/gui/nei/gui_nei_foundry.png}, регион (5, 11) 166×65;</li>
+ *   <li>вход — жидкий материал в размере стоимости формы (оригинал: {@code ItemScraps.create(ms, true)})
+ *       @ (48, 24); форма — @ (75, 6); basin — @ (75, 42) (малая форма — {@code foundry_mold},
+ *       большая — {@code foundry_basin}, как в оригинальном {@code registerMoldsForNEI}); выход — @ (102, 24);</li>
+ *   <li>набор рецептов фильтруется как в оригинальном {@code registerMoldsForNEI} — пары без
+ *       разрешаемого выхода и пары материалов вне Mats не регистрируются (см. {@link #filter});
+ *       свотч в {@link #draw} остаётся только защитным fallback'ом.</li>
+ * </ul>
  */
 public class MoldCastingJeiCategory implements IRecipeCategory<MoldCastingRecipe> {
 
     public static final RecipeType<MoldCastingRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "mold_casting", MoldCastingRecipe.class);
 
-    private static final int BG_WIDTH = 156;
-    private static final int BG_HEIGHT = 46;
-    private static final int MOLD_X = 30;
-    private static final int SLOT_Y = 6;
-    private static final int OUTPUT_X = 116;
+    public static final ResourceLocation TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/nei/gui_nei_foundry.png");
+
+    /** Позиции оригинального RecipeSet: вход (48, 24), форма (75, 6), basin (75, 42), выход (102, 24). */
+    private static final int INPUT_X  = 48;
+    private static final int INPUT_Y  = 24;
+    private static final int MOLD_X   = 75;
+    private static final int MOLD_Y   = 6;
+    private static final int BASIN_X  = 75;
+    private static final int BASIN_Y  = 42;
+    private static final int OUTPUT_X = 102;
+    private static final int OUTPUT_Y = 24;
+
+    public static final int RECIPE_WIDTH  = 166;
+    public static final int RECIPE_HEIGHT = 65;
 
     private static Map<ItemCastMold.MoldType, ItemStack> moldItems;
 
@@ -51,14 +70,20 @@ public class MoldCastingJeiCategory implements IRecipeCategory<MoldCastingRecipe
     private final IDrawable icon;
 
     public MoldCastingJeiCategory(IGuiHelper guiHelper) {
-        this.background = guiHelper.createBlankDrawable(BG_WIDTH, BG_HEIGHT);
+        // В 1.7.10 NEI TemplateRecipeHandler.drawBackground рисует текстуру в регионе (5, 11) 166×65.
+        this.background = guiHelper.createDrawable(TEXTURE, 5, 11, RECIPE_WIDTH, RECIPE_HEIGHT);
         this.icon = guiHelper.createDrawableIngredient(
                 VanillaTypes.ITEM_STACK, new ItemStack(ModBlocks.FOUNDRY_MOLD.get()));
     }
 
     @Override public RecipeType<MoldCastingRecipe> getRecipeType() { return RECIPE_TYPE; }
 
-    @Override public Component getTitle() { return Component.translatable("block.hbm_m.foundry_mold"); }
+    // Оригинальное имя хендлера: "Crucible Casting" (ключ уже есть в обоих lang-файлах).
+    @Override public Component getTitle() { return Component.translatable("jei.hbm_m.crucible_casting"); }
+
+    @Override public int getWidth() { return RECIPE_WIDTH; }
+
+    @Override public int getHeight() { return RECIPE_HEIGHT; }
 
     @Override @SuppressWarnings("removal") public IDrawable getBackground() { return background; }
 
@@ -80,26 +105,61 @@ public class MoldCastingJeiCategory implements IRecipeCategory<MoldCastingRecipe
 
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, MoldCastingRecipe recipe, IFocusGroup focuses) {
+        // Вход — жидкий материал в размере стоимости формы; оригинал: ItemScraps.create(ms, true) @ (48, 24).
+        MaterialStack molten = new MaterialStack(recipe.getMaterial(), recipe.getMold().getCost());
+        ItemStack scrap = JeiMoltenRendering.liquidScrap(molten);
+        if (!scrap.isEmpty()) {
+            builder.addSlot(RecipeIngredientRole.INPUT, INPUT_X, INPUT_Y).addItemStack(scrap);
+        }
+
+        // Форма (оригинал @ (75, 6)).
         ItemStack mold = molds().get(recipe.getMold());
         if (mold != null && !mold.isEmpty()) {
-            builder.addSlot(RecipeIngredientRole.CATALYST, MOLD_X, SLOT_Y).addItemStack(mold);
+            builder.addSlot(RecipeIngredientRole.CATALYST, MOLD_X, MOLD_Y).addItemStack(mold);
         }
-        builder.addSlot(RecipeIngredientRole.OUTPUT, OUTPUT_X, SLOT_Y).addItemStack(recipe.getOutput());
+
+        // Basin (оригинал @ (75, 42)): малая форма — foundry_mold, большая — foundry_basin
+        // (оригинал: mold.size == 0 ? foundry_mold : foundry_basin).
+        builder.addSlot(RecipeIngredientRole.CATALYST, BASIN_X, BASIN_Y)
+                .addItemStack(new ItemStack(recipe.getMold().getSize() == 1
+                        ? ModBlocks.FOUNDRY_BASIN.get() : ModBlocks.FOUNDRY_MOLD.get()));
+
+        // Выход (оригинал @ (102, 24)).
+        builder.addSlot(RecipeIngredientRole.OUTPUT, OUTPUT_X, OUTPUT_Y).addItemStack(recipe.getOutput());
     }
 
     @Override
     public void draw(MoldCastingRecipe recipe, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
-        int cost = recipe.getMold().getCost();
-        MaterialStack molten = new MaterialStack(recipe.getMaterial(), cost);
-        JeiMoltenRendering.drawSwatch(graphics, 6, SLOT_Y, molten);
-        JeiMoltenRendering.drawLabel(graphics, 6, SLOT_Y + 22, molten);
+        // Свотч-fallback для материалов без представления в Mats (alloy, nickel) — на позицию входа (48, 24);
+        // подпись количества — на свободном левом поле панели, чтобы не задевать basin (75, 42) и выход.
+        MaterialStack molten = new MaterialStack(recipe.getMaterial(), recipe.getMold().getCost());
+        if (!JeiMoltenRendering.liquidScrap(molten).isEmpty()) return;
+        JeiMoltenRendering.drawSwatch(graphics, INPUT_X + 1, INPUT_Y + 1, molten);
+        JeiMoltenRendering.drawLabel(graphics, 6, INPUT_Y + 4, molten);
     }
 
-    /** Рецептов литья сотни; вытаскиваем их один раз для регистрации. */
+    /**
+     * Рецептов литья сотни; вытаскиваем их один раз для регистрации.
+     *
+     * <p>Фильтр = набор оригинального NEI ({@code CrucibleRecipes.registerMoldsForNEI},
+     * CrucibleRecipes.java:259-262): пара попадала в хендлер только при
+     * {@code mold.getOutput(material) != null}. В порту этому соответствуют два отбраковочных
+     * правила:</p>
+     * <ul>
+     *   <li>выход не разрешается (JSON ссылается на тег, который не определяет никто —
+     *       {@code getOutput()} даёт {@link ItemStack#EMPTY}; 142 из 463 сгенерированных JSON);</li>
+     *   <li>материал пары без представления в Mats (alloy, nickel — Mats.java:155 оригинала
+     *       MAT_ALLOY закомментирован, MAT_NICKEL не существует): оригинал всегда показывал
+     *       вход как жидкий лом {@code ItemScraps.create(ms, true)}, свотчей в его наборе не было.</li>
+     * </ul>
+     */
     public static List<MoldCastingRecipe> filter(List<MoldCastingRecipe> all) {
         List<MoldCastingRecipe> out = new ArrayList<>(all.size());
         for (MoldCastingRecipe recipe : all) {
-            if (!recipe.getOutput().isEmpty()) out.add(recipe);
+            if (recipe.getOutput().isEmpty()) continue;
+            MaterialStack molten = new MaterialStack(recipe.getMaterial(), recipe.getMold().getCost());
+            if (JeiMoltenRendering.liquidScrap(molten).isEmpty()) continue;
+            out.add(recipe);
         }
         return out;
     }

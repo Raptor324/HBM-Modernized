@@ -521,10 +521,10 @@ public final class OrigCraftingRecipeGenerator {
         g.shaped(item("hbm_m:hev_battery"), 4, p(" W ", "IEI", "ICI"), 'W', ore("oredict/wire_fine/gold"), 'I', Ingredient.of(item("hbm_m:plate_polymer")), 'E', ore("oredict/dust/redstone"), 'C', ore("oredict/dust/cobalt"));
         // CraftingManager.java:533 (FEHLT)
         g.shaped(item("hbm_m:hev_battery"), 4, p(" W ", "ICI", "IEI"), 'W', ore("oredict/wire_fine/gold"), 'I', Ingredient.of(item("hbm_m:plate_polymer")), 'E', ore("oredict/dust/redstone"), 'C', ore("oredict/dust/cobalt"));
-        // CraftingManager.java:534 (FEHLT)
-        g.shapeless(item("hbm_m:hev_battery"), 1, Ingredient.of(item("hbm_m:hev_battery")));
-        // CraftingManager.java:535 (FEHLT)
-        g.shapeless(item("hbm_m:hev_battery"), 1, Ingredient.of(item("hbm_m:hev_battery")));
+        // CraftingManager.java:534 (ABW): Konvertierung Block -> Item
+        g.shapeless(item("hbm_m:hev_battery"), 1, Ingredient.of(item("hbm_m:hev_battery_block")));
+        // CraftingManager.java:535 (ABW): Konvertierung Item -> Block
+        g.shapeless(item("hbm_m:hev_battery_block"), 1, Ingredient.of(item("hbm_m:hev_battery")));
         // CraftingManager.java:546 (FEHLT)
         g.shaped(item("hbm_m:igniter"), 1, p(" W", "SC", "CE"), 'S', ore("oredict/plate/steel"), 'W', ore("oredict/wire_fine/schrabidium"), 'C', Ingredient.of(item("hbm_m:advanced_circuit")), 'E', ore("oredict/ingot/euphemium"));
         // CraftingManager.java:547 (FEHLT)
@@ -600,12 +600,12 @@ public final class OrigCraftingRecipeGenerator {
         g.shaped(item("hbm_m:machine_satlinker"), 1, p("PSP", "SCS", "PSP"), 'P', ore("oredict/ingot/any_resistant_alloy"), 'S', ore("oredict/ingot/any_plastic"), 'C', Ingredient.of(item("hbm_m:sat_chip")));
         // CraftingManager.java:606 (ABW)
         g.shaped(item("hbm_m:machine_keyforge"), 1, p("PCP", "WSW", "WSW"), 'P', ore("oredict/plate/steel"), 'S', ore("oredict/ingot/tungsten"), 'C', Ingredient.of(item("hbm_m:padlock")), 'W', ore("oredict/plank_wood"));
-        // CraftingManager.java:607 (ABW)
-        g.shapeless(item("hbm_m:geiger_counter"), 1, Ingredient.of(item("hbm_m:geiger_counter")));
+        // CraftingManager.java:609 (ABW): Konvertierung Block -> Item
+        g.shapeless(item("hbm_m:geiger_counter"), 1, Ingredient.of(item("hbm_m:geiger_counter_block")));
         // ToolRecipes.java:113 (ABW)
         g.shaped(item("hbm_m:geiger_counter"), 1, p("GPP", "WCS", "WBB"), 'W', ore("oredict/wire_fine/gold"), 'P', ore("oredict/ingot/any_rubber"), 'C', Ingredient.of(item("hbm_m:integrated_circuit")), 'G', ore("oredict/ingot/gold"), 'S', ore("oredict/plate/steel"), 'B', ore("oredict/ingot/beryllium"));
-        // ToolRecipes.java:115 (ABW)
-        g.shapeless(item("hbm_m:geiger_counter"), 1, Ingredient.of(item("hbm_m:geiger_counter")));
+        // ToolRecipes.java:115 (ABW): Konvertierung Item -> Block
+        g.shapeless(item("hbm_m:geiger_counter_block"), 1, Ingredient.of(item("hbm_m:geiger_counter")));
         // CraftingManager.java:608 (FEHLT)
         g.shaped(item("hbm_m:sat_coord"), 1, p("SII", "SCA", "SPP"), 'I', ore("oredict/ingot/steel"), 'S', ore("oredict/ingot/starmetal"), 'P', Ingredient.of(item("hbm_m:plate_polymer")), 'C', Ingredient.of(item("hbm_m:sat_chip")), 'A', Ingredient.of(item("hbm_m:advanced_circuit")));
         // CraftingManager.java:609 (FEHLT)
@@ -1357,7 +1357,7 @@ public final class OrigCraftingRecipeGenerator {
         // MineralRecipes.java:130 (FEHLT)
         g.shapeless(item("hbm_m:polonium_ingot"), 2, Ingredient.of(item("hbm_m:billet_polonium")), Ingredient.of(item("hbm_m:billet_polonium")), Ingredient.of(item("hbm_m:billet_polonium")));
         // MineralRecipes.java:335 (FEHLT, 1x1)
-        g.shapeless(item("hbm_m:polonium_ingot"), 9, Ingredient.of(item("hbm_m:polonium210_block")));
+        g.shapeless(item("hbm_m:polonium_ingot"), 9, Ingredient.of(item("hbm_m:block_polonium")));
         // MineralRecipes.java:373 (FEHLT)
         g.shaped(item("hbm_m:polonium_ingot"), 1, p("###", "###", "###"), '#', Ingredient.of(item("hbm_m:nugget_polonium")));
         // MineralRecipes.java:131 (ABW)
@@ -1619,7 +1619,7 @@ public final class OrigCraftingRecipeGenerator {
         // MineralRecipes.java:281 (FEHLT)
         g.shaped(item("hbm_m:block_yellowcake"), 1, p("###", "###", "###"), '#', Ingredient.of(item("hbm_m:yellowcake_powder")));
         // MineralRecipes.java:288 (FEHLT)
-        g.shaped(item("hbm_m:polonium210_block"), 1, p("###", "###", "###"), '#', Ingredient.of(item("hbm_m:polonium_ingot")));
+        g.shaped(item("hbm_m:block_polonium"), 1, p("###", "###", "###"), '#', Ingredient.of(item("hbm_m:polonium_ingot")));
         // MineralRecipes.java:298 (FEHLT)
         g.shaped(item("hbm_m:block_lithium"), 1, p("###", "###", "###"), '#', Ingredient.of(item("hbm_m:lithium")));
         // MineralRecipes.java:299 (FEHLT)

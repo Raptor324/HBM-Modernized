@@ -33,7 +33,7 @@ public class GUIMachineHeatex extends GuiInfoScreen<MachineHeatexMenu> {
     // Оригинальные координаты (в пикселях относительно левого верхнего угла GUI)
     private static final int TANK_HOT_RENDER_X = 44;
     private static final int TANK_COLD_RENDER_X = 116;
-    private static final int TANK_RENDER_Y = 88;
+    private static final int TANK_RENDER_Y = 36;
     private static final int TANK_INFO_Y = 36;
     private static final int TANK_W = 16;
     private static final int TANK_H = 52;

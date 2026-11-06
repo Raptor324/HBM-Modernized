@@ -20,7 +20,7 @@ import net.minecraft.world.inventory.InventoryMenu;
 
 /**
  * 1:1 {@code BlockRebar.renderRebar} (aus {@code onRenderWorldLastEvent}): zeichnet den Betonstand jeder
- * Bewehrung als Quader 0..progress/1000 mit {@code concrete_liquid}, hoechstens {@code RENDER_REBAR_LIMIT}
+ * Rebar rendered as cuboid 0..progress/1000 with {@code concrete_liquid}, clamped to {@code RENDER_REBAR_LIMIT}
  * Bloecke pro Bild.
  */
 public class RebarRenderer implements com.hbm_m.client.render.HbmBerBounds<RebarBlockEntity> {

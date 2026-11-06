@@ -1,11 +1,6 @@
 package com.hbm_m.client.render.implementations;
 
-import org.jetbrains.annotations.Nullable;
-import org.joml.Vector3f;
-
 import com.hbm_m.blockentity.machines.MachinePressBlockEntity;
-import com.hbm_m.client.model.PressBakedModel;
-import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.machine.MachineRenderApi;
 import com.hbm_m.client.render.machine.MachineRenderers;
 import com.hbm_m.client.render.machine.MachineSpec;
@@ -14,7 +9,6 @@ import com.mojang.math.Axis;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
@@ -22,7 +16,7 @@ import net.minecraft.world.item.ItemStack;
  * Press on the {@link MachineRenderers} factory: Base is the static part,
  * Head is a TRACKED rig (ANIM TRACK FORMAT v2); the stamp and workpiece are
  * drawn by an immediate-mode hook (items, not OBJ). Geometry comes from the
- * multipart blockstate model ({@code hbm_m:press_loader}).
+ * multipart blockstate model ({@code hbm_m:machine_parts_loader}).
  */
 public final class MachinePressRenderer {
 
@@ -135,8 +129,8 @@ public final class MachinePressRenderer {
     private static long pressSegmentEpoch(MachinePressBlockEntity be) {
         // CLEAN t0, no kind tag: the epoch rides into the record verbatim as the
         // t0 float32 word ((float) segmentStartTickFn.applyAsLong(be)) - a tag in
-        // the high bits destroys the float32 mantissa and freezes the head
-        // (same bug as the assembler ring, 2026-10-07). Injectivity across
+        // the high bits destroys the float32 mantissa and freezes the head.
+        // Injectivity across
         // segments still holds on t0 alone: a frozen park's t0 is a past tick,
         // and any motion segment computes t0 = now - elapsed with strictly
         // increasing now; two segments of one machine never classify to the
@@ -207,12 +201,6 @@ public final class MachinePressRenderer {
         return new PressSeg(SEG_PARK, 0L, 1F, 0F);
     }
 
-    private static @Nullable PressBakedModel pressModel(MachinePressBlockEntity blockEntity) {
-        BakedModel raw = Minecraft.getInstance().getBlockRenderer()
-                .getBlockModel(blockEntity.getBlockState());
-        return AbstractPartBasedRenderer.unwrapFabricForwardingModels(raw) instanceof PressBakedModel p ? p : null;
-    }
-
     // Hook: stamp item on the head plus workpiece item on the table.
 
     private static void renderItems(MachinePressBlockEntity blockEntity, float partialTick,
@@ -269,14 +257,11 @@ public final class MachinePressRenderer {
         // NOT from MachineRenderApi.partTransform: that pose lives in the BER's
         // view space (L * T(rel) * ...), so its translation component is rotated by
         // the camera basis and the stamp floated up/down with camera pitch/yaw.
-        PressBakedModel model = pressModel(blockEntity);
-        if (model == null) {
-            return;
-        }
-        Vector3f rest = model.getHeadRestOffset();
-        float offsetY = rest.y()
-                - (blockEntity.getPressAnimationProgress(partialTick)
-                        * Math.max(0.0F, model.getHeadTravelDistance() - PIXEL));
+        // Rest offset / travel mirror the retired press_loader JSON
+        // (head_transform: translation T(0, 0.8, 0), travel 0.8) as constants -
+        // see HEAD_REST_Y / EFFECTIVE_TRAVEL above.
+        float offsetY = HEAD_REST_Y
+                - (blockEntity.getPressAnimationProgress(partialTick) * EFFECTIVE_TRAVEL);
 
         poseStack.pushPose();
         // Block center on X/Z, at the head height plus a small offset

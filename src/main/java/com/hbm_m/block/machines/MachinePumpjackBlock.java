@@ -168,4 +168,14 @@ if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClien
         return CODEC;
     }
     *///?}
+    // Verbatim port of the original MachinePumpjack.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {-2, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {-4, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {-2, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-4, 0, -1, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

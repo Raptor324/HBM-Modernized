@@ -16,9 +16,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 /**
- * 1:1 {@code RenderSiegeLaser}: untexturierter Pfeil in der Laserfarbe, additiv (SRC_ALPHA, ONE), ohne
- * Rueckseitenausblendung und ohne Tiefenschreiben. Spitze und Mittelteil sind Dreiecke (hier als entartete
- * Vierecke gezeichnet), der Schweif blendet nach hinten auf Deckkraft 0 aus.
+ * 1:1 {@code RenderSiegeLaser}: untextured arrow in laser color, additive (SRC_ALPHA, ONE),
+ * without face culling or depth writing. Tip and center sections are triangles (drawn as degenerate
+ * quads), trail fades backward to alpha 0.
  */
 public class SiegeLaserRenderer extends EntityRenderer<EntitySiegeLaser> {
 
@@ -81,7 +81,7 @@ public class SiegeLaserRenderer extends EntityRenderer<EntitySiegeLaser> {
         ps.popPose();
     }
 
-    /** Ein Dreieck (startDrawing(4)) als Viereck mit doppeltem letztem Eckpunkt; je Ecke Position und Deckkraft. */
+    /** Triangle (startDrawing(4)) as quad with duplicated final vertex; position and opacity per vertex. */
     private static void tri(VertexConsumer vc, Matrix4f m, float r, float g, float b,
                             float x0, float y0, float z0, float a0,
                             float x1, float y1, float z1, float a1,
@@ -92,7 +92,7 @@ public class SiegeLaserRenderer extends EntityRenderer<EntitySiegeLaser> {
         com.hbm_m.platform.RenderHooks.vertexColor(vc, m, x2, y2, z2, r, g, b, a2);
     }
 
-    /** Schweif-Viereck: die ersten beiden Ecken deckend, die letzten beiden mit Deckkraft 0. */
+    /** Trail quad: first two vertices opaque, last two with alpha 0. */
     private static void quad(VertexConsumer vc, Matrix4f m, float r, float g, float b,
                              float x0, float y0, float z0, float x1, float y1, float z1,
                              float x2, float y2, float z2, float x3, float y3, float z3) {

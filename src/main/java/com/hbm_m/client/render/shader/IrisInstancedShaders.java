@@ -8,6 +8,14 @@ import net.minecraft.client.renderer.ShaderInstance;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
+/**
+ * Instanced shader manager for Iris shaderpack interoperability.
+ *
+ * <p>Exclusively used for the shadow pass (slot 1, Tier 2 instanced shadow fallback).
+ * The main pass bypasses this class and is handled via {@link com.hbm_m.client.render.NucleusGpuBaker} (Tier 1)
+ * or {@link com.hbm_m.client.render.IrisCompanionMesh} (Tier 2/3 companion path), preventing deferred composite
+ * encoding mismatch. Slot 0 remains reserved/inactive.</p>
+ */
 @OnlyIn(Dist.CLIENT)
 public final class IrisInstancedShaders {
 
@@ -18,6 +26,7 @@ public final class IrisInstancedShaders {
     /** Generation {@link #pipeline} was fetched at; -1 = never resolved. */
     private static long pipelineGenSeen = -1L;
 
+    // Per-pass slots: slot 0 is reserved/inactive (main pass handled via NucleusGpuBaker/IrisCompanionMesh); slot 1 is active (shadow pass)
     private static final ShaderInstance[] cachedShader = { null, null };
     private static final String[] cachedShaderName = { null, null };
     private static final Object[][] cachedFbPair = { null, null }; // [before, after] GlFramebuffer

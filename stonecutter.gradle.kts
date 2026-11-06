@@ -75,6 +75,7 @@ stonecutter parameters {
 		replace("net.minecraftforge.client.event.InputEvent", "net.neoforged.neoforge.client.event.InputEvent")
 		replace("net.minecraftforge.client.event.RenderHandEvent", "net.neoforged.neoforge.client.event.RenderHandEvent")
 		replace("net.minecraftforge.client.event.RenderLevelStageEvent", "net.neoforged.neoforge.client.event.RenderLevelStageEvent")
+		replace("net.minecraftforge.event.BuildCreativeModeTabContentsEvent;", "net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;")
 		// event bus (NeoForge moved the package, class names unchanged)
 		replace("net.minecraftforge.eventbus.api.EventPriority", "net.neoforged.bus.api.EventPriority")
 		replace("net.minecraftforge.eventbus.api.SubscribeEvent", "net.neoforged.bus.api.SubscribeEvent")

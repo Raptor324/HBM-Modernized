@@ -38,6 +38,7 @@ import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
 import net.minecraftforge.client.model.generators.ConfiguredModel;
 import net.minecraftforge.client.model.generators.ModelBuilder;
@@ -70,7 +71,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.GIGA_DET);
         // Textures ported from the 1.7.10 assets - these three had no blockstate at all.
         // geiger (geiger_counter_block) — ниже через customObjBlock (канон FFA); machines-дубль удалён.
-        blockWithItem(ModBlocks.POLONIUM210_BLOCK);
         blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
         blockWithItem(ModBlocks.CRATE_WEAPON);
         blockWithItem(ModBlocks.CRATE_METAL);
@@ -582,7 +582,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customDoorBlock(ModBlocks.SECURE_ACCESS_DOOR);
         customDoorBlock(ModBlocks.VAULT_DOOR);
         customDoorBlock(ModBlocks.CARGO_DOOR);
-        // blast_door — FFA-канон: рукописный blockstate + BER BlastDoorRenderer; customDoorBlock (новая система) несовместим со старым блоком.
+        customDoorBlock(ModBlocks.BLAST_DOOR);
 
         // Machines
         customMachineBlock(ModBlocks.CRYSTALLIZER);
@@ -626,6 +626,18 @@ public class ModBlockStateProvider extends BlockStateProvider {
         directionalBlock(ModBlocks.PISTON_INSERTER.get(), models().getBuilder("piston_inserter").texture("particle", modLoc("block/block_steel")));
         horizontalBlock(ModBlocks.REFUELER.get(), models().getBuilder("refueler").texture("particle", modLoc("block/block_steel")));
         horizontalBlock(ModBlocks.LANTERN_BEHEMOTH.get(), models().getBuilder("lantern_behemoth").texture("particle", modLoc("block/block_rust")));
+        {
+            var guideModel = models().cube("book_guide_block",
+                    modLoc("block/guide_bottom"),
+                    modLoc("block/guide_top"),
+                    modLoc("block/guide_front"),
+                    modLoc("block/guide_back"),
+                    modLoc("block/guide_side_left"),
+                    modLoc("block/guide_side_right"))
+                    .texture("particle", modLoc("block/guide_front"));
+            horizontalBlock(ModBlocks.BOOK_GUIDE.get(), guideModel);
+            simpleBlockItem(ModBlocks.BOOK_GUIDE.get(), guideModel);
+        }
         simpleBlockWithItem(ModBlocks.CRYSTAL_VIRUS.get(), models().cubeAll("crystal_virus", modLoc("block/crystal_virus")));
         simpleBlockWithItem(ModBlocks.CRYSTAL_HARDENED.get(), models().cubeAll("crystal_hardened", modLoc("block/crystal_hardened")));
         simpleBlockWithItem(ModBlocks.CRYSTAL_PULSAR.get(), models().cubeAll("crystal_pulsar", modLoc("block/crystal_pulsar")));
@@ -685,8 +697,15 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // FENSU2 (machine_battery_redd) is a MachineBatteryBlock (FACING-Blockstate) - see orientableBlockWithItem below.
         horizontalBlock(ModBlocks.FIREBOX.get(),
             models().getExistingFile(modLoc("block/machines/firebox")));
-        horizontalBlock(ModBlocks.HEATEX.get(),
-                models().getExistingFile(modLoc("block/machines/heatex")));
+        getVariantBuilder(ModBlocks.HEATEX.get())
+                .partialState().with(com.hbm_m.block.machines.MachineHeatexBlock.FACING, Direction.EAST)
+                .modelForState().modelFile(models().getExistingFile(modLoc("block/machines/heatex"))).addModel()
+                .partialState().with(com.hbm_m.block.machines.MachineHeatexBlock.FACING, Direction.SOUTH)
+                .modelForState().modelFile(models().getExistingFile(modLoc("block/machines/heatex"))).rotationY(90).addModel()
+                .partialState().with(com.hbm_m.block.machines.MachineHeatexBlock.FACING, Direction.WEST)
+                .modelForState().modelFile(models().getExistingFile(modLoc("block/machines/heatex"))).rotationY(180).addModel()
+                .partialState().with(com.hbm_m.block.machines.MachineHeatexBlock.FACING, Direction.NORTH)
+                .modelForState().modelFile(models().getExistingFile(modLoc("block/machines/heatex"))).rotationY(270).addModel();
         customMachineBlock(ModBlocks.HEPHAESTUS);
         // Der Reaktor hat seit dem Port eine Blickrichtung - das Modell dreht sich mit.
         horizontalBlock(ModBlocks.ICF.get(), models().getExistingFile(modLoc("block/machines/icf")));
@@ -720,7 +739,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         horizontalBlock(ModBlocks.SAWMILL.get(),
             models().getExistingFile(modLoc("block/machines/sawmill")));
         customMachineBlock(ModBlocks.SOLIDIFIER);
-        simpleMachineBlock(ModBlocks.ASHPIT);
+        horizontalBlock(ModBlocks.ASHPIT.get(),
+                models().getExistingFile(modLoc("block/machines/ashpit")));
         simpleMachineBlock(ModBlocks.REACTOR_RESEARCH);
         simpleMachineBlock(ModBlocks.SOURCE);
         customMachineBlock(ModBlocks.STEAM_ENGINE);
@@ -738,7 +758,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.MACHINE_CENTRIFUGE);
         customMachineBlock(ModBlocks.MACHINE_GASCENT);
         customMachineBlock(ModBlocks.BREEDER);
-        customMachineBlock(ModBlocks.LARGE_PYLON);
         customMachineBlock(ModBlocks.LAUNCH_PAD);
         customMachineBlock(ModBlocks.LAUNCH_PAD_LARGE);
         customMachineBlock(ModBlocks.MOBILE_LAUNCH_PAD);
@@ -880,7 +899,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .texture("particle", modLoc("block/block_steel_machine")));
         // wire_coated: manual multipart blockstate + OBJ visibility (see assets/hbm_m/blockstates/wire_coated.json)
         // red_* ЛЭП (коннекторы/пилоны): ручные blockstates с OBJ-моделями и поворотами (assets/hbm_m/blockstates).
-        // PYLON_DUMMY не датагенится вовсе (invisible).
 
         blockWithItem(ModBlocks.STEAM_CONDENSER);
 
@@ -1799,8 +1817,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.WEST).setModels(ConfiguredModel.builder().modelFile(brickRedWest).build());
         brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.EAST).setModels(ConfiguredModel.builder().modelFile(brickRedEast).build());
         simpleBlockItem(ModBlocks.BRICK_RED.get(), brickRedNone);
-        // broadcaster_pc: 4 facing variants, y-rotations verbatim from NEXT
-        // assets/hbm/blockstates/broadcaster_pc.json (model front = south).
+        // broadcaster_pc: 4 facing variants, y-rotations verbatim from the original
+        // RenderDecoBlock TESR (meta 3/2/4/5 -> 0/180/90/270; meta = player look direction,
+        // like ctx.getHorizontalDirection()). Model front (lights) = north, UVs verbatim
+        // from Techne ModelBroadcaster.
         ModelFile broadcasterPcModel = models().getExistingFile(modLoc("block/machines/broadcaster_pc"));
         VariantBlockStateBuilder broadcasterPcBuilder = getVariantBuilder(ModBlocks.BROADCASTER_PC.get());
         broadcasterPcBuilder.partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, net.minecraft.core.Direction.SOUTH)
@@ -2038,54 +2058,32 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/drone_dock_top")
                 )
         );
-        directionlessFacingBlock(ModBlocks.DRONE_WAYPOINT.get(),
-                models().cubeAll(
-                        ModBlocks.DRONE_WAYPOINT.getId().getPath(),
-                        modLoc("block/drone_waypoint")
-                )
-        );
-        directionlessFacingBlock(ModBlocks.DRONE_WAYPOINT_REQUEST.get(),
-                models().cubeAll(
-                        ModBlocks.DRONE_WAYPOINT_REQUEST.getId().getPath(),
-                        modLoc("block/drone_waypoint_request")
-                )
-        );
-        directionlessFacingBlock(ModBlocks.RADIO_TORCH_SENDER.get(),
-                models().cubeAll(
-                        ModBlocks.RADIO_TORCH_SENDER.getId().getPath(),
-                        modLoc("block/rtty_sender_off")
-                )
-        );
-        directionlessFacingBlock(ModBlocks.RADIO_TORCH_RECEIVER.get(),
-                models().cubeAll(
-                        ModBlocks.RADIO_TORCH_RECEIVER.getId().getPath(),
-                        modLoc("block/rtty_rec_off")
-                )
-        );
-        directionlessFacingBlock(ModBlocks.RADIO_TORCH_LOGIC.get(),
-                models().cubeAll(
-                        ModBlocks.RADIO_TORCH_LOGIC.getId().getPath(),
-                        modLoc("block/rtty_logic_off")
-                )
-        );
-        directionlessFacingBlock(ModBlocks.RADIO_TORCH_READER.get(),
-                models().cubeAll(
-                        ModBlocks.RADIO_TORCH_READER.getId().getPath(),
-                        modLoc("block/rtty_reader")
-                )
-        );
-        directionlessFacingBlock(ModBlocks.RADIO_TORCH_CONTROLLER.get(),
-                models().cubeAll(
-                        ModBlocks.RADIO_TORCH_CONTROLLER.getId().getPath(),
-                        modLoc("block/rtty_controller")
-                )
-        );
-        directionlessFacingBlock(ModBlocks.RADIO_TORCH_COUNTER.get(),
-                models().cubeAll(
-                        ModBlocks.RADIO_TORCH_COUNTER.getId().getPath(),
-                        modLoc("block/rtty_counter")
-                )
-        );
+        torchBlock(ModBlocks.DRONE_WAYPOINT, "block/drone_waypoint");
+        torchBlock(ModBlocks.DRONE_WAYPOINT_REQUEST, "block/drone_waypoint_request");
+        litTorchBlock(ModBlocks.RADIO_TORCH_SENDER,
+                models().getExistingFile(modLoc("block/radio_torch_sender")),
+                models().getExistingFile(modLoc("block/radio_torch_sender_on")),
+                "block/rtty_sender_off");
+        litTorchBlock(ModBlocks.RADIO_TORCH_RECEIVER,
+                models().getExistingFile(modLoc("block/radio_torch_receiver")),
+                models().getExistingFile(modLoc("block/radio_torch_receiver_on")),
+                "block/rtty_rec_off");
+        litTorchBlock(ModBlocks.RADIO_TORCH_LOGIC,
+                models().getExistingFile(modLoc("block/radio_torch_logic")),
+                models().getExistingFile(modLoc("block/radio_torch_logic_on")),
+                "block/rtty_logic_off");
+        {
+            ModelFile m = models().getExistingFile(modLoc("block/radio_torch_reader"));
+            litTorchBlock(ModBlocks.RADIO_TORCH_READER, m, m, "block/rtty_reader");
+        }
+        {
+            ModelFile m = models().getExistingFile(modLoc("block/radio_torch_controller"));
+            litTorchBlock(ModBlocks.RADIO_TORCH_CONTROLLER, m, m, "block/rtty_controller");
+        }
+        {
+            ModelFile m = models().getExistingFile(modLoc("block/radio_torch_counter"));
+            litTorchBlock(ModBlocks.RADIO_TORCH_COUNTER, m, m, "block/rtty_counter");
+        }
         simpleBlockWithItem(ModBlocks.DUCRETE.get(),
                 models().cubeAll(
                         ModBlocks.DUCRETE.getId().getPath(),
@@ -2104,16 +2102,47 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/factory_titanium_hull")
                 )
         );
-        fenceBlockWithItem(ModBlocks.FENCE_METAL, "block/fence_metal");
-        // одиночный столб chainlink-забора
-        ModelFile postModel = models().withExistingParent(ModBlocks.FENCE_METAL_POST.getId().getPath(), mcLoc("block/fence_post"))
-                .texture("texture", modLoc("block/fence_metal_post"));
-        VariantBlockStateBuilder postBuilder = getVariantBuilder(ModBlocks.FENCE_METAL_POST.get());
-        for (Direction facing : Direction.Plane.HORIZONTAL) {
-            postBuilder.partialState().with(com.hbm_m.block.decorations.DecorShapeBlock.FACING, facing)
-                    .modelForState().modelFile(postModel).addModel();
-        }
-        simpleBlockItem(ModBlocks.FENCE_METAL_POST.get(), postModel);
+        // Chainlink Fence / Post (1:1 порт BlockMetalFence + RenderFence):
+        // Двусторонние плоские сетки в плоскости симметрии (X=8 / Z=8),
+        // столб 4x4 (6..10) по свойству POST (скрыт на прямых участках X/Z у fence_metal,
+        // всегда виден у fence_metal_post). В инвентаре плоские 2D иконки (канон 1.7.10).
+        ModelFile chainlinkSide = models().withExistingParent("fence_metal_side", mcLoc("block/block"))
+                .renderType("minecraft:cutout")
+                .texture("texture", modLoc("block/fence_metal"))
+                .texture("particle", "#texture")
+                .element()
+                        .from(8.0F, 0.0F, 0.0F).to(8.0F, 16.0F, 8.0F)
+                        .face(Direction.WEST).texture("#texture").uvs(0.0F, 0.0F, 8.0F, 16.0F).end()
+                        .face(Direction.EAST).texture("#texture").uvs(8.0F, 0.0F, 0.0F, 16.0F).end()
+                .end();
+        ModelFile chainlinkSideAlt = models().withExistingParent("fence_metal_side_alt", mcLoc("block/block"))
+                .renderType("minecraft:cutout")
+                .texture("texture", modLoc("block/fence_metal"))
+                .texture("particle", "#texture")
+                .element()
+                        .from(8.0F, 0.0F, 8.0F).to(8.0F, 16.0F, 16.0F)
+                        .face(Direction.WEST).texture("#texture").uvs(8.0F, 0.0F, 16.0F, 16.0F).end()
+                        .face(Direction.EAST).texture("#texture").uvs(16.0F, 0.0F, 8.0F, 16.0F).end()
+                .end();
+        ModelFile chainlinkPost = models().withExistingParent("fence_metal_post", mcLoc("block/block"))
+                .renderType("minecraft:cutout")
+                .texture("texture", modLoc("block/fence_metal_post"))
+                .texture("particle", "#texture")
+                .element()
+                        .from(6.0F, 0.0F, 6.0F).to(10.0F, 16.0F, 10.0F)
+                        .face(Direction.NORTH).texture("#texture").uvs(6.0F, 0.0F, 10.0F, 16.0F).end()
+                        .face(Direction.SOUTH).texture("#texture").uvs(6.0F, 0.0F, 10.0F, 16.0F).end()
+                        .face(Direction.WEST).texture("#texture").uvs(6.0F, 0.0F, 10.0F, 16.0F).end()
+                        .face(Direction.EAST).texture("#texture").uvs(6.0F, 0.0F, 10.0F, 16.0F).end()
+                        .face(Direction.UP).texture("#texture").uvs(6.0F, 6.0F, 10.0F, 10.0F).end()
+                        .face(Direction.DOWN).texture("#texture").uvs(6.0F, 6.0F, 10.0F, 10.0F).end()
+                .end();
+        chainlinkFence(ModBlocks.FENCE_METAL.get(), chainlinkSide, chainlinkSideAlt, chainlinkPost);
+        itemModels().withExistingParent(ModBlocks.FENCE_METAL.getId().getPath(), mcLoc("item/generated"))
+                .texture("layer0", modLoc("block/fence_metal"));
+        chainlinkFence(ModBlocks.FENCE_METAL_POST.get(), chainlinkSide, chainlinkSideAlt, chainlinkPost);
+        itemModels().withExistingParent(ModBlocks.FENCE_METAL_POST.getId().getPath(), mcLoc("item/generated"))
+                .texture("layer0", modLoc("block/fence_metal_post"));
         simpleBlockWithItem(ModBlocks.FIELD_DISTURBER.get(),
                 models().cubeAll(
                         ModBlocks.FIELD_DISTURBER.getId().getPath(),
@@ -2230,8 +2259,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         horizontalBlock(ModBlocks.CHARGER.get(), models().getExistingFile(modLoc("block/machines/charger")));
         simpleBlockItem(ModBlocks.CHARGER.get(), models().getExistingFile(modLoc("block/machines/charger_item")));
         // Original: der Grosstank nutzt ebenfalls die Stahlblock-Textur.
-        simpleBlockWithItem(ModBlocks.MACHINE_BIGASSTANK.get(),
-                models().getExistingFile(modLoc("block/machines/machine_bigasstank")));
+        simpleMachineBlock(ModBlocks.MACHINE_BIGASSTANK);
+
         // Original: der RTG ist ein schlichter Wuerfel mit der Textur "rtg" auf allen Seiten.
         // 1.7.10 OBJ: the generator is the block model, the cable connectors are drawn by RtgRenderer.
         simpleBlock(ModBlocks.MACHINE_RTG.get(), models().getExistingFile(modLoc("block/machines/rtg")));
@@ -2253,12 +2282,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.HADRON_COIL_STARMETAL.get(), models().getExistingFile(modLoc("block/hadron_coil_starmetal")));
         // FFA port: glyphid spawner nest (three TYPE variants share the eggs texture here)
         simpleBlockWithItem(ModBlocks.GLYPHID_SPAWNER.get(), models().cubeAll("glyphid_eggs_alt_block", modLoc("block/glyphid_eggs_alt")));
-        simpleBlockWithItem(ModBlocks.HEV_BATTERY.get(),
-                models().cubeAll(
-                        ModBlocks.HEV_BATTERY.getId().getPath(),
-                        modLoc("block/hev_battery")
-                )
-        );
+        // Original RenderBattery: OBJ-Modell battery.obj mit hev_battery-Icon - als handgefertigtes OBJ-Blockmodell
+        simpleBlockWithItem(ModBlocks.HEV_BATTERY.get(), models().getExistingFile(modLoc("block/hev_battery")));
         simpleBlockWithItem(ModBlocks.ICF_COMPONENT.get(),
                 models().cubeAll(
                         ModBlocks.ICF_COMPONENT.getId().getPath(),
@@ -2733,10 +2758,19 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
         {
-            var telex = models().cubeAll(
-                    ModBlocks.RADIO_TELEX.getId().getPath(), modLoc("block/radio_telex"));
-            horizontalBlock(ModBlocks.RADIO_TELEX.get(), telex);
-            simpleBlockItem(ModBlocks.RADIO_TELEX.get(), telex);
+            ModelFile telex = models().getExistingFile(modLoc("block/machines/radio_telex"));
+            VariantBlockStateBuilder builder = getVariantBuilder(ModBlocks.RADIO_TELEX.get());
+            Map<Direction, Integer> rotY = Map.of(
+                    Direction.NORTH, 0,
+                    Direction.WEST, 90,
+                    Direction.SOUTH, 180,
+                    Direction.EAST, 270
+            );
+            for (Direction facing : Direction.Plane.HORIZONTAL) {
+                builder.partialState().with(BlockStateProperties.HORIZONTAL_FACING, facing)
+                        .modelForState().modelFile(telex).rotationY(rotY.get(facing)).addModel();
+            }
+            itemModels().withExistingParent(ModBlocks.RADIO_TELEX.getId().getPath(), modLoc("block/machines/radio_telex"));
         }
         simpleBlockWithItem(ModBlocks.RADIOBOX.get(),
                 models().cubeAll(
@@ -2746,12 +2780,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         );
         customObjBlockRotated(ModBlocks.RADIOREC, Map.of(
                 Direction.NORTH, 180, Direction.SOUTH, 0, Direction.WEST, 90, Direction.EAST, 270));
-        simpleBlockWithItem(ModBlocks.RADIO_AUTOCAL.get(),
-                models().cubeAll(
-                        ModBlocks.RADIO_AUTOCAL.getId().getPath(),
-                        modLoc("block/radio_autocal")
-                )
-        );
+        customObjBlockRotated(ModBlocks.RADIO_AUTOCAL, Map.of(
+                Direction.NORTH, 90, Direction.SOUTH, 270, Direction.WEST, 180, Direction.EAST, 0));
         railBlockstate(ModBlocks.RAIL_BOOSTER, "rail_booster");
         railBlockstate(ModBlocks.RAIL_HIGHSPEED, "rail_highspeed");
         railBlockstate(ModBlocks.RAIL_NARROW, "rail_narrow");
@@ -3199,10 +3229,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         balefireBuilder.part().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_side"))).rotationY(270).nextModel().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_side_alt"))).rotationY(270).addModel().useOr().nestedGroup().condition(balefireWest, true).end().nestedGroup().condition(balefireEast, false).end().nestedGroup().condition(balefireNorth, false).end().nestedGroup().condition(balefireSouth, false).end().nestedGroup().condition(balefireUp, false).end().nestedGroup().condition(balefireWest, false).end().end();
         balefireBuilder.part().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_up"))).nextModel().modelFile(models().getExistingFile(modLoc("block/bomb/balefire_up_alt"))).addModel().condition(balefireUp, true).end();
         getVariantBuilder(ModBlocks.BARRICADE.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/deco/barricade"))).addModel();
-        getVariantBuilder(ModBlocks.BLAST_DOOR.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/blast_door_particle"))).addModel();
-        getVariantBuilder(ModBlocks.BLAST_DOOR.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/blast_door_particle"))).addModel();
-        getVariantBuilder(ModBlocks.BLAST_DOOR.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/blast_door_particle"))).addModel();
-        getVariantBuilder(ModBlocks.BLAST_DOOR.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/blast_door_particle"))).addModel();
         getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector"))).addModel();
         getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector"))).rotationX(90).addModel();
         getVariantBuilder(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get()).partialState().with(com.hbm_m.block.machines.pile.GraphitePileBlocks.META, 2).modelForState().modelFile(models().getExistingFile(modLoc("block/pile_mk1/block_graphite_detector"))).rotationX(90).rotationY(90).addModel();
@@ -3358,8 +3384,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 14).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_14"))).addModel();
         getVariantBuilder(ModBlocks.BRICK_JUNGLE_GLYPH.get()).partialState().with(com.hbm_m.block.generic.JungleBricks.Glyph.GLYPH, 15).modelForState().modelFile(models().getExistingFile(modLoc("block/brick_jungle_glyph_15"))).addModel();
         customObjBlockNoFacing(ModBlocks.BROADCASTER);
-        // cargo_elevator.json — CargoElevatorBlock has no blockstate properties; single model block/cargo_elevator
-        customObjBlockNoFacing(ModBlocks.CARGO_ELEVATOR);
+        // cargo_elevator.json — CargoElevatorBlock has horizontal facing variants
+        customObjBlock(ModBlocks.CARGO_ELEVATOR);
         // conveyor.json — ConveyorBlock (ConveyorBlockBase.FACING + ConveyorBendableBlock.BEND), 12 variants
         getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor"))).addModel();
         getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_left"))).addModel();
@@ -4120,8 +4146,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         getVariantBuilder(ModBlocks.PUTER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/puter"))).rotationY(0).addModel();
         getVariantBuilder(ModBlocks.PUTER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/puter"))).rotationY(90).addModel();
         getVariantBuilder(ModBlocks.PUTER.get()).partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/puter"))).rotationY(270).addModel();
-        // pylon_dummy — PylonDummyBlock: no state properties, single variant; registered without item, so no simpleBlockItem
-        getVariantBuilder(ModBlocks.PYLON_DUMMY.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/pylon_dummy"))).addModel();
         // rail_large_straight — RailDummyableBlock: META 0..15
         getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 0).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_empty"))).addModel();
         getVariantBuilder(ModBlocks.RAIL_LARGE_STRAIGHT.get()).partialState().with(com.hbm_m.block.rail.RailDummyableBlock.META, 1).modelForState().modelFile(models().getExistingFile(modLoc("block/rail/rail_large_straight_empty"))).addModel();
@@ -4325,14 +4349,17 @@ public class ModBlockStateProvider extends BlockStateProvider {
         getMultipartBuilder(ModBlocks.RED_CABLE.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_arm_down"))).addModel().condition(com.hbm_m.api.energy.WireBlock.DOWN, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z).end();
         // red_cable_box — BoxDuctBlock (META + N/S/E/W/UP/DOWN): hand-written json is a single "" variant covering all states
         getVariantBuilder(ModBlocks.RED_CABLE_BOX.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/red_cable_box"))).addModel();
-        // red_cable_classic.json — WireBlock (north/east/south/west/up/down BooleanProperty), multipart
-        getMultipartBuilder(ModBlocks.RED_CABLE_CLASSIC.get()).part().modelFile(models().getExistingFile(modLoc("block/cable_classic_core"))).addModel().end()
-                .part().modelFile(models().getExistingFile(modLoc("block/cable_classic_arm_north"))).addModel().condition(com.hbm_m.api.energy.WireBlock.NORTH, true).end()
-                .part().modelFile(models().getExistingFile(modLoc("block/cable_classic_arm_south"))).addModel().condition(com.hbm_m.api.energy.WireBlock.SOUTH, true).end()
-                .part().modelFile(models().getExistingFile(modLoc("block/cable_classic_arm_east"))).addModel().condition(com.hbm_m.api.energy.WireBlock.EAST, true).end()
-                .part().modelFile(models().getExistingFile(modLoc("block/cable_classic_arm_west"))).addModel().condition(com.hbm_m.api.energy.WireBlock.WEST, true).end()
-                .part().modelFile(models().getExistingFile(modLoc("block/cable_classic_arm_up"))).addModel().condition(com.hbm_m.api.energy.WireBlock.UP, true).end()
-                .part().modelFile(models().getExistingFile(modLoc("block/cable_classic_arm_down"))).addModel().condition(com.hbm_m.api.energy.WireBlock.DOWN, true).end();
+        // red_cable_classic.json — WireBlock: multipart; same conditions and model naming as red_cable, using red_cable_classic_*
+        getMultipartBuilder(ModBlocks.RED_CABLE_CLASSIC.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_classic_core"))).addModel().condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE_CLASSIC.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_classic_straight_x"))).addModel().condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE_CLASSIC.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_classic_straight_y"))).addModel().condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE_CLASSIC.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_classic_straight_z"))).addModel().condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE_CLASSIC.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_classic_arm_north"))).addModel().condition(com.hbm_m.api.energy.WireBlock.NORTH, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE_CLASSIC.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_classic_arm_south"))).addModel().condition(com.hbm_m.api.energy.WireBlock.SOUTH, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE_CLASSIC.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_classic_arm_east"))).addModel().condition(com.hbm_m.api.energy.WireBlock.EAST, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE_CLASSIC.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_classic_arm_west"))).addModel().condition(com.hbm_m.api.energy.WireBlock.WEST, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Y, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE_CLASSIC.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_classic_arm_up"))).addModel().condition(com.hbm_m.api.energy.WireBlock.UP, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z).end();
+        getMultipartBuilder(ModBlocks.RED_CABLE_CLASSIC.get()).part().modelFile(models().getExistingFile(modLoc("block/red_cable_classic_arm_down"))).addModel().condition(com.hbm_m.api.energy.WireBlock.DOWN, true).condition(com.hbm_m.api.energy.WireBlock.CENTER, com.hbm_m.api.energy.WireCenterVisual.JUNCTION, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_X, com.hbm_m.api.energy.WireCenterVisual.STRAIGHT_Z).end();
         // red_cable_gauge.json — RedCableGaugeBlock.FACING (six-way BlockStateProperties.FACING), x/y rotations
         getVariantBuilder(ModBlocks.RED_CABLE_GAUGE.get()).partialState().with(com.hbm_m.block.network.RedCableGaugeBlock.FACING, Direction.UP).modelForState().modelFile(models().getExistingFile(modLoc("block/cable_gauge_block"))).addModel();
         getVariantBuilder(ModBlocks.RED_CABLE_GAUGE.get()).partialState().with(com.hbm_m.block.network.RedCableGaugeBlock.FACING, Direction.DOWN).modelForState().modelFile(models().getExistingFile(modLoc("block/cable_gauge_block"))).rotationX(180).addModel();
@@ -4366,7 +4393,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // red_pylon_steel.json — same, "" variant only
         getVariantBuilder(ModBlocks.RED_PYLON_STEEL.get()).partialState().modelForState().modelFile(models().getExistingFile(modLoc("block/red_pylon_steel"))).addModel();
         // red_pylon_large.json — RedPylonCoreBlock.FACING (horizontal), per-facing y
-        customObjBlockRotated(ModBlocks.RED_PYLON_LARGE, Map.of(Direction.NORTH, 180, Direction.SOUTH, 0, Direction.EAST, 270, Direction.WEST, 90));
+        // red_pylon_large.json — RedPylonCoreBlock.FACING: South (y=0) and North (y=90) straight, East (e) and West (w) diagonal
+        getVariantBuilder(ModBlocks.RED_PYLON_LARGE.get())
+                .partialState().with(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING, Direction.SOUTH)
+                .modelForState().modelFile(models().getExistingFile(modLoc("block/red_pylon_large"))).rotationY(0).addModel()
+                .partialState().with(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING, Direction.NORTH)
+                .modelForState().modelFile(models().getExistingFile(modLoc("block/red_pylon_large"))).rotationY(90).addModel()
+                .partialState().with(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING, Direction.EAST)
+                .modelForState().modelFile(models().getExistingFile(modLoc("block/red_pylon_large_e"))).addModel()
+                .partialState().with(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING, Direction.WEST)
+                .modelForState().modelFile(models().getExistingFile(modLoc("block/red_pylon_large_w"))).addModel();
         // red_pylon_medium_steel.json
         customObjBlockRotated(ModBlocks.RED_PYLON_MEDIUM_STEEL, Map.of(Direction.NORTH, 180, Direction.SOUTH, 0, Direction.EAST, 270, Direction.WEST, 90));
         // red_pylon_medium_steel_transformer.json
@@ -6706,26 +6742,58 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), model);
     }
 
-    /** Ванильный забор (порт BlockMetalFence): post/side шаблоны с текстурой. */
-    private void fenceBlockWithItem(RegistrySupplier<Block> blockObject, String texture) {
-        ModelFile post = models().withExistingParent(blockObject.getId().getPath() + "_post", mcLoc("block/fence_post"))
-                .texture("texture", modLoc(texture));
-        ModelFile side = models().withExistingParent(blockObject.getId().getPath() + "_side", mcLoc("block/fence_side"))
-                .texture("texture", modLoc(texture));
-        net.minecraft.world.level.block.FenceBlock fence = (net.minecraft.world.level.block.FenceBlock) blockObject.get();
+    private void applyTorchRotation(ConfiguredModel.Builder<?> builder, Direction facing) {
+        switch (facing) {
+            case DOWN -> { }
+            case UP -> builder.rotationX(180);
+            case NORTH -> builder.rotationX(90).rotationY(180);
+            case SOUTH -> builder.rotationX(90);
+            case WEST -> builder.rotationX(90).rotationY(90);
+            case EAST -> builder.rotationX(90).rotationY(270);
+        }
+    }
+
+    private void torchBlock(RegistrySupplier<Block> blockObject, String itemTexture) {
+        String name = blockObject.getId().getPath();
+        ModelFile model = models().getExistingFile(modLoc("block/" + name));
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        for (Direction facing : Direction.values()) {
+            var modelForState = builder.partialState().with(BlockStateProperties.FACING, facing).modelForState().modelFile(model);
+            applyTorchRotation(modelForState, facing);
+            modelForState.addModel();
+        }
+        itemModels().withExistingParent(name, mcLoc("item/generated")).texture("layer0", modLoc(itemTexture));
+    }
+
+    private void litTorchBlock(RegistrySupplier<Block> blockObject, ModelFile modelOff, ModelFile modelOn, String itemTexture) {
+        String name = blockObject.getId().getPath();
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        for (Direction facing : Direction.values()) {
+            var offForState = builder.partialState().with(BlockStateProperties.FACING, facing).with(BlockStateProperties.LIT, false).modelForState().modelFile(modelOff);
+            applyTorchRotation(offForState, facing);
+            offForState.addModel();
+
+            var onForState = builder.partialState().with(BlockStateProperties.FACING, facing).with(BlockStateProperties.LIT, true).modelForState().modelFile(modelOn);
+            applyTorchRotation(onForState, facing);
+            onForState.addModel();
+        }
+        itemModels().withExistingParent(name, mcLoc("item/generated")).texture("layer0", modLoc(itemTexture));
+    }
+
+    /** Chainlink fence (1:1 RenderFence): плоские сетки side / side_alt; столб по свойству POST. */
+    private void chainlinkFence(Block block, ModelFile side, ModelFile sideAlt, ModelFile post) {
         var n = net.minecraft.world.level.block.state.properties.BlockStateProperties.NORTH;
         var s2 = net.minecraft.world.level.block.state.properties.BlockStateProperties.SOUTH;
         var w = net.minecraft.world.level.block.state.properties.BlockStateProperties.WEST;
         var e = net.minecraft.world.level.block.state.properties.BlockStateProperties.EAST;
-        getMultipartBuilder(fence)
-                // столб виден, если хотя бы с одной стороны нет соединения (OR)
-                .part().modelFile(post).addModel().useOr()
-                .condition(n, false).condition(s2, false).condition(w, false).condition(e, false).end()
-                .part().modelFile(side).addModel().condition(n, true).end()
-                .part().modelFile(side).addModel().condition(s2, true).end()
-                .part().modelFile(side).addModel().condition(w, true).end()
-                .part().modelFile(side).addModel().condition(e, true).end();
-        simpleBlockItem(fence, post);
+        var builder = getMultipartBuilder(block);
+        // Сетки в плоскостях симметрии
+        builder.part().modelFile(side).addModel().condition(n, true).end();
+        builder.part().modelFile(sideAlt).addModel().condition(s2, true).end();
+        builder.part().modelFile(side).rotationY(90).addModel().condition(e, true).end();
+        builder.part().modelFile(sideAlt).rotationY(90).addModel().condition(w, true).end();
+        // Столб отображается, если POST == true
+        builder.part().modelFile(post).addModel().condition(com.hbm_m.block.generic.BlockMetalFence.POST, true).end();
     }
 
     private void axisBlockWithItem(Block block, String side, String end) {

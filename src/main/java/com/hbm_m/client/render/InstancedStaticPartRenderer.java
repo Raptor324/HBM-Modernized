@@ -577,7 +577,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     private Cleaner.Cleanable instanceBufferCleanable;
 
     /**
-     * R4-2.1: mutable snapshot of the renderer's GL names + VRAM accounting, read
+     * Mutable snapshot of the renderer's GL names + VRAM accounting, read
      * (and consumed) by the second Cleaner action. The action MUST NOT reference
      * the renderer (per {@link Cleaner} javadoc an action touching the registered
      * object's fields keeps it strongly reachable forever) - it closes over this
@@ -660,9 +660,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     private static void drainPendingGlDeletions() {
         // The driver re-issues freed numeric IDs: if a queued entry carries a number the
         // live MdiGeometryAtlas owns RIGHT NOW, deleting it destroys the atlas VAO/EBO
-        // mid-frame and the next MDI draw faults in nvoglv64.dll (hs_err_pid50040:
-        // atlas vao=161475 re-initialised after RESOURCE_RELOAD, killed by a stale
-        // deferred delete one second later). Skipping is safe - the number is owned by
+        // mid-frame and the next MDI draw faults. Skipping is safe - the number is owned by
         // a live object, and the orphaned renderer's true names were already deleted
         // (that is how the number became free for reuse in the first place).
         final int[] atlasNames = com.hbm_m.client.render.MdiGeometryAtlas.liveGlNames();
@@ -817,7 +815,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             // they are parked for the render thread (drainPendingGlDeletions). An
             // explicit cleanup() resets the fields to 0 first, so a cleaned renderer
             // enqueues nothing live here (no double delete).
-            // R4-2.1 (as corrected): the watched object is this renderer and the action
+            // The watched object is this renderer and the action
             // is built by the static factory below, so the action captures ONLY the
             // GlReleaseState snapshot - never the renderer. A lambda reading
             // this.vaoId/this.vramBytes would capture the renderer itself, keeping it
@@ -887,7 +885,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             initialized = true;
             vramBytes = vram;
             if (glReleaseState != null) {
-                glReleaseState.vramBytes = vram; // keep the Cleaner snapshot current (R4-2.1)
+                glReleaseState.vramBytes = vram; // keep the Cleaner snapshot current
             }
             NucleusDebug.addRendererVram(vram);
             synchronized (ACTIVE_RENDERERS) {
@@ -913,7 +911,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 try { GL15.glDeleteBuffers(instanceVboId); } catch (Throwable ignored) {}
                 instanceVboId = -1;
             }
-            // R4-2.1: these names are already deleted - consume them in the Cleaner
+            // These names are already deleted - consume them in the Cleaner
             // snapshot so a later GC-driven clean() cannot park (and double-delete,
             // possibly a recycled name) them.
             if (glReleaseState != null) {
@@ -1104,12 +1102,21 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 Float.intBitsToFloat(packQuatWord(rotTmp.x, rotTmp.y)));
         MemoryUtil.memPutFloat(a + (long) QUAT_FLOAT_OFFSET * 4L + 4,
                 Float.intBitsToFloat(packQuatWord(rotTmp.z, rotTmp.w)));
-        MemoryUtil.memPutFloat(a + (long) BBOX_MIN_FLOAT_OFFSET * 4L, lightBbox[0]);
-        MemoryUtil.memPutFloat(a + (long) BBOX_MIN_FLOAT_OFFSET * 4L + 4, lightBbox[1]);
-        MemoryUtil.memPutFloat(a + (long) BBOX_MIN_FLOAT_OFFSET * 4L + 8, lightBbox[2]);
-        float sx = lightBbox[3] - lightBbox[0];
-        float sy = lightBbox[4] - lightBbox[1];
-        float sz = lightBbox[5] - lightBbox[2];
+        // Union of the mesh's true vertex AABB (objBbox) and the structure lightBbox:
+        // prevents a 1x1x1 fallback lightBbox from shrinking a 30-block tower's culling AABB!
+        float minX = Math.min(objBbox[0], lightBbox[0]);
+        float minY = Math.min(objBbox[1], lightBbox[1]);
+        float minZ = Math.min(objBbox[2], lightBbox[2]);
+        float maxX = Math.max(objBbox[3], lightBbox[3]);
+        float maxY = Math.max(objBbox[4], lightBbox[4]);
+        float maxZ = Math.max(objBbox[5], lightBbox[5]);
+
+        MemoryUtil.memPutFloat(a + (long) BBOX_MIN_FLOAT_OFFSET * 4L, minX);
+        MemoryUtil.memPutFloat(a + (long) BBOX_MIN_FLOAT_OFFSET * 4L + 4, minY);
+        MemoryUtil.memPutFloat(a + (long) BBOX_MIN_FLOAT_OFFSET * 4L + 8, minZ);
+        float sx = maxX - minX;
+        float sy = maxY - minY;
+        float sz = maxZ - minZ;
         MemoryUtil.memPutFloat(a + (long) BBOX_SIZE_FLOAT_OFFSET * 4L, sx);
         MemoryUtil.memPutFloat(a + (long) BBOX_SIZE_FLOAT_OFFSET * 4L + 4, sy);
         MemoryUtil.memPutFloat(a + (long) BBOX_SIZE_FLOAT_OFFSET * 4L + 8, sz);
@@ -1404,7 +1411,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         }
         if (fadingInstanceVboId <= 0) {
             fadingInstanceVboId = GL15.glGenBuffers();
-            // R4-2.1: created lazily after the Cleaner snapshot was taken - keep the
+            // Created lazily after the Cleaner snapshot was taken - keep the
             // snapshot current or a GC'd renderer leaks this GL name.
             if (glReleaseState != null) {
                 glReleaseState.fadingInstanceVboId = fadingInstanceVboId;
@@ -1895,12 +1902,18 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     private boolean recordMatchesBuffer(int baseFloatIndex, boolean skipPosQuat, float[] lightBbox) {
         long a = instanceBufferAddress + (long) baseFloatIndex * 4L;
         if (!skipPosQuat && !posQuatMatchesBuffer(baseFloatIndex)) return false;
-        if (MemoryUtil.memGetFloat(a + (long) BBOX_MIN_FLOAT_OFFSET * 4L) != lightBbox[0]) return false;
-        if (MemoryUtil.memGetFloat(a + (long) BBOX_MIN_FLOAT_OFFSET * 4L + 4) != lightBbox[1]) return false;
-        if (MemoryUtil.memGetFloat(a + (long) BBOX_MIN_FLOAT_OFFSET * 4L + 8) != lightBbox[2]) return false;
-        if (MemoryUtil.memGetFloat(a + (long) BBOX_SIZE_FLOAT_OFFSET * 4L) != lightBbox[3] - lightBbox[0]) return false;
-        if (MemoryUtil.memGetFloat(a + (long) BBOX_SIZE_FLOAT_OFFSET * 4L + 4) != lightBbox[4] - lightBbox[1]) return false;
-        if (MemoryUtil.memGetFloat(a + (long) BBOX_SIZE_FLOAT_OFFSET * 4L + 8) != lightBbox[5] - lightBbox[2]) return false;
+        float minX = Math.min(objBbox[0], lightBbox[0]);
+        float minY = Math.min(objBbox[1], lightBbox[1]);
+        float minZ = Math.min(objBbox[2], lightBbox[2]);
+        float maxX = Math.max(objBbox[3], lightBbox[3]);
+        float maxY = Math.max(objBbox[4], lightBbox[4]);
+        float maxZ = Math.max(objBbox[5], lightBbox[5]);
+        if (MemoryUtil.memGetFloat(a + (long) BBOX_MIN_FLOAT_OFFSET * 4L) != minX) return false;
+        if (MemoryUtil.memGetFloat(a + (long) BBOX_MIN_FLOAT_OFFSET * 4L + 4) != minY) return false;
+        if (MemoryUtil.memGetFloat(a + (long) BBOX_MIN_FLOAT_OFFSET * 4L + 8) != minZ) return false;
+        if (MemoryUtil.memGetFloat(a + (long) BBOX_SIZE_FLOAT_OFFSET * 4L) != maxX - minX) return false;
+        if (MemoryUtil.memGetFloat(a + (long) BBOX_SIZE_FLOAT_OFFSET * 4L + 4) != maxY - minY) return false;
+        if (MemoryUtil.memGetFloat(a + (long) BBOX_SIZE_FLOAT_OFFSET * 4L + 8) != maxZ - minZ) return false;
         if (MemoryUtil.memGetFloat(a + (long) FADE_FLOAT_OFFSET * 4L) != tmpFadeMode) return false;
         long lightA = a + (long) LIGHT_FLOAT_OFFSET * 4L;
         for (int w = 0; w < 4; w++) {
@@ -2487,7 +2500,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         this.instanceBuffer = null;
         this.fadingSnapshot = null;
         this.instanceBufferCleanable = null;
-        // R4-2.1: consume ALL names in the GL Cleaner snapshot and unregister the
+        // Consume ALL names in the GL Cleaner snapshot and unregister the
         // Cleanable - the action then enqueues nothing live. super.cleanup() above
         // already scheduled glDeleteVertexArrays/glDeleteBuffers for the
         // VAO/VBO/EBO names; leaving them in the snapshot made the GC-driven

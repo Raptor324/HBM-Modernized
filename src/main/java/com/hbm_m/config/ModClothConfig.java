@@ -250,6 +250,9 @@ public class ModClothConfig {
     /** MOTD при входе в мир и уведомление о новой версии на Modrinth (ориг. GeneralConfig.enableMOTD). */
     public boolean enableMOTD = true;
 
+    /** Подсказка «tip of the day» на экране загрузки мира (порт LoadingScreenRendererNT). */
+    public boolean enableTips = true;
+
     /** Логирование использования детонатора, взрывов, пусков ракет (ориг. GeneralConfig.enableExtendedLogging). */
     public boolean enableExtendedLogging = false;
 

@@ -1,11 +1,14 @@
 package com.hbm_m.compat.jei;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.AssemblerRecipe.AssemblerInputSlot;
+import com.hbm_m.recipe.AssemblerRecipe.WeightedStack;
 
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
@@ -14,6 +17,7 @@ import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -25,6 +29,79 @@ public class AssemblerJeiCategory extends JeiGenericRecipeCategory<AssemblerReci
 
     public static final RecipeType<AssemblerRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "assembler", AssemblerRecipe.class);
+
+    /**
+     * Original NEI hides recipes of secret blueprint pools by default
+     * ({@code ClientConfig.NEI_HIDE_SECRETS == true} in {@code NEIGenericRecipeHandler}).
+     */
+    public static boolean isSecretPool(AssemblerRecipe recipe) {
+        String pool = recipe.getBlueprintPool();
+        return pool != null && pool.startsWith("secret.");
+    }
+
+    /**
+     * Rezeptmenge wie im Original-NEI: {@code AssemblyMachineRecipeHandler} enumeriert ausschliesslich
+     * {@code AssemblyMachineRecipes.INSTANCE} (AssemblyMachineRecipeHandler.java:13). Im Port ist das
+     * 1:1-Set von {@code AssemblyMachineRecipeGenerator} (+ die dynamischen package_/unpackage_-Rezepte
+     * aus {@code RestRecipeGenerator}) an den Rezept-IDs unter {@code hbm_m:assembler/} erkennbar; die
+     * Port-Notbehelfe ({@code AssemblerRecipeGenerator} u.a.) liegen ausserhalb dieser Ebene und bleiben
+     * außen vor — sie bleiben aber voll craftbar (Maschinen/GUI-Auswahl unveraendert).
+     */
+    public static boolean isVisible(AssemblerRecipe recipe) {
+        if (!recipe.getRecipeId().getPath().startsWith("assembler/")) return false;
+        if (isSecretPool(recipe)) return false;
+        // Original NEIGenericRecipeHandler versteckt Rezepte mit ModItems.excludeNEI-Zutaten
+        // (NEIGenericRecipeHandler.java:216-218/246-249; Liste: item_secret + Meteoritenschwerter).
+        return !usesExcludedItem(recipe);
+    }
+
+    /**
+     * Port von {@code ModItems.excludeNEI} (ModItems.registerItem): {@code item_secret} (im Port fuenf
+     * Einzel-Items) und die elf Meteoritenschwerter der Schwertkette — das Basis-Schwert gehoert wie im
+     * Original NICHT dazu.
+     */
+    private static volatile Set<Item> excludeNeiCache;
+
+    private static Set<Item> excludeNei() {
+        Set<Item> set = excludeNeiCache;
+        if (set == null) {
+            set = Set.of(
+                    ModItems.ITEM_SECRET_CANISTER.get(),
+                    ModItems.ITEM_SECRET_CONTROLLER.get(),
+                    ModItems.ITEM_SECRET_SELENIUM_STEEL.get(),
+                    ModItems.ITEM_SECRET_ABERRATOR.get(),
+                    ModItems.ITEM_SECRET_FOLLY.get(),
+                    ModItems.METEORITE_SWORD_SEARED.get(),
+                    ModItems.METEORITE_SWORD_REFORGED.get(),
+                    ModItems.METEORITE_SWORD_HARDENED.get(),
+                    ModItems.METEORITE_SWORD_ALLOYED.get(),
+                    ModItems.METEORITE_SWORD_MACHINED.get(),
+                    ModItems.METEORITE_SWORD_TREATED.get(),
+                    ModItems.METEORITE_SWORD_ETCHED.get(),
+                    ModItems.METEORITE_SWORD_BRED.get(),
+                    ModItems.METEORITE_SWORD_IRRADIATED.get(),
+                    ModItems.METEORITE_SWORD_FUSED.get(),
+                    ModItems.METEORITE_SWORD_BALEFUL.get());
+            excludeNeiCache = set;
+        }
+        return set;
+    }
+
+    /** Original: inputItem- und outputItem-Stacks gegen {@code ModItems.excludeNEI} geprueft. */
+    private static boolean usesExcludedItem(AssemblerRecipe recipe) {
+        for (AssemblerInputSlot slot : getInputSlots(recipe)) {
+            for (ItemStack stack : slot.ingredient().getItems()) {
+                if (excludeNei().contains(stack.getItem())) return true;
+            }
+        }
+        if (recipe.hasFixedOutput() && excludeNei().contains(recipe.getResultItemSafe().getItem())) return true;
+        for (List<WeightedStack> group : recipe.getChanceOutputs()) {
+            for (WeightedStack w : group) {
+                if (excludeNei().contains(w.stack().getItem())) return true;
+            }
+        }
+        return false;
+    }
 
     public AssemblerJeiCategory(IGuiHelper guiHelper) {
         super(guiHelper, new ItemStack[]{
@@ -57,7 +134,9 @@ public class AssemblerJeiCategory extends JeiGenericRecipeCategory<AssemblerReci
 
     @Override
     protected int getOutputCount(AssemblerRecipe recipe) {
-        return 1 + recipe.getFluidOutputs().size();
+        // Wie im Original outputItem.length (1 Element — fest ODER ChanceOutputMulti) + outputFluid.length.
+        int count = (recipe.hasFixedOutput() ? 1 : 0) + recipe.getChanceOutputs().size();
+        return count + recipe.getFluidOutputs().size();
     }
 
     /** Fluessigkeit des Rezepts (inputFluids/outputFluids des Originals) als JEI-Slot. */
@@ -124,9 +203,25 @@ public class AssemblerJeiCategory extends JeiGenericRecipeCategory<AssemblerReci
     @Override
     protected void addOutputSlots(IRecipeLayoutBuilder builder, AssemblerRecipe recipe, int outputXOffset) {
         int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(getOutputCount(recipe));
-        addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[0][0] + outputXOffset, positions[0][1])
-                .addItemStack(recipe.getResultItemSafe());
-        int idx = 1;
+        int idx = 0;
+        if (recipe.hasFixedOutput()) {
+            addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[idx][0] + outputXOffset, positions[idx][1])
+                    .addItemStack(recipe.getResultItemSafe());
+            idx++;
+        }
+        // Zufallsausgabe (Original ChanceOutputMulti.getAllPossibilities): alle Varianten zyklisch
+        // in einem Slot — gleiche Darstellung wie in RockMillJeiCategory.
+        for (List<WeightedStack> group : recipe.getChanceOutputs()) {
+            List<ItemStack> variants = new ArrayList<>();
+            for (WeightedStack w : group) {
+                if (!w.stack().isEmpty()) variants.add(w.stack());
+            }
+            if (variants.isEmpty()) continue;
+            if (idx >= positions.length) break;
+            addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[idx][0] + outputXOffset, positions[idx][1])
+                    .addItemStacks(variants);
+            idx++;
+        }
         for (dev.architectury.fluid.FluidStack fluid : recipe.getFluidOutputs()) {
             if (idx >= positions.length) break;
             addFluidSlot(addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[idx][0] + outputXOffset, positions[idx][1]), fluid);

@@ -326,8 +326,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         // Two scalar uniforms, NOT a vec2: the vanilla shader-JSON type parser
         // (Uniform.getTypeFromString) knows only int/float/matrixNxN - "vec2"
         // parses to type -1, the Uniform allocates its INTEGER buffer and
-        // set(float,float) NPEs the whole MDI dispatch (models invisible,
-        // 2026-10-08). Splitting the clock keeps the partial tick exact at
+        // set(float,float) fails the whole MDI dispatch. Splitting the clock keeps the partial tick exact at
         // worlds past 2^22 ticks (see FrameViewState.animTicks).
         if ((u = shader.getUniform("uAnimTicks")) != null) {
             u.set(FrameViewState.animTicks());
@@ -623,8 +622,11 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         // model to flicker when the camera moves. This matches the same fix
         // already applied in InstancedStaticPartRenderer.addInstance().
 
-        if (ShaderCompatibilityDetector.isExternalShaderActive()) {
+        if (ShaderCompatibilityDetector.isExternalShaderActive() && !ClientRenderFlags.guiRenderFrame()) {
             // 1) Iris ExtendedShader path through our companion mesh.
+            // (Never entered from the WIAJ demo screen: the pack's gbuffer program,
+            //  IrisPhaseGuard and batch machinery are level-pass-only - inside a
+            //  Screen the vanilla block_lit path below draws screen-safe.)
             if (renderWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
                 return;
             }
@@ -767,7 +769,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             if (cachedLightC45 != null) cachedLightC45.set(tmpCornerUV[8], tmpCornerUV[9], tmpCornerUV[10], tmpCornerUV[11]);
             if (cachedLightC67 != null) cachedLightC67.set(tmpCornerUV[12], tmpCornerUV[13], tmpCornerUV[14], tmpCornerUV[15]);
 
-            if (worldMissileOverlayDraw || entityMissileDepthBias) {
+            if (worldMissileOverlayDraw || entityMissileDepthBias || ClientRenderFlags.guiRenderFrame()) {
                 if (cachedFogStartU != null) cachedFogStartU.set(1.0E8F);
                 if (cachedFogEndU != null) cachedFogEndU.set(1.0E8F);
             } else {
@@ -995,7 +997,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             var brightnessUniform = shader.getUniform("Brightness");
             if (brightnessUniform != null) brightnessUniform.set(calculateBrightness(packedLight));
 
-            if (worldMissileOverlayDraw) {
+            if (worldMissileOverlayDraw || ClientRenderFlags.guiRenderFrame()) {
                 var fogStart = shader.getUniform("FogStart");
                 if (fogStart != null) fogStart.set(1.0E8F);
                 var fogEnd = shader.getUniform("FogEnd");

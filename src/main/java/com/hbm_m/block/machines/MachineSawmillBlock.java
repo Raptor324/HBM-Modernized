@@ -58,6 +58,13 @@ public class MachineSawmillBlock extends DummyableMachineBlock implements com.hb
                     { -0.625D, 1D, -1D, 1.375D, 2D, 1D } });
 
     @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            {0, 0, 0.5, -0.3, 0.4, -0.4, 1}
+        };
+    }
+
+    @Override
     public net.minecraft.world.phys.shapes.VoxelShape getCustomMasterVoxelShape(BlockState state) {
         return BOUNDING.get(state.getValue(FACING));
     }

@@ -213,12 +213,14 @@ public final class PlasmaForgeRecipeGenerator {
                 .addIngredient(it("hbm_m:capacitor_board"), 4)
                 .addIngredient(ModBlocks.GLASS_QUARTZ.get().asItem(), 8)
                 .save(writer, "plasma_forge/excomputer");
-        // Original gibt zusaetzlich 4.000 mB Perfluormethan aus; die Plasmaschmiede hat keinen Ausgangstank
+        // Original gibt zusaetzlich 4.000 mB Perfluormethan aus (outputFluids) - reine NEI/JEI-Anzeige,
+        // denn ModuleMachinePlasma besitzt im Original keinen Ausgangstank
         ex(writer, "bronze_tubes", 600, 1_000_000L, 10_000_000L, ModFluids.PERFLUOROMETHYL_COLD.getSource(), 4_000)
                 .addIngredient(it("hbm_m:item_expensive_heavy_frame"), 3)
                 .addIngredient(it("hbm_m:item_expensive_ferro_plating"), 1)
                 .addIngredient(bismoidCast(), 4)
                 .addIngredient(mi(ModMaterials.ZIRCONIUM, MaterialShape.PLATE_WELDED), 1)
+                .outputFluid(ModFluids.PERFLUOROMETHYL.getSource(), 4_000)
                 .save(writer, "plasma_forge/bronzetubes");
         ex(writer, "plastic", 120, 100_000L, 1_000_000L, ModFluids.SOLVENT.getSource(), 1_000)
                 .addIngredient(hardPlastic(), 4)
@@ -252,9 +254,9 @@ public final class PlasmaForgeRecipeGenerator {
      * Einspeisung und Sternenfluss; der Kern selbst ist mit 12.000 Ticks und 100 Millionen das
      * mit Abstand teuerste Rezept der ganzen Maschine.
      *
-     * <p><b>Ersatzstoffe:</b> Dineutronium liegt in diesem Port nur als Platte vor, nicht als
-     * Dichtdraht, und der Funken-Singularitaet ({@code singularity_spark}) gibt es hier nicht -
-     * an ihrer Stelle steht ein Quantenschaltkreis mehr. Die Emitter-, Empfaenger- und
+     * <p>Das Original {@code DNT.wireDense()} ist hier der eigene {@code DNT}-Stoff mit genau
+     * einer Form ({@code wire_dense_dnt}), und der Singularitaetsfunke existiert als
+     * {@code singularity_spark} - die Zutaten laufen daher 1:1. Die Emitter-, Empfaenger- und
      * Injektorrezepte liefern die <b>arbeitenden</b> Bloecke ({@code core_*}), nicht die
      * gleichnamigen Platzhalter.
      */
@@ -266,8 +268,9 @@ public final class PlasmaForgeRecipeGenerator {
                 .inputEnergy(50_000_000L)
                 .addFluidInput(ModFluids.STELLAR_FLUX.getSource(), 12_000)
                 .addIngredient(ModMaterialItems.item(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_WELDED), 16)
-                .addIngredient(ModMaterialItems.item(ModMaterials.DINEUTRONIUM, MaterialShape.PLATE), 16)
+                .addIngredient(ModMaterialItems.item(ModMaterials.DNT, MaterialShape.WIRE_DENSE), 16)
                 .addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 12)
+                .addIngredient(ModItems.SINGULARITY_SPARK.get(), 1)
                 .addIngredient(ModItems.POWDER_CHLOROPHYTE.get(), 64)
                 .save(writer, "plasma_forge/dfc_core");
 

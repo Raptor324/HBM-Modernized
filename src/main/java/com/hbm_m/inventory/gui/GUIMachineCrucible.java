@@ -62,7 +62,7 @@ public class GUIMachineCrucible extends GuiInfoScreen<MachineCrucibleMenu> {
             if (leftPos + 106 <= x && leftPos + 106 + 18 > x && topPos + 80 < y && topPos + 80 + 18 >= y) {
                 CrucibleRecipe recipe = CrucibleRecipes.get(this.crucible.recipe);
                 if (recipe != null) {
-                    g.renderComponentTooltip(this.font, recipe.print(Screen.hasShiftDown()), x, y);
+                    com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(g, this.font, recipe.print(Screen.hasShiftDown()), x, y);
                 } else {
                     g.renderTooltip(this.font, Component.translatable("gui.recipe.setRecipe").withStyle(ChatFormatting.YELLOW), x, y);
                 }

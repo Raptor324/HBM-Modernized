@@ -200,7 +200,7 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
     }
 
     private boolean isGatling() {
-        return stats == TurretStats.CHEKHOV || stats == TurretStats.FRIENDLY;
+        return stats == TurretStats.CHEKHOV || stats == TurretStats.FRIENDLY || stats == TurretStats.HOWARD || stats == TurretStats.HOWARD_DAMAGED;
     }
 
     private void serverTick(Level level, BlockPos pos) {
@@ -329,9 +329,9 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
      * which is why its tracking never lined up with where the rounds went.</p>
      */
     private Vec3 turretOrigin(BlockPos pos) {
-        // Original getTurretPos(): xCoord + getHorizontalOffset() - die Mitte der Grundplatte, nicht des Kerns
+        // Original getTurretPos(): xCoord + getHorizontalOffset(), yCoord + getHeightOffset() - Mitte der Grundplatte und Drehpunkt
         Vec3 offset = getHorizontalOffset();
-        return new Vec3(pos.getX() + offset.x, pos.getY() + 0.5D + stats.pivotY, pos.getZ() + offset.z);
+        return new Vec3(pos.getX() + offset.x, pos.getY() + stats.pivotY, pos.getZ() + offset.z);
     }
 
     /** {@code getEntityPos}: the original aims at the target's centre of mass, not its eyes. */

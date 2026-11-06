@@ -87,8 +87,7 @@ public final class NucleusDebug {
     private static volatile String shadowFlushTier = "";
     /** IrisShadowBatchCollector.renderFrame() stamp taken at record time; lets
      *  the F3 line age-mark itself instead of silently showing stale values
-     *  (audit 2026-10-07: the Shadow line otherwise stuck after pack disable,
-     *  because the only reset lived in the mixin on renderShadows HEAD). */
+     *  (the Shadow line otherwise stuck after pack disable). */
     private static volatile long shadowStatsFrame = -1L;
 
     /** True start of the frame's shadow phase — mixin HEAD Iris ShadowRenderer.renderShadows. */
@@ -101,7 +100,7 @@ public final class NucleusDebug {
      *  registered RenderCacheManager hook), so the F3 "Shadow:" line cannot
      *  outlive the shader pack: with the pack disabled renderShadows never
      *  runs, and without a teardown reset the last pack-on values printed
-     *  forever (audit 2026-10-07, confirmed stick). */
+     *  forever. */
     public static void resetShadowStats() {
         shadowFallbackParts = 0;
         shadowRecords = 0;
@@ -221,7 +220,7 @@ public final class NucleusDebug {
         mdiRenderersTotal = 0;
         mdiRenderersClean = 0;
         mdiInstancesClean = 0;
-        // Belt-and-braces for the shadow stats (audit 2026-10-07): without a
+        // Safeguard for the shadow stats: without a
         // pack, Iris renderShadows never runs, so neither the mixin reset nor
         // fresh records fire and a stale "Shadow:" line would print forever.
         // The per-frame teardown reset lives in IrisShadowBatchCollector.
@@ -319,9 +318,7 @@ public final class NucleusDebug {
         parametricRecords++;
     }
 
-    // Frozen-walk diagnostics (the 2026-10-07 idle-farm hunt: the walk's
-    // engagement was invisible in profiles - these three counters answer it
-    // directly from the F3 line).
+    // Frozen-walk diagnostics (monitoring walk engagement from F3).
     private static int epochChecks;
     private static int epochStable;
     private static int walkAttempts;
@@ -370,7 +367,7 @@ public final class NucleusDebug {
     }
 
     /**
-     * F3 screen section (compacted 2026-10-07: only lines with data, the
+     * F3 screen section (compacted: only lines with data, the
      * section must fit the screen):
      * <pre>
      * [Nucleus] Active                      - yellow header; Active green / Not rendering red
@@ -404,7 +401,7 @@ public final class NucleusDebug {
         out.add(rendering.toString());
 
         // Draw + parametric counters packed on one line: the F3 section must stay
-        // compact (user request 2026-10-07 - it no longer fit the screen). The
+        // compact. The
         // parametric count is the GPU-FK engagement metric and is omitted when 0
         // (a no-parametric scene should not spend a line on it).
         StringBuilder draws = new StringBuilder("Draws: §b").append(drawCalls).append("§r calls, §7").append(instancesDrawn).append("§r inst");
@@ -428,8 +425,7 @@ public final class NucleusDebug {
             // the last frame that actually baked, "idle" if none did.
             // Both passes stamp the SAME frame on frames where both ran (shadow
             // first, main after, one renderFrame), so the passes report as two
-            // independent per-pass segments instead of an if/else-if chain in
-            // which the shadow branch was unreachable (audit 2026-10-07 #6).
+            // independent per-pass segments instead of an if/else-if chain.
             long f = IrisShadowBatchCollector.renderFrame();
             boolean mainBaked = NucleusGpuBaker.lastBakeMainFrame() == f;
             boolean shadowBaked = NucleusGpuBaker.lastBakeShadowFrame() == f;
@@ -456,7 +452,7 @@ public final class NucleusDebug {
                 out.add(bc.toString());
             }
             // Bake cull line is omitted entirely when no pass baked this frame
-            // (idle on a no-op frame is not data - F3 compaction 2026-10-07).
+            // (idle on a no-op frame is omitted for compaction).
             // Span-level re-expansion totals, one column per pass. A pass stamps
             // its totals only on frames where it ran a PARTIAL dirty expansion
             // (a degenerate full re-bake is deliberately not counted), so
@@ -464,7 +460,7 @@ public final class NucleusDebug {
             // per dirty expansion - flicker on any animated scene. Instead the
             // line always shows the last-known values with a per-column age
             // against the current render frame stamp f. "never" on BOTH passes
-            // = no data yet - the line is omitted (F3 compaction 2026-10-07).
+            // = no data yet - the line is omitted.
             if (NucleusGpuBaker.lastSpanMainDirtyFrame() >= 0) {
                 out.add("Bake spans: §a" + NucleusGpuBaker.lastSpanMainDirtyDispatches()
                         + "§r/§f" + NucleusGpuBaker.lastSpanMainDirtyInstances() + "§7 shared "
@@ -486,7 +482,7 @@ public final class NucleusDebug {
                         + "§7 shadow reallocs §7(each = full pass re-bake)");
             }
         } else if (gpuCullActive && gpuCullInstancesIn > 0
-                // Freshness gate (audit 2026-10-07 #9): gpuCullActive is sticky,
+                // Freshness gate: gpuCullActive is sticky,
                 // so require the stamp to be the current render frame. The stamp is
                 // written by noteGpuCullDispatch on every MDI dispatch that culls,
                 // so a non-current stamp means the coordinator is no longer running
@@ -536,7 +532,7 @@ public final class NucleusDebug {
         // atlas (used vs allocated caps, both instance VBOs), the direct-path
         // renderer VBOs (cap-based), the staging ring, the full Tier-1 bake
         // footprint (pools at their 1.5x-headroom stores, per-cache and shared
-        // SSBOs) and - since the 2026-10-07 VRAM ledger - the Iris companion
+        // SSBOs), the Iris companion
         // meshes + lightmap rings, the joint-spec texture and the Hi-Z pyramid
         // (all pure field math). The ceiling is the sum of ACTUAL allocated
         // capacities - never the bake-cache budget, which excludes the pool
@@ -560,7 +556,7 @@ public final class NucleusDebug {
         // The bar measures ONLY the components that have a real used/allocated
         // split (Atlas, bake pools, caches). The five usage-only components
         // (Renderers, Companions, Joints, Staging, Hi-Z) entered both sums with
-        // identical values before the 2026-10-08 fix - their share contributed
+        // identical values previously - their share contributed
         // ratio 1.0 by construction, pinning the bar near red permanently
         // regardless of actual headroom. They stay visible as a fixed-size
         // suffix and in the per-component ledger line below.
@@ -569,7 +565,7 @@ public final class NucleusDebug {
         long vramMax = atlasMax + poolMainMax + poolShadowMax + bakeCacheMax;
         out.add(vramBarLine(vramUsed, vramMax)
                 + (fixedVram > 0 ? " §8+ §7" + humanBytes(fixedVram) + "§8 fixed" : ""));
-        // Per-component breakdown (2026-10-07 VRAM ledger), compacted 2026-10-07:
+        // Per-component breakdown, compacted:
         // the nine per-component lines no longer fit the F3 screen - all non-zero
         // components now share ONE line, zero-capacity components are omitted
         // entirely (user request: only lines with data).
@@ -610,7 +606,7 @@ public final class NucleusDebug {
 
         // Shadow pass of this frame: batch records / flush / degradations in putBulkData.
         // fallback>0 shown red - the global shadow batch is poisoned, shadows fall back to CPU.
-        // The line carries a frame-age suffix (audit 2026-10-07 #14): after the
+        // The line carries a frame-age suffix: after the
         // pack-disable stick was fixed (resetShadowStats in resetAllMemory +
         // the onFrameStart pack-off self-heal), the marker keeps any future
         // stick self-describing instead of silently stale.
@@ -689,7 +685,7 @@ public final class NucleusDebug {
      * Compact single-line VRAM component: appends "Label used/alloc" (or
      * "Label used" when {@code alloc < 0}, usage-only components) to the
      * shared VRAM parts line, skipping components with no data at all
-     * (user request 2026-10-07: only lines with data, the section must fit
+     * (only lines with data, ensuring the section fits
      * the screen).
      */
     private static void appendVramComponent(StringBuilder sb, String label, long used, long alloc) {

@@ -1,5 +1,4 @@
 package com.hbm_m.inventory.gui;
-import com.hbm_m.client.GuiCompat;
 
 import java.awt.Color;
 

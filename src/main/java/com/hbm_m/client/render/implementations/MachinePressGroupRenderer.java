@@ -69,10 +69,14 @@ public final class MachinePressGroupRenderer {
         MachineRenderers.machine("conveyor_press", ModBlockEntities.CONVEYOR_PRESS_BE.get(),
                 MachineConveyorPressBlockEntity.class)
             .part("Press")
-            .translatingPart("Piston", new Vector3f(0f, -1f, 0f), (be, pt) -> (float) (be.getRenderPress(pt) * 0.75))
+            .part("Piston", (be, pt, gt, pose) -> {
+                if (be.getStampStack().isEmpty()) return false;
+                pose.translate(0, -be.getRenderPress(pt) * 0.75, 0);
+                return true;
+            })
             .part("Belt")
             .blockTransform(MachinePressGroupRenderer::applyConveyorPressTransform)
-            .itemParts("Press", "Belt")
+            .itemParts("Press", "Piston", "Belt")
             .register();
     }
 

@@ -97,6 +97,12 @@ public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMu
     }
 
     @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            {0, 0, 0.5, -0.3, 0.4, -0.4, 1}
+        };
+    }
+
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
@@ -258,5 +264,16 @@ public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMu
     /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
+    // Verbatim port of the original MachineHeatBoilerIndustrial.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 0, Direction.EAST.get3DDataValue()},
+            {-1, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, -1, Direction.NORTH.get3DDataValue()},
+            {0, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {0, 4, 0, Direction.UP.get3DDataValue()}
+        }, facing);
     }
 }

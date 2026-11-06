@@ -9,7 +9,7 @@ import net.minecraftforge.fml.common.Mod;
 /*import net.neoforged.fml.common.EventBusSubscriber;
 *///?}
 
-/** Forge-Hook fuer {@link ConveyorWandPreview} (Original: RenderWorldLastEvent -> RenderOverhead.renderActionPreview). */
+/** Forge hook for {@link ConveyorWandPreview} (Original: RenderWorldLastEvent -> RenderOverhead.renderActionPreview). */
 //? if forge {
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 //?} else {

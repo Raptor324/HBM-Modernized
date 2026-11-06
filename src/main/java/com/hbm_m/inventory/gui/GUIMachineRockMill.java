@@ -57,7 +57,7 @@ public class GUIMachineRockMill extends GuiInfoScreen<MachineRockMillMenu> {
             if (isPointInRect(7, 89, 18, 18, mouseX, mouseY)) {
                 RockMillRecipe recipe = computer.getSelectedRecipe();
                 if (recipe != null) {
-                    g.renderTooltip(this.font, buildRecipeTooltip(recipe), Optional.empty(), mouseX, mouseY);
+                    com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(g, this.font, buildRecipeTooltip(recipe), mouseX, mouseY);
                 } else {
                     g.renderTooltip(this.font, Component.translatable("gui.recipe.setRecipe").withStyle(ChatFormatting.YELLOW), mouseX, mouseY);
                 }

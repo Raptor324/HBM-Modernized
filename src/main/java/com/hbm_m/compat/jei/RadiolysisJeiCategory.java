@@ -1,110 +1,147 @@
 package com.hbm_m.compat.jei;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.compat.jei.NeiUniversalJeiCategory.Slot;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.CrackingTowerRecipe;
 import com.hbm_m.recipe.RadiolysisRecipe;
 
-import dev.architectury.fluid.FluidStack;
-//? if forge {
-//? if forge {
-import mezz.jei.api.forge.ForgeTypes;
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
-//? if forge {
-import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
-//?}
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
+import mezz.jei.api.gui.drawable.IDrawable;
+import mezz.jei.api.gui.drawable.IDrawableAnimated;
+import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
+import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
+import mezz.jei.api.recipe.category.IRecipeCategory;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
- * JEI category for Radiolysis-Kammer recipes (siehe {@link RadiolysisRecipe}): 100mB Eingangsfluid
- * -> outA + optional outB (kein Dampf-Co-Input, anders als {@link CrackingTowerJeiCategory}).
+ * 1:1 port of the 1.7.10 {@code RadiolysisRecipeHandler} (Custom-{@code TemplateRecipeHandler},
+ * kein {@code NEIGenericRecipeHandler}-Nachfahre).
  *
- * <p>Data-driven: рецепты читаются напрямую aus {@code RecipeManager} (JSON {@code hbm_m:radiolysis}),
- * ранее — статический {@code RadiolysisRecipes} (делегат в {@code CrackingTowerRecipes}).</p>
+ * <p>Eigene Textur {@code textures/gui/nei/gui_nei_radiolysis.png} (256x256, Panel 166x65 bei
+ * u=5, v=11): Eingang bei (34, 25), beide Ausgaenge uebereinander bei (118, 16) und (118, 34) -
+ * die Slotrahmen stecken in der Textur. {@code drawExtras} zeichnet
+ * {@code drawProgressBar(52, 19, 5, 87, 64, 28, 60, 0)} - die 64x28-Wellenfuellung aus der
+ * gleichen Textur, 60 Ticks Zyklus, von links fuellend.</p>
+ *
+ * <p>Rezeptset wie {@code RadiolysisRecipes.getRecipesForNEI()}: der eigene Wassereintrag
+ * ({@link RadiolysisRecipe}, 100mB Wasser &rarr; 80mB Peroxid + 20mB Wasserstoff) gefolgt von
+ * allen Cracking-Rezepten ({@link CrackingTowerRecipe}) - die Maschine faellt dorthin zurueck
+ * ({@code MachineRadiolysisBlockEntity}), die Dampf-Spalten der Cracking-Tower-Kategorie gibt
+ * es hier wie im Original nicht. Ein fehlender zweiter Ausgang ({@code Fluids.NONE}, Kerosin)
+ * erscheint wie im Original als {@code nothing}-Item.</p>
  */
+@OnlyIn(Dist.CLIENT)
+public class RadiolysisJeiCategory implements IRecipeCategory<RadiolysisJeiCategory.Entry> {
 
-public class RadiolysisJeiCategory extends JeiGenericRecipeCategory<RadiolysisRecipe> {
+    /** Ein Radiolysis-Rezept: Eingangsfluid und die beiden Original-NEI-Ausgaenge. */
+    public record Entry(Slot input, Slot outputA, Slot outputB) {
 
-    public static final RecipeType<RadiolysisRecipe> RECIPE_TYPE =
-            RecipeType.create(RefStrings.MODID, "radiolysis", RadiolysisRecipe.class);
+        /** Eigener Eintrag aus {@code hbm_m:radiolysis} (Original: {@code RadiolysisRecipes}). */
+        public static Entry own(RadiolysisRecipe recipe) {
+            return new Entry(
+                    Slot.fluid(recipe.getInputFluid(), recipe.getInputMb()),
+                    Slot.fluid(recipe.getOutputA(), recipe.getOutputAMb()),
+                    recipe.hasOutputB() ? Slot.fluid(recipe.getOutputB(), recipe.getOutputBMb())
+                            : Slot.of(new ItemStack(ModItems.NOTHING.get())));
+        }
 
-    private static final int FLUID_RENDERER_CAPACITY = 24_000;
+        /** Cracking-Eintrag aus {@code hbm_m:cracking_tower} (Original: {@code CrackingRecipes}-Map). */
+        public static Entry crack(CrackingTowerRecipe recipe) {
+            return new Entry(
+                    Slot.fluid(recipe.getInputFluid(), recipe.getInputMb()),
+                    Slot.fluid(recipe.getOutputA(), recipe.getOutputAMb()),
+                    recipe.hasOutputB() ? Slot.fluid(recipe.getOutputB(), recipe.getOutputBMb())
+                            : Slot.of(new ItemStack(ModItems.NOTHING.get())));
+        }
+    }
+
+    public static final RecipeType<Entry> RECIPE_TYPE =
+            RecipeType.create(RefStrings.MODID, "radiolysis", Entry.class);
+
+    public static final ResourceLocation TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/nei/gui_nei_radiolysis.png");
+
+    public static final int RECIPE_WIDTH = 166;
+    public static final int RECIPE_HEIGHT = 65;
+
+    private final IDrawable background;
+    private final IDrawable icon;
+    private final IDrawableAnimated progress;
 
     public RadiolysisJeiCategory(IGuiHelper guiHelper) {
-        super(guiHelper, new ItemStack[]{
-                new ItemStack(ModBlocks.RADIOLYSIS.get())
-        });
+        // TemplateRecipeHandler.drawBackground: drawTexturedModalRect(0, 0, 5, 11, 166, 65)
+        this.background = guiHelper.drawableBuilder(TEXTURE, 5, 11, RECIPE_WIDTH, RECIPE_HEIGHT)
+                .setTextureSize(256, 256).build();
+        this.icon = guiHelper.createDrawableItemStack(new ItemStack(ModBlocks.RADIOLYSIS.get()));
+        // drawProgressBar(52, 19, 5, 87, 64, 28, 60, 0): Richtung 0 = von links fuellend
+        this.progress = guiHelper.drawableBuilder(TEXTURE, 5, 87, 64, 28).setTextureSize(256, 256)
+                .buildAnimated(60, IDrawableAnimated.StartDirection.LEFT, false);
+    }
+
+    /** {@code RadiolysisRecipes.getRecipesForNEI()}: Wassereintrag zuerst, danach alle Cracking-Rezepte. */
+    public static List<Entry> recipes(Level level) {
+        List<Entry> list = new ArrayList<>();
+        for (RadiolysisRecipe recipe : RecipeHooks.getAllRecipes(level, RadiolysisRecipe.Type.INSTANCE)) list.add(Entry.own(recipe));
+        for (CrackingTowerRecipe recipe : RecipeHooks.getAllRecipes(level, CrackingTowerRecipe.Type.INSTANCE)) list.add(Entry.crack(recipe));
+        return list;
     }
 
     @Override
-    public RecipeType<RadiolysisRecipe> getRecipeType() {
+    public RecipeType<Entry> getRecipeType() {
         return RECIPE_TYPE;
     }
 
     @Override
     public Component getTitle() {
-        return Component.translatable("block.hbm_m.radiolysis");
+        return Component.translatableWithFallback("jei.hbm_m.radiolysis", "Radiolysis");
     }
 
     @Override
-    protected int getInputCount(RadiolysisRecipe recipe) {
-        return 1;
+    @SuppressWarnings("removal")
+    public IDrawable getBackground() {
+        return background;
     }
 
     @Override
-    protected int getOutputCount(RadiolysisRecipe recipe) {
-        return recipe.hasOutputB() ? 2 : 1;
+    public IDrawable getIcon() {
+        return icon;
     }
 
     @Override
-    protected boolean hasBlueprintTemplate(RadiolysisRecipe recipe) {
-        return false;
+    public int getWidth() {
+        return RECIPE_WIDTH;
     }
 
     @Override
-    protected void addInputSlots(IRecipeLayoutBuilder builder, RadiolysisRecipe recipe, int inputXOffset) {
-        addFluidSlot(builder, RecipeIngredientRole.INPUT, inputXOffset, 22,
-                FluidStack.create(recipe.getInputFluid(), recipe.getInputMb()));
+    public int getHeight() {
+        return RECIPE_HEIGHT;
     }
 
     @Override
-    protected void addOutputSlots(IRecipeLayoutBuilder builder, RadiolysisRecipe recipe, int outputXOffset) {
-        int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(getOutputCount(recipe));
-        addFluidSlot(builder, RecipeIngredientRole.OUTPUT,
-                positions[0][0] + outputXOffset, positions[0][1],
-                FluidStack.create(recipe.getOutputA(), recipe.getOutputAMb()));
-
-        if (recipe.hasOutputB()) {
-            addFluidSlot(builder, RecipeIngredientRole.OUTPUT,
-                    positions[1][0] + outputXOffset, positions[1][1],
-                    FluidStack.create(recipe.getOutputB(), recipe.getOutputBMb()));
-        }
-    }
-
-    private void addFluidSlot(IRecipeLayoutBuilder builder, RecipeIngredientRole role, int x, int y, FluidStack fluid) {
-        addItemSlot(builder, role, x, y)
-                .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
-                //? if forge {
-                .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-                //?} elif neoforge {
-                /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                .addIngredient(NeoForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
-                *///?}
+    public void setRecipe(IRecipeLayoutBuilder builder, Entry recipe, IFocusGroup focuses) {
+        // RecipeSet: input (34, 25), output1 (118, 16), output2 (118, 34); Rahmen stecken in der Textur.
+        NeiUniversalJeiCategory.addSlot(builder, RecipeIngredientRole.INPUT, 34, 25, recipe.input(), null);
+        NeiUniversalJeiCategory.addSlot(builder, RecipeIngredientRole.OUTPUT, 118, 16, recipe.outputA(), null);
+        NeiUniversalJeiCategory.addSlot(builder, RecipeIngredientRole.OUTPUT, 118, 34, recipe.outputB(), null);
     }
 
     @Override
-    protected void addBlueprintSlot(IRecipeLayoutBuilder builder, RadiolysisRecipe recipe, int machineXOffset) {
-        // Kein Blueprint-Slot fuer Radiolysis-Rezepte.
+    public void draw(Entry recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics, double mouseX, double mouseY) {
+        progress.draw(guiGraphics, 52, 19);
     }
 }
-

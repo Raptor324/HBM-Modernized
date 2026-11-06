@@ -8,7 +8,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.phys.Vec3;
 
-/** 1:1 {@code RenderICFController}: der Block ist das Blockmodell, hier nur der dunkle Spiralstrahl ueber {@code laserLength}. */
+/** 1:1 {@code RenderICFController}: block model handles casing, only the dark spiral beam via {@code laserLength} here. */
 public class ICFControllerRenderer implements com.hbm_m.client.render.HbmBerBounds<ICFControllerBlockEntity> {
 
     public ICFControllerRenderer(BlockEntityRendererProvider.Context ctx) { }

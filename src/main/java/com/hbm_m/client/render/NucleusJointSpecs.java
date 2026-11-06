@@ -539,6 +539,20 @@ public final class NucleusJointSpecs {
         return texId != 0 ? texId : ensurePlaceholderTexture();
     }
 
+    /**
+     * Resets pixel unpack parameters after vanilla NativeImage._upload,
+     * which leaves non-zero GL_UNPACK_SKIP_ROWS / SKIP_PIXELS / ROW_LENGTH
+     * (causing glTexImage2D/glTexSubImage2D to read past buffer bounds and
+     * trigger nvoglv64.dll EXCEPTION_ACCESS_VIOLATION).
+     */
+    private static void resetPixelUnpackState() {
+        GL15.glBindBuffer( org.lwjgl.opengl.GL21.GL_PIXEL_UNPACK_BUFFER, 0);
+        GlStateManager._pixelStore(GL11.GL_UNPACK_ROW_LENGTH, 0);
+        GlStateManager._pixelStore(GL11.GL_UNPACK_SKIP_PIXELS, 0);
+        GlStateManager._pixelStore(GL11.GL_UNPACK_SKIP_ROWS, 0);
+        GlStateManager._pixelStore(GL11.GL_UNPACK_ALIGNMENT, 4);
+    }
+
     private static int ensurePlaceholderTexture() {
         if (placeholderTexId != 0) {
             return placeholderTexId;
@@ -546,31 +560,34 @@ public final class NucleusJointSpecs {
         if (!com.mojang.blaze3d.systems.RenderSystem.isOnRenderThread()) {
             return 0;
         }
+        int prevActiveTex = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
+        GlStateManager._activeTexture(GL13.GL_TEXTURE0 + SAMPLER_UNIT);
+        int prevBoundTex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
         try {
             placeholderTexId = GL11.glGenTextures();
             GlStateManager._bindTexture(placeholderTexId);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL32.GL_CLAMP_TO_EDGE);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL32.GL_CLAMP_TO_EDGE);
+
+            resetPixelUnpackState();
+
+            FloatBuffer zero = MemoryUtil.memCallocFloat(4);
             try {
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL32.GL_CLAMP_TO_EDGE);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL32.GL_CLAMP_TO_EDGE);
-                GlVaoSafety.bindVertexArray(0);
-                BufferUploader.invalidate();
-                FloatBuffer zero = MemoryUtil.memCallocFloat(4);
-                try {
-                    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_RGBA32F, 1, 1, 0,
-                            GL11.GL_RGBA, GL11.GL_FLOAT, zero);
-                } finally {
-                    MemoryUtil.memFree(zero);
-                }
+                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_RGBA32F, 1, 1, 0,
+                        GL11.GL_RGBA, GL11.GL_FLOAT, zero);
             } finally {
-                GlStateManager._bindTexture(0);
+                MemoryUtil.memFree(zero);
             }
         } catch (Throwable t) {
             if (placeholderTexId != 0) {
                 GL11.glDeleteTextures(placeholderTexId);
                 placeholderTexId = 0;
             }
+        } finally {
+            GlStateManager._bindTexture(prevBoundTex);
+            GlStateManager._activeTexture(prevActiveTex);
         }
         return placeholderTexId;
     }
@@ -645,50 +662,42 @@ public final class NucleusJointSpecs {
             return;
         }
         dirty = false;
+        int prevActiveTex = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
+        GlStateManager._activeTexture(GL13.GL_TEXTURE0 + SAMPLER_UNIT);
+        int prevBoundTex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
         try {
             if (texId == 0) {
                 texId = GL11.glGenTextures();
             }
             int needed = jointCount * TEXELS_PER_JOINT + poolTexels;
+            resetPixelUnpackState();
+            GlStateManager._bindTexture(texId);
             if (widthTexels < needed) {
                 widthTexels = Math.max(needed, 64);
-                GlStateManager._bindTexture(texId);
-                try {
-                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL32.GL_CLAMP_TO_EDGE);
-                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL32.GL_CLAMP_TO_EDGE);
-                    GlVaoSafety.bindVertexArray(0);
-                    BufferUploader.invalidate();
-                    GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_RGBA32F, widthTexels, 1, 0,
-                            GL11.GL_RGBA, GL11.GL_FLOAT,
-                            (FloatBuffer) cpu.limit(widthTexels * FLOATS_PER_TEXEL).position(0));
-                    ((FloatBuffer) cpu).clear();
-                } finally {
-                    GlStateManager._bindTexture(0);
-                }
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL32.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL32.GL_CLAMP_TO_EDGE);
+                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_RGBA32F, widthTexels, 1, 0,
+                        GL11.GL_RGBA, GL11.GL_FLOAT,
+                        (FloatBuffer) cpu.limit(widthTexels * FLOATS_PER_TEXEL).position(0));
+                ((FloatBuffer) cpu).clear();
             } else {
-                GlStateManager._bindTexture(texId);
-                try {
-                    GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, needed, 1,
-                            GL11.GL_RGBA, GL11.GL_FLOAT, (FloatBuffer) cpu.limit(needed * FLOATS_PER_TEXEL).position(0));
-                    ((FloatBuffer) cpu).clear();
-                } finally {
-                    GlStateManager._bindTexture(0);
-                }
+                GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, needed, 1,
+                        GL11.GL_RGBA, GL11.GL_FLOAT,
+                        (FloatBuffer) cpu.limit(needed * FLOATS_PER_TEXEL).position(0));
+                ((FloatBuffer) cpu).clear();
             }
         } catch (Throwable t) {
-            // The texture is an optimization: on failure the parametric joints simply
-            // will not work (w >= 0 but the fetch returns garbage) - disable joints until fixed.
             MainRegistry.LOGGER.warn("[HBM-M] NucleusJointSpecs upload failed: {}", t.toString());
-            // Delete the orphaned name before zeroing - a never-deleted texture is
-            // reclaimed only at context death (GL 4.6 spec §5.1.1), and the next
-            // register() would otherwise gen a fresh name, repeating per failure.
             if (texId != 0) {
                 GL11.glDeleteTextures(texId);
             }
             texId = 0;
             dirty = false;
+        } finally {
+            GlStateManager._bindTexture(prevBoundTex);
+            GlStateManager._activeTexture(prevActiveTex);
         }
     }
 }

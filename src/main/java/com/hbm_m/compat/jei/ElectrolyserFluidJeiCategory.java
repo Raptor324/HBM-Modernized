@@ -6,14 +6,8 @@ import com.hbm_m.recipe.ElectrolyserFluidRecipe;
 
 import dev.architectury.fluid.FluidStack;
 //? if forge {
-//? if forge {
 import mezz.jei.api.forge.ForgeTypes;
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
-//? if forge {
 import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
-//?}
 //?} elif neoforge {
 /*import mezz.jei.api.neoforge.NeoForgeTypes;
 *///?}
@@ -75,7 +69,11 @@ public class ElectrolyserFluidJeiCategory extends JeiGenericRecipeCategory<Elect
 
     @Override
     protected void addInputSlots(IRecipeLayoutBuilder builder, ElectrolyserFluidRecipe recipe, int inputXOffset) {
-        addFluidSlot(builder, RecipeIngredientRole.INPUT, inputXOffset, 22,
+        // ElectrolyserFluidHandler extends NEIUniversalHandler: dessen getInputCoords(1) setzt das
+        // Eingangsfluid auf {48,24} (direkt am Pfeil) — wie in 1.7.10.
+        int[][] positions = JeiNeiLayout.getUniversalInputCoords(1);
+        addFluidSlot(builder, RecipeIngredientRole.INPUT,
+                positions[0][0] + inputXOffset, positions[0][1],
                 FluidStack.create(recipe.getInputFluid(), recipe.getInputAmount()));
     }
 

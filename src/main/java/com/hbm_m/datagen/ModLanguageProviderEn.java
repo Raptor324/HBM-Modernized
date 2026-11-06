@@ -213,6 +213,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         restportActive = false;
         addConfigTranslations();
         addTranslationsPart2();
+        addCanneryTranslations();
 
         // Автоматическая локализация слитков
         for (ModMaterials mat : ModMaterials.values()) {
@@ -438,6 +439,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.hbm_m.assembler_recipe_selector", "Recipe Selector");
         add("gui.hbm_m.fluid_identifier", "Fluid Identifier");
         add("jei.hbm_m.crucible_smelting", "Crucible Smelting");
+        add("jei.hbm_m.cyclotron", "Cyclotron");
+        add("jei.hbm_m.solidifier", "Industrial Solidification Machine");
         // Present in the Russian provider but missing here.
         add("tooltip.hbm_m.requires", "Requires");
         add("container.hbm_m.nuke_prototype", "Prototype");
@@ -525,7 +528,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("pseudofluid.hbm_m.mud", "WATZ Sludge");
         add("pseudofluid.hbm_m.mud_heavy", "WATZ Sludge (concentrated)");
         add("jei.hbm_m.crucible_alloying", "Crucible Alloying");
-        add("jei.hbm_m.crucible_casting", "Casting");
+        add("jei.hbm_m.crucible_casting", "Crucible Casting");
         add("jei.hbm_m.gas_centrifuge.info", "Requires %s centrifuge(s)");
         add("jei.hbm_m.gas_centrifuge.info_high_speed", "Requires %s centrifuge(s) (high-speed)");
         add("gui.launchPad.notReady", "Not ready");
@@ -1593,6 +1596,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("fluid.hbm_m.chlorocalcite_cleaned", "Cleaned Chlorocalcite");
         add("fluid.hbm_m.bauxite_solution", "Bauxite Solution");
         add("fluid.hbm_m.alumina", "Alumina");
+        add("fluid.hbm_m.titanium_tetrachloride", "Titanium Tetrachloride");
         add("fluid.hbm_m.sodium_aluminate", "Sodium Aluminate");
         add("fluid.hbm_m.redmud", "Red Mud");
         add("fluid.hbm_m.schrabidic", "Schrabidic Acid");
@@ -2302,7 +2306,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("block.hbm_m.zirnox_deb_shrapnel", "ZIRNOX Shrapnel");
         add("block.hbm_m.zirnox_destroyed", "Destroyed ZIRNOX Reactor");
 
-        add("block.hbm_m.polonium210_block", "Polonium-210 Block");
+        add("block.hbm_m.block_polonium", "Block of Polonium-210");
         add("block.hbm_m.armor_table", "Armor Modification Table");
         add(ModBlocks.MACHINE_ASSEMBLER.get(), "Assembly Machine (LEGACY)");
         add(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get(), "Assembly Machine");
@@ -2324,7 +2328,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.hbm_m.designator.set_z", "Set coord to current Z position...");
         add(ModBlocks.CRYSTALLIZER.get(), "Ore Acidizer");
         add(ModBlocks.BREEDER.get(), "Breeder (WIP)");
-        add(ModBlocks.LARGE_PYLON.get(), "Large Pylon (WIP)");
         add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Hydraulic Fracking Tower");
         add(ModBlocks.COOLING_TOWER.get(), "Cooling Tower");
         add(ModBlocks.TOWER_SMALL.get(), "Cooling Tower (Small)");
@@ -2339,7 +2342,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.PART_COPPER.get(),    "Copper Part");
         add(ModItems.PART_PLUTONIUM.get(), "Plutonium Part");
         add(ModBlocks.ZIRNOX.get(), "Zirnox");
-        add(ModBlocks.ARC_WELDER.get(), "Arc Welder (WIP)");
+        add(ModBlocks.ARC_WELDER.get(), "Arc Welder");
         add(ModBlocks.SOLDERING_STATION.get(), "Soldering Station (WIP)");
         add(ModBlocks.MIXER.get(), "Industrial Mixer (WIP)");
         add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant");
@@ -2425,8 +2428,20 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.CRACKING_TOWER.get(), "Cracking Tower (WIP)");
         add(ModBlocks.FRACTION_TOWER.get(), "Fraction Tower (WIP)");
         add(ModBlocks.MINING_DRILL.get(), "Large Mining Drill");
-        add(ModBlocks.FEL.get(), "FEL (WIP)");
-        add(ModBlocks.SILEX.get(), "Silex (WIP)");
+        add(ModBlocks.FEL.get(), "FEL");
+        add("container.hbm_m.fel", "FEL");
+        add(ModBlocks.SILEX.get(), "Laser Isotope Separation Chamber (SILEX)");
+        add("container.hbm_m.silex", "SILEX");
+        add("desc.hbm_m.pellet.recycling", "Pellet for recycling");
+        add("desc.hbm_m.pellet.brand_new", "Brand New");
+        add("desc.hbm_m.pellet.barely_depleted", "Barely Depleted");
+        add("desc.hbm_m.pellet.moderately_depleted", "Moderately Depleted");
+        add("desc.hbm_m.pellet.highly_depleted", "Highly Depleted");
+        add("desc.hbm_m.pellet.fully_depleted", "Fully Depleted");
+        add("desc.hbm_m.pellet.xenon", "High Xenon Poison");
+        add("jei.hbm_m.radiolysis", "Radiolysis");
+        add("jei.hbm_m.silex", "SILEX");
+        add("jei.hbm_m.silex.fluid_alternative", "Alternative: %s (%s mB)");
         add(ModBlocks.MACHINE_BATTERY_SOCKET.get(), "Battery Socket");
         add(ModBlocks.FLUID_DUCT.get(), "Fluid Duct (NEO)");
         add(ModBlocks.FLUID_DUCT_COLORED.get(), "Fluid Duct (Colored)");
@@ -2450,9 +2465,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
             add(ModBlocks.CHEMICAL_FACTORY.get(), "Chemical Factory (WIP)");
             add(ModBlocks.STEAM_TURBINE.get(), "Steam Turbine (WIP)");
             add(ModBlocks.LIQUEFACTOR.get(), "Liquefactor (WIP)");
-            add(ModBlocks.CORE_EMITTER.get(), "Core Emitter (WIP)");
-            add(ModBlocks.CORE_INJECTOR.get(), "Core Injector (WIP)");
-            add(ModBlocks.CORE_RECEIVER.get(), "Core Receiver (WIP)");
+            add(ModBlocks.CORE_EMITTER.get(), "DFC Emitter");
+            add(ModBlocks.CORE_INJECTOR.get(), "DFC Fuel Injector");
+            add(ModBlocks.CORE_RECEIVER.get(), "DFC Receiver");
             add(ModBlocks.VACUUM_DISTILL.get(), "Vacuum Distill (WIP)");
             add(ModBlocks.TURBOFAN.get(), "Turbofan");
             add("desc.hbm_m.turbofan.efficiency", "Fuel efficiency:");
@@ -2562,7 +2577,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.RFC.get(), "Radio Frequency Cavity");
         add(ModBlocks.ROTARY_FURNACE.get(), "Rotary Furnace");
         add("container.hbm_m.rotary_furnace", "Rotary Furnace");
-        add(ModBlocks.SAWMILL.get(), "Sawmill");
+        add(ModBlocks.SAWMILL.get(), "Stirling Sawmill");
         add(ModBlocks.SOLIDIFIER.get(), "Solidifier");
         add(ModBlocks.ASHPIT.get(), "Ashpit");
         add(ModBlocks.REACTOR_RESEARCH.get(), "Research Reactor (LEGACY)");
@@ -2879,9 +2894,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("container.hbm_m.steam_turbine", "Steam Turbine");
         add("container.hbm_m.steam_condenser", "Steam Condenser");
         add("container.hbm_m.liquefactor", "Liquefactor");
-        add("container.hbm_m.core_emitter", "Core Emitter");
-        add("container.hbm_m.core_injector", "Core Injector");
-        add("container.hbm_m.core_receiver", "Core Receiver");
+        add("container.hbm_m.core_emitter", "DFC Emitter");
+        add("container.hbm_m.core_injector", "DFC Fuel Injector");
+        add("container.hbm_m.core_receiver", "DFC Receiver");
         add("container.hbm_m.vacuum_distill", "Vacuum Distill");
         add("container.hbm_m.turbofan", "Turbofan");
         add("container.hbm_m.industrial_turbine", "Industrial Turbine");
@@ -2938,7 +2953,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("container.hbm_m.crate_template", "Template Crate");
         add("container.hbm_m.crystallizer", "Crystallizer");
         add("container.hbm_m.breeder", "Breeder");
-        add("container.hbm_m.large_pylon", "Large Pylon");
         add("container.hbm_m.chemical_plant", "Chemical Plant");
         add("container.hbm_m.centrifuge", "Centrifuge");
 
@@ -3000,7 +3014,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("door.skin.hbm_m.blast_door.default", "Standard");
 
         add(ModItems.SCREWDRIVER.get(), "Screwdriver");
-        add("tooltip.hbm_m.screwdriver", "RMB click - Configure energy converter or change door skin");
+        add("tooltip.hbm_m.screwdriver", "RMB click - Configure machines or change door skin\nShift-click - Dismantle a cargo elevator floor");
         add("tooltip.hbm_m.door_skin", "Use the screwdriver to change the skin!");
 
         add("gui.hbm_m.battery.mode.both", "Mode: Input & Output");
@@ -3157,6 +3171,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("message.hbm_m.button_boosty", "[Boosty]");
         add("message.hbm_m.button_crypto", "[Crypto]");
 
+        add("message.hbm_m.tip_of_the_day", "Tip of the day:");
+
         add("geiger.title", "GEIGER COUNTER");
         add("geiger.title.dosimeter", "DOSIMETER");
         add("geiger.chunkRad", "Current chunk radiation:");
@@ -3280,6 +3296,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.enableRadiation", "Enable radiation");
         add("text.autoconfig.hbm_m.option.enableChunkRads", "Enable chunk radiation");
         add("text.autoconfig.hbm_m.option.enableMOTD", "Join MOTD and update notice");
+        add("text.autoconfig.hbm_m.option.enableTips", "Loading screen tips");
         add("text.autoconfig.hbm_m.option.enable528", "Enable 528 mode");
         add("text.autoconfig.hbm_m.option.enable528.@Tooltip", "The central toggle for 528 mode, required TRUE for most subsequent toggles to work.");
 
@@ -3460,6 +3477,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.enableRadiation.@Tooltip", "If disabled, all radiation is turned off (chunks, items)");
         add("text.autoconfig.hbm_m.option.enableChunkRads.@Tooltip", "If disabled, chunk radiation is always 0");
         add("text.autoconfig.hbm_m.option.enableMOTD.@Tooltip", "Welcome message on world join and a notice when a newer release is on Modrinth");
+        add("text.autoconfig.hbm_m.option.enableTips.@Tooltip", "Yellow 'tip of the day' on the world loading screen, fetched from the mod's GitHub");
 
         add("text.autoconfig.hbm_m.option.maxPlayerRad.@Tooltip", "Maximum radiation the player can accumulate");
         add("text.autoconfig.hbm_m.option.radDecay.@Tooltip", "How fast player radiation decays per tick");
@@ -3858,6 +3876,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.HADRON_COIL_SCHRABIDIUM.get(), "Dense Schrabidic Coil");
         add(ModBlocks.HADRON_COIL_STARMETAL.get(), "Dense Starmetal Coil");
         add(ModBlocks.HEV_BATTERY.get(), "Suit Battery");
+        add("item.hbm_m.hev_battery", "Suit Battery");
+        add(ModBlocks.BOOK_GUIDE.get(), "Hbm's Nuclear Tech Mod Manual [LEGACY]");
         add(ModBlocks.ICF_COMPONENT.get(), "ICF Stability Element");
         add(ModBlocks.ICF_COMPONENT_STRUCTURE.get(), "ICF Casing");
         add(ModBlocks.ICF_COMPONENT_STRUCTURE_BOLTED.get(), "ICF Casing (Riveted)");
@@ -3932,6 +3952,10 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.MACHINE_MISSILE_ASSEMBLY.get(), "Missile Assembly Station");
         add(ModBlocks.MACHINE_SUPERCOMPUTER.get(), "Supercomputer");
         add("container.hbm_m.machine_supercomputer", "Supercomputer");
+        add("block.hbm_m.launchpad_soyuz", "Soyuz Launch Pad");
+        add("block.hbm_m.network_separator", "Network Separator");
+        add("block.hbm_m.flow_control_pump", "Flow Control Pump");
+        add("block.hbm_m.deco_computer", "IBM Personal Computer 300PL");
         add(ModBlocks.LAUNCHPAD_LAMBDA.get(), "Lambda Launch Pad");
         add("container.hbm_m.launchpad_lambda", "Lambda Launch Pad");
         add(ModItems.MISSILE_LAMBDA.get(), "Lambda-98");
@@ -4967,7 +4991,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.FUSION_SHIELD_TUNGSTEN.get(), "Tungsten Fusion Reactor Blanket");
         add(ModItems.FUSION_SHIELD_VAPORWAVE.get(), "Vaporwave Fusion Reactor Blanket");
         add(ModItems.GADGET_CORE.get(), "Large Plutonium Core");
-        add(ModItems.GADGET_EXPLOSIVE.get(), "First Generation Explosive Lens");
         add(ModItems.GADGET_KIT.get(), "The Gadget Kit");
         add(ModItems.GADGET_WIREING.get(), "Wiring");
         add(ModItems.GAS_MASK.get(), "Gas Mask");
@@ -4996,6 +5019,20 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.GOGGLES.get(), "Protection Goggles");
         add(com.hbm_m.item.weapon.grenade.GrenadeItems.GRENADE_UNIVERSAL.get(), "Grenade");
         add(ModItems.GUN_B92.get(), "§9B92 Energy Pistol§r");
+        add(ModItems.GUN_FLIEGERFAUST.get(), "HIMRAAL");
+        add(ModItems.NUGGET_TITANIUM.get(), "Titanium Nugget");
+        add(ModItems.NUGGET_COPPER.get(), "Copper Nugget");
+        add(ModItems.NUGGET_TUNGSTEN.get(), "Tungsten Nugget");
+        add(ModItems.NUGGET_ALUMINIUM.get(), "Aluminium Nugget");
+        add(ModItems.NUGGET_BORON.get(), "Boron Nugget");
+        add(ModItems.NUGGET_LITHIUM.get(), "Lithium Nugget");
+        add(ModItems.NUGGET_SODIUM.get(), "Sodium Nugget");
+        add(ModItems.NUGGET_STRONTIUM.get(), "Strontium Nugget");
+        add(ModItems.POWDER_FIRE.get(), "Red Phosphorus");
+        add(ModItems.DEMOSHAPE_IRON.get(), "Iron Custom Shape Demo");
+        add(ModItems.DEMOSHAPE_STEEL.get(), "Steel Custom Shape Demo");
+        add(ModItems.DEMOSHAPE_CUSTOM.get(), "Custom Metal Demo Custom Shape Demo");
+        add(ModItems.MOLD_DEMOSHAPE.get(), "Foundry Mold (Custom Shape Demo)");
         add(com.hbm_m.item.weapon.sedna.WeaponItems.gun("gun_fireext"), "Fire Extinguisher");
         add(ModItems.GUN_KIT_1.get(), "Gun Oil");
         add(ModItems.GUN_KIT_2.get(), "Gun Repair Kit");
@@ -5410,6 +5447,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.RPA_PLATE.get(), "Remnants Power Armor Chestplate");
         add(ModItems.RTG_UNIT.get(), "RTG Unit");
         add(ModItems.RTTY_PAGER.get(), "Redstone-over-Radio Pager");
+        add(ModItems.RTTY_DESIGNATOR.get(), "Redstone-over-Radio Designator");
         add(ModItems.RUNE_BLANK.get(), "Blank Catalyst Matrix");
         add(ModItems.RUNE_DAGAZ.get(), "Balanced Catalyst Matrix");
         add(ModItems.RUNE_HAGALAZ.get(), "Rough Catalyst Matrix");
@@ -5709,6 +5747,91 @@ public class ModLanguageProviderEn extends LanguageProvider {
             }
         }
         deferredLangKeys.clear();
+    }
+
+    /** WIAJ cannery demo texts (original {@code cannery.*} keys from en_US.lang). */
+    private void addCanneryTranslations() {
+        add("cannery.f1", "[ Press %s for a presentation ]");
+
+        add("cannery.silex", "FEL & SILEX");
+        add("cannery.silex.0", "The Free Electron Laser (FEL) uses energy and a laser crystal to create a powerful laser beam.");
+        add("cannery.silex.1", "Be careful, as the laser will burn/melt through weaker blocks...");
+        add("cannery.silex.2", "...but not blast-proof ones.");
+        add("cannery.silex.3", "The FEL is used to power the Laser Isotope Separation Chamber (SILEX). The FEL and SILEX have to be at least two blocks apart.");
+        add("cannery.silex.4", "The laser has to enter through the glass openings of the SILEX. Aiming it wrong could destroy it.");
+        add("cannery.silex.5", "The openings on the sides can be used to connect fluid ducts to the SILEX. All separation recipes require §ehydrogen §eperoxide§r");
+        add("cannery.silex.6", "In addition to the two connectors on the sides, there is a third hidden connector at the bottom from which items can be extracted.");
+        add("cannery.silex.7", "Each recipe requires a specific laser type. Using a stronger type than required will process items faster.");
+        add("cannery.silex.8", "One FEL can supply up to 5 SILEX. Each SILEX has to be one block apart from one another.");
+
+        add("cannery.firebox", "Firebox");
+        add("cannery.firebox.0", "The firebox burns flammable items to generate heat.");
+        add("cannery.firebox.1", "It can burn any flammable item, although higher quality fuels such as coal, coke and solid fuel burn longer and hotter.");
+        add("cannery.firebox.2", "Heat is given off by the copper contact at the top of the firebox. Machines with an identical contact on the bottom can receive heat by being placed on top of the firebox.");
+        add("cannery.firebox.3", "If heat isn't being used up and the heat buffer becomes full, the firebox will shut off to prevent wasting of fuel.");
+        add("cannery.firebox.4", "One such machine is the stirling engine, which will turn heat directly into energy.");
+
+        add("cannery.stirling", "Stirling Engine");
+        add("cannery.stirling.0", "The Stirling engine uses heat energy from external sources to create power.");
+        add("cannery.stirling.1", "It needs to be placed on top of a heat-producing machine, such as the firebox.");
+        add("cannery.stirling.2", "The amount of heat it can utilize however is limited, overspinning can lead to catastrophic malfunction.");
+        add("cannery.stirling.3", "The upgraded version can take significantly more heat without breaking.");
+
+        add("cannery.centrifuge", "Gas Centrifuge");
+        add("cannery.centrifuge.0", "Gas centrifuges can be supplied with fluid using regular fluid ducts.");
+        add("cannery.centrifuge.1", "Most recipes require multiple centrifuges. The intermediate products cannot be transported via pipes.");
+        add("cannery.centrifuge.2", "This side acts as a connector which outputs the intermediate product into an adjacent centrifuge.");
+        add("cannery.centrifuge.3", "Uranium hexafluoride can be processed with just two centrifuges, this however will produce Uranium fuel and Uranium-238.");
+        add("cannery.centrifuge.4", "Fully processing it into Uranium-235 and Uranium-238 requires a total of four centrifuges.");
+        add("cannery.centrifuge.5", "Some recipes also require the centrifuge overclocking upgrade.");
+
+        add("cannery.crucible", "Crucible");
+        add("cannery.crucible.0", "The crucible is used to smelt ores, ingots or other metallic items for alloying and to cast them into different shapes.");
+        add("cannery.crucible.1", "It requires an external heat source connected to the bottom, like a firebox.");
+        add("cannery.crucible.2", "Once heated up, the crucible can be used in two ways, with or without a recipe template.");
+        add("cannery.crucible.3", "The crucible has two storage buffers for material:");
+        add("cannery.crucible.4", "The buffer to the left is for §abyproducts§r, all material smelted without a recipe template will land here.");
+        add("cannery.crucible.5", "If a recipe is installed, materials that do not match the recipe will also be stored here.");
+        add("cannery.crucible.6", "Materials in this buffer will not react with each other, they can only be output from the green outlet for casting.");
+        add("cannery.crucible.7", "The buffer to the right is for §crecipes§r, if a recipe is installed and that particular material is relevant to that recipe, it will land here.");
+        add("cannery.crucible.8", "The materials will slowly combine into the output material which is automatically output from the red outlet.");
+        add("cannery.crucible.9", "Note that only this buffer handles recipes. If a template is installed retroactively, materials in the byproduct buffer will not combine, nor transfer to the recipe buffer.");
+        add("cannery.crucible.10", "The outlet will output material automatically, if the target is valid, for example a foundry channel or a mold.");
+        add("cannery.crucible.11", "As with all foundry blocks, a shovel can be used to remove all material from the crucible.");
+
+        add("cannery.foundryChannel", "Foundry Channel");
+        add("cannery.foundryChannel.0", "Foundry channels are used to transport molten material from a crucible or storage tank into molds.");
+        add("cannery.foundryChannel.1", "Channels can receive material either by pouring from the top - via an outlet or directly from a crucible - or from the side from other channels.");
+        add("cannery.foundryChannel.2", "When transporting materials, channels will prioritize blocks like outlets and shallow molds.");
+        add("cannery.foundryChannel.3", "When it cannot supply an outlet or a mold, the material will then flow into a neighboring channel.");
+        add("cannery.foundryChannel.4", "Leftover material can be removed by using a shovel.");
+
+        add("cannery.willow", "Mustard Willow");
+        add("cannery.willow.0", "The mustard willow is a plant that allows cadmium metal to be harvested.");
+        add("cannery.willow.1", "Willows can be placed on dirt, grass or even dead/oily dirt, but they require water to grow.");
+        add("cannery.willow.2", "Willows can be fertilized with bone meal or industrial fertilizer. They do not need light to grow.");
+        add("cannery.willow.3", "After the second stage of growth, they will need an extra block of space above them to grow further.");
+        add("cannery.willow.4", "After the fourth stage of growth, they require dead or oily dirt below them.");
+        add("cannery.willow.5", "This can be done either by manually planting willows on dead/oily dirt, or by having a hydraulic fracking tower nearby which continuously contaminates the ground.");
+        add("cannery.willow.6", "After reaching the final stage, the willow will remove contamination from the ground, reverting the dead/oily dirt back into regular dirt.");
+        add("cannery.willow.7", "Now the willow's leaves can be harvested. Breaking the top block will drop a small willow plant, 3-6 leaves and keep the bottom part of the plant intact.");
+        add("cannery.willow.8", "Soon the plant will start growing again, yielding more leaves if the dirt is replaced with oily dirt. The leaves can be processed into cadmium powder using an ore acidizer.");
+        add("cannery.willow.9", "Harvesting willow leaves can be automated using the automatic buzzsaw, it will only break plants that are ready for harvest.");
+
+        add("cannery.cargo_elevator", "Cargo Elevator");
+        add("cannery.cargo_elevator.0", "The Cargo Elevator is an industrial 3x3 lift designed for transporting cargo, vehicles, and players vertically.");
+        add("cannery.cargo_elevator.1", "Its base consists of a central controller block and 8 dummy block parts surrounding it.");
+        add("cannery.cargo_elevator.2", "Right-click with another Cargo Elevator block in hand on any part of the elevator to add an additional floor.");
+        add("cannery.cargo_elevator.3", "The elevator automatically extends its corner guides and telescoping piston, self-stacking floor by floor.");
+        add("cannery.cargo_elevator.4", "Right-clicking with an empty hand toggles the platform between the lowest and highest floors.");
+        add("cannery.cargo_elevator.5", "The platform moves at a steady 2 blocks/s, carrying players, mobs, carts, and dropped items.");
+        add("cannery.cargo_elevator.6", "Clicking while the platform is in motion immediately reverses its travel direction.");
+        add("cannery.cargo_elevator.7", "Shift + right-click with a Screwdriver to dismantle the top floor, dropping the elevator block to the ground.");
+        add("cannery.cargo_elevator.8", "Fully compatible with Redstone Over Radio (ROR): send 'setextension <height>' to wirelessly call to a specific floor.");
+        add("cannery.cargo_elevator.ror.0", "Standard right-click toggles the lift only between endpoints (1st and 3rd floors).");
+        add("cannery.cargo_elevator.ror.1", "Attach a Radio Torch Controller to the shaft to receive wireless Redstone Over Radio (ROR) commands.");
+        add("cannery.cargo_elevator.ror.2", "Command 'setextension!5' sends the platform to the 2nd floor, stopping flush with the intermediate mezzanine deck!");
+        add("cannery.cargo_elevator.ror.3", "Next, 'setextension!10' sends the platform up to the 3rd floor. ROR enables full multi-floor call station systems!");
     }
 }
 //?}

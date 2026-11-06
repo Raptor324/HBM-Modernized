@@ -440,6 +440,6 @@ public class FluidTank implements Cloneable {
 
         type.addInfo(shift, lines);
 
-        guiGraphics.renderTooltip(font, lines, java.util.Optional.empty(), mouseX, mouseY);
+        com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextFluid(guiGraphics, font, lines, mouseX, mouseY, type);
     }
 }

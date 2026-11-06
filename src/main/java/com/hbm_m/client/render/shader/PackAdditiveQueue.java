@@ -15,37 +15,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Post-composite аддитивный проход для Iris/Oculus шейдерпаков.
+ * Post-composite additive pass for Iris/Oculus shaderpacks.
  *
- * <p>Под активным паком draw кастомного core-шейдера мода ({@code hbm_m:gun_additive})
- * попадает в colortex пака как НЕзарегистрированный контент (Oculus 1.8.0 не подменяет
- * модовые шейдеры ExtendedShader'ами), и дальше его судьбу решает композитная цепочка
- * пака: Photon (gbuffer-as-data) переинтерпретирует сплэт как данные материала — чёрный
- * бокс; Solas (полностью deferred-небо) затирает всё с глубиной неба
- * ({@code if (z0 == 1.0) color = skyColor;}). BSL спасает только то, что пишет финальный
- * цвет прямо в gbuffers и пропускает colortex0 сквозь композиты.</p>
+ * <p>Under an active shaderpack, draws using the mod's custom core shader ({@code hbm_m:gun_additive})
+ * end up in the pack's colortex as unregistered content (Oculus does not substitute
+ * modded shaders with ExtendedShaders), and subsequent composite passes can corrupt or discard them:
+ * Photon reinterprets splats as material data (black box); Solas clears everything at sky depth;
+ * only BSL wrote final color directly into gbuffers and passed colortex0 through composites.</p>
  *
- * <p>Решение: под паком аддитивные квады GunGL (mode 2 — вспышки, трассеры, снаряд-факел)
- * НЕ рисуются в gbuffer, а ставятся в эту очередь; в TAIL
- * {@code finalizeLevelRendering} (финальная картинка пака уже в главном render target,
- * его depth-текстура ещё держит глубину сцены — рецепт {@link RawScreenSpaceLight})
- * квады дорисовываются поверх композита raw-GL с истинным аддитивным блендингом и
- * честным depth-test против depth-текстуры главного RT. Работает одинаково для ЛЮБОГО
- * пака: композиты уже позади. Вершинные координаты хранятся камера-относительными
- * (сырые данные {@code GunGL.Tess} до умножения на матрицу), проекция — gbuffer-матрицы,
- * снапшотнутые в HEAD той же инъекции.</p>
+ * <p>Solution: under a shaderpack, GunGL additive quads (mode 2 - flashes, tracers, projectile flares)
+ * are NOT drawn into gbuffers, but queued here. At TAIL {@code finalizeLevelRendering}
+ * (final pack composite is in the main render target, and its depth texture still retains world depth -
+ * matching {@link RawScreenSpaceLight}), quads are drawn on top of the composite using raw GL
+ * with true additive blending and depth testing against the main RT depth texture. Works across
+ * any shaderpack because composites have already executed. Vertex coordinates are stored
+ * camera-relative (raw {@code GunGL.Tess} data before matrix multiplication), projected with
+ * gbuffer matrices captured at HEAD of the injection.</p>
  *
- * <p>Отказоустойчивость по образцу RawScreenSpaceLight: после
- * {@value #MAX_CONSECUTIVE_FAILURES} подряд неуспешных кадров проход навсегда выключается
- * ({@link #engaged()} становится false), и GunGL возвращается к легаси-пути отрисовки в
- * gbuffer пака. Ограничение: DH-рельеф не участвует в depth-test (глубины DH в главном RT
- * нет) — трассеры поверх LOD-террейна далёких чанков не перекрываются им.</p>
+ * <p>Resilience model matches RawScreenSpaceLight: after {@value #MAX_CONSECUTIVE_FAILURES} consecutive
+ * failed frames, the pass permanently disables itself ({@link #engaged()} becomes false),
+ * and GunGL falls back to the legacy drawing path into pack gbuffers. Note: DH terrain does not
+ * participate in depth test (DH depth is absent from main RT), so tracers over distant LOD chunks
+ * are not occluded by them.</p>
  */
 public final class PackAdditiveQueue {
     private PackAdditiveQueue() {}
 
     private static final int MAX_CONSECUTIVE_FAILURES = 60;
-    private static final int FLOATS_PER_VERT = 12; // x,y,z,u,v,r,g,b,a,nx,ny,nz (нормаль не используется)
+    private static final int FLOATS_PER_VERT = 12; // x,y,z,u,v,r,g,b,a,nx,ny,nz (normal unused)
 
     private static int consecutiveFailures;
     private static boolean latched;
@@ -55,12 +52,12 @@ public final class PackAdditiveQueue {
     private static long sweptStaleErrors;
     private static final long STATE_EVERY_FRAMES = 1200;
 
-    /** Depth-test против depth-текстуры главного RT; {@code -Dhbm.packAdditive.depth=false} выключает. */
+    /** Depth-test against main RT depth texture; {@code -Dhbm.packAdditive.depth=false} disables. */
     private static boolean depthEnabled() {
         return !"false".equalsIgnoreCase(System.getProperty("hbm.packAdditive.depth", "true"));
     }
 
-    // ─── Очередь кадра ─────────────────────────────────────────────────────
+    // --- Frame queue ---
 
     public static final int DEPTH_MODE_WORLD = 0;
     public static final int DEPTH_MODE_HAND = 1;
@@ -102,7 +99,7 @@ public final class PackAdditiveQueue {
     private static float[] batchData = new float[1024];
     private static int batchFloats;
 
-    // ─── GL-ресурсы ────────────────────────────────────────────────────────
+    // --- GL resources ---
 
     private static int program = -1, vao = -1, vbo = -1, fbo = -1;
     private static int ibo = -1, iboQuadCapacity;
@@ -139,8 +136,8 @@ public final class PackAdditiveQueue {
             """;
 
     /**
-     * Квады аддитивного режима ставятся в очередь только когда пак реально рендерит мир,
-     * это не теневой проход и не GUI; иначе GunGL рисует легаси-путём (без пака он корректен).
+     * Additive quads are queued only when a shaderpack is actively rendering the world,
+     * not during shadow pass or GUI; otherwise GunGL renders via the legacy path.
      */
     public static boolean engaged() {
         return !latched
@@ -158,8 +155,8 @@ public final class PackAdditiveQueue {
     }
 
     /**
-     * Ставит один ad-hoc draw {@code GunGL.Tess} (аддитивный режим) в очередь.
-     * Сразу захватывает полный трансформ {@code ProjMat * ModelViewMat * model} и режим глубины.
+     * Enqueues one ad-hoc draw from {@code GunGL.Tess} (additive mode).
+     * Immediately captures the full transform {@code ProjMat * ModelViewMat * model} and depth mode.
      */
     public static void push(ResourceLocation texLoc, int glMode, Matrix4fc model, float[] data, int floats) {
         pushWithDepthMode(texLoc, glMode, model, data, floats, currentDepthMode);
@@ -183,7 +180,7 @@ public final class PackAdditiveQueue {
         batchFloats = floats;
     }
 
-    /** TAIL {@code finalizeLevelRendering}: дорисовывает очередь поверх финальной картинки пака. */
+    /** TAIL {@code finalizeLevelRendering}: draws queued batches on top of final shaderpack image. */
     public static void drainAndClear() {
         if (batchFloats == 0 && batches.isEmpty()) {
             return;
@@ -257,7 +254,7 @@ public final class PackAdditiveQueue {
         }
     }
 
-    // ─── Raw-GL отрисовка ──────────────────────────────────────────────────
+    // --- Raw-GL draw ---
 
     private static boolean drawBatches() {
         var mc = net.minecraft.client.Minecraft.getInstance();
@@ -448,14 +445,14 @@ public final class PackAdditiveQueue {
         int prevArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         GL30.glBindVertexArray(vao);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-        // stride 12 float: x,y,z (0) | u,v (3) | r,g,b,a (5) | нормаль (9) пропускается
+        // stride 12 float: x,y,z (0) | u,v (3) | r,g,b,a (5) | normal (9) skipped
         GL20.glEnableVertexAttribArray(0);
         GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, FLOATS_PER_VERT * 4, 0L);
         GL20.glEnableVertexAttribArray(1);
         GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, FLOATS_PER_VERT * 4, 12L);
         GL20.glEnableVertexAttribArray(2);
         GL20.glVertexAttribPointer(2, 4, GL11.GL_FLOAT, false, FLOATS_PER_VERT * 4, 20L);
-        // Индекс-буфер квадов привязывается к VAO (element array — состояние VAO).
+        // Quad index buffer bound to VAO (element array is VAO state).
         ibo = GL15.glGenBuffers();
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, ibo);
         iboQuadCapacity = 0;
@@ -465,9 +462,9 @@ public final class PackAdditiveQueue {
     }
 
     /**
-     * Общий индекс-буфер разворота квадов в треугольники (как ванильный
-     * {@code RenderSystem.getSequentialBuffer} для Mode.QUADS): паттерн
-     * 0,1,2, 2,3 на каждый квад. Растёт с удвоением.
+     * Shared index buffer expanding quads to triangles (like vanilla
+     * {@code RenderSystem.getSequentialBuffer} for Mode.QUADS): pattern
+     * 0,1,2, 2,3,0 per quad. Doubled on capacity growth.
      */
     private static void ensureQuadIndices(int quads) {
         if (quads <= iboQuadCapacity) return;

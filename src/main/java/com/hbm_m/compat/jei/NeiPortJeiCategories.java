@@ -66,8 +66,8 @@ public final class NeiPortJeiCategories {
         add("spent_fuel_pool", "Spent Fuel Pool Drum", stacks(new ItemStack(ModBlocks.MACHINE_WASTE_DRUM.get())), l -> NeiUniversalJeiRecipes.fuelPool());
         add("grenade_crafting", "Grenade Crafting", stacks(new ItemStack(Items.CRAFTING_TABLE)), l -> NeiUniversalJeiRecipes.grenades());
 
-        // "universal boyes"
-        add("zirnox", null, stacks(it("zirnox")), l -> NeiUniversalJeiRecipes.zirnox());
+        // "universal boyes"; Titel wie ModBlocks.reactor_zirnox.getLocalizedName()
+        add("zirnox", "ZIRNOX Nuclear Reactor", stacks(it("zirnox")), l -> NeiUniversalJeiRecipes.zirnox());
         add("pwr", null, stacks(new ItemStack(ModBlocks.PWR_CONTROLLER.get())), l -> NeiUniversalJeiRecipes.pwr());
         add("watz", null, stacks(new ItemStack(ModItems.WATZ_POWERPLANT.get())), l -> NeiUniversalJeiRecipes.watz());
         if (com.hbm_m.config.VersatileConfig.rtgDecay()) {
@@ -162,6 +162,10 @@ public final class NeiPortJeiCategories {
         registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineMixer.class, 66, 20, 52, 44, type("mixer"));
         registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineRefinery.class, 34, 34, 14, 34, RefineryJeiCategory.RECIPE_TYPE);
         registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIBook.class, 89, 34, 24, 18, BookJeiCategory.RECIPE_TYPE);
+        // OutgasserHandler.loadTransferRects: new Rectangle(75, 26, 16, 32) auf GUIRBMKOutgasser.
+        // NEI-Koordinaten sind um {5, 11} verschoben (siehe Centrifuge-Kommentar in HbmJeiPlugin).
+        registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIRBMKOutgasser.class, 80, 37, 16, 32,
+                RBMKOutgasserJeiCategory.RECIPE_TYPE);
     }
 
     /** Baukastengranaten unterscheiden sich nur im NBT - fuer "Rezept zu genau dieser Granate". */
@@ -173,5 +177,10 @@ public final class NeiPortJeiCategories {
             var extra = com.hbm_m.item.weapon.grenade.ItemGrenadeUniversal.getExtra(stack);
             return shell + ";" + filling + ";" + fuze + ";" + extra;
         });
+        // AnnihilatorHandler.loadCraftingRecipes(ItemStack): Ergebnis-Lookup verlangt neben Item-
+        // auch NBT-Gleichheit (areItemStackTagsEqual) - Auszahlungen sind Blaupausen mit Pool-NBT,
+        // im JEI also je Pool ein eigenes Ingredient.
+        HbmJeiPlugin.subtype(registration, ModItems.BLUEPRINTS.get(),
+                (stack, ctx) -> com.hbm_m.item.industrial.ItemBlueprints.getBlueprintPool(stack));
     }
 }

@@ -48,7 +48,7 @@ public final class MachinePetrochemRenderer {
     }
 
     private static void registerReformer() {
-        // catalytic_reformer.obj слит в одну группу "Plane"
+        // catalytic_reformer.obj is merged into a single group "Plane"
         MachineRenderers.machine("catalytic_reformer", ModBlockEntities.CATALYTIC_REFORMER_BE.get(),
                 MachineCatalyticReformerBlockEntity.class)
             .part("Plane")
@@ -99,7 +99,7 @@ public final class MachinePetrochemRenderer {
     }
 
     private static void registerCrackingTower() {
-        // cracking_tower.obj слит в одну группу "Cube_Cube.001"
+        // cracking_tower.obj is merged into a single group "Cube_Cube.001"
         MachineRenderers.machine("cracking_tower", ModBlockEntities.CRACKING_TOWER_BE.get(),
                 MachineCrackingTowerBlockEntity.class)
             .part("Cube_Cube.001")
@@ -110,7 +110,7 @@ public final class MachinePetrochemRenderer {
     }
 
     private static void registerFractionTower() {
-        // fraction_tower.obj слит в одну группу "Plane"
+        // fraction_tower.obj is merged into a single group "Plane"
         MachineRenderers.machine("fraction_tower", ModBlockEntities.FRACTION_TOWER_BE.get(),
                 MachineFractionTowerBlockEntity.class)
             .part("Plane")
@@ -121,7 +121,7 @@ public final class MachinePetrochemRenderer {
     }
 
     private static void registerVacuumDistill() {
-        // vacuum_distill.obj слит в одну группу "Cylinder"
+        // vacuum_distill.obj is merged into a single group "Cylinder"
         MachineRenderers.machine("vacuum_distill", ModBlockEntities.VACUUM_DISTILL_BE.get(),
                 MachineVacuumDistillBlockEntity.class)
             .part("Cylinder")

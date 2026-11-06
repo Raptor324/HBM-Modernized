@@ -201,10 +201,10 @@ public final class WeaponRenderRegistry {
 
     /**
      * Hook called from ClientSetup on ModelEvent.RegisterAdditional.
-     * Только инициализирует список моделей: сами weapon-модели запекаются через item-MRL
-     * зарегистрированных предметов (WeaponMultipartBakedModel подхватывается в onModelBake).
-     * Регистрация сырых {@code *.obj}-путей через RegisterAdditional была рудиментом эпохи
-     * forge:obj и вела лишь к предупреждениям "Unable to load model" (файл искался как
+     * Only initializes the model list: weapon models are baked via the item MRL
+     * of registered items (WeaponMultipartBakedModel is picked up in onModelBake).
+     * Registering raw {@code *.obj} paths via RegisterAdditional was a leftover from
+     * forge:obj and produced "Unable to load model" warnings (looking for
      * {@code models/models/....obj.json}).
      */
     public static void onModelRegisterAdditional(Object event) {

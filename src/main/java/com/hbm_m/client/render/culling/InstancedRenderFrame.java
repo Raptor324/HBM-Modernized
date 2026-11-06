@@ -71,9 +71,6 @@ public final class InstancedRenderFrame {
         // so the sparse queue is an upload no-op.
         com.hbm_m.client.render.retained.RetainedInstanceGraph rig = com.hbm_m.client.render.retained.RetainedInstanceGraph.get();
         rig.drainHandoffQueue();
-        rig.processDirtyLightSections();
-        // R4-3.4.5: the PersistentIndirectCommandTable was dead in production (never
-        // registered to) - both the table and this per-frame flushIfDirty call are gone.
         // Detect Iris pipeline rebuilds before BER so cached ExtendedShader /
         // sampler bindings are not reused with destroyed GlResources.
         IrisExtendedShaderAccess.tickPass();

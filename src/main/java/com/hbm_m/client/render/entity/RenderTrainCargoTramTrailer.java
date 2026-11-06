@@ -19,8 +19,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 1:1 {@code RenderTrainCargoTramTrailer}: Anhaengermodell plus je nach Zahl belegter Plaetze 1-9 Kisten auf der
- * Ladeflaeche (im Original Item-Entitaeten im Rahmenmodus, hier dieselbe Kistengroesse als Block gerendert).
+ * 1:1 {@code RenderTrainCargoTramTrailer}: trailer model plus 1-9 crates on the cargo bed depending
+ * on occupied slots (item entities in frame mode in original, rendered here as block of identical crate size).
  */
 public class RenderTrainCargoTramTrailer extends EntityRenderer<TrainCargoTramTrailer> {
 
@@ -106,8 +106,8 @@ public class RenderTrainCargoTramTrailer extends EntityRenderer<TrainCargoTramTr
     }
 
     /**
-     * Original {@code renderEntityWithPosYaw(EntityItem(crate))} mit {@code renderInFrame}: Schweben 0.1 (Alter 0),
-     * Rahmen-Skalierung 1.25, Versatz 0.05, Drehung -90, Blockgroesse 0.25, Block um den Mittelpunkt.
+     * Original {@code renderEntityWithPosYaw(EntityItem(crate))} with {@code renderInFrame}: hover 0.1 (age 0),
+     * frame scale 1.25, offset 0.05, rotation -90, block size 0.25, centered on block center.
      */
     private static void crate(PoseStack ps, MultiBufferSource buffers, int light, double x, double y, double z) {
         BlockState crate = ModBlocks.CRATE.get().defaultBlockState();

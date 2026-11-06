@@ -81,10 +81,10 @@ public final class ClusterSubmunitionMesh {
     }
 
     /**
-     * Nmesh-first: бинарный {@code .nmesh} через {@link NMeshLoader} (raw .obj — только
-     * resourcepack-fallback внутри самого NMeshLoader). Берём только сабмеши объекта
-     * "MiniNuke"; нормаль треугольника — среднее вершинных нормалей с фолбэком на
-     * векторное произведение, фильтр по максимальной длине ребра сохранён.
+     * Nmesh-first: binary {@code .nmesh} via {@link NMeshLoader} (raw .obj is
+     * resourcepack-fallback inside NMeshLoader). We take only submeshes of the
+     * "MiniNuke" object; triangle normal is the average of vertex normals with fallback
+     * to cross product, max edge length filter preserved.
      */
     private static List<Tri> loadMiniNukeTriangles(ResourceManager rm) {
         NMeshData nmesh = NMeshLoader.load(FATMAN_OBJ);

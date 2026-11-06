@@ -111,13 +111,12 @@ public final class IrisShadowBatchCollector {
     private static long disabledAtGeneration = -1L;
     /** Wall clock of the disable; the latch re-arms after this many ms even without
      * a pipeline generation change (a one-shot failure used to latch shadow
-     * batching off until the next Iris rebuild - part of the "mode does not
-     * reset" symptom, 2026-10-06 audit). */
+     * batching off until the next Iris rebuild). */
     private static final long DISABLE_RETRY_MS = 10_000L;
     private static long disabledAtMs = Long.MIN_VALUE;
 
     static {
-        // Audit 2026-10-05 §3.2: onMeshDestroyed alone frees per-mesh records,
+        // onMeshDestroyed alone frees per-mesh records,
         // but entries can also outlive their meshes in bulk (e.g. meshes
         // destroyed between the record and the flush). Register the session
         // teardown so F3+T / disconnect releases every remaining native record
@@ -1142,7 +1141,7 @@ public final class IrisShadowBatchCollector {
     }
 
     /**
-     * 2026-10-07 shadow-fix: Tier-3 re-draw of the entries the Tier-1 shadow
+     * Tier-3 re-draw of the entries the Tier-1 shadow
      * bake refused this frame (bakeEntry false - a cache-budget admission
      * refusal, or an upload/expansion failure). Called
      * from NucleusGpuBaker.bakeAndDrawShadow AFTER its pool flush; only entries
@@ -1211,7 +1210,7 @@ public final class IrisShadowBatchCollector {
     }
 
     /**
-     * Bounds off-heap retention (audit 2026-10-07 L3a): record buffers double on demand
+     * Bounds off-heap retention: record buffers double on demand
      * and an entry used to keep its session high-water mark for as long as the owning
      * renderer/mesh lives (the LRU sweep only frees dynamic holders). Runs ONLY at
      * re-activation (count == 0, buffer drained by clearEntries), never per-frame in
@@ -1297,7 +1296,7 @@ public final class IrisShadowBatchCollector {
         BY_MESH.clear();
         ENTRIES.clear();
         stashValid = false;
-        // Audit 2026-10-07 #14: clear the F3 "Shadow:" stats here as well. This
+        // Clear the F3 "Shadow:" stats here as well. This
         // is a registered RenderCacheManager hook (pack flip, F3+T, world
         // unload), and with the pack disabled renderShadows never runs, so the
         // per-frame mixin reset cannot fire and the line would stick forever.

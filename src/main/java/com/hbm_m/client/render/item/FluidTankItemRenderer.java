@@ -79,22 +79,22 @@ public class FluidTankItemRenderer extends BlockEntityWithoutLevelRenderer {
             exploded = persistent.getBoolean("hasExploded");
         }
 
-        //? if forge {
-        // The HbmItemDisplayWrapper guard (BakingCompleted) disables forge's display
-        // application for all isCustomRenderer models - mod convention: the BEWLR
-        // applies the JSON display itself (ItemRenderDetonatorLaser pattern).
-        // We restore the vanilla sequence: applyTransform(T), then translate(-0.5).
         poseStack.pushPose();
         poseStack.translate(0.5F, 0.5F, 0.5F); // cancel the vanilla translate(-0.5) before renderByItem
         BakedModel displayModel = Minecraft.getInstance().getItemRenderer().getModel(stack, null, null, 0);
-        boolean leftHand = displayContext == ItemDisplayContext.FIRST_PERSON_LEFT_HAND
-                || displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
-        com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat
-                .resolveDisplayTransforms(displayModel, resolveTankModel(exploded))
-                .getTransform(displayContext)
-                .apply(leftHand, poseStack);
+        // Display transform is applied EXACTLY ONCE: either by the pipeline (ITH wrapper is above
+        // our guard and applies it in handleCameraTransforms), or here when our
+        // HbmItemDisplayWrapper suppressed pre-apply. Duplication caused tiny items.
+        if (!com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat
+                .pipelineAppliesDisplayTransforms(displayModel)) {
+            boolean leftHand = displayContext == ItemDisplayContext.FIRST_PERSON_LEFT_HAND
+                    || displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
+            com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat
+                    .resolveDisplayTransforms(displayModel, resolveTankModel(exploded))
+                    .getTransform(displayContext)
+                    .apply(leftHand, poseStack);
+        }
         poseStack.translate(-0.5F, -0.5F, -0.5F);
-        //?}
 
         // 1.7.10: glDisable(GL_CULL_FACE) around the tank render.
         RenderSystem.disableCull();
@@ -122,9 +122,7 @@ public class FluidTankItemRenderer extends BlockEntityWithoutLevelRenderer {
 
         RenderSystem.enableCull();
 
-        //? if forge {
         poseStack.popPose();
-        //?}
     }
 
     private static void drawQuads(VertexConsumer consumer, PoseStack.Pose pose, List<BakedQuad> quads,

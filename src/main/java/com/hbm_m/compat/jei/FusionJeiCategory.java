@@ -21,8 +21,10 @@ import net.minecraft.world.item.ItemStack;
  * JEI-Kategorie fuer die Fusionsrezepte - Port von {@code FusionRecipeHandler} /
  * {@code FusionRecipe.printNEIExtras} (1.7.10).
  *
- * <p>Wie im Original wechselt die untere Zeile im Sekundentakt zwischen Stromverbrauch und
- * Zuendschwelle; darunter stehen Plasmaausgang und Neutronenfluss.</p>
+ * <p>Wie im Original (NEI {@code drawExtras}) steht die Dauer ueber einer Zeile, die im
+ * Sekundentakt zwischen Stromverbrauch und Zuendschwelle wechselt. Plasmaausgang und
+ * Neutronenfluss zeigt das Original nur im Tooltip der Maschinen-GUI ({@code print()}),
+ * nicht im NEI-Rezept.</p>
  */
 
 @OnlyIn(Dist.CLIENT)
@@ -134,12 +136,6 @@ public class FusionJeiCategory extends JeiGenericRecipeCategory<FusionRecipe> {
             String temp = JeiNeiRendering.formatShortNumber(recipe.getIgnitionTemp()) + "Ky/t";
             graphics.drawString(font, temp, side - font.width(temp), 57, 0xa000a0, false);
         }
-
-        String output = JeiNeiRendering.formatShortNumber(recipe.getOutputTemp()) + "TU/t";
-        graphics.drawString(font, output, side - font.width(output), 69, 0xa000a0, false);
-
-        String flux = (((int) (recipe.getNeutronFlux() * 10)) / 10D) + " flux/t";
-        graphics.drawString(font, flux, side - font.width(flux), 81, 0xa000a0, false);
     }
 
     private static int countItems(FusionRecipe recipe) {

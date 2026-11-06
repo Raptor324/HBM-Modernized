@@ -15,17 +15,26 @@
 //  - FORWARD_Z (DH <= 3.2.x; 3.3.1+ only under the Iris pack without reverse-Z):
 //    near=0, far=1, sky=1. Standard perspective:
 //    ndc = 2d-1, dist = 2fn/((F+N) - ndc(F-N)).
-    //  - REVERSE_Z (DH 3.3.1+ default without the pack; GlDhRenderApiDefinition
-    //    .getRenderDepth(), glClearDepth = farDepth = 0): near=1, far=0.
-    //    DH reverse matrix (RenderUtil.setClipPlanes, 3.3.1 bytecode):
-    //    A = m22 = n/(f-n), B = m23 = fn/(f-n)  =>  stored depth d = A*(f/dist - 1),
-    //    which is exactly 1 at near and 0 at far/sky - d is ALREADY the [0..1]
-    //    reverse value, no ndc = 2d-1 remap. Hence dist = f*n / (d*(f-n) + n).
-    //    Numeric check (n=73.41, f=7512.3): d for dist=1000 is 0.0643 ->
-    //    decode 73.41*7512.3/(0.0643*7438.9+73.41) = 1000.2.
-    //    (IRRELEVANT: an earlier attempt, "ndc = 1-2d + forward formula",
-    //    matched the STANDARD reverse perspective m22=(f+n)/(f-n), while DH uses
-    //    its own, see above - with it the mushroom stayed unoccluded.)
+//  - REVERSE_Z (DH 3.3.1+ default without the pack; GlDhRenderApiDefinition
+//    .getDepthDirection(), glClearDepth = farDepth = 0): near=1, far=0.
+//    The DEPTH32F attachment holds WINDOW depth, not raw NDC: GL's default
+//    window transform ndc*0.5+0.5 always applies (DH never calls glClipControl
+//    or glDepthRange, and DH's own fog.frag calcViewPosition decodes the
+//    sampled depth through ndc.xyz = ndc.xyz*2.0 - 1.0). With DH's reverse
+//    matrix (RenderUtil.setDhProjectionMatrix -> setClipPlanes(mat, far, near,
+//    true): m22 = N/(F-N), m23 = F*N/(F-N)) the clip/NDC depth of terrain is
+//    ndc = (N/(F-N))*(F/dist - 1)  =>  1 at near, 0 at the far plane, and the
+//    STORED texture value is d = 0.5 + 0.5*ndc - so terrain sits in (0.5, 1.0],
+//    sky is cleared to 0.0, and the decode is
+//    dist = F*N / (N + ndc*(F-N))  with ndc = 2d - 1.
+//    Numeric check (n=7.5, f=12309.31, dist=1000): ndc = 0.00689 ->
+//    stored d = 0.50345 -> decode 7.5*12309.31/(7.5 + 0.00689*12301.81) ~ 1000.
+//    (The old comment claimed d was already the raw [0..1] reverse value; its
+//    numeric check had computed the NDC value 0.0643, not the stored window
+//    depth 0.5321. Feeding the window value without the 2d-1 remap decoded
+//    every LOD to [N, 2N] blocks - below the fade mask - making the whole copy
+//    a silent no-op: the DH 3.3.1 "mushroom through blocks without shaders"
+//    regression. Only unwritten/sky texels (d <= 0.5) would go negative.)
 
 uniform sampler2D Sampler0;
 uniform float DhNear;
@@ -47,15 +56,20 @@ void main() {
     float d = texture(Sampler0, uv).r;
     bool reverseZ = DhReverseZ > 0.5;
     // DH sky (no LOD drawn): leave depth untouched. The conventions are opposite.
-    if ((reverseZ && d <= 1.0e-6) || (!reverseZ && d >= 0.999999)) {
+    // REVERSE_Z stores WINDOW depth: DH clears to 0.0 and valid terrain is
+    // (0.5, 1.0] (0.5 = the far plane itself), so anything <= 0.5 is sky or
+    // beyond-far garbage - decoding it would only produce distances >= DhFar.
+    if ((reverseZ && d <= 0.5) || (!reverseZ && d >= 0.999999)) {
         discard;
     }
-    // REVERSE_Z: d in [0..1] (1 = near, 0 = far), feed d directly - feeding
-    // ndc = 2d-1 made the denominator negative for d < 0.5, clamped to 1e-6,
-    // and every LOD beyond ~15 blocks decoded to ~5e13 (depth copy no-op).
+    // REVERSE_Z: the texture holds WINDOW depth (ndc*0.5+0.5); remap to NDC
+    // first - the same window->NDC step the FORWARD branch applies. Distances
+    // then decode exactly: ndc = 2d-1 = (N/(F-N))*(F/dist - 1)
+    // => dist = F*N / (N + ndc*(F-N)) (1 at near, ~F at the far plane).
+    float ndc = d * 2.0 - 1.0;
     float dist = reverseZ
-        ? (DhFar * DhNear) / max(DhNear + d * (DhFar - DhNear), 1.0e-6)
-        : (2.0 * DhFar * DhNear) / max((DhFar + DhNear) - (d * 2.0 - 1.0) * (DhFar - DhNear), 1.0e-6);
+        ? (DhFar * DhNear) / max(DhNear + ndc * (DhFar - DhNear), 1.0e-6)
+        : (2.0 * DhFar * DhNear) / max((DhFar + DhNear) - ndc * (DhFar - DhNear), 1.0e-6);
     if (dist < DhFadeMaskDist) {
         discard;
     }

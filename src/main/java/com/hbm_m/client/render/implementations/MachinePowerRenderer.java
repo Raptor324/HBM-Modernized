@@ -170,7 +170,7 @@ public final class MachinePowerRenderer {
     }
 
     private static void registerTesla() {
-        // tesla.obj слит в одну группу "Cube.001"
+        // tesla.obj is merged into a single group "Cube.001"
         MachineRenderers.machine("tesla", ModBlockEntities.TESLA_BE.get(),
                 TeslaBlockEntity.class)
             .part("Cube.001")
@@ -242,11 +242,16 @@ public final class MachinePowerRenderer {
     private static void registerBatterySocket() {
         MachineRenderers.machine("battery_socket", ModBlockEntities.BATTERY_SOCKET_BE.get(),
                 BatterySocketBlockEntity.class)
-            .part("Base")
+            .part("Socket")
             .conditionalPart("Supports", be -> be.getLevel() != null && !be.getLevel().getBlockState(be.getBlockPos().above(2)).isAir())
             .facing(ObjBerHelper::facing)
+            .blockTransform((be, anim) -> {
+                anim.setupBlockTransform(ObjBerHelper.facing(be));
+                anim.translate(-0.5, 0.0, 0.5);
+            })
             .viewDistance(256)
-            .itemParts("Base", "Supports")
+            // In the item/GUI model, do not show the frame (Supports) - socket only.
+            .itemParts("Socket")
             .hook(new MachineRenderHook<BatterySocketBlockEntity>() {
                 @Override
                 public void render(BatterySocketBlockEntity socket, float pt, PoseStack ps,
@@ -256,7 +261,21 @@ public final class MachinePowerRenderer {
 
                     ItemStack render = socket.getItemHandler().getStackInSlot(0);
                     if (render.isEmpty()) return;
-                    if (render.getItem() instanceof ItemBatteryPack || render.getItem() instanceof ItemBatterySC) return;
+
+                    if (render.getItem() instanceof ItemBatteryPack packItem) {
+                        ResourceLocation tex = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
+                                "textures/block/machine/battery_pack/" + packItem.pack.texture + ".png");
+                        VertexConsumer vc = buf.getBuffer(RenderType.entityCutoutNoCull(tex));
+                        BATTERY_MODEL.renderPartEntity(packItem.pack.isCapacitor() ? "Capacitor" : "Battery",
+                                ps, vc, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                        return;
+                    } else if (render.getItem() instanceof ItemBatterySC) {
+                        ResourceLocation tex = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
+                                "textures/block/machine/battery_sc.png");
+                        VertexConsumer vc = buf.getBuffer(RenderType.entityCutoutNoCull(tex));
+                        BATTERY_MODEL.renderPartEntity("Battery", ps, vc, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
+                        return;
+                    }
 
                     long time = level.getGameTime();
                     if (render.getItem() instanceof ItemCreativeBattery) {
@@ -304,8 +323,7 @@ public final class MachinePowerRenderer {
 
                 @Override
                 public boolean mayDrawContent(BatterySocketBlockEntity be) {
-                    ItemStack s = be.getItemHandler().getStackInSlot(0);
-                    return !s.isEmpty() && !(s.getItem() instanceof ItemBatteryPack) && !(s.getItem() instanceof ItemBatterySC);
+                    return !be.getItemHandler().getStackInSlot(0).isEmpty();
                 }
             })
             .register();

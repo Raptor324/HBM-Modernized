@@ -16,8 +16,17 @@ public final class MachineCentrifugeRenderer {
         MachineRenderers.machine("gascent", ModBlockEntities.MACHINE_GASCENT_BE.get(),
                 MachineGasCentBlockEntity.class)
             .part("Flag")
-            .rotateY("Centrifuge", 0.5f, 0.5f, (be, pt) -> Math.toDegrees(be.getAnim(pt)))
-            .blockTransform((be, animator) -> animator.translate(0.5, 0.0, 0.5))
+            .rotateY("Centrifuge", 0.0f, 0.0f, (be, pt) -> Math.toDegrees(be.getAnim(pt)))
+            .blockTransform((be, animator) -> {
+                animator.translate(0.5, 0.0, 0.5);
+                switch (ObjBerHelper.facing(be)) {
+                    case NORTH -> animator.rotate(270, 0, 1, 0);
+                    case SOUTH -> animator.rotate(90, 0, 1, 0);
+                    case WEST -> {}
+                    case EAST -> animator.rotate(180, 0, 1, 0);
+                    default -> animator.rotate(270, 0, 1, 0);
+                }
+            })
             .itemParts("Centrifuge", "Flag")
             .register();
     }

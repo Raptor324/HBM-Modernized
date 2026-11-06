@@ -17,16 +17,16 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 1:1 {@code ItemRenderGunAnim} fuer die B92: Inventar = flaches Icon (Original ohne INVENTORY-Zweig),
- * Hand/Boden = {@link ModelB92} mit den Original-GL-Schritten. Die 1.7.10-Bezugsraeume wie im {@code GunItemRenderer}.
+ * 1:1 {@code ItemRenderGunAnim} for the B92: Inventory = flat icon (original without INVENTORY branch),
+ * hand/ground = {@link ModelB92} with the original GL steps. 1.7.10 reference frames as in {@code GunItemRenderer}.
  */
 public class GunB92ItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     private static GunB92ItemRenderer instance;
     /**
-     * Bake-Id иконки БЕЗ префикса {@code item/}: {@code LoaderHooks.registerItemModel}/{@code getItemModel}
-     * строят {@code ModelResourceLocation} из пути как есть (файл ищется в {@code models/item/<path>.json}).
-     * Префиксированный путь дал бы {@code models/item/item/gun_b92_icon.json} и missing model.
+     * Icon bake-ID WITHOUT {@code item/} prefix: {@code LoaderHooks.registerItemModel}/{@code getItemModel}
+     * construct {@code ModelResourceLocation} from the path as-is (file looked up at {@code models/item/<path>.json}).
+     * A prefixed path would result in {@code models/item/item/gun_b92_icon.json} and a missing model.
      */
     public static final ResourceLocation ICON_BAKE_ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "gun_b92_icon");
     private static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/modelb92sm.png");
@@ -55,8 +55,8 @@ public class GunB92ItemRenderer extends BlockEntityWithoutLevelRenderer {
                 Minecraft.getInstance().getItemRenderer().render(stack, ctx, false, ps, buf, light, overlay, icon);
             }
             case FIRST_PERSON_RIGHT_HAND, FIRST_PERSON_LEFT_HAND -> {
-                // Vanilla 1.7.10 renderItemInFirstPerson: nach dem in-hand Offset folgen R_y(+45) und S(0.4).
-                // 1.20.1 (applyItemArmAttackTransform) hebt die 45 auf -> hier 1:1 nachbauen.
+                // Vanilla 1.7.10 renderItemInFirstPerson: in-hand offset is followed by R_y(+45) and S(0.4).
+                // 1.20.1 (applyItemArmAttackTransform) neutralizes the 45 degree rotation -> replicate 1:1 here.
                 ps.mulPose(Axis.YP.rotationDegrees(45.0F));
                 ps.scale(0.4F, 0.4F, 0.4F);
                 // Forge 1.7.10 ForgeHooksClient.renderEquippedItem (shouldUseRenderHelper == false):
@@ -90,7 +90,7 @@ public class GunB92ItemRenderer extends BlockEntityWithoutLevelRenderer {
                 ps.mulPose(Axis.ZP.rotationDegrees(60));
                 ps.mulPose(Axis.XP.rotationDegrees(-90));
                 ps.mulPose(Axis.ZP.rotationDegrees(20));
-                // Forge 1.7.10 ForgeHooksClient.renderEquippedItem (gilt fuer EQUIPPED, nicht fuer ENTITY):
+                // Forge 1.7.10 ForgeHooksClient.renderEquippedItem (applies to EQUIPPED, not ENTITY):
                 ps.translate(0.0F, -0.3F, 0.0F);
                 ps.scale(1.5F, 1.5F, 1.5F);
                 ps.mulPose(Axis.YP.rotationDegrees(50.0F));
@@ -99,7 +99,7 @@ public class GunB92ItemRenderer extends BlockEntityWithoutLevelRenderer {
                 renderEquipped(stack, ps, buf, light);
             }
             case FIXED -> {
-                // Original: handleRenderType(FIXED) == false -> Rahmengestell zeigt das flache Icon
+                // Original: handleRenderType(FIXED) == false -> item frame shows flat icon
                 BakedModel icon = com.hbm_m.platform.LoaderHooks.getItemModel(Minecraft.getInstance().getModelManager(), ICON_BAKE_ID);
                 Minecraft.getInstance().getItemRenderer().render(stack, ctx, false, ps, buf, light, overlay, icon);
             }
@@ -111,7 +111,7 @@ public class GunB92ItemRenderer extends BlockEntityWithoutLevelRenderer {
         ps.popPose();
     }
 
-    /** Zweig EQUIPPED / ENTITY des Originals. */
+    /** EQUIPPED / ENTITY branches of original. */
     private void renderEquipped(ItemStack stack, PoseStack ps, MultiBufferSource buf, int light) {
         ps.mulPose(Axis.ZP.rotationDegrees(-200.0F));
         ps.mulPose(Axis.YP.rotationDegrees(75.0F));

@@ -16,8 +16,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * 1:1 {@code RenderSatLink}: Sockel, Drehkranz (Drehung rot) und Schuessel (Neigung lift um Hoehe 7.375) aus
- * {@code satlink.obj}; das Modell liegt in der Mitte der 2x2-Flaeche.
+ * 1:1 {@code RenderSatLink}: base, slew ring (rotation rot) and dish (elevation lift around height 7.375) from
+ * {@code satlink.obj}; model centered on the 2x2 surface.
  */
 public class SatLinkRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineSatLinkBlockEntity> {
 
@@ -32,8 +32,8 @@ public class SatLinkRenderer implements com.hbm_m.client.render.HbmBerBounds<Mac
         pose.translate(0.5D, 0, 0.5D);
         pose.mulPose(Axis.YP.rotationDegrees(180));
 
-        // Original: dir = Meta - 10 (= FACING, zum Spieler hin), rot = dir.getRotation(DOWN) (= gegen den
-        // Uhrzeigersinn); Versatz (dir + rot) * 0.5 im bereits gedrehten Koordinatensystem.
+        // Original: dir = Meta - 10 (= FACING toward player), rot = dir.getRotation(DOWN) (= counterclockwise);
+        // offset (dir + rot) * 0.5 in already rotated coordinate system.
         Direction dir = link.getBlockState().getValue(DummyableMachineBlock.FACING);
         Direction rot = dir.getCounterClockWise();
         pose.translate((dir.getStepX() + rot.getStepX()) * 0.5, 0, (dir.getStepZ() + rot.getStepZ()) * 0.5);

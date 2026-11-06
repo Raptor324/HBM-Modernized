@@ -57,6 +57,12 @@ public class MachineCokerBlock extends DummyableMachineBlock {
 
     @Nullable
     @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            {0, 0, 0.5, -0.3, 0.4, -0.4, 1}
+        };
+    }
+
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineCokerBlockEntity(pos, state);
     }

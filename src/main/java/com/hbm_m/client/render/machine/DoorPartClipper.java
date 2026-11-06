@@ -13,21 +13,21 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 
 /**
- * Zero-allocation CPU-клиппер дверных партов (Sutherland-Hodgman по BakedQuad)
- * под архитектуру Nucleus.
+ * Zero-allocation CPU clipper for door parts (Sutherland-Hodgman over BakedQuad)
+ * under the Nucleus architecture.
  * <p>
- * При STRADDLING геометрия отсекается плоскостями на CPU и стримится напрямую
- * в {@link VertexConsumer} через {@link RenderHooks#putBulkData} без создания
- * промежуточных объектов в куче (0 байт аллокаций на горячем пути).
+ * During STRADDLING, geometry is clipped by planes on the CPU and streamed directly
+ * into the {@link VertexConsumer} via {@link RenderHooks#putBulkData} without creating
+ * intermediate heap objects (0 bytes of allocation on hot path).
  */
 public final class DoorPartClipper {
 
-    /** BLOCK vertex format: 8 int на вершину (pos x3, color, uv x2, light, normal). */
+    /** BLOCK vertex format: 8 ints per vertex (pos x3, color, uv x2, light, normal). */
     private static final int VERTEX_SIZE = 8;
-    /** Ёмкость скратч-полигона (4 входные вершины; 3 плоскости максимум у дверных партов). */
+    /** Scratch polygon capacity (4 input vertices; 3 planes max for door parts). */
     private static final int CAPACITY = 16;
 
-    // Переиспользуемые скратч-буферы (рендер однопоточный на RenderThread).
+    // Reusable scratch buffers (rendering is single-threaded on RenderThread).
     private static final int[][] polyA = new int[CAPACITY][VERTEX_SIZE];
     private static final int[][] polyB = new int[CAPACITY][VERTEX_SIZE];
     private static final float[] dist = new float[CAPACITY];
@@ -64,7 +64,7 @@ public final class DoorPartClipper {
     private DoorPartClipper() {}
 
     /**
-     * Потоковый рендеринг подрезанных квадов напрямую в consumer.
+     * Streams clipped quads directly to the vertex consumer.
      */
     static void renderClipped(List<BakedQuad> quads, float[][] planes, @Nullable float[] uvRect,
                               VertexConsumer consumer, PoseStack.Pose pose,
@@ -81,7 +81,7 @@ public final class DoorPartClipper {
             BakedQuad quad = quads.get(i);
             int[] v = quad.getVertices();
             if (v.length != 4 * VERTEX_SIZE) {
-                // Нестандартный формат — отдаём как есть
+                // Non-standard format - emit as-is
                 float shade = RenderHooks.quadShade(quad.getDirection());
                 RenderHooks.putBulkData(consumer, pose, quad,
                         shade * tr, shade * tg, shade * tb, alpha, packedLight,
@@ -106,7 +106,7 @@ public final class DoorPartClipper {
                 continue;
             }
 
-            // Квад пересекает плоскости или частично/полностью снаружи
+            // Quad straddles planes or is partially/fully outside
             clipAndEmit(v, planes, remap, u0, v0, du, dv, consumer, pose, quad,
                     tr, tg, tb, alpha, packedLight);
         }
@@ -141,7 +141,7 @@ public final class DoorPartClipper {
         for (float[] plane : planes) {
             count = clipPlane(src, count, plane, dst);
             if (count == 0) {
-                return; // Полностью отсечён
+                return; // Fully clipped
             }
             int[][] tmp = src;
             src = dst;
@@ -195,9 +195,9 @@ public final class DoorPartClipper {
 
     private static int lerpColor(int p, int q, float t) {
         int r = Math.round(lerp(p & 0xFF, q & 0xFF, t));
-        int g = Math.round(lerp((p >> 8) & 0xFF, q & 0xFF, t));
-        int b = Math.round(lerp((p >> 16) & 0xFF, q & 0xFF, t));
-        int a = Math.round(lerp((p >> 24) & 0xFF, q & 0xFF, t));
+        int g = Math.round(lerp((p >> 8) & 0xFF, (q >> 8) & 0xFF, t));
+        int b = Math.round(lerp((p >> 16) & 0xFF, (q >> 16) & 0xFF, t));
+        int a = Math.round(lerp((p >> 24) & 0xFF, (q >> 24) & 0xFF, t));
         return (a << 24) | (b << 16) | (g << 8) | r;
     }
 
@@ -209,7 +209,7 @@ public final class DoorPartClipper {
         SCRATCH_QUAD.prepare(srcQuad);
         float shade = RenderHooks.quadShade(srcQuad.getDirection());
 
-        // Первый квад (или треугольник, дополненный 4-й вершиной)
+        // First quad (or triangle completed with 4th vertex)
         if (n == 3) {
             System.arraycopy(poly[0], 0, PACKED_SCRATCH, 0, VERTEX_SIZE);
             System.arraycopy(poly[1], 0, PACKED_SCRATCH, VERTEX_SIZE, VERTEX_SIZE);
@@ -227,7 +227,7 @@ public final class DoorPartClipper {
         emitPacked(PACKED_SCRATCH, remap, u0, v0, du, dv, consumer, pose,
                 shade, tr, tg, tb, alpha, packedLight);
 
-        // n >= 5: веер треугольников poly[0], poly[k], poly[k+1], poly[k+1]
+        // n >= 5: triangle fan poly[0], poly[k], poly[k+1], poly[k+1]
         for (int k = 3; k + 1 < n; k++) {
             System.arraycopy(poly[0], 0, PACKED_SCRATCH, 0, VERTEX_SIZE);
             System.arraycopy(poly[k], 0, PACKED_SCRATCH, VERTEX_SIZE, VERTEX_SIZE);
@@ -250,8 +250,8 @@ public final class DoorPartClipper {
     }
 
     /**
-     * Статическое запекание (bake-time) для рам дверей: однократная обрезка списка BakedQuad
-     * перед компиляцией VBO (вызывается из resolveDoorPartQuads).
+     * Static baking (bake-time) for door frames: one-time clipping of BakedQuad list
+     * before VBO compilation (called from resolveDoorPartQuads).
      */
     public static List<BakedQuad> clipQuads(List<BakedQuad> quads, float[][] planes, @Nullable float[] uvRect) {
         if (quads.isEmpty() || planes == null || planes.length == 0) return quads;

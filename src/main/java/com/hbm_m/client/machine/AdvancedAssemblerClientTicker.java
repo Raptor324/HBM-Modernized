@@ -32,8 +32,7 @@ public class AdvancedAssemblerClientTicker implements IClientTicker {
     private AdvancedAssemblerSoundInstance soundInstance;
     /** Bumped whenever any arm angle changed this tick - the O(1) epoch salt
      * consumed by {@code MachineAdvancedAssemblerRenderer.animationEpoch} (it
-     * replaces hashing every arm angle per render frame - 3.8% of the frame on
-     * the 5000-machine fleet, spark 2026-10-07). Streamed record words derive
+     * replaces hashing every arm angle per render frame). Streamed record words derive
      * only from the arm angles, so the checksum covers exactly the inputs the
      * render-side epoch must observe. */
     public long animVersion;
@@ -155,8 +154,7 @@ public class AdvancedAssemblerClientTicker implements IClientTicker {
         // "stable" and the frozen walk asserted the arms mid-swing - and the
         // freeze then stopped the very changes the sum watched, locking the
         // machine in a frozen pose while the tracked ring extrapolated its
-        // stale segment past the target (jerk + snap on every real epoch flip,
-        // 2026-10-07). A bitwise mix cannot cancel: any angle bit flip changes
+        // stale segment past the target. A bitwise mix cannot cancel: any angle bit flip changes
         // the hash deterministically.
         int hash = 0;
         for (AssemblerArm arm : arms) {

@@ -24,10 +24,10 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 1:1 {@code RenderDecoBlockAlt} fuer {@code TileEntityDecoBlockAltF}: {@code ModelStatue} (64x64), davor die Uhr als
- * Gegenstand im Rahmenmodus ({@code RenderDecoItem}, {@code renderInFrame}) und das {@code ModelGun}-Gewehr (64x64,
- * halbe Groesse, -20 Grad geneigt). Die {@code mirror = true}-Zeilen der Modelle stehen erst nach {@code addBox} und
- * wirken im Original nicht.
+ * 1:1 {@code RenderDecoBlockAlt} for {@code TileEntityDecoBlockAltF}: {@code ModelStatue} (64x64), clock in front
+ * rendered as item in frame mode ({@code RenderDecoItem}, {@code renderInFrame}) and {@code ModelGun} rifle (64x64,
+ * half size, tilted -20 degrees). The {@code mirror = true} lines in the models appear after {@code addBox} and
+ * have no effect in original.
  */
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 public class StatueRenderer implements com.hbm_m.client.render.HbmBerBounds<StatueBlockEntity> {

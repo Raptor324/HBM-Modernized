@@ -3,13 +3,17 @@ package com.hbm_m.compat.jei;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.ParticleAcceleratorRecipe;
 
+import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.RecipeType;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
@@ -66,5 +70,16 @@ public class ParticleAcceleratorJeiCategory extends JeiUniversalRecipeCategory<P
         if (!recipe.getOutputB().isEmpty()) outputs.add(recipe.getOutputB());
         return outputs;
     }
-}
 
+    @Override
+    public void draw(ParticleAcceleratorRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics,
+                     double mouseX, double mouseY) {
+        super.draw(recipe, recipeSlotsView, guiGraphics, mouseX, mouseY);
+
+        // Original drawExtras (ParticleAcceleratorHandler.java:24-36): "Momentum: %,d" bei (8, 52),
+        // Farbe 0x404040, hardcoded Englisch mit US-Zifferngruppierung - wie beim Crystallizer
+        // wird der Originaltext 1:1 uebernommen statt ihn zu uebersetzen.
+        String momentum = "Momentum: " + String.format(Locale.US, "%,d", recipe.getMomentum());
+        guiGraphics.drawString(Minecraft.getInstance().font, momentum, 8, 52, 0x404040, false);
+    }
+}

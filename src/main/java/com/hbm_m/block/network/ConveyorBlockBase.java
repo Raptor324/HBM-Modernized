@@ -37,7 +37,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * (not the input side), set on placement from the player's look direction exactly like the
  * original's {@code onBlockPlacedBy}.
  */
-public class ConveyorBlockBase extends Block implements IConveyorBelt {
+public class ConveyorBlockBase extends Block implements IConveyorBelt, com.hbm_m.api.block.IToolable {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 4, 16);
@@ -120,7 +120,7 @@ public class ConveyorBlockBase extends Block implements IConveyorBelt {
     //?} else {
     /*public net.minecraft.world.item.ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
     *///?}
-        return new net.minecraft.world.item.ItemStack(getWandItem());
+        return new net.minecraft.world.item.ItemStack(this);
     }
 
     public Direction getTravelDirection(Level level, BlockPos pos, Vec3 itemPos) {
@@ -162,6 +162,19 @@ public class ConveyorBlockBase extends Block implements IConveyorBelt {
 
     // ==================== screwdriver reconfiguration ====================
 
+    @Override
+    public boolean onScrew(Level world, Player player, BlockPos pos, Direction side, float fX, float fY, float fZ, InteractionHand hand, ToolType tool) {
+        if (tool != ToolType.SCREWDRIVER) return false;
+        if (world.isClientSide) return true;
+        BlockState state = world.getBlockState(pos);
+        BlockState newState = onScrew(world, pos, state, player);
+        if (newState != null && newState != state) {
+            world.setBlock(pos, newState, 3);
+            return true;
+        }
+        return false;
+    }
+
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
@@ -171,7 +184,7 @@ public class ConveyorBlockBase extends Block implements IConveyorBelt {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.phys.BlockHitResult hit) {
         ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
     *///?}
-        if (held.getItem() != ModItems.SCREWDRIVER.get()) return InteractionResult.PASS;
+        if (held.getItem() != ModItems.SCREWDRIVER.get() && held.getItem() != ModItems.SCREWDRIVER_DESH.get()) return InteractionResult.PASS;
 
         if (level.isClientSide) return InteractionResult.SUCCESS;
 

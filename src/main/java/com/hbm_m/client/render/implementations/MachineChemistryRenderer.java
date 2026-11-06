@@ -42,7 +42,7 @@ public final class MachineChemistryRenderer {
     }
 
     private static void registerElectrolyser() {
-        // electrolyser.obj слит в одну группу "Cube_Cube.001"
+        // electrolyser.obj is merged into a single group "Cube_Cube.001"
         MachineRenderers.machine("electrolyser", ModBlockEntities.ELECTROLYSER_BE.get(),
                 MachineElectrolyserBlockEntity.class)
             .part("Cube_Cube.001")
@@ -51,7 +51,7 @@ public final class MachineChemistryRenderer {
     }
 
     private static void registerRadiolysis() {
-        // radiolysis.obj слит в одну группу "Cube.001_Cube.002"
+        // radiolysis.obj is merged into a single group "Cube.001_Cube.002"
         MachineRenderers.machine("radiolysis", ModBlockEntities.RADIOLYSIS_BE.get(),
                 MachineRadiolysisBlockEntity.class)
             .part("Cube.001_Cube.002")

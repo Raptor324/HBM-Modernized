@@ -46,6 +46,16 @@ public final class MachineEngineRenderer {
                     (be, pt) -> Mth.lerp(pt, be.lastSpin, be.spin) * 2.0 + 3.0)
             .translatingPart("Piston", new Vector3f(1.0F, 0.0F, 0.0F),
                     (be, pt) -> Math.sin(Mth.lerp(pt, be.lastSpin, be.spin) * Math.PI / 90.0) * 0.25 + 0.125)
+            .blockTransform((be, animator) -> {
+                animator.translate(0.5, 0.0, 0.5);
+                switch (ObjBerHelper.facing(be)) {
+                    case SOUTH -> {}
+                    case EAST -> animator.rotate(90, 0, 1, 0);
+                    case NORTH -> animator.rotate(180, 0, 1, 0);
+                    case WEST -> animator.rotate(270, 0, 1, 0);
+                    default -> {}
+                }
+            })
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
             .itemParts("Base", "Cog", "CogSmall", "Piston")

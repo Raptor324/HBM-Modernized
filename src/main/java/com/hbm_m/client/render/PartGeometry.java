@@ -51,7 +51,15 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone, com.h
     }
 
     public PartGeometry {
-        solidQuads = List.copyOf(solidQuads);
+        solidQuads = solidQuads != null ? List.copyOf(solidQuads) : List.of();
+    }
+
+    @Override
+    public List<BakedQuad> solidQuads() {
+        if (solidQuads.isEmpty() && nmeshModel != null) {
+            return nmeshModel.getOrBuildQuads();
+        }
+        return solidQuads;
     }
 
     public boolean isEmpty() {
@@ -92,9 +100,7 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone, com.h
                 MainRegistry.LOGGER.debug("PartGeometry: Part '{}' is an EMPTY nmesh model, skipping", partName);
                 return EMPTY;
             }
-            List<BakedQuad> nmeshQuads = nmesh.getOrBuildQuads();
-            MainRegistry.LOGGER.debug("PartGeometry: Part '{}' (nmesh, standalone={}) - {} quads", partName, standalone, nmeshQuads.size());
-            return new PartGeometry(nmeshQuads, standalone, nmesh);
+            return new PartGeometry(List.of(), standalone, nmesh);
         }
         List<BakedQuad> quads = collectSolidQuads(modelPart, partName);
         if (quads.isEmpty()) {
@@ -144,7 +150,7 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone, com.h
      * {@code bone_id} in vertices = 0 (static / ring).
      */
     public SingleMeshVboRenderer.VboData toVboData(String partName) {
-        return buildVboDataFromQuads(solidQuads, partName, 0, this.standalone);
+        return toVboData(partName, 0, this.standalone);
     }
 
     /**
@@ -152,7 +158,7 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone, com.h
      *                        see {@code MachineAdvancedAssemblerRenderer} and {@code block_lit.vsh}.
      */
     public SingleMeshVboRenderer.VboData toVboData(String partName, int perVertexBoneId) {
-        return buildVboDataFromQuads(solidQuads, partName, perVertexBoneId, this.standalone);
+        return toVboData(partName, perVertexBoneId, this.standalone);
     }
 
     /**
@@ -162,21 +168,21 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone, com.h
         if (nmeshModel != null) {
             return nmeshModel.buildDirectVboData(perVertexBoneId, normalizeUv);
         }
-        return buildVboDataFromQuads(solidQuads, partName, perVertexBoneId, normalizeUv);
+        return buildVboDataFromQuads(solidQuads(), partName, perVertexBoneId, normalizeUv);
     }
 
     /**
      * Explicit convenience method to compile normalized VBO data for standalone textures.
      */
     public SingleMeshVboRenderer.VboData toVboDataNormalized(String partName) {
-        return buildVboDataFromQuads(solidQuads, partName, 0, true);
+        return toVboData(partName, 0, true);
     }
 
     /**
      * Explicit convenience method to compile normalized VBO data with bone index.
      */
     public SingleMeshVboRenderer.VboData toVboDataNormalized(String partName, int perVertexBoneId) {
-        return buildVboDataFromQuads(solidQuads, partName, perVertexBoneId, true);
+        return toVboData(partName, perVertexBoneId, true);
     }
 
     /**

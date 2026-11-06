@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 /**
  * Генератор JSON-рецептов пиро-печи ({@code hbm_m:pyro_oven}).
  *
- * <p>Порт 69 рецептов из удалённого статического {@code PyroOvenRecipes}:</p>
+ * <p>Порт 71 рецепта из удалённого статического {@code PyroOvenRecipes}:</p>
  * <ul>
  *   <li>27 «Solid Fuel»-auto-рецептов: {@code mB = 1_440_000 * 1000 * 0.5 / FT_Flammable-энергия}
  *       (BALEFIRE: {@code 24_000_000 TU} → {@code SOLID_FUEL_BF}), с округлением вниз до 1000/100/10 mB,
@@ -32,14 +32,16 @@ import java.util.function.Consumer;
  *       {@code ModFluidCalculatedFuel.apply()}. У всех исходных жидкостей трейт был — пропусков нет.</li>
  *   <li>30 roast-рецептов bedrock-руд: цикл 6 {@link Type} × 5 Grade-пар (предмет → roasted-предмет +
  *       50 mB купороса, длительность 10) — цикл сохранён, JSON пишется по одному файлу на рецепт.</li>
- *   <li>12 ручных рецептов (Syngas/Wolframcarbid, Kohle → Syngas/Kohlegas/Schweröl, Biomasse, Reformgas,
- *       Erdgas) — 1:1 из статического блока.</li>
+ *   <li>14 ручных рецептов (Syngas/Wolframcarbid, Kohle/Koks → Syngas, Kohle → Kohlegas/Schweröl,
+ *       Biomasse, Reformgas, Erdgas, TiCl4, Russ) — 1:1 из статического блока.</li>
  * </ul>
  *
- * <p><b>Порядок имеет значение:</b> оригинал проверял рецепты по порядку, первым побеждал
- * безжидкостный coal/coke-рецепт (он «затенял» жидкостные варианты с тем же предметом). Имена файлов
- * подобраны так, чтобы при алфавитной сортировке путей {@code coal_all_*} шли раньше
- * {@code coalgas_*}/{@code heavyoil_*} — поведение 1:1.</p>
+ * <p><b>Порядок имеет значение:</b> оригинал проверял рецепты по порядку, побеждал первый
+ * подходящий ({@code TileEntityMachinePyroOven.getMatchingRecipe()}). Coal/coke→Syngas-рецепты
+ * требуют Dampf (500 mB для угля/угольной пыли, 250 mB для кокса — PyroOvenRecipes l.83-91) —
+ * как в оригинале, поэтому они не «затеняют»
+ * Hydrogen/Schweröl-варианты с тем же предметом: при другом типе жидкости в баке они не совпадают.
+ * Порядок проверки 1:1 с порядком регистрации в оригинале.</p>
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
  */
@@ -142,18 +144,21 @@ public final class PyroOvenRecipeGenerator {
                 300
         ).save(writer, "pyro_oven/tungsten_carbide");
 
-        // Syngas aus Kohle (ohne Fluid-Anforderung - «coal_all_*» sortiert vor coalgas_*/heavyoil_*,
-        // damit die Schatten-Reihenfolge des Originals erhalten bleibt).
+        // Syngas aus Kohle - Original PyroOvenRecipes l.83-91: 500 mB Dampf + Kohle/Kohlestaub,
+        // 250 mB Dampf + ANY_COKE.gem() (Kohle-, Lignit- und Petrolkoks), je 100 Ticks.
+        // Der Dampfeingang ist noetig, damit die Rezepte nur mit Dampf im Eingangstank
+        // greifen (wie im Original) und nicht die Hydrogen/Schweröl-Varianten mit gleichem Item
+        // ueberdecken.
         PyroOvenRecipeBuilder.pyroOvenRecipe(
-                null, Ingredient.of(Items.COAL), 1,
+                fluid(ModFluids.STEAM, 500), Ingredient.of(Items.COAL), 1,
                 null, fluid(ModFluids.SYNGAS, 1_000), 100
         ).save(writer, "pyro_oven/coal_all_to_syngas");
         PyroOvenRecipeBuilder.pyroOvenRecipe(
-                null, Ingredient.of(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER)), 1,
+                fluid(ModFluids.STEAM, 500), Ingredient.of(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER)), 1,
                 null, fluid(ModFluids.SYNGAS, 1_000), 100
         ).save(writer, "pyro_oven/coal_all_powder_to_syngas");
         PyroOvenRecipeBuilder.pyroOvenRecipe(
-                null, Ingredient.of(ModItems.COKE_PETROLEUM.get()), 1,
+                fluid(ModFluids.STEAM, 250), Ingredient.of(ModItems.COAL_COKE.get(), ModItems.LIGNITE_COKE.get(), ModItems.COKE_PETROLEUM.get()), 1,
                 null, fluid(ModFluids.SYNGAS, 1_000), 100
         ).save(writer, "pyro_oven/coal_all_coke_to_syngas");
 
@@ -163,7 +168,12 @@ public final class PyroOvenRecipeGenerator {
                 new ItemStack(Items.CHARCOAL), fluid(ModFluids.SYNGAS, 1_000), 100
         ).save(writer, "pyro_oven/biomass_to_charcoal");
 
-        // Original PyroOvenRecipes l.96: Russ aus Teer (ANY_TAR = Roh-, Kohle-, Crack- und Holzteer), 40 Ticks
+        // Original PyroOvenRecipes l.96-99: Russ aus Teer (ANY_TAR.any() = Oredict "anyTar"), 40 Ticks.
+        // Im Original enthaelt "anyTar" genau 4 Metas: Roh-, Kohle-, Crack- und Holzteer — die vier
+        // Tar-Keys werden nur mit diesen Metas registriert (OreDictManager l.513-516) und per
+        // Re-Registration in "anyTar" kopiert (l.684 + l.691-705). Wachs- und Paraffinteer sind im
+        // Original nur unter dyeCyan/dyeWhite registriert (l.626-627) und gehoeren bewusst NICHT
+        // in dieses Rezept.
         PyroOvenRecipeBuilder.pyroOvenRecipe(
                 null, Ingredient.of(ModItems.OIL_TAR_CRUDE.get(), ModItems.OIL_TAR_COAL.get(), ModItems.OIL_TAR_CRACK.get(), ModItems.OIL_TAR_WOOD.get()), 4,
                 new ItemStack(ModItems.ASH_SOOT.get()), fluid(ModFluids.CARBONDIOXIDE, 1_000), 40
@@ -184,7 +194,7 @@ public final class PyroOvenRecipeGenerator {
                 null, fluid(ModFluids.HEAVYOIL, 1_000), 100
         ).save(writer, "pyro_oven/heavyoil_from_hydrogen_coal_powder");
 
-        // Kohlegas aus Kohle (Schweroel + Kohle).
+        // Kohlegas aus Kohle (Schweroel + Kohle/ANY_COKE.gem()-Koks).
         PyroOvenRecipeBuilder.pyroOvenRecipe(
                 fluid(ModFluids.HEAVYOIL, 500), Ingredient.of(Items.COAL), 1,
                 null, fluid(ModFluids.COALGAS, 1_000), 50
@@ -194,7 +204,7 @@ public final class PyroOvenRecipeGenerator {
                 null, fluid(ModFluids.COALGAS, 1_000), 50
         ).save(writer, "pyro_oven/coalgas_from_coal_powder");
         PyroOvenRecipeBuilder.pyroOvenRecipe(
-                fluid(ModFluids.HEAVYOIL, 500), Ingredient.of(ModItems.COKE_PETROLEUM.get()), 1,
+                fluid(ModFluids.HEAVYOIL, 500), Ingredient.of(ModItems.COAL_COKE.get(), ModItems.LIGNITE_COKE.get(), ModItems.COKE_PETROLEUM.get()), 1,
                 null, fluid(ModFluids.COALGAS, 1_000), 50
         ).save(writer, "pyro_oven/coalgas_from_coke");
 

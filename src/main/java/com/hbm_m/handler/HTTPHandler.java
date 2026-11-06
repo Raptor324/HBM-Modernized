@@ -26,11 +26,15 @@ public class HTTPHandler {
 	public static final String SUPPORT_PAGE_URL =
 			"https://github.com/Raptor324/HBM-Modernized/blob/main/SUPPORT.md";
 
+	/** Базовый URL каталога с файлами подсказок «tip of the day» (tips/&lt;lang&gt;.txt, как в оригинальном NTM). */
+	public static final String TIPS_BASE_URL = "https://raw.githubusercontent.com/Raptor324/HBM-Modernized/main/tips";
+	/** Fallback-файл, если файла для языка клиента нет (или загрузка не удалась). */
+	public static final String TIPS_FALLBACK_LANG = "en_us";
+
 	// volatile + replaced wholesale: written by the NTM-Version-Checker daemon thread and read
 	// from the game thread. Appending into a shared ArrayList also duplicated entries whenever
 	// loadStats ran more than once.
 	public static volatile List<String> capsule = new ArrayList<>();
-	public static volatile List<String> tipOfTheDay = new ArrayList<>();
 
 	public static VersionUpdate modrinthUpdate;
 	public static VersionUpdate curseforgeUpdate;
@@ -45,9 +49,8 @@ public class HTTPHandler {
 			}
 			try {
 				loadSoyuz();
-				loadTips();
 			} catch (IOException e) {
-				MainRegistry.LOGGER.warn("Failed to load the soyuz/tip-of-the-day lists", e);
+				MainRegistry.LOGGER.warn("Failed to load the soyuz list", e);
 			}
 		}, "NTM-Version-Checker");
 
@@ -204,18 +207,15 @@ public class HTTPHandler {
 		capsule = readLines(github);
 	}
 
-	private static void loadTips() throws IOException {
-		URL github = URI.create("https://gist.githubusercontent.com/HbmMods/a03c66ba160184e12f43de826b30c096/raw/tip_of_the_day").toURL();
-		tipOfTheDay = readLines(github);
-	}
-
 	/**
 	 * Both loaders used to call url.openStream() directly: no timeouts, so a slow or unreachable
 	 * gist hung the checker thread until the OS gave up (seen on a dedicated server as a
 	 * SocketTimeoutException in the middle of startup), and the reader was closed only on the happy
 	 * path. Same connection settings as readResponse, but keeping the lines apart.
+	 *
+	 * Также используется клиентским {@code ClientTipsHandler} для загрузки «tip of the day».
 	 */
-	private static List<String> readLines(URL url) throws IOException {
+	public static List<String> readLines(URL url) throws IOException {
 		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 		connection.setRequestProperty("User-Agent", "HBM-Modernized/" + Platform.getMod(RefStrings.MODID).getVersion());
 		connection.setConnectTimeout(10_000);

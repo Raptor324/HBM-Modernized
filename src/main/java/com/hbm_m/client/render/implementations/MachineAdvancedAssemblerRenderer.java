@@ -50,8 +50,6 @@ import net.minecraft.world.item.ItemStack;
  * part declares the chain TRUNCATED at its own joint (lower = mount+J0, upper =
  * mount+J0..J1, head = mount+J0..J2, spike = mount+J0..J3), reproducing the
  * legacy accumulated matrices exactly.
- *
- * @credit Spark Profiler Remediation / Forward Kinematics Memoization
  */
 public final class MachineAdvancedAssemblerRenderer {
 

@@ -53,27 +53,31 @@ import dev.architectury.registry.registries.RegistrySupplier;
  *
  * <p>Осознанно пропущены (см. отчёт генерации):
  * <ul>
- *   <li>Горячая кузня (ItemHot): цепочка ingot_steel_dusted 0..9, chainsteel,
- *       метеорит/кобальтовые клинки, meteorite_sword_reforged.</li>
- *   <li>wings_murk (тахион), flask_infusion (система фласок), переименование
- *       именным ярлыком, цианидный хлеб (AnvilSmithingCyanide/RenameRecipe).</li>
- *   <li>Рецепты, чьих предметов нет в порте: siren_track (все 20), platemetal,
- *       deco_asbestos, machine_rockmill, machine_deuterium_extractor,
- *       shell weaponsteel/saturnite, pipe_rubber, pile-rod RA226BE/PO210BE/ZR,
- *       боевые формы c9/c50 (id 16/17 оригинала; в порту вместо них нет предметов),
- *       варианты meta=1 (стёрлинг без шестерни), тостеры steel/wooden (один блок в порту).</li>
+ *   <li>Рецепты, чьих предметов нет в порту: siren_track (все 20), platemetal,
+ *       shell weaponsteel/saturnite, pipe_rubber, варианты meta=1 (стёрлинг без
+ *       шестерни), тостеры steel/wooden (один блок в порту).</li>
  *   <li>Рецепт deuterium_tower требует fluid-стек SOURGAS x8 — fluid-требования
  *       в AnvilRecipe не поддерживаются.</li>
  * </ul>
+ *
+ * <p>Переименованы в порту: боевые формы c9/c50 (id 16/17 оригинала) —
+ * {@code mold_c357}/{@code mold_cbuckshot}; hot-предметы оригинала (ItemHot) —
+ * отдельные предметы с heat-NBT ({@code ItemHot}/{@code ItemHotDusted}), у
+ * {@code ingot_steel_dusted} мета 1-9 — предметы {@code steel_dusted_ingot_1..9}.</p>
  */
 public final class AnvilRecipeGenerator {
     private AnvilRecipeGenerator() { }
 
     /** Порядковый номер construction-рецепта в GUI (порядок регистрации оригинала). */
     private static int constructionOrder;
+    /** Порядковый номер smithing-рецепта (отдельный счётчик: списки фильтруются по kind). */
+    private static int smithingOrder;
+
+    private static int nextSmithingOrder() { return smithingOrder++; }
 
     public static void generate(Consumer<FinishedRecipe> writer) {
         constructionOrder = 0;
+        smithingOrder = 0;
         registerSmithing(writer);
         registerConstruction(writer);
         registerPortStopgaps(writer);
@@ -101,17 +105,112 @@ public final class AnvilRecipeGenerator {
     // =====================================================================================
     private static void registerSmithing(Consumer<FinishedRecipe> writer) {
         registerAnvilUpgrades(writer);
+        registerSmithingHot(writer);
+        registerSmithingItems(writer);
         registerSmithingAlloys(writer);
         registerMoldRecipes(writer);
-        // Пропущено осознанно:
-        //  - AnvilSmithingHotRecipe: цепочка ingot_steel_dusted 1..9 + chainsteel (#76-80),
-        //    метеорит (ingot/blade/sword, #82-84), кобальтовое оружие (#87-91) — в порте
-        //    нет системы ItemHot (температурных предметов).
-        //  - wings_murk (#93, wings_limp + particle_tachyon) и flask_infusion SHIELD (#94,
-        //    gem_alexandrite + bottle_nuka) — нет соответствующих систем (тахион-крафт,
-        //    фласки). Предметы в порте есть, но решением задачи рецепт исключён.
-        //  - AnvilSmithingCyanideRecipe (#128) и AnvilSmithingRenameRecipe (#129) —
-        //    спец-логика (яд на хлебе, переименование) не переносима датагеном.
+        registerSmithingSpecials(writer);
+    }
+
+    /**
+     * Горячие рецепты ({@code AnvilSmithingHotRecipe}, ориг. #75-91): предмет {@code ItemHot}
+     * считается пригодным при {@code heat >= 0.5} ({@code AnvilRecipe#doesStackMatch}), вывод
+     * наследует среднюю температуру ({@code AnvilRecipe#getSmithingOutput}). Порядок — как в
+     * оригинале: запылённые слитки 0-8 -&gt; 1-9, chainsteel из 9 складок, метеорит
+     * (слиток/клинок/меч), 5 кобальтовых орудий с метеоритовой насадкой.
+     */
+    private static void registerSmithingHot(Consumer<FinishedRecipe> writer) {
+        ItemStack dustedCold = matStack(ModMaterials.STEEL_DUSTED, MaterialShape.INGOT, 1); // ориг. ingot_steel_dusted мета 0
+        for (int i = 0; i < 9; i++) {
+            ItemStack from = i == 0 ? dustedCold : stack(ModItems.STEEL_DUSTED_INGOTS.get(i - 1)); // мета i
+            hot(writer, stack(ModItems.STEEL_DUSTED_INGOTS.get(i)), from, from, AnvilTier.OIL,
+                    "steel_dusted_" + (i + 1)); // original: AnvilRecipes.java#75-77 (мета i -> i+1)
+        }
+        hot(writer, matStack(ModMaterials.CHAINSSTEEL, MaterialShape.INGOT, 1),
+                stack(ModItems.STEEL_DUSTED_INGOTS.get(8)), stack(ModItems.STEEL_DUSTED_INGOTS.get(8)),
+                AnvilTier.OIL, "chainsteel"); // original: AnvilRecipes.java#79-80 (мета 9 -> chainsteel)
+
+        hot(writer, matStack(ModMaterials.METEORITE_FORGED, MaterialShape.INGOT, 1),
+                matStack(ModMaterials.METEORITE, MaterialShape.INGOT, 1), matStack(ModMaterials.METEORITE, MaterialShape.INGOT, 1),
+                AnvilTier.OIL, "meteorite_forged"); // original: AnvilRecipes.java#82
+        hot(writer, stack(ModItems.BLADE_METEORITE),
+                matStack(ModMaterials.METEORITE_FORGED, MaterialShape.INGOT, 1), matStack(ModMaterials.METEORITE_FORGED, MaterialShape.INGOT, 1),
+                AnvilTier.OIL, "blade_meteorite"); // original: AnvilRecipes.java#83
+        hot(writer, stack(ModItems.METEORITE_SWORD_REFORGED),
+                stack(ModItems.METEORITE_SWORD_SEARED), matStack(ModMaterials.METEORITE_FORGED, MaterialShape.INGOT, 1),
+                AnvilTier.OIL, "meteorite_sword_reforged"); // original: AnvilRecipes.java#84
+
+        cobaltHot(writer, ModItems.COBALT_SWORD, ModItems.COBALT_DECORATED_SWORD);         // original: AnvilRecipes.java#87
+        cobaltHot(writer, ModItems.COBALT_PICKAXE, ModItems.COBALT_DECORATED_PICKAXE);     // original: AnvilRecipes.java#88
+        cobaltHot(writer, ModItems.COBALT_AXE, ModItems.COBALT_DECORATED_AXE);             // original: AnvilRecipes.java#89
+        cobaltHot(writer, ModItems.COBALT_SHOVEL, ModItems.COBALT_DECORATED_SHOVEL);       // original: AnvilRecipes.java#90
+        cobaltHot(writer, ModItems.COBALT_HOE, ModItems.COBALT_DECORATED_HOE);             // original: AnvilRecipes.java#91
+    }
+
+    private static void cobaltHot(Consumer<FinishedRecipe> writer, RegistrySupplier<Item> tool, RegistrySupplier<Item> decorated) {
+        hot(writer, stack(decorated), stack(tool), matStack(ModMaterials.METEORITE, MaterialShape.INGOT, 1),
+                AnvilTier.OIL, decorated.getId().getPath());
+    }
+
+    /** Горячий рецепт: два слота, вывод — {@code AnvilSmithingHotRecipe} ({@code hot: true}). */
+    private static void hot(Consumer<FinishedRecipe> writer, ItemStack output, ItemStack left, ItemStack right, AnvilTier tier, String name) {
+        AnvilRecipeBuilder.anvilRecipe(ing(left), ing(right), output, tier)
+                .hot()
+                .withOrder(nextSmithingOrder())
+                .withOverlay(AnvilRecipe.OverlayType.SMITHING)
+                .save(writer, anvilId(tierFolder(tier), "smithing", name));
+    }
+
+    /** wings_murk (#93) и flask_infusion SHIELD (#94) — предметы в порту есть. */
+    private static void registerSmithingItems(Consumer<FinishedRecipe> writer) {
+        AnvilRecipeBuilder.anvilRecipe(
+                        ing(stack(ModItems.WINGS_LIMP)),
+                        ing(stack(ModItems.PARTICLE_TACHYON)),
+                        stack(ModItems.WINGS_MURK),
+                        AnvilTier.MURKY)
+                .withOrder(nextSmithingOrder()) // original: AnvilRecipes.java#93
+                .withOverlay(AnvilRecipe.OverlayType.SMITHING)
+                .save(writer, anvilId("murky", "smithing", "wings_murk"));
+
+        AnvilRecipeBuilder.anvilRecipe(
+                        ing(stack(ModItems.GEM_ALEXANDRITE)),
+                        ing(stack(ModItems.BOTTLE_NUKA)),
+                        stack(ModItems.FLASK_INFUSION), // ориг. flask_infusion мета SHIELD; в порту флоска одна
+                        AnvilTier.NUCLEAR)
+                .withOrder(nextSmithingOrder()) // original: AnvilRecipes.java#94
+                .withOverlay(AnvilRecipe.OverlayType.SMITHING)
+                .save(writer, anvilId("nuclear", "smithing", "flask_infusion"));
+    }
+
+    /** Спец-рецепты: цианидный хлеб (#128) и переименование именным ярлыком (#129). */
+    private static void registerSmithingSpecials(Consumer<FinishedRecipe> writer) {
+        // AnvilSmithingCyanideRecipe: слева любая еда (в JSON — хлеб, как в дисплее оригинала),
+        // справа plan_c (или pill_red); вывод — хлеб с NBT ntmCyanide. Логика matches/getOutput —
+        // в AnvilRecipe#matchesSmithing/getSmithingOutput (special=cyanide).
+        ItemStack cyanideBread = new ItemStack(Items.BREAD);
+        com.hbm_m.platform.StackNbt.putBoolean(cyanideBread, "ntmCyanide", true);
+        AnvilRecipeBuilder.anvilRecipe(
+                        ing(new ItemStack(Items.BREAD)),
+                        ing(stack(ModItems.PLAN_C)),
+                        cyanideBread,
+                        AnvilTier.IRON)
+                .special("cyanide")
+                .withOrder(nextSmithingOrder()) // original: AnvilRecipes.java#128
+                .withOverlay(AnvilRecipe.OverlayType.SMITHING)
+                .save(writer, anvilId("iron", "smithing", "cyanide_bread"));
+
+        // AnvilSmithingRenameRecipe: справа именной ярлык, вывод — предмет слева с новым именем.
+        // Ярлык не расходуется (ориг. right.stacksize = 0 -> amountConsumed(1) = 0).
+        AnvilRecipeBuilder.anvilRecipe(
+                        ing(new ItemStack(Items.IRON_SWORD)),
+                        ing(new ItemStack(Items.NAME_TAG)),
+                        new ItemStack(Items.IRON_SWORD),
+                        AnvilTier.IRON)
+                .special("rename")
+                .keepRight()
+                .withOrder(nextSmithingOrder()) // original: AnvilRecipes.java#129
+                .withOverlay(AnvilRecipe.OverlayType.SMITHING)
+                .save(writer, anvilId("iron", "smithing", "rename"));
     }
 
     /** Апгрейды наковален: [anvil_iron|anvil_lead] + 10 слитков -> наковальня выше (тир 1). */
@@ -127,17 +226,20 @@ public final class AnvilRecipeGenerator {
                 {"dnt",           stack(ModBlocks.ANVIL_DNT),           matStack(ModMaterials.DINEUTRONIUM, MaterialShape.INGOT, 1)},   // original: AnvilRecipes.java#71
                 {"osmiridium",    stack(ModBlocks.ANVIL_OSMIRIDIUM),    matStack(ModMaterials.OSMIRIDIUM, MaterialShape.INGOT, 1)},     // original: AnvilRecipes.java#72
         };
-        for (Object[] upgrade : upgrades) {
-            String name = (String) upgrade[0];
-            ItemStack output = (ItemStack) upgrade[1];
-            ItemStack material = (ItemStack) upgrade[2];
-            for (RegistrySupplier<Block> base : List.of(ModBlocks.ANVIL_IRON, ModBlocks.ANVIL_LEAD)) {
-                String baseName = base == ModBlocks.ANVIL_IRON ? "iron" : "lead";
+        // Оригинал AnvilRecipes.java#61-73: внешняя петля — наковальни [iron, lead],
+        // внутренняя — материалы; порядок регистрации задаёт порядок в JEI (sort).
+        for (RegistrySupplier<Block> base : List.of(ModBlocks.ANVIL_IRON, ModBlocks.ANVIL_LEAD)) {
+            String baseName = base == ModBlocks.ANVIL_IRON ? "iron" : "lead";
+            for (Object[] upgrade : upgrades) {
+                String name = (String) upgrade[0];
+                ItemStack output = (ItemStack) upgrade[1];
+                ItemStack material = (ItemStack) upgrade[2];
                 AnvilRecipeBuilder.anvilRecipe(
                                 ing(stack(base)),
                                 ingCount(material, 10),
                                 output,
                                 AnvilTier.IRON)
+                        .withOrder(nextSmithingOrder())
                         .withOverlay(AnvilRecipe.OverlayType.SMITHING)
                         .save(writer, anvilId("iron", "smithing", "anvil_" + name + "_from_" + baseName));
             }
@@ -151,8 +253,9 @@ public final class AnvilRecipeGenerator {
                         aluminiumIngot(),
                         matStack(ModMaterials.GUNMETAL, MaterialShape.INGOT, 1),
                         AnvilTier.IRON)
+                .withOrder(nextSmithingOrder()) // original: AnvilRecipes.java#96, после wings_murk/flask_infusion
                 .withOverlay(AnvilRecipe.OverlayType.SMITHING)
-                .save(writer, anvilId("iron", "smithing", "gunmetal_ingot")); // original: AnvilRecipes.java#96
+                .save(writer, anvilId("iron", "smithing", "gunmetal_ingot"));
     }
 
     // =====================================================================================
@@ -224,6 +327,7 @@ public final class AnvilRecipeGenerator {
                         stack(moldItem),
                         AnvilTier.IRON)
                 .keepInputA() // материал остаётся (оригинальный AnvilSmithingMold.amountConsumed)
+                .withOrder(nextSmithingOrder()) // порядок регистрации оригинала (AnvilRecipes.java#98-126)
                 .withOverlay(AnvilRecipe.OverlayType.SMITHING)
                 .save(writer, anvilId("iron", "mold", name));
     }
@@ -425,7 +529,13 @@ public final class AnvilRecipeGenerator {
                 ingCount(stack(ModItems.FIREBRICK), 32),
                 ingCount(matStack(ModMaterials.COPPER, MaterialShape.PLATE, 1), 8)); // original: AnvilRecipes.java#219-225
 
-        // machine_rockmill (ориг. #229-235) — блока rockmill в порте нет, SKIP.
+        // Каменная мельница (ориг. #229-235, тир 2)
+        construction(writer, "steel", "rockmill", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
+                stack(ModBlocks.MACHINE_ROCKMILL),
+                ingCount(new ItemStack(Items.STONE), 16),          // KEY_STONE (представитель)
+                ingCount(matStack(ModMaterials.STEEL, MaterialShape.PLATE, 1), 4),
+                ing(stack(ModItems.PIPE_COPPER)),
+                ing(stack(ModItems.MOTOR))); // original: AnvilRecipes.java#229-235
 
         // Сборочная машина (ориг. #237-243, тир 2; дефолт enableExpensiveMode=false -> 4 лампы)
         construction(writer, "steel", "assembly_machine", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
@@ -606,8 +716,16 @@ public final class AnvilRecipeGenerator {
                 ingCount(new ItemStack(Items.LEATHER), 4),
                 ingCount(new ItemStack(Items.FEATHER), 24)); // original: AnvilRecipes.java#448-453
 
-        // Депьютеризатор и башня (ориг. #455-473) — extractor: блока в порте нет, SKIP;
-        // tower: требует fluid-стек SOURGAS x8 — fluid-требования не поддерживаются, SKIP.
+        // Депьютеризатор (ориг. #455-462, тир 2)
+        construction(writer, "steel", "deuterium_extractor", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
+                stack(ModBlocks.DEUTERIUM_EXTRACTOR),
+                ingCount(stack(ModItems.SULFUR), 12),
+                ingCount(stack(ModItems.SHELL_STEEL), 4),
+                ingCount(matStack(ModMaterials.COPPER, MaterialShape.PLATE_CAST, 1), 6),
+                ingCount(stack(ModItems.CIRCUIT), 2)); // original: AnvilRecipes.java#455-462
+
+        // Депьютеризационная башня (ориг. #464-473): требует fluid-стек SOURGAS x8 —
+        // fluid-требования не поддерживаются, SKIP.
 
         // Пилоны и подстанция (ориг. #475-491; ANY_CONCRETE = concrete/asbestos/ducrete)
         construction(writer, "steel", "red_pylon_large", AnvilTier.STEEL, AnvilRecipe.OverlayType.CONSTRUCTION,
@@ -857,7 +975,7 @@ public final class AnvilRecipeGenerator {
                 },
                 ing(stack(ModItems.RAREGROUND_ORE_CHUNK))); // original: AnvilRecipes.java#639-651 (chunk_ore RARE)
 
-        // Деко-блоки -> слитки (ориг. #653-662, тир 1); deco_asbestos и platemetal — SKIP (нет блоков)
+        // Деко-блоки -> слитки (ориг. #653-662, тир 1); platemetal — SKIP (нет блока)
         disassemble(writer, "iron", "deco_titanium",  AnvilTier.IRON, AnvilRecipe.OverlayType.RECYCLING,
                 b -> b.addOutput(matStack(ModMaterials.TITANIUM, MaterialShape.INGOT, 1)),
                 ing(stack(ModBlocks.DECO_TITANIUM), 4));      // original: AnvilRecipes.java#653
@@ -882,6 +1000,9 @@ public final class AnvilRecipeGenerator {
         disassemble(writer, "iron", "deco_beryllium", AnvilTier.IRON, AnvilRecipe.OverlayType.RECYCLING,
                 b -> b.addOutput(matStack(ModMaterials.BERYLLIUM, MaterialShape.INGOT, 1)),
                 ing(stack(ModBlocks.DECO_BERYLLIUM), 4));     // original: AnvilRecipes.java#660
+        disassemble(writer, "iron", "deco_asbestos", AnvilTier.IRON, AnvilRecipe.OverlayType.RECYCLING,
+                b -> b.addOutput(matStack(ModMaterials.ASBESTOS, MaterialShape.INGOT, 1)),
+                ing(stack(ModBlocks.DECO_ASBESTOS), 4));      // original: AnvilRecipes.java#661
 
         // Нагреватели (ориг. #664-678, тир 2)
         disassemble(writer, "steel", "firebox", AnvilTier.STEEL, AnvilRecipe.OverlayType.RECYCLING, b -> {
@@ -1001,8 +1122,17 @@ public final class AnvilRecipeGenerator {
                 },
                 ing(stack(ModBlocks.FILE_CABINET))); // original: AnvilRecipes.java#840-849 (filing_cabinet)
 
-        // Топливные стержни (ориг. #851-866, тир 2). RA226BE/PO210BE/ZR — SKIP
-        // (в порте нет соответствующих pile_rod предметов).
+        // Топливные стержни (ориг. #851-866, тир 2): биллеты RA226BE/PO210BE/ZR ->
+        // стержни pile_rod_mk2 (в порту отдельные предметы), урановый биллет -> NU.
+        disassemble(writer, "steel", "pile_rod_ra226be", AnvilTier.STEEL, AnvilRecipe.OverlayType.RECYCLING,
+                b -> b.addOutput(stack(ModItems.PILE_ROD_RA226BE)),
+                ingCount(matStack(ModMaterials.RA226BE, MaterialShape.BILLET, 1), 3)); // original: AnvilRecipes.java#851-854
+        disassemble(writer, "steel", "pile_rod_po210be", AnvilTier.STEEL, AnvilRecipe.OverlayType.RECYCLING,
+                b -> b.addOutput(stack(ModItems.PILE_ROD_PO210BE)),
+                ingCount(matStack(ModMaterials.PO210BE, MaterialShape.BILLET, 1), 3)); // original: AnvilRecipes.java#855-858
+        disassemble(writer, "steel", "pile_rod_zirconium", AnvilTier.STEEL, AnvilRecipe.OverlayType.RECYCLING,
+                b -> b.addOutput(stack(ModItems.PILE_ROD_ZR)),
+                ingCount(matStack(ModMaterials.ZIRCONIUM, MaterialShape.BILLET, 1), 3)); // original: AnvilRecipes.java#859-862
         disassemble(writer, "steel", "pile_rod_uranium", AnvilTier.STEEL, AnvilRecipe.OverlayType.RECYCLING,
                 b -> b.addOutput(stack(ModItems.PILE_ROD_URANIUM)),
                 ingCount(matStack(ModMaterials.URANIUM, MaterialShape.BILLET, 1), 3)); // original: AnvilRecipes.java#863-866 (U.billet -> pile_rod NU)
@@ -1102,44 +1232,39 @@ public final class AnvilRecipeGenerator {
                 },
                 ing(stack(ModItems.REACTOR_RESEARCH))); // original: AnvilRecipes.java#952-962
 
-        // Турбина, бочки, глифид, фьюжн (ориг. #966-1005)
-        disassemble(writer, "oil", "turbine", AnvilTier.OIL, AnvilRecipe.OverlayType.RECYCLING, b -> {
-                    b.addOutput(stack(ModItems.TURBINE_TITANIUM));
-                    b.addOutput(stack(ModItems.COIL_COPPER, 2));
-                    b.addOutput(matStack(ModMaterials.STEEL, MaterialShape.INGOT, 4));
-                },
-                ing(stack(ModItems.TURBINE))); // original: AnvilRecipes.java#966-971 (machine_turbine)
+        // Бочки, глифид, фьюжн (ориг. #966-1005). Рецепта разборки machine_turbine в оригинале нет
+        // (AnvilRecipes.java#966-971 — разборка yellow_barrel), он был придуман портом и удалён.
         disassemble(writer, "oil", "yellow_barrel", AnvilTier.OIL, AnvilRecipe.OverlayType.RECYCLING, b -> {
                     b.addOutput(stack(ModItems.TANK_STEEL));
                     b.addOutput(matStack(ModMaterials.LEAD, MaterialShape.PLATE, 2));
                     b.addOutput(stack(ModItems.NUCLEAR_WASTE, 10));
                 },
-                ing(stack(ModBlocks.BARREL_YELLOW))); // original: AnvilRecipes.java#973-978
+                ing(stack(ModBlocks.BARREL_YELLOW))); // original: AnvilRecipes.java#966-971 (yellow_barrel)
         disassemble(writer, "oil", "vitrified_barrel", AnvilTier.OIL, AnvilRecipe.OverlayType.RECYCLING, b -> {
                     b.addOutput(stack(ModItems.TANK_STEEL));
                     b.addOutput(matStack(ModMaterials.LEAD, MaterialShape.PLATE, 2));
                     b.addOutput(stack(ModItems.NUCLEAR_WASTE_VITRIFIED, 10));
                 },
-                ing(stack(ModBlocks.BARREL_VITRIFIED))); // original: AnvilRecipes.java#979-984
+                ing(stack(ModBlocks.BARREL_VITRIFIED))); // original: AnvilRecipes.java#972-977 (vitrified_barrel)
         disassemble(writer, "iron", "egg_glyphid", AnvilTier.IRON, AnvilRecipe.OverlayType.RECYCLING, b -> {
                     b.addOutput(stack(ModItems.GLYPHID_MEAT, 2));
                     b.addOutput(stack(ModItems.GLYPHID_MEAT, 1), 0.5F);
                     b.addOutput(new ItemStack(Items.BONE, 1), 0.75F);
                     b.addOutput(new ItemStack(Items.EXPERIENCE_BOTTLE, 1), 0.5F);
                 },
-                ing(stack(ModItems.EGG_GLYPHID))); // original: AnvilRecipes.java#986-992
+                ing(stack(ModItems.EGG_GLYPHID))); // original: AnvilRecipes.java#979-985 (egg_glyphid)
         disassemble(writer, "iron", "fusion_heater", AnvilTier.IRON, AnvilRecipe.OverlayType.RECYCLING, b -> {
                     b.addOutput(stack(ModItems.PIPE_STEEL, 4));
                     b.addOutput(stack(ModItems.PIPE_COPPER, 2));
                     b.addOutput(stack(ModItems.ANALOG_CIRCUIT, 1), 0.5F);
                 },
-                ing(stack(ModBlocks.FUSION_HEATER))); // original: AnvilRecipes.java#994-999
+                ing(stack(ModBlocks.FUSION_HEATER))); // original: AnvilRecipes.java#987-992 (fusion_heater)
         disassemble(writer, "iron", "fusion_hatch", AnvilTier.IRON, AnvilRecipe.OverlayType.RECYCLING, b -> {
                     b.addOutput(stack(ModItems.PIPE_STEEL, 4));
                     b.addOutput(stack(ModItems.PIPE_COPPER, 4));
                     b.addOutput(stack(ModItems.ANALOG_CIRCUIT, 1), 0.75F);
                 },
-                ing(stack(ModBlocks.FUSION_HATCH))); // original: AnvilRecipes.java#1000-1005
+                ing(stack(ModBlocks.FUSION_HATCH))); // original: AnvilRecipes.java#993-998 (fusion_hatch)
     }
 
     // =====================================================================================
@@ -1261,6 +1386,11 @@ public final class AnvilRecipeGenerator {
      */
     private static String anvilId(String tierFolder, String category, String name) {
         return "anvil/" + tierFolder + "/" + category + "_" + name;
+    }
+
+    /** Имя папки тиера ({@code AnvilTier#name()}, строчными) — как в {@code tierName(int)}. */
+    private static String tierFolder(AnvilTier tier) {
+        return tier.name().toLowerCase(java.util.Locale.ROOT);
     }
 
     private static ItemStack stack(Object obj, int count) {

@@ -1149,8 +1149,8 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.conveyor.MovingConveyorItemEntity>of(
                                     com.hbm_m.entity.conveyor.MovingConveyorItemEntity::new, MobCategory.MISC)
                             .sized(0.375F, 0.375F)
-                            .clientTrackingRange(8)
-                            .updateInterval(20)
+                            .clientTrackingRange(64)
+                            .updateInterval(1)
                             .build("moving_conveyor_item"));
 
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.conveyor.MovingConveyorPackageEntity>> MOVING_CONVEYOR_PACKAGE =
@@ -1158,8 +1158,8 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.conveyor.MovingConveyorPackageEntity>of(
                                     com.hbm_m.entity.conveyor.MovingConveyorPackageEntity::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
-                            .clientTrackingRange(8)
-                            .updateInterval(20)
+                            .clientTrackingRange(64)
+                            .updateInterval(1)
                             .build("moving_conveyor_package"));
 
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.drone.EntityDeliveryDrone>> DELIVERY_DRONE =

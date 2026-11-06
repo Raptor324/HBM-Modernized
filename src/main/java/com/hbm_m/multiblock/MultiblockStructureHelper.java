@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -686,7 +687,9 @@ public class MultiblockStructureHelper {
                                         worldEnergy.add(rotateLocalDirectionToWorld(localDir, facing));
                                     }
                                 } else {
-                                    Collections.addAll(worldEnergy, Direction.values());
+                                    for (Direction d : Direction.values()) {
+                                        if (d != Direction.DOWN) worldEnergy.add(d);
+                                    }
                                 }
                                 part.setAllowedEnergySides(worldEnergy);
                             } else {
@@ -701,7 +704,9 @@ public class MultiblockStructureHelper {
                                         worldFluid.add(rotateLocalDirectionToWorld(localDir, facing));
                                     }
                                 } else {
-                                    Collections.addAll(worldFluid, Direction.values());
+                                    for (Direction d : Direction.values()) {
+                                        if (d != Direction.DOWN) worldFluid.add(d);
+                                    }
                                 }
                                 part.setAllowedFluidSides(worldFluid);
                             } else {
@@ -1131,7 +1136,9 @@ public class MultiblockStructureHelper {
                         worldEnergy.add(rotateLocalDirectionToWorld(localDir, facing));
                     }
                 } else {
-                    Collections.addAll(worldEnergy, Direction.values());
+                    for (Direction d : Direction.values()) {
+                        if (d != Direction.DOWN) worldEnergy.add(d);
+                    }
                 }
                 part.setAllowedEnergySides(worldEnergy);
             } else {
@@ -1147,7 +1154,9 @@ public class MultiblockStructureHelper {
                         worldFluid.add(rotateLocalDirectionToWorld(localDir, facing));
                     }
                 } else {
-                    Collections.addAll(worldFluid, Direction.values());
+                    for (Direction d : Direction.values()) {
+                        if (d != Direction.DOWN) worldFluid.add(d);
+                    }
                 }
                 part.setAllowedFluidSides(worldFluid);
             } else {
@@ -1568,7 +1577,9 @@ public class MultiblockStructureHelper {
                             worldEnergy.add(rotateLocalDirectionToWorld(localDir, facing));
                         }
                     } else {
-                        Collections.addAll(worldEnergy, Direction.values());
+                        for (Direction d : Direction.values()) {
+                            if (d != Direction.DOWN) worldEnergy.add(d);
+                        }
                     }
                     partBe.setAllowedEnergySides(worldEnergy);
                     energyConnectorPositions.add(worldPos);
@@ -1583,7 +1594,9 @@ public class MultiblockStructureHelper {
                             worldFluid.add(rotateLocalDirectionToWorld(localDir, facing));
                         }
                     } else {
-                        Collections.addAll(worldFluid, Direction.values());
+                        for (Direction d : Direction.values()) {
+                            if (d != Direction.DOWN) worldFluid.add(d);
+                        }
                     }
                     partBe.setAllowedFluidSides(worldFluid);
                     fluidConnectorPositions.add(worldPos);
@@ -2027,6 +2040,150 @@ public class MultiblockStructureHelper {
             case EAST -> new BlockPos(-pos.getZ(), pos.getY(), pos.getX());
             default -> pos; // NORTH
         };
+    }
+
+    public static int[][] rotatePorts(int[][] ports, Direction facing) {
+        Direction rot = facing.getClockWise();
+        int[][] result = new int[ports.length][4];
+        for (int i = 0; i < ports.length; i++) {
+            int nx = ports[i][0];
+            int ny = ports[i][1];
+            int nz = ports[i][2];
+            Direction face = Direction.from3DDataValue(ports[i][3]);
+
+            result[i][0] = nx * rot.getStepX() + nz * facing.getStepX();
+            result[i][1] = ny;
+            result[i][2] = nx * rot.getStepZ() + nz * facing.getStepZ();
+
+            int fx = face.getStepX() * rot.getStepX() + face.getStepZ() * facing.getStepX();
+            int fy = face.getStepY();
+            int fz = face.getStepX() * rot.getStepZ() + face.getStepZ() * facing.getStepZ();
+
+            Direction rotatedFace = Direction.getNearest(fx, fy, fz);
+            result[i][3] = rotatedFace.get3DDataValue();
+        }
+        return result;
+    }
+
+    public List<int[]> getAutoPorts(IMultiblockController controller, Direction facing) {
+        List<int[]> result = new ArrayList<>();
+        Set<Long> seen = new HashSet<>();
+
+        // 1. Controller's own ports
+        boolean controllerHasEnergy = (controllerEnergyLocalDirections != null && !controllerEnergyLocalDirections.isEmpty())
+                || controller.hasControllerEnergy()
+                || controller.getPartRole(BlockPos.ZERO).canReceiveEnergy();
+
+        if (controllerHasEnergy) {
+            if (controllerEnergyLocalDirections != null && !controllerEnergyLocalDirections.isEmpty()) {
+                for (Direction localDir : controllerEnergyLocalDirections) {
+                    if (localDir == Direction.DOWN) continue;
+                    BlockPos neighbor = controllerOffset.relative(localDir);
+                    if (!structureMap.containsKey(neighbor)) {
+                        Direction worldDir = rotateLocalDirectionToWorld(localDir, facing);
+                        if (worldDir != Direction.DOWN) {
+                            addPortIfNew(result, seen, 0, 0, 0, worldDir);
+                        }
+                    }
+                }
+            } else {
+                for (Direction d : Direction.values()) {
+                    if (d == Direction.DOWN || d == Direction.UP) continue;
+                    BlockPos neighbor = controllerOffset.relative(d);
+                    if (!structureMap.containsKey(neighbor)) {
+                        Direction worldDir = rotateLocalDirectionToWorld(d, facing);
+                        if (worldDir != Direction.DOWN) {
+                            addPortIfNew(result, seen, 0, 0, 0, worldDir);
+                        }
+                    }
+                }
+            }
+        }
+
+        boolean controllerHasFluid = (controllerFluidSidesFromStructure && controllerFluidLocalDirections != null && !controllerFluidLocalDirections.isEmpty())
+                || controller.hasControllerFluid();
+
+        if (controllerHasFluid) {
+            if (controllerFluidLocalDirections != null && !controllerFluidLocalDirections.isEmpty()) {
+                for (Direction localDir : controllerFluidLocalDirections) {
+                    if (localDir == Direction.DOWN) continue;
+                    BlockPos neighbor = controllerOffset.relative(localDir);
+                    if (!structureMap.containsKey(neighbor)) {
+                        Direction worldDir = rotateLocalDirectionToWorld(localDir, facing);
+                        if (worldDir != Direction.DOWN) {
+                            addPortIfNew(result, seen, 0, 0, 0, worldDir);
+                        }
+                    }
+                }
+            } else {
+                for (Direction d : Direction.values()) {
+                    if (d == Direction.DOWN || d == Direction.UP) continue;
+                    BlockPos neighbor = controllerOffset.relative(d);
+                    if (!structureMap.containsKey(neighbor)) {
+                        Direction worldDir = rotateLocalDirectionToWorld(d, facing);
+                        if (worldDir != Direction.DOWN) {
+                            addPortIfNew(result, seen, 0, 0, 0, worldDir);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Part connector ports
+        for (BlockPos gridPos : structureMap.keySet()) {
+            PartRole role = resolvePartRole(gridPos, controller);
+            if (role != PartRole.UNIVERSAL_CONNECTOR && role != PartRole.ENERGY_CONNECTOR
+                    && role != PartRole.FLUID_CONNECTOR && role != PartRole.ITEM_INPUT
+                    && role != PartRole.ITEM_OUTPUT) {
+                continue;
+            }
+
+            BlockPos localOffset = gridPos.subtract(controllerOffset);
+            BlockPos worldOffset = rotate(localOffset, facing);
+
+            Set<Direction> energyDirs = energyLocalDirections.get(gridPos);
+            Set<Direction> fluidDirs = fluidLocalDirections.get(gridPos);
+
+            boolean hasExplicitDirs = (energyDirs != null && !energyDirs.isEmpty())
+                    || (fluidDirs != null && !fluidDirs.isEmpty());
+
+            if (hasExplicitDirs) {
+                Set<Direction> allDirs = new HashSet<>();
+                if (energyDirs != null) allDirs.addAll(energyDirs);
+                if (fluidDirs != null) allDirs.addAll(fluidDirs);
+                for (Direction localDir : allDirs) {
+                    if (localDir == Direction.DOWN) continue;
+                    BlockPos neighbor = gridPos.relative(localDir);
+                    if (structureMap.containsKey(neighbor) || neighbor.equals(controllerOffset)) continue;
+                    Direction worldDir = rotateLocalDirectionToWorld(localDir, facing);
+                    if (worldDir != Direction.DOWN) {
+                        addPortIfNew(result, seen, worldOffset.getX(), worldOffset.getY(), worldOffset.getZ(), worldDir);
+                    }
+                }
+            } else {
+                for (Direction d : Direction.values()) {
+                    if (d == Direction.DOWN || d == Direction.UP) continue;
+                    BlockPos neighbor = gridPos.relative(d);
+                    if (!structureMap.containsKey(neighbor) && !neighbor.equals(controllerOffset)) {
+                        Direction worldDir = rotateLocalDirectionToWorld(d, facing);
+                        if (worldDir != Direction.DOWN) {
+                            addPortIfNew(result, seen, worldOffset.getX(), worldOffset.getY(), worldOffset.getZ(), worldDir);
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    private static void addPortIfNew(List<int[]> result, Set<Long> seen, int x, int y, int z, Direction dir) {
+        long key = (((long) (x + 1024) & 0x7FF) << 26)
+                 | (((long) (y + 256) & 0x3FF) << 16)
+                 | (((long) (z + 1024) & 0x7FF) << 5)
+                 | (dir.get3DDataValue() & 0x1F);
+        if (seen.add(key)) {
+            result.add(new int[] { x, y, z, dir.get3DDataValue() });
+        }
     }
 
     public List<BlockPos> getAllPartPositions(BlockPos controllerPos, Direction facing) {

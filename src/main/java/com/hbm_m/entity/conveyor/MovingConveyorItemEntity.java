@@ -92,14 +92,14 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        // The original's EntityMovingConveyorObject.hitByEntity only reacts to a player attacker and
-        // never overrides attackEntityFrom, so fire, lava and explosions leave belt cargo alone.
-        // Reacting to every source spilled a whole conveyor line through any hot spot.
-        if (this.level().isClientSide || this.isRemoved() || !(source.getEntity() instanceof Player)) {
+        if (this.level().isClientSide || this.isRemoved()) {
             return false;
         }
-        knockOff();
-        return true;
+        if (source.getEntity() instanceof Player || source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION)) {
+            knockOff();
+            return true;
+        }
+        return false;
     }
 
     private void knockOff() {
@@ -178,19 +178,24 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
         if (!before.equals(after)) {
             Block enteredBlock = this.level().getBlockState(after).getBlock();
             if (enteredBlock instanceof com.hbm_m.block.network.IEnterableBlock enterable) {
-                // Eintrittsseite wie EntityMovingConveyorObject (nur bei genau einem Achsenschritt, sonst UNKNOWN)
                 net.minecraft.core.Direction dir = null;
                 BlockPos d = before.subtract(after);
                 if (d.distManhattan(BlockPos.ZERO) == 1) dir = net.minecraft.core.Direction.fromDelta(d.getX(), d.getY(), d.getZ());
-                if (enterable.canItemEnter(this.level(), after, dir, this)) enterable.onItemEnter(this.level(), after, this);
+                enterBlock(enterable, after, dir);
             } else if (!this.level().getBlockState(after).isSolid()) {
-                // enterBlockFalling: in einen darunterliegenden Block von oben
                 BlockPos below = after.below();
-                if (this.level().getBlockState(below).getBlock() instanceof com.hbm_m.block.network.IEnterableBlock enterable
-                        && enterable.canItemEnter(this.level(), below, net.minecraft.core.Direction.UP, this)) {
-                    enterable.onItemEnter(this.level(), below, this);
+                if (this.level().getBlockState(below).getBlock() instanceof com.hbm_m.block.network.IEnterableBlock enterable) {
+                    enterBlock(enterable, below, net.minecraft.core.Direction.UP);
                 }
             }
+        }
+    }
+
+    public void enterBlock(com.hbm_m.block.network.IEnterableBlock enterable, BlockPos pos, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction dir) {
+        if (this.isRemoved()) return;
+        if (enterable.canItemEnter(this.level(), pos, dir, this)) {
+            enterable.onItemEnter(this.level(), pos, dir, this);
+            this.discard();
         }
     }
 

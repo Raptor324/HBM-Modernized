@@ -1515,7 +1515,7 @@ public abstract class DoorDecl {
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
             // Декаль движется вместе с дверью
             if ("door".equals(partName) || "decal".equals(partName)) {
-                set(trans, 0, 3.0F * getNormTime(openTicks), 0);
+                set(trans, 0, 2.25F * getNormTime(openTicks), 0);
             } else {
                 super.getTranslation(partName, openTicks, child, trans);
             }

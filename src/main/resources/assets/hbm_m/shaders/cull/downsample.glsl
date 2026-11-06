@@ -28,7 +28,7 @@ uvec2 get_xy() {
     return uvec2(x, y);
 }
 
-const float SKY_DEPTH_THRESHOLD = 0.9999;
+const float SKY_DEPTH_THRESHOLD = 0.999999;
 
 float reduce_4(vec4 v) {
     // Forward-Z: the conservative occluder is the farthest surface = MAX depth.

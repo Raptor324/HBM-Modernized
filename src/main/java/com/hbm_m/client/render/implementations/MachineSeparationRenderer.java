@@ -44,6 +44,7 @@ public final class MachineSeparationRenderer {
                 MachineSilexBlockEntity.class)
             .part("Cube_Cube.001")
             .blockTransform(MachineSeparationRenderer::applySilexTransform)
+            .itemParts("Cube_Cube.001")
             .hook(new MachineRenderHook<MachineSilexBlockEntity>() {
                 @Override
                 public void render(MachineSilexBlockEntity silex, float partialTick, PoseStack ps,
@@ -55,18 +56,27 @@ public final class MachineSeparationRenderer {
                     VertexConsumer vc = buf.getBuffer(ClientRenderHandler.CustomRenderTypes.DETONATOR_LASER_GLOW);
                     Matrix4f m = ps.last().pose();
                     float w = 0.05F;
-                    float len = 2.0F;
+                    float len = 1.5F;
 
-                    // Central green/cyan laser excitation beam
-                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -w, -len, 0, 0.1F, 1.0F, 0.7F, 0.9F);
-                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m,  w, -len, 0, 0.1F, 1.0F, 0.7F, 0.9F);
-                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m,  w,  len, 0, 0.1F, 1.0F, 0.7F, 0.9F);
-                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -w,  len, 0, 0.1F, 1.0F, 0.7F, 0.9F);
+                    int color = (silex.mode != null && silex.mode.renderedBeamColor != 0)
+                            ? silex.mode.renderedBeamColor
+                            : 0x1AFFB3;
+                    float r = ((color >> 16) & 0xFF) / 255.0F;
+                    float g = ((color >> 8) & 0xFF) / 255.0F;
+                    float b = (color & 0xFF) / 255.0F;
 
-                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m, 0, -len, -w, 0.1F, 1.0F, 0.7F, 0.9F);
-                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m, 0, -len,  w, 0.1F, 1.0F, 0.7F, 0.9F);
-                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m, 0,  len,  w, 0.1F, 1.0F, 0.7F, 0.9F);
-                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m, 0,  len, -w, 0.1F, 1.0F, 0.7F, 0.9F);
+                    // Central laser excitation beam passing horizontally along Z through the SILEX chamber
+                    // Vertical ribbon (X=0, Y in [-w, w], Z in [-len, len])
+                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m, 0, -w, -len, r, g, b, 0.9F);
+                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m, 0, -w,  len, r, g, b, 0.9F);
+                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m, 0,  w,  len, r, g, b, 0.9F);
+                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m, 0,  w, -len, r, g, b, 0.9F);
+
+                    // Horizontal ribbon (Y=0, X in [-w, w], Z in [-len, len])
+                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -w, 0, -len, r, g, b, 0.9F);
+                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -w, 0,  len, r, g, b, 0.9F);
+                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m,  w, 0,  len, r, g, b, 0.9F);
+                    com.hbm_m.platform.RenderHooks.vertexColor(vc, m,  w, 0, -len, r, g, b, 0.9F);
 
                     ps.popPose();
                 }

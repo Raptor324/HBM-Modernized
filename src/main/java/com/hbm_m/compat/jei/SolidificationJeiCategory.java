@@ -35,7 +35,9 @@ public class SolidificationJeiCategory extends JeiFluidRecipeCategory<Solidifica
 
     @Override
     public Component getTitle() {
-        return Component.translatable("block.hbm_m.solidifier");
+        // Оригинал (NEI SolidificationHandler:9) брал tile.machine_solidifier.name,
+        // а не имя блока: "Industrial Solidification Machine".
+        return Component.translatable("jei.hbm_m.solidifier");
     }
 
     @Override

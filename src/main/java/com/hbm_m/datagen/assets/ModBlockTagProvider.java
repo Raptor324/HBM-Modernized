@@ -67,6 +67,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
         for (var s : java.util.List.of(ModBlocks.TAPE_RECORDER, ModBlocks.STEEL_POLE, ModBlocks.ANTENNA_TOP, ModBlocks.POLE_SATELLITE_RECEIVER, ModBlocks.PUTER, ModBlocks.CRT_CLEAN, ModBlocks.CRT_BROKEN, ModBlocks.CRT_BLINKING, ModBlocks.CRT_BSOD, ModBlocks.TOASTER, ModBlocks.TOASTER_STEEL, ModBlocks.TOASTER_WOOD, ModBlocks.STEEL_CORNER, ModBlocks.STEEL_WALL, ModBlocks.STEEL_ROOF, ModBlocks.STEEL_BEAM, ModBlocks.STEEL_SCAFFOLD, ModBlocks.STEEL_SCAFFOLD_RED, ModBlocks.STEEL_SCAFFOLD_WHITE, ModBlocks.STEEL_SCAFFOLD_YELLOW, ModBlocks.DUNGEON_CHAIN, ModBlocks.DECO_EMITTER, ModBlocks.PART_EMITTER, ModBlocks.DET_CORD, ModBlocks.DET_CHARGE, ModBlocks.DET_NUKE, ModBlocks.DUD_BALEFIRE, ModBlocks.DUD_CONVENTIONAL, ModBlocks.DUD_NUKE, ModBlocks.DUD_SALTED, ModBlocks.FIREWORKS, ModBlocks.VOLCANO_CORE, ModBlocks.VOLCANO_RAD_CORE, ModBlocks.SPIKES, ModBlocks.TRAPDOOR_STEEL, ModBlocks.REINFORCED_LAMINATE_PANE, ModBlocks.STONE_POROUS, ModBlocks.LAMP_DEMON, ModBlocks.THERM_ENDO, ModBlocks.THERM_EXO, ModBlocks.FLOAT_BOMB, ModBlocks.EMP_BOMB, ModBlocks.FLAME_WAR, ModBlocks.SKELETON_HOLDER, ModBlocks.FILE_CABINET, ModBlocks.FILE_CABINET_STEEL, ModBlocks.VENDING_MACHINE, ModBlocks.VENDING_MACHINE_SNACKS, ModBlocks.STEEL_GRATE, ModBlocks.STEEL_GRATE_WIDE, ModBlocks.BOXCAR, ModBlocks.BOAT, ModBlocks.DECO_PIPE, ModBlocks.DECO_PIPE_RUSTED, ModBlocks.DECO_PIPE_GREEN, ModBlocks.DECO_PIPE_GREEN_RUSTED, ModBlocks.DECO_PIPE_RED, ModBlocks.DECO_PIPE_MARKED, ModBlocks.DECO_PIPE_RIM, ModBlocks.DECO_PIPE_RIM_RUSTED, ModBlocks.DECO_PIPE_RIM_GREEN, ModBlocks.DECO_PIPE_RIM_GREEN_RUSTED, ModBlocks.DECO_PIPE_RIM_RED, ModBlocks.DECO_PIPE_RIM_MARKED, ModBlocks.DECO_PIPE_FRAMED, ModBlocks.DECO_PIPE_FRAMED_RUSTED, ModBlocks.DECO_PIPE_FRAMED_GREEN, ModBlocks.DECO_PIPE_FRAMED_GREEN_RUSTED, ModBlocks.DECO_PIPE_FRAMED_RED, ModBlocks.DECO_PIPE_FRAMED_MARKED, ModBlocks.DECO_PIPE_QUAD, ModBlocks.DECO_PIPE_QUAD_RUSTED, ModBlocks.DECO_PIPE_QUAD_GREEN, ModBlocks.DECO_PIPE_QUAD_GREEN_RUSTED, ModBlocks.DECO_PIPE_QUAD_RED, ModBlocks.DECO_PIPE_QUAD_MARKED)) r6aNoTier.add(s.get());
         // SEDNA: Waffenmodifikationstisch, Original Material.iron (beliebige Spitzhacke)
         r6aNoTier.add(ModBlocks.MACHINE_WEAPON_TABLE.get());
+        r6aNoTier.add(ModBlocks.BOOK_GUIDE.get());
         // Zugsystem: Schienen im Original Material.iron (beliebige Spitzhacke)
         for (var s : java.util.List.of(ModBlocks.RAIL_NARROW_STRAIGHT, ModBlocks.RAIL_NARROW_CURVE, ModBlocks.RAIL_LARGE_STRAIGHT, ModBlocks.RAIL_LARGE_STRAIGHT_SHORT, ModBlocks.RAIL_LARGE_CURVE, ModBlocks.RAIL_LARGE_CURVE_7, ModBlocks.RAIL_LARGE_CURVE_9, ModBlocks.RAIL_LARGE_RAMP, ModBlocks.RAIL_LARGE_BUFFER, ModBlocks.RAIL_LARGE_SWITCH, ModBlocks.RAIL_LARGE_SWITCH_FLIPPED)) r6aNoTier.add(s.get());
         Set<Block> r6aNoTool = new java.util.HashSet<>();
@@ -288,6 +289,14 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
 
 
+
+        // ============ FENCES ============
+        this.tag(BlockTags.FENCES)
+                .add(ModBlocks.FENCE_METAL.get())
+                .add(ModBlocks.FENCE_METAL_POST.get());
+        this.tag(Tags.Blocks.FENCES)
+                .add(ModBlocks.FENCE_METAL.get())
+                .add(ModBlocks.FENCE_METAL_POST.get());
 
         // ============ ТЕГ ДЛЯ OCCLUSION CULLING ============
         // Блоки, через которые можно видеть (не блокируют рендеринг машин)

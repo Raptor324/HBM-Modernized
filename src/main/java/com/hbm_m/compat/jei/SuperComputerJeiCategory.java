@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.SuperComputerRecipe;
 import com.hbm_m.recipe.SuperComputerRecipe.CountedIngredient;
@@ -12,14 +11,8 @@ import com.hbm_m.recipe.SuperComputerRecipe.FluidIngredient;
 
 import dev.architectury.fluid.FluidStack;
 //? if forge {
-//? if forge {
 import mezz.jei.api.forge.ForgeTypes;
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
-//? if forge {
 import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
-//?}
 //?} elif neoforge {
 /*import mezz.jei.api.neoforge.NeoForgeTypes;
 *///?}
@@ -76,28 +69,9 @@ public class SuperComputerJeiCategory extends JeiGenericRecipeCategory<SuperComp
         return recipe.requiresBlueprint();
     }
 
-    @Override
-    protected int getInputXOffset(SuperComputerRecipe recipe, int inputCount) {
-        if (inputCount > 12) return -9;
-        if (inputCount > 9) return 18;
-        return 0;
-    }
-
-    @Override
-    protected int getOutputXOffset(SuperComputerRecipe recipe, int outputCount) {
-        return getOffset(getInputCount(recipe));
-    }
-
-    @Override
-    protected int getMachineXOffset(SuperComputerRecipe recipe) {
-        return getOffset(getInputCount(recipe));
-    }
-
-    private static int getOffset(int inputCount) {
-        if (inputCount > 12) return 27;
-        if (inputCount > 9) return 18;
-        return 0;
-    }
+    // Keine X-Offsets: das Original SuperComputerRecipeHandler ueberschreibt getInputXOffset/
+    // getOutputXOffset/getMachineXOffset NICHT (im Gegensatz zu AssemblyMachineRecipeHandler) —
+    // alle Rezepte bleiben in der Standardposition.
 
     @Override
     protected void addInputSlots(IRecipeLayoutBuilder builder, SuperComputerRecipe recipe, int inputXOffset) {

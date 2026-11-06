@@ -1,5 +1,5 @@
 {
-  "loader": "hbm_m:radar_loader",
+  "loader": "hbm_m:machine_parts_loader",
   "model": "hbm_m:models/block/machines/radar.obj",
   "flip_v": true,
   "render_type": "minecraft:cutout",

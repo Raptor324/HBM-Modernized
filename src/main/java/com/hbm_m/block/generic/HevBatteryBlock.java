@@ -19,11 +19,11 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * 1:1 {@code HEVBattery} (1.7.10 Original): Einweg-Ladepad. Rechtsklick (ohne Schleichen) mit vollem FSB-Satz und
- * strombetriebenem Helm laedt alle Anzugteile um 10.000 HE und verbraucht den Block.
+ * strombetriebenem Helm laedt alle Anzugteile um 150.000 HE und verbraucht den Block.
  */
 public class HevBatteryBlock extends Block {
 
-    private static final long CHARGE_AMOUNT = 10_000L;
+    private static final long CHARGE_AMOUNT = 150_000L;
     private static final VoxelShape SHAPE = Shapes.box(0.125, 0.0, 0.125, 0.875, 0.4375, 0.875);
 
     public HevBatteryBlock(Properties properties) {

@@ -49,22 +49,21 @@ public class LaunchPadMissileRenderer implements com.hbm_m.client.render.HbmBerB
     }
 
     /**
-     * Standpunkt der Rakete im lokalen Blockraum, gemessen nach der Drehung um FACING - dort
-     * zeigt -Z immer in Blickrichtung der Rampe. Standard ist die Blockmitte, einen Block hoch.
+     * Missile position in local block space, measured after FACING rotation - where
+     * -Z always points in the launch pad's facing direction. Default is block center, one block high.
      */
     protected net.minecraft.world.phys.Vec3 missileOffset(LaunchPadBaseBlockEntity be, float partialTicks) {
         return new net.minecraft.world.phys.Vec3(0.0D, 1.0D, 0.0D);
     }
 
-    /** Massstab der dargestellten Rakete. Rampen mit engem Startrahmen verkleinern hier. */
+    /** Scale factor of the rendered missile. Launch pads with tight gantries scale down here. */
     protected float missileScale() {
         return 1.0F;
     }
 
     /**
-     * Neigung der Rakete um den Standpunkt, in Grad. 0 = senkrecht; positive Werte kippen sie
-     * nach hinten weg von der Blickrichtung, bei 90 liegt sie waagerecht. Rampen mit Aufrichter
-     * geben hier ihren Fortschritt aus.
+     * Missile tilt around its pivot, in degrees. 0 = vertical; positive values tilt backward
+     * away from facing direction, at 90 it lies horizontal. Pads with erectors report progress here.
      */
     protected float missilePitch(LaunchPadBaseBlockEntity be, float partialTicks) {
         return 0.0F;

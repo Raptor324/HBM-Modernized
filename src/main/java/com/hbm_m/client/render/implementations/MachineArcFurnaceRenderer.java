@@ -26,7 +26,7 @@ public final class MachineArcFurnaceRenderer {
     public static void register() {
         MachineRenderers.machine("arcfurnace", ModBlockEntities.ARC_FURNACE_BE.get(),
                 MachineArcFurnaceBlockEntity.class)
-            // Original fullbright(true)-Bloecke: ContentsHot und gebrauchte/verbrauchte Elektroden.
+            // Original fullbright(true) blocks: ContentsHot and used/depleted electrodes.
             .lightOverride("ContentsHot", be -> LightTexture.FULL_BRIGHT)
             .lightOverride("Electrode1Hot", be -> LightTexture.FULL_BRIGHT)
             .lightOverride("Electrode2Hot", be -> LightTexture.FULL_BRIGHT)
@@ -38,26 +38,26 @@ public final class MachineArcFurnaceRenderer {
             .staticPart("Lid", MachineArcFurnaceRenderer::animateLid)
             .staticPart("ContentsHot", MachineArcFurnaceRenderer::animateContentsHot)
             .staticPart("ContentsCold", MachineArcFurnaceRenderer::animateContentsCold)
-            // RingN haengt an Elektrodenplatz N (original: nur wenn electrodes[N] != NONE).
+            // RingN attaches to electrode slot N (original: only when electrodes[N] != NONE).
             .conditionalPart("Ring1", slotNotEmpty(0))
             .conditionalPart("Ring2", slotNotEmpty(1))
             .conditionalPart("Ring3", slotNotEmpty(2))
-            // ElectrodeN nur im FRESH-Zustand (original: == ELECTRODE_FRESH).
+            // ElectrodeN only in FRESH state (original: == ELECTRODE_FRESH).
             .conditionalPart("Electrode1", slotState(0, MachineArcFurnaceBlockEntity.ELECTRODE_FRESH))
             .conditionalPart("Electrode2", slotState(1, MachineArcFurnaceBlockEntity.ELECTRODE_FRESH))
             .conditionalPart("Electrode3", slotState(2, MachineArcFurnaceBlockEntity.ELECTRODE_FRESH))
-            // Hot/Short-Varianten (fullbright ueber lightOverride oben).
+            // Hot/Short variants (fullbright via lightOverride above).
             .conditionalPart("Electrode1Hot", slotState(0, MachineArcFurnaceBlockEntity.ELECTRODE_USED))
             .conditionalPart("Electrode2Hot", slotState(1, MachineArcFurnaceBlockEntity.ELECTRODE_USED))
             .conditionalPart("Electrode3Hot", slotState(2, MachineArcFurnaceBlockEntity.ELECTRODE_USED))
             .conditionalPart("Electrode1Short", slotState(0, MachineArcFurnaceBlockEntity.ELECTRODE_DEPLETED))
             .conditionalPart("Electrode2Short", slotState(1, MachineArcFurnaceBlockEntity.ELECTRODE_DEPLETED))
             .conditionalPart("Electrode3Short", slotState(2, MachineArcFurnaceBlockEntity.ELECTRODE_DEPLETED))
-            // Cables schwingen ±30° um y = 5.5 (z-Offsets 0.5 / 0 / -0.5 wie im Original).
+            // Cables swing ±30° around y = 5.5 (z-offsets 0.5 / 0 / -0.5 as in original).
             .conditionalPart("Cable1", cableAnimator(0.5), slotNotEmpty(0))
             .conditionalPart("Cable2", cableAnimator(0.0), slotNotEmpty(1))
             .conditionalPart("Cable3", cableAnimator(-0.5), slotNotEmpty(2))
-            // Original ItemRenderBase: Furnace/Lid/Rings/Electrode1-3/Cables, keine Contents/Hot/Short.
+            // Original ItemRenderBase: Furnace/Lid/Rings/Electrode1-3/Cables, no Contents/Hot/Short.
             .itemParts("Furnace", "Lid", "Ring1", "Ring2", "Ring3",
                     "Electrode1", "Electrode2", "Electrode3",
                     "Cable1", "Cable2", "Cable3")
@@ -89,7 +89,7 @@ public final class MachineArcFurnaceRenderer {
 
     // ── Animators (1:1 RenderArcFurnace.renderTileEntityAt) ──────────────────
 
-    /** Lid: T(0, 2 * lift, 0) plus Schuetteln sin(totalTime) * 0.005 auf z, solange geschmolzen wird. */
+    /** Lid: T(0, 2 * lift, 0) plus shake sin(totalTime) * 0.005 on Z while smelting. */
     private static boolean animateLid(MachineArcFurnaceBlockEntity be, float partialTick,
                                       long gameTime, PoseStack pose) {
         float lift = be.prevLid + (be.lid - be.prevLid) * partialTick;
@@ -98,7 +98,7 @@ public final class MachineArcFurnaceRenderer {
         return true;
     }
 
-    /** ContentsHot: nur bei Schmelze im Kessel, Anhebung mit der Fuellmenge (-1.75 .. 0). */
+    /** ContentsHot: only when molten liquids are present, lifted by fill level (-1.75 .. 0). */
     private static boolean animateContentsHot(MachineArcFurnaceBlockEntity be, float partialTick,
                                               long gameTime, PoseStack pose) {
         if (be.liquids.isEmpty()) return false;
@@ -107,13 +107,13 @@ public final class MachineArcFurnaceRenderer {
         return true;
     }
 
-    /** ContentsCold: nur bei leerem Kessel mit Material darin (original: hasMaterial). */
+    /** ContentsCold: only when molten liquids empty and solid material present (original: hasMaterial). */
     private static boolean animateContentsCold(MachineArcFurnaceBlockEntity be, float partialTick,
                                                long gameTime, PoseStack pose) {
         return be.liquids.isEmpty() && be.hasMaterial;
     }
 
-    /** Cable: R_x(sin(totalTime / 2) * 30) um das Pivot (0, 5.5, zOff), solange geschmolzen wird. */
+    /** Cable: R_x(sin(totalTime / 2) * 30) around pivot (0, 5.5, zOff) while smelting. */
     private static boolean animateCable(MachineArcFurnaceBlockEntity be, float partialTick,
                                         long gameTime, PoseStack pose, double zOff) {
         pose.translate(0, 5.5, zOff);

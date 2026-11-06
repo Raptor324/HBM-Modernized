@@ -57,7 +57,7 @@ public final class MachineFurnaceRenderer {
     }
 
     private static void registerSteelFurnace() {
-        // furnace_steel.obj слит в одну группу "Plane"
+        // furnace_steel.obj is merged into a single group "Plane"
         MachineRenderers.machine("furnace_steel", ModBlockEntities.FURNACE_STEEL_BE.get(),
                 MachineFurnaceSteelBlockEntity.class)
             .part("Plane")
@@ -94,7 +94,7 @@ public final class MachineFurnaceRenderer {
     }
 
     private static void registerRotaryFurnace() {
-        // rotary_furnace.obj: Furnace/Piston анимируются, Plane — статичная подставка
+        // rotary_furnace.obj: Furnace/Piston are animated, Plane is the static base
         MachineRenderers.machine("rotary_furnace", ModBlockEntities.ROTARY_FURNACE_BE.get(),
                 MachineRotaryFurnaceBlockEntity.class)
             .part("Plane")
@@ -108,7 +108,7 @@ public final class MachineFurnaceRenderer {
     }
 
     private static void registerCombinationOven() {
-        // combination_oven.obj слит в одну группу "Plane"
+        // combination_oven.obj is merged into a single group "Plane"
         MachineRenderers.machine("combination_oven", ModBlockEntities.COMBINATION_OVEN_BE.get(),
                 MachineCombinationOvenBlockEntity.class)
             .part("Plane")

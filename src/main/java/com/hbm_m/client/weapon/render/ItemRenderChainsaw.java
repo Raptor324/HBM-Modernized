@@ -25,6 +25,9 @@ public class ItemRenderChainsaw extends ItemRenderWeaponBase {
 
     @Override public boolean customFirstPerson() { return false; }
 
+    /** Original: {@code player.isSwingInProgress = false} — Vanilla-Schwungbasis unterdrueckt (s. GunItemRenderer). */
+    @Override public boolean suppressVanillaSwing() { return true; }
+
     @Override
     public void renderFirstPerson(ItemStack stack) { }
 

@@ -31,17 +31,17 @@
     "firstperson_righthand": {
       "rotation": [ 0, 225, 0 ],
       "translation": [ 1.00, -0.25, 0.00 ],
-      "scale": [ 0.10, 0.10, 0.10 ]
+      "scale": [ 0.15, 0.15, 0.15 ]
     },
     "firstperson_lefthand": {
       "rotation": [ 0, 135, 0 ],
       "translation": [ 2.00, -1.00, 0.00 ],
-      "scale": [ 0.10, 0.10, 0.10 ]
+      "scale": [ 0.15, 0.15, 0.15 ]
     },
     "gui": {
       "rotation": [ 30, 225, 0 ],
-      "translation": [ -0.50, -2.40, 0.00 ],
-      "scale": [ 0.10, 0.10, 0.10 ]
+      "translation": [ -0.40, -4.65, 0.00 ],
+      "scale": [ 0.1875, 0.1875, 0.1875 ]
     },
     "head": {
       "rotation": [ 0, 0, 0 ],

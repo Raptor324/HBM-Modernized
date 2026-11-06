@@ -77,7 +77,8 @@ public final class DhDepthCopy {
         shader.safeGetUniform("OutNear").set(com.hbm_m.client.compat.dh.DhClientCompat.extendedNear());
         shader.safeGetUniform("OutFar").set(com.hbm_m.client.compat.dh.DhClientCompat.extendedFar());
         // Маска dither-fade зоны DH («Fade Nearby DH LODs») — там глубина-шум
-        shader.safeGetUniform("DhFadeMaskDist").set(DhOcclusionGpu.ditherFadeMaskDistance());
+        float fadeMaskDist = DhOcclusionGpu.ditherFadeMaskDistance();
+        shader.safeGetUniform("DhFadeMaskDist").set(fadeMaskDist);
 
         // Oculus без пака оставляет GL-программу 0 при «свежем» с точки зрения
         // ванильного кеша шейдере — без этого blit уйдёт в программу 0.
@@ -90,5 +91,10 @@ public final class DhDepthCopy {
             RenderSystem.depthFunc(org.lwjgl.opengl.GL43.GL_LEQUAL);
             RenderSystem.setShaderTexture(0, 0);
         }
+
+        // Однокадровая диагностика: сколько текселей шейдер отбросил бы
+        // (небо/fade-маска) и сколько записал бы — путь отказывает молча.
+        com.hbm_m.client.render.shader.DhDepthBlitDiag.onBlitRan(
+                texId, dhNear, dhFar, DhClientState.dhReverseZ(), fadeMaskDist);
     }
 }

@@ -47,6 +47,25 @@ public class ScrewdriverItem extends com.hbm_m.item.tool.ItemTooling implements 
         Player player = context.getPlayer();
         if (player == null) return InteractionResult.PASS;
 
+        // Shift-click dismantles the top floor of a cargo elevator shaft (any part: core or cell).
+        // Vanilla skips the block use hooks when sneaking with a non-empty hand, so this lives here.
+        if (player.isShiftKeyDown()) {
+            BlockEntity clicked = level.getBlockEntity(pos);
+            com.hbm_m.blockentity.machines.CargoElevatorBlockEntity elevator = null;
+            if (clicked instanceof com.hbm_m.blockentity.machines.CargoElevatorBlockEntity be) {
+                elevator = be.isCore() ? be : be.resolveCore(com.hbm_m.blockentity.machines.CargoElevatorBlockEntity.class);
+            } else if (clicked instanceof IMultiblockPart part && part.getControllerPos() != null
+                    && level.getBlockEntity(part.getControllerPos()) instanceof com.hbm_m.blockentity.machines.CargoElevatorBlockEntity be) {
+                elevator = be;
+            }
+            if (elevator != null) {
+                if (com.hbm_m.block.machines.CargoElevatorBlock.dismantleTopFloor(level, elevator.getBlockPos(), elevator, player)) {
+                    return level.isClientSide ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
+                }
+                return InteractionResult.FAIL;
+            }
+        }
+
         DoorBlockEntity doorEntity = resolveDoorController(level, pos);
         if (doorEntity == null) {
             // NEXT: ItemTooling.useOn dispatches IToolable.onScrew with no sneak gate. The pile
@@ -69,6 +88,11 @@ public class ScrewdriverItem extends com.hbm_m.item.tool.ItemTooling implements 
 
     private static DoorBlockEntity resolveDoorController(Level level, BlockPos clickedPos) {
         BlockEntity be = level.getBlockEntity(clickedPos);
+        // Blast door: GUI скинов нет (NEXT BlastDoor.java:99-105) — отвёртка тогглит дверь
+        // как пустая рука; не перехватываем клик (паритет BlastDoorBlock/UniversalMachinePartBlock)
+        if (be instanceof com.hbm_m.block.entity.doors.BlastDoorBlockEntity) {
+            return null;
+        }
         if (be instanceof DoorBlockEntity doorBE && doorBE.isController()) {
             return doorBE;
         }
@@ -76,7 +100,8 @@ public class ScrewdriverItem extends com.hbm_m.item.tool.ItemTooling implements 
             BlockPos controllerPos = part.getControllerPos();
             if (controllerPos != null) {
                 BlockEntity ctrlBe = level.getBlockEntity(controllerPos);
-                if (ctrlBe instanceof DoorBlockEntity doorBE && doorBE.isController()) {
+                if (ctrlBe instanceof DoorBlockEntity doorBE && doorBE.isController()
+                        && !(doorBE instanceof com.hbm_m.block.entity.doors.BlastDoorBlockEntity)) {
                     return doorBE;
                 }
             }

@@ -211,8 +211,7 @@ public final class IrisExtendedShaderAccess {
      * Cheap liveness probe for a resolved Iris shader. Programs are destroyed by
      * pipeline rebuilds and nvidia then recycles the names, but a destroyed
      * shader object still answers {@code getId()} with the dead name - applying
-     * it binds whatever live program now owns that id (observed 2026-10-05: our
-     * compute bake program under BSL) and every uniform push becomes
+     * it binds whatever live program now owns that id and every uniform push becomes
      * GL_INVALID_OPERATION.
      *
      * <p>Two-stage detection. {@code glIsProgram} catches the not-yet-recycled

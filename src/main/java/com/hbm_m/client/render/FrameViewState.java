@@ -70,8 +70,8 @@ public final class FrameViewState {
         // Session teardown: forget the anchor so the next world join takes the
         // init path of checkAnchorDrift -> onAnchorChanged ->
         // InstancedStaticPartRenderer.onRenderOriginChanged -> worldGen bump,
-        // which bulk-clears RenderBoundsCache and every per-BER render-state map (audit
-        // 2026-10-05 §3.1). SESSION_END only: a mid-session reset would
+        // which bulk-clears RenderBoundsCache and every per-BER render-state map.
+        // SESSION_END only: a mid-session reset would
         // re-anchor (and bump worldGen) after every resource reload.
         com.hbm_m.client.render.cache.RenderCacheManager.register(reason -> {
             if (reason == com.hbm_m.client.render.cache.RenderCacheManager.Reason.SESSION_END) {
@@ -320,8 +320,7 @@ public final class FrameViewState {
      * but the old fused {@code (float)(gameTime - 1) + partialTick} collapsed
      * the partial tick into half-tick steps once the tick counter passed 2^22
      * (float32 spacing 0.5) - every tracked rig visibly juddered, its u
-     * advancing only twice per tick (the assembler ring's "jerky spin",
-     * 2026-10-07). The VSH reconstructs the elapsed time as
+     * advancing only twice per tick. The VSH reconstructs the elapsed time as
      * {@code (ticks - t0) + pt}: both operands of the subtraction are exact
      * integer floats, so it is exact and the partial tick survives.
      */

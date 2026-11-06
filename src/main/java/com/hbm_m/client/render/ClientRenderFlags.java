@@ -2,6 +2,8 @@ package com.hbm_m.client.render;
 
 import com.hbm_m.config.ModClothConfig;
 
+import net.minecraft.util.Mth;
+
 /**
  * Per-render-frame snapshot of hot {@link ModClothConfig} rendering flags.
  * Updated once at the start of the block-entity pass to avoid thousands of
@@ -31,6 +33,26 @@ public final class ClientRenderFlags {
     /** Last Iris states: a change invalidates fast-path records (worldGen bump). */
     private static boolean lastIrisExternal = false;
     private static boolean lastIrisExtended = false;
+
+    /**
+     * True while a WIAJ demo screen ({@code GuiWorldInAJar}) renders its scene:
+     * machines must draw through the per-BE VBO tier with the screen's own
+     * PoseStack/bufferSource instead of registering instances in the level's
+     * instanced graph, and block_lit fog uniforms must be forced off (stale
+     * level fog would wash the scene out at GUI depth). Set/cleared around the
+     * scene pass in {@code GuiWorldInAJar}.
+     */
+    private static boolean guiRenderFrame = false;
+
+    /**
+     * Global machine alpha inside the WIAJ demo scene (0-1, 1 = opaque). The demo's
+     * smooth-placement actor wrapper ({@code ActorTileEntity}) drives it for the
+     * fade-in of a machine being lowered into place; {@code MachineBer} reads it in
+     * the {@link #guiRenderFrame()} branch and it flows into the regular per-part
+     * fade pipeline (blend + depthMask off, fade uniform / translucent putBulkData).
+     * Reset to 1 around every actor render, so a plain demo frame is unchanged.
+     */
+    private static float guiFadeAlpha = 1.0F;
 
     private ClientRenderFlags() {}
 
@@ -108,9 +130,8 @@ public final class ClientRenderFlags {
      * byte-paired packing scheme (albedo/normal/light packed into unorm8 pairs -
      * verified against Photon). This is the ONLY recognized scheme: a general
      * vanilla-parity encoder for identity-directive packs was tried and removed -
-     * an identity directive alone does not guarantee content parity, and BSL 10.x
-     * / Insanity / Flashlight composited black through it (in-game verified
-     * 2026-10-05).
+     * an identity directive alone does not guarantee content parity, and shaderpacks such as BSL 10.x
+     * / Insanity / Flashlight composite black through it.
      * <p>
      * For every other pack there is no valid generic encoder, so main-pass
      * instancing falls back to per-instance companion via the pack's
@@ -145,5 +166,21 @@ public final class ClientRenderFlags {
         } catch (Throwable ignored) {
             return 4096;
         }
+    }
+
+    public static boolean guiRenderFrame() {
+        return guiRenderFrame;
+    }
+
+    public static void setGuiRenderFrame(boolean value) {
+        guiRenderFrame = value;
+    }
+
+    public static float guiFadeAlpha() {
+        return guiFadeAlpha;
+    }
+
+    public static void setGuiFadeAlpha(float alpha) {
+        guiFadeAlpha = Mth.clamp(alpha, 0.0F, 1.0F);
     }
 }

@@ -201,10 +201,10 @@ public class GUIPneumoStorageAccess extends AbstractContainerScreen<PneumoStorag
             if (!slot.hasItem()) continue;
             if (!isOverSlot(slot, mouseX, mouseY)) continue;
 
-            guiGraphics.renderComponentTooltip(font, List.of(
+            com.hbm_m.inventory.gui.element.GUIElements.drawHoveringText(guiGraphics, font, List.of(
                     slot.getItem().getHoverName(),
                     Component.translatable("gui.hbm_m.pneumo.access.count", menu.getAmount(i))),
-                    mouseX, mouseY);
+                    mouseX, mouseY, 0xD57C4F, 0xAB4223);
             break;
         }
     }

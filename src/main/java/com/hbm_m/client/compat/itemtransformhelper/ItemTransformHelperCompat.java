@@ -147,6 +147,22 @@ public final class ItemTransformHelperCompat {
         return meshDelegate.getTransforms();
     }
 
+    /**
+     * Истина, если display-трансформ к PoseStack уже применит ПАЙПЛАЙН до {@code renderByItem}.
+     * Случай ITH (Item Transforms Helper): его обёртка {@code ItemModelFlexibleCamera} стоит НАД
+     * нашей {@link HbmItemDisplayWrapper} и НЕ переопределяет {@code applyTransform} — работает
+     * дефолтный, который применяет {@code getTransforms()} (форснутую трансформ ITH) в
+     * {@code handleCameraTransforms}. Наш гвард при этом не вызывается вовсе (он под ITH).
+     * Ручное применение display-трансформа в BEWLR в этом случае дублирует её — предмет
+     * рендерится с квадратом масштаба (0.16^2 в GUI, 0.1^2 в руке — «супер мелкий»).
+     */
+    public static boolean pipelineAppliesDisplayTransforms(@Nullable BakedModel displayModel) {
+        if (!isLoaded() || displayModel == null) {
+            return false;
+        }
+        return peelIthWrapper(displayModel) != displayModel;
+    }
+
     @Nullable
     public static ItemTransforms resolveLiveTransforms(BakedModel wrapperInstance) {
         if (!isLoaded() || !ensureUpdateLinkFields()) {

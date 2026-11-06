@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.RockMillRecipe;
 import com.hbm_m.recipe.RockMillRecipe.CountedIngredient;
@@ -12,14 +11,8 @@ import com.hbm_m.recipe.RockMillRecipe.FluidIngredient;
 
 import dev.architectury.fluid.FluidStack;
 //? if forge {
-//? if forge {
 import mezz.jei.api.forge.ForgeTypes;
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
-//? if forge {
 import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
-//?}
 //?} elif neoforge {
 /*import mezz.jei.api.neoforge.NeoForgeTypes;
 *///?}
@@ -76,28 +69,8 @@ public class RockMillJeiCategory extends JeiGenericRecipeCategory<RockMillRecipe
         return recipe.requiresBlueprint();
     }
 
-    @Override
-    protected int getInputXOffset(RockMillRecipe recipe, int inputCount) {
-        if (inputCount > 12) return -9;
-        if (inputCount > 9) return 18;
-        return 0;
-    }
-
-    @Override
-    protected int getOutputXOffset(RockMillRecipe recipe, int outputCount) {
-        return getOffset(getInputCount(recipe));
-    }
-
-    @Override
-    protected int getMachineXOffset(RockMillRecipe recipe) {
-        return getOffset(getInputCount(recipe));
-    }
-
-    private static int getOffset(int inputCount) {
-        if (inputCount > 12) return 27;
-        if (inputCount > 9) return 18;
-        return 0;
-    }
+    // Keine Input-/Output-/Machine-X-Offsets: das Original {@code RockMillRecipeHandler} ueberschreibt
+    // keine der Offset-Methoden von {@code NEIGenericRecipeHandler} (alle liefern dort 0).
 
     @Override
     protected void addInputSlots(IRecipeLayoutBuilder builder, RockMillRecipe recipe, int inputXOffset) {

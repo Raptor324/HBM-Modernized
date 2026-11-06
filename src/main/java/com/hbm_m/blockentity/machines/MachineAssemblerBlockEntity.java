@@ -323,7 +323,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
         boolean hasRecipe = recipeOpt.isPresent();
         boolean hasResources = hasRecipe && hasResources(recipeOpt.get());
-        boolean canInsert = hasRecipe && canInsertResult(recipeOpt.get().getResultItemSafe());
+        boolean canInsert = hasRecipe && canInsertResult(recipeOpt.get());
 
         if (hasRecipe && hasResources && canInsert) {
             AssemblerRecipe recipe = recipeOpt.get();
@@ -438,9 +438,25 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                         outputSlotStack.getCount() + result.getCount() <= outputSlotStack.getMaxStackSize());
     }
 
+    /**
+     * Zufallsausgabe (Original ChanceOutputMulti, ass.nitra): was herausrollt, steht vor dem Craft
+     * noch nicht fest — es darf nur gestartet werden, wenn ALLE Varianten in den Ausgangsslot passen
+     * (konservativ; im Original blockiert der volle Ausgangsslot ebenso).
+     */
+    private boolean canInsertResult(AssemblerRecipe recipe) {
+        if (!recipe.getChanceOutputs().isEmpty()) {
+            ItemStack outputSlotStack = inventory.getStackInSlot(OUTPUT_SLOT);
+            if (outputSlotStack.isEmpty()) return true;
+            for (ItemStack possible : recipe.getPossibleOutputs()) {
+                if (!canInsertResult(possible)) return false;
+            }
+            return true;
+        }
+        return canInsertResult(recipe.getResultItemSafe());
+    }
+
     private void craftItem(AssemblerRecipe recipe) {
         NonNullList<Ingredient> ingredients = recipe.getIngredients();
-        ItemStack result = recipe.getResultItemSafe().copy();
 
         for (Ingredient ingredient : ingredients) {
             for (int i = INPUT_SLOT_START; i <= INPUT_SLOT_END; i++) {
@@ -452,15 +468,27 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
         }
 
+        // Zufallsausgabe: aus jeder Gruppe eine Variante nach Gewicht ziehen
+        // (Original ChanceOutputMulti.collapse).
+        if (!recipe.getChanceOutputs().isEmpty()) {
+            for (ItemStack rolled : recipe.rollChanceOutputs(this.level.random)) {
+                insertResult(rolled);
+            }
+        } else {
+            insertResult(recipe.getResultItemSafe().copy());
+        }
+
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    private void insertResult(ItemStack result) {
         ItemStack outputSlot = inventory.getStackInSlot(OUTPUT_SLOT);
         if (outputSlot.isEmpty()) {
             inventory.setStackInSlot(OUTPUT_SLOT, result);
         } else {
             outputSlot.grow(result.getCount());
         }
-
-        setChanged();
-        sendUpdateToClient();
     }
 
     // ==================== AUTOMATION ====================

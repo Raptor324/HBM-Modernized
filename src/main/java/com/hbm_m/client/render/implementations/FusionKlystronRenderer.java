@@ -16,8 +16,8 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.Mth;
 
 /**
- * 1:1-Port von {@code RenderFusionKlystron} (1.7.10): das Gehaeuse steckt im Blockmodell,
- * hier laeuft nur der Rotor - er dreht sich um die lokale X-Achse auf Hoehe 2,5.
+ * 1:1 port of {@code RenderFusionKlystron} (1.7.10): housing is part of block model;
+ * only rotor runs here - rotates around local X axis at height 2.5.
  */
 public class FusionKlystronRenderer implements com.hbm_m.client.render.HbmBerBounds<FusionKlystronBlockEntity> {
 
@@ -48,7 +48,7 @@ public class FusionKlystronRenderer implements com.hbm_m.client.render.HbmBerBou
         pose.pushPose();
         pose.translate(0.5D, 0D, 0.5D);
         MachineFusionComplexRenderer.applyFacing(be.getBlockState(), pose);
-        // Original: glTranslated(-1, 0, 0) nach der Ausrichtungsdrehung.
+        // Original: glTranslated(-1, 0, 0) following orientation rotation.
         pose.translate(-1D, 0D, 0D);
 
         float rot = Mth.lerp(partialTick, be.prevFan, be.fan);

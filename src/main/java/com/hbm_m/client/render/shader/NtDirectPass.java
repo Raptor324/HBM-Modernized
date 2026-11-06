@@ -73,9 +73,7 @@ public final class NtDirectPass {
             // lastProgramId static), ensureFreshBind below covers the PACK
             // ExtendedShader - its apply() gates on Iris's own static
             // ExtendedShader.lastApplied instead, which the vanilla reset cannot
-            // touch (2026-10-06: this gap was the 85k-error "No active program"
-            // storm - apply() pushed every uniform into program 0 once the
-            // window's vanilla draws had left the program there).
+            // touch.
             ShaderBindResync.invalidateStaticProgramCache();
             ShaderInstance packShader = ModShaders.resolveTexColor();
             activePackShader = packShader;

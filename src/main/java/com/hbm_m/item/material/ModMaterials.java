@@ -84,7 +84,7 @@ public enum ModMaterials {
     DNT("dnt", java.util.EnumSet.of(MaterialShape.WIRE_DENSE), "ru_ru", "ДНТ", "en_us", "DNT"),
     AMERICIUM("americium", java.util.EnumSet.of(MaterialShape.INGOT), "ru_ru", "Америциевый слиток", "en_us", "Americium Ingot"),
     NEPTUNIUM("neptunium", java.util.EnumSet.of(MaterialShape.INGOT, MaterialShape.BILLET, MaterialShape.BLOCK, MaterialShape.NUGGET, MaterialShape.POWDER), "ru_ru", "Нептуниевый слиток", "en_us", "Neptunium Ingot"),
-    POLONIUM("polonium", java.util.EnumSet.of(MaterialShape.INGOT, MaterialShape.BILLET, MaterialShape.NUGGET, MaterialShape.POWDER), "ru_ru", "Слиток полония-210", "en_us", "Polonium-210 Ingot"),
+    POLONIUM("polonium", java.util.EnumSet.of(MaterialShape.INGOT, MaterialShape.BILLET, MaterialShape.NUGGET, MaterialShape.POWDER, MaterialShape.BLOCK), "ru_ru", "Слиток полония-210", "en_us", "Polonium-210 Ingot"),
     TECHNETIUM("technetium", java.util.EnumSet.of(MaterialShape.INGOT, MaterialShape.BILLET, MaterialShape.NUGGET), "ru_ru", "Слиток технеция-99", "en_us", "Technetium-99 Ingot"),
     BORON("boron", java.util.EnumSet.of(MaterialShape.INGOT, MaterialShape.BLOCK, MaterialShape.POWDER, MaterialShape.POWDER_TINY), "ru_ru", "Борный слиток", "en_us", "Boron Ingot"),
     SCHRABIDATE("schrabidate", java.util.EnumSet.of(MaterialShape.INGOT, MaterialShape.BLOCK, MaterialShape.POWDER, MaterialShape.PLATE_CAST, MaterialShape.WIRE_DENSE), "ru_ru", "Слиток шрабидата железа", "en_us", "Ferric Schrabidate Ingot"),

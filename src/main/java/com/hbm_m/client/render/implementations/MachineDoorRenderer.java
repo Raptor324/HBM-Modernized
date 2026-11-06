@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.joml.Matrix4f;
 
+import com.hbm_m.block.entity.doors.BlastDoorDecl;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.machines.TransitionSealBlock;
@@ -88,6 +89,7 @@ public final class MachineDoorRenderer {
             DoorDecl.SILO_HATCH_LARGE,
             DoorDecl.CARGO_DOOR,
             DoorDecl.VAULT_DOOR,
+            BlastDoorDecl.INSTANCE,
     };
 
     /** The nucleusDoorSkinSharing config is the primary source; -Dhbm.doorSkinSharing=false is an emergency override. */
@@ -97,29 +99,28 @@ public final class MachineDoorRenderer {
     private static final boolean DOOR_PART_CULLING_FLAG =
             !"false".equalsIgnoreCase(System.getProperty("hbm.doorPartCulling", "true"));
 
-    // ==================== ДЕБАГ КЛИПА (-Dhbm.debugDoorClip=true) ====================
-    // Одноразовый дамп для диагностики: (а) почему резолвер вернул/не вернул плоскости,
-    // (б) какие спрайты/UV реально приходят в клип-тир. Пишется один раз на ключ.
+    // ==================== DOOR CLIP DEBUG (-Dhbm.debugDoorClip=true) ====================
+    // One-time dump for diagnostics: (a) why resolver returned/omitted planes,
+    // (b) which sprites/UVs arrive at clip tier. Logged once per key.
 
-    /** Одноразовый дебаг-дамп клипа дверей; включается -Dhbm.debugDoorClip=true. */
-    /** Дебаг-дамп клипа дверей включается конфигом doorClipDebug (вкладка «Рендеринг»). */
+    /** Door clip debug dump enabled via doorClipDebug config. */
     static boolean debugDoorClip() {
         return com.hbm_m.config.ModClothConfig.get().doorClipDebug;
     }
-    /** Ключи, уже залогированные дебагом клипа. */
+    /** Keys already logged by clip debug. */
     private static final java.util.Set<String> DEBUG_CLIP_LOGGED = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
-    /** Одноразовый лог дебага клипа: '[HBM-M][DoorClipDebug] <key>: <msg>'. */
+    /** One-time clip debug log: '[HBM-M][DoorClipDebug] <key>: <msg>'. */
     static void debugClipLog(String key, java.util.function.Supplier<String> msg) {
         if (!debugDoorClip()) return;
         if (!DEBUG_CLIP_LOGGED.add(key)) return;
         com.hbm_m.main.MainRegistry.LOGGER.info("[HBM-M][DoorClipDebug] {}: {}", key, msg.get());
     }
     private static boolean skinSharing() {
-        // Share-пайплайн восстановлен до контракта первой рабочей итерации:
-        // кеш — нормализованные квадами (normalizeQuadUvsPerQuad), ремап — по-квадный
-        // в клиппере. Партовые копии uvRect (не общий скретч) обязательны: rect живёт
-        // до флаша инстанс-батча, общий скретч портил текстуры всех партов.
+        // Share pipeline restored to contract:
+        // cache holds per-quad normalized UVs (normalizeQuadUvsPerQuad), remapping is per-quad
+        // in clipper. Per-part uvRect copies (not shared scratch) are required: rect lives
+        // until instance batch flush; shared scratch corrupted all part textures.
         return com.hbm_m.config.ModClothConfig.get().nucleusDoorSkinSharing && SKIN_SHARING_FLAG;
     }
 
@@ -166,16 +167,15 @@ public final class MachineDoorRenderer {
     }
 
     // ==================== SHARE-STATE: per-frame desired!=current + epoch ====================
-    // shareSkins() зависит от НЕСТАБИЛЬНЫХ входов: Iris on/off (ShaderCompatibilityDetector),
-    // конфиг-тумблер nucleusDoorSkinSharing, момент загрузки block_lit_instanced. Канонический
-    // механизм детерминизма (рев.2): каждый кадр вычисляется desired и сравнивается с current;
-    // при несовпадении — shareEpoch++, current=desired и ОДНОВРЕМЕННО инвалидируется всё, что
-    // построено в прежнем режиме: мемо-кеш клипера (эпоха входит в его ключ), PART/VBO-кеш
-    // дверей (эпоха в doorPartCacheKey/daeCacheKey) и ПОЛНАЯ очистка MachineSpec.partRenderers
-    // (глобальный реестр MachineRenderRegistry.clearAll() — без очистки старые renderer'ы
-    // утекли бы и ссылались бы на VBO прежнего режима). Оба резолвера кеш-ключей и оба
-    // uvRect-резолвера читают shareSkins()/shareEpoch() АТОМАРНО: между syncShareState() и
-    // использованием ключа рендер однопоточен.
+    // shareSkins() depends on dynamic inputs: Iris on/off (ShaderCompatibilityDetector),
+    // config toggle nucleusDoorSkinSharing, and the moment block_lit_instanced finishes loading.
+    // Determinism mechanism: each frame desired is compared to current; on mismatch,
+    // shareEpoch++, current=desired and simultaneously invalidates everything built in the prior mode:
+    // clipper memo-cache (epoch is in its key), PART/VBO door cache (epoch in doorPartCacheKey/daeCacheKey),
+    // and full clear of MachineSpec.partRenderers (global registry MachineRenderRegistry.clearAll()
+    // to prevent leaking old renderers referencing stale VBOs). Both cache-key resolvers and both
+    // uvRect resolvers read shareSkins()/shareEpoch() atomically between syncShareState() and
+    // key usage on the single render thread.
 
     private static boolean shareStateCurrent;
     private static boolean shareCullCurrent;
@@ -183,7 +183,7 @@ public final class MachineDoorRenderer {
     private static long shareEpoch;
     private static long shareStateFrame = -1L;
 
-    /** Current share epoch; входит во все дверные кеш-ключи (PART/VBO/dae/клипер-мемо). */
+    /** Current share epoch; included in all door cache keys (PART/VBO/dae/clipper-memo). */
     public static long shareEpoch() {
         return shareEpoch;
     }
@@ -214,9 +214,9 @@ public final class MachineDoorRenderer {
         shareCullCurrent = desiredCull;
         MainRegistry.LOGGER.info("[HBM-M] Door share state (skinSharing {} -> {}, doorPartCulling {} -> {}, shareEpoch={}) -- invalidating door VBO/dae/clip caches",
                 prev, desired, prevCull, desiredCull, shareEpoch);
-        // Полная очистка partRenderers глобального реестра + GPU-кешей машин; dae-кеш
-        // и кеш канонических спрайтов партов -- дверные; мемо-кеш клипера ключуется
-        // эпохой и истекает сам (плюс его списки квадов меняются идентичностью).
+        // Full clear of partRenderers in global registry + machine GPU caches; dae-cache
+        // and part canonical sprite cache are door-specific; clipper memo-cache is keyed
+        // by epoch and expires on its own (plus quad lists change identity).
         com.hbm_m.client.render.machine.MachineRenderRegistry.clearAll();
         clearDaeCaches();
         clearPartSpriteCache();
@@ -259,7 +259,9 @@ public final class MachineDoorRenderer {
         Set<String> allParts = collectAllPartNames();
 
         registerDoorSpec("door", ModBlockEntities.DOOR_ENTITY.get(), allParts);
-        // blast_door — FFA-канон: старая система с BER BlastDoorRenderer; спек новой системы удалён.
+        // Separate BE type for blast door (hbm_m:blast_door) - BlastDoorBlockEntity class
+        // persists across reloads under its own ID, so a spec is needed for it as well.
+        registerDoorSpec("blast_door", ModBlockEntities.BLAST_DOOR_ENTITY.get(), allParts);
 
         MachineSpecBuilder<TransitionSealBlockEntity> seal =
                 MachineRenderers.machine("transition_seal", ModBlockEntities.TRANSITION_SEAL_BE.get(),
@@ -272,9 +274,9 @@ public final class MachineDoorRenderer {
     }
 
     /**
-     * Один и тот же набор дверных частей регистрируется на оба BE-типа дверей
-     * (базовый DOOR_ENTITY и BLAST_DOOR_ENTITY). VBO-кэш уже учитывает тип двери
-     * и скин в ключе (doorPartCacheKey), поэтому два спека не конфликтуют.
+     * The same set of door parts is registered to both door BE types
+     * (base DOOR_ENTITY and BLAST_DOOR_ENTITY). The VBO cache already accounts for
+     * door type and skin in the key (doorPartCacheKey), avoiding conflicts between specs.
      */
     private static void registerDoorSpec(String id, BlockEntityType<? extends DoorBlockEntity> type, Set<String> allParts) {
         MachineSpecBuilder<DoorBlockEntity> door =
@@ -288,10 +290,10 @@ public final class MachineDoorRenderer {
             // the spec's VBO cache key must include the door type and skin (the same part
             // name "frame"/"door" on different doors = DIFFERENT geometry; a cache keyed
             // by part name would hand every door the mesh of the first one drawn).
-            // Per-part CPU-клип (обрезка «карманом» двери). ВАЖНО: вызов ДО объявления парта —
-            // билдер захватывает резолвер eagerly при dynamicPart, обратный порядок оставлял
-            // резолвер null и всю обрезку мёртвым кодом. DAE-парты ниже — БЕЗ резолвера
-            // (паритет RenderDoorGeneric).
+            // Per-part CPU clipping (door "pocket" clipping). IMPORTANT: call BEFORE declaring part -
+            // builder captures resolver eagerly during dynamicPart; reverse order leaves
+            // resolver null making clipping dead code. DAE parts below have NO resolver
+            // (matching RenderDoorGeneric).
             if (!isStaticFramePart(part)) {
                 door.clipPlanes(part, (be, partialTick) ->
                         doorPartClipPlanes(be, partialTick, partF, child));
@@ -372,12 +374,12 @@ public final class MachineDoorRenderer {
                 final DoorDecl declF = decl;
                 final DaeModel modelF = model;
                 final DaeNodePath npF = np;
-                // Per-part CPU-клип DAE-узлов. ВАЖНО: вызов ДО объявления парта — билдер
-                // захватывает резолвер eagerly при dynamicPart. Без резолвера DAE-скины
-                // не скрывали створки «карманом» (паритет RenderDoorGeneric нарушался
-                // только на OBJ). Резолвер — DAE-зеркало doorPartClipPlanes: та же
-                // поз-СК конвенция DoorDecl, инверсия дельты DAE-аниматора
-                // (applyDaeRootOffset + цепочка localMatrix) вместо doPartTransform.
+                // Per-part CPU clipping of DAE nodes. IMPORTANT: call BEFORE declaring part - builder
+                // captures resolver eagerly during dynamicPart. Without resolver, DAE skins
+                // did not hide door leaves in "pockets" (RenderDoorGeneric parity was violated).
+                // Resolver is DAE counterpart to doorPartClipPlanes: same pose-space convention
+                // of DoorDecl, inverting DAE animator delta (applyDaeRootOffset + localMatrix chain)
+                // instead of doPartTransform.
                 door.clipPlanes("dae/" + np.name(), (be, partialTick) ->
                         doorDaeClipPlanes(be, partialTick, declF, modelF, npF.chain(), npF.name()));
                 door.dynamicPart(
@@ -539,6 +541,7 @@ public final class MachineDoorRenderer {
         if (doorDecl == DoorDecl.SILO_HATCH_LARGE) return "silo_hatch_large";
         if (doorDecl == DoorDecl.VAULT_DOOR) return "vault_door";
         if (doorDecl == DoorDecl.CARGO_DOOR) return "cargo_door";
+        if (doorDecl == BlastDoorDecl.INSTANCE) return "blast_door";
         throw new IllegalStateException("Unknown door type: " + doorDecl.getClass().getName());
     }
 
@@ -634,11 +637,11 @@ public final class MachineDoorRenderer {
      * rect per part). The return value is the shared UV_RECT_SCRATCH -- every consumer
      * MUST snapshot the values in the same frame (the DoorPartClipper memo key does).
      */
-    /** Партовые копии uvRect по спрайту (не аллоцирует строки и исключает коллизии между скинами). */
+    /** Per-part uvRect copies per sprite (avoids string allocations and skin collisions). */
     private static final java.util.concurrent.ConcurrentHashMap<TextureAtlasSprite, float[]> UV_RECT_COPIES =
             new java.util.concurrent.ConcurrentHashMap<>();
 
-    /** Снимок атласного rect спрайта в переиспользуемый партовый массив. */
+    /** Snapshot of atlas sprite rect into reusable per-part array. */
     private static float[] cachedUvRect(TextureAtlasSprite s) {
         return UV_RECT_COPIES.computeIfAbsent(s, spr -> new float[] {
                 spr.getU0(),
@@ -654,9 +657,9 @@ public final class MachineDoorRenderer {
         if (part == null) return null;
         TextureAtlasSprite s = partSprite(part);
         if (s == null) return null;
-        // Партовая КОПИЯ rect (не общий UV_RECT_SCRATCH): rect живёт до флаша
-        // инстанс-батча; общий скретч давал всем партам rect последнего парта —
-        // «все текстуры дверей сломаны» в share-режиме.
+        // Per-part COPY of rect (not shared UV_RECT_SCRATCH): rect lives until
+        // instance batch flush; shared scratch assigned the last part's rect to all parts -
+        // corrupting door textures in share mode.
         return cachedUvRect(s);
     }
 
@@ -695,16 +698,16 @@ public final class MachineDoorRenderer {
                         fPlanes[pIdx][2] = (float) planes[pIdx][2];
                         fPlanes[pIdx][3] = (float) planes[pIdx][3];
                     }
-                    // Однократный bake-time клип статической рамы перед компиляцией VBO
+                    // One-time bake-time clipping of static frame before VBO compilation
                     out = DoorPartClipper.clipQuads(out, fPlanes, null);
                 }
             }
         }
 
         if (share) {
-            // Композиция tile-split → frac → sprite-нормализация (рев.2). На этом
-            // call-site вход атласный (DoorBakedModel/RemappedPartModel quads),
-            // split-фаза no-op, путь тождественен normalizeQuadUvsPerQuad.
+            // Composition tile-split -> frac -> sprite normalization. At this
+            // call site input is atlas-mapped (DoorBakedModel/RemappedPartModel quads),
+            // split phase is no-op, equivalent to normalizeQuadUvsPerQuad.
             out = com.hbm_m.client.model.ModelHelper.normalizeQuadUvsPerQuad(out);
         }
         return out;
@@ -717,11 +720,10 @@ public final class MachineDoorRenderer {
         if (doorDecl == null) return false;
         DoorModelSelection selection = be.getModelSelection();
         float open = openTicks(be, partialTick, doorDecl);
-        // Куллинг частей при открывании (be-aware doesRender: blast door — сегменты
-        // створки исчезают, входя в корпус). Тумблер doorPartCulling выключает
-        // ПОКАДРОВОЕ скрытие для всех дверей разом; статичные правила
-        // (water_door: скрытие spinny-вентилей через DoorDecl.doesRender(partName, child))
-        // работают всегда — они не про «уезд в корпус», а про постоянные декоративные части.
+        // Part culling on opening (be-aware doesRender: blast door leaf segments
+        // vanish into housing). Toggle doorPartCulling disables per-frame hiding
+        // across all doors; static rules (water_door: hide spinny valves via
+        // DoorDecl.doesRender(partName, child)) always apply for permanent decorative parts.
         if (com.hbm_m.config.ModClothConfig.get().doorPartCulling && DOOR_PART_CULLING_FLAG
                 && !doorDecl.doesRender(be, partName, open, child)) return false;
         if (!doorDecl.doesRender(partName, child)) return false;
@@ -747,27 +749,27 @@ public final class MachineDoorRenderer {
 
     // ==================== DOOR: PER-PART CLIP PLANES ====================
 
-    /** Скретч-стек для инверсии позовой дельты doPartTransform (рендер однопоточный). */
+    /** Scratch stack for inverting pose delta of doPartTransform (rendering is single-threaded). */
     private static final PoseStack CLIP_POSE = new PoseStack();
-    /** Переиспользуемый скретч результата (у дверных партов максимум 2 плоскости). */
+    /** Reusable result scratch (door parts have at most 2 planes). */
     private static final float[][] CLIP_SCRATCH = new float[2][4];
 
     /**
-     * Резолвер per-part clip-плоскостей дверных OBJ-партов (плоскости {A,B,C,D} в
-     * конвенции DoorDecl «+D» — внутри = {@code n·x + D >= 0}). ЯВНЫЙ КОНТРАКТ — null,
-     * если: (1) тумблер выключен ({@code ModClothConfig.doorPartCulling &&
-     * DOOR_PART_CULLING_FLAG} — ЕДИНСТВЕННАЯ точка гейта: ВЫКЛ = вся геометрия целиком,
-     * включая blast door); (2) {@code resolveModel(be)} не DoorBakedModel (DAE-скины без
-     * клипа, паритет RenderDoorGeneric); (3) массив плоскостей DoorDecl пуст (иначе рамы
-     * всех 14 дверей навсегда деградировали бы в immediate-тир).
+     * Resolver of per-part clip planes for door OBJ parts (planes {A,B,C,D} in
+     * DoorDecl "+D" convention - inside is {@code n·x + D >= 0}). Contract is null
+     * if: (1) toggle is disabled ({@code ModClothConfig.doorPartCulling &&
+     * DOOR_PART_CULLING_FLAG} - single gate point: OFF = entire geometry,
+     * including blast door); (2) {@code resolveModel(be)} is not DoorBakedModel (DAE skins
+     * without clip, matching RenderDoorGeneric); (3) DoorDecl plane array is empty (otherwise
+     * frames of all 14 doors would degrade to immediate tier).
      * <p>
-     * Иначе: {@code decl.getClippingPlanes(partName, open, selection)} в поз-СК, затем
-     * инверсия позовой дельты doPartTransform ({@code p = R·v + c}, {@code c = R·t + (I-R)·o})
-     * и конверсия в конвенцию «+D»: {@code {R^T·n, n·c + D}}. Для чистого сдвига —
+     * Otherwise: {@code decl.getClippingPlanes(partName, open, selection)} in pose space, then
+     * inverts pose delta of doPartTransform ({@code p = R·v + c}, {@code c = R·t + (I-R)·o})
+     * and converts to "+D" convention: {@code {R^T·n, n·c + D}}. For pure translation -
      * {@code d_local = d - n·t}.
      * <p>
-     * child-парты требуют композиции дельты родителя («door») — сегодня путь мёртв
-     * (spinny_* плоскостей не имеют), для них возвращается null.
+     * Child parts require compositing the parent's delta ("door") - currently dead
+     * (spinny_* have no planes), returning null for them.
      */
     private static float[][] doorPartClipPlanes(DoorBlockEntity be, float partialTick,
                                                 String partName, boolean child) {
@@ -787,7 +789,7 @@ public final class MachineDoorRenderer {
                 + " planes=" + (planes == null ? "null" : java.util.Arrays.deepToString(planes)));
         if (planes == null || planes.length == 0) return null;
 
-        // Позовая дельта doPartTransform, воспроизведённая в скретч-стеке:
+        // Pose delta of doPartTransform reproduced in scratch stack:
         // pose = T(o)·R·T(-o+t), R = Rx·Ry·Rz. c = pose·(0,0,0) = R·t + (I-R)·o.
         CLIP_POSE.pushPose();
         try {
@@ -799,10 +801,10 @@ public final class MachineDoorRenderer {
     }
 
     /**
-     * Общая инверсия позовой дельты (вызывается с уже собранной позой в {@link #CLIP_POSE}):
-     * конвертация плоскостей из позовой СК в локальную СК геометрии парт-квада.
-     * p = R^T·(p' - c) ⇒ {n, D}_local = {R^T·n, n·c + D} (конвенция «+D» сохраняется;
-     * обратная операция к резолверу — decl'ы возвращают плоскости в позовой СК).
+     * Shared inversion of pose delta (called with pose assembled in {@link #CLIP_POSE}):
+     * converts planes from pose space to local geometry space of the part quad.
+     * p = R^T·(p' - c) => {n, D}_local = {R^T·n, n·c + D} ("+D" convention preserved;
+     * inverse operation to resolver - decls return planes in pose space).
      */
     private static float[][] invertPosePlanes(double[][] planes) {
         org.joml.Matrix4f m = CLIP_POSE.last().pose();
@@ -828,21 +830,15 @@ public final class MachineDoorRenderer {
     }
 
     /**
-     * Резолвер per-part clip-плоскостей DAE-партов (skin dynamicPart "dae/&lt;node&gt;").
-     * Зеркало {@link #doorPartClipPlanes} для DAE-пайплайна: гейт — обратный (только
-     * когда DAE-модель активна), а поза — та же композиция, что в аниматоре узла
-     * ({@code applyDaeRootOffset} + цепочка localMatrix из {@code mulPoseChain} с тем
-     * же time). Плоскости берутся из decl-хука {@link DoorDecl#getDaeClippingPlanes} —
-     * НЕ из {@code getClippingPlanes(partName, ...)}: тот матчит doPartTransform-имена
-     * ("LeftLock"), тогда как фактическое имя парта — "dae/LeftLock" — именные
-     * override'ы были недостижимы и ВСЕ узлы получали generic OBJ-слэб
-     * SLIDING_BLAST_SLAB {0,0,±1,2.5}, посаженный в СК узла и резавший видимую
-     * геометрию (корень старой поломки, задокументирован в хуке DoorDecl). Хук
-     * возвращает плоскости в ЛОКАЛЬНОЙ СК узла .dae; инверсия в локальную СК
-     * rest-геометрии — существующая цепочка applyDaeRootOffset+mulPoseChain+
-     * invertPosePlanes (та же поза, что у animateDaeNode, тот же time). Лог
-     * «dae-invert» (перенесён из doorPartClipPlanes, где был мёртв за гейтом isDbm)
-     * восстанавливает наблюдаемость инвертированных плоскостей из дебаг-дампов.
+     * Resolver of per-part clip planes for DAE parts (skin dynamicPart "dae/&lt;node&gt;").
+     * Counterpart of {@link #doorPartClipPlanes} for DAE pipeline: gate is inverted (only
+     * when DAE model is active), and pose matches node animator composition
+     * ({@code applyDaeRootOffset} + localMatrix chain from {@code mulPoseChain} with same
+     * time). Planes are retrieved from decl hook {@link DoorDecl#getDaeClippingPlanes} -
+     * NOT from {@code getClippingPlanes(partName, ...)}, which matches doPartTransform names
+     * ("LeftLock") rather than "dae/LeftLock". The hook returns planes in LOCAL space of the
+     * .dae node; inversion to rest geometry local space uses applyDaeRootOffset + mulPoseChain +
+     * invertPosePlanes. Log "dae-invert" restores observability of inverted planes in debug dumps.
      */
     private static float[][] doorDaeClipPlanes(DoorBlockEntity be, float partialTick, DoorDecl decl,
                                                DaeModel model, List<DaeNode> chain, String partName) {
@@ -851,7 +847,7 @@ public final class MachineDoorRenderer {
         float open = openTicks(be, partialTick, decl);
         float time = open / 20.0f;
         DaeNode node = chain.get(chain.size() - 1);
-        // Stripping префикса "dae/": decl-хуки работают с именами узлов .dae.
+        // Strip "dae/" prefix: decl hooks operate on .dae node names.
         String nodeName = partName.startsWith("dae/") ? partName.substring(4) : partName;
         double[][] planes = (cfg && daeActive)
                 ? decl.getDaeClippingPlanes(nodeName, node, time) : null;
@@ -863,7 +859,7 @@ public final class MachineDoorRenderer {
 
         CLIP_POSE.pushPose();
         try {
-            // Та же поза, что у аниматора узла (animateDaeNode), с тем же time.
+            // Same pose as node animator (animateDaeNode), with same time.
             applyDaeRootOffset(CLIP_POSE, decl);
             mulPoseChain(CLIP_POSE, model, chain, time);
             float[][] inverted = invertPosePlanes(planes);
@@ -963,8 +959,8 @@ public final class MachineDoorRenderer {
             if (quads == null) return List.of();
             // Skin sharing: UVs are normalized to sprite-local -- the sprite goes into
             // a per-instance uvRect, the node VBO is shared by all skins of the door.
-            // Композиция tile-split → frac → sprite-нормализация (рев.2): вход здесь
-            // атласный (DaeQuadBaker лерпит raw UV в rect спрайта), split-фаза no-op.
+            // Composition tile-split -> frac -> sprite normalization: input here
+            // is atlas-mapped (DaeQuadBaker lerps raw UV into sprite rect), split phase is no-op.
             if (normalize) {
                 quads = com.hbm_m.client.model.ModelHelper.normalizeQuadUvsPerQuad(quads);
             }

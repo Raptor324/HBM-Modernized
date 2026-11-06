@@ -11,7 +11,9 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -115,6 +117,24 @@ public class GunItemRenderer extends BlockEntityWithoutLevelRenderer {
                     }
                 }
                 case FIRST_PERSON_RIGHT_HAND, FIRST_PERSON_LEFT_HAND -> {
+                    // Original ItemRenderChainsaw setzte player.isSwingInProgress=false und unterdrueckte damit
+                    // die drei Schwung-Rotationen (-20 Y, -20 Z, -80 X) der 1.7.10-Basismatrix. 1.20 legt dieselben
+                    // Rotationen (applyItemArmAttackTransform aus getAttackAnim) VOR dem BEWLR-Aufruf in die Pose,
+                    // das Feld swinging hat darauf keinen Einfluss -> hier rechnerisch zuruecknehmen, sonst
+                    // liegt der Vanilla-Zumachen-Schwung doppelt auf der eigenen SWING_ROT-Animation.
+                    if (renderer.suppressVanillaSwing()) {
+                        Player player = Minecraft.getInstance().player;
+                        if (player != null) {
+                            float swing = player.getAttackAnim(com.hbm_m.platform.RenderHooks.getPartialTickRaw());
+                            int side = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? -1 : 1;
+                            float f1 = Mth.sin(swing * swing * (float) Math.PI);
+                            float f2 = Mth.sin(Mth.sqrt(swing) * (float) Math.PI);
+                            ps.mulPose(Axis.YP.rotationDegrees(side * 45F));                 // invers zu YP(-45)
+                            ps.mulPose(Axis.XP.rotationDegrees(f2 * 80F));                   // invers zu XP(-80)
+                            ps.mulPose(Axis.ZP.rotationDegrees(side * f2 * 20F));            // invers zu ZP(-20)
+                            ps.mulPose(Axis.YP.rotationDegrees(side * (f1 * 20F - 45F)));    // invers zu YP(45-20)
+                        }
+                    }
                     // 1.7.10 ItemRenderer.renderItemInFirstPerson fuer IItemRenderer ohne Render-Helfer:
                     // Rest der Basismatrix (translate 0.56/-0.52/-0.72 + Equip-Progress macht die Vanilla-Hand),
                     // hier bleiben rotate 45 Y und scale 0.4 aus 1.7.10 uebrig (1.20 macht beides nicht)

@@ -175,7 +175,7 @@ public class HazardRegistry {
                 new HazardEntry(RADIATION, 10.5f)));
         HazardSystem.register(ModItems.FALLOUT.get(), new HazardData(
                 new HazardEntry(RADIATION, 30f)));
-        HazardSystem.register(ModBlocks.POLONIUM210_BLOCK.get(), new HazardData(
+        HazardSystem.register(ModBlocks.INGOT_BLOCKS.get(ModMaterials.POLONIUM).get(), new HazardData(
                 new HazardEntry(RADIATION, 750f),
                 new HazardEntry(HOT, 3f)));
 

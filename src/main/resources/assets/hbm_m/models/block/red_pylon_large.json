@@ -5,6 +5,7 @@
   "render_type": "minecraft:solid",
   "textures": {
     "particle": "hbm_m:block/red_pylon_large",
+    "default": "hbm_m:block/red_pylon_large",
     "surface": "hbm_m:block/red_pylon_large"
   },
   "transform": {
@@ -13,5 +14,6 @@
       0,
       0.5
     ]
-  }
+  },
+  "ao": false
 }

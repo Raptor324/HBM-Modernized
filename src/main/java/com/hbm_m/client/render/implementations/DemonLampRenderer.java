@@ -129,7 +129,7 @@ public class DemonLampRenderer implements BlockEntityRenderer<DemonLampBlockEnti
     }
 
     /** Rotates local space so the +Y ray fan points along {@code facing}
-     * (повороты 1:1 из RenderDemonLamp 1.7.10). */
+     * (rotations 1:1 from RenderDemonLamp 1.7.10). */
     public static void orient(PoseStack poseStack, Direction facing) {
         switch (facing) {
             case DOWN -> poseStack.mulPose(Axis.XP.rotationDegrees(180));

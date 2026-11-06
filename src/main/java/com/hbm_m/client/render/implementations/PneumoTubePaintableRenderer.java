@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * 1:1-Port des Zweipass-Renderns aus {@code PneumoTubePaintableBlock.getIcon}.
  *
- * <p>Erster Durchgang: der Tarnblock, oder - solange keiner gesetzt ist - der nackte Wuerfel des
+ * <p>First pass: camouflage block, or - if none set - the unpainted cube of the
  * Rohrs. Zweiter Durchgang: die Seitenmarkierung. Die Einzugsseite und die Ausgabeseite tragen ein
  * eigenes Zeichen, alle uebrigen ein neutrales; der Entschaerfer schaltet den ganzen zweiten
  * Durchgang ab.</p>
@@ -71,7 +71,7 @@ public class PneumoTubePaintableRenderer implements com.hbm_m.client.render.HbmB
         return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(tex);
     }
 
-    /** Der nackte Wuerfel, wenn kein Anstrich gesetzt ist. */
+    /** Unpainted cube when no camouflage color is assigned. */
     private static void drawCube(PoseStack ps, MultiBufferSource buffer, TextureAtlasSprite sprite, float alpha) {
         for (Direction dir : Direction.values()) drawFace(ps, buffer, sprite, dir, alpha, 0F);
     }

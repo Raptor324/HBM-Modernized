@@ -2,8 +2,10 @@ package com.hbm_m.client.render.shader;
 
 import com.hbm_m.client.compat.dh.DhClientState;
 import com.hbm_m.client.compat.dh.DhOcclusionGpu;
+import com.hbm_m.client.render.GlVaoSafety;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.lwjgl.opengl.*;
@@ -16,7 +18,8 @@ import java.util.Map;
 /**
  * Screen-space nuclear explosion post-pass renderer.
  * Injected at TAIL finalizeLevelRendering (Iris/Oculus), rendering directly into
- * the Minecraft main render target with soft shadows, normal derivation and atmospheric glow.
+ * the Minecraft main render target with soft shadows, normal derivation, 3D shockwave,
+ * obstacle-wrapping volumetric godrays, and atmospheric glow.
  */
 public final class RawScreenSpaceLight {
     private RawScreenSpaceLight() {}
@@ -31,14 +34,15 @@ public final class RawScreenSpaceLight {
 
     private static int program = -1, fbo = -1;
     private static int uDepthTex0Loc = -1, uDhDepthTexLoc = -1, uDhReverseZLoc = -1, uDhPresentLoc = -1;
-    private static int uDhNearLoc = -1, uDhFarLoc = -1, uDhFadeDistLoc = -1, uProjLoc = -1, uProjInvLoc = -1;
+    private static int uDhNearLoc = -1, uDhFarLoc = -1, uDhFadeDistLoc = -1, uProjLoc = -1;
     private static int uModelViewLoc = -1, uModelViewInvLoc = -1, uCamPosLoc = -1, uSourcesLoc = -1;
     private static int uSourceCountLoc = -1, uSrcRadiusLoc = -1, uVanillaFarLoc = -1, uIntensityLoc = -1;
     private static int uHaloStrengthLoc = -1;
     private static int uHeatScaleLoc = -1, uResolutionLoc = -1, uNormalScaleLoc = -1, uDebugReplaceLoc = -1;
     private static int uSolidAddLoc = -1, uSrcShockLoc = -1, uSceneColorLoc = -1, uHasSceneLoc = -1, uCineLoc = -1;
+    private static int uSrcExtraLoc = -1, uTimeLoc = -1;
 
-    private static int sceneTex = -1, sceneTexW = -1, sceneTexH = -1;
+    private static int sceneTex = -1, sceneTexW = -1, sceneTexH = -1, sceneTexInternalFormat = -1;
     private static boolean sceneCopySupported = true;
     private static final int[] FBO_DRAW_BUFFERS = {GL30.GL_COLOR_ATTACHMENT0};
 
@@ -46,10 +50,10 @@ public final class RawScreenSpaceLight {
     private static final int MAX_CONSECUTIVE_FAILURES = 60;
     private static int consecutiveFailures;
 
-    private static final FloatBuffer projBuf = directFloats(16), projInvBuf = directFloats(16);
+    private static final FloatBuffer projBuf = directFloats(16);
     private static final FloatBuffer modelViewBuf = directFloats(16), modelViewInvBuf = directFloats(16);
     private static float camX, camY, camZ; private static volatile boolean headSnapshotValid;
-    private static final Matrix4f hbmProj = new Matrix4f(), hbmProjInv = new Matrix4f(), hbmMv = new Matrix4f(), hbmMvInv = new Matrix4f();
+    private static final Matrix4f hbmProj = new Matrix4f(), hbmMv = new Matrix4f(), hbmMvInv = new Matrix4f();
 
     private static final Matrix4f vanillaCapturedProj = new Matrix4f();
     private static final Matrix4f vanillaCapturedMv = new Matrix4f();
@@ -79,6 +83,10 @@ public final class RawScreenSpaceLight {
 
     public static void drawIfReady() {
         if (!isEnabled()) return;
+        long currentRenderFrame = com.hbm_m.client.render.IrisShadowBatchCollector.renderFrame();
+        if (currentRenderFrame > 0 && lastDrawnRenderFrame == currentRenderFrame) {
+            return;
+        }
         frameCounter++;
         try {
             Inputs inputs = resolveTailInputs();
@@ -97,6 +105,7 @@ public final class RawScreenSpaceLight {
                         frameCounter, framesDrawn, framesSkipped, lastSkipReason, sourceCount, NukeLightTracker.src0String(), camX, camY, camZ, NukeLightTracker.camDist0(camX, camY, camZ), NukeLightTracker.getSrcRadius()[0], headSnapshotValid, inputs.dhTexture(), inputs.dhNear(), inputs.dhFar(), inputs.dhReverseZ(), inputs.dhTexture() > 0);
             }
             draw(inputs);
+            lastDrawnRenderFrame = currentRenderFrame;
             framesDrawn++; consecutiveFailures = 0;
         } catch (Throwable t) {
             consecutiveFailures++;
@@ -119,6 +128,9 @@ public final class RawScreenSpaceLight {
 
     private static final Map<String, Boolean> notedOnce = new HashMap<>();
     private static long frameCounter, framesDrawn, framesSkipped;
+    // Render-frame stamp of the last successful draw; guards against a double draw
+    // when drawIfReady() is invoked from more than one hook in the same frame.
+    private static long lastDrawnRenderFrame = -1L;
     private static String lastSkipReason = "(none)";
     private static boolean loggedFirstDraw;
     private static final long ALWAYS_LOG_FRAMES = 10, SKIP_RESURFACE_FRAMES = 3600, STATE_EVERY_FRAMES = 1200;
@@ -168,7 +180,6 @@ public final class RawScreenSpaceLight {
     /** Fills the hbm* matrices, their FloatBuffers and the camera position from the pack gbuffer matrices. */
     private static void storeFrameMatrices(Matrix4fc proj, Matrix4fc mv) {
         hbmProj.set(proj); setMat(projBuf, hbmProj);
-        hbmProjInv.set(proj).invert(); setMat(projInvBuf, hbmProjInv);
         hbmMv.set(mv); setMat(modelViewBuf, hbmMv);
         hbmMvInv.set(mv).invert(); setMat(modelViewInvBuf, hbmMvInv);
         net.minecraft.world.phys.Vec3 cam = net.minecraft.client.Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
@@ -185,7 +196,6 @@ public final class RawScreenSpaceLight {
         cleanDepthSnapshotValid = false;
         dhBlittedThisFrame = true;
         if (!isEnabled() || !depthCopySupported) return;
-        // Only pay the depth copy cost when an explosion light source actually exists!
         if (NukeLightTracker.collectAndTrackSources() <= 0) return;
 
         net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
@@ -246,6 +256,18 @@ public final class RawScreenSpaceLight {
         }
     }
 
+    /**
+     * Called from RawDhDepthCopy after a successful Iris-path blit: the bound
+     * pipeline FB depth (which is what the main RT depth texture holds at TAIL)
+     * now carries dh_depth_blit-encoded pixels (EXTENDED projection near=0.05 /
+     * far=8e6), so the TAIL pass must run the isBlittedDhDepth guard on
+     * uDepthTex0 and re-route those pixels to the DH layer instead of decoding
+     * them with the pack's frame projection.
+     */
+    public static void markDhBlittedInDepth0() {
+        dhBlittedThisFrame = true;
+    }
+
     private static Inputs resolveTailInputs() throws Throwable {
         net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
         var main = mc.getMainRenderTarget();
@@ -264,7 +286,6 @@ public final class RawScreenSpaceLight {
     }
 
     private static boolean fillFrameMatrices() throws Throwable {
-        // The HEAD snapshot (if captured) already left the FloatBuffers filled.
         if (headSnapshotValid) return true;
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             Matrix4fc proj = IrisReflectionBridge.getGbufferProjection();
@@ -279,9 +300,12 @@ public final class RawScreenSpaceLight {
             return true;
         }
         Matrix4f rsProj = com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix();
-        Matrix4f rsMv = com.mojang.blaze3d.systems.RenderSystem.getModelViewMatrix();
-        if (rsProj != null && rsMv != null) {
-            storeFrameMatrices(rsProj, rsMv);
+        // RenderSystem.getModelViewMatrix() is IDENTITY during world rendering on 1.20.1
+        // (no camera pitch/yaw), which would pin the effect to a fixed screen corner.
+        // FrameViewState keeps the real camera rotation instead.
+        Matrix4f basisMv = com.hbm_m.client.render.FrameViewState.viewBasisRotation();
+        if (rsProj != null && basisMv != null) {
+            storeFrameMatrices(rsProj, basisMv);
             return true;
         }
         skipFrame("no valid frame matrices (neither Iris nor Vanilla)");
@@ -295,10 +319,6 @@ public final class RawScreenSpaceLight {
         boolean depthTestWasEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST), prevDepthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
         boolean cullWasEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE), blendWasEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
         int prevBlendSrcRgb = GL11.glGetInteger(GL20.GL_BLEND_SRC_RGB), prevBlendDstRgb = GL11.glGetInteger(GL20.GL_BLEND_DST_RGB), prevBlendSrcAlpha = GL11.glGetInteger(GL20.GL_BLEND_SRC_ALPHA), prevBlendDstAlpha = GL11.glGetInteger(GL20.GL_BLEND_DST_ALPHA), prevBlendEquation = GL11.glGetInteger(GL20.GL_BLEND_EQUATION_RGB);
-        boolean stencilWasEnabled = GL11.glIsEnabled(GL11.GL_STENCIL_TEST), scissorWasEnabled = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST), rasterizerDiscardWasEnabled = GL11.glIsEnabled(0x8C89), logicOpWasEnabled = GL11.glIsEnabled(GL11.GL_COLOR_LOGIC_OP), sampleMaskWasEnabled = GL11.glIsEnabled(0x8E51);
-        int logicOpMode = logicOpWasEnabled ? GL11.glGetInteger(GL11.GL_LOGIC_OP_MODE) : 0;
-        int[] prevPolyMode = new int[2]; GL11.glGetIntegerv(0x0B40, prevPolyMode);
-        boolean[] clipWasEnabled = new boolean[8]; for (int i = 0; i < clipWasEnabled.length; i++) clipWasEnabled[i] = GL11.glIsEnabled(0x3000 + i);
 
         int prevViewportX, prevViewportY, prevViewportW, prevViewportH;
         boolean[] prevColorMask = new boolean[4];
@@ -315,17 +335,16 @@ public final class RawScreenSpaceLight {
 
         float cine = cinematics(); boolean sceneActive = false;
         if (sceneCopySupported && cine > 0.001F && !DEBUG_REPLACE && !SOLID_ADD) {
-            sceneActive = copySceneTexture(in.colorTexture(), in.width(), in.height());
+            sceneActive = copySceneTexture(in.colorTexture(), in.width(), in.height(), prevUnit0Tex);
         }
         if (!ensureFbo(in.colorTexture())) { GlStateManager._activeTexture(prevActiveTex); return; }
 
         boolean depthBindingsActive = false;
         int[] savedFilters0 = new int[2], savedFilters1 = new int[2];
         try {
-            GL11.glDisable(GL11.GL_CULL_FACE); GL11.glDisable(GL11.GL_DEPTH_TEST);
-            if (stencilWasEnabled) GL11.glDisable(GL11.GL_STENCIL_TEST);
-            if (scissorWasEnabled) GL11.glDisable(GL11.GL_SCISSOR_TEST);
-            GL11.glColorMask(true, true, true, true);
+            RenderSystem.disableCull();
+            RenderSystem.disableDepthTest();
+            RenderSystem.colorMask(true, true, true, true);
             if (DEBUG_REPLACE || sceneActive) {
                 GL11.glDisable(GL11.GL_BLEND);
             } else {
@@ -334,125 +353,216 @@ public final class RawScreenSpaceLight {
                 GL20.glBlendEquation(GL20.GL_FUNC_ADD);
             }
 
-            if (rasterizerDiscardWasEnabled) GL11.glDisable(0x8C89);
-            if (logicOpWasEnabled) GL11.glDisable(GL11.GL_COLOR_LOGIC_OP);
-            if (sampleMaskWasEnabled) GL11.glDisable(0x8E51);
-            GL11.glPolygonMode(0x408, 0x1B02);
-            for (int i = 0; i < clipWasEnabled.length; i++) if (clipWasEnabled[i]) GL11.glDisable(0x3000 + i);
-
-            GL11.glViewport(0, 0, in.width(), in.height());
+            RenderSystem.viewport(0, 0, in.width(), in.height());
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fbo); GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, in.colorTexture(), 0); GL20.glDrawBuffers(FBO_DRAW_BUFFERS);
 
             GlStateManager._glUseProgram(program);
             GL20.glUniform1i(uDepthTex0Loc, 0); GL20.glUniform1i(uDhDepthTexLoc, 1); GL20.glUniform1i(uSceneColorLoc, 2);
-            GL20.glUniformMatrix4fv(uProjLoc, false, projBuf); GL20.glUniformMatrix4fv(uProjInvLoc, false, projInvBuf);
+            GL20.glUniformMatrix4fv(uProjLoc, false, projBuf);
             GL20.glUniformMatrix4fv(uModelViewLoc, false, modelViewBuf); GL20.glUniformMatrix4fv(uModelViewInvLoc, false, modelViewInvBuf);
-            GL20.glUniform3f(uCamPosLoc, camX, camY, camZ); GL20.glUniform2f(uResolutionLoc, in.width(), in.height());
-            GL20.glUniform4fv(uSourcesLoc, NukeLightTracker.getSources()); GL20.glUniform1i(uSourceCountLoc, NukeLightTracker.getSourceCount());
-            GL20.glUniform1fv(uSrcRadiusLoc, NukeLightTracker.getSrcRadius()); GL20.glUniform2fv(uSrcShockLoc, NukeLightTracker.getSrcShock());
-            GL20.glUniform1f(uIntensityLoc, intensity()); GL20.glUniform1f(uHeatScaleLoc, NukeLightTracker.HEAT_SCALE);
+            GL20.glUniform3f(uCamPosLoc, camX, camY, camZ);
+            GL20.glUniform4fv(uSourcesLoc, NukeLightTracker.getSources());
+            GL20.glUniform1iv(uSourceCountLoc, new int[]{NukeLightTracker.getSourceCount()});
+            GL20.glUniform1fv(uSrcRadiusLoc, NukeLightTracker.getSrcRadius());
+            GL20.glUniform2fv(uSrcShockLoc, NukeLightTracker.getSrcShock());
+            GL20.glUniform4fv(uSrcExtraLoc, NukeLightTracker.getSrcExtra());
+            GL20.glUniform1f(uTimeLoc, NukeLightTracker.getTimeSeconds());
+
+            // Boundary of vanilla geometry in blocks, (RD+1)*16 (HEAD used
+            // DhOcclusionGpu.vanillaFarPlane()) - one chunk LOOSER than
+            // gameRenderer.getRenderDistance() (= RD*16), so boundary-chunk
+            // pixels decoding marginally beyond the render distance are not
+            // dropped from the vanilla geometry class.
+            float vanillaFar = com.hbm_m.client.compat.dh.DhOcclusionGpu.vanillaFarPlane();
+            GL20.glUniform1f(uVanillaFarLoc, vanillaFar);
+            GL20.glUniform1f(uIntensityLoc, intensity());
             GL20.glUniform1f(uHaloStrengthLoc, haloStrength());
-            GL20.glUniform1f(uNormalScaleLoc, NORMAL_SCALE); GL20.glUniform1f(uCineLoc, cine);
-            GL20.glUniform1f(uDebugReplaceLoc, DEBUG_REPLACE ? 1.0F : 0.0F); GL20.glUniform1f(uSolidAddLoc, SOLID_ADD ? 1.0F : 0.0F);
-            GL20.glUniform1f(uHasSceneLoc, sceneActive ? 1.0F : 0.0F); GL20.glUniform1f(uDhReverseZLoc, in.dhReverseZ() ? 1.0F : 0.0F);
-            GL20.glUniform1f(uDhPresentLoc, in.dhTexture() > 0 ? 1.0F : 0.0F); GL20.glUniform1f(uDhNearLoc, in.dhTexture() > 0 ? in.dhNear() : 1.0F);
-            GL20.glUniform1f(uDhFarLoc, in.dhTexture() > 0 ? in.dhFar() : 2.0F); GL20.glUniform1f(uDhFadeDistLoc, in.dhTexture() > 0 ? DhOcclusionGpu.ditherFadeMaskDistance() : 0.0F);
-            GL20.glUniform1f(uVanillaFarLoc, DhOcclusionGpu.vanillaFarPlane());
-            boolean blittedInDepth0 = dhBlittedThisFrame && !cleanDepthSnapshotValid;
-            if (uDhBlittedInDepth0Loc >= 0) {
-                GL20.glUniform1f(uDhBlittedInDepth0Loc, blittedInDepth0 ? 1.0F : 0.0F);
-            }
+            GL20.glUniform1f(uHeatScaleLoc, NukeLightTracker.HEAT_SCALE);
+            GL20.glUniform2f(uResolutionLoc, (float) in.width(), (float) in.height());
+            GL20.glUniform1f(uNormalScaleLoc, NORMAL_SCALE);
+            GL20.glUniform1i(uDebugReplaceLoc, DEBUG_REPLACE ? 1 : 0);
+            GL20.glUniform1i(uSolidAddLoc, SOLID_ADD ? 1 : 0);
+            GL20.glUniform1i(uHasSceneLoc, sceneActive ? 1 : 0);
+            GL20.glUniform1f(uCineLoc, cine);
+            GL20.glUniform1i(uDhBlittedInDepth0Loc, (dhBlittedThisFrame && !cleanDepthSnapshotValid) ? 1 : 0);
 
-            bindDepthTexture(GL13.GL_TEXTURE0, in.depthTexture(), savedFilters0);
-            depthBindingsActive = true;
-            if (in.dhTexture() > 0) bindDepthTexture(GL13.GL_TEXTURE1, in.dhTexture(), savedFilters1);
-            if (sceneActive) { GlStateManager._activeTexture(GL13.GL_TEXTURE2); GlStateManager._bindTexture(sceneTex); }
-
-            RawFullscreenQuad.draw();
-            int drawErr = GL11.glGetError();
-            if (drawErr != 0) MainRegistry.LOGGER.warn("RawScreenSpaceLight: glDrawArrays set GL error 0x{}", Integer.toHexString(drawErr));
-
-            GL11.glViewport(prevViewportX, prevViewportY, prevViewportW, prevViewportH);
-            GL11.glColorMask(prevColorMask[0], prevColorMask[1], prevColorMask[2], prevColorMask[3]);
-            if (blendWasEnabled) GL11.glEnable(GL11.GL_BLEND); else GL11.glDisable(GL11.GL_BLEND);
-            GL14.glBlendFuncSeparate(prevBlendSrcRgb, prevBlendDstRgb, prevBlendSrcAlpha, prevBlendDstAlpha); GL20.glBlendEquation(prevBlendEquation);
-            if (scissorWasEnabled) GL11.glEnable(GL11.GL_SCISSOR_TEST); if (stencilWasEnabled) GL11.glEnable(GL11.GL_STENCIL_TEST);
-            GL11.glDepthFunc(prevDepthFunc); if (depthTestWasEnabled) GL11.glEnable(GL11.GL_DEPTH_TEST);
-            GL11.glDepthMask(prevDepthMask); if (cullWasEnabled) GL11.glEnable(GL11.GL_CULL_FACE);
-        } finally {
-            if (rasterizerDiscardWasEnabled) GL11.glEnable(0x8C89);
-            if (logicOpWasEnabled) { GL11.glEnable(GL11.GL_COLOR_LOGIC_OP); GL11.glLogicOp(logicOpMode); }
-            if (sampleMaskWasEnabled) GL11.glEnable(0x8E51);
-            if (prevPolyMode[0] != 0x1B02) GL11.glPolygonMode(0x408, prevPolyMode[0]);
-            for (int i = 0; i < clipWasEnabled.length; i++) if (clipWasEnabled[i]) GL11.glEnable(0x3000 + i);
-            if (depthBindingsActive) {
-                GlStateManager._activeTexture(GL13.GL_TEXTURE1);
-                if (in.dhTexture() > 0) { restoreDepthFilters(in.dhTexture(), savedFilters1); GlStateManager._bindTexture(prevUnit1Tex); }
-                GlStateManager._activeTexture(GL13.GL_TEXTURE0); restoreDepthFilters(in.depthTexture(), savedFilters0); GlStateManager._bindTexture(prevUnit0Tex);
-                GlStateManager._activeTexture(GL13.GL_TEXTURE2); GlStateManager._bindTexture(prevUnit2Tex);
-            }
-            GlStateManager._glUseProgram(prevProgram); GlStateManager._glBindVertexArray(prevVao); GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDrawFb); GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevReadFb); GlStateManager._activeTexture(prevActiveTex);
-            ShaderBindResync.resetBlendModeToOpaque();
-            if (blendWasEnabled) {
-                com.mojang.blaze3d.systems.RenderSystem.enableBlend();
-                GlStateManager._blendFuncSeparate(0, 0, 0, 0);
-                GlStateManager._blendFuncSeparate(prevBlendSrcRgb, prevBlendDstRgb, prevBlendSrcAlpha, prevBlendDstAlpha);
+            if (in.dhTexture() > 0) {
+                GL20.glUniform1i(uDhPresentLoc, 1); GL20.glUniform1i(uDhReverseZLoc, in.dhReverseZ() ? 1 : 0);
+                GL20.glUniform1f(uDhNearLoc, in.dhNear()); GL20.glUniform1f(uDhFarLoc, in.dhFar());
+                // Dither-fade ring of DH ("Fade Nearby DH LODs"): inside it the
+                // DEPTH32F is stochastic noise - excluded from the DH layer
+                // (normals/shadows/shell must not read it). 0 = not determined.
+                GL20.glUniform1f(uDhFadeDistLoc, DhOcclusionGpu.ditherFadeMaskDistance());
             } else {
-                com.mojang.blaze3d.systems.RenderSystem.disableBlend();
+                GL20.glUniform1i(uDhPresentLoc, 0); GL20.glUniform1i(uDhReverseZLoc, 0);
+                GL20.glUniform1f(uDhNearLoc, 0.05F); GL20.glUniform1f(uDhFarLoc, 4096.0F); GL20.glUniform1f(uDhFadeDistLoc, 0.0F);
             }
+
+            GlStateManager._activeTexture(GL13.GL_TEXTURE0); GlStateManager._bindTexture(in.depthTexture());
+            savedFilters0[0] = GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER);
+            savedFilters0[1] = GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+
+            if (in.dhTexture() > 0) {
+                GlStateManager._activeTexture(GL13.GL_TEXTURE1); GlStateManager._bindTexture(in.dhTexture());
+                savedFilters1[0] = GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER);
+                savedFilters1[1] = GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+            }
+
+            if (sceneActive) {
+                GlStateManager._activeTexture(GL13.GL_TEXTURE2);
+                GlStateManager._bindTexture(sceneTex);
+            }
+            depthBindingsActive = true;
+
+            RawFullscreenQuad.render();
+        } finally {
+            if (depthBindingsActive) {
+                GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+                GlStateManager._bindTexture(in.depthTexture());
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, savedFilters0[0]);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, savedFilters0[1]);
+                if (in.dhTexture() > 0) {
+                    GlStateManager._activeTexture(GL13.GL_TEXTURE1);
+                    GlStateManager._bindTexture(in.dhTexture());
+                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, savedFilters1[0]);
+                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, savedFilters1[1]);
+                }
+            }
+            GlStateManager._activeTexture(GL13.GL_TEXTURE0); GlStateManager._bindTexture(prevUnit0Tex);
+            GlStateManager._activeTexture(GL13.GL_TEXTURE1); GlStateManager._bindTexture(prevUnit1Tex);
+            GlStateManager._activeTexture(GL13.GL_TEXTURE2); GlStateManager._bindTexture(prevUnit2Tex);
+            GlStateManager._activeTexture(prevActiveTex);
+
+            GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDrawFb);
+            GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevReadFb);
+            RenderSystem.viewport(prevViewportX, prevViewportY, prevViewportW, prevViewportH);
+            RenderSystem.colorMask(prevColorMask[0], prevColorMask[1], prevColorMask[2], prevColorMask[3]);
+
+            if (cullWasEnabled) RenderSystem.enableCull();
+            if (depthTestWasEnabled) RenderSystem.enableDepthTest();
+            RenderSystem.depthMask(prevDepthMask); RenderSystem.depthFunc(prevDepthFunc);
+            if (blendWasEnabled) {
+                GL11.glEnable(GL11.GL_BLEND);
+                GL20.glBlendFuncSeparate(prevBlendSrcRgb, prevBlendDstRgb, prevBlendSrcAlpha, prevBlendDstAlpha);
+                GL20.glBlendEquation(prevBlendEquation);
+            } else {
+                GL11.glDisable(GL11.GL_BLEND);
+            }
+
+            GlVaoSafety.bindVertexArray(prevVao);
+            GlStateManager._glUseProgram(prevProgram);
         }
     }
 
-    private static boolean ensureFbo(int colorTexture) {
-        if (fbo != -1 && GL30.glIsFramebuffer(fbo)) return true;
-        if (fbo != -1) { GL30.glDeleteFramebuffers(fbo); fbo = -1; }
-        fbo = GL30.glGenFramebuffers();
-        int prevDrawFb = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING), prevReadFb = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
-        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fbo);
-        GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, colorTexture, 0);
-        GL20.glDrawBuffers(FBO_DRAW_BUFFERS);
-        int status = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
-        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDrawFb); GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevReadFb);
-        if (status != GL30.GL_FRAMEBUFFER_COMPLETE) { GL30.glDeleteFramebuffers(fbo); fbo = -1; return false; }
-        return true;
-    }
-
-    private static void bindDepthTexture(int unit, int textureId, int[] savedOut) {
-        GlStateManager._activeTexture(unit); GlStateManager._bindTexture(textureId);
-        savedOut[0] = GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER);
-        savedOut[1] = GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST); GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-    }
-
-    private static void restoreDepthFilters(int textureId, int[] savedFilters) {
-        if (textureId <= 0) return;
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, savedFilters[0]); GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, savedFilters[1]);
-    }
-
-    private static boolean copySceneTexture(int srcTexture, int w, int h) {
-        if (sceneTex != -1 && (sceneTexW != w || sceneTexH != h)) { GL11.glDeleteTextures(sceneTex); sceneTex = -1; }
-        if (sceneTex == -1) {
-            sceneTex = GL11.glGenTextures(); GL11.glBindTexture(GL11.GL_TEXTURE_2D, sceneTex);
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, w, h, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR); GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, 0x812D); GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, 0x812D);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
-            sceneTexW = w; sceneTexH = h;
-        }
+    private static boolean copySceneTexture(int srcColorTex, int w, int h, int prevTex0) {
+        if (!sceneCopySupported || srcColorTex <= 0 || w <= 0 || h <= 0) return false;
         GLCapabilities caps = GL.getCapabilities();
         if (caps == null || caps.glCopyImageSubData == 0L) {
             sceneCopySupported = false;
-            MainRegistry.LOGGER.info("RawScreenSpaceLight: glCopyImageSubData unsupported on this GL context - scene copy cinematics disabled, core light stays active");
+            noteOnce("copy-unsupported", "GL43/ARB_copy_image unavailable - cinematic pass falling back to additive");
             return false;
         }
-        while (GL11.glGetError() != GL11.GL_NO_ERROR) { /* drain stale errors */ }
-        GL43.glCopyImageSubData(srcTexture, GL11.GL_TEXTURE_2D, 0, 0, 0, 0, sceneTex, GL11.GL_TEXTURE_2D, 0, 0, 0, 0, w, h, 1);
-        boolean ok = GL11.glGetError() == GL11.GL_NO_ERROR;
-        if (!ok) {
-            sceneCopySupported = false;
-            MainRegistry.LOGGER.warn("RawScreenSpaceLight: scene color copy failed (GL error) - cinematics disabled");
+
+        int prevActive = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
+        GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+        try {
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, srcColorTex);
+            int internalFmt = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_INTERNAL_FORMAT);
+            if (internalFmt <= 0) internalFmt = GL11.GL_RGBA8;
+
+            if (sceneTex != -1 && (sceneTexW != w || sceneTexH != h || sceneTexInternalFormat != internalFmt)) {
+                GL11.glDeleteTextures(sceneTex);
+                sceneTex = -1;
+            }
+            if (sceneTex == -1) {
+                sceneTex = GL11.glGenTextures();
+                GL11.glBindTexture(GL11.GL_TEXTURE_2D, sceneTex);
+                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, internalFmt, w, h, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+                sceneTexW = w;
+                sceneTexH = h;
+                sceneTexInternalFormat = internalFmt;
+            }
+        } finally {
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, prevTex0);
+            GlStateManager._activeTexture(prevActive);
         }
-        return ok;
+
+        while (GL11.glGetError() != GL11.GL_NO_ERROR) { /* clear stale */ }
+        GL43.glCopyImageSubData(srcColorTex, GL11.GL_TEXTURE_2D, 0, 0, 0, 0,
+                                sceneTex, GL11.GL_TEXTURE_2D, 0, 0, 0, 0, w, h, 1);
+        int err = GL11.glGetError();
+        if (err != GL11.GL_NO_ERROR) {
+            sceneCopySupported = false;
+            MainRegistry.LOGGER.warn("RawScreenSpaceLight: scene glCopyImageSubData failed (err 0x{}) - disabling cinematics pass", Integer.toHexString(err));
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean ensureFbo(int colorTexture) {
+        if (fbo == -1) fbo = GL30.glGenFramebuffers();
+        return fbo > 0;
+    }
+
+    private static boolean ensureProgram() {
+        if (program != -1) return true;
+        try {
+            String fshSource = GlShaderUtil.loadResource(RawScreenSpaceLight.class, "/assets/hbm_m/shaders/core/screen_space_light.fsh");
+            int prog = GlShaderUtil.createRasterProgram(
+                    RawFullscreenQuad.VERTEX_SHADER_SOURCE,
+                    fshSource,
+                    java.util.Map.of(0, "Position"),
+                    "RawScreenSpaceLight");
+            if (prog == 0) {
+                return false;
+            }
+            program = prog;
+            resolveUniformLocations();
+            return true;
+        } catch (Throwable t) {
+            MainRegistry.LOGGER.error("RawScreenSpaceLight: shader compilation error:", t);
+            return false;
+        }
+    }
+
+    private static void resolveUniformLocations() {
+        uDepthTex0Loc = GL20.glGetUniformLocation(program, "uDepthTex0");
+        uDhDepthTexLoc = GL20.glGetUniformLocation(program, "uDhDepthTex");
+        uDhReverseZLoc = GL20.glGetUniformLocation(program, "uDhReverseZ");
+        uDhPresentLoc = GL20.glGetUniformLocation(program, "uDhPresent");
+        uDhNearLoc = GL20.glGetUniformLocation(program, "uDhNear");
+        uDhFarLoc = GL20.glGetUniformLocation(program, "uDhFar");
+        uDhFadeDistLoc = GL20.glGetUniformLocation(program, "uDhFadeDist");
+        uProjLoc = GL20.glGetUniformLocation(program, "uProj");
+        uModelViewLoc = GL20.glGetUniformLocation(program, "uModelView");
+        uModelViewInvLoc = GL20.glGetUniformLocation(program, "uModelViewInv");
+        uCamPosLoc = GL20.glGetUniformLocation(program, "uCamPos");
+        uSourcesLoc = GL20.glGetUniformLocation(program, "uSources[0]");
+        uSourceCountLoc = GL20.glGetUniformLocation(program, "uSourceCount");
+        uSrcRadiusLoc = GL20.glGetUniformLocation(program, "uSrcRadius[0]");
+        uSrcShockLoc = GL20.glGetUniformLocation(program, "uSrcShock[0]");
+        uSrcExtraLoc = GL20.glGetUniformLocation(program, "uSrcExtra[0]");
+        uTimeLoc = GL20.glGetUniformLocation(program, "uTime");
+        uVanillaFarLoc = GL20.glGetUniformLocation(program, "uVanillaFar");
+        uIntensityLoc = GL20.glGetUniformLocation(program, "uIntensity");
+        uHaloStrengthLoc = GL20.glGetUniformLocation(program, "uHaloStrength");
+        uHeatScaleLoc = GL20.glGetUniformLocation(program, "uHeatScale");
+        uResolutionLoc = GL20.glGetUniformLocation(program, "uResolution");
+        uNormalScaleLoc = GL20.glGetUniformLocation(program, "uNormalScale");
+        uDebugReplaceLoc = GL20.glGetUniformLocation(program, "uDebugReplace");
+        uSolidAddLoc = GL20.glGetUniformLocation(program, "uSolidAdd");
+        uSceneColorLoc = GL20.glGetUniformLocation(program, "uSceneColor");
+        uHasSceneLoc = GL20.glGetUniformLocation(program, "uHasScene");
+        uCineLoc = GL20.glGetUniformLocation(program, "uCine");
+        uDhBlittedInDepth0Loc = GL20.glGetUniformLocation(program, "uDhBlittedInDepth0");
     }
 
     public static void destroy() {
@@ -469,6 +579,7 @@ public final class RawScreenSpaceLight {
             sceneTex = -1;
             sceneTexW = -1;
             sceneTexH = -1;
+            sceneTexInternalFormat = -1;
         }
         if (cleanDepthTex != -1) {
             GL11.glDeleteTextures(cleanDepthTex);
@@ -483,40 +594,8 @@ public final class RawScreenSpaceLight {
         latched = false;
         consecutiveFailures = 0;
         loggedFirstDraw = false;
+        lastDrawnRenderFrame = -1L;
         notedOnce.clear();
     }
-
-    private static boolean ensureProgram() {
-        if (latched) return false;
-        if (program != -1 && GL20.glIsProgram(program)) return true;
-        try {
-            String fshSource = GlShaderUtil.loadResource(RawScreenSpaceLight.class, "/assets/hbm_m/shaders/core/screen_space_light.fsh");
-            int newProgram = GlShaderUtil.createRasterProgram(RawFullscreenQuad.FULLSCREEN_VSH, fshSource, java.util.Map.of(0, "Position"), "RawScreenSpaceLight");
-            if (newProgram == 0) {
-                latched = true;
-                return false;
-            }
-            uDepthTex0Loc = GL20.glGetUniformLocation(newProgram, "uDepthTex0"); uDhDepthTexLoc = GL20.glGetUniformLocation(newProgram, "uDhDepthTex");
-            uDhReverseZLoc = GL20.glGetUniformLocation(newProgram, "uDhReverseZ"); uDhPresentLoc = GL20.glGetUniformLocation(newProgram, "uDhPresent");
-            uDhNearLoc = GL20.glGetUniformLocation(newProgram, "uDhNear"); uDhFarLoc = GL20.glGetUniformLocation(newProgram, "uDhFar");
-            uDhFadeDistLoc = GL20.glGetUniformLocation(newProgram, "uDhFadeDist"); uProjLoc = GL20.glGetUniformLocation(newProgram, "uProj");
-            uProjInvLoc = GL20.glGetUniformLocation(newProgram, "uProjInv"); uModelViewLoc = GL20.glGetUniformLocation(newProgram, "uModelView");
-            uModelViewInvLoc = GL20.glGetUniformLocation(newProgram, "uModelViewInv"); uCamPosLoc = GL20.glGetUniformLocation(newProgram, "uCamPos");
-            uSourcesLoc = GL20.glGetUniformLocation(newProgram, "uSources[0]"); uSourceCountLoc = GL20.glGetUniformLocation(newProgram, "uSourceCount");
-            uSrcRadiusLoc = GL20.glGetUniformLocation(newProgram, "uSrcRadius[0]"); uVanillaFarLoc = GL20.glGetUniformLocation(newProgram, "uVanillaFar");
-            uIntensityLoc = GL20.glGetUniformLocation(newProgram, "uIntensity"); uHeatScaleLoc = GL20.glGetUniformLocation(newProgram, "uHeatScale");
-            uHaloStrengthLoc = GL20.glGetUniformLocation(newProgram, "uHaloStrength");
-            uResolutionLoc = GL20.glGetUniformLocation(newProgram, "uResolution"); uNormalScaleLoc = GL20.glGetUniformLocation(newProgram, "uNormalScale");
-            uDebugReplaceLoc = GL20.glGetUniformLocation(newProgram, "uDebugReplace"); uSolidAddLoc = GL20.glGetUniformLocation(newProgram, "uSolidAdd");
-            uSrcShockLoc = GL20.glGetUniformLocation(newProgram, "uSrcShock[0]"); uSceneColorLoc = GL20.glGetUniformLocation(newProgram, "uSceneColor");
-            uHasSceneLoc = GL20.glGetUniformLocation(newProgram, "uHasScene"); uCineLoc = GL20.glGetUniformLocation(newProgram, "uCine");
-            uDhBlittedInDepth0Loc = GL20.glGetUniformLocation(newProgram, "uDhBlittedInDepth0");
-            program = newProgram;
-            return true;
-        } catch (Throwable t) {
-            MainRegistry.LOGGER.warn("RawScreenSpaceLight: program init failed: {}", t.toString());
-            latched = true;
-            return false;
-        }
-    }
 }
+

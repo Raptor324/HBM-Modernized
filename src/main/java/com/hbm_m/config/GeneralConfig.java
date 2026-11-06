@@ -32,6 +32,8 @@ public final class GeneralConfig {
     public static boolean enableGuideBook = true;
     /** Original 1.99_enableExpensiveMode: Rezeptfassungen ueber {@code recipe.condition.ConfigRecipeFlags} ("expensive"), HUD-Plakette. */
     public static boolean enableExpensiveMode = false;
+    /** Original 1.35_enableFluidContainerCompat: Fremd-Behaelter oredicten, TrainCraft-Diesel als gueltigen Diesel-Kanister (Compat.registerCompatFluidContainers). */
+    public static boolean enableFluidContainerCompat = true;
 
     // ── 528 ──
     /** Original X528_forceReasimBoilers. */

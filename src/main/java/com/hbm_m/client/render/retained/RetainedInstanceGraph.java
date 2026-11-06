@@ -54,8 +54,10 @@ public final class RetainedInstanceGraph {
 
     public @Nullable MachineSpec<?> getSpec(BlockEntityType<?> type) {
         if (type == null) return null;
+        MachineSpec<?> spec = MachineRenderRegistry.getSpec(type);
+        if (spec != null) return spec;
         synchronized (specsByType) {
-            MachineSpec<?> spec = specsByType.get(type);
+            spec = specsByType.get(type);
             if (spec == null) {
                 cacheSpecs();
                 spec = specsByType.get(type);
@@ -66,8 +68,7 @@ public final class RetainedInstanceGraph {
 
     public boolean isManaged(BlockEntity be) {
         if (be == null) return false;
-        MachineSpec<?> spec = getSpec(be.getType());
-        return spec != null && spec.isPurelyStatic();
+        return getSpec(be.getType()) != null;
     }
 
     // ── Asynchronous Entry Points (Invoked from Mixins / Off-Thread) ──
@@ -94,8 +95,11 @@ public final class RetainedInstanceGraph {
         if (be == null || be.getLevel() == null || !be.getLevel().isClientSide()) {
             return;
         }
+        long posKey = be.getBlockPos().asLong();
+        BlockEntityType<?> type = be.getType();
         handoffQueue.offer(() -> {
-            if (isManaged(be)) onMachineRemoved(be);
+            onMachineRemoved(be);
+            NucleusDispatcherBypass.dropMachineCaches(type, posKey, be);
         });
     }
 
@@ -127,8 +131,6 @@ public final class RetainedInstanceGraph {
         }
     }
 
-    public void processDirtyLightSections() {
-    }
 
     public void onChunkLoaded(LevelChunk chunk) {
         if (chunk == null) return;
@@ -156,11 +158,9 @@ public final class RetainedInstanceGraph {
 
     public void onMachineRemoved(long blockKey, boolean slotsAlreadyFreed) {
         if (!slotsAlreadyFreed) {
-            synchronized (specsByType) {
-                for (MachineSpec<?> spec : specsByType.values()) {
-                    if (spec != null) {
-                        spec.freeMachineSlots(blockKey);
-                    }
+            for (MachineSpec<?> spec : MachineRenderRegistry.specs()) {
+                if (spec != null) {
+                    spec.freeMachineSlots(blockKey);
                 }
             }
         }
@@ -168,15 +168,17 @@ public final class RetainedInstanceGraph {
 
     public void onMachineRemoved(BlockEntity be) {
         if (be == null) return;
-        onMachineRemoved(be.getBlockPos().asLong(), false);
+        long posKey = be.getBlockPos().asLong();
+        MachineSpec<?> spec = getSpec(be.getType());
+        if (spec != null) {
+            spec.freeMachineSlots(posKey);
+        }
+        onMachineRemoved(posKey, spec != null);
         if (be instanceof com.hbm_m.client.render.NucleusTrackedBlockEntity tracked) {
             tracked.hbm_m$setNucleusRegistered(false);
         }
     }
 
-    public void reconcileStaleHandles(net.minecraft.client.multiplayer.ClientLevel level) {
-        // Handled by NucleusDispatcherBypass safety sweep
-    }
 
     public void onRenderOriginChanged(int deltaX, int deltaY, int deltaZ) {
         if (deltaX == 0 && deltaY == 0 && deltaZ == 0) return;
@@ -194,6 +196,8 @@ public final class RetainedInstanceGraph {
     }
 
     public boolean hasActiveInstances(com.hbm_m.client.render.InstancedStaticPartRenderer renderer) {
-        return renderer != null && renderer.getInstanceCount() > 0;
+        return renderer != null
+                && (renderer.getInstanceCount() > 0
+                    || (renderer.getSlotAllocator() != null && renderer.getSlotAllocator().getHighWaterMark() > 0));
     }
 }

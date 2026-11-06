@@ -28,12 +28,11 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * 1:1-Port der Himmelszusaetze aus {@code RenderNTMSkyboxChainloader} und {@code RenderNTMSkyboxImpact}.
- * <p>Das Original haengt sich als Sky-Renderer vor/hinter den vorhandenen Himmel; hier laeuft das Zeichnen direkt
- * nach dem Vanilla-Himmel ({@code AFTER_SKY}). Normal: Leitstern (nur durch polarisiertes Glas), Digamma-Stern
- * und Bobmazon-Satellit. Nach dem Einschlag (Staub/Feuer > 0): Digamma-Stern mit Alpha {@code dust} und
- * Satellit mit Alpha {@code dust * (1 - Regen)}; Sonne/Mond/Sterne und Morgenrot daempft
- * {@code LevelRendererImpactMixin}.</p>
+ * 1:1 port of sky additions from {@code RenderNTMSkyboxChainloader} and {@code RenderNTMSkyboxImpact}.
+ * <p>Original hooks as sky renderer before/after existing sky; here rendering executes directly
+ * after vanilla sky ({@code AFTER_SKY}). Normal: Lode Star (visible only through polarized glass), Digamma Star
+ * and Bobmazon satellite. Post-impact (dust/fire > 0): Digamma Star with alpha {@code dust} and
+ * satellite with alpha {@code dust * (1 - rain)}; sun/moon/stars and dawn attenuated by {@code LevelRendererImpactMixin}.</p>
  */
 public final class RenderNTMSkybox {
 
@@ -51,7 +50,7 @@ public final class RenderNTMSkybox {
         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
     }
 
-    /** Original {@code ModEventHandlerClient.onClientTickLast}: impact-Himmel, sonst Chainloader, nur Oberwelt. */
+    /** Original {@code ModEventHandlerClient.onClientTickLast}: impact sky or chainloader, overworld only. */
     public static boolean isImpactSky(ClientLevel world) {
         return ImpactWorldHandler.getDustForClient(world) > 0 || ImpactWorldHandler.getFireForClient(world) > 0;
     }
@@ -64,11 +63,10 @@ public final class RenderNTMSkybox {
         if (world.dimension() != Level.OVERWORLD) return;
         if (com.hbm_m.api.space.SpaceApi.overridesSky(world)) return; // Space-Addon zeichnet den Himmel selbst
 
-        // Himmel-Basis (R_cam): auf 1.20.1 traegt das Event-PoseStack die Rotation bereits,
-        // auf 1.21.1 ist es eine leere Identity - der Hook ergaenzte dort die Kamerarotation.
+        // Sky base (R_cam): on 1.20.1 event pose stack already includes rotation; on 1.21.1 identity.
         com.hbm_m.platform.RenderHooks.applySkyViewBasis(poseStack);
 
-        // Leitstern-Raycast laeuft im Client-Tick (CLIENT_POST), nicht pro Frame.
+        // Lode Star raycast runs in client tick (CLIENT_POST), not per frame.
 
         poseStack.pushPose();
         RenderSystem.enableDepthTest();
@@ -92,12 +90,10 @@ public final class RenderNTMSkybox {
         poseStack.popPose();
     }
 
-    /** {@code RenderNTMSkyboxChainloader.render} ab der Stelle nach dem Elternhimmel. */
+    /** {@code RenderNTMSkyboxChainloader.render} section executed after parent sky. */
     private static void renderChainloader(PoseStack ps, float partialTicks, Minecraft mc, ClientLevel world) {
         if (renderLodeStar) {
-            // Twinkle-Size des Originals - nur ziehen, wenn der Stern auch gezeichnet
-            // wird (der Zufall des Client-Worlds darf nicht pro Frame aus dem
-            // Render-Thread konsumiert werden, unsichtbar oder nicht).
+            // Original twinkle size - sampled only when star is rendered (client world random must not be consumed from render thread per frame).
             float var12 = 0.5F + world.random.nextFloat() * 0.25F;
             ps.pushPose();
             ps.mulPose(Axis.XP.rotationDegrees(-75.0F));
@@ -108,7 +104,7 @@ public final class RenderNTMSkybox {
         renderCelestialObjects(ps, partialTicks, mc, world, 1.0F, 1.0F);
     }
 
-    /** Der Digamma-/Satelliten-Block aus {@code RenderNTMSkyboxImpact.render}. */
+    /** Digamma / satellite section from {@code RenderNTMSkyboxImpact.render}. */
     private static void renderImpact(PoseStack ps, float partialTicks, Minecraft mc, ClientLevel world) {
         float atmosphericDust = ImpactWorldHandler.getDustForClient(world);
         float dust = Math.max((1.0F - (atmosphericDust * 2)), 0);
@@ -116,7 +112,7 @@ public final class RenderNTMSkybox {
         renderCelestialObjects(ps, partialTicks, mc, world, dust, rain);
     }
 
-    /** Gemeinsamer Digamma-Stern/Satellit-Block beider Sky-Varianten (nur die Alpha-Werte unterscheiden sich). */
+    /** Shared Digamma star / satellite section of both sky variants (differing only in alpha values). */
     private static void renderCelestialObjects(PoseStack ps, float partialTicks, Minecraft mc, ClientLevel world,
                                                float starAlpha, float satAlpha) {
         float celestial = world.getTimeOfDay(partialTicks);
@@ -144,12 +140,12 @@ public final class RenderNTMSkybox {
         var12 = 0.5F;
         dist = 100D;
 
-        // Original: die Farbe vom Digamma-Stern bleibt gesetzt
+        // Original: color of Digamma star remains active
         quad(ps, bobmazonSat, var12, dist, brightness, brightness, brightness, satAlpha);
         ps.popPose();
     }
 
-    /** Die Tessellator-Quads des Originals: (-s,-s) 0/0, (s,-s) 0/1, (s,s) 1/1, (-s,s) 1/0. */
+    /** Original tessellator quads: (-s,-s) 0/0, (s,-s) 0/1, (s,s) 1/1, (-s,s) 1/0. */
     private static void quad(PoseStack ps, ResourceLocation texture, float s, double dist, float r, float g, float b, float a) {
         if (a <= 0.0F || r <= 0.0F && g <= 0.0F && b <= 0.0F) return;
         Matrix4f m = ps.last().pose();
@@ -179,10 +175,9 @@ public final class RenderNTMSkybox {
     }
 
     /**
-     * Original {@code onClientTickLast}: alle 200 ms ein Strahl 25 Bloecke nach Norden, 15 Grad angehoben; trifft er
-     * polarisiertes Glas, ist der Leitstern zu sehen. Laeuft im CLIENT_POST-Tick - der
-     * Raycast gehoert nicht in den Render-Frame (Reihenfolge: Tick N setzt das Flag,
-     * Frame N zeichnet danach damit).
+     * Original {@code onClientTickLast}: raycast 25 blocks north elevated 15 degrees every 200 ms;
+     * if it intersects polarized glass, the Lode Star becomes visible. Executes in CLIENT_POST tick
+     * rather than render frame.
      */
     public static void updateLodeStar(Minecraft mc, ClientLevel world) {
         long millis = System.currentTimeMillis();

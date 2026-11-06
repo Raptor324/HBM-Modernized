@@ -50,6 +50,13 @@ public abstract class ItemRenderWeaponBase {
     /** Original {@code Item.isFull3D} — waehlt den Drittperson-Basistransform in {@code RenderBiped.renderEquippedItems}. */
     public boolean isFull3D() { return false; }
 
+    /**
+     * Original-Hack {@code player.isSwingInProgress = false} im Renderer: unterdrueckt die Vanilla-Schwung-Rotationen
+     * der 1.7.10-Erstperson-Basismatrix. Nur der Chainsaw nutzte das; hier rueckgaengig gemacht, weil 1.20 die
+     * Schwung-Rotationen vor dem Renderer-Aufruf in die Pose legt ({@code GunItemRenderer}).
+     */
+    public boolean suppressVanillaSwing() { return false; }
+
     /** Original {@code renderItem(type, item, data)}: Zustand ist bereits per {@link GunGL#begin} gesetzt. */
     public void renderItem(ItemRenderType type, ItemStack item, Object... data) {
         GunGL.pushMatrix();

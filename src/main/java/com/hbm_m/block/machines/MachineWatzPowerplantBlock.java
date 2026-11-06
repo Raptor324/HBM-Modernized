@@ -11,6 +11,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -116,4 +117,20 @@ public class MachineWatzPowerplantBlock extends DummyableMachineBlock {
         return CODEC;
     }
     *///?}
+    // Verbatim port of the original Watz.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {2, 0, 0, Direction.DOWN.get3DDataValue()},
+            {-2, 0, 0, Direction.DOWN.get3DDataValue()},
+            {0, 0, 2, Direction.DOWN.get3DDataValue()},
+            {0, 0, -2, Direction.DOWN.get3DDataValue()},
+            {2, 2, 0, Direction.UP.get3DDataValue()},
+            {-2, 2, 0, Direction.UP.get3DDataValue()},
+            {0, 2, 2, Direction.UP.get3DDataValue()},
+            {0, 2, -2, Direction.UP.get3DDataValue()},
+            {0, 2, 0, Direction.UP.get3DDataValue()},
+            {0, 0, 0, Direction.DOWN.get3DDataValue()}
+        }, facing);
+    }
 }

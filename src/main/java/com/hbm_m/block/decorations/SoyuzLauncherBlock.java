@@ -93,7 +93,11 @@ public class SoyuzLauncherBlock extends BaseEntityBlock implements IMultiblockCo
 
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
-        return structureHelper.resolvePartRole(localOffset, this);
+        // Answered directly: the helper is built without symbol maps, so delegating to
+        // resolvePartRole would fall back to this very method and recurse to a
+        // StackOverflowError (hit whenever the item is held — port-square derivation calls
+        // getPartRole(BlockPos.ZERO) on MultiblockStructureHelper.getAutoPorts).
+        return localOffset.equals(BlockPos.ZERO) ? PartRole.CONTROLLER : PartRole.DEFAULT;
     }
 
     @Override

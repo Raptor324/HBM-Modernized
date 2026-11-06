@@ -9,7 +9,7 @@ import net.minecraftforge.fml.common.Mod;
 /*import net.neoforged.fml.common.EventBusSubscriber;
 *///?}
 
-/** Forge-Haken fuer {@link RenderOverhead} (Original: {@code RenderWorldLastEvent}). */
+/** Forge hook for {@link RenderOverhead} (Original: {@code RenderWorldLastEvent}). */
 //? if forge {
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 //?} else {

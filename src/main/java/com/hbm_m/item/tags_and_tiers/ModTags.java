@@ -64,6 +64,12 @@ public class ModTags {
         public static final TagKey<Item> RUBBER_BAR = tag("rubber_bar");
         public static final TagKey<Item> ZIRNOX_RODS = tag("zirnox_rods");
 
+        // --- ТЕГИ OREDICT (hbm_m:oredict/*, датаген OreDictTagData; оригинальные имена словаря OreDictionary) ---
+        public static final TagKey<Item> OREDICT_LOG_WOOD = tag("oredict/log_wood");
+        public static final TagKey<Item> OREDICT_PLANK_WOOD = tag("oredict/plank_wood");
+        public static final TagKey<Item> OREDICT_STICK_WOOD = tag("oredict/stick_wood");
+        public static final TagKey<Item> OREDICT_TREE_SAPLING = tag("oredict/tree_sapling");
+
         private static TagKey<Item> tag(String name) {
             return TagKey.create(Registries.ITEM, modIdPath(name));
         }

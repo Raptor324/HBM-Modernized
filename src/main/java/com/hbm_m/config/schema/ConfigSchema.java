@@ -122,6 +122,7 @@ public final class ConfigSchema {
         // Wird nur beim Serverstart gelesen (RadiationSystemSelector) -> Welt neu laden.
         reg(ConfigField.enumField("radiationSystem", ConfigSide.SERVER, ApplyMode.REQUIRES_RESTART, "general"));
         reg(ConfigField.bool("enableMOTD", ConfigSide.CLIENT, ApplyMode.LIVE, "general"));
+        reg(ConfigField.bool("enableTips", ConfigSide.CLIENT, ApplyMode.LIVE, "general").withComment("Tip of the day on the world loading screen (fetched from the mod's GitHub)"));
         reg(ConfigField.bool("enableExtendedLogging", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("Logs uses of the detonator, nuclear explosions, missile launches, grenades, etc."));
         // NEXT ContentConfig mode_528.enabled (ConfigSchema.ENABLE_528) → BalanceConfig.enable528;
         // зеркалируется в GeneralConfig.enable528 (см. applyAll → GeneralConfig.syncFrom).

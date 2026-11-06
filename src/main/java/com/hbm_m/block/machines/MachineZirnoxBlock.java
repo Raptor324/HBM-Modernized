@@ -261,4 +261,15 @@ public class MachineZirnoxBlock extends BaseEntityBlock implements IMultiblockCo
         return CODEC;
     }
     *///?}
+    // Verbatim port of the original ReactorZirnox.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {2, 1, 0, Direction.EAST.get3DDataValue()},
+            {2, 3, 0, Direction.EAST.get3DDataValue()},
+            {-2, 1, 0, Direction.WEST.get3DDataValue()},
+            {-2, 3, 0, Direction.WEST.get3DDataValue()},
+            {0, 4, 0, Direction.UP.get3DDataValue()}
+        }, facing);
+    }
 }

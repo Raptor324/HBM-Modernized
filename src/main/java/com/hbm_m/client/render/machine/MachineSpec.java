@@ -1511,10 +1511,9 @@ public final class MachineSpec<T extends BlockEntity> {
     }
 
     /**
-     * Per-part clip-плоскости для этого BE ({@code float[][]} из {A,B,C,D} в конвенции
-     * «+D», локальные координаты геометрии) или null (обычный тир). Вызывается каждый
-     * кадр для партов с резолвером — резолвер должен быть дешёвым и переиспользовать
-     * скратч-массивы.
+     * Per-part clip planes for this BE ({@code float[][]} of {A,B,C,D} in "+D" convention,
+     * local geometry coordinates) or null (standard tier). Called every frame for parts with
+     * a resolver - the resolver must be cheap and reuse scratch arrays.
      */
     @Nullable float[][] resolveClipPlanes(PartDef<T> part, T be, float partialTick) {
         if (part.clipPlanesResolver() == null) return null;
@@ -1652,13 +1651,13 @@ public final class MachineSpec<T extends BlockEntity> {
         return created;
     }
 
-    /** LRU sweep cadence and idle bound for the dynKey holders (audit 2026-10-05 §3.5). */
+    /** LRU sweep cadence and idle bound for the dynKey holders. */
     private static final int DYN_RENDERER_SWEEP_EVERY = 128;
     private static final long DYN_RENDERER_IDLE_LIMIT_FRAMES = 600;
     private int flushCountForSweep = 0;
 
     /**
-     * Amortized LRU sweep of the per-dynKey holders (audit 2026-10-05 §3.5):
+     * Amortized LRU sweep of the per-dynKey holders:
      * only dynamic keys grow unbounded (a farm of cycling tanks/casters/
      * crucibles converges toward thousands of permanent slots, each pinning up
      * to 4 GL objects plus native VBO staging), while a non-dynamic part holds
@@ -1697,13 +1696,19 @@ public final class MachineSpec<T extends BlockEntity> {
     }
 
     void flush(Matrix4f projection) {
-        sweepStaleDynRenderers();
+        long nowFrame = com.hbm_m.client.render.IrisShadowBatchCollector.renderFrame();
         for (MachinePartRenderer r : partRenderers.values()) {
-            if (r.instanced() != null && r.instanced().getBlockEntityType() == null) {
-                r.instanced().setOwnerSpec(this);
+            if (r.instanced() != null) {
+                if (r.instanced().getBlockEntityType() == null) {
+                    r.instanced().setOwnerSpec(this);
+                }
+                if (r.instanced().getInstanceCount() > 0) {
+                    r.markUsed(nowFrame);
+                }
             }
             r.flush(projection);
         }
+        sweepStaleDynRenderers();
     }
 
     /** Reusable sort buffer for flushFading (rendering is single-threaded). */

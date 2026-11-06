@@ -14,8 +14,8 @@ import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
 
 /**
- * 1:1 {@code RenderBeam5}: acht ineinanderliegende additive Vierkant-Roehren (Radius 0..0,175, Laenge 2),
- * innen weiss, aussen nach Blau auslaufend; Drehung um Gier, dann -Nick.
+ * 1:1 {@code RenderBeam5}: eight concentric additive square tubes (radius 0..0.175, length 2),
+ * white core fading outward to blue; rotated by yaw then -pitch.
  */
 public class B92BeamRenderer extends EntityRenderer<EntityB92Beam> {
 

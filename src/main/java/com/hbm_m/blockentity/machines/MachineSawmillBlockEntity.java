@@ -13,6 +13,7 @@ import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.entity.projectile.SawbladeEntity;
 import com.hbm_m.interfaces.IHeatSource;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModTags;
 import com.hbm_m.util.SimpleCraftingContainer;
 
 import net.minecraft.core.BlockPos;
@@ -23,7 +24,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -213,19 +213,22 @@ public class MachineSawmillBlockEntity extends BaseMachineBlockEntity {
         this.heat = Math.max(this.heat - Math.max(this.heat / 1000, 1), 0);
     }
 
-    /** Original {@code getOutput}: Ore-Dictionary-Namen als Item-Tags, Staemme ueber das 1x1-Werkbankrezept. */
+    /**
+     * Original {@code getOutput}: Ore-Dictionary-Namen als hbm_m:oredict/*-Tags (OreDictTagData, s. ModTags.Items).
+     * Darueber gehoeren pink_log/pink_planks zu logWood/plankWood (OreDictManager 588-591), stickWood umfasst
+     * {@code #forge:rods/wooden} (Port-Mapping von {@code stickWood}, Stock bleibt explizit).
+     */
     @Nullable
     public ItemStack getOutput(ItemStack input) {
 
         if (input == null || input.isEmpty())
             return null;
 
-        if (input.is(Items.STICK) || input.is(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM,
-                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "rods/wooden")))) {
+        if (input.is(Items.STICK) || input.is(ModTags.Items.OREDICT_STICK_WOOD)) {
             return new ItemStack(ModItems.POWDER_SAWDUST.get());
         }
 
-        if (input.is(ItemTags.LOGS) && level != null) {
+        if (input.is(ModTags.Items.OREDICT_LOG_WOOD) && level != null) {
             NonNullList<ItemStack> items = NonNullList.withSize(1, ItemStack.EMPTY);
             items.set(0, input.copyWithCount(1));
             SimpleCraftingContainer grid = new SimpleCraftingContainer(items, 1, 1);
@@ -241,11 +244,11 @@ public class MachineSawmillBlockEntity extends BaseMachineBlockEntity {
             }
         }
 
-        if (input.is(ItemTags.PLANKS)) {
+        if (input.is(ModTags.Items.OREDICT_PLANK_WOOD)) {
             return new ItemStack(Items.STICK, 6);
         }
 
-        if (input.is(ItemTags.SAPLINGS)) {
+        if (input.is(ModTags.Items.OREDICT_TREE_SAPLING)) {
             return new ItemStack(Items.STICK, 1);
         }
 

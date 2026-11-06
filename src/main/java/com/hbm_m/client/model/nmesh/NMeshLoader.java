@@ -415,8 +415,7 @@ public final class NMeshLoader {
         }
 
         float[] finalVerts = Arrays.copyOf(uniqueVerts, uniqueCount * 8);
-        int[] tangents = new int[uniqueCount];
-        Arrays.fill(tangents, 0x7F00007F);
+        int[] tangents = computePackedTangents(uniqueCount, finalVerts, indices);
         if (!Float.isFinite(minX)) {
             minX = minY = minZ = 0f;
             maxX = maxY = maxZ = 1f;
@@ -425,5 +424,54 @@ public final class NMeshLoader {
                 kdR, kdG, kdB, kaR, kaG, kaB,
                 minX, minY, minZ, maxX, maxY, maxZ,
                 uniqueCount, finalVerts, tangents, indices);
+    }
+
+    private static int[] computePackedTangents(int vertexCount, float[] verts, int[] indices) {
+        float[] tan1 = new float[vertexCount * 3];
+        float[] tan2 = new float[vertexCount * 3];
+        for (int i = 0; i + 2 < indices.length; i += 3) {
+            int i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2];
+            int b0 = i0 * 8, b1 = i1 * 8, b2 = i2 * 8;
+            float dx1 = verts[b1] - verts[b0], dy1 = verts[b1 + 1] - verts[b0 + 1], dz1 = verts[b1 + 2] - verts[b0 + 2];
+            float dx2 = verts[b2] - verts[b0], dy2 = verts[b2 + 1] - verts[b0 + 1], dz2 = verts[b2 + 2] - verts[b0 + 2];
+            float du1 = verts[b1 + 6] - verts[b0 + 6], dv1 = verts[b1 + 7] - verts[b0 + 7];
+            float du2 = verts[b2 + 6] - verts[b0 + 6], dv2 = verts[b2 + 7] - verts[b0 + 7];
+            float det = du1 * dv2 - du2 * dv1;
+            if (Math.abs(det) < 1e-8f) continue;
+            float r = 1.0f / det;
+            float sx = (dv2 * dx1 - dv1 * dx2) * r;
+            float sy = (dv2 * dy1 - dv1 * dy2) * r;
+            float sz = (dv2 * dz1 - dv1 * dz2) * r;
+            float tx = (du1 * dx2 - du2 * dx1) * r;
+            float ty = (du1 * dy2 - du2 * dy1) * r;
+            float tz = (du1 * dz2 - du2 * dz1) * r;
+            for (int idx : new int[]{i0, i1, i2}) {
+                int tOff = idx * 3;
+                tan1[tOff] += sx; tan1[tOff + 1] += sy; tan1[tOff + 2] += sz;
+                tan2[tOff] += tx; tan2[tOff + 1] += ty; tan2[tOff + 2] += tz;
+            }
+        }
+        int[] packed = new int[vertexCount];
+        for (int v = 0; v < vertexCount; v++) {
+            int b = v * 8, tOff = v * 3;
+            float nx = verts[b + 3], ny = verts[b + 4], nz = verts[b + 5];
+            float tx = tan1[tOff], ty = tan1[tOff + 1], tz = tan1[tOff + 2];
+            float dot = nx * tx + ny * ty + nz * tz;
+            tx -= nx * dot; ty -= ny * dot; tz -= nz * dot;
+            float len = (float) Math.sqrt(tx * tx + ty * ty + tz * tz);
+            if (len > 1e-6f) {
+                tx /= len; ty /= len; tz /= len;
+            } else {
+                tx = 1f; ty = 0f; tz = 0f;
+            }
+            float cx = ny * tz - nz * ty, cy = nz * tx - nx * tz, cz = nx * ty - ny * tx;
+            float handedness = (cx * tan2[tOff] + cy * tan2[tOff + 1] + cz * tan2[tOff + 2]) < 0f ? -1f : 1f;
+            int bx = ((int) Math.round(Math.max(-1f, Math.min(1f, tx)) * 127f)) & 0xFF;
+            int by = ((int) Math.round(Math.max(-1f, Math.min(1f, ty)) * 127f)) & 0xFF;
+            int bz = ((int) Math.round(Math.max(-1f, Math.min(1f, tz)) * 127f)) & 0xFF;
+            int bw = (handedness < 0f ? -127 : 127) & 0xFF;
+            packed[v] = bx | (by << 8) | (bz << 16) | (bw << 24);
+        }
+        return packed;
     }
 }

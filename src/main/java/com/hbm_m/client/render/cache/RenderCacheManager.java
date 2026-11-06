@@ -147,7 +147,7 @@ public final class RenderCacheManager {
     /**
      * One teardown step with its own guard: a throw from one cache must not
      * cancel the frees of the others (GL storage lives until its Delete* call
-     * and these steps are the only free paths - see the audit 2026-10-05 §3.11).
+     * and these steps are the only free paths).
      */
     private static void guarded(String name, Runnable step) {
         try {

@@ -16,9 +16,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 
 /**
- * Gegenstueck zu 1.7.10 {@code RenderEntity}: der Rueckfall-Renderer fuer Entities ohne eigenen Renderer zeichnet
- * die Trefferbox als weissen Quader ({@code renderOffsetAABB}). Genutzt fuer Entities, denen das Original keinen
- * Renderer zuweist (z.B. EntityWastePearl).
+ * Counterpart to 1.7.10 {@code RenderEntity}: fallback renderer for entities without their own renderer,
+ * drawing the bounding box as a white box ({@code renderOffsetAABB}). Used for entities where the original
+ * assigns no renderer (e.g. EntityWastePearl).
  */
 public class WhiteBoxRenderer<T extends Entity> extends EntityRenderer<T> {
 

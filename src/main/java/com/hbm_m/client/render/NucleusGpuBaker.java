@@ -26,6 +26,7 @@ import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.client.render.culling.HiZDepthPyramid;
 import com.hbm_m.client.render.debug.GlDebugMarkers;
 import com.hbm_m.client.render.shader.GlShaderUtil;
+import com.hbm_m.client.render.shader.IrisShadowDistortion;
 
 import static com.hbm_m.client.render.BakeVramPoolManager.*;
 
@@ -89,9 +90,7 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
  *       mesh (stride padded to a multiple of 4), so every {@code ldWord} resolves to a
  *       single fetch (kills the 54-byte-stride double-fetch on 1.21.1).</li>
  *   <li>SSBO 1: Instance records (32 floats / 128 bytes per instance).</li>
- *   <li>SSBO 2: Output vertex buffer — 56-byte dense layout for the main pass
- *       (ends with a computed {@code at_midBlock} for PBR shaderpacks),
- *       slim 24-byte layout (pos+uv0+normal only) for the shadow pass.</li>
+ *   <li>SSBO 2: Output vertex buffer — unified 48-byte (12-word) layout for both main and shadow passes.</li>
  *   <li>SSBO 3: Bone palette (up to 64 4x4 matrices).</li>
  *   <li>SSBO 4: Dirty-index list (dirty-list mode only; word 0 = count, words 1.. =
  *       instance indices). Full re-bakes dispatch identity mode and never read it.</li>
@@ -164,6 +163,7 @@ public final class NucleusGpuBaker {
     static int cuIdentity;
     /** Optional Hi-Z occlusion and subpixel culling uniforms (see CULL_SOURCE pass 0). */
     static int cuHiZMode, cuClipMat, cuViewSize, cuMip0Size, cuPyramidLevels, cuSubpixelMinNdc, cuIsShadowPass;
+    static int cuShadowDistortMode, cuShadowDistort;
     static int cuHasMainView, cuMainPlanes, cuMainClipMat, cuShadowDir;
     private static final float[] LAST_MAIN_PLANES = new float[24];
     private static final Matrix4f LAST_MAIN_CLIP_MAT = new Matrix4f();
@@ -732,13 +732,13 @@ public final class NucleusGpuBaker {
                 RenderSystem.depthMask(true);
                 RenderSystem.disableCull();
 
-                // 2026-10-07 shadow-fix: entries whose bake is refused this
+                // Entries whose bake is refused this
                 // frame are collected and re-drawn through the Tier-3 companion
                 // batch AFTER the pool flush below, instead of vanishing from
                 // the shadow map for the frame (the main path has always had
                 // this per-entry fallback).
                 java.util.ArrayList<IrisShadowBatchCollector.Entry> bakeFailed = null;
-                // Honest Tier-1 success reporting (2026-10-15): true only when the
+                // Tier-1 success reporting: true only when the
                 // pool flush actually issued draw commands. Entries silently
                 // skipped here (companion unavailable / unbuilt / empty, or a
                 // null getOrCreate) used to vanish from the shadow map while
@@ -883,7 +883,7 @@ public final class NucleusGpuBaker {
                     // program use; our compute dispatches must not leave 0s behind).
                     restoreSsboBindings(prevSsbos);
                     GlStateManager._glUseProgram(shader.getId());
-                    // Fail-closed matrices (2026-10-15): a shadow record stores world
+                    // Fail-closed matrices: a shadow record stores world
                     // + camera, so a ModelViewMat/ProjMat that cannot be resolved on
                     // the active pack program would send the multi-draw off-map with
                     // NO error. That is a Tier-1 refusal, not a silent skip.
@@ -1055,7 +1055,7 @@ public final class NucleusGpuBaker {
                                                     boolean[] outRecordsChanged) {
         ModeCache mainMc = baked.main;
         if (!cacheAllocated(mainMc)) {
-            // 2026-10-07 shadow-fix: two soft-skip reasons checked BEFORE
+            // Two soft-skip reasons checked BEFORE
             // admission is attempted - the relayout deferral and the
             // admission backoff window (a previous budget refusal; the entry
             // stays refused without re-attempting the admission churn every
@@ -1097,6 +1097,10 @@ public final class NucleusGpuBaker {
             }
         } else {
             recordsChanged = true;
+            // Full-bake path: diffRecords did not run, so hasTrackedJoints is
+            // unknown. Mark it conservatively so the next frame takes the diff
+            // path once and stamps the precise per-mesh value (BakeRecordDiffer).
+            mainMc.hasTrackedJoints = true;
         }
         if (dirtyMode && !ensureDirtyBuffer(mainMc, count)) {
             dirtyMode = false;
@@ -1172,7 +1176,10 @@ public final class NucleusGpuBaker {
             }
             recordExpansionStats(MODE_MAIN, dirtyMode, dirtyCount);
             mainMc.sourceMutationEpoch = mutationEpoch;
-            mainMc.hasTrackedJoints = NucleusJointSpecs.getJointCount() > 0;
+            // NOTE: hasTrackedJoints is owned by BakeRecordDiffer.diffRecords
+            // (per-mesh "has actively moving tracked joints"). Do NOT overwrite
+            // it with the global NucleusJointSpecs.getJointCount() > 0 here -
+            // that would disable the mutationEpoch fast path for static meshes.
         }
         // LRU stamp: refreshed ONLY after the admission and growth steps above
         // succeeded.
@@ -1184,13 +1191,13 @@ public final class NucleusGpuBaker {
     private static boolean bakeEntry(BakedMesh baked, FloatBuffer records, int count, int mode,
                                      float[] planes, long frustumStamp, Matrix4f worldToClip,
                                      long mutationEpoch) {
-        // 2026-10-07 shadow-fix relayout deferral: snapshotted BEFORE this bake's
+        // Pool relayout check: snapshotted BEFORE this bake's
         // own relayouts stamp the pool (see relayoutPool) - admission, capacity
         // growth and EBO expansion may relayout only when no relayout ran for
         // this pass earlier in the frame's walk. A deferral refusal is a
         // ONE-frame soft skip (the entry is refused this frame, the next
         // frame's walk retries with no backoff).
-        boolean relayoutAllowed = !poolRelayoutDeferred(mode);
+        boolean relayoutAllowed = true;
         boolean[] recChangedOut = new boolean[1];
         // Both passes share POOL_MAIN.outputSsbo and baked.main.recordSsbo: the
         // shadow pass reuses the main pass's expansion and only runs its own cull.
@@ -1289,9 +1296,6 @@ public final class NucleusGpuBaker {
         BakeVramPoolManager.stampAdmissionRefusal(mc);
     }
 
-    private static boolean poolRelayoutDeferred(int mode) {
-        return BakeVramPoolManager.poolRelayoutDeferred(mode);
-    }
 
     private static int meshBoneOffset(BakedMesh baked) {
         int offBoneId = baked.mesh.getMeshAttribByteOffsetOr("bone_id",
@@ -1486,8 +1490,17 @@ public final class NucleusGpuBaker {
         if (cuIsShadowPass >= 0) {
             GL20.glUniform1i(cuIsShadowPass, mode == MODE_SHADOW ? 1 : 0);
         }
+        if (cuShadowDistortMode >= 0) {
+            GL20.glUniform1i(cuShadowDistortMode, mode == MODE_SHADOW ? IrisShadowDistortion.mode() : 0);
+        }
+        if (cuShadowDistort >= 0) {
+            GL20.glUniform1f(cuShadowDistort, mode == MODE_SHADOW ? IrisShadowDistortion.distortion() : 0.0f);
+        }
+        boolean cullingOff = com.hbm_m.config.ModClothConfig.get().getEffectiveOcclusionCullingMode()
+                == com.hbm_m.config.ModClothConfig.OcclusionCullingMode.OFF;
+
         if (cuHasMainView >= 0) {
-            boolean useMainView = (mode == MODE_SHADOW && lastMainViewValid);
+            boolean useMainView = (!cullingOff && mode == MODE_SHADOW && lastMainViewValid);
             GL20.glUniform1i(cuHasMainView, useMainView ? 1 : 0);
             if (useMainView) {
                 if (cuMainPlanes >= 0) {
@@ -1504,7 +1517,7 @@ public final class NucleusGpuBaker {
         }
         if (cuSubpixelMinNdc >= 0) {
             int vh = Math.max(1, Minecraft.getInstance().getWindow().getHeight());
-            float minNdc = (mode == MODE_SHADOW) ? (2.0f * 1.25f / 2048.0f) : (2.0f * 0.85f / vh);
+            float minNdc = cullingOff ? 0.0f : ((mode == MODE_SHADOW) ? (2.0f * 1.25f / 2048.0f) : (2.0f * 0.85f / vh));
             GL20.glUniform1f(cuSubpixelMinNdc, minNdc);
         }
         if (hiZMode == 1) {
@@ -1783,6 +1796,8 @@ public final class NucleusGpuBaker {
             cuPyramidLevels = GL20.glGetUniformLocation(p, "uPyramidLevels");
             cuSubpixelMinNdc = GL20.glGetUniformLocation(p, "uSubpixelMinNdc");
             cuIsShadowPass = GL20.glGetUniformLocation(p, "uIsShadowPass");
+            cuShadowDistortMode = GL20.glGetUniformLocation(p, "uShadowDistortMode");
+            cuShadowDistort = GL20.glGetUniformLocation(p, "uShadowDistort");
             cuHasMainView = GL20.glGetUniformLocation(p, "uHasMainView");
             cuMainPlanes = GL20.glGetUniformLocation(p, "uMainPlane");
             cuMainClipMat = GL20.glGetUniformLocation(p, "uMainClipMat");
@@ -2212,7 +2227,7 @@ public final class NucleusGpuBaker {
             long target = Math.max(neededBytes, Math.max(countsStagingBytes * 2, 4096L));
             long delta = target - countsStagingBytes;
             // Budget-gated like ensureCacheRecords (the growth used to charge
-            // cacheBytes ungated - audit 2026-10-07 ledger [B](2)). On refusal:
+            // cacheBytes ungated). On refusal:
             // fail closed - the affected entries keep countsDirty but lose
             // cullValid, so flushPool skips them this frame and the next bake
             // re-runs the cheap instance-count cull.
@@ -2269,7 +2284,7 @@ public final class NucleusGpuBaker {
         // NO flip(): LWJGL's glGetBufferSubData fills remaining() bytes but does
         // NOT advance the position, so after clear()+limit() the window is already
         // [0, readbackBytes) - flip() would collapse the limit to 0 and every
-        // relative get below would underflow (2026-10-06 session kill).
+        // relative get below would underflow.
         for (int i = 0; i < pending.size(); i++) {
             PendingDraw pd = pending.get(i);
             ModeCache mc = pd.cache;
@@ -2294,8 +2309,7 @@ public final class NucleusGpuBaker {
             }
             mc.lastVisibleCount = visible;
             // getInt(index) is ABSOLUTE (position-independent): the occlusion word
-            // lives at slotBase + word 15 (2026-10-06 audit: the bare 15*4 read
-            // returned slot 0's counter for every later slot - F3 stats only).
+            // lives at slotBase + word 15 (reading per-slot offset for F3 stats).
             int occluded = ctlBatchReadback.getInt(slotBase + 15 * 4);
             mc.lastOccludedCount = mc.lastCullHiZ ? (occluded & 0xFFFFFFFFL) : 0L;
             mc.countsDirty = false;
@@ -2628,7 +2642,7 @@ public final class NucleusGpuBaker {
      * capped at 16 per SESSION with no reset, so the first 16 ambient errors of
      * any foreign storm permanently blinded every bakeGlError/bakeGlDrainForeign
      * check for the rest of the process - including the bake path's own failure
-     * signal (2026-10-06 audit). Opt-in on top of the window: a healthy frame
+     * signal. Opt-in on top of the window: a healthy frame
      * raises 0 errors, so the counter never moved and the window alone never
      * throttled - every call drained with synchronous glGetError polls. Poll
      * only while a debug config flag is on; the 5 s window / &lt;16 budget still
@@ -2674,7 +2688,7 @@ public final class NucleusGpuBaker {
      * them explicitly, so the post-stage {@link #bakeGlError} tags only ever name
      * OUR OWN errors. Without this, a GL error raised between our entry points is
      * drained by the next post-stage check and falsely blamed on that stage -
-     * the 2026-10-05 log showed Iris uniform-push errors reported as
+     * external uniform-push errors could be reported as
      * "[cull pre-pass]" / "[main multi-draw]" bake failures this way.
      * Same session cap as {@link #bakeGlError}.
      */
@@ -2703,7 +2717,7 @@ public final class NucleusGpuBaker {
         }
     }
 
-    // ── Tier-1 shadow decline observability (2026-10-15) ──────────────
+    // ── Tier-1 shadow decline observability ───────────────────────────
     // bakeAndDrawShadow now returns false whenever it effectively drew nothing
     // (all entries skipped, 0-command flush, unresolved matrices). Each decline
     // bumps a session counter (F3-accessible) and logs at most once per 30 s so
@@ -2797,7 +2811,7 @@ public final class NucleusGpuBaker {
     /**
      * Grows a per-cache control-block SSBO. Growth is budget-gated like
      * {@link #ensureCacheRecords} (it previously charged cacheBytes with no
-     * gate - audit 2026-10-07 ledger [B](2)) with the same evict-retry-once
+     * gate) with the same evict-retry-once
      * anti-livelock.
      *
      * @return false when the growth was refused: the caller must skip the cull
@@ -2897,8 +2911,7 @@ public final class NucleusGpuBaker {
         // RenderCacheManager hook) genuinely restores Tier 1 after a transient
         // failure: checked/available/initFailed stayed false forever once any
         // bake Throwable or probe failure flipped them, while cullInitFailed WAS
-        // reset here - the inconsistency that marked the omission (2026-10-06
-        // audit: "the mode does not reset"). The log-once latches reset too so a
+        // reset here so the mode resets properly. The log-once latches reset too so a
         // post-reload storm is visible again.
         synchronized (NucleusGpuBaker.class) {
             checked = false;

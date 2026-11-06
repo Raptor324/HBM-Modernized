@@ -59,7 +59,7 @@ final class MachinePartRenderer {
 
     /**
      * Render frame of the last use - the LRU stamp for the per-dynKey sweep
-     * (MachineSpec, audit 2026-10-05 §3.5). Stamped at creation and on every
+     * (MachineSpec). Stamped at creation and on every
      * cache find (full loop or roster assert), so a holder of a machine
      * visible in ANY pass never goes stale.
      */
@@ -181,13 +181,10 @@ final class MachinePartRenderer {
     }
 
     /**
-     * Exec-гейт bbox-допущения дверных клип-плоскостей: фактические bbox запечённых
-     * квадов по партам. Все дверные парты проходят через эту ветку как dynamicPart.
-     * Включение: {@code -Dhbm.debugDoorBakedBbox=true}. Ожидания no-wrap — см.
-     * javadoc DoorDecl.getClippingPlanes(partName, ...): airlock frame z[-1.5, 2.5],
-     * doorLeft z[0.375, 2.438]; large_vehicle frame z[-3.5, 3.5]; sliding_blast
-     * frame z[-3.5, 3.5]; fire door y[0, 3]. Пороги клип-плоскостей фиксировать
-     * ТОЛЬКО после совпадения лога с ожиданиями.
+     * Diagnostic gate for door clipping plane assumptions: actual baked quad bbox per part.
+     * All door parts pass through this branch as dynamicPart. Enabled via {@code -Dhbm.debugDoorBakedBbox=true}.
+     * Expected no-wrap ranges: airlock frame z[-1.5, 2.5], doorLeft z[0.375, 2.438];
+     * large_vehicle frame z[-3.5, 3.5]; sliding_blast frame z[-3.5, 3.5]; fire door y[0, 3].
      */
     private void debugDoorBakedBbox(List<BakedQuad> quads) {
         if (!Boolean.getBoolean("hbm.debugDoorBakedBbox")) return;
@@ -229,11 +226,11 @@ final class MachinePartRenderer {
         float[] tint = rq.tint;
         float[][] clipPlanes = rq.clipPlanes;
 
-        // O(1) AABB-классификатор дверных плоскостей (Nucleus Phase 2/3):
-        // INSIDE -> створка полностью внутри (например закрытая дверь), обрезка не нужна,
-        //           сбрасываем clipPlanes и отправляем в штатный GPU MDI инстансинг!
-        // OUTSIDE -> деталь полностью ушла в карман стены, освобождаем слот инстансера и выходим.
-        // STRADDLING -> деталь прямо сейчас пересекает карман, режем через zero-allocation стример.
+        // O(1) AABB classifier for door planes:
+        // INSIDE -> part is fully inside (e.g. closed door), no clipping needed,
+        //           clear clipPlanes and dispatch to standard GPU MDI instancing!
+        // OUTSIDE -> part has fully recessed into the wall pocket, free instancer slot and return.
+        // STRADDLING -> part currently intersects the pocket plane, clip via zero-allocation streamer.
         if (clipPlanes != null && clipPlanes.length > 0 && boundsValid) {
             ClipClassification classification = classifyAabb(clipPlanes);
             if (classification == ClipClassification.OUTSIDE) {
@@ -259,6 +256,20 @@ final class MachinePartRenderer {
             }
             noteShadowFallback("clipPlanes(fallback)");
             renderClippedQuads(poseStack, packedLight, bufferSource, uvRect, tint, clipPlanes);
+            return;
+        }
+
+        // WIAJ demo screen: render through the per-BE VBO tier with the screen's own
+        // PoseStack/bufferSource - the instanced/MDI paths are tied to the level frame
+        // and would register fake instances in the level's instanced graph. Parts with
+        // uvRect/tint (block_lit_simple cannot remap them) degrade to immediate.
+        if (ClientRenderFlags.guiRenderFrame()) {
+            if (uvRect == null && isWhiteTint(tint) && single != null) {
+                single.render(poseStack, packedLight, rq.blockPos, blockEntity, bufferSource);
+            } else {
+                noteShadowFallback("guiRenderFrame");
+                renderQuadsFallback(poseStack, packedLight, blockEntity, bufferSource, uvRect, tint);
+            }
             return;
         }
 
@@ -289,7 +300,7 @@ final class MachinePartRenderer {
     }
 
     /**
-     * Zero-allocation потоковый рендеринг подрезанных квадов (Sutherland-Hodgman).
+     * Zero-allocation streaming rendering for clipped quads (Sutherland-Hodgman).
      */
     private void renderClippedQuads(PoseStack poseStack, int packedLight,
                                     @Nullable MultiBufferSource bufferSource,
@@ -347,7 +358,7 @@ final class MachinePartRenderer {
     /** One-shot guard for the shadow-fallback reason warn log (the counter lives in NucleusDebug). */
     private boolean shadowFallbackLogged;
 
-    // ==== Дебаг клип-тира (конфиг doorClipDebug): одноразовый дамп спрайтов/UV партов ====
+    // ==== Door clip tier debugging (config doorClipDebug): one-time dump of part sprite/UV ====
     private static final java.util.Set<String> CLIP_DEBUG_DUMPED = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     private void debugDumpQuads(@Nullable float[] uvRect) {
@@ -417,8 +428,13 @@ final class MachinePartRenderer {
         // Cutout, not solid: solid has no alpha test, so transparent texels of glass/window
         // parts come out black. Cutout discards them; translucent stays for the fade path
         // (alpha blending). Shared helper (dedup with renderClippedQuads).
+        // WIAJ demo screen: the isometric pose has a negative determinant, which flips the
+        // projected winding - the cull-enabled chunk types would hide the outward faces, so
+        // use the no-cull variant over the same block atlas there.
         VertexConsumer consumer = bufferSource.getBuffer(
-                com.hbm_m.client.model.ModelHelper.clipRenderType(alpha));
+                ClientRenderFlags.guiRenderFrame() && alpha >= 0.99f
+                        ? net.minecraft.client.renderer.RenderType.entityCutoutNoCull(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS)
+                        : com.hbm_m.client.model.ModelHelper.clipRenderType(alpha));
         PoseStack.Pose pose = poseStack.last();
         for (BakedQuad quad : drawn) {
             // terrain RenderTypes do not compute shade from normals - bake it into

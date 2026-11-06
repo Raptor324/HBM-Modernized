@@ -21,9 +21,9 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Schlanker Wavefront-Leser nach dem Vorbild von {@code HFRWavefrontObject} (1.7.10): Gruppen ("o"/"g"),
- * Dreiecke und Vierecke, UV mit gespiegeltem V ({@code 1 - v}), Vertexnormalen falls vorhanden.
- * {@link #renderPart} entspricht {@code IModelCustom.renderPart}.
+ * Lightweight Wavefront reader following {@code HFRWavefrontObject} (1.7.10): groups ("o"/"g"),
+ * triangles and quads, UV with inverted V ({@code 1 - v}), vertex normals if present.
+ * {@link #renderPart} corresponds to {@code IModelCustom.renderPart}.
  */
 public final class ArmorObjModel {
 
@@ -46,7 +46,7 @@ public final class ArmorObjModel {
     private static ArmorObjModel load(ResourceLocation location) {
         ArmorObjModel model = new ArmorObjModel();
 
-        // nmesh-first: kompilierte .nmesh-Daten (oder NMeshLoader-Resourcepack-Fallback) statt eigenem Wavefront-Leser.
+        // nmesh-first: compiled .nmesh data (or NMeshLoader resource pack fallback) instead of custom Wavefront reader.
         var nmesh = com.hbm_m.client.model.nmesh.NMeshLoader.load(location);
         if (nmesh != null) {
             try {
@@ -63,7 +63,7 @@ public final class ArmorObjModel {
                         for (int c = 0; c < 3; c++) {
                             int b = idx[i + c] * 8;
                             pos[c] = new float[] {verts[b + 0], verts[b + 1], verts[b + 2]};
-                            // Dieser Leser spiegelt V bereits beim Laden (1 - v); nmesh liefert rohes V.
+                            // This reader already flips V on load (1 - v); nmesh provides raw V.
                             uv[c] = new float[] {verts[b + 6], 1 - verts[b + 7]};
                             float nx = verts[b + 3], ny = verts[b + 4], nz = verts[b + 5];
                             nor[c] = (nx == 0 && ny == 0 && nz == 0) ? null : new float[] {nx, ny, nz};
@@ -74,7 +74,7 @@ public final class ArmorObjModel {
                 return model;
             } catch (Exception e) {
                 MainRegistry.LOGGER.warn("ArmorObjModel: nmesh conversion of {} failed: {}", location, e.toString());
-                model = new ArmorObjModel(); // sauber neu beginnen fuer den klassischen Pfad
+                model = new ArmorObjModel(); // Fresh restart for legacy path
             }
         }
 
@@ -123,12 +123,12 @@ public final class ArmorObjModel {
         return model;
     }
 
-    /** Original {@code renderAll}: alle Gruppen. */
+    /** Original {@code renderAll}: all groups. */
     public void renderAll(PoseStack poseStack, VertexConsumer vc, int light, float r, float g, float b, float a) {
         for (String name : groups.keySet()) renderPart(name, poseStack, vc, light, r, g, b, a);
     }
 
-    /** Original {@code renderPart}: eine Gruppe mit der aktuellen Matrix in den Puffer schreiben. */
+    /** Original {@code renderPart}: write one group with the current matrix to the buffer. */
     public void renderPart(String name, PoseStack poseStack, VertexConsumer vc, int light, float r, float g, float b, float a) {
         List<Face> faces = groups.get(name);
         if (faces == null) return;
@@ -140,7 +140,7 @@ public final class ArmorObjModel {
         for (Face face : faces) {
             float[] fn = face.normal[0] == null ? faceNormal(face.pos) : null;
             int n = face.pos.length;
-            // Die Render-Typen zeichnen Vierecke: Dreiecke bekommen den letzten Eckpunkt doppelt.
+            // Render types draw quads: triangles duplicate the final vertex.
             for (int i = 0; i < 4; i++) {
                 int k = Math.min(i, n - 1);
                 float[] p = face.pos[k];

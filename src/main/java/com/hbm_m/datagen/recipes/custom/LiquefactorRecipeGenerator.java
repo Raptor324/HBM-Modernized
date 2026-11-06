@@ -16,8 +16,9 @@ import java.util.function.Consumer;
 /**
  * Генератор JSON-рецептов ликвейфактора ({@code hbm_m:liquefactor}).
  *
- * <p>Порт 24 рецептов из удалённого статического {@code LiquefactorRecipes} (static-блок;
- * оригинал 1.7.10 — {@code com.hbm.inventory.recipes.LiquefactionRecipes}): предмет → жидкость (mB),
+ * <p>Порт 37 рецептов из удалённого статического {@code LiquefactorRecipes} (static-блок;
+ * оригинал 1.7.10 — {@code com.hbm.inventory.recipes.LiquefactionRecipes}, там 34 записи —
+ * дикий-кард «любая рыба» развёрнут в 4 предметных рецепта): предмет → жидкость (mB),
  * 1 предмет за цикл. Жидкостные стаки создаются через {@link FluidStack#create} из {@link ModFluids}.
  * Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
  */
@@ -27,10 +28,10 @@ public final class LiquefactorRecipeGenerator {
 
     public static void generate(Consumer<FinishedRecipe> writer) {
         // ── Переработка нефти/металлов ─────────────────────────────────────────
-        put(writer, "coaloil_from_coal",     Items.COAL,                               ModFluids.COALOIL, 100);
-        put(writer, "coaloil_from_coal_powder", ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER), ModFluids.COALOIL, 100);
-        put(writer, "coaloil_from_lignite",  ModItems.LIGNITE.get(),                   ModFluids.COALOIL, 50);
-        put(writer, "coaloil_from_lignite_powder", ModItems.LIGNITE_POWDER.get(), ModFluids.COALOIL, 50);
+        put(writer, "coaloil_from_coal",     Items.COAL,                               ModFluids.COALOIL, 250);
+        put(writer, "coaloil_from_coal_powder", ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER), ModFluids.COALOIL, 250);
+        put(writer, "coaloil_from_lignite",  ModItems.LIGNITE.get(),                   ModFluids.COALOIL, 150);
+        put(writer, "coaloil_from_lignite_powder", ModItems.LIGNITE_POWDER.get(), ModFluids.COALOIL, 150);
         // Teere → Bitumen (KEY_OIL_TAR = Rohteer, KEY_CRACK_TAR, KEY_COAL_TAR)
         put(writer, "bitumen_from_oil_tar",   ModItems.OIL_TAR_CRUDE.get(), ModFluids.BITUMEN, 75);
         put(writer, "bitumen_from_crack_tar", ModItems.OIL_TAR_CRACK.get(), ModFluids.BITUMEN, 100);
@@ -55,8 +56,6 @@ public final class LiquefactorRecipeGenerator {
         put(writer, "enderjuice_from_pearl", Items.ENDER_PEARL, ModFluids.ENDERJUICE, 100);
 
         put(writer, "ethanol_from_sugar",     Items.SUGAR,     ModFluids.ETHANOL, 100);
-        put(writer, "ethanol_from_dandelion", Items.DANDELION, ModFluids.ETHANOL, 150);
-        put(writer, "ethanol_from_poppy",     Items.POPPY,     ModFluids.ETHANOL, 50);
         put(writer, "ethanol_from_melon",     Items.MELON_SLICE, ModFluids.ETHANOL, 100);
         // Original: plant_flower Meta 3 (Hanf) 100 mB, Meta 4 (CD0) 50 mB
         put(writer, "ethanol_from_weed",      com.hbm_m.block.ModBlocks.PLANT_FLOWER_WEED.get().asItem(), ModFluids.ETHANOL, 100);

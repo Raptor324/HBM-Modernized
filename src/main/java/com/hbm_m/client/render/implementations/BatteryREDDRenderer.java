@@ -26,8 +26,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * 1:1 {@code RenderBatteryREDD}: Sockel, drehendes Rad mit vollhellen Lichtern, gelbe Bewegungsschlieren am Radrand
- * (Laenge je nach Tempo), Plasma mit wanderndem Funkeln und bei Drehung zufaellige Entladungsblitze.
+ * 1:1 {@code RenderBatteryREDD}: base, rotating wheel with fullbright lights, yellow motion streaks at wheel rim
+ * (length depending on speed), plasma with wandering sparkles and random discharge lightning during rotation.
  */
 public class BatteryREDDRenderer implements com.hbm_m.client.render.HbmBerBounds<BatteryREDDBlockEntity> {
 
@@ -78,7 +78,7 @@ public class BatteryREDDRenderer implements com.hbm_m.client.render.HbmBerBounds
         ps.popPose();
     }
 
-    /** Die gelben Schlieren: je Radseite acht Speichen, drei auslaufende Segmente ueber {@code span} Grad. */
+    /** Yellow streaks: eight spokes per wheel side, three tapering segments spanning {@code span} degrees. */
     static void renderStreaks(PoseStack ps, VertexConsumer vc, float speed) {
         double len = 4.25D;
         double width = 0.125D;
@@ -107,7 +107,7 @@ public class BatteryREDDRenderer implements com.hbm_m.client.render.HbmBerBounds
         }
     }
 
-    /** Vec3NT.rotateAroundXDeg auf (y, z). */
+    /** Vec3NT.rotateAroundXDeg on (y, z). */
     private static double[] rotX(double[] yz, double deg) {
         double a = Math.toRadians(deg);
         double c = Math.cos(a), s = Math.sin(a);

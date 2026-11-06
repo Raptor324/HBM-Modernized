@@ -50,7 +50,7 @@ import net.minecraft.client.renderer.RenderBuffers;
  * so invoking it reflectively on the passed {@code ShadowRenderer} instance
  * with the passed arguments is byte-for-byte the previous behavior. No
  * accessor mixin is needed to "capture before overwrite": the field has no
- * other writer on 1.21.1 (see the grep above; re-verified 2026-10-15), and no
+ * other writer on 1.21.1, and no
  * code path runs between the initializer and our install that could change
  * it. If a third-party mod (Flywheel/DH) ever DOES install its own function
  * before our first shadow pass, we would overwrite theirs - mitigation is

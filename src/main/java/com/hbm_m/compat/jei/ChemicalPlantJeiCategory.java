@@ -67,28 +67,9 @@ public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalP
         return recipe.requiresBlueprint();
     }
 
-    @Override
-    protected int getInputXOffset(ChemicalPlantRecipe recipe, int inputCount) {
-        if (inputCount > 12) return -9;
-        if (inputCount > 9) return 18;
-        return 0;
-    }
-
-    @Override
-    protected int getOutputXOffset(ChemicalPlantRecipe recipe, int outputCount) {
-        return getOffset(getInputCount(recipe));
-    }
-
-    @Override
-    protected int getMachineXOffset(ChemicalPlantRecipe recipe) {
-        return getOffset(getInputCount(recipe));
-    }
-
-    private static int getOffset(int inputCount) {
-        if (inputCount > 12) return 27;
-        if (inputCount > 9) return 18;
-        return 0;
-    }
+    // Keine X-Offsets: das Original ChemicalPlantRecipeHandler ueberschreibt getInputXOffset/
+    // getOutputXOffset/getMachineXOffset NICHT (im Gegensatz zu AssemblyMachineRecipeHandler) —
+    // alle Slots sitzen auf den Basispositionen von NEIGenericRecipeHandler.
 
     @Override
     protected void addInputSlots(IRecipeLayoutBuilder builder, ChemicalPlantRecipe recipe, int inputXOffset) {
@@ -125,11 +106,17 @@ public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalP
                     .setCustomRenderer(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
             *///?}
-            // Original ItemFluidIcon: rote Zeile "<N>PU" bei Druckeingaengen
+            // Original ItemFluidIcon.addInformation: rote Zeile "<N>PU" plus blinkende
+            // "Pressurized, use compressor!"-Zeile (ROT/DUNKELROT, 500ms-Blink) bei Druckeingaengen.
             int pressure = recipe.getFluidInputPressure(fi);
             if (fluidSlot != null && pressure > 0) {
                 Component pu = Component.literal(pressure + "PU").withStyle(net.minecraft.ChatFormatting.RED);
-                fluidSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(pu));
+                fluidSlot.addRichTooltipCallback((view, tooltip) -> {
+                    tooltip.add(pu);
+                    boolean blink = (System.currentTimeMillis() / 500) % 2 == 0;
+                    tooltip.add(Component.translatable("gui.hbm_m.fluid_tank.pressurized")
+                            .withStyle(blink ? net.minecraft.ChatFormatting.RED : net.minecraft.ChatFormatting.DARK_RED));
+                });
             }
             slotIndex++;
         }

@@ -57,6 +57,12 @@ public class MachineOilburnerBlock extends DummyableMachineBlock implements com.
     }
 
     @Nullable @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            {2, 2, 0.5, -0.3, 0.4, -0.4, 1}
+        };
+    }
+
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineOilburnerBlockEntity(pos, state);
     }

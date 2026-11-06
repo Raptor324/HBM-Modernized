@@ -84,6 +84,7 @@ public class MachineBatteryREDDBlock extends BaseEntityBlock implements IMultibl
     }
 
     @Override public MultiblockStructureHelper getStructureHelper() { return structureHelper; }
+    @Override public boolean hasControllerEnergy() { return true; }
     @Override public PartRole getPartRole(BlockPos localOffset) { return structureHelper.resolvePartRole(localOffset, this); }
 
     @Override

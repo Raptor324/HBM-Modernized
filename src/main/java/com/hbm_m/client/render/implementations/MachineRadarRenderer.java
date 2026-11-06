@@ -7,7 +7,7 @@ import org.joml.Matrix4f;
 
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
-import com.hbm_m.client.model.MachineRadarBakedModel;
+import com.hbm_m.client.model.AbstractMultipartBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.MeshRenderCache;
@@ -76,23 +76,23 @@ public final class MachineRadarRenderer {
 
     private MachineRadarRenderer() {}
 
-    private static @Nullable MachineRadarBakedModel radarModel(MachineRadarBlockEntity be) {
+    private static @Nullable AbstractMultipartBakedModel radarModel(MachineRadarBlockEntity be) {
         BakedModel raw = Minecraft.getInstance().getBlockRenderer()
                 .getBlockModel(be.getBlockState());
         raw = AbstractPartBasedRenderer.unwrapFabricForwardingModels(raw);
-        if (raw instanceof MachineRadarBakedModel model) return model;
+        if (raw instanceof AbstractMultipartBakedModel model) return model;
         if (!loggedModelResolveFailure) {
             loggedModelResolveFailure = true;
             MainRegistry.LOGGER.error(
-                    "MachineRadarRenderer: block model is not MachineRadarBakedModel ({}), radar invisible under VBO",
+                    "MachineRadarRenderer: block model is not AbstractMultipartBakedModel ({}), radar invisible under VBO",
                     raw == null ? "null" : raw.getClass().getName());
         }
         return null;
     }
 
     private static boolean isLarge(MachineRadarBlockEntity be) {
-        MachineRadarBakedModel model = radarModel(be);
-        return model != null && model.isLargeRadar();
+        AbstractMultipartBakedModel model = radarModel(be);
+        return model != null && model.getPart("Radar") != null;
     }
 
     private static String sizeKey(MachineRadarBlockEntity be) {
@@ -100,16 +100,16 @@ public final class MachineRadarRenderer {
     }
 
     private static List<BakedQuad> baseQuads(MachineRadarBlockEntity be) {
-        MachineRadarBakedModel model = radarModel(be);
+        AbstractMultipartBakedModel model = radarModel(be);
         if (model == null) return List.of();
-        BakedModel part = model.getPart(model.getStaticPartName());
+        BakedModel part = model.getPart(isLarge(be) ? "Radar" : "Base");
         if (part == null) return List.of();
         String cacheKey = "radar:" + sizeKey(be) + "_base";
         return MeshRenderCache.getOrCompilePartGeometry(cacheKey, part).solidQuads();
     }
 
     private static List<BakedQuad> dishQuads(MachineRadarBlockEntity be) {
-        MachineRadarBakedModel model = radarModel(be);
+        AbstractMultipartBakedModel model = radarModel(be);
         if (model == null) return List.of();
         BakedModel part = model.getPart("Dish");
         if (part == null) return List.of();
