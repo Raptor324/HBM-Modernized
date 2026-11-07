@@ -598,12 +598,10 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         return missile;
     }
 
-    /** Launch point (pad centre + launch offset) in world space, see {@link com.hbm_m.compat.sable.SableCompat}. */
+    /** Launch point ({@link #getLaunchOrigin()}) in world space, see {@link com.hbm_m.compat.sable.SableCompat}. */
     private Vec3 launchPosInWorld() {
-        return com.hbm_m.compat.sable.SableCompat.toWorld(level,
-                worldPosition.getX() + 0.5D,
-                worldPosition.getY() + getLaunchOffset(),
-                worldPosition.getZ() + 0.5D);
+        Vec3 origin = getLaunchOrigin();
+        return com.hbm_m.compat.sable.SableCompat.toWorld(level, origin.x, origin.y, origin.z);
     }
 
     /**
