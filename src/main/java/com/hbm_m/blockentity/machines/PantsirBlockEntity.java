@@ -14,7 +14,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.logic.EntityPlaneBase;
-import com.hbm_m.entity.missile.MissileABMEntity;
+import com.hbm_m.entity.missile.MissileAntiBallisticEntity;
 import com.hbm_m.entity.missile.MissileBaseEntity;
 import com.hbm_m.entity.missile.MissilePantsirEntity;
 import com.hbm_m.particle.helper.IParticleCreator;
@@ -338,7 +338,7 @@ private static boolean isAirTarget(@Nullable Entity entity) {
     }
 
     private boolean isThreat(MissileBaseEntity missile) {
-        if (missile.isRemoved() || missile instanceof MissileABMEntity || !missile.canBeDetectedByRadar()) {
+        if (missile.isRemoved() || missile instanceof MissileAntiBallisticEntity || !missile.canBeDetectedByRadar()) {
             return false;
         }
         if (missile.getDeltaMovement().y < 0.0D) {
