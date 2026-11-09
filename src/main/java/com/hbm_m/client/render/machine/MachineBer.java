@@ -1245,6 +1245,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             fastAssertScratchCount = 0;
             for (int i = 0; i < parts.size(); i++) {
                 MachineSpec.PartDef<T> part = parts.get(i);
+                if (part.isConditional() && !part.isVisible(be)) continue;
                 MachinePartRenderer r = (rosterRenderers != null && i < rosterRenderers.length && !part.dynamic())
                         ? rosterRenderers[i] : null;
                 if (r == null) {
@@ -1271,6 +1272,9 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                     return false;
                 }
                 if (part.animated() && !animatedVisible) continue;
+                if (IrisShadowBatchCollector.isAnchorSpaceShadowActive() && IrisShadowBatchCollector.hasFreshPrebake(inst, posKey)) {
+                    return true;
+                }
                 if (!IrisShadowBatchCollector.hasFreshPrebake(inst, posKey)) {
                     return false;
                 }

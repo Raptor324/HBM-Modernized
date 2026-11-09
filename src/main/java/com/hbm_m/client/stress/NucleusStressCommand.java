@@ -3,16 +3,22 @@ package com.hbm_m.client.stress;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.config.ModClothConfig;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -48,12 +54,12 @@ public final class NucleusStressCommand {
             (context, builder) -> SharedSuggestionProvider.suggest(STRESS_COUNTS, builder);
 
     private static final SuggestionProvider<CommandSourceStack> MODEL_SUGGESTIONS =
-            (context, builder) -> SharedSuggestionProvider.suggest(NucleusStressManager.machineModelIds(), builder);
+            (context, builder) -> suggestMatching(NucleusStressManager.machineModelIds(), builder);
 
     /** "skin=..." - only the skins of the door selected in the &lt;model&gt; argument. */
     private static final SuggestionProvider<CommandSourceStack> SKIN_SUGGESTIONS =
-            (context, builder) -> SharedSuggestionProvider.suggest(
-                    NucleusStressManager.doorSkinSuggestions(StringArgumentType.getString(context, "model")), builder);
+            (context, builder) -> suggestMatching(
+                    NucleusStressManager.doorSkinSuggestions(context.getArgument("model", String.class)), builder);
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         LiteralArgumentBuilder<CommandSourceStack> stress = net.minecraft.commands.Commands.literal("stress");
@@ -93,11 +99,18 @@ public final class NucleusStressCommand {
                 .executes(context -> executeAnims(context, NucleusStressManager.AnimMode.OFF)));
         stress.then(anims);
 
+        LiteralArgumentBuilder<CommandSourceStack> debug = net.minecraft.commands.Commands.literal("debug");
+        debug.then(net.minecraft.commands.Commands.literal("cull_render")
+                .executes(context -> executeToggleCullRender(context, null))
+                .then(net.minecraft.commands.Commands.argument("enabled", BoolArgumentType.bool())
+                        .executes(context -> executeToggleCullRender(context, BoolArgumentType.getBool(context, "enabled")))));
+
         // Operators only: the client-side source carries the permission level the
         // server synced to the player (singleplayer = cheats on / LAN with cheats).
         dispatcher.register(net.minecraft.commands.Commands.literal("nucleus")
                 .requires(source -> source.hasPermission(2))
-                .then(stress));
+                .then(stress)
+                .then(debug));
     }
 
     private static int executeSpawn(CommandContext<CommandSourceStack> context, String model, @Nullable String skin,
@@ -109,6 +122,13 @@ public final class NucleusStressCommand {
 
     private static int executeClear(CommandContext<CommandSourceStack> context) {
         feedback(NucleusStressManager.clear(Minecraft.getInstance()));
+        return 1;
+    }
+
+    private static int executeToggleCullRender(CommandContext<CommandSourceStack> context, @Nullable Boolean enabled) {
+        boolean newState = enabled != null ? enabled : !ModClothConfig.isDebugCullRender();
+        ModClothConfig.get().nucleusDebugCullRender = newState;
+        feedback(Component.literal("§e[HBM-M] Compute Cull Debug Render: " + (newState ? "§aENABLED (green overlay, depth-test disabled)" : "§cDISABLED")));
         return 1;
     }
 
@@ -125,5 +145,51 @@ public final class NucleusStressCommand {
         if (Minecraft.getInstance().player != null) {
             Minecraft.getInstance().player.displayClientMessage(message, false);
         }
+    }
+
+    private static CompletableFuture<Suggestions> suggestMatching(Iterable<String> candidates,
+                                                                   SuggestionsBuilder builder) {
+        String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);
+        for (String candidate : candidates) {
+            if (matchesCandidate(remaining, candidate.toLowerCase(Locale.ROOT))) {
+                builder.suggest(candidate);
+            }
+        }
+        return builder.buildFuture();
+    }
+
+    private static boolean matchesCandidate(String input, String candidate) {
+        if (input.isEmpty() || matchesWordStart(input, candidate)) {
+            return true;
+        }
+        int inputColon = input.indexOf(':');
+        if (inputColon >= 0) {
+            int candColon = candidate.indexOf(':');
+            if (candColon >= 0) {
+                String inputNs = input.substring(0, inputColon);
+                String inputPath = input.substring(inputColon + 1);
+                String candNs = candidate.substring(0, candColon);
+                String candPath = candidate.substring(candColon + 1);
+                if (candNs.startsWith(inputNs) && matchesWordStart(inputPath, candPath)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean matchesWordStart(String input, String candidate) {
+        if (input.isEmpty() || candidate.startsWith(input)) {
+            return true;
+        }
+        for (int i = 0; i < candidate.length(); i++) {
+            char c = candidate.charAt(i);
+            if (c == '_' || c == ':' || c == '=' || c == '/') {
+                if (candidate.startsWith(input, i + 1)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

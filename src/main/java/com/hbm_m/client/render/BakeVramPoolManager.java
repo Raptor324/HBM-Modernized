@@ -52,7 +52,7 @@ public final class BakeVramPoolManager {
     public static final int OUT_OFF_MIDBLOCK = 44;
 
     public static final PassPool POOL_MAIN = new PassPool(false);
-    public static final PassPool POOL_SHADOW = new PassPool(true);
+    public static final PassPool POOL_SHADOW = new PassPool(false);
 
     public static PassPool pool(int mode) {
         return mode == NucleusGpuBaker.MODE_SHADOW ? POOL_SHADOW : POOL_MAIN;
@@ -160,29 +160,35 @@ public final class BakeVramPoolManager {
         try {
             GL30.glBindVertexArray(vao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-            if (slim) {
-                GL20.glEnableVertexAttribArray(0);
-                GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_POS);
-                GL20.glEnableVertexAttribArray(2);
-                GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_UV0);
-                GL20.glEnableVertexAttribArray(5);
-                GL20.glVertexAttribPointer(5, 3, GL11.GL_BYTE, true, OUT_STRIDE_BYTES, OUT_OFF_NORMAL);
-            } else {
-                GL20.glEnableVertexAttribArray(0);
-                GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_POS);
-                GL20.glEnableVertexAttribArray(1);
-                GL20.glVertexAttribPointer(1, 4, GL11.GL_UNSIGNED_BYTE, true, OUT_STRIDE_BYTES, OUT_OFF_COLOR);
-                GL20.glEnableVertexAttribArray(2);
-                GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_UV0);
-                // UV1 (overlay) is constant NO_OVERLAY (0, 10) for all machines;
-                // keeping it as a constant attribute saves 4 bytes per baked vertex.
-                GL20.glDisableVertexAttribArray(3);
-                GL30.glVertexAttribI2i(3, 0, 10);
-                GL20.glEnableVertexAttribArray(4);
-                GL30.glVertexAttribIPointer(4, 2, GL11.GL_SHORT, OUT_STRIDE_BYTES, OUT_OFF_UV2);
-                GL20.glEnableVertexAttribArray(5);
-                GL20.glVertexAttribPointer(5, 3, GL11.GL_BYTE, true, OUT_STRIDE_BYTES, OUT_OFF_NORMAL);
-            }
+            // Full 48-byte attribute coverage for both Main and Shadow passes:
+            // 0: Position (vec3 float)
+            GL20.glEnableVertexAttribArray(0);
+            GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_POS);
+            // 1: Color (vec4 ubyte)
+            GL20.glEnableVertexAttribArray(1);
+            GL20.glVertexAttribPointer(1, 4, GL11.GL_UNSIGNED_BYTE, true, OUT_STRIDE_BYTES, OUT_OFF_COLOR);
+            // 2: UV0 (vec2 float)
+            GL20.glEnableVertexAttribArray(2);
+            GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_UV0);
+            // 3: UV1 (overlay) is constant NO_OVERLAY (0, 10) for all machines;
+            // keeping it as a constant attribute saves 4 bytes per baked vertex.
+            GL20.glDisableVertexAttribArray(3);
+            GL30.glVertexAttribI2i(3, 0, 10);
+            // 4: UV2 (ivec2 short)
+            GL20.glEnableVertexAttribArray(4);
+            GL30.glVertexAttribIPointer(4, 2, GL11.GL_SHORT, OUT_STRIDE_BYTES, OUT_OFF_UV2);
+            // 5: Normal (vec3 byte normalized)
+            GL20.glEnableVertexAttribArray(5);
+            GL20.glVertexAttribPointer(5, 3, GL11.GL_BYTE, true, OUT_STRIDE_BYTES, OUT_OFF_NORMAL);
+            // 6: mc_midTexCoord (vec2 float)
+            GL20.glEnableVertexAttribArray(6);
+            GL20.glVertexAttribPointer(6, 2, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_MIDTEX);
+            // 7: at_tangent (vec4 byte normalized)
+            GL20.glEnableVertexAttribArray(7);
+            GL20.glVertexAttribPointer(7, 4, GL11.GL_BYTE, true, OUT_STRIDE_BYTES, OUT_OFF_TANGENT);
+            // 8: at_midBlock (vec4 byte unnormalized)
+            GL20.glEnableVertexAttribArray(8);
+            GL20.glVertexAttribPointer(8, 4, GL11.GL_BYTE, false, OUT_STRIDE_BYTES, OUT_OFF_MIDBLOCK);
             ebo = GL15.glGenBuffers();
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, ebo);
             GlVaoSafety.bindVertexArray(previousVao);
@@ -268,7 +274,7 @@ public final class BakeVramPoolManager {
         GL20.glUniform1i(NucleusGpuBaker.cuIdxCount, baked.idxCount);
         GL20.glUniform1i(NucleusGpuBaker.cuVertBase, vertBase);
         GL20.glUniform1i(NucleusGpuBaker.cuEboBase, eboWordBase);
-        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
+        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2, baked.baseIdxSsbo);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 3, eboSsbo);
         GL43.glDispatchCompute((int) groups, 1, 1);
@@ -468,24 +474,17 @@ public final class BakeVramPoolManager {
 
     public static boolean expandPoolEbo(BakedMesh baked, ModeCache mc, int count, int mode,
                                          boolean relayoutAllowed) {
-        if (mc.eboCapacity >= count && mc.filled == count) {
+        if (mc.eboCapacity >= count) {
+            mc.filled = count;
             return true;
         }
-        int targetCapacity = Math.max(count, Math.max(MIN_EBO_INSTANCES,
-                mc.eboCapacity + Math.max(16, mc.eboCapacity >> 2)));
+        int targetCapacity = Math.max(mc.eboInstances,
+                roundUpInstanceCapacity(Math.max(count, MIN_EBO_INSTANCES)));
         if (!eboExpansionFits(baked, targetCapacity)) {
             return false;
         }
-        if (!relayoutAllowed && (count > mc.eboInstances || targetCapacity > mc.eboInstances)) {
+        if (!relayoutAllowed && targetCapacity > mc.eboInstances) {
             return false;
-        }
-        if (count > mc.eboInstances) {
-            int oldEbo = mc.eboInstances;
-            mc.eboInstances = Math.max(count, mc.eboInstances + Math.max(16, mc.eboInstances >> 2));
-            if (!relayoutPool(mode)) {
-                mc.eboInstances = oldEbo;
-                return false;
-            }
         }
         PassPool pool = pool(mode);
         if (targetCapacity > mc.eboInstances) {
@@ -752,7 +751,7 @@ public final class BakeVramPoolManager {
                     if (pool.vao != -1) {
                         GL30.glDeleteVertexArrays(pool.vao);
                     }
-                    pool.vao = createOutputVaoWithEbo(POOL_MAIN.outputSsbo, pool.eboSsbo, true);
+                    pool.vao = createOutputVaoWithEbo(POOL_MAIN.outputSsbo, pool.eboSsbo, false);
                     GlDebugMarkers.labelVao(pool.vao, "HBM_Pool_Shadow_VAO");
                 }
             } else if ((pool.vao == -1 || vaoNeedsRebuild) && pool.outputSsbo != -1 && pool.eboSsbo != -1) {
@@ -766,7 +765,7 @@ public final class BakeVramPoolManager {
                     if (POOL_SHADOW.vao != -1) {
                         GL30.glDeleteVertexArrays(POOL_SHADOW.vao);
                     }
-                    POOL_SHADOW.vao = createOutputVaoWithEbo(pool.outputSsbo, POOL_SHADOW.eboSsbo, true);
+                    POOL_SHADOW.vao = createOutputVaoWithEbo(pool.outputSsbo, POOL_SHADOW.eboSsbo, false);
                     GlDebugMarkers.labelVao(POOL_SHADOW.vao, "HBM_Pool_Shadow_VAO");
                 }
             }
@@ -927,7 +926,7 @@ public final class BakeVramPoolManager {
             }
             total += NucleusGpuBaker.countsStagingBytes;
             if (NucleusGpuBaker.boneSsbo != -1) total += (long) NucleusGpuBaker.BONE_PALETTE_SIZE * 16L * 4L;
-            if (NucleusGpuBaker.bakeParamsUbo != -1) total += 88L;
+            if (NucleusGpuBaker.bakeParamsUbo != -1) total += 96L;
             return total;
         }
     }
@@ -942,7 +941,7 @@ public final class BakeVramPoolManager {
             }
             total += NucleusGpuBaker.countsStagingBytes;
             if (NucleusGpuBaker.boneSsbo != -1) total += (long) NucleusGpuBaker.BONE_PALETTE_SIZE * 16L * 4L;
-            if (NucleusGpuBaker.bakeParamsUbo != -1) total += 88L;
+            if (NucleusGpuBaker.bakeParamsUbo != -1) total += 96L;
             return total;
         }
     }
@@ -957,7 +956,7 @@ public final class BakeVramPoolManager {
             }
             total += NucleusGpuBaker.countsStagingBytes;
             if (NucleusGpuBaker.boneSsbo != -1) total += (long) NucleusGpuBaker.BONE_PALETTE_SIZE * 16L * 4L;
-            if (NucleusGpuBaker.bakeParamsUbo != -1) total += 88L;
+            if (NucleusGpuBaker.bakeParamsUbo != -1) total += 96L;
             return total;
         }
     }
@@ -975,7 +974,7 @@ public final class BakeVramPoolManager {
             }
             total += NucleusGpuBaker.countsStagingBytes;
             if (NucleusGpuBaker.boneSsbo != -1) total += (long) NucleusGpuBaker.BONE_PALETTE_SIZE * 16L * 4L;
-            if (NucleusGpuBaker.bakeParamsUbo != -1) total += 88L;
+            if (NucleusGpuBaker.bakeParamsUbo != -1) total += 96L;
             return total;
         }
     }

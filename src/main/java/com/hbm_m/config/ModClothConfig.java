@@ -405,6 +405,17 @@ public class ModClothConfig {
     /** После каждого MDI-dispatch: одна строка INFO (число sub-draw, инстансов, атлас). */
     public boolean mdiDebugLogDispatch = false;
 
+    /**
+     * Отладочный рендер компьют-куллинга: закуленные инстансы не отрезаются,
+     * а заливаются ярко-зелёным цветом и рендерятся поверх мира без теста глубины.
+     * Флаг: {@code -Dhbm.debugCullRender=true}.
+     */
+    public boolean nucleusDebugCullRender = false;
+
+    public static boolean isDebugCullRender() {
+        return (INSTANCE != null && INSTANCE.nucleusDebugCullRender) || Boolean.getBoolean("hbm.debugCullRender");
+    }
+
     /** Плюс по строке INFO на каждую MDI-команду (тег части, baseInstance и т.д.). */
     public boolean mdiVerboseSubdraws = false;
 
