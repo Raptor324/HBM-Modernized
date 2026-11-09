@@ -78,6 +78,7 @@ uniform float uP00;
 uniform float uP11;
 uniform vec4 uFrustumPlanes[6];
 uniform uint uFrustumOnly;
+uniform uint uDebugCullMode;
 
 vec3 quatRotate(vec4 q, vec3 v) {
     return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
@@ -100,11 +101,11 @@ vec4 instQuat(uint base) {
                 snorm16ToFloat(wzw), snorm16ToFloat(wzw >> 16u));
 }
 
-bool testFrustumAabb(vec3 viewCenter, vec3 viewHalfExt) {
+bool testFrustumAabb(vec3 worldCenter, vec3 worldHalfExt) {
     for (int i = 0; i < 6; i++) {
         vec3 n = uFrustumPlanes[i].xyz;
-        float d = dot(n, viewCenter) + uFrustumPlanes[i].w;
-        float r = dot(abs(n), viewHalfExt);
+        float d = dot(n, worldCenter) + uFrustumPlanes[i].w;
+        float r = dot(abs(n), worldHalfExt);
         if (d + r < 0.0) {
             return false;
         }
@@ -136,15 +137,11 @@ bool projectViewAabb(vec3 worldCenter, vec3 worldHe, float znear, float zfar, fl
 
 float hizOccluder(vec4 aabb) {
     vec4 uv = clamp(vec4(min(aabb.xy, aabb.zw), max(aabb.xy, aabb.zw)), 0.0, 1.0);
-    // Map directly into actual mip-0 texels (uViewSize is the FULL framebuffer;
-    // the pyramid mip-0 is the pow2-snapped lower half). The +-0.5 bias is the
-    // standard round-to-nearest for a half-open rect; sub-pixel rects return
-    // the conservative VISIBLE below.
-    ivec4 rect = ivec4(uv * uMip0Size.xyxy + vec4(0.5, 0.5, -0.5, -0.5));
+    ivec4 rect = ivec4(uv * uMip0Size.xyxy);
     if (any(lessThan(rect.zw, rect.xy))) {
         return 1.0;
     }
-    rect = min(rect, ivec4(uMip0Size.xyxy) - 1);
+    rect = clamp(rect, ivec4(0), ivec4(uMip0Size.xyxy) - 1);
 
     ivec2 extent = rect.zw - rect.xy;
     int level = max(findMSB(max(extent.x, extent.y)), 0);
@@ -202,15 +199,12 @@ bool testInstanceVisibility(uint inIdx) {
         worldHe += vec3(0.15);
     }
 
-    vec3 viewCenter = (uViewMat * vec4(worldCenter, 1.0)).xyz;
-    mat3 absView = mat3(abs(uViewMat[0].xyz), abs(uViewMat[1].xyz), abs(uViewMat[2].xyz));
-    vec3 viewHe = absView * worldHe;
-
-    // 1. 6-plane AABB frustum test in view space
-    bool isVisible = testFrustumAabb(viewCenter, viewHe);
+    // 1. 6-plane AABB frustum test in world space
+    bool isVisible = testFrustumAabb(worldCenter, worldHe);
 
     // 1.5. Analytic Subpixel Culling:
     if (isVisible) {
+        vec3 viewCenter = (uViewMat * vec4(worldCenter, 1.0)).xyz;
         float depthZ = -viewCenter.z;
         if (depthZ > unpaddedRadius + uZNear) {
             float subpixelThresholdPx = (unpaddedRadius < 0.75 || isAnimOrParam) ? 1.35 : 0.75;
@@ -298,8 +292,7 @@ void main() {
             // compacted to the window front and overwrote each other (parts
             // displaced/vanished/duplicated, alternating frame to frame - the
             // elected lane is the only per-frame variable on a static scene).
-            if (visCount != 0u
-                    && gl_SubgroupInvocationID == subgroupBallotFindLSB(subgroupBallot(true))) {
+            if (visCount != 0u && gl_SubgroupInvocationID == 0u) {
                 scanBase = atomicAdd(commands[cmdIdx].instanceCount, visCount);
             }
             scanBase = subgroupBroadcastFirst(scanBase);
@@ -308,11 +301,32 @@ void main() {
                 uint outIdx = commands[cmdIdx].baseInstance + slot;
                 copyInstance(inIdx, outIdx);
             }
+
+            if (uDebugCullMode != 0u) {
+                uvec4 culledBallot = subgroupBallot(!isVisible);
+                uint culledCount = subgroupBallotBitCount(culledBallot);
+                uint culledScanBase = 0u;
+                uint culledCmd = cmdIdx + uNumCommands;
+                if (culledCount != 0u && gl_SubgroupInvocationID == 0u) {
+                    culledScanBase = atomicAdd(commands[culledCmd].instanceCount, culledCount);
+                }
+                culledScanBase = subgroupBroadcastFirst(culledScanBase);
+                if (!isVisible) {
+                    uint slot = culledScanBase + subgroupBallotExclusiveBitCount(culledBallot);
+                    uint outIdx = commands[culledCmd].baseInstance + slot;
+                    copyInstance(inIdx, outIdx);
+                }
+            }
         } else {
             // Command boundary lane handling
             if (isVisible) {
                 uint slot = atomicAdd(commands[cmdIdx].instanceCount, 1u);
                 uint outIdx = commands[cmdIdx].baseInstance + slot;
+                copyInstance(inIdx, outIdx);
+            } else if (uDebugCullMode != 0u) {
+                uint culledCmd = cmdIdx + uNumCommands;
+                uint slot = atomicAdd(commands[culledCmd].instanceCount, 1u);
+                uint outIdx = commands[culledCmd].baseInstance + slot;
                 copyInstance(inIdx, outIdx);
             }
         }
@@ -322,6 +336,11 @@ void main() {
             uint slot = atomicAdd(commands[cmdIdx].instanceCount, 1u);
             uint outIdx = commands[cmdIdx].baseInstance + slot;
             copyInstance(inIdx, outIdx);
+        } else if (uDebugCullMode != 0u && isValid) {
+            uint culledCmd = cmdIdx + uNumCommands;
+            uint slot = atomicAdd(commands[culledCmd].instanceCount, 1u);
+            uint outIdx = commands[culledCmd].baseInstance + slot;
+            copyInstance(inIdx, outIdx);
         }
     }
 #else
@@ -329,6 +348,11 @@ void main() {
     if (isVisible) {
         uint slot = atomicAdd(commands[cmdIdx].instanceCount, 1u);
         uint outIdx = commands[cmdIdx].baseInstance + slot;
+        copyInstance(inIdx, outIdx);
+    } else if (uDebugCullMode != 0u && isValid) {
+        uint culledCmd = cmdIdx + uNumCommands;
+        uint slot = atomicAdd(commands[culledCmd].instanceCount, 1u);
+        uint outIdx = commands[culledCmd].baseInstance + slot;
         copyInstance(inIdx, outIdx);
     }
 #endif

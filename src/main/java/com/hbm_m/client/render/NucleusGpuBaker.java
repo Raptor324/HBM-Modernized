@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -164,9 +165,100 @@ public final class NucleusGpuBaker {
     /** Optional Hi-Z occlusion and subpixel culling uniforms (see CULL_SOURCE pass 0). */
     static int cuHiZMode, cuClipMat, cuViewSize, cuMip0Size, cuPyramidLevels, cuSubpixelMinNdc, cuIsShadowPass;
     static int cuShadowDistortMode, cuShadowDistort;
-    static int cuHasMainView, cuMainPlanes, cuMainClipMat, cuShadowDir;
+    static int cuHasMainView, cuMainPlanes, cuMainClipMat, cuShadowDir, cuDebugCullMode;
+    public record CulledDraw(BakedMesh baked, int count, int firstIndex) {}
+    private static final java.util.List<CulledDraw> CULLED_MAIN_DRAWS = new java.util.ArrayList<>();
     private static final float[] LAST_MAIN_PLANES = new float[24];
     private static final Matrix4f LAST_MAIN_CLIP_MAT = new Matrix4f();
+    private static int debugRasterProgram = -1;
+    private static int uDebugModelViewLoc = -1;
+    private static int uDebugProjLoc = -1;
+    private static final Matrix4f LAST_MAIN_PROJ = new Matrix4f();
+
+    private static void ensureDebugRasterProgram() {
+        if (debugRasterProgram > 0) return;
+        String vsh = """
+                #version 330 core
+                layout(location = 0) in vec3 Position;
+                uniform mat4 ModelViewMat;
+                uniform mat4 ProjMat;
+                void main() {
+                    gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
+                }
+                """;
+        String fsh = """
+                #version 330 core
+                out vec4 fragColor;
+                void main() {
+                    fragColor = vec4(0.0, 1.0, 0.0, 0.85);
+                }
+                """;
+        debugRasterProgram = GlShaderUtil.createRasterProgram(vsh, fsh, java.util.Map.of(0, "Position"), "HBM_DebugCull_Raster");
+        if (debugRasterProgram > 0) {
+            uDebugModelViewLoc = GL20.glGetUniformLocation(debugRasterProgram, "ModelViewMat");
+            uDebugProjLoc = GL20.glGetUniformLocation(debugRasterProgram, "ProjMat");
+        }
+    }
+
+    public static void renderDebugCulledOverlay(Matrix4f projection) {
+        if (!com.hbm_m.config.ModClothConfig.isDebugCullRender() || CULLED_MAIN_DRAWS.isEmpty()) {
+            CULLED_MAIN_DRAWS.clear();
+            return;
+        }
+        if (POOL_MAIN.vao == -1 || !RenderSystem.isOnRenderThread()) {
+            CULLED_MAIN_DRAWS.clear();
+            return;
+        }
+        ensureDebugRasterProgram();
+        if (debugRasterProgram <= 0) {
+            CULLED_MAIN_DRAWS.clear();
+            return;
+        }
+
+        Matrix4f effProj = projection != null ? projection : LAST_MAIN_PROJ;
+        int previousProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+        int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
+
+        try {
+            com.mojang.blaze3d.platform.GlStateManager._glUseProgram(debugRasterProgram);
+            GlVaoSafety.bindVertexArray(POOL_MAIN.vao);
+
+            if (uDebugModelViewLoc >= 0) {
+                Matrix4f viewRot = new Matrix4f(FrameViewState.viewBasisRotation());
+                MAIN_MV.set(viewRot).translate(-FrameViewState.relCamX(),
+                        -FrameViewState.relCamY(), -FrameViewState.relCamZ());
+                MAIN_MV.get(CLIP_MAT_FLOATS);
+                GL20.glUniformMatrix4fv(uDebugModelViewLoc, false, CLIP_MAT_FLOATS);
+            }
+            if (uDebugProjLoc >= 0) {
+                float[] projFloats = new float[16];
+                effProj.get(projFloats);
+                GL20.glUniformMatrix4fv(uDebugProjLoc, false, projFloats);
+            }
+
+            RenderSystem.depthMask(false);
+            RenderSystem.disableDepthTest();
+            RenderSystem.enableBlend();
+            RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            RenderSystem.disableCull();
+
+            for (CulledDraw draw : CULLED_MAIN_DRAWS) {
+                if (draw.count() > 0) {
+                    GL11.glDrawElements(GL11.GL_TRIANGLES, draw.count(), GL11.GL_UNSIGNED_INT, (long) draw.firstIndex() * 4L);
+                }
+            }
+
+            RenderSystem.enableDepthTest();
+            RenderSystem.depthMask(true);
+            RenderSystem.disableBlend();
+        } catch (Throwable t) {
+            com.hbm_m.main.MainRegistry.LOGGER.warn("[HBM-M] Error rendering debug culled overlay", t);
+        } finally {
+            CULLED_MAIN_DRAWS.clear();
+            GlVaoSafety.bindVertexArray(previousVao);
+            com.mojang.blaze3d.platform.GlStateManager._glUseProgram(previousProgram);
+        }
+    }
     private static final float[] LAST_MAIN_CLIP_FLOATS = new float[16];
     private static boolean lastMainViewValid = false;
     private static final float[] SHADOW_DIR_VEC = new float[] { 0.0f, -1.0f, 0.0f };
@@ -310,7 +402,7 @@ public final class NucleusGpuBaker {
     }
 
     /** Cull pre-pass available: toggle on, indirect draws present, cull program compiled. */
-    static boolean cullEnabled() {
+    public static boolean cullEnabled() {
         return CULL_SWITCH && cullProgramId != -1;
     }
 
@@ -387,7 +479,8 @@ public final class NucleusGpuBaker {
         // shadow viewport (shadow map resolution) differs from the screen, so
         // building both passes through the singleton reallocated the pyramid
         // texture twice per frame. Shadows keep frustum-only culling.
-        if (hiZSessionDisabled || !com.hbm_m.config.ModClothConfig.get().nucleusBakeHiZ) {
+        if (hiZSessionDisabled || (!com.hbm_m.config.ModClothConfig.get().nucleusBakeHiZ
+                && !com.hbm_m.config.ModClothConfig.isDebugCullRender())) {
             return 0;
         }
         if (mode == MODE_SHADOW) {
@@ -1202,6 +1295,13 @@ public final class NucleusGpuBaker {
         // Both passes share POOL_MAIN.outputSsbo and baked.main.recordSsbo: the
         // shadow pass reuses the main pass's expansion and only runs its own cull.
         if (!ensureSharedMainExpanded(baked, records, count, mutationEpoch, relayoutAllowed, recChangedOut)) {
+            if (com.hbm_m.client.render.debug.NucleusFrameCapture.isCapturing()) {
+                com.hbm_m.client.render.debug.NucleusFrameCapture.recordEvent(
+                        "GPU_BAKE_ENTRY_" + (mode == MODE_SHADOW ? "SHADOW" : "MAIN"),
+                        baked.debugTag() + " [GPU_BAKE_EXPAND_FAILED] (inst=" + count + ")",
+                        com.hbm_m.client.render.debug.NucleusFrameCapture.inspectInstanceBuffer(
+                                baked.debugTag(), records, count, InstancedStaticPartRenderer.INSTANCE_DATA_SIZE));
+            }
             return false;
         }
         if (com.hbm_m.client.render.debug.NucleusFrameCapture.isCapturing()) {
@@ -1393,7 +1493,7 @@ public final class NucleusGpuBaker {
         UBO_INT_VIEW.flip();
 
         GL15.glBindBuffer(GL31.GL_UNIFORM_BUFFER, bakeParamsUbo);
-        GL15.glBufferSubData(GL31.GL_UNIFORM_BUFFER, 0L, UBO_BYTE_BUF);
+        GL15.glBufferData(GL31.GL_UNIFORM_BUFFER, UBO_BYTE_BUF, GL15.GL_STREAM_DRAW);
         GL30.glBindBufferBase(GL31.GL_UNIFORM_BUFFER, UBO_BINDING_BAKE_PARAMS, bakeParamsUbo);
 
         // Save the pack's texture binding on SAMPLER_UNIT (GL_TEXTURE4) before binding uJointSpecs:
@@ -1405,11 +1505,9 @@ public final class NucleusGpuBaker {
         NucleusJointSpecs.bindSampler();
 
         // WAR synchronization with previous draw call: ensures shader storage and vertex attribute
-        // arrays are synchronized before compute write. BUFFER_UPDATE covers record uploads
-        // (glCopyBufferSubData via staging / glBufferSubData fallback) landing in SSBO 1.
+        // arrays are synchronized before compute write.
         GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT
-                | GL43.GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT
-                | GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
+                | GL43.GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, inputSsbo);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 1, recordSsbo);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2, outputTargetSsbo);
@@ -1460,28 +1558,22 @@ public final class NucleusGpuBaker {
         // Optional Hi-Z phase: build the pyramid BEFORE the cull program is bound
         // (regenerate switches programs itself) - at most once per frame per pass,
         // before the pass's first cull dispatch. 0 = frustum-only (current behavior).
-        int prevUnit10Texture = 0;
         int hiZMode = 0;
         if (bakeHiZPlanned(mode)) {
-            // Capture the PHYSICAL unit-10 binding BEFORE ensureBakeHiZ:
-            // HiZDepthPyramid.regenerate's finally binds texture 0 on unit 10, so a
-            // capture taken after the call would read 0 instead of the pack's texture.
-            com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE10);
-            prevUnit10Texture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
-            com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
             hiZMode = ensureBakeHiZ(mode);
         }
 
         GlStateManager._glUseProgram(cullProgramId);
 
-        // Bind the pyramid to sampler unit 10 (same convention as NucleusGpuCuller)
-        // through GlStateManager (cache-coherent), restoring the captured binding.
-        boolean hiZBound = false;
+        // Always capture and bind unit 10 for driver sampler validation on layout(binding = 10)
+        GlStateManager._activeTexture(GL13.GL_TEXTURE10);
+        int prevUnit10Texture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
         if (hiZMode == 1) {
-            com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE10);
-            com.mojang.blaze3d.platform.GlStateManager._bindTexture(HiZDepthPyramid.get().getPyramidTextureId());
-            hiZBound = true;
+            GlStateManager._bindTexture(HiZDepthPyramid.get().getPyramidTextureId());
+        } else {
+            GlStateManager._bindTexture(HiZDepthPyramid.get().getPyramidTextureId()); // binds 1x1 placeholder texture so layout(binding = 10) uniform sampler2D uDepthPyramid has a valid 2D texture and passes driver sampler validation!
         }
+        GlStateManager._activeTexture(GL13.GL_TEXTURE0);
         GL20.glUniform1i(cuHiZMode, hiZMode);
         if (cuClipMat >= 0 && worldToClip != null) {
             worldToClip.get(CLIP_MAT_FLOATS);
@@ -1535,6 +1627,10 @@ public final class NucleusGpuBaker {
         }
 
         GL20.glUniform1i(cuPass, 0);
+        boolean debugCull = com.hbm_m.config.ModClothConfig.isDebugCullRender() && (mode == MODE_MAIN);
+        if (cuDebugCullMode >= 0) {
+            GL20.glUniform1i(cuDebugCullMode, debugCull ? 1 : 0);
+        }
         // The EBO identity fill (expandPoolEbo) shares this program and
         // leaves uIdentity at 1 - reset it so pass 1 reads the visible list.
         GL20.glUniform1i(cuIdentity, 0);
@@ -1547,9 +1643,8 @@ public final class NucleusGpuBaker {
         // absolute indices shifted by vertBase (always MODE_MAIN's shared output vertex base).
         GL20.glUniform1i(cuVertBase, baked.vertBase[MODE_MAIN]);
         GL20.glUniform1i(cuEboBase, baked.eboWordBase[baked.modeOf(mc)]);
-        // BUFFER_UPDATE: the records were just written by glCopyBufferSubData (staging)
-        // or glBufferSubData (fallback) - make those writes visible to SSBO reads.
-        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
+        // Synchronize prior shader writes to SSBO before compute execution.
+        GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, baked.main.recordSsbo);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 1, mc.ctlSsbo);
         GL43.glDispatchCompute((count + LOCAL_SIZE - 1) / LOCAL_SIZE, 1, 1);
@@ -1559,14 +1654,11 @@ public final class NucleusGpuBaker {
         // Binding 1 stays resident - the assembler rebinds the same buffer below
         // with no GPU work in between (P5 trim; its trailing unbind set owns it).
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, 0);
-        if (hiZBound) {
-            // The pyramid is only sampled by pass 0: restore the pack's unit-10
-            // binding before the assembler/EBO passes run.
-            com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE10);
-            com.mojang.blaze3d.platform.GlStateManager._bindTexture(prevUnit10Texture);
-            com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
-            hiZBound = false;
-        }
+        // The pyramid is only sampled by pass 0: restore the pack's unit-10
+        // binding before the assembler/EBO passes run.
+        GlStateManager._activeTexture(GL13.GL_TEXTURE10);
+        GlStateManager._bindTexture(prevUnit10Texture);
+        GlStateManager._activeTexture(GL13.GL_TEXTURE0);
 
         // Assemble: visible count -> indirect dispatch/draw words (single invocation).
         GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
@@ -1627,6 +1719,15 @@ public final class NucleusGpuBaker {
                 pool(baked.modeOf(mc)).eboSsbo);
         GL43.glBindBuffer(GL43.GL_DISPATCH_INDIRECT_BUFFER, mc.ctlSsbo);
         GL43.glDispatchComputeIndirect(EBO_DISPATCH_OFFSET);
+        if (debugCull) {
+            GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+            GL20.glUniform1i(cuPass, 3);
+            int total = baked.idxCount * count;
+            int groups = (total + 63) / 64;
+            int gx = Math.min(groups, 65535);
+            int gy = (groups + 65534) / 65535;
+            GL43.glDispatchCompute(gx, gy, 1);
+        }
         // Pipeline-exit hygiene (deliberate, do not batch away): every path out of
         // bakeEntry can reach a foreign pack-program draw from here (the pooled
         // flush), and pack GLSL is arbitrary -
@@ -1773,6 +1874,13 @@ public final class NucleusGpuBaker {
                     "INST_BSIZE_WORD", InstancedStaticPartRenderer.BBOX_SIZE_FLOAT_OFFSET,
                     "INST_FADE_WORD", InstancedStaticPartRenderer.FADE_FLOAT_OFFSET,
                     "INST_GRAD_WORD", InstancedStaticPartRenderer.GRAD_FLOAT_OFFSET);
+            if (com.hbm_m.client.render.culling.NucleusGpuCuller.hasSubgroupBallot()) {
+                source = source.replaceFirst("(?m)^#version 430 core$",
+                        "#version 430 core\n"
+                                + "#extension GL_KHR_shader_subgroup_basic : enable\n"
+                                + "#extension GL_KHR_shader_subgroup_ballot : enable\n"
+                                + "#define NUCLEUS_BALLOT 1\n");
+            }
             int p = GlShaderUtil.createComputeProgram(source, "HBM_BakeCull_CS");
             if (p == 0) {
                 cullInitFailed = true;
@@ -1802,6 +1910,7 @@ public final class NucleusGpuBaker {
             cuMainPlanes = GL20.glGetUniformLocation(p, "uMainPlane");
             cuMainClipMat = GL20.glGetUniformLocation(p, "uMainClipMat");
             cuShadowDir = GL20.glGetUniformLocation(p, "uShadowDir");
+            cuDebugCullMode = GL20.glGetUniformLocation(p, "uDebugCullMode");
         } catch (Exception t) {
             cullInitFailed = true;
             cullProgramId = -1;
@@ -1963,7 +2072,7 @@ public final class NucleusGpuBaker {
      */
     private static boolean flushPoolGpuCounts(PassPool pool, int mode, ShaderInstance packShader,
                                               java.util.ArrayList<PendingDraw> pending) {
-        if (!mdicEnabled() || !cullEnabled() || pending.isEmpty()) {
+        if (!mdicEnabled() || !cullEnabled() || pending.isEmpty() || com.hbm_m.config.ModClothConfig.isDebugCullRender()) {
             return false;
         }
         int n = pending.size();
@@ -1990,11 +2099,18 @@ public final class NucleusGpuBaker {
         }
         long instances = 0L;
         boolean anyRepaired = false;
+        boolean copyBarrierIssued = false;
         for (int i = 0; i < n; i++) {
             PendingDraw pd = pending.get(i);
             ModeCache mc = pd.cache;
             if (mc.cmdGenStamp != pool.cmdGen || mc.cmdSlotWritten != i
                     || i >= pool.cmdSlotOwners.length || pool.cmdSlotOwners[i] != mc) {
+                if (!copyBarrierIssued) {
+                    // mc.ctlSsbo was written by the compute shader SSBO in runCull.
+                    // BUFFER_UPDATE_BARRIER_BIT ensures DMA buffer copies see prior shader writes.
+                    GL42.glMemoryBarrier(GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
+                    copyBarrierIssued = true;
+                }
                 anyRepaired = true;
                 GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, mc.ctlSsbo);
                 GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, pool.cmdSsbo);
@@ -2013,7 +2129,6 @@ public final class NucleusGpuBaker {
             mc.countsDirty = false;
         }
         if (anyRepaired) {
-            GL42.glMemoryBarrier(GL42.GL_COMMAND_BARRIER_BIT);
             GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, 0);
             GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, 0);
         }
@@ -2030,16 +2145,11 @@ public final class NucleusGpuBaker {
         GL15.glBufferData(GL46.GL_PARAMETER_BUFFER, mdicCountBuf, GL15.GL_DYNAMIC_DRAW);
         GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, pool.cmdSsbo);
         GL30.glBindVertexArray(pool.vao);
-        if (mode == MODE_SHADOW) {
-            // Shadow draw: resolve the ACTIVE pack program's slim-layout attribute
-            // locations and rebind the VAO pointers if they differ from the
-            // hard-coded 0/2/5 (see bindSlimShadowAttributes).
-            IrisBakeBridge.bindSlimShadowAttributes(packShader, POOL_MAIN.outputSsbo);
-        } else if (mode == MODE_MAIN) {
+        if (mode == MODE_SHADOW || mode == MODE_MAIN) {
             // One bindIrisExtendedAttributes call for the WHOLE multi-draw: the
             // locations are pack-program-dependent and the pointers snapshot
             // GL_ARRAY_BUFFER, so the pool output is bound as the source first.
-            IrisBakeBridge.bindIrisExtendedAttributes(packShader, pool.outputSsbo, OUT_STRIDE_BYTES,
+            IrisBakeBridge.bindIrisExtendedAttributes(packShader, POOL_MAIN.outputSsbo, OUT_STRIDE_BYTES,
                     OUT_OFF_MIDTEX, OUT_OFF_TANGENT, OUT_OFF_MIDBLOCK);
         }
         if (GlDebugMarkers.ENABLED && GlDebugMarkers.isActive()) {
@@ -2137,7 +2247,17 @@ public final class NucleusGpuBaker {
             recordBakeStats(mode, pd.instanceCount, vis, occl,
                     cullEnabled() && mc.cullValid && mc.lastCullHiZ);
             if (indexCount <= 0) {
+                if (com.hbm_m.config.ModClothConfig.isDebugCullRender() && mode == MODE_MAIN && mc.lastCulledCount > 0) {
+                    int culledFirstIndex = pd.baked.eboWordBase[mode] + (int) mc.lastVisibleCount * pd.baked.idxCount;
+                    int culledIndexCount = (int) mc.lastCulledCount * pd.baked.idxCount;
+                    CULLED_MAIN_DRAWS.add(new CulledDraw(pd.baked, culledIndexCount, culledFirstIndex));
+                }
                 continue; // nothing visible: compacted out CPU-side (no no-op command)
+            }
+            if (com.hbm_m.config.ModClothConfig.isDebugCullRender() && mode == MODE_MAIN && mc.lastCulledCount > 0) {
+                int culledFirstIndex = pd.baked.eboWordBase[mode] + (int) mc.lastVisibleCount * pd.baked.idxCount;
+                int culledIndexCount = (int) mc.lastCulledCount * pd.baked.idxCount;
+                CULLED_MAIN_DRAWS.add(new CulledDraw(pd.baked, culledIndexCount, culledFirstIndex));
             }
             // DrawElementsIndirectCommand: indexCount, instanceCount, firstIndex,
             // baseVertex, baseInstance.
@@ -2165,16 +2285,11 @@ public final class NucleusGpuBaker {
         // from on the GPU-count path.
         GL15.glBufferData(GL40.GL_DRAW_INDIRECT_BUFFER, buf, GL15.GL_DYNAMIC_DRAW);
         GL30.glBindVertexArray(pool.vao);
-        if (mode == MODE_SHADOW) {
-            // Shadow draw: resolve the ACTIVE pack program's slim-layout attribute
-            // locations and rebind the VAO pointers if they differ from the
-            // hard-coded 0/2/5 (see bindSlimShadowAttributes).
-            IrisBakeBridge.bindSlimShadowAttributes(packShader, POOL_MAIN.outputSsbo);
-        } else if (mode == MODE_MAIN) {
+        if (mode == MODE_SHADOW || mode == MODE_MAIN) {
             // One bindIrisExtendedAttributes call for the WHOLE multi-draw: the
             // locations are pack-program-dependent and the pointers snapshot
             // GL_ARRAY_BUFFER, so the pool output is bound as the source first.
-            IrisBakeBridge.bindIrisExtendedAttributes(packShader, pool.outputSsbo, OUT_STRIDE_BYTES,
+            IrisBakeBridge.bindIrisExtendedAttributes(packShader, POOL_MAIN.outputSsbo, OUT_STRIDE_BYTES,
                     OUT_OFF_MIDTEX, OUT_OFF_TANGENT, OUT_OFF_MIDBLOCK);
         }
         if (GlDebugMarkers.ENABLED && GlDebugMarkers.isActive()) {
@@ -2308,6 +2423,8 @@ public final class NucleusGpuBaker {
                 continue;
             }
             mc.lastVisibleCount = visible;
+            int culled = ctlBatchReadback.getInt(slotBase + 4);
+            mc.lastCulledCount = (culled >= 0 && culled <= pd.instanceCount) ? culled : Math.max(0, pd.instanceCount - visible);
             // getInt(index) is ABSOLUTE (position-independent): the occlusion word
             // lives at slotBase + word 15 (reading per-slot offset for F3 stats).
             int occluded = ctlBatchReadback.getInt(slotBase + 15 * 4);
@@ -2329,6 +2446,9 @@ public final class NucleusGpuBaker {
      * when nothing baked or without a pack shader.
      */
     public static void presentMainBatch(Matrix4f projection) {
+        if (projection != null) {
+            LAST_MAIN_PROJ.set(projection);
+        }
         if (MAIN_BAKE_QUEUE.isEmpty() && PENDING_MAIN.isEmpty()) {
             return;
         }
@@ -2530,7 +2650,8 @@ public final class NucleusGpuBaker {
                     freeModeCache(bm.shadow);
                     shadowChanged = true;
                 } else if (cacheAllocated(bm.shadow) && bm.shadow.recordCount > 0
-                        && bm.shadow.outInstances > 256 && bm.shadow.recordCount * 4 < bm.shadow.outInstances) {
+                        && (bm.shadow.outInstances > 256 || bm.shadow.eboInstances > 256)
+                        && bm.shadow.recordCount * 4 < Math.max(bm.shadow.outInstances, bm.shadow.eboInstances)) {
                     int target = roundUpInstanceCapacity(bm.shadow.recordCount);
                     bm.shadow.outInstances = target;
                     bm.shadow.eboInstances = target;
@@ -2540,7 +2661,8 @@ public final class NucleusGpuBaker {
                     freeModeCache(bm.main);
                     mainChanged = true;
                 } else if (cacheAllocated(bm.main) && bm.main.recordCount > 0
-                        && bm.main.outInstances > 256 && bm.main.recordCount * 4 < bm.main.outInstances) {
+                        && (bm.main.outInstances > 256 || bm.main.eboInstances > 256)
+                        && bm.main.recordCount * 4 < Math.max(bm.main.outInstances, bm.main.eboInstances)) {
                     int target = roundUpInstanceCapacity(bm.main.recordCount);
                     bm.main.outInstances = target;
                     bm.main.eboInstances = target;
@@ -2874,6 +2996,11 @@ public final class NucleusGpuBaker {
             GL20.glDeleteProgram(cullProgramId);
             cullProgramId = -1;
         }
+        if (debugRasterProgram != -1) {
+            GL20.glDeleteProgram(debugRasterProgram);
+            debugRasterProgram = -1;
+        }
+        CULLED_MAIN_DRAWS.clear();
         cullInitFailed = false;
         if (boneSsbo != -1) {
             GL15.glDeleteBuffers(boneSsbo);

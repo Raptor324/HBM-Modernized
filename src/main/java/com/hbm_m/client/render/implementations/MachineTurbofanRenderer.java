@@ -55,8 +55,8 @@ public final class MachineTurbofanRenderer {
             // ticks per cycle = mom/2 deg/tick).
             .staticPart("Body", MachineTurbofanRenderer::animateStatic)
             .staticPart("Blades", MachineTurbofanRenderer::animateBlades)
-            .part("AfterburnerCold", MachineTurbofanRenderer::animateCold)
-            .part("AfterburnerHot", MachineTurbofanRenderer::animateHot)
+            .conditionalPart("AfterburnerCold", be -> be.getAfterburner() <= 0)
+            .conditionalPart("AfterburnerHot", be -> be.getAfterburner() > 0)
             .itemParts("Body", "Blades", "AfterburnerCold")
             .blockTransform(MachineTurbofanRenderer::applyBlockTransform)
             .register();

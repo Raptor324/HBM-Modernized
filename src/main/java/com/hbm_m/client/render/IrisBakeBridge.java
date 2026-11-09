@@ -32,6 +32,9 @@ public final class IrisBakeBridge {
     public static void bindIrisExtendedAttributes(ShaderInstance shader, int outputSsbo,
                                                   int strideBytes, int offMidTex, int offTangent,
                                                   int offMidBlock) {
+        if (shader == null || outputSsbo == -1) {
+            return;
+        }
         long gen = IrisExtendedShaderAccess.getPipelineGeneration();
         if (extAttribShader != shader || extAttribPipelineGen != gen) {
             extAttribShader = shader;
@@ -71,50 +74,11 @@ public final class IrisBakeBridge {
     private static boolean slimAttribMismatchLogged = false;
 
     public static void bindSlimShadowAttributes(ShaderInstance shader, int outputSsbo) {
-        if (shader == null || outputSsbo == -1) {
-            return;
-        }
-        long gen = IrisExtendedShaderAccess.getPipelineGeneration();
-        if (slimAttribShader != shader || slimAttribPipelineGen != gen) {
-            slimAttribShader = shader;
-            slimAttribPipelineGen = gen;
-            int program = shader.getId();
-            slimLocPos = firstAttrib(program, "iris_Position", "Position");
-            slimLocUv = firstAttrib(program, "iris_UV0", "UV0");
-            slimLocNormal = firstAttrib(program, "iris_Normal", "Normal");
-        }
-        if (slimLocPos < 0 && slimLocUv < 0 && slimLocNormal < 0) {
-            return;
-        }
-        if (slimLocPos == 0
-                && (slimLocUv < 0 || slimLocUv == 2)
-                && (slimLocNormal < 0 || slimLocNormal == 5)) {
-            return;
-        }
-        if (!slimAttribMismatchLogged) {
-            slimAttribMismatchLogged = true;
-            MainRegistry.LOGGER.info(
-                    "[HBM-M] NucleusGpuBaker: pack shadow program attribute locations "
-                            + "(Position={}, UV0={}, Normal={}) differ from the shadow VAO layout "
-                            + "(0, 2, 5) - rebinding slim shadow attributes per program",
-                    slimLocPos, slimLocUv, slimLocNormal);
-        }
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, outputSsbo);
-        if (slimLocPos >= 0) {
-            GL20.glEnableVertexAttribArray(slimLocPos);
-            GL20.glVertexAttribPointer(slimLocPos, 3, GL11.GL_FLOAT, false,
-                    BakeVramPoolManager.OUT_STRIDE_BYTES, BakeVramPoolManager.OUT_OFF_POS);
-        }
-        if (slimLocUv >= 0) {
-            GL20.glEnableVertexAttribArray(slimLocUv);
-            GL20.glVertexAttribPointer(slimLocUv, 2, GL11.GL_FLOAT, false,
-                    BakeVramPoolManager.OUT_STRIDE_BYTES, BakeVramPoolManager.OUT_OFF_UV0);
-        }
-        if (slimLocNormal >= 0) {
-            GL20.glEnableVertexAttribArray(slimLocNormal);
-            GL20.glVertexAttribPointer(slimLocNormal, 3, GL11.GL_BYTE, true,
-                    BakeVramPoolManager.OUT_STRIDE_BYTES, BakeVramPoolManager.OUT_OFF_NORMAL);
-        }
+        bindIrisExtendedAttributes(shader, outputSsbo,
+                BakeVramPoolManager.OUT_STRIDE_BYTES,
+                BakeVramPoolManager.OUT_OFF_MIDTEX,
+                BakeVramPoolManager.OUT_OFF_TANGENT,
+                BakeVramPoolManager.OUT_OFF_MIDBLOCK);
     }
 
     public static int firstAttrib(int program, String... names) {

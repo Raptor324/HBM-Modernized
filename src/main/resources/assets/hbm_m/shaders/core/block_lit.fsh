@@ -18,6 +18,7 @@ uniform float FogEnd;
 // screen-door dissolve instead of alpha blending - no fade-tail sort, no blend
 // passes. Not uploaded by the plain block_lit program - stays 0.0.
 uniform float uDitherFade;
+uniform vec4 uDebugColor;
 
 out vec4 fragColor;
 
@@ -27,6 +28,10 @@ float fadeDitherThreshold(vec2 fragCoord) {
 }
 
 void main() {
+    if (uDebugColor.a > 0.0) {
+        fragColor = uDebugColor;
+        return;
+    }
     // Both texture() samples sit above the dither discard: fadeDitherThreshold
     // varies per pixel, so that discard is non-uniform across a quad, and
     // implicit-derivative texture() lookups in non-uniform control flow are

@@ -6,6 +6,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -132,6 +134,278 @@ public final class NMeshPartBakedModel implements BakedModel {
         return true;
     }
 
+    public boolean hasMaterialColors() {
+        for (BoundSubMesh b : subMeshes) {
+            NMeshData.SubMesh sm = b.subMesh();
+            if (sm.kdR != 1f || sm.kdG != 1f || sm.kdB != 1f) return true;
+            if (emissiveAmbient && (sm.kaR > 0f || sm.kaG > 0f || sm.kaB > 0f)) return true;
+        }
+        return false;
+    }
+
+    public @Nullable float[] getMaterialColorTint() {
+        if (subMeshes.isEmpty()) return null;
+        NMeshData.SubMesh first = subMeshes.get(0).subMesh();
+        float fakeLight = emissiveAmbient ? ((first.kaR + first.kaG + first.kaB) / 3.0f) : 0f;
+        return new float[] { first.kdR, first.kdG, first.kdB, Math.min(1f, fakeLight) };
+    }
+
+    public record DirectIrisCompanionData(
+            ByteBuffer vertexBuffer,
+            int[] indices,
+            int vertexCount,
+            float[] weldedPositions,
+            float minX, float minY, float minZ,
+            float maxX, float maxY, float maxZ,
+            int stride
+    ) implements AutoCloseable {
+        @Override
+        public void close() {
+            if (vertexBuffer != null) {
+                MemoryUtil.memFree(vertexBuffer);
+            }
+        }
+    }
+
+    /**
+     * Direct binary compilation for IrisCompanionMesh: reads welded vertices, tangents, indices,
+     * MTL Kd/Ka, and true barycenter mc_midTexCoord directly from NMeshData without un-welding
+     * into degenerate BakedQuads.
+     */
+    public @Nullable DirectIrisCompanionData buildDirectIrisCompanionData(
+            VertexFormat actualFormat,
+            Map<String, Integer> elementOffsets,
+            int stride) {
+        return buildDirectIrisCompanionData(actualFormat, elementOffsets, stride, false);
+    }
+
+    public @Nullable DirectIrisCompanionData buildDirectIrisCompanionData(
+            VertexFormat actualFormat,
+            Map<String, Integer> elementOffsets,
+            int stride,
+            boolean normalizeUv) {
+        int totalVerts = 0;
+        int totalIndices = 0;
+        for (BoundSubMesh b : subMeshes) {
+            totalVerts += b.subMesh().vertexCount;
+            totalIndices += b.subMesh().indices.length;
+        }
+        if (totalVerts == 0 || totalIndices == 0) {
+            return null;
+        }
+
+        int posOff = elementOffsets.getOrDefault("position", 0);
+        int colorOff = elementOffsets.getOrDefault("color", -1);
+        int uv0Off = elementOffsets.getOrDefault("uv0", -1);
+        int uv1Off = elementOffsets.getOrDefault("uv1", -1);
+        int uv2Off = elementOffsets.getOrDefault("uv2", -1);
+        int normOff = elementOffsets.getOrDefault("normal", -1);
+        int irisEntityOff = elementOffsets.getOrDefault("iris_Entity", -1);
+        int midTexOff = elementOffsets.getOrDefault("mc_midTexCoord", -1);
+        int tangentOff = elementOffsets.getOrDefault("at_tangent", -1);
+
+        ByteBuffer vb = MemoryUtil.memCalloc(totalVerts, stride);
+        long baseAddr = MemoryUtil.memAddress(vb);
+        int[] combinedIndices = new int[totalIndices];
+        float[] weldedPositions = new float[totalVerts * 3];
+
+        boolean hasTransform = !rootTransform.isIdentity();
+        Matrix4f posMat = hasTransform ? rootTransform.getMatrix() : null;
+        Matrix3f nrmMat = hasTransform ? rootTransform.getNormalMatrix() : null;
+        Vector4f posTmp = new Vector4f();
+        Vector3f nrmTmp = new Vector3f();
+        Vector3f tanTmp = new Vector3f();
+
+        float minX = Float.POSITIVE_INFINITY, minY = Float.POSITIVE_INFINITY, minZ = Float.POSITIVE_INFINITY;
+        float maxX = Float.NEGATIVE_INFINITY, maxY = Float.NEGATIVE_INFINITY, maxZ = Float.NEGATIVE_INFINITY;
+
+        int vertBase = 0;
+        int idxCursor = 0;
+
+        try {
+            for (BoundSubMesh bound : subMeshes) {
+                NMeshData.SubMesh sm = bound.subMesh();
+                if (!hasTransform) {
+                    if (sm.minX < minX) minX = sm.minX;
+                    if (sm.minY < minY) minY = sm.minY;
+                    if (sm.minZ < minZ) minZ = sm.minZ;
+                    if (sm.maxX > maxX) maxX = sm.maxX;
+                    if (sm.maxY > maxY) maxY = sm.maxY;
+                    if (sm.maxZ > maxZ) maxZ = sm.maxZ;
+                }
+                TextureAtlasSprite sprite = bound.sprite();
+                float u0 = 0f, v0 = 0f, du = 1f, dv = 1f;
+                if (!normalizeUv && sprite != null) {
+                    u0 = sprite.getU0();
+                    v0 = sprite.getV0();
+                    du = sprite.getU1() - u0;
+                    dv = sprite.getV1() - v0;
+                }
+
+                // Material diffuse color (Kd) and fakeLight from ambient (Ka)
+                float kdR = sm.kdR, kdG = sm.kdG, kdB = sm.kdB;
+                int colorPacked = (clampByte(kdR)) | (clampByte(kdG) << 8) | (clampByte(kdB) << 16) | (255 << 24);
+
+                int uv2 = LightTexture.pack(15, 15);
+                if (emissiveAmbient && (sm.kaR > 0f || sm.kaG > 0f || sm.kaB > 0f)) {
+                    int fakeLight = (int) ((sm.kaR + sm.kaG + sm.kaB) * 15 / 3.0f);
+                    uv2 = LightTexture.pack(Math.min(15, fakeLight), Math.min(15, fakeLight));
+                }
+
+                // Precompute midTexCoord as the true barycenter (UV0 + UV1 + UV2) / 3.0f for all triangles in this sub-mesh
+                float[] midUArr = null;
+                float[] midVArr = null;
+                if (midTexOff >= 0) {
+                    midUArr = new float[sm.vertexCount];
+                    midVArr = new float[sm.vertexCount];
+                    int[] triCountPerVert = new int[sm.vertexCount];
+                    int[] smIdx = sm.indices;
+                    float[] verts = sm.vertices;
+                    for (int t = 0; t + 2 < smIdx.length; t += 3) {
+                        int i0 = smIdx[t], i1 = smIdx[t + 1], i2 = smIdx[t + 2];
+                        float uA = u0 + verts[i0 * 8 + 6] * du;
+                        float vA = v0 + (flipV ? (1.0f - verts[i0 * 8 + 7]) : verts[i0 * 8 + 7]) * dv;
+                        float uB = u0 + verts[i1 * 8 + 6] * du;
+                        float vB = v0 + (flipV ? (1.0f - verts[i1 * 8 + 7]) : verts[i1 * 8 + 7]) * dv;
+                        float uC = u0 + verts[i2 * 8 + 6] * du;
+                        float vC = v0 + (flipV ? (1.0f - verts[i2 * 8 + 7]) : verts[i2 * 8 + 7]) * dv;
+                        float triMidU = (uA + uB + uC) / 3.0f;
+                        float triMidV = (vA + vB + vC) / 3.0f;
+
+                        midUArr[i0] += triMidU; midVArr[i0] += triMidV; triCountPerVert[i0]++;
+                        midUArr[i1] += triMidU; midVArr[i1] += triMidV; triCountPerVert[i1]++;
+                        midUArr[i2] += triMidU; midVArr[i2] += triMidV; triCountPerVert[i2]++;
+                    }
+                    for (int v = 0; v < sm.vertexCount; v++) {
+                        if (triCountPerVert[v] > 0) {
+                            midUArr[v] /= triCountPerVert[v];
+                            midVArr[v] /= triCountPerVert[v];
+                        } else {
+                            midUArr[v] = u0 + verts[v * 8 + 6] * du;
+                            midVArr[v] = v0 + (flipV ? (1.0f - verts[v * 8 + 7]) : verts[v * 8 + 7]) * dv;
+                        }
+                    }
+                }
+
+                float[] verts = sm.vertices;
+                for (int v = 0; v < sm.vertexCount; v++) {
+                    int b = v * 8;
+                    float x = verts[b];
+                    float y = verts[b + 1];
+                    float z = verts[b + 2];
+                    float nx = verts[b + 3];
+                    float ny = verts[b + 4];
+                    float nz = verts[b + 5];
+                    float rawU = verts[b + 6];
+                    float rawV = flipV ? (1.0f - verts[b + 7]) : verts[b + 7];
+
+                    if (hasTransform) {
+                        posTmp.set(x, y, z, 1.0f).mul(posMat);
+                        x = posTmp.x;
+                        y = posTmp.y;
+                        z = posTmp.z;
+                        nrmTmp.set(nx, ny, nz).mul(nrmMat);
+                        float len = nrmTmp.length();
+                        if (len > 1e-6f) {
+                            nx = nrmTmp.x / len;
+                            ny = nrmTmp.y / len;
+                            nz = nrmTmp.z / len;
+                        }
+                        if (x < minX) minX = x; if (x > maxX) maxX = x;
+                        if (y < minY) minY = y; if (y > maxY) maxY = y;
+                        if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+                    }
+
+                    float u = u0 + rawU * du;
+                    float vt = v0 + rawV * dv;
+
+                    int nPacked = (((int) Math.round(Math.max(-1f, Math.min(1f, nx)) * 127f)) & 0xFF)
+                            | ((((int) Math.round(Math.max(-1f, Math.min(1f, ny)) * 127f)) & 0xFF) << 8)
+                            | ((((int) Math.round(Math.max(-1f, Math.min(1f, nz)) * 127f)) & 0xFF) << 16);
+
+                    int globalV = vertBase + v;
+                    weldedPositions[globalV * 3]     = x;
+                    weldedPositions[globalV * 3 + 1] = y;
+                    weldedPositions[globalV * 3 + 2] = z;
+
+                    long vAddr = baseAddr + (long) globalV * stride;
+                    MemoryUtil.memPutFloat(vAddr + posOff, x);
+                    MemoryUtil.memPutFloat(vAddr + posOff + 4L, y);
+                    MemoryUtil.memPutFloat(vAddr + posOff + 8L, z);
+
+                    if (colorOff >= 0) {
+                        MemoryUtil.memPutInt(vAddr + colorOff, colorPacked);
+                    }
+                    if (uv0Off >= 0) {
+                        MemoryUtil.memPutFloat(vAddr + uv0Off, u);
+                        MemoryUtil.memPutFloat(vAddr + uv0Off + 4L, vt);
+                    }
+                    if (uv1Off >= 0) {
+                        MemoryUtil.memPutInt(vAddr + uv1Off, OverlayTexture.NO_OVERLAY);
+                    }
+                    if (uv2Off >= 0) {
+                        MemoryUtil.memPutInt(vAddr + uv2Off, uv2);
+                    }
+                    if (normOff >= 0) {
+                        MemoryUtil.memPutInt(vAddr + normOff, nPacked);
+                    }
+                    if (irisEntityOff >= 0) {
+                        MemoryUtil.memPutInt(vAddr + irisEntityOff, 0);
+                    }
+                    if (midTexOff >= 0 && midUArr != null) {
+                        MemoryUtil.memPutFloat(vAddr + midTexOff, midUArr[v]);
+                        MemoryUtil.memPutFloat(vAddr + midTexOff + 4L, midVArr[v]);
+                    }
+                    if (tangentOff >= 0) {
+                        int packedTangent;
+                        if (sm.tangents != null && sm.tangents.length > v) {
+                            if (hasTransform) {
+                                int rawTan = sm.tangents[v];
+                                float tx = ((byte) (rawTan & 0xFF)) / 127.0f;
+                                float ty = ((byte) ((rawTan >> 8) & 0xFF)) / 127.0f;
+                                float tz = ((byte) ((rawTan >> 16) & 0xFF)) / 127.0f;
+                                int bw = (rawTan >> 24) & 0xFF;
+                                tanTmp.set(tx, ty, tz).mul(nrmMat);
+                                float tlen = tanTmp.length();
+                                if (tlen > 1e-6f) {
+                                    tx = tanTmp.x / tlen;
+                                    ty = tanTmp.y / tlen;
+                                    tz = tanTmp.z / tlen;
+                                }
+                                int bx = ((int) Math.round(Math.max(-1f, Math.min(1f, tx)) * 127f)) & 0xFF;
+                                int by = ((int) Math.round(Math.max(-1f, Math.min(1f, ty)) * 127f)) & 0xFF;
+                                int bz = ((int) Math.round(Math.max(-1f, Math.min(1f, tz)) * 127f)) & 0xFF;
+                                packedTangent = bx | (by << 8) | (bz << 16) | (bw << 24);
+                            } else {
+                                packedTangent = sm.tangents[v];
+                            }
+                        } else {
+                            packedTangent = 127 | (127 << 24); // default +X unit tangent, +1 handedness
+                        }
+                        MemoryUtil.memPutInt(vAddr + tangentOff, packedTangent);
+                    }
+                }
+
+                int[] smIdx = sm.indices;
+                for (int i = 0; i < smIdx.length; i++) {
+                    combinedIndices[idxCursor++] = vertBase + smIdx[i];
+                }
+                vertBase += sm.vertexCount;
+            }
+
+            vb.position(0).limit(totalVerts * stride);
+            if (!Float.isFinite(minX)) {
+                minX = minY = minZ = 0f;
+                maxX = maxY = maxZ = 0f;
+            }
+            return new DirectIrisCompanionData(vb, combinedIndices, totalVerts, weldedPositions,
+                    minX, minY, minZ, maxX, maxY, maxZ, stride);
+        } catch (Throwable t) {
+            MemoryUtil.memFree(vb);
+            throw t;
+        }
+    }
+
     /**
      * Direct binary-to-VBO compilation: bypasses BakedQuad allocation and vertex-welding hash tables.
      */
@@ -147,6 +421,42 @@ public final class NMeshPartBakedModel implements BakedModel {
         }
 
         final int strideBytes = SingleMeshVboRenderer.MACHINE_PART_VERTEX_STRIDE_BYTES; // 36 bytes
+
+        // Material colors preservation: check if submeshes have non-default diffuse/ambient
+        boolean hasMaterialColor = false;
+        boolean multiMaterialMismatch = false;
+        float firstKdR = 1f, firstKdG = 1f, firstKdB = 1f, firstFakeLight = 0f;
+        boolean firstSubmesh = true;
+
+        for (BoundSubMesh b : subMeshes) {
+            NMeshData.SubMesh sm = b.subMesh();
+            float kdR = sm.kdR, kdG = sm.kdG, kdB = sm.kdB;
+            float fakeLight = emissiveAmbient ? ((sm.kaR + sm.kaG + sm.kaB) / 3.0f) : 0f;
+            if (kdR != 1f || kdG != 1f || kdB != 1f || fakeLight > 0f) {
+                hasMaterialColor = true;
+            }
+            if (firstSubmesh) {
+                firstKdR = kdR; firstKdG = kdG; firstKdB = kdB; firstFakeLight = fakeLight;
+                firstSubmesh = false;
+            } else {
+                if (Math.abs(kdR - firstKdR) > 1e-4f || Math.abs(kdG - firstKdG) > 1e-4f
+                        || Math.abs(kdB - firstKdB) > 1e-4f || Math.abs(fakeLight - firstFakeLight) > 1e-4f) {
+                    multiMaterialMismatch = true;
+                }
+            }
+        }
+
+        // Conflicting material colors across submeshes cannot be represented in a single 36-byte unshaded VBO
+        // (which lacks per-vertex color attributes). Return null to trigger the BakedQuad fallback where each quad
+        // carries its submesh's distinct material color.
+        if (multiMaterialMismatch) {
+            return null;
+        }
+
+        float[] defaultTint = hasMaterialColor
+                ? new float[] { firstKdR, firstKdG, firstKdB, Math.min(1f, firstFakeLight) }
+                : null;
+
         ByteBuffer vb = MemoryUtil.memAlloc(totalVerts * strideBytes);
         IntBuffer ib = MemoryUtil.memAllocInt(totalIndices);
         IntBuffer vbInts = vb.asIntBuffer();
@@ -165,6 +475,14 @@ public final class NMeshPartBakedModel implements BakedModel {
         try {
             for (BoundSubMesh bound : subMeshes) {
                 NMeshData.SubMesh sm = bound.subMesh();
+                if (!hasTransform) {
+                    if (sm.minX < minX) minX = sm.minX;
+                    if (sm.minY < minY) minY = sm.minY;
+                    if (sm.minZ < minZ) minZ = sm.minZ;
+                    if (sm.maxX > maxX) maxX = sm.maxX;
+                    if (sm.maxY > maxY) maxY = sm.maxY;
+                    if (sm.maxZ > maxZ) maxZ = sm.maxZ;
+                }
                 TextureAtlasSprite sprite = bound.sprite();
                 float u0 = 0f, v0 = 0f, du = 1f, dv = 1f;
                 if (!normalizeUv && sprite != null) {
@@ -198,11 +516,11 @@ public final class NMeshPartBakedModel implements BakedModel {
                             ny = nrmTmp.y / len;
                             nz = nrmTmp.z / len;
                         }
-                    }
 
-                    if (x < minX) minX = x; if (x > maxX) maxX = x;
-                    if (y < minY) minY = y; if (y > maxY) maxY = y;
-                    if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+                        if (x < minX) minX = x; if (x > maxX) maxX = x;
+                        if (y < minY) minY = y; if (y > maxY) maxY = y;
+                        if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+                    }
 
                     float u = u0 + rawU * du;
                     float vt = v0 + rawV * dv;
@@ -232,7 +550,7 @@ public final class NMeshPartBakedModel implements BakedModel {
                 minX = minY = minZ = 0f;
                 maxX = maxY = maxZ = 0f;
             }
-            return new SingleMeshVboRenderer.VboData(vb, ib, minX, minY, minZ, maxX, maxY, maxZ, strideBytes);
+            return new SingleMeshVboRenderer.VboData(vb, ib, minX, minY, minZ, maxX, maxY, maxZ, strideBytes, defaultTint);
         } catch (Throwable t) {
             MemoryUtil.memFree(vb);
             MemoryUtil.memFree(ib);

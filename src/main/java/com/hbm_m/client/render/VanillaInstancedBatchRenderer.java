@@ -495,6 +495,7 @@ final class VanillaInstancedBatchRenderer {
         // ModelViewMat = V: the instanced VS multiplies world-space InstPos/InstRot by it.
         applyCommonUniforms(shader, proj, FrameViewState.viewMatrix());
         SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
+        com.hbm_m.client.render.shader.ShaderBindResync.ensureFreshBind(shader);
         shader.apply();
         SingleMeshVboRenderer.bindBlockLitSamplerTextures(shader);
 

@@ -342,16 +342,21 @@ public final class WeaponRenderRegistry {
             PartGeometry geo = PartGeometry.compile(partBaked, partName, true);
             SingleMeshVboRenderer.VboData vboData = geo.toVboDataNormalized(partName);
             if (vboData != null) {
-                List<BakedQuad> rawQuads = geo.solidQuads();
-                List<BakedQuad> normQuads = new java.util.ArrayList<>(rawQuads.size());
-                for (BakedQuad q : rawQuads) {
-                    normQuads.add(normalizeQuadUv(q));
+                WeaponPartVboRenderer renderer;
+                if (geo.nmeshModel() != null) {
+                    renderer = new WeaponPartVboRenderer(vboData, null, geo.nmeshModel());
+                } else {
+                    List<BakedQuad> rawQuads = geo.solidQuads();
+                    List<BakedQuad> normQuads = new java.util.ArrayList<>(rawQuads.size());
+                    for (BakedQuad q : rawQuads) {
+                        normQuads.add(normalizeQuadUv(q));
+                    }
+                    allRawQuads.addAll(rawQuads);
+                    allNormQuads.addAll(normQuads);
+                    renderer = new WeaponPartVboRenderer(vboData, List.copyOf(normQuads));
                 }
-                allRawQuads.addAll(rawQuads);
-                allNormQuads.addAll(normQuads);
                 // VboData ownership is fully handed to the renderer; initVbo()
                 // consumes and frees it - it must never be retained here.
-                WeaponPartVboRenderer renderer = new WeaponPartVboRenderer(vboData, List.copyOf(normQuads));
                 compiled.put(partBaked, renderer);
                 partRenderers.put(partName, renderer);
             }

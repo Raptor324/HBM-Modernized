@@ -63,7 +63,10 @@ public final class IrisCompanionMesh {
     private static final int IRIS_ATTRIB_MID_TEX = 12;
     private static final int IRIS_ATTRIB_TANGENT = 13;
 
+    @org.jetbrains.annotations.Nullable
+    private final com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmeshModel;
     private final List<BakedQuad> quads;
+    private final boolean normalizeUv;
     private String debugName = "unknown";
     private int vaoId = -1;
     private int vboId = -1;
@@ -294,6 +297,11 @@ public final class IrisCompanionMesh {
     private int lightmapDirtyMinSlot = Integer.MAX_VALUE;
     private int lightmapDirtyMaxSlot = -1;
 
+    private static VertexFormat cachedIrisFormat = null;
+    private static Map<String, Integer> cachedElementOffsets = null;
+    private static Map<String, VertexFormatElement> cachedElementByName = null;
+    private static int cachedStride = 0;
+
     /**
      * Cached actual {@link VertexFormat} the buffer was built with - usually
      * {@code IrisVertexFormats.ENTITY} when Iris is loaded, or plain
@@ -365,7 +373,20 @@ public final class IrisCompanionMesh {
     }
 
     public IrisCompanionMesh(List<BakedQuad> quads) {
-        this.quads = quads;
+        this(null, quads, false);
+    }
+
+    public IrisCompanionMesh(@org.jetbrains.annotations.Nullable com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmeshModel,
+                             @org.jetbrains.annotations.Nullable List<BakedQuad> fallbackQuads) {
+        this(nmeshModel, fallbackQuads, false);
+    }
+
+    public IrisCompanionMesh(@org.jetbrains.annotations.Nullable com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmeshModel,
+                             @org.jetbrains.annotations.Nullable List<BakedQuad> fallbackQuads,
+                             boolean normalizeUv) {
+        this.nmeshModel = nmeshModel;
+        this.quads = fallbackQuads != null ? fallbackQuads : List.of();
+        this.normalizeUv = normalizeUv;
     }
 
     public String getDebugName() {
@@ -384,7 +405,7 @@ public final class IrisCompanionMesh {
     public boolean ensureBuilt() {
         if (built) return true;
         if (failed) return false;
-        if (quads == null || quads.isEmpty()) {
+        if ((quads == null || quads.isEmpty()) && (nmeshModel == null || nmeshModel.isEmpty())) {
             failed = true;
             return false;
         }
@@ -396,6 +417,15 @@ public final class IrisCompanionMesh {
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
 
         try {
+            if (nmeshModel != null && !nmeshModel.isEmpty()) {
+                if (buildFromNMesh()) {
+                    return true;
+                }
+                if (quads == null || quads.isEmpty()) {
+                    failed = true;
+                    return false;
+                }
+            }
             // First pass: compute the mesh's object-space AABB so we can bake
             // per-vertex trilinear weights relative to it. Done before feeding
             // quads into the BufferBuilder because BufferBuilder.putBulkData
@@ -437,83 +467,7 @@ public final class IrisCompanionMesh {
             this.vertexCount = drawState.vertexCount();
             *///?}
 
-            // Record byte offset of every named element in the format so
-            // prepareForShader() can hand the linker-resolved locations a
-            // pointer to real per-vertex data populated by Iris's
-            // MixinBufferBuilder.iris$beforeNext (iris_Entity / mc_midTexCoord
-            // / at_tangent). Names and order come from getElementAttributeNames() /
-            // getElements(); offsets are accumulated via getByteSize() (as previously
-            // via entrySet getElementMapping), without getElementName/getOffset(Element),
-            // which do not exist on 1.20.1 Forge.
-            elementOffsets.clear();
-            elementByName.clear();
-            
-            //? if < 1.21.1 {
-            var elements = RenderHooks.getElements(actualFormat);
-            var names = actualFormat.getElementAttributeNames();
-            int runningOffset = 0;
-            for (int i = 0; i < elements.size(); i++) {
-                String name = names.get(i);
-                VertexFormatElement el = elements.get(i);
-                elementOffsets.put(name, runningOffset);
-                elementByName.put(name, el);
-                var usage = RenderHooks.getUsage(el);
-                if (usage == VertexFormatElement.Usage.POSITION) {
-                    elementOffsets.put("position", runningOffset);
-                } else if (usage == VertexFormatElement.Usage.COLOR) {
-                    elementOffsets.put("color", runningOffset);
-                } else if (usage == VertexFormatElement.Usage.NORMAL) {
-                    elementOffsets.put("normal", runningOffset);
-                } else if (usage == VertexFormatElement.Usage.UV) {
-                    elementOffsets.put("uv" + RenderHooks.getIndex(el), runningOffset);
-                }
-                runningOffset += RenderHooks.getByteSize(el);
-            }
-            //?} else {
-            /*// 1.21.1: the format has no getElementAttributeNames-compatible
-            // name list for Iris elements (ids are dynamic - hardcoded
-            // 11/12/13 no longer match), and paddings are NOT part of the elements
-            // (accumulation undercounted field offsets after a padding). Resolve
-            // names by usage+type, offsets natively from the format.
-            var elements = RenderHooks.getElements(actualFormat);
-            for (int i = 0; i < elements.size(); i++) {
-                VertexFormatElement el = elements.get(i);
-                String name = "unknown_" + i;
-                var usage = RenderHooks.getUsage(el);
-                int glType = RenderHooks.getGlType(el);
-                int off = RenderHooks.getElementOffset(actualFormat, el);
-                if (usage == VertexFormatElement.Usage.POSITION) {
-                    name = "position";
-                    elementOffsets.put("position", off);
-                } else if (usage == VertexFormatElement.Usage.COLOR) {
-                    name = "color";
-                    elementOffsets.put("color", off);
-                } else if (usage == VertexFormatElement.Usage.NORMAL) {
-                    name = "normal";
-                    elementOffsets.put("normal", off);
-                } else if (usage == VertexFormatElement.Usage.UV) {
-                    int uvIdx = RenderHooks.getIndex(el);
-                    if (uvIdx == 3) {
-                        name = "iris_Entity";
-                    } else {
-                        name = "uv" + uvIdx;
-                    }
-                    elementOffsets.put("uv" + uvIdx, off);
-                } else if (usage == VertexFormatElement.Usage.GENERIC
-                        && glType == org.lwjgl.opengl.GL11.GL_FLOAT) {
-                    name = "mc_midTexCoord";
-                } else if (usage == VertexFormatElement.Usage.GENERIC
-                        && glType == org.lwjgl.opengl.GL11.GL_BYTE
-                        && RenderHooks.getCount(el) == 4) {
-                    name = "at_tangent";
-                } else if (usage == VertexFormatElement.Usage.GENERIC
-                        && glType == org.lwjgl.opengl.GL11.GL_SHORT) {
-                    name = "mc_Entity";
-                }
-                elementOffsets.put(name, off);
-                elementByName.put(name, el);
-            }
-            *///?}
+            recordFormatElements(actualFormat);
 
             this.vaoId = GL30.glGenVertexArrays();
             this.vboId = GL15.glGenBuffers();
@@ -625,88 +579,6 @@ public final class IrisCompanionMesh {
                 MemoryUtil.memFree(weldedBuf);
             }
 
-            int offset = 0;
-            int detectedUv2Location = -1;
-            int detectedColorLocation = -1;
-            // We only enable the SIX standard Mojang attributes (locations 0..5:
-            // Position/Color/UV0/UV1/UV2/Normal). Iris's MixinShaderInstance
-            // explicitly binds these names - prefixed with "iris_" - to those
-            // exact locations via glBindAttribLocation, so the linker is forced
-            // to honor them and our element-index = location assumption holds.
-            //
-            // The remaining elements in IrisVertexFormats.ENTITY (iris_Entity,
-            // mc_midTexCoord, at_tangent) are injected into the transformed GLSL
-            // by Iris's transformers WITHOUT layout(location = N) qualifiers and
-            // are NOT bound via glBindAttribLocation for ExtendedShader. The
-            // GLSL linker assigns them whatever locations it pleases - typically
-            // 6/7/8 in declaration order, but driver- and pack-dependent -
-            // which never matches the 7/8/9 that VertexFormat.setupBufferState
-            // would derive from the element's index in the format. That mismatch
-            // is the *real* root cause of the intermittent broken-geometry
-            // symptom: the shader reads from a slot we never bound, falling
-            // back to whatever value Embeddium's chunk re-bake or another
-            // immediate-mode draw left behind in the global "current value" bank.
-            //
-            // We deliberately leave those slots untouched here and let
-            // prepareForShader(programId) bind them at the *correct*,
-            // linker-resolved locations using the real per-vertex data Iris's
-            // MixinBufferBuilder wrote into our VBO via iris$beforeNext.
-            int elementCount = RenderHooks.getElements(actualFormat).size();
-            for (int location = 0; location < elementCount; location++) {
-                VertexFormatElement element = RenderHooks.getElements(actualFormat).get(location);
-                //? if < 1.21.1 {
-                if (RenderHooks.getUsage(element) == VertexFormatElement.Usage.PADDING) {
-                    offset += RenderHooks.getByteSize(element);
-                    continue;
-                }
-                //?}
-                if (location > 5) {
-                    offset += RenderHooks.getByteSize(element);
-                    continue;
-                }
-                GL20.glEnableVertexAttribArray(location);
-                int glType = RenderHooks.getGlType(element);
-                int count = RenderHooks.getCount(element);
-                // Pack shaders declare UV1/UV2 as `ivec2` and Mojang itself binds
-                // them with glVertexAttribIPointer (integer pipeline). Using the
-                // float-converting glVertexAttribPointer for SHORT-typed integer
-                // UV attributes leaves the shader reading garbage from the wrong
-                // attribute "bank" - the symptom looks like uniform max/min
-                // brightness regardless of the per-vertex/per-draw value.
-                if (isIntegerAttribute(element)) {
-                    GL30.glVertexAttribIPointer(location, count, glType, stride, offset);
-                } else {
-                    boolean normalize = shouldNormalize(element);
-                    GL20.glVertexAttribPointer(location, count, glType, normalize, stride, offset);
-                }
-                if (RenderHooks.getUsage(element) == VertexFormatElement.Usage.UV && RenderHooks.getIndex(element) == 2) {
-                    detectedUv2Location = location;
-                }
-                if (RenderHooks.getUsage(element) == VertexFormatElement.Usage.COLOR) {
-                    detectedColorLocation = location;
-                }
-                offset += RenderHooks.getByteSize(element);
-            }
-
-            // Disable the per-vertex UV2 (lightmap) array inside this VAO so that
-            // callers can later inject a per-draw constant via
-            // glVertexAttrib2f(uv2Location, blockU, skyV) and still have the pack
-            // shader read a sane value from `vaUV2`. The fully-bright values that
-            // putBulkData wrote into the buffer remain as a static fallback for
-            // any future code path that re-enables this attribute.
-            if (detectedUv2Location != -1) {
-                GL20.glDisableVertexAttribArray(detectedUv2Location);
-            }
-            this.uv2Location = detectedUv2Location;
-            // COLOR is disabled using the same pattern: putBulkData bakes (1,1,1,1) into vertices,
-            // while per-part tint (GunGL.color, used for cartridge casing coloring with grayscale
-            // casings.png) is injected as a constant per draw. Without this under shaderpacks,
-            // tint was lost and casings rendered completely white.
-            if (detectedColorLocation != -1) {
-                GL20.glDisableVertexAttribArray(detectedColorLocation);
-            }
-            this.colorLocation = detectedColorLocation;
-
             this.eboId = GL15.glGenBuffers();
             com.hbm_m.client.render.debug.GlDebugMarkers.labelBuffer(this.eboId, "IrisComp_" + debugName + "_EBO");
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, eboId);
@@ -715,10 +587,7 @@ public final class IrisCompanionMesh {
             this.eboStoreBytes = (long) indices.length * 4L;
             this.baseIndices = indices;
 
-            // Bake Iris extended attribs into the VAO while it is still bound.
-            // Doing this at draw time races Embeddium/Iris rebinding VAO 0 and
-            // triggers GL_INVALID_OPERATION on glEnableVertexAttribArray.
-            primeIrisExtendedVertexAttributes(stride);
+            setupVaoAttributes(actualFormat, stride);
 
             //? if < 1.21.1 {
             rendered.release();
@@ -729,7 +598,7 @@ public final class IrisCompanionMesh {
             built = true;
             MainRegistry.LOGGER.debug(
                 "IrisCompanionMesh: built {} quads, format stride {} bytes, {} attribute(s)",
-                quadCount, stride, elementCount);
+                quadCount, stride, RenderHooks.getElements(actualFormat).size());
             return true;
         } catch (Exception t) {
             MainRegistry.LOGGER.warn("IrisCompanionMesh: build failed ({}); will fall back to vanilla path",
@@ -762,6 +631,225 @@ public final class IrisCompanionMesh {
         } finally {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
         }
+    }
+
+    private static synchronized void ensureIrisFormat() {
+        if (cachedIrisFormat != null) return;
+        try {
+            BufferBuilder dummy = IrisBufferHelper.create(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.NEW_ENTITY, 256);
+            //? if < 1.21.1 {
+            for (int i = 0; i < 3; i++) {
+                dummy.vertex(0, 0, 0).color(255, 255, 255, 255).uv(0, 0).overlayCoords(0, 10).uv2(0, 0).normal(0, 1, 0).endVertex();
+            }
+            BufferBuilder.RenderedBuffer rendered = dummy.end();
+            VertexFormat actualFormat = rendered.drawState().format();
+            rendered.release();
+            //?} else {
+            /*for (int i = 0; i < 3; i++) {
+                dummy.addVertex(0, 0, 0).setColor(255, 255, 255, 255).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(0).setNormal(0, 1, 0);
+            }
+            var rendered = dummy.buildOrThrow();
+            VertexFormat actualFormat = rendered.drawState().format();
+            rendered.close();
+            *///?}
+
+            Map<String, Integer> offsets = new HashMap<>();
+            Map<String, VertexFormatElement> elements = new HashMap<>();
+            parseFormatElements(actualFormat, offsets, elements);
+            int stride = RenderHooks.getVertexSize(actualFormat);
+
+            cachedIrisFormat = actualFormat;
+            cachedElementOffsets = Map.copyOf(offsets);
+            cachedElementByName = Map.copyOf(elements);
+            cachedStride = stride;
+        } catch (Throwable t) {
+            MainRegistry.LOGGER.warn("IrisCompanionMesh: failed to initialize cached Iris format", t);
+        }
+    }
+
+    private boolean buildFromNMesh() {
+        if (nmeshModel == null || nmeshModel.isEmpty()) return false;
+        try {
+            ensureIrisFormat();
+            if (cachedIrisFormat == null) {
+                return false;
+            }
+            VertexFormat actualFormat = cachedIrisFormat;
+            this.actualFormat = actualFormat;
+            this.elementOffsets.clear();
+            this.elementOffsets.putAll(cachedElementOffsets);
+            this.elementByName.clear();
+            this.elementByName.putAll(cachedElementByName);
+            int stride = cachedStride;
+
+            com.hbm_m.client.model.nmesh.NMeshPartBakedModel.DirectIrisCompanionData data =
+                    nmeshModel.buildDirectIrisCompanionData(actualFormat, elementOffsets, stride, normalizeUv);
+            if (data == null) {
+                return false;
+            }
+
+            try {
+                this.objBbox[0] = data.minX(); this.objBbox[1] = data.minY(); this.objBbox[2] = data.minZ();
+                this.objBbox[3] = data.maxX(); this.objBbox[4] = data.maxY(); this.objBbox[5] = data.maxZ();
+                this.vertexCount = data.vertexCount();
+                this.indexCount = data.indices().length;
+                this.baseIndices = data.indices();
+                this.weldedPositions = data.weldedPositions();
+
+                this.vaoId = GL30.glGenVertexArrays();
+                this.vboId = GL15.glGenBuffers();
+                if (vaoId == 0 || vboId == 0) {
+                    throw new IllegalStateException("Failed to generate companion VAO/VBO");
+                }
+                com.hbm_m.client.render.debug.GlDebugMarkers.labelVao(this.vaoId, "IrisComp_" + debugName + "_VAO");
+                com.hbm_m.client.render.debug.GlDebugMarkers.labelBuffer(this.vboId, "IrisComp_" + debugName + "_VBO");
+
+                GlStateManager._glBindVertexArray(vaoId);
+                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+                GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data.vertexBuffer(), GL15.GL_STATIC_DRAW);
+                this.vboStoreBytes = data.vertexBuffer().remaining();
+
+                this.eboId = GL15.glGenBuffers();
+                com.hbm_m.client.render.debug.GlDebugMarkers.labelBuffer(this.eboId, "IrisComp_" + debugName + "_EBO");
+                GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, eboId);
+                GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, data.indices(), GL15.GL_STATIC_DRAW);
+                this.eboStoreBytes = (long) data.indices().length * 4L;
+
+                setupVaoAttributes(actualFormat, stride);
+
+                built = true;
+                MainRegistry.LOGGER.debug(
+                    "IrisCompanionMesh: built direct NMesh '{}', {} verts, {} indices, format stride {} bytes",
+                    debugName, vertexCount, indexCount, stride);
+                return true;
+            } finally {
+                data.close();
+            }
+        } catch (Exception t) {
+            MainRegistry.LOGGER.warn("IrisCompanionMesh: direct NMesh build failed ({}); trying fallback", t.getMessage());
+            destroy();
+            return false;
+        }
+    }
+
+    private static void parseFormatElements(VertexFormat actualFormat,
+                                            Map<String, Integer> offsets,
+                                            Map<String, VertexFormatElement> byName) {
+        offsets.clear();
+        byName.clear();
+        //? if < 1.21.1 {
+        var elements = RenderHooks.getElements(actualFormat);
+        var names = actualFormat.getElementAttributeNames();
+        int runningOffset = 0;
+        for (int i = 0; i < elements.size(); i++) {
+            String name = names.get(i);
+            VertexFormatElement el = elements.get(i);
+            offsets.put(name, runningOffset);
+            byName.put(name, el);
+            var usage = RenderHooks.getUsage(el);
+            if (usage == VertexFormatElement.Usage.POSITION) {
+                offsets.put("position", runningOffset);
+            } else if (usage == VertexFormatElement.Usage.COLOR) {
+                offsets.put("color", runningOffset);
+            } else if (usage == VertexFormatElement.Usage.NORMAL) {
+                offsets.put("normal", runningOffset);
+            } else if (usage == VertexFormatElement.Usage.UV) {
+                offsets.put("uv" + RenderHooks.getIndex(el), runningOffset);
+            }
+            runningOffset += RenderHooks.getByteSize(el);
+        }
+        //?} else {
+        /*var elements = RenderHooks.getElements(actualFormat);
+        for (int i = 0; i < elements.size(); i++) {
+            VertexFormatElement el = elements.get(i);
+            String name = "unknown_" + i;
+            var usage = RenderHooks.getUsage(el);
+            int glType = RenderHooks.getGlType(el);
+            int off = RenderHooks.getElementOffset(actualFormat, el);
+            if (usage == VertexFormatElement.Usage.POSITION) {
+                name = "position";
+                offsets.put("position", off);
+            } else if (usage == VertexFormatElement.Usage.COLOR) {
+                name = "color";
+                offsets.put("color", off);
+            } else if (usage == VertexFormatElement.Usage.NORMAL) {
+                name = "normal";
+                offsets.put("normal", off);
+            } else if (usage == VertexFormatElement.Usage.UV) {
+                int uvIdx = RenderHooks.getIndex(el);
+                if (uvIdx == 3) {
+                    name = "iris_Entity";
+                } else {
+                    name = "uv" + uvIdx;
+                }
+                offsets.put("uv" + uvIdx, off);
+            } else if (usage == VertexFormatElement.Usage.GENERIC
+                    && glType == org.lwjgl.opengl.GL11.GL_FLOAT) {
+                name = "mc_midTexCoord";
+            } else if (usage == VertexFormatElement.Usage.GENERIC
+                    && glType == org.lwjgl.opengl.GL11.GL_BYTE
+                    && RenderHooks.getCount(el) == 4) {
+                name = "at_tangent";
+            } else if (usage == VertexFormatElement.Usage.GENERIC
+                    && glType == org.lwjgl.opengl.GL11.GL_SHORT) {
+                name = "mc_Entity";
+            }
+            offsets.put(name, off);
+            byName.put(name, el);
+        }
+        *///?}
+    }
+
+    private void recordFormatElements(VertexFormat actualFormat) {
+        parseFormatElements(actualFormat, this.elementOffsets, this.elementByName);
+    }
+
+    private void setupVaoAttributes(VertexFormat actualFormat, int stride) {
+        int offset = 0;
+        int detectedUv2Location = -1;
+        int detectedColorLocation = -1;
+        int elementCount = RenderHooks.getElements(actualFormat).size();
+        for (int location = 0; location < elementCount; location++) {
+            VertexFormatElement element = RenderHooks.getElements(actualFormat).get(location);
+            //? if < 1.21.1 {
+            if (RenderHooks.getUsage(element) == VertexFormatElement.Usage.PADDING) {
+                offset += RenderHooks.getByteSize(element);
+                continue;
+            }
+            //?}
+            if (location > 5) {
+                offset += RenderHooks.getByteSize(element);
+                continue;
+            }
+            GL20.glEnableVertexAttribArray(location);
+            int glType = RenderHooks.getGlType(element);
+            int count = RenderHooks.getCount(element);
+            if (isIntegerAttribute(element)) {
+                GL30.glVertexAttribIPointer(location, count, glType, stride, offset);
+            } else {
+                boolean normalize = shouldNormalize(element);
+                GL20.glVertexAttribPointer(location, count, glType, normalize, stride, offset);
+            }
+            if (RenderHooks.getUsage(element) == VertexFormatElement.Usage.UV && RenderHooks.getIndex(element) == 2) {
+                detectedUv2Location = location;
+            }
+            if (RenderHooks.getUsage(element) == VertexFormatElement.Usage.COLOR) {
+                detectedColorLocation = location;
+            }
+            offset += RenderHooks.getByteSize(element);
+        }
+
+        if (detectedUv2Location != -1) {
+            GL20.glDisableVertexAttribArray(detectedUv2Location);
+        }
+        this.uv2Location = detectedUv2Location;
+        // Keep vertex color attribute (location 1) enabled in the VAO:
+        // disabling it causes shaderpacks to sample generic attribute 1 which defaults
+        // to vec4(0.0, 0.0, 0.0, 1.0) (pure black) when no uniform/attrib is supplied,
+        // turning all meshes black under Tier 2 / Iris companion render.
+        this.colorLocation = detectedColorLocation;
+
+        primeIrisExtendedVertexAttributes(stride);
     }
 
     /**
@@ -824,7 +912,7 @@ public final class IrisCompanionMesh {
         if (perVertexCornerWeights != null) {
             return perVertexCornerWeights;
         }
-        if (quads == null || vertexCount <= 0) {
+        if (((quads == null || quads.isEmpty()) && nmeshModel == null) || vertexCount <= 0) {
             return null;
         }
         float minX = objBbox[0], minY = objBbox[1], minZ = objBbox[2];
@@ -870,7 +958,7 @@ public final class IrisCompanionMesh {
      *         this mesh (UV2 attribute location known and vertices present).
      */
     public boolean supportsPerVertexLightmap() {
-        return built && uv2Location != -1 && vertexCount > 0 && quads != null && !quads.isEmpty();
+        return built && uv2Location != -1 && vertexCount > 0 && ((quads != null && !quads.isEmpty()) || nmeshModel != null);
     }
 
     /**

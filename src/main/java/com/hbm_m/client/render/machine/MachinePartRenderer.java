@@ -47,6 +47,8 @@ final class MachinePartRenderer {
     @Nullable private InstancedStaticPartRenderer instanced;
     @Nullable private SingleMeshVboRenderer single;
     @Nullable private List<BakedQuad> quads;
+    @Nullable private com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmeshModel;
+    @Nullable private float[] defaultTint;
     private boolean attempted;
     private float minX, minY, minZ, maxX, maxY, maxZ;
     private boolean boundsValid;
@@ -106,25 +108,42 @@ final class MachinePartRenderer {
             PartGeometry geo = (partModel != null)
                     ? MeshRenderCache.getOrCompilePartGeometry(key, partModel)
                     : PartGeometry.EMPTY;
-            this.quads = geo.solidQuads();
+            this.nmeshModel = geo.nmeshModel();
+            if (this.nmeshModel != null) {
+                // Bypass eager quad materialization when NMesh is present!
+                this.quads = geo.solidQuadsRaw();
+            } else {
+                this.quads = geo.solidQuads();
+            }
             if (!geo.isEmpty()) {
                 data = geo.toVboData(partName);
                 this.single = MeshRenderCache.getOrCreateRenderer(key, partModel);
             }
         }
 
-        if (this.quads != null && !this.quads.isEmpty()) {
+        if (data != null) {
+            this.defaultTint = data.defaultTint;
+            computeAabb(data.minX, data.minY, data.minZ, data.maxX, data.maxY, data.maxZ);
+        } else if (this.quads != null && !this.quads.isEmpty()) {
             computeAabb(this.quads);
         }
 
         if (data != null) {
             if (InstancedGlCompat.supportsInstancedAttributeDivisor()) {
-                InstancedStaticPartRenderer r = new InstancedStaticPartRenderer(data, quads);
+                InstancedStaticPartRenderer r = new InstancedStaticPartRenderer(data, quads, nmeshModel);
                 r.setMdiTraceTag(key);
                 this.instanced = r;
             } else {
                 data.close();
             }
+        }
+    }
+
+    private void computeAabb(float lx0, float ly0, float lz0, float lx1, float ly1, float lz1) {
+        if (Float.isFinite(lx0) && Float.isFinite(lx1)) {
+            this.minX = lx0; this.minY = ly0; this.minZ = lz0;
+            this.maxX = lx1; this.maxY = ly1; this.maxZ = lz1;
+            this.boundsValid = true;
         }
     }
 
@@ -286,7 +305,7 @@ final class MachinePartRenderer {
             instanced.addInstance(rq);
             return;
         }
-        if (uvRect == null && isWhiteTint(tint) && single != null) {
+        if (uvRect == null && isWhiteTint(tint) && isWhiteTint(defaultTint) && single != null) {
             single.render(poseStack, packedLight, rq.blockPos, blockEntity, bufferSource);
             return;
         }
@@ -306,6 +325,9 @@ final class MachinePartRenderer {
                                     @Nullable MultiBufferSource bufferSource,
                                     @Nullable float[] uvRect, @Nullable float[] tint,
                                     float[][] clipPlanes) {
+        if ((quads == null || quads.isEmpty()) && nmeshModel != null) {
+            this.quads = nmeshModel.getOrBuildQuads();
+        }
         if (quads == null || quads.isEmpty() || bufferSource == null) return;
         if (com.hbm_m.config.ModClothConfig.get().doorClipDebug) {
             debugDumpQuads(uvRect);
@@ -410,6 +432,9 @@ final class MachinePartRenderer {
     void renderQuadsFallback(PoseStack poseStack, int packedLight, BlockEntity blockEntity,
                              @Nullable MultiBufferSource bufferSource, @Nullable float[] uvRect,
                              @Nullable float[] tint) {
+        if ((quads == null || quads.isEmpty()) && nmeshModel != null) {
+            this.quads = nmeshModel.getOrBuildQuads();
+        }
         if (quads == null || quads.isEmpty() || bufferSource == null) return;
         List<BakedQuad> drawn = quads;
         if (!com.hbm_m.client.model.ModelHelper.isIdentityRect(uvRect)) {

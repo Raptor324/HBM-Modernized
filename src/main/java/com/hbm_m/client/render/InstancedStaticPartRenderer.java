@@ -235,13 +235,14 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             ((Buffer) instanceBuffer).position(targetPos);
         }
 
-        // 7. If all instances of this renderer were freed, immediately evict from MDI coordinator
+        // 7. If all instances of this renderer were freed, immediately evict from MDI coordinator and shadow collector
         if (hwm == 0) {
             MdiBatchCoordinator coord = MdiBatchCoordinator.active();
             if (coord != null) {
                 coord.evictRenderer(this);
             }
             MdiBatchCoordinator.evict(this);
+            IrisShadowBatchCollector.onRendererDestroyed(this);
         }
     }
 
@@ -700,6 +701,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     }
 
     final List<BakedQuad> quadsForIris;
+    @org.jetbrains.annotations.Nullable
+    public final com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmeshModel;
+    @org.jetbrains.annotations.Nullable
+    final float[] defaultTint;
 
     // ── Delegate helpers ───────────────────────────────────────────────
     final VanillaInstancedBatchRenderer vanillaHelper;
@@ -710,11 +715,18 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     // ── Constructors ───────────────────────────────────────────────────
 
     public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data) {
-        this(data, null);
+        this(data, null, null);
     }
 
     public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data, List<BakedQuad> quadsForIris) {
+        this(data, quadsForIris, null);
+    }
+
+    public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data, List<BakedQuad> quadsForIris,
+                                       @org.jetbrains.annotations.Nullable com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmeshModel) {
         this.quadsForIris = quadsForIris;
+        this.nmeshModel = nmeshModel;
+        this.defaultTint = (data != null && data.defaultTint != null) ? data.defaultTint.clone() : null;
         this.instanceDataSize = INSTANCE_DATA_SIZE;
         this.instanceAttribLast = 15;
         this.instanceFadeFloatOffset = FADE_FLOAT_OFFSET; // InstBboxSize.w
@@ -1497,6 +1509,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     }
 
     protected List<BakedQuad> getQuadsForIrisPath() {
+        if ((quadsForIris == null || quadsForIris.isEmpty()) && nmeshModel != null) {
+            return nmeshModel.getOrBuildQuads();
+        }
         return quadsForIris;
     }
 
@@ -1515,14 +1530,15 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             if (irisHelper.drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
                 return;
             }
-            if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
+            List<BakedQuad> fallbackQuads = getQuadsForIrisPath();
+            if (fallbackQuads != null && !fallbackQuads.isEmpty() && bufferSource != null) {
                 // Fallback goes to bufferSource (drawn at endBatch) - the companion VAO
                 // of the shadow batch must be detached (per-part release in shadow is disabled).
                 com.hbm_m.client.render.shader.IrisRenderBatch.detachCompanionVaoForVanillaWork();
                 float fade = SingleMeshVboRenderer.getFadeAlpha();
                 VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 var pose = poseStack.last();
-                for (BakedQuad quad : quadsForIris) {
+                for (BakedQuad quad : fallbackQuads) {
                     RenderHooks.putBulkDataShaded(consumer, pose, quad, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
                 }
             }
@@ -1742,6 +1758,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             tmpTint[1] = tint[1];
             tmpTint[2] = tint[2];
             tmpTint[3] = tint[3];
+        } else if (defaultTint != null) {
+            tmpTint[0] = defaultTint[0];
+            tmpTint[1] = defaultTint[1];
+            tmpTint[2] = defaultTint[2];
+            tmpTint[3] = defaultTint[3];
         } else {
             tmpTint[0] = 1f;
             tmpTint[1] = 1f;
@@ -1793,7 +1814,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             if (irisHelper.drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
                 return;
             }
-            if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
+            List<BakedQuad> fallbackQuads = getQuadsForIrisPath();
+            if (fallbackQuads != null && !fallbackQuads.isEmpty() && bufferSource != null) {
                 // Fallback to bufferSource with the shadow batch open - see the detach comment in renderSingle.
                 // The tint is read from tmpTint (filled earlier in this addInstance) - shadows do
                 // not use color, but alpha/overbright must not be lost on the fallback path.
@@ -1802,7 +1824,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 float tr = tmpTint[0], tg = tmpTint[1], tb = tmpTint[2];
                 VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 var pose = poseStack.last();
-                for (BakedQuad quad : quadsForIris) {
+                for (BakedQuad quad : fallbackQuads) {
                     float shade = RenderHooks.quadShade(quad.getDirection());
                     RenderHooks.putBulkData(consumer, pose, quad,
                             shade * tr, shade * tg, shade * tb, fade, packedLight,

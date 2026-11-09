@@ -87,12 +87,12 @@ vec2 raySphere(vec3 ro, vec3 rd, vec3 sc, float r) {
 
 float sampleRawDepth(vec2 uv) {
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return 1.0;
-    return texture(uDepthTex0, uv).r;
+    return textureLod(uDepthTex0, uv, 0.0).r;
 }
 
 float sampleDhRawDepth(vec2 uv) {
     if (uDhPresent == 0 || uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) return -1.0;
-    return texture(uDhDepthTex, uv).r;
+    return textureLod(uDhDepthTex, uv, 0.0).r;
 }
 
 float linearizeVanillaDepth(float zNdc) {

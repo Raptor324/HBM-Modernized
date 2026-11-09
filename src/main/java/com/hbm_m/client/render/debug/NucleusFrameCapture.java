@@ -245,8 +245,31 @@ public final class NucleusFrameCapture {
         int nanCount = 0;
         int zeroQuatCount = 0;
         int originGhostCount = 0;
+        int duplicateCount = 0;
         int visibleCount = 0;
         List<String> samples = new ArrayList<>();
+
+        int maxCheck = Math.min(instanceCount, 256);
+        for (int i = 0; i < maxCheck; i++) {
+            int baseA = pos + i * strideFloats;
+            if (buf.get(baseA + InstancedStaticPartRenderer.FADE_FLOAT_OFFSET) < 0.0f) continue;
+            float ax = buf.get(baseA + InstancedStaticPartRenderer.POS_FLOAT_OFFSET);
+            float ay = buf.get(baseA + InstancedStaticPartRenderer.POS_FLOAT_OFFSET + 1);
+            float az = buf.get(baseA + InstancedStaticPartRenderer.POS_FLOAT_OFFSET + 2);
+            for (int j = i + 1; j < maxCheck; j++) {
+                int baseB = pos + j * strideFloats;
+                if (buf.get(baseB + InstancedStaticPartRenderer.FADE_FLOAT_OFFSET) < 0.0f) continue;
+                float bx = buf.get(baseB + InstancedStaticPartRenderer.POS_FLOAT_OFFSET);
+                float by = buf.get(baseB + InstancedStaticPartRenderer.POS_FLOAT_OFFSET + 1);
+                float bz = buf.get(baseB + InstancedStaticPartRenderer.POS_FLOAT_OFFSET + 2);
+                float dx = ax - bx;
+                float dy = ay - by;
+                float dz = az - bz;
+                if (dx * dx + dy * dy + dz * dz < 0.25f) {
+                    duplicateCount++;
+                }
+            }
+        }
 
         for (int i = 0; i < instanceCount; i++) {
             int base = pos + i * strideFloats;
@@ -283,9 +306,15 @@ public final class NucleusFrameCapture {
         info.put("nanPositions", nanCount);
         info.put("zeroQuaternions", zeroQuatCount);
         info.put("originGhosts", originGhostCount);
+        info.put("duplicateOverlapping", duplicateCount);
         info.put("samples", samples);
 
         if (state == CaptureState.CAPTURING && currentReport != null) {
+            if (duplicateCount > 0) {
+                currentReport.anomalies.add(String.format(Locale.ROOT,
+                        "[DUPLICATE_OVERLAPPING_INSTANCES] Mesh '%s' has %d duplicate overlapping instance pair(s) in the same buffer!",
+                        tag, duplicateCount));
+            }
             if (nanCount > 0 || zeroQuatCount > 0 || originGhostCount > 0) {
                 currentReport.anomalies.add(String.format(Locale.ROOT,
                         "[GEOMETRY_ARTIFACT] Mesh '%s' has corrupted active records: NaN=%d, zeroQuat=%d, uninitializedOriginGhost=%d (out of %d visible)",
@@ -305,6 +334,7 @@ public final class NucleusFrameCapture {
         s.glProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
         s.glProgramValid = s.glProgram > 0 && GL20.glIsProgram(s.glProgram);
         s.glVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
+        s.glAttrib1Enabled = (s.glVao > 0) ? (GL20.glGetVertexAttribi(1, GL20.GL_VERTEX_ATTRIB_ARRAY_ENABLED) != 0) : null;
         s.glArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         s.glElementArrayBuffer = GL11.glGetInteger(GL15.GL_ELEMENT_ARRAY_BUFFER_BINDING);
         s.glDrawIndirectBuffer = GL11.glGetInteger(GL40.GL_DRAW_INDIRECT_BUFFER_BINDING);
@@ -538,6 +568,21 @@ public final class NucleusFrameCapture {
                         + " instead of opaque=false (SRC_ALPHA -> ONE_MINUS_SRC_ALPHA) (will break vignette/GUI!)");
             }
         }
+
+        // 6. Shaderpack & GPU Bake Anomalies
+        if ((ev.name.contains("BATCH") || ev.name.contains("DRAW") || ev.name.contains("BAKE")) && g.glVao > 0) {
+            if (Boolean.FALSE.equals(g.glAttrib1Enabled)) {
+                flagAnomaly(ev, "[COLOR_ATTRIB_DISABLED] VAO " + g.glVao + " has vertex attribute 1 (Color) DISABLED! "
+                        + "Vertex colors will default to vec4(0,0,0,1) pure black!");
+            }
+        }
+        if (ev.name.startsWith("GPU_BAKE_") && !com.hbm_m.client.render.NucleusGpuBaker.cullEnabled()) {
+            flagAnomaly(ev, "[GPU_BAKE_CULL_DISABLED] NucleusGpuBaker.cullEnabled() is false during bake! "
+                    + "bake_cull.comp failed to compile or was disabled, forcing CPU EBO fallback!");
+        }
+        if (ev.name.contains("[GPU_BAKE_EXPAND_FAILED]") || (ev.details != null && ev.details.contains("[GPU_BAKE_EXPAND_FAILED]"))) {
+            flagAnomaly(ev, "[GPU_BAKE_EXPAND_FAILED] GPU Bake ensureSharedMainExpanded failed! VRAM budget exceeded or pool relayout rejected.");
+        }
     }
 
     private static void flagAnomaly(EventRecord ev, String msg) {
@@ -648,7 +693,7 @@ public final class NucleusFrameCapture {
                 sb.append("- **Diff vs prev**: `").append(String.join("` | `", ev.stateChanges)).append("`\n");
             }
             sb.append("- **GL State**: `prog=").append(g.glProgram)
-              .append("` `vao=").append(g.glVao)
+              .append("` `vao=").append(g.glVao).append(g.glAttrib1Enabled != null ? (g.glAttrib1Enabled ? "(col1:on)" : "(col1:OFF!)") : "")
               .append("` `").append(g.glFboAttachments)
               .append("` `blend=").append(g.glBlendEnabled).append(" (").append(g.glBlendFunc).append(")`")
               .append(" `depth=").append(g.glDepthTest).append("/mask=").append(g.glDepthMask).append("/").append(g.glDepthFunc)
@@ -883,6 +928,7 @@ public final class NucleusFrameCapture {
         public int glProgram;
         public boolean glProgramValid;
         public int glVao;
+        public Boolean glAttrib1Enabled;
         public int glArrayBuffer;
         public int glElementArrayBuffer;
         public int glDrawIndirectBuffer;

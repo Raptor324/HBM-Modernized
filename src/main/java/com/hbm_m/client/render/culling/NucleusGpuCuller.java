@@ -51,14 +51,18 @@ public final class NucleusGpuCuller {
     private static int uP11Loc = -1;
     private static int uFrustumPlanesLoc = -1;
     private static int uFrustumOnlyLoc = -1;
+    private static int uDebugCullModeLoc = -1;
     private static boolean initialized = false;
 
     private static final float[] FRUSTUM_PLANES = new float[24];
     private static final float[] MAT_FLOATS = new float[16];
+    private static final Matrix4f SCRATCH_WORLD_TO_CLIP = new Matrix4f();
     private static long lastDispatchLogTimeMs = 0L;
 
     /** GL_KHR_shader_subgroup query: size of a subgroup in invocations (LWJGL has no constant). */
     private static final int GL_SUBGROUP_SIZE_KHR = 0x9532;
+    private static final int GL_SUBGROUP_SUPPORTED_FEATURES_KHR = 0x9534;
+    private static final int GL_SUBGROUP_FEATURE_BALLOT_BIT_KHR = 0x00000008;
     /** Default workgroup size; extended to 64 when hardware executes 64-thread wavefronts (AMD). */
     private static int subgroupSize = 32;
     private static Boolean subgroupBallotCapable = null;
@@ -67,11 +71,12 @@ public final class NucleusGpuCuller {
 
     /**
      * CrankShaft pattern: subgroup ballot compaction is compiled in only when
-     * GL_KHR_shader_subgroup is present AND the queried subgroup size matches the
-     * workgroup (32 or 64). The shader additionally runtime-verifies workgroup == one
-     * subgroup and falls back to atomic/shared compaction per workgroup.
+     * GL_KHR_shader_subgroup is present, ballot feature bit is supported, AND the
+     * queried subgroup size matches the workgroup (32 or 64). The shader additionally
+     * runtime-verifies workgroup == one subgroup and falls back to atomic/shared
+     * compaction per workgroup.
      */
-    private static boolean hasSubgroupBallot() {
+    public static boolean hasSubgroupBallot() {
         Boolean cached = subgroupBallotCapable;
         if (cached != null) {
             return cached;
@@ -80,10 +85,13 @@ public final class NucleusGpuCuller {
         try {
             GLCapabilities caps = GL.getCapabilities();
             if (caps.GL_KHR_shader_subgroup) {
-                int queriedSize = GL11.glGetInteger(GL_SUBGROUP_SIZE_KHR);
-                if (queriedSize == 32 || queriedSize == 64) {
-                    subgroupSize = queriedSize;
-                    capable = true;
+                int features = GL11.glGetInteger(GL_SUBGROUP_SUPPORTED_FEATURES_KHR);
+                if ((features & GL_SUBGROUP_FEATURE_BALLOT_BIT_KHR) != 0) {
+                    int queriedSize = GL11.glGetInteger(GL_SUBGROUP_SIZE_KHR);
+                    if (queriedSize == 32 || queriedSize == 64) {
+                        subgroupSize = queriedSize;
+                        capable = true;
+                    }
                 }
             }
         } catch (Throwable t) {
@@ -126,6 +134,7 @@ public final class NucleusGpuCuller {
             uP11Loc = GL20.glGetUniformLocation(programId, "uP11");
             uFrustumPlanesLoc = GL20.glGetUniformLocation(programId, "uFrustumPlanes");
             uFrustumOnlyLoc = GL20.glGetUniformLocation(programId, "uFrustumOnly");
+            uDebugCullModeLoc = GL20.glGetUniformLocation(programId, "uDebugCullMode");
 
             LOGGER.info("[HBM-M] NucleusGpuCuller compute program initialized (programId={}, compaction={}, subgroupSize={})",
                     programId, hasSubgroupBallot() ? "subgroup-ballot" : "atomic-fallback", getWorkgroupSize());
@@ -220,6 +229,23 @@ public final class NucleusGpuCuller {
             int viewWidth,
             int viewHeight,
             boolean frustumOnly) {
+        return cull(atlas, numCommands, totalInstances, depthPyramid, viewMatrix, projMatrix,
+                zNear, zFar, viewWidth, viewHeight, frustumOnly, false);
+    }
+
+    public static boolean cull(
+            MdiGeometryAtlas atlas,
+            int numCommands,
+            int totalInstances,
+            HiZDepthPyramid depthPyramid,
+            Matrix4f viewMatrix,
+            Matrix4f projMatrix,
+            float zNear,
+            float zFar,
+            int viewWidth,
+            int viewHeight,
+            boolean frustumOnly,
+            boolean debugCull) {
 
         if (atlas == null || !atlas.isReady() || numCommands <= 0 || totalInstances <= 0 || depthPyramid == null) {
             return false;
@@ -238,7 +264,8 @@ public final class NucleusGpuCuller {
                 zFar,
                 viewWidth,
                 viewHeight,
-                frustumOnly
+                frustumOnly,
+                debugCull
         );
     }
 
@@ -259,6 +286,25 @@ public final class NucleusGpuCuller {
             int viewWidth,
             int viewHeight,
             boolean frustumOnly) {
+        return cull(inInstanceVbo, outInstanceVbo, indirectBufferId, numCommands, totalInstances,
+                depthPyramid, viewMatrix, projMatrix, zNear, zFar, viewWidth, viewHeight, frustumOnly, false);
+    }
+
+    public static boolean cull(
+            int inInstanceVbo,
+            int outInstanceVbo,
+            int indirectBufferId,
+            int numCommands,
+            int totalInstances,
+            HiZDepthPyramid depthPyramid,
+            Matrix4f viewMatrix,
+            Matrix4f projMatrix,
+            float zNear,
+            float zFar,
+            int viewWidth,
+            int viewHeight,
+            boolean frustumOnly,
+            boolean debugCull) {
 
         if (inInstanceVbo <= 0 || outInstanceVbo <= 0 || indirectBufferId <= 0 || numCommands <= 0 || totalInstances <= 0) {
             return false;
@@ -324,11 +370,15 @@ public final class NucleusGpuCuller {
                 GL20.glUniform1f(uP11Loc, projMatrix.m11());
             }
             if (uFrustumPlanesLoc >= 0) {
-                CpuFrustumCuller.extractPlanes(projMatrix, FRUSTUM_PLANES, true);
+                Matrix4f worldToClip = SCRATCH_WORLD_TO_CLIP.set(projMatrix).mul(viewMatrix);
+                CpuFrustumCuller.extractPlanes(worldToClip, FRUSTUM_PLANES, true);
                 GL20.glUniform4fv(uFrustumPlanesLoc, FRUSTUM_PLANES);
             }
             if (uFrustumOnlyLoc >= 0) {
                 GL30.glUniform1ui(uFrustumOnlyLoc, frustumOnly ? 1 : 0);
+            }
+            if (uDebugCullModeLoc >= 0) {
+                GL30.glUniform1ui(uDebugCullModeLoc, debugCull ? 1 : 0);
             }
 
             // Decoupled 1D instance tiling: dispatch flat tiles covering all instances

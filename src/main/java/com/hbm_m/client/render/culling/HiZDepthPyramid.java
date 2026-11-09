@@ -93,10 +93,10 @@ public final class HiZDepthPyramid {
      */
     public static int getImageMipLevels(int width, int height) {
         int result = 1;
-        while (width > 1 && height > 1) {
+        while (width > 1 || height > 1) {
             result++;
-            width >>= 1;
-            height >>= 1;
+            width = Math.max(1, width >> 1);
+            height = Math.max(1, height >> 1);
         }
         return result;
     }
@@ -235,6 +235,7 @@ public final class HiZDepthPyramid {
         // bug CrankShaft fixed in 1.5.2 — silently sampling a dead texture).
         int previousProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
         GlStateManager._activeTexture(GL13.GL_TEXTURE10);
+        int prevUnit10Tex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
         try {
             GlStateManager._bindTexture(sourceDepthTextureId);
 
@@ -281,9 +282,9 @@ public final class HiZDepthPyramid {
                 GL42.glBindImageTexture(i, 0, 0, false, 0, GL15.GL_READ_ONLY, GL30.GL_R32F);
             }
 
-            // Explicitly unbind source depth texture from unit 10 (cache-coherent with GlStateManager)
+            // Restore source texture on unit 10 (cache-coherent with GlStateManager)
             GlStateManager._activeTexture(GL13.GL_TEXTURE10);
-            GlStateManager._bindTexture(0);
+            GlStateManager._bindTexture(prevUnit10Tex);
 
             // Restore OpenGL bindings
             GlStateManager._glUseProgram(previousProgram);
