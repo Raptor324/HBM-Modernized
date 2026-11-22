@@ -16,19 +16,18 @@ public final class ItemComponentHooks {
     /*private static final java.util.Map<net.minecraft.world.item.Item, java.util.function.Supplier<net.minecraft.world.item.Rarity>> RARITIES =
             new java.util.LinkedHashMap<>();
 
-    /^* Merkt die Seltenheit eines Items vor (Lieferant darf {@code null} liefern = Vanilla-Wert behalten). ^/
+    // Merkt die Seltenheit eines Items vor (Lieferant darf {@code null} liefern = Vanilla-Wert behalten).
     public static void deferRarity(net.minecraft.world.item.Item item, java.util.function.Supplier<net.minecraft.world.item.Rarity> rarity) {
         synchronized (RARITIES) {
             RARITIES.put(item, rarity);
         }
     }
 
+    // ZWEI Jukebox-Wege, beide gebraucht: createRecordItem setzt JUKEBOX_PLAYABLE direkt
+    // bei der Erstellung (ItemHooks.jukeboxProperties); deferJukeboxSong ist der Weg für
+    // ItemModRecord (Song-Key == Item-Key, erst nach Registrierung auflösbar).
     private static final java.util.List<net.minecraft.world.item.Item> JUKEBOX = new java.util.ArrayList<>();
 
-    /^*
-     * 1.21.1: {@code RecordItem} entfaellt; die Platte spielt den Jukebox-Song {@code <modid>:<item-id>}
-     * ({@code data/<modid>/jukebox_song/<item-id>.json}), gesetzt als Default-Komponente {@code JUKEBOX_PLAYABLE}.
-     ^/
     public static void deferJukeboxSong(net.minecraft.world.item.Item item) {
         synchronized (JUKEBOX) {
             JUKEBOX.add(item);
@@ -37,19 +36,17 @@ public final class ItemComponentHooks {
 
     private static final java.util.List<net.minecraft.world.item.Item> UNBREAKABLE = new java.util.ArrayList<>();
 
-    /^*
-     * 1.20.1 {@code canBeDepleted() == false}: das Item nutzt sich nie ab. 1.21.1: die Default-Komponenten
-     * {@code MAX_DAMAGE}/{@code DAMAGE} werden entfernt (ohne den Tooltip von {@code UNBREAKABLE}).
-     ^/
+    //
+    // 1.20.1 {@code canBeDepleted() == false}: das Item nutzt sich nie ab. 1.21.1: die Default-Komponenten
+    // {@code MAX_DAMAGE}/{@code DAMAGE} werden entfernt (ohne den Tooltip von {@code UNBREAKABLE}).
+    //
     public static void deferUnbreakable(net.minecraft.world.item.Item item) {
         synchronized (UNBREAKABLE) {
             UNBREAKABLE.add(item);
         }
     }
-    *///?}
 
-    //? if neoforge {
-    /*@net.neoforged.fml.common.EventBusSubscriber(modid = com.hbm_m.lib.RefStrings.MODID, bus = net.neoforged.fml.common.EventBusSubscriber.Bus.MOD)
+    @net.neoforged.fml.common.EventBusSubscriber(modid = com.hbm_m.lib.RefStrings.MODID)
     public static final class Events {
         private Events() {}
 

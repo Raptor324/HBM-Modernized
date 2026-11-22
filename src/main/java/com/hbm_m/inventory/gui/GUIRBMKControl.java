@@ -12,11 +12,14 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Port of {@code GUIRBMKControl} (1.7.10 Original), rendered with the real
  * {@code gui_rbmk_control.png} texture instead of a flat-fill placeholder.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKControl extends GuiInfoScreen<RBMKControlMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -103,13 +106,5 @@ public class GUIRBMKControl extends GuiInfoScreen<RBMKControlMenu> {
         }
 
         return handled;
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // Original drawGuiContainerForegroundLayer
-        String name = this.title.getString();
-        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 6, 4210752, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 92, 4210752, false);
     }
 }

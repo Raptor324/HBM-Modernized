@@ -18,6 +18,7 @@ import net.minecraft.world.level.Level;
  */
 public class ItemSatChip extends Item implements ISatChip, ITooltipProvider {
 
+
     public ItemSatChip(Properties properties) {
         super(properties.stacksTo(1));
     }

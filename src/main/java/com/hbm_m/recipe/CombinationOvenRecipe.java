@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonObject;
+import com.hbm_m.blockentity.machines.MachineCombinationOvenBlockEntity;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.recipe.PlatformRecipe;
 import com.hbm_m.platform.recipe.PlatformRecipeSerializer;
@@ -64,6 +65,29 @@ public class CombinationOvenRecipe extends PlatformRecipe {
         return fluidOutput != null ? (int) Math.min(Integer.MAX_VALUE, fluidOutput.getAmount()) : 0;
     }
 
+    // ── Machines-Frame-Zugriffsmethoden (JEI/Upgrade-Infos) ──────────────────
+    // Die machines-Variante dieser Rezeptklelle hatte inputCount/fluidInput/duration als
+    // eigene Felder; die zusammengeführte Rezeptform folgt der FFA-Variante (Item rein,
+    // Item und/oder Fluid heraus, feste Maschinenzeit). Die Accessoren existieren weiter
+    // und werden auf die FFA-Felder abgebildet, damit der machines-JEI-Frame kompiliert.
+
+    /** FFA-Form: je Vorgang wird genau ein Eingangsitem verbraucht. */
+    public int getInputCount() { return 1; }
+
+    /** Machines-API: der am Ofen beteiligte Fluidtyp - hier die FFA-Ausgabe (einziges Fluid des Rezepts). */
+    @NotNull
+    public Fluid getFluid() { return getOutputFluid(); }
+
+    /** Machines-API: Fluidmenge - hier die FFA-Ausgabemenge. */
+    public int getFluidAmount() { return getOutputFluidAmount(); }
+
+    /** Machines-API: feste Verarbeitungszeit des Ofens (FFA: haengt an der Ofenhitze, nicht am Rezept). */
+    public int getDuration() {
+        // Nominelle Ticks je Vorgang bei voller Ofenhitze (progress += heat/100 je Tick).
+        int burnPerTickAtMaxHeat = Math.max(1, MachineCombinationOvenBlockEntity.maxHeat / 100);
+        return Math.max(1, MachineCombinationOvenBlockEntity.processTime / burnPerTickAtMaxHeat);
+    }
+
     public boolean matchesInput(ItemStack stack) {
         return !stack.isEmpty() && input.test(stack);
     }
@@ -92,11 +116,7 @@ public class CombinationOvenRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<CombinationOvenRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "combination_oven");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "combination_oven");
-        //?}
 
         @Override
         public @NotNull CombinationOvenRecipe readJson(@NotNull ResourceLocation recipeId, @NotNull JsonObject json) {

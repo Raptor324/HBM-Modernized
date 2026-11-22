@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "hbm_m:cobalt_ore",
+    "hbm_m:cobalt_ore_deepslate",
+    "hbm_m:nether_cobalt_ore"
+  ]
+}

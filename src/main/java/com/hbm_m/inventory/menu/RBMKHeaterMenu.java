@@ -10,6 +10,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1-Port von {@code ContainerRBMKHeater}: ein Fluid-Identifier-Slot bei (41,45), der den
@@ -50,7 +51,7 @@ public class RBMKHeaterMenu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
         // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
         if (inv.player.level().isClientSide) return null;
-        throw new IllegalStateException("No RBMKHeaterBlockEntity at " + pos);
+        throw new MenuBlockEntityMissingException("No RBMKHeaterBlockEntity at " + pos);
     }
 
     public RBMKHeaterBlockEntity getBlockEntity() { return blockEntity; }
@@ -61,8 +62,7 @@ public class RBMKHeaterMenu extends AbstractContainerMenu {
         if (blockEntity == null) {
             return false;
         }
-        return blockEntity.getLevel() == player.level()
-            && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

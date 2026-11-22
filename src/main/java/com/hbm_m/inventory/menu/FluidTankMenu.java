@@ -11,7 +11,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -22,6 +21,9 @@ import net.minecraft.world.level.material.Fluids;
 
 import dev.architectury.fluid.FluidStack;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.FluidHooks;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Единое меню для всех вариантов «жидкостной бочки» (tcalloy/plastic/corroded/antimatter/orbus и т.д.) —
@@ -42,7 +44,7 @@ public class FluidTankMenu extends AbstractContainerMenu {
     private static final int HOTBAR_END = HOTBAR_START + 9;
 
     public FluidTankMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(7));
+        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(6));
     }
 
     public FluidTankMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -51,14 +53,17 @@ public class FluidTankMenu extends AbstractContainerMenu {
         this.blockEntity = (MachineFluidTankBlockEntity) entity;
         this.data = data;
 
-        checkContainerDataCount(data, 7);
+        // Должно совпадать с getCount() ContainerData в MachineFluidTankBlockEntity
+        checkContainerDataCount(data, 6);
 
         var container = new ModItemStackHandlerContainer(this.blockEntity.getItemHandler(), this.blockEntity::setChanged);
 
+        // NEXT MenuBarrel: слоты plain, mayPlace идёт через container.canPlaceItem —
+        // гейчим все входы тем же canPlaceItem BlockEntity, что и автоматизацию.
         this.addSlot(new Slot(container, MachineFluidTankBlockEntity.SLOT_ID_IN, 8, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return stack.getItem() instanceof IItemFluidIdentifier;
+                return blockEntity.canPlaceItem(MachineFluidTankBlockEntity.SLOT_ID_IN, stack);
             }
         });
 
@@ -72,7 +77,7 @@ public class FluidTankMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(container, MachineFluidTankBlockEntity.SLOT_LOAD_IN, 35, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack); // auch HBM-Behaelter ohne Plattform-Capability (Registry)
+                return blockEntity.canPlaceItem(MachineFluidTankBlockEntity.SLOT_LOAD_IN, stack);
             }
         });
 
@@ -86,7 +91,7 @@ public class FluidTankMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(container, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, 125, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack); // auch HBM-Behaelter ohne Plattform-Capability (Registry)
+                return blockEntity.canPlaceItem(MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, stack);
             }
         });
 
@@ -143,10 +148,6 @@ public class FluidTankMenu extends AbstractContainerMenu {
         return this.data.get(5);
     }
 
-    public int getFilterFluidId() {
-        return this.data.get(6);
-    }
-
     @Override
     public ItemStack quickMoveStack(Player playerIn, int index) {
         ItemStack sourceStack = ItemStack.EMPTY;
@@ -162,10 +163,12 @@ public class FluidTankMenu extends AbstractContainerMenu {
                 }
             } else {
                 if (stackInSlot.getItem() instanceof IItemFluidIdentifier) {
-                    if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_ID_IN, MachineFluidTankBlockEntity.SLOT_ID_IN + 1, false) /* Identifier-Slot 0 (frueher MACHINE_SLOTS = Spielerinventar) */) {
+                    // The ID-in slot is added first, so it is index 0. MACHINE_SLOTS equals
+                    // PLAYER_INVENTORY_START, so the old range pointed at the player inventory.
+                    if (!moveItemStackTo(stackInSlot, 0, 1, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stackInSlot)) {
+                } else if (FluidHooks.isFluidContainer(stackInSlot)) {
                     if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_LOAD_IN, MachineFluidTankBlockEntity.SLOT_LOAD_IN + 1, false)) {
                         if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN + 1, false)) {
                             return ItemStack.EMPTY;
@@ -193,7 +196,6 @@ public class FluidTankMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity, block);
     }
 }

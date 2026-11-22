@@ -30,6 +30,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code TileEntityMachineStrandCaster}: Stranggiessanlage. Nimmt fluessiges Metall an den vier oberen Einguessen
@@ -97,7 +98,7 @@ public class MachineStrandCasterBlockEntity extends MachineFoundryCastingBaseBlo
                         slots[i] = out.copyWithCount(0);
                     }
 
-                    if (slots[i].isEmpty() || PlatformHooks.isSameItemSameTags(slots[i], out)) {
+                    if (slots[i].isEmpty() || StackNbt.sameItemSameTags(slots[i], out)) {
                         int current = slots[i].isEmpty() ? 0 : slots[i].getCount();
                         int toDeposit = Math.min(remaining, maxStackSize - current);
                         slots[i] = out.copyWithCount(current + toDeposit);
@@ -117,9 +118,8 @@ public class MachineStrandCasterBlockEntity extends MachineFoundryCastingBaseBlo
         }
     }
 
-    private void sendUpdateToClient() {
-        if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-    }
+    /* sendUpdateToClient() kommt aus BaseHbmBlockEntity (protected, mit isRemoved-Guard);
+       die fruehere private Lokalkopie schattierte die Basismethode und war kein Override. */
 
     private int maxProcessable() {
         ItemMold.Mold mold = this.getInstalledMold();
@@ -133,7 +133,7 @@ public class MachineStrandCasterBlockEntity extends MachineFoundryCastingBaseBlo
         for (int i = 1; i < 7; i++) {
             if (slots[i].isEmpty()) {
                 freeSlots += stackLimit;
-            } else if (PlatformHooks.isSameItemSameTags(slots[i], mold.getOutput(type))) {
+            } else if (StackNbt.sameItemSameTags(slots[i], mold.getOutput(type))) {
                 freeSlots += stackLimit - slots[i].getCount();
             }
         }
@@ -185,6 +185,12 @@ public class MachineStrandCasterBlockEntity extends MachineFoundryCastingBaseBlo
     public int getMoldSize() {
         ItemMold.Mold mold = getInstalledMold();
         return mold == null ? 0 : mold.size;
+    }
+
+    /** Стоимость изложницы (квантов за отливку) для рендера; 0 если изложницы нет. */
+    public int getMoldCost() {
+        ItemMold.Mold mold = getInstalledMold();
+        return mold == null ? 0 : mold.getCost();
     }
 
     @Override
@@ -316,14 +322,14 @@ public class MachineStrandCasterBlockEntity extends MachineFoundryCastingBaseBlo
         casterHandler = null;
     }
     //?} elif neoforge {
-    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> casterHandler;
+    /*private com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> casterHandler;
 
     /^* Original {@code getAccessibleSlotsFromSide {1..6}}: nur die Ausgaben, entnehmbar. ^/
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
             if (casterHandler == null) {
-                casterHandler = com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+                casterHandler = com.hbm_m.platform.LazyCap.of(() -> new net.minecraftforge.items.IItemHandler() {
                     @Override public int getSlots() { return 6; }
                     @Override public @NotNull ItemStack getStackInSlot(int slot) { return slots[slot + 1]; }
                     @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) { return stack; }

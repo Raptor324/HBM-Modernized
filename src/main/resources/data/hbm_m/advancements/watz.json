@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:watz_pellet_schrabidium"
+      "item": "hbm_m:struct_watz_core"
     },
     "title": {
       "translate": "advancements.hbm_m.watz.title"

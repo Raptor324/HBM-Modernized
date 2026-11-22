@@ -4,11 +4,13 @@ import com.hbm_m.particle.explosions.AbstractExplosionParticle;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SpriteSet;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  *  Дым грибовидного облака (серый дым)
  * Основной элемент визуала взрыва
  */
+@OnlyIn(Dist.CLIENT)
 public class MushroomSmokeParticle extends AbstractExplosionParticle {
 
     public MushroomSmokeParticle(ClientLevel level, double x, double y, double z,

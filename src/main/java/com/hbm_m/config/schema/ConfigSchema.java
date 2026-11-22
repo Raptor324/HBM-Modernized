@@ -1,5 +1,6 @@
 package com.hbm_m.config.schema;
 
+import com.hbm_m.config.GeneralConfig;
 import com.hbm_m.config.ModClothConfig;
 
 import java.util.ArrayList;
@@ -113,6 +114,7 @@ public final class ConfigSchema {
         reg(ConfigField.bool("gunAnimsLegacy", ConfigSide.CLIENT, ApplyMode.LIVE, "general").withComment("Uses the legacy gun animations"));
         reg(ConfigField.bool("gunModelFov", ConfigSide.CLIENT, ApplyMode.LIVE, "general").withComment("Gun models use the FOV setting instead of a fixed 70"));
         reg(ConfigField.bool("gunVisualRecoil", ConfigSide.CLIENT, ApplyMode.LIVE, "general").withComment("Guns shake the camera when fired"));
+        reg(ConfigField.bool("gunCrazyRecoil", ConfigSide.CLIENT, ApplyMode.LIVE, "general").withComment("Crazy recoil: multiplies the recoil of every gun by 10"));
         reg(ConfigField.floatNum("gunAnimationSpeed", ConfigSide.CLIENT, ApplyMode.LIVE, "general", 0.01F, 10F).withComment("Multiplier for gun animation speed"));
         reg(ConfigField.bool("enableGuns", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("Prevents new system guns to be fired"));
         reg(ConfigField.integer("renderRebarLimit", ConfigSide.CLIENT, ApplyMode.LIVE, "general", 0, 100000).withComment("How many rebar blocks may render their concrete fill per frame"));
@@ -120,10 +122,26 @@ public final class ConfigSchema {
         // Wird nur beim Serverstart gelesen (RadiationSystemSelector) -> Welt neu laden.
         reg(ConfigField.enumField("radiationSystem", ConfigSide.SERVER, ApplyMode.REQUIRES_RESTART, "general"));
         reg(ConfigField.bool("enableMOTD", ConfigSide.CLIENT, ApplyMode.LIVE, "general"));
+        reg(ConfigField.bool("enableTips", ConfigSide.CLIENT, ApplyMode.LIVE, "general").withComment("Tip of the day on the world loading screen (fetched from the mod's GitHub)"));
+        reg(ConfigField.bool("enableExtendedLogging", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("Logs uses of the detonator, nuclear explosions, missile launches, grenades, etc."));
+        // NEXT ContentConfig mode_528.enabled (ConfigSchema.ENABLE_528) → BalanceConfig.enable528;
+        // зеркалируется в GeneralConfig.enable528 (см. applyAll → GeneralConfig.syncFrom).
+        reg(ConfigField.bool("enable528", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("The central toggle for 528 mode, required TRUE for most subsequent toggles to work."));
+        reg(ConfigField.integer("energyRatioHe", ConfigSide.SERVER, ApplyMode.LIVE, "general", 1, 1_000_000).withComment("HE units per one FE (HE:FE ratio numerator)"));
+        reg(ConfigField.integer("energyRatioFe", ConfigSide.SERVER, ApplyMode.LIVE, "general", 1, 1_000_000).withComment("FE units per one HE (HE:FE ratio denominator)"));
 
         // ── SERVER: эффекты мира ────────────────────────────────────
         reg(ConfigField.bool("enableRadFogEffect", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
         reg(ConfigField.bool("worldRadEffects", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
+        // Legacy RadiationConfig/MobConfig поля: читались кодом, но не были
+        // зарегистрированы — никогда не попадали в JSON (навсегда дефолт,
+        // тот же класс бага, что RBMK-диалсы).
+        reg(ConfigField.bool("enablePollution", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects").withComment("Enables/disables the pollution grid"));
+        reg(ConfigField.floatNum("pollutionMult", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects", 0F, 10_000F));
+        reg(ConfigField.floatNum("buffMobThreshold", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects", 0F, 10_000F));
+        reg(ConfigField.bool("enablePoison", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
+        reg(ConfigField.bool("enableLeadPoisoning", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
+        reg(ConfigField.bool("enableLeadFromBlocks", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
         reg(ConfigField.bool("taintTrails", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
 
         // ── SERVER: кратерные биомы (ориг. WorldConfig, категория CATEGORY_BIOMES) ──
@@ -193,8 +211,14 @@ public final class ConfigSchema {
         reg(ConfigField.integer("falloutRangePercent", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 500));
         reg(ConfigField.integer("falloutDelay", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 100));
         reg(ConfigField.bool("enableChunkLoading", ConfigSide.SERVER, ApplyMode.LIVE, "explosions"));
-        reg(ConfigField.integer("explosionAlgorithm", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 2));
+        // resetOnUpgrade: принудительный переход всех пользователей на Threaded DDA
+        // (дефолт 1); кастомные 0/2 сбрасываются один раз при смене версии мода.
+        reg(ConfigField.integer("explosionAlgorithm", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 2)
+                .withComment("Crater generator: 0 = Legacy (loaded chunks only), 1 = Threaded DDA, 2 = Threaded DDA + damage accumulation")
+                .resetOnUpgrade());
         reg(ConfigField.integer("limitExplosionLifespan", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 3600));
+        reg(ConfigField.integer("blastChunksInFlight", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 65536));
+        reg(ConfigField.integer("bombMaxThreads", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", -16, 256));
         reg(ConfigField.bool("enableNukeNBTSaving", ConfigSide.SERVER, ApplyMode.LIVE, "explosions"));
 
         // ── SERVER: сетевая трассировка ракет ───────────────────────
@@ -210,17 +234,48 @@ public final class ConfigSchema {
         // ── CLIENT: рендеринг ───────────────────────────────────────
         reg(ConfigField.integer("modelUpdateDistance", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 0, 20));
         reg(ConfigField.integer("modelStaticRenderDistance", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 1, 20));
-        reg(ConfigField.bool("enableOcclusionCulling", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
-        reg(ConfigField.bool("instanceVboOrphanBeforeUpload", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.enumField("occlusionCullingMode", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         // Инстансинг/MDI/GPU-bone skinning всегда включены; forceVanillaImmediatePath — резервный
         // ручной перевод всех OBJ-станков на ванильный immediate-путь (putBulkData).
         reg(ConfigField.bool("forceVanillaImmediatePath", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("mdiCleanFrameReuse", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusRenderDirtySkip", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("mdiDebugLogDispatch", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("doorClipDebug", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("mdiVerboseSubdraws", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         // Размер буферов инстансинга фиксируется при создании рендерера → reload ресурсов
         reg(ConfigField.integer("maxInstancedInstancesPerPart", ConfigSide.CLIENT, ApplyMode.REQUIRES_RESOURCE_RELOAD, "rendering", 256, 16384));
+        // Пайплайн Nucleus: бывшие JVM-флаги -Dhbm.* как пользовательские тумблеры
+        // (конфиг — первоисточник; флаг остаётся аварийным оверрайдом).
+        reg(ConfigField.bool("nucleusAnimCache", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusParametricAnim", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusDitherFade", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusShadowInstancing", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusDoorSkinSharing", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        // Скрытие частей дверей при открывании (be-aware doesRender: BlastDoorDecl/MachineDoorRenderer.applyDoorPartTransform).
+        reg(ConfigField.bool("doorPartCulling", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusDispatcherBypass", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusGpuBake", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusBakeHiZ", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusGpuScatter", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusStagingDirect", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.integer("nucleusGpuCullMinInstances", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 0, 1_000_000));
+        reg(ConfigField.integer("nucleusGpuScatterMinSpans", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 2, 512));
+        // 0 отключает bake-кэш; эффективный бюджет клэмпится в 16..1024 МБ (NucleusGpuBaker)
+        reg(ConfigField.integer("nucleusBakeCacheMB", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 0, 1024));
         reg(ConfigField.integer("vatsRenderDistanceChunks", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 1, 32));
-        reg(ConfigField.enumField("thermalRenderMode", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        // ── Графические эффекты: сворачиваемая группа (аккордеон по parentObject)
+        // внутри вкладки «rendering». parentObject = публичное поле ModClothConfig
+        // graphicEffects (ConfigField.resolveTarget резолвит его рефлексией),
+        // fieldName = хвост ключа после точки. Ключи в JSON - плоские
+        // «graphicEffects.<поле>» (миграция старых верхнеуровневых - HbmConfigStore).
+        reg(ConfigField.builder("graphicEffects.thermalRenderMode", ConfigField.FieldType.ENUM).client().live()
+                .category("rendering").parent("graphicEffects").build());
+        reg(ConfigField.boolNested("graphicEffects.screenSpaceLightFill", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects"));
+        reg(ConfigField.floatNested("graphicEffects.nukeLightIntensity", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects", 0F, 50F));
+        reg(ConfigField.floatNested("graphicEffects.nukeLightRadiusScale", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects", 0.1F, 8F));
+        reg(ConfigField.floatNested("graphicEffects.nukeCinematics", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects", 0F, 2F));
+        reg(ConfigField.floatNested("graphicEffects.nukeHaloStrength", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", "graphicEffects", 0F, 3F));
 
         // ── CLIENT: оверлеи ─────────────────────────────────────────
         reg(ConfigField.boolNested("radiationPixelEffect.enableRadiationPixelEffect", ConfigSide.CLIENT, ApplyMode.LIVE, "overlay", "radiationPixelEffect"));
@@ -241,6 +296,32 @@ public final class ConfigSchema {
         // ── CLIENT: отладка (читается только клиентом) ──────────────
         reg(ConfigField.floatNum("debugRenderTextSize", ConfigSide.CLIENT, ApplyMode.LIVE, "debug", 0.05F, 5F));
         reg(ConfigField.integer("debugRenderDistance", ConfigSide.CLIENT, ApplyMode.LIVE, "debug", 1, 20));
+        reg(ConfigField.bool("glDebugOutput", ConfigSide.CLIENT, ApplyMode.LIVE, "debug"));
+        reg(ConfigField.bool("debugAnimCacheLog", ConfigSide.CLIENT, ApplyMode.LIVE, "debug"));
+
+        // These were missing from the schema entirely. HbmConfigStore writes and reads the JSON
+        // through ConfigSchema.snapshotForJson / applyAll, so an unregistered field never reaches
+        // the file at all: the fifteen RBMK dials were permanently pinned to their defaults and the
+        // reactor could not be tuned. Bounds follow RBMKDials, which clamps the same ranges.
+        reg(ConfigField.doubleNested("rbmkDials.passiveCooling", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1_000D));
+        reg(ConfigField.doubleNested("rbmkDials.passiveCoolingInner", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1_000D));
+        reg(ConfigField.doubleNested("rbmkDials.columnHeatFlow", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1D));
+        reg(ConfigField.doubleNested("rbmkDials.fuelDiffusionMod", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 100D));
+        reg(ConfigField.doubleNested("rbmkDials.heatProvision", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 100D));
+        reg(ConfigField.doubleNested("rbmkDials.boilerHeatConsumption", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 100D));
+        reg(ConfigField.doubleNested("rbmkDials.controlSpeedMod", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 100D));
+        reg(ConfigField.doubleNested("rbmkDials.reactivityMod", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 100D));
+        reg(ConfigField.doubleNested("rbmkDials.outgasserMod", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 100D));
+        reg(ConfigField.doubleNested("rbmkDials.surgeMod", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 100D));
+        reg(ConfigField.doubleNested("rbmkDials.reasimBoilerSpeed", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1D));
+        reg(ConfigField.doubleNested("rbmkDials.moderatorEfficiency", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1D));
+        reg(ConfigField.doubleNested("rbmkDials.absorberEfficiency", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1D));
+        reg(ConfigField.doubleNested("rbmkDials.reflectorEfficiency", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1D));
+        reg(ConfigField.doubleNested("rbmkDials.absorberHeatConversion", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1D));
+
+        reg(ConfigField.floatNum("netherAmbientRad", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects", 0F, 1_000F));
+        reg(ConfigField.floatNum("basaltDeltasRadMult", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects", 0F, 1_000F));
+        reg(ConfigField.bool("enableDhRenderBridge", ConfigSide.CLIENT, ApplyMode.REQUIRES_RESTART, "debug"));
 
         // ── Restport: Original-Optionen, die bisher nur als POJO-Feld existierten ──
         // ToolConfig (11.xx), Lesestellen IToolAreaAbility / IToolHarvestAbility
@@ -273,22 +354,16 @@ public final class ConfigSchema {
         reg(ConfigField.bool("structureDebug", ConfigSide.SERVER, ApplyMode.LIVE, "server").withComment("[Original: STRUCTURE_DEBUG]"));
         reg(ConfigField.integer("autocalMaxClock", ConfigSide.SERVER, ApplyMode.LIVE, "server", 1, Integer.MAX_VALUE).withComment("[Original: AUTOCAL_MAX_CLOCK]"));
         reg(ConfigField.integer("potionSickness", ConfigSide.SERVER, ApplyMode.LIVE, "server", 0, 2).withComment("0 = OFF, 1 = NORMAL, 2 = TERRARIA (duration x12) [Original: 8.S0_potionSickness]"));
-        // GeneralConfig / WeaponConfig / RadiationConfig / MobConfig
+        // GeneralConfig / WeaponConfig
         reg(ConfigField.bool("enable528NetherBurn", ConfigSide.SERVER, ApplyMode.LIVE, "528").withComment("Whether players burn in the nether [Original: X528_enable528NetherBurn]"));
-        reg(ConfigField.bool("enableExtendedLogging", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("Logs uses of the detonator, nuclear explosions, missile launches, grenades, etc. [Original: 1.18_enableExtendedLogging]"));
         reg(ConfigField.integer("polaroidOverride", ConfigSide.SERVER, ApplyMode.LIVE, "general", 0, 18).withComment("1-18 forces the polaroid number, 0 = random [Original: generalOverride]"));
         reg(ConfigField.bool("dropCrys", ConfigSide.SERVER, ApplyMode.LIVE, "weapons").withComment("Whether xen crystals should move blocks when dropped [Original: 10.04_dropCrys]"));
         reg(ConfigField.bool("dropDead", ConfigSide.SERVER, ApplyMode.LIVE, "weapons").withComment("Whether dead man's explosives should explode when dropped [Original: 10.05_dropDead]"));
-        reg(ConfigField.floatNum("netherAmbientRad", ConfigSide.SERVER, ApplyMode.LIVE, "radiation", 0F, 100000F).withComment("RAD/s in the nether [Original: AMBIENT_00_nether]"));
-        reg(ConfigField.floatNum("basaltDeltasRadMult", ConfigSide.SERVER, ApplyMode.LIVE, "radiation", 0F, 1000F).withComment("Port: multiplier of the nether background in basalt deltas"));
-        reg(ConfigField.bool("enablePollution", ConfigSide.SERVER, ApplyMode.LIVE, "pollution").withComment("If disabled, none of the polltuion related things will work [Original: POL_00_enablePollution]"));
-        reg(ConfigField.bool("enableLeadFromBlocks", ConfigSide.SERVER, ApplyMode.LIVE, "pollution").withComment("Whether breaking blocks in heavy metal polluted areas will poison the player [Original: POL_01_enableLeadFromBlocks]"));
-        reg(ConfigField.bool("enableLeadPoisoning", ConfigSide.SERVER, ApplyMode.LIVE, "pollution").withComment("Whether being in a heavy metal polluted area will poison the player [Original: POL_02_enableLeadPoisoning]"));
-        reg(ConfigField.bool("enablePoison", ConfigSide.SERVER, ApplyMode.LIVE, "pollution").withComment("Whether being in a poisoned area will affect the player [Original: POL_04_enablePoison]"));
-        reg(ConfigField.floatNum("buffMobThreshold", ConfigSide.SERVER, ApplyMode.LIVE, "pollution", 0F, 100000F).withComment("The amount of soot required to buff naturally spawning mobs [Original: POL_05_buffMobThreshold]"));
-        reg(ConfigField.builder("pollutionMult", ConfigField.FieldType.DOUBLE).side(ConfigSide.SERVER).applyMode(ApplyMode.LIVE).category("pollution").range(0D, 1000D).build().withComment("A multiplier for soot emitted, whether you want to increase or decrease it [Original: 12.R08_pollutionMult]"));
+        // (enableExtendedLogging, netherAmbientRad, basaltDeltasRadMult, enablePollution,
+        // enableLeadFromBlocks, enableLeadPoisoning, enablePoison, buffMobThreshold,
+        // pollutionMult — уже зарегистрированы выше (machines-вариант); дубликаты FFA опущены.)
 
-        // ── Restport: statisch gebundene Original-*Config-Klassen (World/Structure/General/Radiation/...) ──
+        // ── Restport: статически gebundene Original-*Config-Klassen (World/Structure/General/Radiation/...) ──
         RestportConfigFields.addTo(ConfigSchema::reg);
     }
 
@@ -369,12 +444,20 @@ public final class ConfigSchema {
                 // Формируем строчку с описанием, дефолтным значением и границами
                 StringBuilder desc = new StringBuilder();
                 if (f.getComment() != null) desc.append(f.getComment()).append(" ");
-                
+
+                // Для enum перечисляем все допустимые значения (не только дефолт)
+                if (f.getType() == ConfigField.FieldType.ENUM) {
+                    List<String> values = f.getEnumValueNames();
+                    if (!values.isEmpty()) {
+                        desc.append("[Values: ").append(String.join(", ", values)).append("] ");
+                    }
+                }
                 if (f.getMin() != null && f.getMax() != null) {
                     desc.append("[Range: ").append(f.getMin()).append(" ~ ").append(f.getMax()).append("] ");
                 }
                 desc.append("[Default: ").append(defaultAsString(f)).append("]");
                 if (f.requiresRestart()) desc.append(" [REQUIRES RESTART]");
+                if (f.isResetOnUpgrade()) desc.append(" [RESET ON UPGRADE]");
 
                 // Записываем фейковый ключ-комментарий
                 out.put("_desc_" + f.getKey(), desc.toString().trim());
@@ -398,6 +481,9 @@ public final class ConfigSchema {
             }
         }
         validate(cfg);
+        // Статические фасады поверх POJO (NEXT: NeoForgeHbmConfig.set/reload →
+        // NuclearTech.deriveConfigFacades → BalanceConfig.loadFrom).
+        GeneralConfig.syncFrom(cfg);
     }
 
     /** Применяет одно значение по ключу (проверяет side). Возвращает true при успехе. */
@@ -410,6 +496,30 @@ public final class ConfigSchema {
         } catch (IllegalArgumentException ex) {
             return false;
         }
+    }
+
+    // ================================================================
+    // Миграция конфига (смена версии мода)
+    // ================================================================
+
+    /**
+     * Сбрасывает поля стороны, помеченные {@code resetOnUpgrade}, к значениям по
+     * умолчанию — только те, чьё пользовательское значение отличается от дефолта.
+     * Вызывается из {@link com.hbm_m.config.HbmConfigStore} один раз на версию мода
+     * (по штампу {@code _configVersion} в JSON-файле). Возвращает ключи фактически
+     * сброшенных полей (для лога); поля, уже стоящие на дефолте, не трогает.
+     */
+    public static List<String> resetFlaggedToDefault(ModClothConfig cfg, ConfigSide side) {
+        List<String> reset = new ArrayList<>();
+        ModClothConfig def = defaults();
+        for (ConfigField f : FIELDS.values()) {
+            if (f.getSide() != side || !f.isResetOnUpgrade()) continue;
+            if (!Objects.equals(f.getAsString(cfg), f.getAsString(def))) {
+                f.set(cfg, f.get(def));
+                reset.add(f.getKey());
+            }
+        }
+        return reset;
     }
 
     // ================================================================
@@ -434,6 +544,7 @@ public final class ConfigSchema {
                 // Поле недоступно — пропускаем
             }
         }
+        cfg.enableOcclusionCulling = (cfg.occlusionCullingMode != ModClothConfig.OcclusionCullingMode.OFF);
         // Restport: Nachbehandlung des Original-loadFromConfig (Strukturabstand min > max)
         com.hbm_m.config.StructureConfig.sanitize();
     }

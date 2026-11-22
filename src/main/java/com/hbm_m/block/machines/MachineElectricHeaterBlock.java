@@ -46,6 +46,13 @@ public class MachineElectricHeaterBlock extends DummyableMachineBlock implements
         com.hbm_m.interfaces.ILookOverlay.printGeneric(g, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
+    @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            {1, 1, 0.74, -0.06, 0.4, -0.4, 1}
+        };
+    }
+
     public MachineElectricHeaterBlock(Properties properties) { super(properties); }
 
     @Override

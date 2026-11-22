@@ -77,14 +77,7 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
-        // Nur Verfolgung; Nah- und Strahlenangriff macht attackEntity() in aiStep (gemeinsamer attackTime)
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, false) {
-            //? if < 1.21.1 {
-            @Override protected void checkAndPerformAttack(@NotNull LivingEntity t, double d) { }
-            //?} else {
-            /*@Override protected void checkAndPerformAttack(@NotNull LivingEntity t) { }
-            *///?}
-        });
+        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, false));
         this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
@@ -96,13 +89,15 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(VICTIM_ID, 0);
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
+        defs.define(VICTIM_ID, 0);
     }
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
-        builder.define(VICTIM_ID, 0);
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+        defs.define(VICTIM_ID, 0);
     }
     *///?}
 
@@ -151,13 +146,11 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
 
             if (this.attackCooldown > 0) this.attackCooldown--;
 
-            // Original: entityToAttack != null && attackTime < 10 -> Strahl zeigen
+            // Sync who is being zapped so the renderer can draw the beam.
             this.entityData.set(VICTIM_ID,
-                    target != null && this.attackCooldown < 10 ? target.getId() : 0);
+                    target != null && this.attackCooldown > 10 ? target.getId() : 0);
 
-            if (target != null && target.isAlive() && this.hasLineOfSight(target)) {
-                attackEntity(target, this.distanceTo(target));
-            }
+            radiationAttack(target);
         } else {
             spawnAmbientParticles();
         }
@@ -174,29 +167,16 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
      * The ranged half of the original's {@code attackEntity}: within 30 blocks it irradiates the
      * target directly rather than closing in, and dumps 100 RAD into its own chunk while doing so.
      */
-    private void attackEntity(LivingEntity target, float dist) {
-        // 1:1 attackEntity: Nahkampf unter 2 Bloecken bei Hoehenueberlappung, sonst Strahlung bis 30
-        if (this.attackCooldown <= 0 && dist < 2.0F
-                && target.getBoundingBox().maxY > this.getBoundingBox().minY
-                && target.getBoundingBox().minY < this.getBoundingBox().maxY) {
-            this.attackCooldown = 20;
-            this.doHurtTarget(target);
+    private void radiationAttack(@Nullable LivingEntity target) {
+        if (target == null || this.attackCooldown > 0) return;
+        if (this.distanceTo(target) >= 30.0F || !this.hasLineOfSight(target)) return;
 
-        } else if (dist < 30.0F) {
-            double deltaX = target.getX() - this.getX();
-            double deltaZ = target.getZ() - this.getZ();
-
-            if (this.attackCooldown == 0) {
-                ChunkRadiationManager.incrementRad(this.level(),
-                        this.getBlockX(), this.getBlockY(), this.getBlockZ(), 100F);
-                target.hurt(ModDamageSources.radiation(this.level()), 16.0F);
-                this.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
-                this.playAmbientSound();
-                this.attackCooldown = 20;
-            }
-
-            this.setYRot((float) (Math.atan2(deltaZ, deltaX) * 180.0D / Math.PI) - 90.0F);
-        }
+        ChunkRadiationManager.incrementRad(this.level(),
+                this.getBlockX(), this.getBlockY(), this.getBlockZ(), 100F);
+        target.hurt(ModDamageSources.radiation(this.level()), 16.0F);
+        this.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+        this.playAmbientSound();
+        this.attackCooldown = 20;
     }
 
     /** The leader burns with lava; ordinary beasts glow faintly. */

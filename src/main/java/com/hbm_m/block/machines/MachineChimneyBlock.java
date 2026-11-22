@@ -25,7 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * 1:1 {@code MachineChimneyBrick} ({@code getDimensions {12,0,1,1,1,1}}) und {@code MachineChimneyIndustrial}
  * ({@code {22,0,1,1,1,1}}), beide {@code getOffset 1}; die vier Seitenzellen des Sockels nehmen Rauch an. Gezeichnet
- * vom {@code ChimneyRenderer}.
+ * von der Nucleus-Spec in {@code MachineSeparationRenderer}.
  */
 public class MachineChimneyBlock extends DummyableMachineBlock {
 

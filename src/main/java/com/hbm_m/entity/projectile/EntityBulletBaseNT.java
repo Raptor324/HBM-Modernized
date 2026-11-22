@@ -50,6 +50,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code EntityBulletBaseNT} (MK2-Altsystem, entity_bullet_mk2): nur noch fuer die NPC-Geschosse (Maskman,
@@ -353,7 +354,7 @@ public class EntityBulletBaseNT extends EntityThrowableInterp {
     }
 
     private void onEntityHurt(Entity e) {
-        if (config.incendiary > 0 && !level().isClientSide) PlatformHooks.setSecondsOnFire(e, config.incendiary);
+        if (config.incendiary > 0 && !level().isClientSide) MobHooks.setSecondsOnFire(e, config.incendiary);
 
         if (config.leadChance > 0 && !level().isClientSide && level().random.nextInt(100) < config.leadChance && e instanceof LivingEntity living)
             living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.LEAD), 10 * 20, 0));

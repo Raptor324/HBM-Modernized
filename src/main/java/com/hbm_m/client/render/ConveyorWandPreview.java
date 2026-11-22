@@ -30,25 +30,24 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * 1:1 {@code RenderOverhead.setActionPreview/renderActionPreview} fuer den Foerderband-Stab: die geplante Strecke wird
- * als volle Helligkeit gerendert, tuerkis ({@code 0,1,1}) wenn sie gebaut werden kann, sonst rot. Die Berechnung
- * (inkl. Kanten-Einrasten und Cache ueber Blickziel/Seite/Drehung) stammt aus {@code ItemConveyorWand.onUpdate}.
+ * 1:1 equivalent of {@code RenderOverhead.setActionPreview/renderActionPreview} for the conveyor wand: renders
+ * the planned conveyor path at full brightness, cyan ({@code 0,1,1}) when valid to build, otherwise red.
+ * Calculation (including edge snapping and view target/side/yaw caching) originates from {@code ItemConveyorWand.onUpdate}.
  */
 public final class ConveyorWandPreview {
 
     private ConveyorWandPreview() {}
 
     private static volatile Map<BlockPos, BlockState> preview;
-    private static boolean previewSuccess;
-    private static boolean clearPreview;
+    private static volatile boolean previewSuccess;
 
     private static BlockPos lastPos;
     private static Direction lastSide;
     private static float lastYaw;
 
-    /** Prevents thread unsafe null exception */
+    /** Clears the active preview atomically. */
     public static void clear() {
-        clearPreview = true;
+        preview = null;
         lastPos = null;
     }
 
@@ -88,23 +87,17 @@ public final class ConveyorWandPreview {
         Map<BlockPos, BlockState> wiaj = new HashMap<>();
         boolean pathSuccess = ItemConveyorWand.construct(world, wiaj::put, ItemConveyorWand.getType(stack), player, start, sSide, pos, side, count) > 0;
 
-        clearPreview = false;
-        preview = wiaj;
         previewSuccess = pathSuccess;
+        preview = wiaj;
     }
 
     public static void render(PoseStack poseStack, Vec3 camera) {
-        if (clearPreview) {
-            preview = null;
-            clearPreview = false;
-        }
-
         Map<BlockPos, BlockState> blocks = preview;
         if (blocks == null || blocks.isEmpty()) return;
 
         Minecraft mc = Minecraft.getInstance();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        VertexConsumer consumer = buffers.getBuffer(RenderType.cutout());
+        VertexConsumer consumer = buffers.getBuffer(RenderType.translucent());
         RandomSource rand = RandomSource.create();
 
         float r = previewSuccess ? 0F : 1F;
@@ -120,24 +113,16 @@ public final class ConveyorWandPreview {
             for (Direction d : Direction.values()) {
                 rand.setSeed(42L);
                 for (BakedQuad q : model.getQuads(e.getValue(), d, rand)) {
-                    //? if < 1.21.1 {
-                    consumer.putBulkData(pose, q, r, g, b, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
-                    //?} else {
-                    /*consumer.putBulkData(pose, q, r, g, b, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
-                    *///?}
+                    com.hbm_m.platform.RenderHooks.putBulkData(consumer, pose, q, r, g, b, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
                 }
             }
             rand.setSeed(42L);
             for (BakedQuad q : model.getQuads(e.getValue(), null, rand)) {
-                //? if < 1.21.1 {
-                consumer.putBulkData(pose, q, r, g, b, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
-                //?} else {
-                /*consumer.putBulkData(pose, q, r, g, b, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
-                *///?}
+                com.hbm_m.platform.RenderHooks.putBulkData(consumer, pose, q, r, g, b, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
             }
             poseStack.popPose();
         }
 
-        buffers.endBatch(RenderType.cutout());
+        buffers.endBatch(RenderType.translucent());
     }
 }

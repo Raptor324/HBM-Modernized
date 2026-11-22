@@ -78,7 +78,6 @@ public class ConveyorLiftBlock extends ConveyorBlockBase {
 
     @Override
     protected BlockState onScrewSneak(Level level, BlockPos pos, BlockState state, Player player) {
-        level.setBlock(pos, ModBlocks.CONVEYOR_CHUTE.get().defaultBlockState().setValue(FACING, state.getValue(FACING)), 3);
-        return state;
+        return ModBlocks.CONVEYOR_CHUTE.get().defaultBlockState().setValue(FACING, state.getValue(FACING));
     }
 }

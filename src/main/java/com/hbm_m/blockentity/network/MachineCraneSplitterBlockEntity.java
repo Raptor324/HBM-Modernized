@@ -59,6 +59,7 @@ public class MachineCraneSplitterBlockEntity extends com.hbm_m.blockentity.BaseH
 
     @Override
     protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(nbt, registries);
         nbt.putBoolean("pos", position);
         nbt.putByte("count", remaining);
         nbt.putByte("left", leftRatio);
@@ -67,6 +68,7 @@ public class MachineCraneSplitterBlockEntity extends com.hbm_m.blockentity.BaseH
 
     @Override
     protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(nbt, registries);
         position = nbt.getBoolean("pos");
         remaining = nbt.getByte("count");
         // bestehende Baender mit Verhaeltnis initialisieren

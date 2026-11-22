@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'uzi.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o GunMirror
 v 0.750000 0.000000 3.250000
 v -0.750000 0.000000 3.250000

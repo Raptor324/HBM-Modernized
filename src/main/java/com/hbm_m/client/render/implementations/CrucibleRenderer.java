@@ -1,77 +1,106 @@
 package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.block.machines.DummyableMachineBlock;
-import com.hbm_m.blockentity.machines.MachineCrucibleBlockEntity;
-import com.hbm_m.client.render.SimpleObjModel;
-import com.hbm_m.inventory.material.Mats.MaterialStack;
-import com.hbm_m.lib.RefStrings;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
+import java.util.ArrayList;
+import java.util.List;
 
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
+import com.hbm_m.blockentity.machines.MachineCrucibleBlockEntity;
+import com.hbm_m.client.model.ConfiguredMultipartBakedModel;
+import com.hbm_m.client.render.machine.MachineRenderers;
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.inventory.InventoryMenu;
+
+import com.hbm_m.platform.RenderHooks;
 
 /**
- * 1:1 {@code RenderCrucible}: das Tiegelmodell und - solange etwas darin ist - ein vollhell leuchtender Schmelzspiegel,
- * dessen Hoehe dem Gesamtinhalt beider Stapel folgt.
+ * Crucible on the {@link MachineRenderers} factory -- port of {@code RenderCrucible} (1.7.10):
+ * the body (Main) is baked into the chunk mesh; the melt surface is a dynamic part
+ * built from the OBJ part "Lava", lifted to the fill level
+ * ({@code 0.5 + fill * 0.875} in the original) and retextured with lava
+ * ({@code hbm_m:block/machine/lava} -- a copy of the original {@code lava.png}).
+ * The VBO is cached per quantized fill level.
  */
-public class CrucibleRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineCrucibleBlockEntity> {
+public final class CrucibleRenderer {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/crucible.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/crucible_heat.png");
-    public static final ResourceLocation LAVA = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/lava.png");
+    private static final RandomSource RANDOM = RandomSource.create(42);
+    private static final ResourceLocation LAVA_SPRITE =
+            ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "block/machine/lava");
 
-    public CrucibleRenderer(BlockEntityRendererProvider.Context ctx) { }
+    private CrucibleRenderer() {}
 
-    @Override
-    public void render(MachineCrucibleBlockEntity crucible, float interp, PoseStack ps, MultiBufferSource buf, int light, int overlay) {
-        ps.pushPose();
-        ps.translate(0.5D, 0D, 0.5D);
-
-        // Original: Metadaten 3/5/2/4 -> 270/0/90/180 Grad
-        switch (crucible.getBlockState().getValue(DummyableMachineBlock.FACING)) {
-            case SOUTH -> ps.mulPose(Axis.YP.rotationDegrees(270));
-            case NORTH -> ps.mulPose(Axis.YP.rotationDegrees(90));
-            case WEST -> ps.mulPose(Axis.YP.rotationDegrees(180));
-            default -> { }
-        }
-
-        MODEL.renderAll(ps, buf.getBuffer(RenderType.entityCutout(TEX)), light);
-
-        if (!crucible.recipeStack.isEmpty() || !crucible.wasteStack.isEmpty()) {
-            int totalCap = MachineCrucibleBlockEntity.recipeZCapacity + MachineCrucibleBlockEntity.wasteZCapacity;
-            int totalMass = 0;
-
-            for (MaterialStack stack : crucible.recipeStack) totalMass += stack.amount;
-            for (MaterialStack stack : crucible.wasteStack) totalMass += stack.amount;
-
-            float level = (float) (((double) totalMass / (double) totalCap) * 0.875D);
-            float h = 0.5F + level;
-
-            VertexConsumer vc = buf.getBuffer(RenderType.entityCutoutNoCull(LAVA));
-            org.joml.Matrix4f m = ps.last().pose();
-            org.joml.Matrix3f n = ps.last().normal();
-            int full = 0xF000F0;
-            //? if < 1.21.1 {
-            vc.vertex(m, -1, h, -1).color(1F, 1F, 1F, 1F).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
-            vc.vertex(m, -1, h, 1).color(1F, 1F, 1F, 1F).uv(0, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
-            vc.vertex(m, 1, h, 1).color(1F, 1F, 1F, 1F).uv(1, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
-            vc.vertex(m, 1, h, -1).color(1F, 1F, 1F, 1F).uv(1, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
-            //?} else {
-            /*com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, -1, h, -1).setColor(1F, 1F, 1F, 1F).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
-            com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, -1, h, 1).setColor(1F, 1F, 1F, 1F).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
-            com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, 1, h, 1).setColor(1F, 1F, 1F, 1F).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
-            com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, 1, h, -1).setColor(1F, 1F, 1F, 1F).setUv(1, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
-            *///?}
-        }
-
-        ps.popPose();
+    public static void register() {
+        MachineRenderers.machine("crucible", com.hbm_m.blockentity.ModBlockEntities.CRUCIBLE_BE.get(),
+                MachineCrucibleBlockEntity.class)
+            .part("Main") // empty_world_quads: the body is drawn by the BER
+            .lightOverride("Melt", be -> be.getFillLevel() > 0 ? net.minecraft.client.renderer.LightTexture.pack(15, 15) : -1)
+            .dynamicPart("Melt", CrucibleRenderer::meltQuads,
+                    be -> String.valueOf((int) (be.getFillLevel() * 64)))
+            .register();
     }
 
-    @Override public boolean shouldRenderOffScreen(MachineCrucibleBlockEntity te) { return true; }
-    @Override public int getViewDistance() { return 256; }
+    /** Melt surface quads: the Lava part, lifted to the fill level, with the lava sprite. */
+    private static List<BakedQuad> meltQuads(MachineCrucibleBlockEntity be) {
+        if (be.getFillLevel() <= 0f) return List.of();
+        BakedModel raw = Minecraft.getInstance().getBlockRenderer().getBlockModel(be.getBlockState());
+        if (!(raw instanceof ConfiguredMultipartBakedModel model)) return List.of();
+
+        BakedModel lavaPart = model.getPart("Lava");
+        if (lavaPart == null) return List.of();
+
+        List<BakedQuad> quads = new ArrayList<>();
+        for (Direction dir : Direction.values()) {
+            quads.addAll(RenderHooks.getModelQuads(lavaPart, null, dir, RANDOM, null));
+        }
+        quads.addAll(RenderHooks.getModelQuads(lavaPart, null, null, RANDOM, null));
+        if (quads.isEmpty()) return List.of();
+
+        TextureAtlasSprite lava = Minecraft.getInstance()
+                .getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(LAVA_SPRITE);
+
+        List<BakedQuad> result = new ArrayList<>(quads.size());
+        float lift = be.getFillLevel() * 0.875F;
+        for (BakedQuad quad : quads) {
+            BakedQuad retex = retextureAndFixUV(quad, lava);
+            result.addAll(com.hbm_m.client.model.ModelHelper.translateQuads(List.of(retex), 0f, lift, 0f));
+        }
+        return result;
+    }
+
+    /** Remaps a quad's UVs from its old sprite to the lava sprite (BLOCK format: 8 ints per vertex). */
+    private static BakedQuad retextureAndFixUV(BakedQuad original, TextureAtlasSprite newSprite) {
+        var oldSprite = original.getSprite();
+        if (oldSprite == null) return original;
+
+        float oldUDiff = oldSprite.getU1() - oldSprite.getU0();
+        float oldVDiff = oldSprite.getV1() - oldSprite.getV0();
+        float newUDiff = newSprite.getU1() - newSprite.getU0();
+        float newVDiff = newSprite.getV1() - newSprite.getV0();
+        if (oldUDiff == 0 || oldVDiff == 0 || newUDiff == 0 || newVDiff == 0) return original;
+
+        int[] oldData = original.getVertices();
+        int[] newData = new int[oldData.length];
+        System.arraycopy(oldData, 0, newData, 0, oldData.length);
+
+        int vertexSize = oldData.length / 4;
+        for (int i = 0; i < 4; i++) {
+            int offset = i * vertexSize;
+            float oldU = Float.intBitsToFloat(oldData[offset + 4]);
+            float oldV = Float.intBitsToFloat(oldData[offset + 5]);
+
+            float normU = (oldU - oldSprite.getU0()) / oldUDiff;
+            float normV = (oldV - oldSprite.getV0()) / oldVDiff;
+
+            newData[offset + 4] = Float.floatToRawIntBits(newSprite.getU0() + normU * newUDiff);
+            newData[offset + 5] = Float.floatToRawIntBits(newSprite.getV0() + normV * newVDiff);
+        }
+
+        return new BakedQuad(newData, original.getTintIndex(), original.getDirection(), newSprite, false);
+    }
 }

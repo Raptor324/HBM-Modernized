@@ -12,13 +12,8 @@ import net.minecraft.resources.ResourceLocation;
  */
 public final class PotionSheetRenderer {
 
-    //? if fabric && < 1.21.1 {
-    /*public static final ResourceLocation POTIONS_SHEET =
-            new ResourceLocation(RefStrings.MODID, "textures/gui/potions.png");
-    *///?} else {
     public static final ResourceLocation POTIONS_SHEET =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/potions.png");
-    //?}
 
     public static final int ICON_SIZE = 18;
     /** Erste Zeile des Modblatts in potions.png. */

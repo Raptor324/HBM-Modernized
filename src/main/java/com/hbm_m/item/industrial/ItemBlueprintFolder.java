@@ -3,6 +3,8 @@ package com.hbm_m.item.industrial;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.hbm_m.platform.StackNbt;
+
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -22,6 +24,25 @@ public class ItemBlueprintFolder extends Item {
     public ItemBlueprintFolder(Properties properties, String prefix) {
         super(properties.stacksTo(1));
         this.prefix = prefix;
+    }
+
+    // ── Machines-Frame: Template-Ordner mit festem Blueprint-Pool (NTM-Templates-Tab) ──
+    // Aus der machines-Variante dieser Klasse uebernommen; NBT-Schreibzugriff läuft jetzt
+    // über StackNbt (plattformübergreifend), der Key "blueprintPool" bleibt unverändert.
+
+    /** Записать пул в NBT (machines-API: {@code ItemBlueprintFolder.writeBlueprintPool(ItemStack, String)}). */
+    public static void writeBlueprintPool(ItemStack folderStack, String poolName) {
+        if (folderStack.getItem() instanceof ItemBlueprintFolder) {
+            StackNbt.edit(folderStack, nbt -> nbt.putString("blueprintPool", poolName));
+        }
+    }
+
+    /** Получить пул из NBT (machines-API); "" ohne Eintrag. */
+    public static String getBlueprintPool(ItemStack folderStack) {
+        if (StackNbt.has(folderStack) && StackNbt.read(folderStack).contains("blueprintPool")) {
+            return StackNbt.read(folderStack).getString("blueprintPool");
+        }
+        return "";
     }
 
     @Override

@@ -14,7 +14,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** 1:1 {@code RenderDecoBlock} fuer {@code boxcar} und {@code boat} (gleiche Matrizenfolge wie das Original). */
+/** 1:1 {@code RenderDecoBlock} for {@code boxcar} and {@code boat} (identical matrix sequence to original). */
 public class DecoBlockRenderer implements com.hbm_m.client.render.HbmBerBounds<DecoBlockEntity> {
 
     public static final SimpleObjModel BOXCAR = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/boxcar.obj"));

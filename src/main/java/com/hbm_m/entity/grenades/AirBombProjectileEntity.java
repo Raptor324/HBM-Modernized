@@ -39,7 +39,6 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
     //  Параметры взрыва
     private static final float EXPLOSION_POWER = 12.0f;
     private static final float EXPLOSION_POWER2 = 20.0f;
-    private static final float DAMAGE_RADIUS = 28.0f;
     private static final int DETONATION_RADIUS = 10;
     private static final Random RANDOM = new Random();
 
@@ -63,17 +62,19 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(SYNCHED_YAW, 0.0F);
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-
         super.defineSynchedData(builder);
-        builder.define(SYNCHED_YAW, 0.0F);
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    *///?}
+
+        defs.define(SYNCHED_YAW, 0.0F);
     
     }
-    *///?}
 
     public void syncYawWithPlane(float planeYaw) {
         this.entityData.set(SYNCHED_YAW, planeYaw);
@@ -151,7 +152,6 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
 
             //  Все кастомные эффекты
             triggerNearbyDetonations(serverLevel, pos, null);
-            dealExplosionDamage(serverLevel, x, y, z);
             scheduleExplosionEffects(serverLevel, x, y, z);
             playDetonationSound(serverLevel, pos);
 
@@ -166,17 +166,6 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
                 ));
             }
         }
-    }
-
-    private void dealExplosionDamage(ServerLevel serverLevel, double x, double y, double z) {
-        List<LivingEntity> entitiesNearby = serverLevel.getEntitiesOfClass(
-                LivingEntity.class,
-                new net.minecraft.world.phys.AABB(
-                        x - DAMAGE_RADIUS, y - DAMAGE_RADIUS, z - DAMAGE_RADIUS,
-                        x + DAMAGE_RADIUS, y + DAMAGE_RADIUS, z + DAMAGE_RADIUS
-                )
-        );
-        // здесь можно добавить урон по [translate:entitiesNearby]
     }
 
     /**
@@ -242,11 +231,9 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
                         BlockPos checkPos = pos.offset(x, y, z);
                         BlockState checkState = serverLevel.getBlockState(checkPos);
                         Block block = checkState.getBlock();
-                        if (block instanceof IDetonatable detonatable) {
-                            int delay = (int) (dist * 2.0);
-                            serverLevel.getServer().tell(new net.minecraft.server.TickTask(delay, () ->
-                                    detonatable.onDetonate(serverLevel, checkPos, checkState, player)
-                            ));
+                        if (block instanceof IDetonatable) {
+                            com.hbm_m.api.bomb.BombDetonation.triggerDetonatableLater(
+                                    serverLevel, checkPos, block, player, (int) (dist * 2));
                         }
                     }
                 }

@@ -1,5 +1,6 @@
 package com.hbm_m.blockentity.network.radio;
 
+import com.hbm_m.block.machines.radio.RadioTorchBaseBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -64,6 +65,10 @@ public class RadioTorchReceiverBlockEntity extends RadioTorchBaseBlockEntity {
             be.setChanged();
             be.syncToClient();
             level.updateNeighborsAt(pos, state.getBlock());
+            boolean lit = nextState > 0;
+            if (state.hasProperty(RadioTorchBaseBlock.LIT) && state.getValue(RadioTorchBaseBlock.LIT) != lit) {
+                level.setBlock(pos, state.setValue(RadioTorchBaseBlock.LIT, lit), 3);
+            }
         }
     }
 }

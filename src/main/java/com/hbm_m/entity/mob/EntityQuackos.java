@@ -24,6 +24,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * BOW. 1:1 {@code EntityQuackos}: die 25-fache Ente. Unverwundbar, laesst sich nicht toeten (Gesundheit bleibt
@@ -114,7 +115,7 @@ public class EntityQuackos extends EntityDuck implements IDespawnable {
         float f1 = Mth.cos(this.yBodyRot * (float) Math.PI / 180.0F);
         float f2 = 0.1F;
         float f3 = 0.0F;
-        move.accept(passenger, getX() + (double) (f2 * f), getY() + (double) (this.getBbHeight() - 0.125F) + PlatformHooks.getMyRidingOffset(passenger) + (double) f3, getZ() - (double) (f2 * f1));
+        move.accept(passenger, getX() + (double) (f2 * f), getY() + (double) (this.getBbHeight() - 0.125F) + MobHooks.getMyRidingOffset(passenger) + (double) f3, getZ() - (double) (f2 * f1));
 
         if (passenger instanceof LivingEntity living) {
             living.yBodyRot = this.yBodyRot;

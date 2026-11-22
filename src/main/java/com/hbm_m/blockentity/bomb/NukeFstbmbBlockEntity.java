@@ -186,3 +186,4 @@ public class NukeFstbmbBlockEntity extends NukeBaseBlockEntity implements IContr
         tag.putBoolean("loaded", loaded);
     }
 }
+

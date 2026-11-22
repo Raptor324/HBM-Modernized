@@ -19,6 +19,7 @@ import com.hbm_m.util.Vec3NT;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -112,13 +113,18 @@ public class LegoClient {
 
 	public static void renderBulletStandard(Tess tess, int dark, int light, double length, double widthF, double widthB, boolean fullbright) {
 
+		GunGL.pushAttrib();
+		GunGL.enableBlend();
+		GunGL.blendFunc(GunGL.GL_SRC_ALPHA, GunGL.GL_ONE); // additiv wie 1.7.10 -> GunRenderTypes mode 2 (emissive, kein Lightmap)
+		GunGL.depthMask(false); // аддитив: без этого mode 2 получает COLOR_DEPTH_WRITE и не возвращает glDepthMask после батча
 		GunGL.disableTexture2D();
 		GunGL.disableCull();
 		GunGL.disableLighting();
+		GunGL.fullbright(true);
 		GunGL.color(1F, 1F, 1F, 1F);
 
 		tess.startDrawingQuads();
-		if(fullbright) tess.setBrightness(240);
+		if(fullbright) tess.setBrightness(LightTexture.FULL_BRIGHT);
 		tess.setNormal(0F, 1F, 0F);
 		tess.setColorOpaque_I(dark);
 		tess.addVertex(length, widthB, -widthB); tess.addVertex(length, widthB, widthB);
@@ -144,9 +150,7 @@ public class LegoClient {
 		tess.addVertex(0, -widthF, -widthF); tess.addVertex(0, -widthF, widthF);
 		tess.draw();
 
-		GunGL.enableLighting();
-		GunGL.enableCull();
-		GunGL.enableTexture2D();
+		GunGL.popAttrib();
 	}
 
 	public static BiConsumer<EntityBulletBaseMK4, Float> RENDER_FLARE = (bullet, interp) -> { renderFlare(bullet, interp, 1F, 0.5F, 0.5F); };
@@ -159,7 +163,7 @@ public class LegoClient {
 		if(bullet.tickCount < 2) return;
 		GunGL.fullbright(true);
 
-		double scale = Math.min(5, (bullet.tickCount + interp - 2) * 0.5) * (0.8 + bullet.level().random.nextDouble() * 0.4);
+		double scale = Math.min(5, (bullet.tickCount + interp - 2) * 0.5) * (0.8 + java.util.concurrent.ThreadLocalRandom.current().nextDouble() * 0.4);
 		renderFlareSprite(bullet, interp, r, g, b, scale, 0.5F, 0.75F);
 
 		GunGL.fullbright(false);
@@ -207,6 +211,7 @@ public class LegoClient {
 		tess.addVertexWithUV((double) (posX + f1 * scale - f3 * scale), (double) (posY - f5 * scale), (double) (posZ + f2 * scale - f4 * scale), 0, 1);
 
 		tess.draw();
+		GunGL.flushEffects();
 
 		GunGL.depthMask(true);
 		GunGL.enableLighting();
@@ -480,7 +485,10 @@ public class LegoClient {
 		GunGL.popMatrix();
 
 		GunGL.pushMatrix();
+		GunGL.pushAttrib();
+		GunGL.enableBlend();
 		GunGL.blendFunc(GunGL.GL_SRC_ALPHA, GunGL.GL_ONE);
+		GunGL.depthMask(false); // аддитив: гарантирует mode 2 -> COLOR_WRITE, иначе glDepthMask утекает до конца кадра
 		GunGL.rotate(180 - bullet.getYRot(), 0, 1F, 0);
 		GunGL.rotate(-bullet.getXRot() - 90, 1F, 0, 0);
 		Vec3NT delta = Vec3NT.createVectorHelper(0, bullet.beamLength, 0);
@@ -488,6 +496,7 @@ public class LegoClient {
 		int colorInner = ((int)(0x20 * age) << 16) | ((int)(0x20 * age) << 8) | (int) (0x20 * age);
 		prontBeam(delta, EnumWaveType.RANDOM, EnumBeamType.SOLID, colorInner, colorInner, bullet.tickCount / 3, (int)(bullet.beamLength / 2 + 1), 0F, 8, 0.0625F);
 		GunGL.disableBlend();
+		GunGL.popAttrib();
 		GunGL.popMatrix();
 
 		GunGL.fullbright(false);

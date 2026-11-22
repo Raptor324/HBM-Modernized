@@ -15,7 +15,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
-/** 1:1 {@code RenderChopperMine}: 8er-Wuerfel, 1,5-fach, kopfueber. */
+/** 1:1 {@code RenderChopperMine}: 8-cube, 1.5x scale, inverted. */
 public class ChopperMineRenderer extends EntityRenderer<EntityChopperMine> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/chopper_bomb.png");

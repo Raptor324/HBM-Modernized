@@ -13,8 +13,8 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 1:1 {@code ItemRenderMissile}: in der Hand/am Boden mit Faktor 0.2 und 2 Einheiten seitlich versetzt, im Inventar
- * auf die Gesamthoehe skaliert, schraeg gestellt und langsam um die eigene Achse drehend.
+ * 1:1 {@code ItemRenderMissile}: held/ground at 0.2 scale offset 2 units laterally; in inventory
+ * scaled to total height, tilted, and slowly rotating around its vertical axis.
  */
 public class ItemRenderMissileCustom extends BlockEntityWithoutLevelRenderer {
 
@@ -27,9 +27,9 @@ public class ItemRenderMissileCustom extends BlockEntityWithoutLevelRenderer {
     @Override
     public void renderByItem(ItemStack stack, ItemDisplayContext ctx, PoseStack ps, MultiBufferSource buffers, int light, int overlay) {
         MissileStruct missile = ItemCustomMissile.getStruct(stack);
-        // Port-getStruct liefert nie null; "kein Bauplan" = alle Teile leer (Original: Stack ohne NBT)
+        // Non-null blueprint check; empty parts list indicates unconfigured missile
         if (missile == null || (missile.warhead == null && missile.fuselage == null && missile.fins == null && missile.thruster == null)) {
-            // vI2: Original handleRenderType == false ohne Bauplan -> Vanilla zeichnet das flache Icon "missile_custom"
+            // Original handleRenderType == false without blueprint -> renders flat icon "missile_custom"
             if (ctx == ItemDisplayContext.GUI) renderFlatIcon(ps, buffers);
             return;
         }
@@ -58,7 +58,7 @@ public class ItemRenderMissileCustom extends BlockEntityWithoutLevelRenderer {
         ps.popPose();
     }
 
-    /** vI2: flaches Inventar-Icon (Textur item/missile_custom) im Einheitswuerfel, wie ein item/generated-Modell. */
+    /** Flat inventory icon (texture item/missile_custom) in unit cube matching item/generated model. */
     private static void renderFlatIcon(PoseStack ps, MultiBufferSource buffers) {
         net.minecraft.client.renderer.texture.TextureAtlasSprite sp = Minecraft.getInstance()
                 .getTextureAtlas(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS)

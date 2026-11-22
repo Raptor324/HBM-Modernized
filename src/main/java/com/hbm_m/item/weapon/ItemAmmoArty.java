@@ -50,6 +50,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.StackNbt;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code ItemAmmoArty} (ammo_arty, Meta = Granatentyp). Im Port ist jede Meta ein eigener Gegenstand mit dem
@@ -129,9 +131,9 @@ public class ItemAmmoArty extends Item implements ITooltipProvider {
                 list.add(Component.literal("minecraft's unicode has to offer)").withStyle(r));
             }
             case CARGO -> {
-                CompoundTag tag = PlatformHooks.getItemTag(stack);
+                CompoundTag tag = StackNbt.read(stack);
                 if (tag != null && tag.contains("cargo")) {
-                    ItemStack cargo = PlatformHooks.itemStackOf(tag.getCompound("cargo"), PlatformHooks.bestEffortProvider());
+                    ItemStack cargo = StackNbt.parse(tag.getCompound("cargo"), PlatformHooks.bestEffortProvider());
                     list.add(Component.empty().append(cargo.getHoverName()).withStyle(y));
                 } else {
                     list.add(Component.literal("Empty").withStyle(r));
@@ -144,7 +146,7 @@ public class ItemAmmoArty extends Item implements ITooltipProvider {
     /** Original {@code getIconIndex}: Frachtgranate mit Ladung zeigt {@code ammo_arty_cargo_full}. */
     public static boolean hasCargo(ItemStack stack) {
         if (typeOf(stack) != CARGO) return false;
-        CompoundTag tag = PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.read(stack);
         return tag != null && tag.contains("cargo");
     }
 
@@ -210,7 +212,7 @@ public class ItemAmmoArty extends Item implements ITooltipProvider {
     private static void phosphorusSplash(Entity source, double cx, double cy, double cz, int radius) {
         List<Entity> hit = source.level().getEntities(source, new AABB(cx - radius, cy - radius, cz - radius, cx + radius, cy + radius, cz + radius));
         for (Entity e : hit) {
-            PlatformHooks.setSecondsOnFire(e, 5);
+            MobHooks.setSecondsOnFire(e, 5);
             if (e instanceof LivingEntity living) {
                 MobEffectInstance eff = new MobEffectInstance(EffectHooks.of(ModEffects.PHOSPHORUS), 30 * 20, 0, true, true);
                 //? if forge {

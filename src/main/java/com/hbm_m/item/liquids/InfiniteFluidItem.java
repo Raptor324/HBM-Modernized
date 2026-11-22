@@ -16,6 +16,11 @@ import net.minecraft.world.level.material.Fluids;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.registries.BuiltInRegistries;
+import com.hbm_m.platform.StackNbt;
+
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+
 // Forge/NeoForge: сигнатуры IFluidHandlerItem идентичны, различаются только пакеты.
 //? if forge {
 import net.minecraft.nbt.CompoundTag;
@@ -23,16 +28,12 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import org.jetbrains.annotations.NotNull;
 import net.minecraft.core.Direction;
 //?}
 //? if neoforge {
-/*import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+/*import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 *///?}
 
 /**
@@ -81,8 +82,8 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
         if (fixedFluid != null && fixedFluid != Fluids.EMPTY) {
             return fixedFluid;
         }
-        if (PlatformHooks.hasItemTag(stack) && PlatformHooks.contains(stack, "FluidType")) {
-            return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(PlatformHooks.getString(stack, "FluidType")));
+        if (StackNbt.has(stack) && StackNbt.contains(stack, "FluidType")) {
+            return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(StackNbt.getString(stack, "FluidType")));
         }
         return Fluids.EMPTY;
     }
@@ -194,8 +195,8 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
 
         public Fluid getConfiguredFluid() {
             if (fixedFluid != null && fixedFluid != Fluids.EMPTY) return fixedFluid;
-            if (PlatformHooks.hasItemTag(container) && PlatformHooks.contains(container, "FluidType")) {
-                return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(PlatformHooks.getString(container, "FluidType")));
+            if (StackNbt.has(container) && StackNbt.contains(container, "FluidType")) {
+                return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(StackNbt.getString(container, "FluidType")));
             }
             return Fluids.EMPTY;
         }
@@ -242,7 +243,6 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
     //  FORGE / NEOFORGE — тонкий адаптер IFluidHandlerItem над InfiniteAccess //
     // ================================================================== //
 
-    //? if forge || neoforge {
     public static class InfiniteFluidCapabilityHandler implements IFluidHandlerItem {
         protected final InfiniteAccess access;
 
@@ -289,7 +289,6 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
                     : new FluidStack(arch.getFluid(), (int) arch.getAmount());
         }
     }
-    //?}
 
     // neo-pendant: ModCapabilities.registerBatteryItemCaps (RegisterCapabilitiesEvent, Item-Capabilities)
     //? if forge {

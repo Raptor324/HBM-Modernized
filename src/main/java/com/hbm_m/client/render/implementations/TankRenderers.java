@@ -129,8 +129,8 @@ public final class TankRenderers {
     // ── RenderOrbus ────────────────────────────────────────────────────────────────────
 
     /**
-     * Orbus: schwebende Kugel in Fluidfarbe ({@code scale = fill / maxFill}, Hoehe 2.5 mit Sinuswippen), Gehaeuse und
-     * drei Strahlen durch die Mitte, solange etwas im Tank ist.
+     * Orbus: floating sphere in fluid color ({@code scale = fill / maxFill}, height 2.5 with sine bobbing), casing and
+     * three beams through center while tank contains fluid.
      */
     public static class Orbus implements com.hbm_m.client.render.HbmBerBounds<MachineFluidTankBlockEntity> {
 
@@ -184,8 +184,8 @@ public final class TankRenderers {
     // ── RenderFluidBarrel ──────────────────────────────────────────────────────────────
 
     /**
-     * Fass: das Fass selbst ist das Blockmodell; hier nur die Anschlussstutzen zu passenden Nachbarn
-     * ({@code Library.canConnectFluid}) und vier Gefahrenrauten rundum, solange eine Sorte gesetzt ist.
+     * Barrel: casing is handled by block model; only connection nozzles to valid neighbors
+     * ({@code Library.canConnectFluid}) and hazard diamonds rendered here when fluid type is present.
      */
     public static class Barrel implements com.hbm_m.client.render.HbmBerBounds<MachineFluidTankBlockEntity> {
 
@@ -204,7 +204,7 @@ public final class TankRenderers {
             ps.pushPose();
             ps.translate(0.5, 0.5, 0.5);
 
-            // Original: nur Kunststoff/Stahl/TCA/Antimaterie binden eine eigene Textur
+            // Original: only plastic/steel/TCA/antimatter bind custom textures
             Block block = barrel.getBlockState().getBlock();
             String tex = block == ModBlocks.BARREL_PLASTIC.get() ? "barrel_plastic"
                     : block == ModBlocks.BARREL_STEEL.get() ? "barrel_steel"
@@ -253,7 +253,7 @@ public final class TankRenderers {
             ps.popPose();
         }
 
-        /** 1:1 {@code Library.canConnectFluid}: Nachbarblock oder -tile muss die Seite zum Fass annehmen. */
+        /** 1:1 {@code Library.canConnectFluid}: neighbor block or tile must accept connection to barrel. */
         static boolean canConnectFluid(Level level, BlockPos pos, Direction dir, Fluid fluid) {
             if (pos.getY() > level.getMaxBuildHeight() - 1 || pos.getY() < level.getMinBuildHeight()) return false;
             if (level.getBlockState(pos).getBlock() instanceof IFluidConnectorBlock con

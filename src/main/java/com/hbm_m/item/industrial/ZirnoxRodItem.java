@@ -14,6 +14,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.StackNbt;
 
 public class ZirnoxRodItem extends Item implements ITooltipProvider {
 
@@ -43,12 +44,12 @@ public class ZirnoxRodItem extends Item implements ITooltipProvider {
     }
 
     public static int getLifeTime(ItemStack stack) {
-        CompoundTag tag = PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.read(stack);
         return tag == null ? 0 : tag.getInt(NBT_LIFE);
     }
 
     public static void setLifeTime(ItemStack stack, int time) {
-        PlatformHooks.editItemTag(stack, t -> t.putInt(NBT_LIFE, Math.max(0, time)));
+        StackNbt.edit(stack, t -> t.putInt(NBT_LIFE, Math.max(0, time)));
     }
 
     public static void incrementLifeTime(ItemStack stack) {

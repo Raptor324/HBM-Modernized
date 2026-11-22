@@ -17,37 +17,38 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * 1:1 {@code BlockScaffold} ({@code steel_scaffold}, Farben als eigene Bloecke). Vier Lagen wie Meta 0/4/8/12:
- * auf Boden/Decke gesetzt stehend, je nach Blickachse laengs X (Meta 0) oder Z (Meta 8); an eine Nord/Sued-Seite
- * gesetzt liegend (Meta 4), an eine West/Ost-Seite liegend gedreht (Meta 12).
+ * auf Boden/Decke nach X oder Z laufend, oder senkrecht an Nord-Sued-/Ost-West-Waenden.
  */
 public class SteelScaffoldBlock extends Block {
 
     public enum Orient implements StringRepresentable {
-        UPRIGHT_X("upright_x"), FLAT_NS("flat_ns"), UPRIGHT_Z("upright_z"), FLAT_WE("flat_we");
+        UPRIGHT_X("upright_x"),
+        UPRIGHT_Z("upright_z"),
+        FLAT_NS("flat_ns"),
+        FLAT_WE("flat_we");
 
         private final String name;
         Orient(String name) { this.name = name; }
         @Override public String getSerializedName() { return name; }
 
-        Orient turned() {
+        public Orient turned() {
             return switch (this) {
                 case UPRIGHT_X -> UPRIGHT_Z;
                 case UPRIGHT_Z -> UPRIGHT_X;
-                case FLAT_NS -> FLAT_WE;
-                case FLAT_WE -> FLAT_NS;
+                case FLAT_NS   -> FLAT_WE;
+                case FLAT_WE   -> FLAT_NS;
             };
         }
     }
 
     public static final EnumProperty<Orient> ORIENT = EnumProperty.create("orient", Orient.class);
 
-    private static final double F = 1.0 / 16.0;
-    private static final VoxelShape UPRIGHT_X = Shapes.box(0, 0, 2 * F, 1, 1, 14 * F);
-    private static final VoxelShape UPRIGHT_Z = Shapes.box(2 * F, 0, 0, 14 * F, 1, 1);
-    private static final VoxelShape FLAT = Shapes.box(0, 2 * F, 0, 1, 14 * F, 1);
+    protected static final VoxelShape UPRIGHT_X = Shapes.box(0.0, 0.0, 2.0 / 16.0, 1.0, 1.0, 14.0 / 16.0);
+    protected static final VoxelShape UPRIGHT_Z = Shapes.box(2.0 / 16.0, 0.0, 0.0, 14.0 / 16.0, 1.0, 1.0);
+    protected static final VoxelShape FLAT = Shapes.box(0.0, 2.0 / 16.0, 0.0, 1.0, 14.0 / 16.0, 1.0);
 
-    public SteelScaffoldBlock(Properties props) {
-        super(props);
+    public SteelScaffoldBlock(Properties properties) {
+        super(properties);
         registerDefaultState(stateDefinition.any().setValue(ORIENT, Orient.UPRIGHT_X));
     }
 
@@ -77,6 +78,11 @@ public class SteelScaffoldBlock extends Block {
             case UPRIGHT_Z -> UPRIGHT_Z;
             default -> FLAT;
         };
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        return getShape(state, level, pos, ctx);
     }
 
     @Override

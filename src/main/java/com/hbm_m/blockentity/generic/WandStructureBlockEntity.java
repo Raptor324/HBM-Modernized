@@ -33,6 +33,8 @@ import net.minecraft.world.phys.AABB;
  */
 public class WandStructureBlockEntity extends BaseHbmBlockEntity implements IControlReceiver {
 
+    public static final int MAX_SAVE_VOLUME = 8 * 1024 * 1024;
+
     public String name = "";
 
     public int sizeX = 1;
@@ -53,6 +55,17 @@ public class WandStructureBlockEntity extends BaseHbmBlockEntity implements ICon
         }
     }
 
+    private static File structuresFile(String name) {
+        File directory = NBTStructure.getStructureDirectory();
+        directory.mkdir();
+        try {
+            File file = new File(directory, name + ".nbt").getCanonicalFile();
+            return file.getParentFile().equals(directory.getCanonicalFile()) ? file : null;
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
     public void saveStructure(Player player) {
         if (name.isEmpty()) {
             player.sendSystemMessage(Component.literal("Could not save: invalid name").withStyle(ChatFormatting.RED));
@@ -61,6 +74,16 @@ public class WandStructureBlockEntity extends BaseHbmBlockEntity implements ICon
 
         if (sizeX <= 0 || sizeY <= 0 || sizeZ <= 0) {
             player.sendSystemMessage(Component.literal("Could not save: invalid dimensions").withStyle(ChatFormatting.RED));
+            return;
+        }
+
+        if ((long) sizeX * sizeY > MAX_SAVE_VOLUME / sizeZ) {
+            player.sendSystemMessage(Component.literal("Could not save: selection exceeds " + MAX_SAVE_VOLUME + " blocks").withStyle(ChatFormatting.RED));
+            return;
+        }
+
+        if (structuresFile(name) == null) {
+            player.sendSystemMessage(Component.literal("Could not save: invalid name").withStyle(ChatFormatting.RED));
             return;
         }
 
@@ -93,7 +116,11 @@ public class WandStructureBlockEntity extends BaseHbmBlockEntity implements ICon
             return;
         }
 
-        File structureFile = new File(NBTStructure.getStructureDirectory(), name + ".nbt");
+        File structureFile = structuresFile(name);
+        if (structureFile == null) {
+            player.sendSystemMessage(Component.literal("Could not load: invalid name").withStyle(ChatFormatting.RED));
+            return;
+        }
 
         boolean debug = !level.hasNeighborSignal(worldPosition);
         boolean previousDebug = ModClothConfig.get().structureDebug;
@@ -168,7 +195,7 @@ public class WandStructureBlockEntity extends BaseHbmBlockEntity implements ICon
 
     @Override
     public boolean hasPermission(Player player) {
-        return true;
+        return player.distanceToSqr(worldPosition.getCenter()) <= 64.0;
     }
 
     @Override
@@ -176,7 +203,11 @@ public class WandStructureBlockEntity extends BaseHbmBlockEntity implements ICon
 
     @Override
     public void receiveControl(Player player, CompoundTag nbt) {
-        readNbtData(nbt, null);
+        if (nbt.contains("name")) name = nbt.getString("name");
+        if (nbt.contains("sizeX")) sizeX = nbt.getInt("sizeX");
+        if (nbt.contains("sizeY")) sizeY = nbt.getInt("sizeY");
+        if (nbt.contains("sizeZ")) sizeZ = nbt.getInt("sizeZ");
+        setChanged();
         sync();
 
         if (nbt.getBoolean("save")) {

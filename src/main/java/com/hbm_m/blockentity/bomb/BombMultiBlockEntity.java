@@ -6,13 +6,10 @@ import com.hbm_m.item.ModItems;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
@@ -57,16 +54,12 @@ public class BombMultiBlockEntity extends NukeBaseBlockEntity {
                 && slots.get(3).is(Items.TNT) && slots.get(4).is(Items.TNT);
     }
 
-    private static Item fire() {
-        return BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "fire_powder"));
-    }
-
     private static int type(ItemStack stack) {
         if (stack.isEmpty()) return 0;
         if (stack.is(Items.GUNPOWDER)) return 1;
         if (stack.is(Items.TNT)) return 2;
         if (stack.is(ModItems.PELLET_CLUSTER.get())) return 3;
-        if (stack.is(fire())) return 4;
+        if (stack.is(ModItems.FIRE_POWDER.get())) return 4;
         if (stack.is(ModItems.POWDER_POISON.get())) return 5;
         if (stack.is(ModItems.PELLET_GAS.get())) return 6;
         return 0;
@@ -85,3 +78,4 @@ public class BombMultiBlockEntity extends NukeBaseBlockEntity {
         return new BombMultiMenu(id, inventory, this);
     }
 }
+

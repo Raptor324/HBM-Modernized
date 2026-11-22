@@ -33,7 +33,7 @@ public interface IArmorModelConfig {
 
     /**
      * Класс предмета брони для проверки в ItemOverrides.
-     * @return Класс, который должен быть экземпляром ModPowerArmorItem
+     * @return Класс, которому должен принадлежать предмет брони
      */
     Class<? extends net.minecraft.world.item.Item> getArmorItemClass();
 

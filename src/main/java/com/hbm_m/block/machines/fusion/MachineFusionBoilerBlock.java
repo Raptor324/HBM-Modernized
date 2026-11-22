@@ -9,6 +9,7 @@ import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -103,5 +104,23 @@ public class MachineFusionBoilerBlock extends FusionMultiblockBlock implements c
     /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
+    // Verbatim port of the original MachineFusionBoiler.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, -1, Direction.EAST.get3DDataValue()},
+            {-1, 0, -1, Direction.WEST.get3DDataValue()},
+            {1, 0, 2, Direction.EAST.get3DDataValue()},
+            {-1, 0, 2, Direction.WEST.get3DDataValue()}
+        }, facing);
+    }
+
+    // Verbatim port of the original MachineFusionBoiler.getAABBExtras.
+    @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            {1.5, 3.5, -4.5, -4.5, 1, -1}
+        };
     }
 }

@@ -5,7 +5,6 @@
 
 package com.hbm_m.mixin;
 
-//? if forge || neoforge {
 import com.hbm_m.radiation.ntmnext.NtmRadiationSystem;
 import com.hbm_m.radiation.ntmnext.RadiationSystemSelector;
 
@@ -37,4 +36,3 @@ public abstract class LevelChunkNtmRadiationMixin {
         NtmRadiationSystem.onBlockStateReplaced((LevelChunk) (Object) this, pos, state);
     }
 }
-//?}

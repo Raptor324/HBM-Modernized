@@ -67,7 +67,6 @@ public class ItemEnergy extends Item {
         return this;
     }
 
-    //? if forge || neoforge {
     @Override
     public boolean hasCraftingRemainingItem(ItemStack stack) {
         return craftingContainer && container != null;
@@ -77,7 +76,6 @@ public class ItemEnergy extends Item {
     public ItemStack getCraftingRemainingItem(ItemStack stack) {
         return hasCraftingRemainingItem(stack) ? new ItemStack(container.get()) : ItemStack.EMPTY;
     }
-    //?}
 
     private boolean is(Supplier<? extends Item> item) {
         return this == item.get();

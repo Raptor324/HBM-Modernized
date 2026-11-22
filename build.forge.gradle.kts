@@ -39,23 +39,43 @@ legacyForge {
 			gameDirectory = file("run/")
 			ideName = "Forge Client (${stonecutter.active?.version})"
 			programArgument("--username=Dev")
-			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8")
+			// user.language=en: локаль по умолчанию даёт русские месяцы в паттерне
+			// даты log4j; в Cp1251-файле они читаются как «ёхэЄ» — лог ломается.
+			// AllowEnhancedClassRedefinition: DCEVM в JetBrains Runtime — hot swap не только
+			// тел методов, но и новых методов/полей/иерархии классов. Работает только при
+			// запуске на JBR (Gradle JVM → jbr-17.0.11-dcevm), на обычном Hotspot флаг
+			// игнорируется с предупреждением.
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-XX:+UnlockDiagnosticVMOptions", "-XX:+DebugNonSafepoints",
+				"-XX:+IgnoreUnrecognizedVMOptions",
+				"-XX:+AllowEnhancedClassRedefinition",
+				"-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8",
+				"-Duser.language=en", "-Duser.country=US")
 		}
 		register("server") {
 			server()
 			gameDirectory = file("run/")
 			ideName = "Forge Server (${stonecutter.active?.version})"
 			programArgument("--nogui")
-			jvmArguments.addAll("-Xmx4G", "-Xms2G")
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8",
+				"-Duser.language=en", "-Duser.country=US")
 		}
 		// GameTest-сервер: headless-прогон всех @GameTest без GUI.
 		register("gameTestServer") {
 			server()
-			gameDirectory = file("run/")
+			// Выделенный gameDir: мир "Test Level" (flat) пересоздаётся каждый прогон,
+			// чтобы условия тестов были идентичны на forge и neoforge и не зависели
+			// от состояния общего run/ (клиент/сервер оставляют там свой мир с рельефом —
+			// в нём арена оказывается под землёй, sky-тесты ломаются).
+			gameDirectory = file("runGameTest/")
 			ideName = "Forge GameTest (${stonecutter.active?.version})"
 			systemProperty("forge.gameTestServer", "true")
 			systemProperty("forge.enableGameTest", "true")
-			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8")
+			jvmArguments.addAll("-Xmx12G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8",
+				"-Duser.language=en", "-Duser.country=US",
+				// Точечный прогон одного класса: все тесты зарегистрированы в неймспейс hbm_m,
+				// а тяжёлый интеграционный турбины - в tf_integration (см. TurbofanIntegrationGameTest).
+				// Оверрайд неймспейса: -PgameTestNamespace=hbm_m (NukeProfileGameTest и др.)
+				"-Dforge.enabledGameTestNamespaces=${project.findProperty("gameTestNamespace") ?: "tf_integration"}")
 		}
 
 		register("data") {
@@ -139,27 +159,28 @@ dependencies {
 	"modRuntimeOnly"("curse.maven:smooth-boot-reloaded-633412:5016280")
 	
 	"modRuntimeOnly"("curse.maven:screenshot-to-clipboard-326950:3643026")
-	// "modRuntimeOnly"("maven.modrinth:cwoL6CqY:3PEwIAxS") // Item Transforms Helper
-	// "modRuntimeOnly"("maven.modrinth:f3zK7pP5:8gUY8UiV") // Tick Freeze
 	"modRuntimeOnly"("maven.modrinth:spark:1.10.53-forge")
-	"modRuntimeOnly"("maven.modrinth:VYRu7qmG:QtSVNyjm") // Observable -  profiles (tile) entities and shows you what's taking up tick time and where.
+	"modRuntimeOnly"("maven.modrinth:VYRu7qmG:QtSVNyjm") // Observable - profiles (tile) entities and shows you what's taking up tick time and where.
 	"modRuntimeOnly"("maven.modrinth:ordsPcFz:Zsh14XeQ") // Kotlin For Forge
-	// "modRuntimeOnly"("curse.maven:konkrete-410295:5028413")
 	// Distant Horizons: compileOnly для официального API (DhApiBeforeApplyShaderRenderEvent
 	// и пр.) в com.hbm_m.client.compat.dh.DhRenderBridge. Класс моста грузится только при
 	// установленном DH, поэтому отсутствие зависимости в рантайме безопасно.
-	"modCompileOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.20.1") // 3.2.0-b-1.20.1
-	// "modRuntimeOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.20.1")
+	"modCompileOnly"("maven.modrinth:distanthorizons:3.3.3-1.20.1") // 3.3.3-1.20.1
 
-	// "modRuntimeOnly"("curse.maven:xaeros-world-map-317780:7598469")
-    // "modRuntimeOnly"("curse.maven:xaeros-minimap-263420:7598586")
+	// Jade (WAILA fork): плагин com.hbm_m.compat.jade. compileOnly берёт ТОТ ЖЕ файл, что и
+	// рантайм, чтобы API плагина гарантированно совпадал с тем, под чем запускаемся. Классы
+	// плагина грузит только сканер @WailaPlugin самого Jade — без Jade они не загружаются.
+	"modCompileOnly"("curse.maven:jade-324717:6855440")
 	"modRuntimeOnly"("curse.maven:jade-324717:6855440")
-	"modRuntimeOnly"("maven.modrinth:worldedit:Wrlqaul6") // WorldEdit 7.2.15 Forge 1.20.1 (Dev-Laufzeit)
 }
 
 sourceSets {
 	main {
 		resources.srcDir(rootProject.file("src/generated/resources"))
+	}
+	test {
+		compileClasspath += configurations["compileClasspath"]
+		runtimeClasspath += configurations["runtimeClasspath"]
 	}
 }
 
@@ -174,10 +195,11 @@ tasks.named<Jar>("jar") {
 	exclude("com/hbm_m/datagen/**", "com/hbm_m/test/**")
 }
 
-tasks.withType<JavaCompile>().configureEach { options.encoding = "UTF-8" }
+tasks.withType<JavaCompile>().configureEach {
+	options.encoding = "UTF-8"
+	// See build.neoforge.gradle.kts: the forked compiler worker needs a real heap.
+	options.forkOptions.memoryMaximumSize = "3g"
+}
 
 stonecutter {
 }
-
-
-

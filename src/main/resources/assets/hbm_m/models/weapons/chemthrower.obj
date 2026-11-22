@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'chemthrower.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Gauge
 v -0.812500 1.125000 1.750000
 v -0.812500 1.062500 1.718750

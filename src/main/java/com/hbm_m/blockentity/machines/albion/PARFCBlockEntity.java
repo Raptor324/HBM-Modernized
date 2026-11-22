@@ -108,7 +108,6 @@ public class PARFCBlockEntity extends CooledMachineBlockEntity implements IParti
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return new com.hbm_m.inventory.menu.PARFCMenu(id, inv, this);
     }
-
     @Override
     protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);

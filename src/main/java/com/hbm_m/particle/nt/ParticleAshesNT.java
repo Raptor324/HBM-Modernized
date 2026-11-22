@@ -18,7 +18,7 @@ import net.minecraft.world.phys.Vec3;
  * Паттерн рендера как у {@link ParticleSkeletonNT} / Muke*: вершины пишутся
  * сразу в пространстве камеры (consumer.vertex без PoseStack).
  */
-public class ParticleAshesNT extends ParticleNT {
+public class ParticleAshesNT extends ParticleNT implements ReplaceOnRespawn {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             com.hbm_m.lib.RefStrings.MODID, "textures/particle/particle_base.png");
@@ -206,6 +206,6 @@ public class ParticleAshesNT extends ParticleNT {
     @Override
     public RenderType getRenderType() {
         // QUADS-вариант lightmap-рендертипа с той же формулой 770/771 как в 1.7.10.
-        return com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.ASHES_PARTICLES.apply(TEXTURE);
+        return com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.ashesParticles(TEXTURE);
     }
 }

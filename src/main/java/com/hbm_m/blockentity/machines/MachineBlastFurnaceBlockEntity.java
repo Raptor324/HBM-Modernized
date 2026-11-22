@@ -13,9 +13,9 @@ import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 import net.minecraft.core.BlockPos;
@@ -44,14 +44,16 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.StackNbt;
+import com.hbm_m.platform.LevelHooks;
 
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+//?}
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
 
 /**
  * Доменная печь (обновлённая версия из оригинала).
@@ -86,11 +88,11 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
                 case OUTPUT_SLOT_FIRST, OUTPUT_SLOT_SECOND -> false;
                 case INPUT_SLOT_FIRST -> {
                     ItemStack other = itemHandler.getStackInSlot(INPUT_SLOT_SECOND);
-                    yield other.isEmpty() || !PlatformHooks.isSameItemSameTags(other, stack);
+                    yield other.isEmpty() || !StackNbt.sameItemSameTags(other, stack);
                 }
                 case INPUT_SLOT_SECOND -> {
                     ItemStack other = itemHandler.getStackInSlot(INPUT_SLOT_FIRST);
-                    yield other.isEmpty() || !PlatformHooks.isSameItemSameTags(other, stack);
+                    yield other.isEmpty() || !StackNbt.sameItemSameTags(other, stack);
                 }
                 default -> false;
             };
@@ -104,14 +106,6 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
     private double speed;
     private int fuel;
     private boolean progressing;
-
-    // Кэш последнего синка — шлём обновление клиенту только при изменении.
-    private int lastProgress = Integer.MIN_VALUE;
-    private int lastSpeed = Integer.MIN_VALUE;
-    private int lastFuel = Integer.MIN_VALUE;
-    private int lastAir = Integer.MIN_VALUE;
-    private int lastFlue = Integer.MIN_VALUE;
-    private boolean lastProgressing;
 
     private static final int DATA_COUNT = 6;
     private static final int DATA_PROGRESS = 0;
@@ -239,7 +233,7 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
         }
     }
     //?} elif neoforge {
-    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.fluids.capability.IFluidHandler> lazyFluidHandler = com.hbm_m.platform.LazyCap.empty();
+    /*private com.hbm_m.platform.LazyCap<net.minecraftforge.fluids.capability.IFluidHandler> lazyFluidHandler = com.hbm_m.platform.LazyCap.empty();
 
     @Override
     public void onLoad() {
@@ -262,29 +256,29 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
     }
 
     /^* Заполнение - только дутьё, слив - только дымовые газы (как в оригинале). ^/
-    private class CombinedFluidHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+    private class CombinedFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
         @Override public int getTanks() { return 2; }
-        @Override public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
-            if (tank == 0 && !airTank.isEmpty()) return new net.neoforged.neoforge.fluids.FluidStack(airTank.getStoredFluid(), airTank.getFluidAmountMb());
-            if (tank == 1 && !flueTank.isEmpty()) return new net.neoforged.neoforge.fluids.FluidStack(flueTank.getStoredFluid(), flueTank.getFluidAmountMb());
-            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        @Override public net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            if (tank == 0 && !airTank.isEmpty()) return new net.minecraftforge.fluids.FluidStack(airTank.getStoredFluid(), airTank.getFluidAmountMb());
+            if (tank == 1 && !flueTank.isEmpty()) return new net.minecraftforge.fluids.FluidStack(flueTank.getStoredFluid(), flueTank.getFluidAmountMb());
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
         }
         @Override public int getTankCapacity(int tank) { return tank == 0 ? AIR_CAPACITY_MB : tank == 1 ? FLUE_CAPACITY_MB : 0; }
-        @Override public boolean isFluidValid(int tank, net.neoforged.neoforge.fluids.FluidStack stack) {
+        @Override public boolean isFluidValid(int tank, net.minecraftforge.fluids.FluidStack stack) {
             return tank == 0 && !stack.isEmpty() && stack.getFluid() == ModFluids.AIRBLAST.getSource();
         }
-        @Override public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+        @Override public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (resource.isEmpty() || resource.getFluid() != ModFluids.AIRBLAST.getSource()) return 0;
             return airTank.fillMb(resource.getFluid(), resource.getAmount(), action.simulate());
         }
-        @Override public net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || resource.getFluid() != flueTank.getStoredFluid()) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        @Override public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || resource.getFluid() != flueTank.getStoredFluid()) return net.minecraftforge.fluids.FluidStack.EMPTY;
             return drain(resource.getAmount(), action);
         }
-        @Override public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+        @Override public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
             int drained = flueTank.drainMb(maxDrain, action.simulate());
-            if (drained <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
-            return new net.neoforged.neoforge.fluids.FluidStack(ModFluids.FLUE.getSource(), drained);
+            if (drained <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            return new net.minecraftforge.fluids.FluidStack(ModFluids.FLUE.getSource(), drained);
         }
     }
     *///?}
@@ -356,7 +350,7 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
                 progress = 0D;
             }
             if (level.random.nextInt(10) == 0) {
-                PlatformHooks.playSound(level, pos, SoundEvents.FIRE_AMBIENT, SoundSource.BLOCKS,
+                LevelHooks.playSound(level, pos, SoundEvents.FIRE_AMBIENT, SoundSource.BLOCKS,
                         1.0F, 0.5F + level.random.nextFloat() * 0.25F);
             }
         } else {
@@ -387,8 +381,17 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
             level.setBlock(pos, state.setValue(BlastFurnaceBlock.LIT, progressing), 3);
         }
 
-        syncIfChanged();
-        setChanged();
+        // Anti-sync-spam: setChanged + полный BE-пакет только при изменении отрисовываемого
+        // состояния (прогресс/скорость/топливо/баки/прогресс = isLit). Подпись покрывает всё,
+        // что пишет writeNbtData, кроме инвентаря — слоты сами зовут setChanged через
+        // onContentsChanged и меняются только вместе с прогрессом.
+        long lo = (int) Math.round(progress * 1_000_000D);
+        lo = lo * 31L + (int) Math.round(speed * 1_000D);
+        lo = lo * 31L + fuel;
+        long hi = progressing ? 1L : 0L;
+        hi = hi * 31L + airTank.getFluidAmountMb();
+        hi = hi * 31L + flueTank.getFluidAmountMb();
+        syncIfStateChanged(lo, hi);
     }
 
     private void clientTick(Level level, BlockPos pos) {
@@ -406,32 +409,6 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
                         pos.getZ() + 0.5D + (level.random.nextDouble() - 0.5D) * 0.25D,
                         0D, 0.1D, 0D);
             }
-        }
-    }
-
-    private void syncIfChanged() {
-        int progressValue = (int) Math.round(progress * 1_000_000D);
-        int speedValue = (int) Math.round(speed * 1_000D);
-        if (progressValue != lastProgress || speedValue != lastSpeed || fuel != lastFuel
-                || airTank.getFluidAmountMb() != lastAir || flueTank.getFluidAmountMb() != lastFlue
-                || progressing != lastProgressing) {
-            lastProgress = progressValue;
-            lastSpeed = speedValue;
-            lastFuel = fuel;
-            lastAir = airTank.getFluidAmountMb();
-            lastFlue = flueTank.getFluidAmountMb();
-            lastProgressing = progressing;
-            sendUpdateToClient();
-        }
-    }
-
-    /**
-     * Синк BE на клиент через block update (аналог {@code BaseMachineBlockEntity#sendUpdateToClient}):
-     * печать доменной печи не наследует энергомашину, поэтому helper дублируется локально.
-     */
-    protected void sendUpdateToClient() {
-        if (level != null && !level.isClientSide && !isRemoved()) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
 
@@ -492,21 +469,34 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
 
     // ==================== PROCESSING ====================
 
+    /** Кэшированный скан рецептов: подпись — оба входных слота. */
+    private final CachedRecipeResolver<BlastFurnaceRecipe> recipeResolver = new CachedRecipeResolver<>();
+
+    /** Data-driven поиск BlastFurnaceRecipe по обоим входным слотам (NT-рецепты нового Hochofens). */
     @Nullable
     private BlastFurnaceRecipe findRecipe() {
+        Level level = getLevel();
         if (level == null) return null;
-        SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
-        for (int i = 0; i < itemHandler.getSlots(); i++) {
-            inventory.setItem(i, itemHandler.getStackInSlot(i));
-        }
-        RecipeInputWrapper wrapper = new RecipeInputWrapper(inventory);
-        for (BlastFurnaceRecipe recipe : RecipeHooks.getAllRecipes(level, BlastFurnaceRecipe.Type.INSTANCE)) {
-            // Original: der Hochofen nutzt nur BlastFurnaceRecipesNT
-            if (recipe.isNT() && recipe.matchesRecipe(wrapper, level)) {
-                return recipe;
+        long signature = CachedRecipeResolver.sign(1,
+                StackNbt.fingerprint(itemHandler.getStackInSlot(INPUT_SLOT_FIRST)),
+                StackNbt.fingerprint(itemHandler.getStackInSlot(INPUT_SLOT_SECOND)));
+        return recipeResolver.resolve(level, BlastFurnaceRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            if (itemHandler.getStackInSlot(INPUT_SLOT_FIRST).isEmpty()
+                    && itemHandler.getStackInSlot(INPUT_SLOT_SECOND).isEmpty()) {
+                return null;
             }
-        }
-        return null;
+            SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
+            for (int i = 0; i < itemHandler.getSlots(); i++) {
+                inventory.setItem(i, itemHandler.getStackInSlot(i));
+            }
+            RecipeInputWrapper wrapper = new RecipeInputWrapper(inventory);
+            for (BlastFurnaceRecipe recipe : all) {
+                if (recipe.isNT() && recipe.matchesRecipe(wrapper, lvl)) {
+                    return recipe;
+                }
+            }
+            return null;
+        });
     }
 
     private boolean canProcess(BlastFurnaceRecipe recipe) {
@@ -519,7 +509,7 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
         if (output.isEmpty()) return true;
         ItemStack existing = itemHandler.getStackInSlot(slot);
         if (existing.isEmpty()) return true;
-        if (!PlatformHooks.isSameItemSameTags(existing, output)) return false;
+        if (!StackNbt.sameItemSameTags(existing, output)) return false;
         return existing.getCount() + output.getCount() <= existing.getMaxStackSize();
     }
 
@@ -585,7 +575,7 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
+        tag.put("inventory", itemHandler.serialize( registries));
         tag.putDouble("bf_progress", progress);
         tag.putDouble("bf_speed", speed);
         tag.putInt("bf_fuel", fuel);
@@ -598,7 +588,7 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
+        itemHandler.deserialize(tag.getCompound("inventory"), registries);
         progress = Mth.clamp(tag.getDouble("bf_progress"), 0D, 1D);
         speed = tag.getDouble("bf_speed");
         fuel = Mth.clamp(tag.getInt("bf_fuel"), 0, MAX_FUEL);

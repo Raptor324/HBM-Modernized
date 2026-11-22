@@ -12,8 +12,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-/** Port of {@code GUIScreenRBMKKeyPad} - 4 buttons, each with an RTTY channel, a command string and a polling toggle. */
 public class GUIRBMKKeyPad extends Screen {
 
     private final BlockPos pos;

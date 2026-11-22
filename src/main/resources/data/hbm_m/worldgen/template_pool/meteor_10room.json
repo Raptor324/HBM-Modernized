@@ -1,0 +1,77 @@
+{
+  "fallback": "hbm_m:meteor_roomback",
+  "elements": [
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room10/room-basic",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room10/room-balcony",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room10/room-dragon",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room10/room-ladder",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room10/room-ooze",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room10/room-split",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room10/room-stairs",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room10/room-triple",
+        "processors": "hbm_m:connection_fix"
+      }
+    }
+  ]
+}

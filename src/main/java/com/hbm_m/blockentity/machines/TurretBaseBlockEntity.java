@@ -31,6 +31,7 @@ import com.hbm_m.particle.SpentCasing;
 import com.hbm_m.particle.SpentCasing.CasingType;
 import com.hbm_m.particle.helper.CasingCreator;
 import com.hbm_m.particle.helper.IParticleCreator;
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.sound.HbmSoundsNT;
 import com.hbm_m.util.EntityDamageUtil;
 import com.hbm_m.util.Vec3NT;
@@ -92,6 +93,16 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
     private final TurretStats stats;
     private int cooldown = 0;
     private boolean hasTarget = false;
+
+    /**
+     * Cached target entity. The {@code getEntitiesOfClass} query plus the per-candidate LOS
+     * clips are the most expensive part of the tick, so re-acquisition runs only on
+     * {@code probeDue(5)} (4 Hz); between probes the cached target is reused while it stays
+     * alive. PR-note: a newly-arrived enemy is picked up with up to 5 ticks delay, and a
+     * target that leaves range is kept until it dies or the next re-acquisition - the 4 Hz
+     * re-acquisition latency is the accepted fidelity cost.
+     */
+    private LivingEntity cachedTarget;
 
     /** On/Off-Schalter + Ziel-Kategorien (Original: {@code TileEntityTurretBaseNT}), per GUI-Button umschaltbar. */
     private boolean isOn = true;
@@ -189,7 +200,7 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
     }
 
     private boolean isGatling() {
-        return stats == TurretStats.CHEKHOV || stats == TurretStats.FRIENDLY;
+        return stats == TurretStats.CHEKHOV || stats == TurretStats.FRIENDLY || stats == TurretStats.HOWARD || stats == TurretStats.HOWARD_DAMAGED;
     }
 
     private void serverTick(Level level, BlockPos pos) {
@@ -231,7 +242,15 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
             return;
         }
 
-        LivingEntity target = findTarget(level, pos);
+        // 4 Hz re-acquisition (PR-note): full entity query + LOS clips only on probeDue(5);
+        // between probes the cached target is reused while alive.
+        if (probeDue(5)) {
+            cachedTarget = findTarget(level, pos);
+        }
+        if (cachedTarget != null && (!cachedTarget.isAlive() || cachedTarget.isRemoved())) {
+            cachedTarget = null;
+        }
+        LivingEntity target = cachedTarget;
         hasTarget = target != null;
 
         prevYaw = yaw;
@@ -254,6 +273,7 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
                 sendUpdateToClient();
             }
             wasActiveLastTick = hasTarget;
+            syncTargetState();
             return;
         }
 
@@ -271,19 +291,52 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
             }
         }
 
-        setChanged();
-        sendUpdateToClient();
         wasActiveLastTick = true;
+        syncTargetState();
+    }
+
+    /**
+     * Anti-sync-spam (P6): the per-tick {@code setChanged(); sendUpdateToClient();} while a
+     * target is tracked is replaced by a change-gated sync with a 10-tick heartbeat.
+     * PR-note: yaw/pitch are quantized to 5-degree buckets in the signature, so fine-grained
+     * tracking motion syncs on the heartbeat only - up to 10 ticks of sub-bucket client-side
+     * aim lag is the accepted fidelity cost.
+     */
+    private void syncTargetState() {
+        long lo = com.hbm_m.recipe.index.CachedRecipeResolver.sign(11L,
+                quantize(yaw), quantize(pitch),
+                (long) (spin * 2.0F), (long) (barrelSpinAngle / 22.5F),
+                hasTarget ? 1L : 0L, isOn ? 1L : 0L, fireMode,
+                (long) (himarsCraneProgress * 10.0F));
+        long hi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(12L,
+                cachedTarget != null ? cachedTarget.getId() : -1L,
+                loaded, reload, cooldown);
+        syncIfChangedOrEvery(lo, hi, 10);
+    }
+
+    /** 5-degree quantization bucket for float aim angles. */
+    private static long quantize(float angle) {
+        return (long) Math.floor(angle / 5.0F);
     }
 
     /**
      * The point the gun actually sits at, and the single origin used for aiming, line of sight and
      * firing alike - the original's {@code getTurretPos()}.
+     *
+     * <p>These three had drifted apart in this port: aiming measured from the block centre, the
+     * sight check from half a block above it, and shots left from the pivot height. The turret was
+     * therefore aiming at one point, testing visibility from a second and firing from a third,
+     * which is why its tracking never lined up with where the rounds went.</p>
      */
     private Vec3 turretOrigin(BlockPos pos) {
-        // Original getTurretPos(): xCoord + getHorizontalOffset() - die Mitte der Grundplatte, nicht des Kerns
+        // Original getTurretPos(): xCoord + getHorizontalOffset(), yCoord + getHeightOffset() - Mitte der Grundplatte und Drehpunkt
         Vec3 offset = getHorizontalOffset();
-        return new Vec3(pos.getX() + offset.x, pos.getY() + 0.5D + stats.pivotY, pos.getZ() + offset.z);
+        return new Vec3(pos.getX() + offset.x, pos.getY() + stats.pivotY, pos.getZ() + offset.z);
+    }
+
+    /** {@code getEntityPos}: the original aims at the target's centre of mass, not its eyes. */
+    private static Vec3 targetPoint(LivingEntity target) {
+        return new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.5D, target.getZ());
     }
 
     // --- Mehrblockstruktur (Original BlockDummyable) ---
@@ -363,11 +416,6 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
     public AABB getRenderBoundingBox() {
         return new AABB(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY,
                 Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
-    }
-
-    /** {@code getEntityPos}: the original aims at the target's centre of mass, not its eyes. */
-    private static Vec3 targetPoint(LivingEntity target) {
-        return new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.5D, target.getZ());
     }
 
     private void updateAim(BlockPos pos, LivingEntity target) {
@@ -1771,9 +1819,9 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
         proj.setType(meta);
 
         if (meta == com.hbm_m.item.weapon.ItemAmmoArty.CARGO) {
-            CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(type);
+            CompoundTag tag = com.hbm_m.platform.StackNbt.read(type);
             if (tag != null && tag.contains("cargo")) {
-                proj.setCargo(com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("cargo"), com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
+                proj.setCargo(com.hbm_m.platform.StackNbt.parse(tag.getCompound("cargo"), com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
             }
         }
 
@@ -2036,6 +2084,14 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
         return super.getHbmCapability(cap, side);
     }
     *///?}
+
+    @Override
+    public @Nullable Object getFluidHandler(@Nullable Direction side) {
+        if (stats == TurretStats.FRITZ) {
+            return tank.getCapability();
+        }
+        return null;
+    }
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {

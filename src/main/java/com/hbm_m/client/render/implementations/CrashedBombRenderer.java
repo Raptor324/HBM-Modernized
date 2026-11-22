@@ -17,8 +17,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * 1:1 {@code RenderCrashedBomb}: der Blindgaenger steckt schraeg im Boden; Gier, Neigung (45-90), Rollen und Versatz
- * kommen aus einem Zufall mit der Blockposition als Saat ({@code BlockPos.getIdentity}).
+ * 1:1 {@code RenderCrashedBomb}: dud bomb embedded at an angle in ground; yaw, pitch (45-90), roll and offset
+ * are seeded by block position ({@code BlockPos.getIdentity}).
  */
 public class CrashedBombRenderer implements com.hbm_m.client.render.HbmBerBounds<CrashedBombBlockEntity> {
 

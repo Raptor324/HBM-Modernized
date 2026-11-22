@@ -52,12 +52,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeType;
+
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code TileEntityMachineMiningLaser}: haengt unter der Decke und tastet sich Ebene fuer Ebene nach unten. Pro
@@ -73,6 +75,7 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity implem
         com.hbm_m.interfaces.IUpgradeInfoProvider {
 
     /** Original: Slot 0 Batterie, 1-8 Upgrades, 9-29 Ausgabe. */
+
     public static final int SLOT_BATTERY = 0;
     public static final int UPGRADE_START = 1;
     public static final int UPGRADE_COUNT = 8;
@@ -207,6 +210,7 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity implem
                     } else {
                         breakBlock(world, fortune);
                         buildDam(world);
+
                     }
                 }
             }
@@ -422,7 +426,7 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity implem
                 targetX + 0.5 + 1, targetY + 0.5 + 1, targetZ + 0.5 + 1));
 
         for (LivingEntity mob : mobs) {
-            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(mob, 5);
+            com.hbm_m.platform.MobHooks.setSecondsOnFire(mob, 5);
         }
     }
 
@@ -430,7 +434,7 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity implem
     private ItemStack addToOutput(ItemStack toAdd) {
         for (int i = OUTPUT_START; i < OUTPUT_START + OUTPUT_COUNT && !toAdd.isEmpty(); i++) {
             ItemStack slot = inventory.getStackInSlot(i);
-            if (!slot.isEmpty() && com.hbm_m.platform.PlatformHooks.isSameItemSameTags(slot, toAdd)) {
+            if (!slot.isEmpty() && com.hbm_m.platform.StackNbt.sameItemSameTags(slot, toAdd)) {
                 int move = Math.min(slot.getMaxStackSize() - slot.getCount(), toAdd.getCount());
                 if (move > 0) {
                     ItemStack grown = slot.copy();
@@ -528,6 +532,7 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity implem
     public FluidTank getTank() { return tank; }
 
     /** Original: {@code AuxButtonPacket} des An/Aus-Knopfs. */
+
     public void toggleOn() {
         isOn = !isOn;
         setChanged();
@@ -591,6 +596,7 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity implem
         tag.putBoolean("beam", beam);
         tag.putDouble("progress", clientBreakProgress);
         tag.putBoolean("redstone", redstonePowered);
+
     }
 
     @Override
@@ -652,6 +658,7 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity implem
     // ==================== Sonstiges ====================
 
     @Override
+
     protected Component getDefaultName() {
         return Component.translatable("container.hbm_m.mining_laser");
     }
@@ -661,6 +668,7 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity implem
         return getDefaultName();
     }
 
+
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
@@ -668,6 +676,7 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity implem
     }
 
     /** Original: {@code INFINITE_EXTENT_AABB}, Sichtweite 256. */
+
     //? if forge {
     @Override
     //?}
@@ -716,4 +725,5 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity implem
         sidedItems.invalidate();
     }
     *///?}
+
 }

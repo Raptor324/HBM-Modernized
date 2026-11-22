@@ -54,7 +54,7 @@ public class TurretControlPacket implements C2SPacket {
                 return;
             }
 
-            var blockEntity = player.level().getBlockEntity(packet.pos);
+            var blockEntity = ModPacketHandler.blockEntityAt(player, packet.pos);
             if (blockEntity instanceof TurretBaseBlockEntity turret) {
                 // Original IControlReceiver#hasPermission: nur wer das Inventar benutzen darf
                 if (player.distanceToSqr(packet.pos.getX() + 0.5, packet.pos.getY() + 0.5, packet.pos.getZ() + 0.5) > 64D) return;

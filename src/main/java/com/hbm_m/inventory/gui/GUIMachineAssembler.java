@@ -22,15 +22,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import com.hbm_m.platform.StackNbt;
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineAssembler extends GuiInfoScreen<MachineAssemblerMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/gui_assembler.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_assembler.png");
-            //?}
 
     
     // РљРѕРЅСЃС‚Р°РЅС‚Р° РґР»СЏ РєРѕСЂСЂРµРєС‚РЅРѕРіРѕ РёРЅРґРµРєСЃР° СЃР»РѕС‚Р° С€Р°Р±Р»РѕРЅР°
@@ -102,7 +101,7 @@ public class GUIMachineAssembler extends GuiInfoScreen<MachineAssemblerMenu> {
             // РС‰РµРј СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ РїСЂРµРґРјРµС‚ РІ РіСЂСѓРїРїРµ
             ItemStack found = null;
             for (ItemStack key : groupedItems.keySet()) {
-                if (PlatformHooks.isSameItemSameTags(key, stack)) {
+                if (StackNbt.sameItemSameTags(key, stack)) {
                     found = key;
                     break;
                 }

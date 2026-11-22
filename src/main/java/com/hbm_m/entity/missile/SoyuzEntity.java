@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.platform.PlatformHooks;
@@ -20,6 +19,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.StackNbt;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code EntitySoyuz}: steigt beschleunigt senkrecht auf (ohne Kollision), verbrennt alles im Abgasstrahl und
@@ -89,10 +90,12 @@ public class SoyuzEntity extends Entity {
             List<Entity> caught = level().getEntities(this, exhaustZone);
 
             for (Entity e : caught) {
-                PlatformHooks.setSecondsOnFire(e, 15);
+                MobHooks.setSecondsOnFire(e, 15);
                 DamageSource exhaust = ModDamageSources.exhaust(level());
                 e.hurt(exhaust, 100.0F);
 
+                // "Potato In Space": the original awards this to whoever stands in the plume,
+                // which is the joke - you are the potato.
                 if (e instanceof net.minecraft.world.entity.player.Player player) {
                     if (!memed) {
                         memed = true;
@@ -162,8 +165,11 @@ public class SoyuzEntity extends Entity {
                 capsule.setPayload(payload);
                 capsule.soyuz = this.getSkin();
                 capsule.setPos(targetX + 0.5, DEPLOY_HEIGHT, targetZ + 0.5);
-                // Original provider.loadChunk: Zielchunk einmal laden (kein dauerhaftes Ticket)
-                server.getChunk(targetX >> 4, targetZ >> 4);
+                net.minecraft.world.level.ChunkPos landing =
+                        new net.minecraft.world.level.ChunkPos(targetX >> 4, targetZ >> 4);
+                server.getChunkSource().addRegionTicket(SoyuzCapsuleEntity.CHUNK_TICKET, landing,
+                        SoyuzCapsuleEntity.CHUNK_TICKET_RADIUS, capsule.getUUID());
+                capsule.setLoadedChunk(landing);
                 server.addFreshEntity(capsule);
             }
         }
@@ -175,15 +181,18 @@ public class SoyuzEntity extends Entity {
 
     @Override
     protected void defineSynchedData() {
-        this.entityData.define(SKIN, 0);
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
-        builder.define(SKIN, 0);
-    }
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     *///?}
+
+        // No synced fields needed - mode/skin only matter server-side and for our own render pose.
+
+    }
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
@@ -198,7 +207,7 @@ public class SoyuzEntity extends Entity {
             CompoundTag itemTag = list.getCompound(i);
             int slot = itemTag.getByte("slot");
             if (slot >= 0 && slot < payload.size()) {
-                payload.set(slot, PlatformHooks.itemStackOf(itemTag, PlatformHooks.bestEffortProvider()));
+                payload.set(slot, StackNbt.parse(itemTag, PlatformHooks.bestEffortProvider()));
             }
         }
     }
@@ -217,7 +226,7 @@ public class SoyuzEntity extends Entity {
             if (!stack.isEmpty()) {
                 CompoundTag itemTag = new CompoundTag();
                 itemTag.putByte("slot", (byte) i);
-                PlatformHooks.saveItemStack(stack, itemTag, PlatformHooks.bestEffortProvider());
+                StackNbt.save(stack, itemTag, PlatformHooks.bestEffortProvider());
                 list.add(itemTag);
             }
         }

@@ -30,7 +30,8 @@ final class RestportConfigFields {
 
     static void addTo(Consumer<ConfigField> r) {
         // ── GeneralConfig (1.xx, 528, LBSM) ──
-        s(r, GeneralConfig.class, "enable528", FieldType.BOOLEAN, ConfigSide.SERVER, ApplyMode.REQUIRES_RESTART, "528", null, null, "The central toggle for 528 mode, required TRUE for most subsequent toggles to work. [Original: enable528Mode]");
+        // ("enable528" регистрируется в ConfigSchema как POJO-поле ModClothConfig.enable528 —
+        // дубликат ключа здесь привёл бы к IllegalStateException в reg().)
         s(r, GeneralConfig.class, "enableDebugMode", FieldType.BOOLEAN, ConfigSide.SERVER, ApplyMode.LIVE, "general", null, null, "Enable debugging mode [Original: 1.00_enableDebugMode]");
         s(r, GeneralConfig.class, "enablePlutoniumOre", FieldType.BOOLEAN, ConfigSide.SERVER, ApplyMode.LIVE, "general", null, null, "Enables plutonium ore generation in the nether [Original: 1.02_enablePlutoniumNetherOre]");
         s(r, GeneralConfig.class, "enableDungeons", FieldType.INT, ConfigSide.SERVER, ApplyMode.LIVE, "general", 0D, (double) 2, "Allows structures and dungeons to spawn. 0 = false, 1 = true, 2 = flag (respects the \"Generate Structures\" world flag). [Original: 1.03_enableDungeonSpawn]");
@@ -43,6 +44,7 @@ final class RestportConfigFields {
         s(r, GeneralConfig.class, "enableImpactWorldProvider", FieldType.BOOLEAN, ConfigSide.SERVER, ApplyMode.REQUIRES_RESTART, "general", null, null, "If enabled, registers custom world provider which modifies lighting and sky colors for post impact effects. [Original: 1.32_enableImpactWorldProvider]");
         s(r, GeneralConfig.class, "enableGuideBook", FieldType.BOOLEAN, ConfigSide.SERVER, ApplyMode.LIVE, "general", null, null, "If enabled, gives players the guide book when joining the world for the first time [Original: 1.37_enableGuideBook]");
         s(r, GeneralConfig.class, "enableExpensiveMode", FieldType.BOOLEAN, ConfigSide.SERVER, ApplyMode.REQUIRES_RESTART, "general", null, null, "It does what the name implies. [Original: 1.99_enableExpensiveMode]");
+        s(r, GeneralConfig.class, "enableFluidContainerCompat", FieldType.BOOLEAN, ConfigSide.SERVER, ApplyMode.REQUIRES_RESTART, "general", null, null, "If enabled, fluid containers will be oredicted and interchangable in recipes with other mods' containers, as well as TrainCraft's diesel being considered a valid diesel canister. [Original: 1.35_enableFluidContainerCompat]");
         s(r, GeneralConfig.class, "enable528ReasimBoilers", FieldType.BOOLEAN, ConfigSide.SERVER, ApplyMode.LIVE, "528", null, null, "Keeps the RBMK dial for ReaSim boilers on, preventing use of non-ReaSim boiler columns and forcing the use of steam in-/outlets [Original: X528_forceReasimBoilers]");
         s(r, GeneralConfig.class, "enable528BosniaSimulator", FieldType.BOOLEAN, ConfigSide.SERVER, ApplyMode.LIVE, "528", null, null, "Enables anti tank mines spawning all over the world. [Original: X528_enableBosniaSimulator]");
         s(r, GeneralConfig.class, "enable528PressurizedRecipes", FieldType.BOOLEAN, ConfigSide.SERVER, ApplyMode.LIVE, "528", null, null, "Sets some recipes to require pressurized input fluid [Original: X528_enable528PressurizedRecipes]");

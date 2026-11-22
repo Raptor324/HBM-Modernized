@@ -23,13 +23,11 @@ import net.minecraftforge.common.util.LazyOptional;
  * В выключенном (POWERED=false... по факту при отсутствии питания/включенном состоянии)
  * состоянии узел уничтожается, разрывая сеть.
  */
-public class SwitchBlockEntity extends BlockEntity implements PowerConductor, com.hbm_m.platform.HbmCapabilityProvider {
+public class SwitchBlockEntity extends BlockEntity implements PowerConductor {
 
     //? if forge {
     private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-    //?} elif neoforge {
-    /*private final com.hbm_m.platform.LazyCap<com.hbm_m.interfaces.IEnergyConnector> hbmConnector = com.hbm_m.platform.LazyCap.of(() -> this);
-    *///?}
+    //?}
 
     public SwitchBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.SWITCH_BE.get(), pos, state);
@@ -81,34 +79,15 @@ public class SwitchBlockEntity extends BlockEntity implements PowerConductor, co
         hbmConnector.invalidate();
     }
 
+    //?}
+
+    // NeoForge has onChunkUnloaded too (IBlockEntityExtension); keeping it in the forge-only
+    // block left the node in Nodespace after an unload on 1.21.1.
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
         destroyOwnNode();
     }
-    //?} elif neoforge {
-    /*@Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR) {
-            if (isValidSide(side)) {
-                return hbmConnector.cast();
-            }
-        }
-        return com.hbm_m.platform.HbmCapabilityProvider.super.getHbmCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateHbmCaps() {
-        com.hbm_m.platform.HbmCapabilityProvider.super.invalidateHbmCaps();
-        hbmConnector.invalidate();
-    }
-
-    @Override
-    public void onChunkUnloaded() {
-        super.onChunkUnloaded();
-        destroyOwnNode();
-    }
-    *///?}
 
     @Override
     public boolean canConnectEnergy(Direction side) {
@@ -118,11 +97,8 @@ public class SwitchBlockEntity extends BlockEntity implements PowerConductor, co
     @Override
     public void setRemoved() {
         super.setRemoved();
-        //? if neoforge {
-        /*invalidateHbmCaps();
-        *///?}
         destroyOwnNode();
-        //? if forge || neoforge {
+        //? if forge {
         hbmConnector.invalidate();
         //?}
     }

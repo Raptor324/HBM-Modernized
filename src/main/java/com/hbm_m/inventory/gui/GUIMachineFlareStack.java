@@ -1,11 +1,12 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineFlareStackBlockEntity;
-import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.trait.FT_Flammable;
 import com.hbm_m.inventory.menu.MachineFlareStackMenu;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.network.MachineControlC2SPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -13,9 +14,17 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
-
-/** 1:1 {@code GUIMachineGasFlare}: Ventil- und Zuendschalter per Klick, Tank- und Energieanzeige. */
+import net.minecraft.world.level.material.Fluids;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+/**
+ * Порт {@code GUIMachineGasFlare} (1.7.10): клапан ("valve") и поджиг ("dial") —
+ * кликабельные области с оверлеями из текстуры, иконка пламени при горении,
+ * бак и батарея. Позиции и регионы текстуры 1:1 с оригиналом.
+ */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineFlareStack extends GuiInfoScreen<MachineFlareStackMenu> {
 
     private static final ResourceLocation TEXTURE =

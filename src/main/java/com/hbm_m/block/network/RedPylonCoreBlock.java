@@ -5,8 +5,10 @@ import java.util.function.Function;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.network.PylonBaseBlockEntity;
+import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -22,6 +24,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -30,39 +33,49 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * Базовое ядро пилона ЛЭП — порт BlockDummyable-пилонов 1.7.10 (PylonRedWire/PylonMedium/PylonLarge).
- * При установке заполняет габарит dims{up,down,mx,px,mz,pz} фиктивными частями
- * ({@link PylonDummyBlock}); ПКМ красителем окрашивает кабель (setColor оригинала).
+ * Переведено на систему MultiblockStructureHelper с фантомами UniversalMachinePartBlock;
+ * ПКМ красителем окрашивает кабель (setColor оригинала).
  */
-public abstract class RedPylonCoreBlock extends BaseEntityBlock {
+public abstract class RedPylonCoreBlock extends BaseEntityBlock implements IMultiblockController {
 
-    /** {up, down, minusX, plusX, minusZ, plusZ} — габарит структуры относительно ядра. */
-    protected abstract int[] getDimensions();
+    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
     protected abstract BlockEntityType<? extends PylonBaseBlockEntity> getBlockEntityType();
 
     protected abstract String getTypeKey();
     protected abstract int getRange();
 
-    /** Хелпер codec() для 1.21.1: лямбда захватывает параметры подкласса (флаг трансформера и т.п.). */
     //? if > 1.20.1 {
-    /*protected <T extends RedPylonCoreBlock> com.mojang.serialization.MapCodec<T> makeCodec(Function<Properties, T> factory) {
-        return simpleCodec(factory::apply);
+    /*@Override
+    protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() {
+        return com.mojang.serialization.MapCodec.unit(this);
     }
     *///?}
 
-    public static final DirectionProperty FACING = DirectionProperty.create("facing",
-            Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST);
-
     protected RedPylonCoreBlock(Properties properties) {
         super(properties);
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);
+    }
+
+    @Override
+    public BlockState rotate(BlockState state, net.minecraft.world.level.block.Rotation rot) {
+        return state.setValue(FACING, rot.rotate(state.getValue(FACING)));
+    }
+
+    @Override
+    public BlockState mirror(BlockState state, net.minecraft.world.level.block.Mirror mirror) {
+        return state.setValue(FACING, mirror.mirror(state.getValue(FACING)));
     }
 
     @Override
@@ -86,58 +99,97 @@ public abstract class RedPylonCoreBlock extends BaseEntityBlock {
         };
     }
 
-    // ══════════════════════ Фиктивные части ══════════════════════
+    // ══════════════════════ Освещение ══════════════════════
+
+    @Override
+    public int getLightBlock(BlockState state, BlockGetter level, BlockPos pos) {
+        return 0;
+    }
+
+    @Override
+    public float getShadeBrightness(BlockState state, BlockGetter level, BlockPos pos) {
+        return 1.0F;
+    }
+
+    public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos) {
+        return true;
+    }
+
+    @Override
+    public VoxelShape getVisualShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        return Shapes.empty();
+    }
+
+    // ══════════════════════ Мультиблок (MultiblockStructureHelper) ══════════════════════
+
+    @Override
+    public int getOffset() {
+        return 0;
+    }
+
+    @Override
+    public int getHeightOffset() {
+        return 0;
+    }
+
+    @Override
+    public PartRole getPartRole(BlockPos localOffset) {
+        MultiblockStructureHelper helper = getStructureHelper();
+        return helper != null ? helper.resolvePartRole(localOffset, this) : PartRole.DEFAULT;
+    }
 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
-        if (level.isClientSide || oldState.getBlock() == this) return;
-        fillDummies(level, pos);
-    }
-
-    private void fillDummies(Level level, BlockPos pos) {
-        int[] d = getDimensions();
-        BlockState dummy = ModBlocks.PYLON_DUMMY.get().defaultBlockState();
-        for (int y = -d[1]; y <= d[0]; y++) {
-            for (int x = -d[2]; x <= d[3]; x++) {
-                for (int z = -d[4]; z <= d[5]; z++) {
-                    if (x == 0 && y == 0 && z == 0) continue;
-                    BlockPos p = pos.offset(x, y, z);
-                    if (level.getBlockState(p).canBeReplaced()) {
-                        level.setBlock(p, dummy, Block.UPDATE_CLIENTS);
-                        if (level.getBlockEntity(p) instanceof com.hbm_m.blockentity.network.PylonDummyBlockEntity be) {
-                            be.setCorePos(pos);
-                        }
-                    }
-                }
-            }
+        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
+            placeMultiblockStructure(level, pos, state);
         }
     }
 
     @Override
+    public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
+    }
+
+    @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!level.isClientSide && newState.getBlock() != this) {
-            clearDummies(level, pos);
+        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof PylonBaseBlockEntity pylon) {
                 pylon.disconnectAll();
+            }
+            MultiblockStructureHelper helper = getStructureHelper();
+            if (helper != null) {
+                helper.destroyStructure(level, pos, state.getValue(FACING));
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
-    private void clearDummies(Level level, BlockPos pos) {
-        int[] d = getDimensions();
-        for (int y = -d[1]; y <= d[0]; y++) {
-            for (int x = -d[2]; x <= d[3]; x++) {
-                for (int z = -d[4]; z <= d[5]; z++) {
-                    if (x == 0 && y == 0 && z == 0) continue;
-                    BlockPos p = pos.offset(x, y, z);
-                    if (level.getBlockState(p).getBlock() instanceof PylonDummyBlock) {
-                        level.removeBlock(p, false);
-                    }
-                }
-            }
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        MultiblockStructureHelper helper = getStructureHelper();
+        if (helper != null) {
+            return helper.getControllerCellShape(state.getValue(FACING));
         }
+        return Shapes.block();
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        MultiblockStructureHelper helper = getStructureHelper();
+        if (helper != null) {
+            return helper.getSpecificCollisionShape(helper.getControllerOffset(), state.getValue(FACING));
+        }
+        return Shapes.block();
+    }
+
+    @Override
+    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        MultiblockStructureHelper helper = getStructureHelper();
+        if (helper != null && !helper.isFullBlock(helper.getControllerOffset(), state.getValue(FACING))) {
+            return Shapes.empty();
+        }
+        return Shapes.block();
     }
 
     // ══════════════════════ Окраска красителем ══════════════════════
@@ -172,6 +224,7 @@ public abstract class RedPylonCoreBlock extends BaseEntityBlock {
                 .append(Component.translatable(getTypeKey()).withStyle(ChatFormatting.YELLOW)).withStyle(ChatFormatting.GOLD));
         tooltip.add(Component.translatable("tooltip.hbm_m.connection_range")
                 .append(Component.literal(getRange() + "m").withStyle(ChatFormatting.YELLOW)).withStyle(ChatFormatting.GOLD));
+
         // Original PylonLarge.addInformation: dritte Zeile
         if (this instanceof RedPylonLargeBlock) tooltip.add(Component.literal("This pylon requires a substation!").withStyle(ChatFormatting.GOLD));
     }

@@ -46,6 +46,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
+import com.hbm_m.platform.BlockEntityItemData;
 
 /** Enargit-Ziegel des Originals: {@code BlockBallsSpawner}, {@code FragileBrick}, {@code BlockGlyph}, {@code TrappedBrick}. */
 public final class JungleBricks {
@@ -57,7 +58,7 @@ public final class JungleBricks {
         ItemStack s = new ItemStack(item);
         CompoundTag bst = new CompoundTag();
         bst.putString(prop, value);
-        com.hbm_m.platform.BlockStateItemData.put(s, bst);
+        com.hbm_m.platform.BlockEntityItemData.putState(s, bst);
         return s;
     }
 

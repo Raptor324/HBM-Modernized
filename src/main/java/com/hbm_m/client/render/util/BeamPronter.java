@@ -79,8 +79,13 @@ public final class BeamPronter {
         ps.mulPose(Axis.XP.rotationDegrees(sPitch - 90));
 
         Matrix4f m = ps.last().pose();
+        // WIAJ demo screen: BEAM_SOLID_DEPTH writes depth into the GUI depth buffer and would
+        // occlude every later 2D draw (panels/text) across the beam's near pixels - use the
+        // no-depth-write glow type there; in-scene ordering is preserved by the block/machine depth.
         VertexConsumer vc = buffers.getBuffer(beam == EnumBeamType.SOLID
-                ? (depth ? ClientRenderHandler.CustomRenderTypes.BEAM_SOLID_DEPTH : ClientRenderHandler.CustomRenderTypes.DETONATOR_LASER_GLOW)
+                ? (depth && !com.hbm_m.client.render.ClientRenderFlags.guiRenderFrame()
+                        ? ClientRenderHandler.CustomRenderTypes.BEAM_SOLID_DEPTH
+                        : ClientRenderHandler.CustomRenderTypes.DETONATOR_LASER_GLOW)
                 : ClientRenderHandler.CustomRenderTypes.BEAM_LINES);
 
         rand.setSeed(start);
@@ -140,27 +145,15 @@ public final class BeamPronter {
     private static void quad(VertexConsumer vc, Matrix4f m, int r, int g, int b, int a,
                              double x1, double y1, double z1, double x2, double y2, double z2,
                              double x3, double y3, double z3, double x4, double y4, double z4) {
-        //? if < 1.21.1 {
-        vc.vertex(m, (float) x1, (float) y1, (float) z1).color(r, g, b, a).endVertex();
-        vc.vertex(m, (float) x2, (float) y2, (float) z2).color(r, g, b, a).endVertex();
-        vc.vertex(m, (float) x3, (float) y3, (float) z3).color(r, g, b, a).endVertex();
-        vc.vertex(m, (float) x4, (float) y4, (float) z4).color(r, g, b, a).endVertex();
-        //?} else {
-        /*vc.addVertex(m, (float) x1, (float) y1, (float) z1).setColor(r, g, b, a);
-        vc.addVertex(m, (float) x2, (float) y2, (float) z2).setColor(r, g, b, a);
-        vc.addVertex(m, (float) x3, (float) y3, (float) z3).setColor(r, g, b, a);
-        vc.addVertex(m, (float) x4, (float) y4, (float) z4).setColor(r, g, b, a);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, (float) x1, (float) y1, (float) z1, r, g, b, a);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, (float) x2, (float) y2, (float) z2, r, g, b, a);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, (float) x3, (float) y3, (float) z3, r, g, b, a);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, (float) x4, (float) y4, (float) z4, r, g, b, a);
     }
 
     private static void line(VertexConsumer vc, Matrix4f m, double x1, double y1, double z1, double x2, double y2, double z2, int color, int a) {
         int r = (color >> 16) & 0xFF, g = (color >> 8) & 0xFF, b = color & 0xFF;
-        //? if < 1.21.1 {
-        vc.vertex(m, (float) x1, (float) y1, (float) z1).color(r, g, b, a).endVertex();
-        vc.vertex(m, (float) x2, (float) y2, (float) z2).color(r, g, b, a).endVertex();
-        //?} else {
-        /*vc.addVertex(m, (float) x1, (float) y1, (float) z1).setColor(r, g, b, a);
-        vc.addVertex(m, (float) x2, (float) y2, (float) z2).setColor(r, g, b, a);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, (float) x1, (float) y1, (float) z1, r, g, b, a);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, (float) x2, (float) y2, (float) z2, r, g, b, a);
     }
 }

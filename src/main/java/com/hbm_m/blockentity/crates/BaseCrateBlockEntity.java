@@ -3,11 +3,11 @@ package com.hbm_m.blockentity.crates;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.machines.crates.CrateValidation;
 import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -15,7 +15,7 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -60,7 +60,7 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
 
             @Override
             public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-                return CrateValidation.isValidForCrate(stack);
+                return true; // Original TileEntityCrateBase.isItemValidForSlot: jeder Gegenstand, auch andere Kisten
             }
         };
     }
@@ -85,27 +85,7 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?} elif neoforge {
-    /*/^* Original {@code TileEntityCrateBase}: alle Plaetze von allen Seiten, ein und aus nur ohne Schloss. ^/
-    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> getItemHandler(),
-            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
-                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, itemHandler.getSlots() - 1); }
-                @Override public boolean canInsert(int slot, ItemStack stack, net.minecraft.core.Direction side) { return canInsertAutomation(slot, stack); }
-                @Override public boolean canExtract(int slot, ItemStack stack, net.minecraft.core.Direction side) { return canExtractAutomation(slot, stack); }
-            });
-
-    @Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
-        return super.getHbmCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateHbmCaps() {
-        super.invalidateHbmCaps();
-        sidedItems.invalidate();
-    }
-    *///?}
+    //?}
 
     /** Original {@code canInsertItem}: {@code isItemValidForSlot && !isLocked}. */
     protected boolean canInsertAutomation(int slot, ItemStack stack) {
@@ -117,8 +97,6 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
         return !isLocked();
     }
 
-    
-    // (устраняет вложенный stonecutter-баг в load())
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
@@ -128,7 +106,7 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
                 tag.putLong("LootTableSeed", this.lootTableSeed);
             }
         }
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
+        tag.put("inventory", itemHandler.serialize( registries));
         if (lockState.isLocked) lockState.write(tag);
         if (hasSpiders) tag.putBoolean("spiders", true);
     }
@@ -141,7 +119,7 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
             this.lootTableSeed = tag.getLong("LootTableSeed");
         }
         if (tag.contains("inventory")) {
-            com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
+            itemHandler.deserialize(tag.getCompound("inventory"), registries);
         }
         if (tag.contains("isLocked")) lockState.read(tag);
         hasSpiders = tag.getBoolean("spiders");
@@ -184,6 +162,9 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
     }
 
     public boolean isEmpty() {
+        // A structure crate holds its loot as a pending LootTable until first opened; without this a
+        // crate mined before opening was packed as empty and its loot was lost.
+        if (lootTable != null) return false;
         for (int i = 0; i < itemHandler.getSlots(); i++) {
             if (!itemHandler.getStackInSlot(i).isEmpty()) {
                 return false;
@@ -191,6 +172,20 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
         }
         return true;
     }
+
+    // The chunk packet does not need every stack of every crate in render distance: nothing on the
+    // client reads them (the menu syncs its own slots, and there is no crate renderer).
+    //? if < 1.21.1 {
+    @Override
+    public @NotNull CompoundTag getUpdateTag() {
+        return new CompoundTag();
+    }
+    //?} else {
+    /*@Override
+    public @NotNull CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+        return new CompoundTag();
+    }
+    *///?}
 
     public void saveToItem(ItemStack stack) {
         //? if < 1.21.1 {
@@ -210,6 +205,22 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
                     net.minecraft.world.item.component.CustomData.of(tag));
         }
         *///?}
+    }
+
+    // Upstream TileEntityCrateBase is an ISidedInventory open on every side; the port dropped the
+    // item capability during the Fabric port, so hoppers, pipes and every automation mod saw nothing.
+    @Override
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
+        return itemHandler;
+    }
+
+    /** Leert Inventar und Loot-Tabelle - nach dem Packen in das Kisten-Item. */
+    public void clearContents() {
+        for (int i = 0; i < itemHandler.getSlots(); i++) {
+            itemHandler.setStackInSlot(i, ItemStack.EMPTY);
+        }
+        lootTable = null;
+        lootTableSeed = 0L;
     }
 
     public ModItemStackHandler getItemHandler() {

@@ -34,7 +34,6 @@ public class PileControlBlockEntity extends LoadedMachineBlockEntity
     public static final double SPEED = 1D / 60D;
 
     private double level_ = 0D;
-
     /** Original Client-Seite: geglaettete Stellung fuer den Renderer ({@code level/lastLevel/syncLevel/turnProgress}). */
     public double renderLevel;
     public double lastRenderLevel;
@@ -155,7 +154,6 @@ public class PileControlBlockEntity extends LoadedMachineBlockEntity
         super.applyClientUpdate(tag);
         if (this.level_ != lastSync) this.turnProgress = 2;
     }
-
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);

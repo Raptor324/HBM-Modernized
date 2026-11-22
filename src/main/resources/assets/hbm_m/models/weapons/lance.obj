@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'lance.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Blade
 v -0.000000 2.000000 -10.750000
 v 0.000000 2.000000 -9.250000

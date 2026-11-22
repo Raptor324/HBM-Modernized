@@ -99,6 +99,7 @@ public class ItemCustomMissilePart extends Item {
     // vJ: Original ItemRenderMissilePart (OBJ des Teils als Icon); greift nur bei builtin/entity-Itemmodell (Chips flach)
     //? if forge {
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override

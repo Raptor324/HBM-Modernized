@@ -35,7 +35,6 @@ public class MachineFoundryMoldBlock extends MachineFoundryBasinBlock {
 
     @Override public VoxelShape getShape(BlockState s, BlockGetter l, BlockPos p, CollisionContext c) { return SHAPE; }
     @Override public VoxelShape getCollisionShape(BlockState s, BlockGetter l, BlockPos p, CollisionContext c) { return SHAPE; }
-
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineFoundryMoldBlockEntity(pos, state);

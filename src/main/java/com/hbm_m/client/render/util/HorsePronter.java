@@ -9,9 +9,8 @@ import com.mojang.math.Axis;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * 1:1 {@code com.hbm.render.util.HorsePronter}: Pferdemodell ({@code models/mobs/horse.obj}) mit posierbaren Teilen
- * (Drehung um Y, X, Z um feste Gelenkpunkte). Der Aufrufer bindet die Textur ueber den uebergebenen Puffer
- * (Original: Culling aus).
+ * 1:1 {@code com.hbm.render.util.HorsePronter}: horse model ({@code models/mobs/horse.obj}) with poseable parts
+ * (rotation around Y, X, Z about fixed pivot points). Caller binds texture via provided buffer (original: culling disabled).
  */
 public final class HorsePronter {
 

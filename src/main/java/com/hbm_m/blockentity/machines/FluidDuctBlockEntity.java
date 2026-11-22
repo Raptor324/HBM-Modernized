@@ -20,9 +20,6 @@ import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -37,17 +34,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
  //?}
 
  /**
  * BlockEntity трубы. Хранит тип жидкости и управляет MK2 узлом в UniNodespace.
  * <p>
- * Визуал оверлея (neo / colored / silver): в Forge OBJ MTL задаётся {@code forge_TintIndex 1} для слоя
- * «skin»; на Fabric {@link com.hbm_m.client.model.loading.MtlData} читает это поле, JSON {@code mtl_override}
- * подставляет MTL для bake (base / overlay), а блоки труб зарегистрированы в {@code BlockRenderLayerMap}
- * как {@code cutout} в {@link com.hbm_m.client.ClientSetup}, чтобы оверлей с альфой и tint из
- * {@code ColorProviderRegistry.BLOCK} отображался как на Forge (multipart solid + cutout).
+ * Визуал оверлея (neo / colored / silver): в OBJ MTL слой «skin» помечен {@code forge_TintIndex 1},
+ * JSON {@code mtl_override} подставляет MTL для bake (base / overlay), а блоки труб зарегистрированы
+ * как {@code cutout} в {@link com.hbm_m.client.ClientSetup}, чтобы оверлей с альфой отображался
+ * поверх основы.
  *
  * Логика передачи жидкостей:
  *  - Узел (FluidNode) создаётся при загрузке блока/смене типа и разрушается при выгрузке.
@@ -58,7 +53,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
  */
 
 @SuppressWarnings("UnstableApiUsage")
-public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPipeMK2 {
+public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPipeMK2, com.hbm_m.interfaces.ICopiable {
 
     private static final String NBT_FLUID_TYPE = "FluidType";
 
@@ -77,9 +72,33 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
 
     /**
      * Кэш адаптеров для соседних Forge-машин.
-     * Ключ — направление от duct к машине.
+     * Ключ — направление от duct к машине; валидность — по (позиция, blockstate, identity BE).
      */
     private final Map<Direction, ForgeFluidHandlerAdapter> adapterCache = new EnumMap<>(Direction.class);
+    private final Map<Direction, AdapterKey> adapterKeys = new EnumMap<>(Direction.class);
+
+    /** Ключ валидности кэшированного адаптера: сосед, его состояние и позиция. */
+    private static final class AdapterKey {
+        final BlockPos pos;
+        final BlockState state;
+        final BlockEntity be;
+        AdapterKey(BlockPos pos, BlockState state, BlockEntity be) { this.pos = pos; this.state = state; this.be = be; }
+        boolean matches(BlockPos pos, BlockState state, BlockEntity be) {
+            return this.pos.equals(pos) && this.state == state && this.be == be;
+        }
+    }
+
+    private void invalidateAdapterCache() {
+        adapterCache.clear();
+        adapterKeys.clear();
+    }
+
+    @Override
+    public void setBlockState(BlockState state) {
+        super.setBlockState(state);
+        // Смена blockstate (подключения/поворот трубы) — кэш соседей мог устареть.
+        invalidateAdapterCache();
+    }
 
     public FluidDuctBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FLUID_DUCT_BE.get(), pos, state);
@@ -112,7 +131,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
     public void setFluidTypeSilent(Fluid fluid) {
         Fluid prev = this.fluidType;
         this.fluidType = fluid != null ? fluid : Fluids.EMPTY;
-        adapterCache.clear();
+        invalidateAdapterCache();
         setChanged();
 
         if (level instanceof ServerLevel serverLevel) {
@@ -165,7 +184,6 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         }
     }
 
-    //? if forge || neoforge {
     @Override
     public void onLoad() {
         super.onLoad();
@@ -190,17 +208,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
             FluidDuctBlock.refreshAdjacentDucts(level, worldPosition);
         }
     }
-    //?}
 
-    //? if fabric {
-    /*@Override
-    public void setLevel(Level level) {
-        super.setLevel(level);
-        if (level instanceof ServerLevel serverLevel) {
-            ensureNode(serverLevel);
-        }
-    }
-    *///?}
 
     @Override
     public void setRemoved() {
@@ -208,21 +216,19 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
             UniNodespace.destroyNode(serverLevel, node);
         }
         node = null;
-        adapterCache.clear();
+        invalidateAdapterCache();
         super.setRemoved();
     }
 
-    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         if (level instanceof ServerLevel serverLevel && node != null && !node.isExpired()) {
             UniNodespace.destroyNode(serverLevel, node);
         }
         node = null;
-        adapterCache.clear();
+        invalidateAdapterCache();
         super.onChunkUnloaded();
     }
-    //?}
 
     // =====================================================================================
     // Tick — регистрация Forge-машин в сети
@@ -254,7 +260,10 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         entity.ensureNode(serverLevel);
         if (entity.node == null || entity.node.isExpired()) return;
 
-        // Для каждого подключённого соседа, не являющегося трубой, создать адаптер и подписать его
+        // Для каждого подключённого соседа, не являющегося трубой, создать адаптер и подписать его.
+        // Троттлинг подписок до 2 Гц (%10): FluidNet отбрасывает записи по таймауту 3 с —
+        // 2 Гц с запасом покрывает 0.33 Гц; сразу после инвалидации кэша подписка идёт без гейта.
+        boolean throttled = serverLevel.getGameTime() % 10 != 0;
         for (Direction dir : Direction.values()) {
             if (!state.getValue(FluidDuctBlock.PROPERTY_BY_DIRECTION.get(dir))) continue;
 
@@ -266,23 +275,32 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
             // Пропускаем машины, реализующие MK2 напрямую (они вызывают trySubscribe/tryProvide сами)
             if (neighbor instanceof IFluidConnectorMK2) continue;
 
-            // Проверяем, что у соседа есть IFluidHandler на нашей стороне
             Direction sideOfNeighborFacingDuct = dir.getOpposite();
-            boolean hasFluidHandler = checkNeighborFluidHandler(level, neighbor, sideOfNeighborFacingDuct);
-
-            if (!hasFluidHandler) {
+            boolean subscribeNow = !throttled;
+            AdapterKey key = entity.adapterKeys.get(dir);
+            boolean cacheValid = key != null && key.matches(neighborPos, state, neighbor);
+            if (!cacheValid) {
                 entity.adapterCache.remove(dir);
-                continue;
+                entity.adapterKeys.remove(dir);
+                // Проверяем, что у соседа есть IFluidHandler на нашей стороне (дорого — только при инвалидации)
+                if (!checkNeighborFluidHandler(level, neighbor, sideOfNeighborFacingDuct)) {
+                    continue;
+                }
+                ForgeFluidHandlerAdapter fresh = new ForgeFluidHandlerAdapter(level, neighborPos, sideOfNeighborFacingDuct, entity.fluidType);
+                entity.adapterCache.put(dir, fresh);
+                entity.adapterKeys.put(dir, new AdapterKey(neighborPos, state, neighbor));
+                subscribeNow = true; // сразу после (пере)создания — подписываем немедленно
             }
 
             ForgeFluidHandlerAdapter adapter = entity.adapterCache.get(dir);
-            if (adapter == null) {
-                adapter = new ForgeFluidHandlerAdapter(level, neighborPos, sideOfNeighborFacingDuct, entity.fluidType);
-                entity.adapterCache.put(dir, adapter);
-            }
+            if (adapter == null) continue;
 
-            adapter.trySubscribe(entity.fluidType, serverLevel, pos, dir.getOpposite());
+            // Прямой перенос к соседу — каждый тик: троттлинг делит пропускную способность,
+            // а не только стоимость скана. На троттлинге остаётся только подписка в сеть.
             adapter.tryProvide(entity.fluidType, serverLevel, pos, dir.getOpposite());
+            if (subscribeNow) {
+                adapter.trySubscribe(entity.fluidType, serverLevel, pos, dir.getOpposite());
+            }
         }
     }
 
@@ -293,17 +311,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
      * на Fabric — через Fabric Transfer API FluidStorage.SIDED.
      */
     private static boolean checkNeighborFluidHandler(Level level, BlockEntity neighbor, Direction side) {
-        //? if forge {
-        return neighbor.getCapability(ForgeCapabilities.FLUID_HANDLER, side).isPresent();
-         //?}
-        //? if fabric {
-        /*return FluidStorage.SIDED.find(level, neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
-        *///?}
-        //? if neoforge {
-        /*// NeoForge 1.21.1: FluidHandler.BLOCK через level.getCapability (BlockEntity.getCapability убран).
-        return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK,
-                neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
-        *///?}
+        return com.hbm_m.api.fluids.FluidCapabilityAccess.hasFluidHandler(level, neighbor.getBlockPos(), side);
     }
 
     // =====================================================================================
@@ -341,7 +349,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
             Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(tag.getString(NBT_FLUID_TYPE)));
             this.fluidType = f != null ? f : Fluids.EMPTY;
         }
-        adapterCache.clear();
+        invalidateAdapterCache();
         if (level != null && level.isClientSide && !Objects.equals(before, this.fluidType)) {
             refreshClientTintMesh();
         }
@@ -353,10 +361,50 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
      */
     private void refreshClientTintMesh() {
         if (level == null || !level.isClientSide) return;
-        //? if forge || neoforge {
         requestModelDataUpdate();
-         //?}
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
         DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
+    }
+
+    // =====================================================================================
+    // Устройство настройки: тип жидкости + Ctrl-массовая вставка по сети труб (оригинал
+    // TileEntityPipeBaseNT: TOOL_CTRL → changeTypeRecursively, индекс >= длины → очистка).
+    // =====================================================================================
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        if (fluidType != Fluids.EMPTY) {
+            net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+            list.add(net.minecraft.nbt.StringTag.valueOf(BuiltInRegistries.FLUID.getKey(fluidType).toString()));
+            nbt.put("fluids", list);
+        }
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) {
+        net.minecraft.nbt.ListTag list = nbt.getList("fluids", net.minecraft.nbt.Tag.TAG_STRING);
+        if (list.isEmpty()) return;
+
+        // Оригинал: индекс за пределами списка = тип NONE (очистка трубы).
+        Fluid fluid = Fluids.EMPTY;
+        if (index < list.size()) {
+            fluid = com.hbm_m.interfaces.IFluidCopiable.fluidFromString(list.getString(index));
+        }
+
+        if (player != null && com.hbm_m.network.CopyToolKeyState.get(player.getUUID()).ctrl) {
+            com.hbm_m.block.machines.FluidDuctBlock.paintConnectedDuctNetwork(level, pos, fluid);
+        } else {
+            setFluidType(fluid);
+        }
+    }
+
+    @Override
+    public String[] infoForDisplay(Level level, BlockPos pos) {
+        if (fluidType == Fluids.EMPTY) return new String[0];
+        return new String[] {
+                com.hbm_m.inventory.fluid.FluidType.forFluid(fluidType).getUnlocalizedName()
+        };
     }
 }

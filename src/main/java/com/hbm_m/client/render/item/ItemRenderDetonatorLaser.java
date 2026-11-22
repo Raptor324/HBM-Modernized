@@ -1,10 +1,7 @@
-//? if forge || neoforge {
 package com.hbm_m.client.render.item;
 
 import com.hbm_m.client.ClientRenderHandler;
-//? if forge || neoforge {
 import com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat;
-//?}
 import com.hbm_m.client.model.MissileBakedModel;
 import com.hbm_m.client.render.missile.MissileRenderHelper;
 import com.mojang.blaze3d.platform.Lighting;
@@ -22,11 +19,7 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?} else {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
 import org.joml.Matrix4f;
 
 import java.util.List;
@@ -34,13 +27,13 @@ import java.util.Random;
 
 /**
  * 1.7.10 {@code ItemRenderDetonatorLaser} port for {@link com.hbm_m.item.grenades_and_activators.RangeDetonatorItem}.
- * Позиция/поворот/масштаб — из {@code display} в {@code models/item/range_detonator.json}.
+ * Position/rotation/scale come from {@code display} in {@code models/item/range_detonator.json}.
  */
 public class ItemRenderDetonatorLaser extends BlockEntityWithoutLevelRenderer {
 
     public static final ItemRenderDetonatorLaser INSTANCE = new ItemRenderDetonatorLaser();
 
-    /** OBJ в block-координатах (~0–2); JSON {@code display.scale} настраивает поверх. */
+    /** OBJ in block coordinates (~0-2); the JSON {@code display.scale} adjusts on top. */
     private static final float BASE_MESH_SCALE = 0.125F;
 
     private ItemRenderDetonatorLaser() {
@@ -52,13 +45,11 @@ public class ItemRenderDetonatorLaser extends BlockEntityWithoutLevelRenderer {
     public void renderByItem(ItemStack stack, ItemDisplayContext displayContext, PoseStack poseStack,
                              MultiBufferSource buffer, int packedLight, int packedOverlay) {
         BakedModel displayModel = MissileRenderHelper.resolveBakedModel(stack);
-        // Phase C: Anzeige-Waechter (ItemTransformHelperCompat) laufen jetzt auch auf NeoForge -> gleicher Pfad
-        //? if forge || neoforge {
+        // Phase C: ItemTransformHelperCompat runs on NeoForge too -> same path
         MissileBakedModel model = ItemTransformHelperCompat.unwrapMissileDelegate(displayModel);
         if (model == null) {
             return;
         }
-        //?}
 
         if (displayContext == ItemDisplayContext.GUI) {
             Lighting.setupFor3DItems();
@@ -69,11 +60,9 @@ public class ItemRenderDetonatorLaser extends BlockEntityWithoutLevelRenderer {
                 || displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
         poseStack.translate(0.5F, 0.5F, 0.5F);
         
-        //? if forge || neoforge {
         ItemTransformHelperCompat.resolveDisplayTransforms(displayModel, model)
                 .getTransform(displayContext)
                 .apply(leftHand, poseStack);
-        //?}
         poseStack.scale(BASE_MESH_SCALE, BASE_MESH_SCALE, BASE_MESH_SCALE);
 
         MissileRenderHelper.bindBlockAtlas();
@@ -177,4 +166,3 @@ public class ItemRenderDetonatorLaser extends BlockEntityWithoutLevelRenderer {
         poseStack.popPose();
     }
 }
-//?}

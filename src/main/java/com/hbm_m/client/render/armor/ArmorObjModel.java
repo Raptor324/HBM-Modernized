@@ -21,9 +21,9 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Schlanker Wavefront-Leser nach dem Vorbild von {@code HFRWavefrontObject} (1.7.10): Gruppen ("o"/"g"),
- * Dreiecke und Vierecke, UV mit gespiegeltem V ({@code 1 - v}), Vertexnormalen falls vorhanden.
- * {@link #renderPart} entspricht {@code IModelCustom.renderPart}.
+ * Lightweight Wavefront reader following {@code HFRWavefrontObject} (1.7.10): groups ("o"/"g"),
+ * triangles and quads, UV with inverted V ({@code 1 - v}), vertex normals if present.
+ * {@link #renderPart} corresponds to {@code IModelCustom.renderPart}.
  */
 public final class ArmorObjModel {
 
@@ -45,6 +45,39 @@ public final class ArmorObjModel {
 
     private static ArmorObjModel load(ResourceLocation location) {
         ArmorObjModel model = new ArmorObjModel();
+
+        // nmesh-first: compiled .nmesh data (or NMeshLoader resource pack fallback) instead of custom Wavefront reader.
+        var nmesh = com.hbm_m.client.model.nmesh.NMeshLoader.load(location);
+        if (nmesh != null) {
+            try {
+                for (var sm : nmesh.subMeshes()) {
+                    String key = sm.objectName != null && !sm.objectName.isEmpty() ? sm.objectName
+                            : (sm.groupName != null && !sm.groupName.isEmpty() ? sm.groupName : "Default");
+                    float[] verts = sm.vertices;
+                    int[] idx = sm.indices;
+                    List<Face> faces = model.groups.computeIfAbsent(key, k -> new ArrayList<>());
+                    for (int i = 0; i + 2 < idx.length; i += 3) {
+                        float[][] pos = new float[3][];
+                        float[][] uv = new float[3][];
+                        float[][] nor = new float[3][];
+                        for (int c = 0; c < 3; c++) {
+                            int b = idx[i + c] * 8;
+                            pos[c] = new float[] {verts[b + 0], verts[b + 1], verts[b + 2]};
+                            // This reader already flips V on load (1 - v); nmesh provides raw V.
+                            uv[c] = new float[] {verts[b + 6], 1 - verts[b + 7]};
+                            float nx = verts[b + 3], ny = verts[b + 4], nz = verts[b + 5];
+                            nor[c] = (nx == 0 && ny == 0 && nz == 0) ? null : new float[] {nx, ny, nz};
+                        }
+                        faces.add(new Face(pos, uv, nor));
+                    }
+                }
+                return model;
+            } catch (Exception e) {
+                MainRegistry.LOGGER.warn("ArmorObjModel: nmesh conversion of {} failed: {}", location, e.toString());
+                model = new ArmorObjModel(); // Fresh restart for legacy path
+            }
+        }
+
         List<float[]> v = new ArrayList<>();
         List<float[]> vt = new ArrayList<>();
         List<float[]> vn = new ArrayList<>();
@@ -90,12 +123,12 @@ public final class ArmorObjModel {
         return model;
     }
 
-    /** Original {@code renderAll}: alle Gruppen. */
+    /** Original {@code renderAll}: all groups. */
     public void renderAll(PoseStack poseStack, VertexConsumer vc, int light, float r, float g, float b, float a) {
         for (String name : groups.keySet()) renderPart(name, poseStack, vc, light, r, g, b, a);
     }
 
-    /** Original {@code renderPart}: eine Gruppe mit der aktuellen Matrix in den Puffer schreiben. */
+    /** Original {@code renderPart}: write one group with the current matrix to the buffer. */
     public void renderPart(String name, PoseStack poseStack, VertexConsumer vc, int light, float r, float g, float b, float a) {
         List<Face> faces = groups.get(name);
         if (faces == null) return;
@@ -107,19 +140,14 @@ public final class ArmorObjModel {
         for (Face face : faces) {
             float[] fn = face.normal[0] == null ? faceNormal(face.pos) : null;
             int n = face.pos.length;
-            // Die Render-Typen zeichnen Vierecke: Dreiecke bekommen den letzten Eckpunkt doppelt.
+            // Render types draw quads: triangles duplicate the final vertex.
             for (int i = 0; i < 4; i++) {
                 int k = Math.min(i, n - 1);
                 float[] p = face.pos[k];
                 float[] uv = face.uv[k];
                 float[] no = face.normal[k] != null ? face.normal[k] : fn;
-                //? if < 1.21.1 {
-                vc.vertex(mat, p[0], p[1], p[2]).color(r, g, b, a).uv(uv[0], uv[1]).overlayCoords(OverlayTexture.NO_OVERLAY)
-                        .uv2(light).normal(nmat, no[0], no[1], no[2]).endVertex();
-                //?} else {
-                /*vc.addVertex(mat, p[0], p[1], p[2]).setColor(r, g, b, a).setUv(uv[0], uv[1]).setOverlay(OverlayTexture.NO_OVERLAY)
-                        .setLight(light).setNormal(pose, no[0], no[1], no[2]);
-                *///?}
+                com.hbm_m.platform.RenderHooks.vertexFull(vc, mat, p[0], p[1], p[2], r, g, b, a,
+                        uv[0], uv[1], OverlayTexture.NO_OVERLAY, light, nmat, no[0], no[1], no[2]);
             }
         }
     }

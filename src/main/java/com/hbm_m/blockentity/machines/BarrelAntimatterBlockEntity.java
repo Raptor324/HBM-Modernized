@@ -35,7 +35,9 @@ public class BarrelAntimatterBlockEntity extends MachineFluidTankBlockEntity {
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable(ModBlocks.BARREL_ANTIMATTER.get().getDescriptionId());
+        // Паритет NEXT BlockEntityBarrel.getDefaultName: у всех бочек общий заголовок GUI
+        // "Barrel" (container.hbm.barrel); имя материала остаётся у блока/предмета.
+        return Component.translatable("container.hbm_m.barrel");
     }
 
     @Nullable

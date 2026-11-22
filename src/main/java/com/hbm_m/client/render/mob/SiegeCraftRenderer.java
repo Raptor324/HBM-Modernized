@@ -29,9 +29,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * 1:1 {@code RenderSiegeCraft}: kreisende Scheibe ({@code siege_ufo.obj}, Textur je Stufe), leuchtende Spulen in
- * Lebensfarbe (rot -> gruen), bei aktivem Strahl ein Glanz ueber dem Rumpf, zufaellige Blitzboegen an den acht
- * Spulen und die drei Strahlen zum fixierten Zielpunkt.
+ * 1:1 {@code RenderSiegeCraft}: orbiting disc ({@code siege_ufo.obj}, texture per tier), glowing coils in
+ * health color (red -> green), sheen over hull while beam is active, random electric arcs at eight coils
+ * and three beams to locked target.
  */
 public class SiegeCraftRenderer extends EntityRenderer<EntitySiegeCraft> {
 
@@ -59,7 +59,7 @@ public class SiegeCraftRenderer extends EntityRenderer<EntitySiegeCraft> {
 
         SIEGE_UFO.renderPartEntity("UFO", ps, buffers.getBuffer(RenderType.entityCutoutNoCull(getTextureLocation(ufo))), light, OverlayTexture.NO_OVERLAY, 1F, 1F, 1F, 1F);
 
-        // Spulen ohne Textur und Licht, Farbe nach Restleben
+        // Coils without texture and lighting, color reflects remaining health
         float health = ufo.getHealth() / ufo.getMaxHealth();
         SIEGE_UFO.renderPartEntity("Coils", ps, buffers.getBuffer(RenderType.entityCutoutNoCull(GunGL.WHITE)), LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, 1F - health, health, 0F, 1F);
 

@@ -1,6 +1,7 @@
 package com.hbm_m.test;
 
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.industrial.ItemBlueprints;
 import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
 import com.hbm_m.module.machine.MachineModuleBase;
@@ -22,13 +23,9 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-//? if forge {
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
-*///?}
 
 import java.util.List;
 import java.util.Map;
@@ -43,7 +40,7 @@ import java.util.Map;
  *   <li>{@link ModRecipeIndex} — cached recipe index (byId, byPool, ordered).</li>
  *   <li>{@link AssemblerRecipe} — structure, {@code blueprintPool}, {@code requiresBlueprint}.</li>
  *   <li>{@link ChemicalPlantRecipe} — fluid inputs/outputs, {@code blueprintPool}.</li>
- *   <li>{@link com.hbm_m.item.industrial.ItemBlueprints} — writing/reading pool from NBT, {@code isBlueprintPoolAllowed}.</li>
+ *   <li>{@link ItemBlueprints} — writing/reading pool from NBT, {@code isBlueprintPoolAllowed}.</li>
  *   <li>{@link MachineModuleBase} — energy gate ({@code hasEnoughEnergyToStartCraft}/{@code hasEnoughEnergyForTick}).</li>
  *   <li>{@link MachineModuleAdvancedAssembler} — {@code update}, progress, {@code processCraft}.</li>
  *   <li>{@link MachineModuleChemplant} — recipe selection by ID, blueprint-gating.</li>
@@ -380,13 +377,13 @@ public final class MachineCraftingGameTest {
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    //  Group 5: Blueprint pool — ItemBlueprintFolder, isBlueprintPoolAllowed.
+    //  Group 5: Blueprint pool — ItemBlueprints, isBlueprintPoolAllowed.
     // ════════════════════════════════════════════════════════════════════════
 
     @GameTest(template = "empty3x3x3", batch = "machines", timeoutTicks = 100)
     public static void blueprintFolder_emptyByDefault(GameTestHelper helper) {
         ItemStack folder = new ItemStack(ModItems.BLUEPRINTS.get());
-        String pool = com.hbm_m.item.industrial.ItemBlueprints.getBlueprintPool(folder);
+        String pool = ItemBlueprints.getBlueprintPool(folder);
         check(pool != null && pool.isEmpty(),
                 "Fresh blueprint folder pool must be empty string, got: " + pool);
         helper.succeed();
@@ -394,8 +391,8 @@ public final class MachineCraftingGameTest {
 
     @GameTest(template = "empty3x3x3", batch = "machines", timeoutTicks = 100)
     public static void blueprintFolder_writeReadPool(GameTestHelper helper) {
-        ItemStack folder = com.hbm_m.item.industrial.ItemBlueprints.make("machines");
-        String pool = com.hbm_m.item.industrial.ItemBlueprints.getBlueprintPool(folder);
+        ItemStack folder = ItemBlueprints.make("machines");
+        String pool = ItemBlueprints.getBlueprintPool(folder);
         check("machines".equals(pool),
                 "Blueprint folder must read back written pool 'machines', got: " + pool);
         helper.succeed();
@@ -404,7 +401,7 @@ public final class MachineCraftingGameTest {
     @GameTest(template = "empty3x3x3", batch = "machines", timeoutTicks = 100)
     public static void blueprintFolder_emptyStackPool(GameTestHelper helper) {
         // An empty stack (ItemStack.EMPTY) must not crash getBlueprintPool.
-        String pool = com.hbm_m.item.industrial.ItemBlueprints.getBlueprintPool(ItemStack.EMPTY);
+        String pool = ItemBlueprints.getBlueprintPool(ItemStack.EMPTY);
         check(pool != null && pool.isEmpty(),
                 "EMPTY stack pool must be empty string, got: " + pool);
         helper.succeed();
@@ -553,27 +550,14 @@ public final class MachineCraftingGameTest {
         List<AssemblerRecipe> recipes = RecipeHooks.getAllRecipes(level, AssemblerRecipe.Type.INSTANCE);
         // A silent succeed with no recipes would mask a completely broken craft.
         check(!recipes.isEmpty(), "No recipes found to execute test — see assemblerRecipes_loaded for diagnostics");
-        // Erstes Rezept ohne Fluessigkeiten und ohne Blaupausen-Pool nehmen: seit dem 1:1-Port
-        // (Fluessigkeitstanks + Blaupausenpflicht wie im Original ModuleMachineAssembler) kann
-        // recipes.get(0) ein Rezept sein, das ohne Tank/Blaupause zu Recht nie startet.
-        AssemblerRecipe recipe = null;
-        for (AssemblerRecipe r : recipes) {
-            if (!r.getFluidInputs().isEmpty() || !r.getFluidOutputs().isEmpty()) continue;
-            if (r.getBlueprintPool() != null && !r.getBlueprintPool().isEmpty()) continue;
-            int n = 0;
-            boolean usable = true;
-            for (net.minecraft.world.item.crafting.Ingredient ing : r.getIngredients()) {
-                if (ing.isEmpty()) continue;
-                ItemStack[] items = ing.getItems();
-                if (items.length == 0 || items[0].isEmpty()) { usable = false; break; }
-                n++;
-            }
-            if (!usable || n == 0 || n > 12) continue;
-            if (r.getResultItem(level.registryAccess()).isEmpty()) continue;
-            recipe = r;
-            break;
-        }
-        check(recipe != null, "No item-only assembler recipe without blueprint pool found");
+        // Рецепт без blueprint-pool (тест не ставит чертёж) и не более 12 РАЗЛИЧНЫХ
+        // ингредиентов — по числу input-слотов модуля. Порядок рецептов не гарантирован.
+        AssemblerRecipe recipe = recipes.stream()
+                .filter(r -> r.getBlueprintPool() == null || r.getBlueprintPool().isEmpty())
+                .filter(r -> !r.getInputDisplaySlots().isEmpty() && r.getInputDisplaySlots().size() <= 12)
+                .findFirst().orElse(null);
+        check(recipe != null,
+                "No assembler recipe without blueprint pool and with <= 12 distinct inputs found");
         int duration = recipe.getDuration();
         long power = recipe.getPowerConsumption();
         long totalEnergy = power * duration;
@@ -581,15 +565,12 @@ public final class MachineCraftingGameTest {
         ModItemStackHandler inv = makeInventory(20);
         MachineModuleAdvancedAssembler mod = makeAssemblerModule(level, inv, totalEnergy * 2, totalEnergy * 2);
 
-        // Fill the input slots with items matching the ingredients.
-        // Ingredients are a NonNullList<Ingredient> (expanded by count).
-        net.minecraft.core.NonNullList<net.minecraft.world.item.crafting.Ingredient> ings =
-                recipe.getIngredients();
+        // Заполняем input-слоты по РАЗЛИЧНЫМ ингредиентам рецепта (displaySlots —
+        // ingredient+count в авторской формулировке), а не по развёрнутому списку:
+        // у крупных рецептов развёрнутый список длиннее числа слотов.
         int inputSlotIdx = 0;
-        for (net.minecraft.world.item.crafting.Ingredient ing : ings) {
-            if (ing.isEmpty()) continue;
-            // Take the first matching stack from the Ingredient.
-            ItemStack[] matchingStacks = ing.getItems();
+        for (com.hbm_m.recipe.AssemblerRecipe.AssemblerInputSlot slot : recipe.getInputDisplaySlots()) {
+            ItemStack[] matchingStacks = slot.ingredient().getItems();
             if (matchingStacks.length == 0 || matchingStacks[0].isEmpty()) continue;
             ItemStack sample = matchingStacks[0].copy();
             sample.setCount(sample.getMaxStackSize()); // with headroom
@@ -608,7 +589,14 @@ public final class MachineCraftingGameTest {
         // After one update with speed=duration the progress must reach maxProgress and the craft must complete.
         ItemStack output = inv.getStackInSlot(16);
         check(!output.isEmpty(),
-                "Assembler module must produce output after full cycle. Output=" + output);
+                "Assembler module must produce output after full cycle. Output=" + output
+                        + "; progress=" + mod.getProgress()
+                        + "; didProcess=" + mod.didProcess
+                        + "; preferred=" + (mod.getPreferredRecipe() != null)
+                        + "; canProcess=" + mod.canProcess(recipe)
+                        + "; duration=" + duration + "; power=" + power
+                        + "; filledSlots=" + inputSlotIdx
+                        + "; totalRecipes=" + recipes.size());
 
         // Extra check: the output must match the recipe result.
         ItemStack expected = recipe.getResultItem(level.registryAccess());
@@ -739,7 +727,7 @@ public final class MachineCraftingGameTest {
         check(mod.peekRecipe(level) != null, "peekRecipe must resolve before blueprint mismatch");
 
         // Folder with a different pool.
-        ItemStack wrongFolder = com.hbm_m.item.industrial.ItemBlueprints.make(pool + "_wrong");
+        ItemStack wrongFolder = ItemBlueprints.make(pool + "_wrong");
 
         mod.updateAndGetDirty(1.0, 1.0, true, wrongFolder);
         check(mod.peekRecipe(level) == null,
@@ -784,7 +772,7 @@ public final class MachineCraftingGameTest {
                 inTanks, outTanks, level);
         mod.setSelectedRecipe(id);
 
-        ItemStack correctFolder = com.hbm_m.item.industrial.ItemBlueprints.make(pool);
+        ItemStack correctFolder = ItemBlueprints.make(pool);
 
         mod.updateAndGetDirty(1.0, 1.0, true, correctFolder);
         ChemicalPlantRecipe peeked = mod.peekRecipe(level);
@@ -815,5 +803,166 @@ public final class MachineCraftingGameTest {
         List<ChemicalPlantRecipe> list = RecipeHooks.getAllRecipes(level, ChemicalPlantRecipe.Type.INSTANCE);
         check(list != null, "getAllRecipes(chemical_plant) must not return null");
         helper.succeed();
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  Group 8: Auto recipe pick with a blueprint folder (user bug report
+    //  2026-10-08: folder "plates" + iron ingot — recipe picks, machine jerks
+    //  and stops crafting; removing and re-inserting the resource resumes it).
+    // ════════════════════════════════════════════════════════════════════════
+
+    /** The plate-from-iron-ingots recipe (pool "plates"), or null. */
+    private static AssemblerRecipe findPlatesIronRecipe(Level level) {
+        for (AssemblerRecipe r : ModRecipeIndex.of(level.getRecipeManager())
+                .getAll(AssemblerRecipe.Type.INSTANCE)) {
+            if (!"plates".equals(r.getBlueprintPool())) continue;
+            for (com.hbm_m.recipe.AssemblerRecipe.AssemblerInputSlot slot : r.getInputDisplaySlots()) {
+                for (ItemStack s : slot.ingredient().getItems()) {
+                    if (s.is(Items.IRON_INGOT)) return r;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static ItemStack makePlatesFolder() {
+        return ItemBlueprints.make("plates");
+    }
+
+    @GameTest(template = "empty3x3x3", batch = "machines", timeoutTicks = 400)
+    public static void assemblerModule_folderAutoPick_ironPlates_craftsContinuously(GameTestHelper helper) {
+        Level level = helper.getLevel();
+        check(findPlatesIronRecipe(level) != null,
+                "assembler recipe 'iron plates from ingots' with pool 'plates' must exist");
+
+        ModItemStackHandler inv = makeInventory(20);
+        inv.setStackInSlot(1, makePlatesFolder());
+        inv.setStackInSlot(4, new ItemStack(Items.IRON_INGOT, 10));
+        MachineModuleAdvancedAssembler mod = makeAssemblerModule(level, inv, 1_000_000L, 1_000_000L);
+
+        // Insertion tick: auto-pick must fire and select the iron plate recipe.
+        mod.update(1.0, 1.0, true, inv.getStackInSlot(1));
+        check(mod.getCurrentRecipe() != null,
+                "auto-pick must select the iron plate recipe with folder(plates)+iron present");
+
+        // ~3 craft cycles at duration 60 without any further slot changes.
+        for (int i = 0; i < 200; i++) {
+            mod.update(1.0, 1.0, true, inv.getStackInSlot(1));
+        }
+        ItemStack out = inv.getStackInSlot(16);
+        check(!out.isEmpty(),
+                "output must contain plates after 200 ticks; progress=" + mod.getProgress()
+                        + "; currentRecipe=" + (mod.getCurrentRecipe() != null));
+        check(inv.getStackInSlot(4).getCount() < 10,
+                "iron must be consumed across cycles, left=" + inv.getStackInSlot(4).getCount());
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty3x3x3", batch = "machines", timeoutTicks = 100)
+    public static void assemblerModule_folderAutoPick_tooFewIngots_noPick(GameTestHelper helper) {
+        Level level = helper.getLevel();
+        AssemblerRecipe recipe = findPlatesIronRecipe(level);
+        check(recipe != null, "iron plate recipe must exist");
+
+        int ingotsNeeded = recipe.getInputDisplaySlots().stream()
+                .filter(s -> {
+                    for (ItemStack st : s.ingredient().getItems()) {
+                        if (st.is(Items.IRON_INGOT)) return true;
+                    }
+                    return false;
+                })
+                .mapToInt(com.hbm_m.recipe.AssemblerRecipe.AssemblerInputSlot::count)
+                .sum();
+        check(ingotsNeeded > 1, "recipe must need more than 1 ingot for this test to be meaningful");
+
+        ModItemStackHandler inv = makeInventory(20);
+        inv.setStackInSlot(1, makePlatesFolder());
+        // Fewer ingots than the recipe's total count → no pick at all.
+        inv.setStackInSlot(4, new ItemStack(Items.IRON_INGOT, ingotsNeeded - 1));
+        MachineModuleAdvancedAssembler mod = makeAssemblerModule(level, inv, 1_000_000L, 1_000_000L);
+
+        mod.update(1.0, 1.0, true, inv.getStackInSlot(1));
+        check(mod.getCurrentRecipe() == null,
+                "auto-pick must NOT select a recipe whose full ingredient count is not present");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty3x3x3", batch = "machines", timeoutTicks = 400)
+    public static void assemblerModule_folderAutoPick_reinsert_recovers(GameTestHelper helper) {
+        Level level = helper.getLevel();
+        check(findPlatesIronRecipe(level) != null, "iron plate recipe must exist");
+
+        ModItemStackHandler inv = makeInventory(20);
+        inv.setStackInSlot(1, makePlatesFolder());
+        MachineModuleAdvancedAssembler mod = makeAssemblerModule(level, inv, 1_000_000L, 1_000_000L);
+
+        // Empty machine: no recipe.
+        mod.update(1.0, 1.0, true, inv.getStackInSlot(1));
+        check(mod.getCurrentRecipe() == null, "no pick with empty inputs");
+
+        // First insert: 3 ingots — exactly one full craft's worth.
+        inv.setStackInSlot(4, new ItemStack(Items.IRON_INGOT, 3));
+        for (int i = 0; i < 70; i++) mod.update(1.0, 1.0, true, inv.getStackInSlot(1));
+        check(!inv.getStackInSlot(16).isEmpty(),
+                "first insert must complete a craft; progress=" + mod.getProgress());
+
+        // Remove the resource (craft stops, inputs empty).
+        inv.setStackInSlot(4, ItemStack.EMPTY);
+        for (int i = 0; i < 10; i++) mod.update(1.0, 1.0, true, inv.getStackInSlot(1));
+
+        // Re-insert the SAME resource: crafting must resume — this is the exact
+        // user-reported scenario (remove from GUI, put back).
+        inv.setStackInSlot(4, new ItemStack(Items.IRON_INGOT, 3));
+        boolean pickedAgain = false;
+        for (int i = 0; i < 70; i++) {
+            mod.update(1.0, 1.0, true, inv.getStackInSlot(1));
+            if (mod.isProcessing()) pickedAgain = true;
+        }
+        check(pickedAgain, "re-inserting the resource must resume crafting");
+        check(inv.getStackInSlot(16).getCount() >= 4, "second craft must complete");
+        helper.succeed();
+    }
+
+    /**
+     * BE-level repro of the user report: folder "plates" + iron ingots into the REAL
+     * MachineAdvancedAssemblerBlockEntity (selectedRecipeId / setPreferredRecipe interplay
+     * included). Insert → craft; remove → stop; re-insert → crafting must resume.
+     */
+    @GameTest(template = "empty5x5x5", batch = "machines", timeoutTicks = 600)
+    public static void assemblerBE_folderAutoPick_reinsert(GameTestHelper helper) {
+        Level level = helper.getLevel();
+        check(findPlatesIronRecipe(level) != null, "iron plate recipe must exist");
+        helper.setBlock(new BlockPos(1, 1, 1), com.hbm_m.block.ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get());
+        BlockEntity beRaw = helper.getBlockEntity(new BlockPos(1, 1, 1));
+        check(beRaw instanceof com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity,
+                "block must create the advanced assembler BE");
+        com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity be =
+                (com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity) beRaw;
+        ModItemStackHandler inv = be.getInventory();
+        inv.setStackInSlot(1, makePlatesFolder());
+
+        // t+5: first insert with a charged buffer.
+        helper.startSequence().thenExecuteAfter(5, () -> {
+            be.receiveEnergy(1_000_000L, false);
+            inv.setStackInSlot(4, new ItemStack(Items.IRON_INGOT, 3));
+        });
+        // t+80: first craft must be done.
+        helper.startSequence().thenExecuteAfter(80, () -> {
+            check(!inv.getStackInSlot(16).isEmpty(),
+                    "first insert must complete a craft; out=" + inv.getStackInSlot(16));
+            inv.setStackInSlot(4, ItemStack.EMPTY);
+        });
+        // t+90: re-insert the same resource — the user-reported recovery path.
+        helper.startSequence().thenExecuteAfter(90, () -> {
+            be.receiveEnergy(1_000_000L, false);
+            inv.setStackInSlot(4, new ItemStack(Items.IRON_INGOT, 3));
+        });
+        // t+170: second craft must be done.
+        helper.startSequence().thenExecuteAfter(170, () -> {
+            check(inv.getStackInSlot(16).getCount() >= 4,
+                    "second craft must complete after re-insert; out=" + inv.getStackInSlot(16)
+                            + " iron=" + inv.getStackInSlot(4).getCount());
+            helper.succeed();
+        }).thenSucceed();
     }
 }

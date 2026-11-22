@@ -2,7 +2,7 @@
 package com.hbm_m.powerarmor.render;
 
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.mixin.LivingEntityRendererInvoker;
+import com.hbm_m.mixin.client.LivingEntityRendererInvoker;
 import com.hbm_m.powerarmor.layer.AJROPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.AJRPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.BismuthPowerArmorLayer;
@@ -79,6 +79,10 @@ public final class ClientPowerArmorRenderForge {
         accessor.hbm_m$getLayers().add(new com.hbm_m.client.render.armor.ObjArmorLayer((LivingEntityRenderer) renderer));
         accessor.hbm_m$getLayers().add(new com.hbm_m.client.render.armor.ArmorAccessoryLayer((LivingEntityRenderer) renderer));
         accessor.hbm_m$getLayers().add(new GasMaskLayer((LivingEntityRenderer) renderer));
+        // Костюмы химзащиты - по слою на окрас (общая геометрия, разные текстуры).
+        for (com.hbm_m.item.hazmat.HazmatArmorItem.Variant variant : com.hbm_m.item.hazmat.HazmatArmorItem.Variant.values()) {
+            accessor.hbm_m$getLayers().add(new com.hbm_m.item.hazmat.render.HazmatArmorLayer<>((LivingEntityRenderer) renderer, variant));
+        }
     }
 
     private ClientPowerArmorRenderForge() {}

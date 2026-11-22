@@ -14,8 +14,8 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Gegenstueck zu {@code LogicBlock.getIcon(IBlockAccess, ...)}: ist eine Tarnung gesetzt, wird deren Modell gezeichnet,
- * sonst das eigene Modell des Logikblocks. Der unsichtbare Logikblock zeichnet nichts.
+ * Counterpart to {@code LogicBlock.getIcon(IBlockAccess, ...)}: if camouflage is set, render that model;
+ * otherwise render the logic block's own model. The invisible logic block renders nothing.
  */
 public class LogicBlockRenderer implements com.hbm_m.client.render.HbmBerBounds<LogicBlockEntity> {
 

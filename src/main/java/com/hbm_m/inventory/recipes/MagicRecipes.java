@@ -86,7 +86,6 @@ public class MagicRecipes {
                 () -> Ingredient.of(ModItems.PELLET_CHARGED.get()),
                 () -> Ingredient.of(ModMaterialItems.item(ModMaterials.DINEUTRONIUM, MaterialShape.INGOT)),
                 () -> Ingredient.of(ModMaterialItems.item(ModMaterials.DINEUTRONIUM, MaterialShape.INGOT))));
-
         // Алмазная кувалда
         recipes.add(new MagicRecipe(ModItems.DIAMOND_GAVEL,
                 () -> Ingredient.of(ModBlocks.GRAVEL_DIAMOND.get().asItem()),

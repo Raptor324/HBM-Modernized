@@ -23,7 +23,8 @@ public class ArmorNCRPA extends ModPowerArmorItem implements IPAWeaponsProvider 
 
     public ArmorNCRPA(ModArmorMaterials material, Type type, Properties properties, String texture,
                       long maxPower, long chargeRate, long consumption, long drain) {
-        super(material, type, properties, texture, maxPower, chargeRate, consumption, drain);
+        // ModPowerArmorItem nimmt PowerArmorSpecs; texture wird (wie dort dokumentiert) nicht an die Basisklasse gereicht.
+        super(material, type, properties, new PowerArmorSpecs(maxPower, chargeRate, drain, consumption));
     }
 
     private static final UUID speed = UUID.fromString("6ab858ba-d712-485c-bae9-e5e765fc555a");

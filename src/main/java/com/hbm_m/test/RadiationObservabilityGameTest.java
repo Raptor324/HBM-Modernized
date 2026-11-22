@@ -24,13 +24,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
 
 /**
  * Radiation observability via instruments: the Geiger counter (item and block) and the dosimeter.
@@ -71,15 +66,16 @@ public final class RadiationObservabilityGameTest {
 
     /**
      * Version-compatible creation of a mock player:
-     * 1.20.1 (forge): eigener Ueberlebens-Spieler - {@code makeMockPlayer()} ist dort fest
-     * {@code isCreative() == true}, und ContaminationUtil.contaminate verschont Kreativspieler
-     * (Original-Regel), wodurch die 200-Tick-Pruefung auf Forge nie Dosis sah;
-     * 1.21.1 (neoforge): {@code makeMockPlayer(GameType.SURVIVAL)}.
+     * 1.20.1 (forge): {@code makeMockPlayer()};
+     * 1.21.1 (neoforge): {@code makeMockPlayer(GameType)}.
      */
     private static Player makePlayer(GameTestHelper helper) {
         //? if < 1.21.1 {
+        // ВАЖНО: ванильный makeMockPlayer() на 1.20.1 возвращает КРЕАТИВНОГО игрока,
+        // а ContaminationUtil.contaminate игнорирует креатив — для тестов загрязнения
+        // нужен survival-игрок (см. GasGameTest.makeSurvivalPlayer).
         return new Player(helper.getLevel(), BlockPos.ZERO, 0.0F,
-                new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "test-mock-player")) {
+                new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "rad-test-player")) {
             @Override
             public boolean isSpectator() {
                 return false;
@@ -92,7 +88,7 @@ public final class RadiationObservabilityGameTest {
         };
         //?} else {
         /*return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        *///?}
+         *///?}
     }
 
     /**

@@ -65,9 +65,7 @@ public class FusionCollectorBlockEntity extends BlockEntity implements com.hbm_m
 
     private AABB renderBounds = null;
 
-    //? if forge {
     @Override
-    //?}
     public AABB getRenderBoundingBox() {
         if (renderBounds == null) {
             renderBounds = new AABB(

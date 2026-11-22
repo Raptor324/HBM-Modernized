@@ -35,7 +35,6 @@ public class RailGenericBlock extends RailBlock {
         this.booster = booster;
     }
 
-    //? if forge || neoforge {
     @Override
     public float getRailMaxSpeed(BlockState state, Level level, BlockPos pos, AbstractMinecart cart) {
         return maxSpeed;
@@ -48,7 +47,6 @@ public class RailGenericBlock extends RailBlock {
             cart.setDeltaMovement(m.x * 1.15F, m.y * 1.15F, m.z * 1.15F);
         }
     }
-    //?}
 
     @Override
     //? if < 1.21.1 {

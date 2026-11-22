@@ -11,11 +11,14 @@ import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Baked model for rendering Bismuth power armor in GUI/hand.
  * Uses the same multipart baked model infrastructure as T51/AJR.
  */
+@OnlyIn(Dist.CLIENT)
 public class BismuthArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final String[] BISMUTH_ORDER = {

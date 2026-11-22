@@ -249,7 +249,7 @@ public class MachinePyroOvenBlockEntity extends com.hbm_m.blockentity.MachinePol
         ItemStack result = recipe.getOutputItem();
         if (result != null && !result.isEmpty() && !out.isEmpty()) {
             if (result.getCount() + out.getCount() > out.getMaxStackSize()) return false; // zu viel Ausgangsitem
-            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(out, result)) return false; // Ausgangsitem passt nicht
+            if (!com.hbm_m.platform.StackNbt.sameItemSameTags(out, result)) return false; // Ausgangsitem passt nicht
         }
 
         return true;

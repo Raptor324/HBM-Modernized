@@ -1,12 +1,18 @@
 package com.hbm_m.blockentity.network.radio;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.api.item.ItemHandlerAccess;
 import com.hbm_m.block.machines.radio.RadioTorchBaseBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.filter.ModulePatternMatcher;
 import com.hbm_m.inventory.menu.radio.RadioTorchCounterMenu;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -16,11 +22,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
-//?}
 
 /**
  * Port of {@code TileEntityRadioTorchCounter} (1.7.10 Original) - 3 independent filter-pattern
@@ -51,8 +52,7 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
         BlockEntity sourceBe = level.getBlockEntity(sourcePos);
         if (sourceBe == null) return;
 
-        //? if forge {
-        IItemHandler handler = sourceBe.getCapability(ForgeCapabilities.ITEM_HANDLER, facing).orElse(null);
+        var handler = ItemHandlerAccess.getItemHandler(level, sourcePos, facing.getOpposite());
         if (handler == null) return;
 
         for (int i = 0; i < SLOT_COUNT; i++) {
@@ -73,29 +73,6 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
             if (be.lastCount[i] != count) level.sendBlockUpdated(pos, state, state, 2);
             be.lastCount[i] = count;
         }
-        //?} elif neoforge {
-        /*net.neoforged.neoforge.items.IItemHandler handler = com.hbm_m.platform.HbmCaps.get(sourceBe, com.hbm_m.platform.HbmCap.ITEM_HANDLER, facing).orElse(null);
-        if (handler == null) return;
-
-        for (int i = 0; i < SLOT_COUNT; i++) {
-            if (be.channel[i] == null || be.channel[i].isEmpty()) continue;
-            ItemStack pattern = be.inventory.getStackInSlot(i);
-            if (pattern.isEmpty()) continue;
-
-            int count = 0;
-            for (int j = 0; j < handler.getSlots(); j++) {
-                ItemStack stack = handler.getStackInSlot(j);
-                if (!stack.isEmpty() && be.matcher.isValidForFilter(pattern, i, stack)) count += stack.getCount();
-            }
-
-            if (be.polling || be.lastCount[i] != count) {
-                RTTYNetwork.broadcast(level, be.channel[i], String.valueOf(count));
-            }
-            // Original networkPackNT: der Zaehlstand geht an den Client (Blick-Anzeige "Signal n")
-            if (be.lastCount[i] != count) level.sendBlockUpdated(pos, state, state, 2);
-            be.lastCount[i] = count;
-        }
-        *///?}
     }
 
     public ModulePatternMatcher getMatcher() { return matcher; }
@@ -119,9 +96,9 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
         if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
     }
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("polling", polling);
         for (int i = 0; i < SLOT_COUNT; i++) {
             tag.putString("channel" + i, channel[i]);
@@ -129,20 +106,10 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
         }
         matcher.writeToNBT(tag);
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putBoolean("polling", polling);
-    for (int i = 0; i < SLOT_COUNT; i++) {
-    tag.putString("channel" + i, channel[i]);
-    tag.putInt("lastCount" + i, lastCount[i]);
-    }
-    matcher.writeToNBT(tag);
-    }
-    *///?}
 
     @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+    protected void readNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         polling = tag.getBoolean("polling");
         for (int i = 0; i < SLOT_COUNT; i++) {
             channel[i] = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";

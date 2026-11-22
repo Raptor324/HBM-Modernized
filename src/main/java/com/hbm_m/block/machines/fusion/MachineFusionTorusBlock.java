@@ -9,6 +9,7 @@ import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -161,5 +162,48 @@ public class MachineFusionTorusBlock extends FusionMultiblockBlock {
     /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
+    // Verbatim port of the original MachineFusionTorus.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {0, 4, 0, Direction.UP.get3DDataValue()},
+            {0, 0, 0, Direction.DOWN.get3DDataValue()},
+            {2, 0, 6, Direction.DOWN.get3DDataValue()},
+            {2, 4, 6, Direction.UP.get3DDataValue()},
+            {2, 0, -6, Direction.DOWN.get3DDataValue()},
+            {2, 4, -6, Direction.UP.get3DDataValue()},
+            {-2, 0, 6, Direction.DOWN.get3DDataValue()},
+            {-2, 4, 6, Direction.UP.get3DDataValue()},
+            {-2, 0, -6, Direction.DOWN.get3DDataValue()},
+            {-2, 4, -6, Direction.UP.get3DDataValue()},
+            {6, 0, 0, Direction.DOWN.get3DDataValue()},
+            {6, 4, 0, Direction.UP.get3DDataValue()},
+            {6, 0, 2, Direction.DOWN.get3DDataValue()},
+            {6, 4, 2, Direction.UP.get3DDataValue()},
+            {6, 0, -2, Direction.DOWN.get3DDataValue()},
+            {6, 4, -2, Direction.UP.get3DDataValue()},
+            {-6, 0, 0, Direction.DOWN.get3DDataValue()},
+            {-6, 4, 0, Direction.UP.get3DDataValue()},
+            {-6, 0, 2, Direction.DOWN.get3DDataValue()},
+            {-6, 4, 2, Direction.UP.get3DDataValue()},
+            {-6, 0, -2, Direction.DOWN.get3DDataValue()},
+            {-6, 4, -2, Direction.UP.get3DDataValue()},
+            {0, 0, 6, Direction.DOWN.get3DDataValue()},
+            {0, 4, 6, Direction.UP.get3DDataValue()},
+            {0, 0, -6, Direction.DOWN.get3DDataValue()},
+            {0, 4, -6, Direction.UP.get3DDataValue()}
+        }, facing);
+    }
+
+    // Verbatim port of the original MachineFusionTorus.getAABBExtras (pipe-stub wire boxes).
+    @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            {3.5, 1.5, 7.5, 7.5, 1, -1},
+            {3.5, 1.5, -7.5, -7.5, 1, -1},
+            {3.5, 1.5, 1, -1, 7.5, 7.5},
+            {3.5, 1.5, 1, -1, -7.5, -7.5}
+        };
     }
 }

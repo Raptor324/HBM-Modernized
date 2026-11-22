@@ -32,6 +32,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Fluid Duct — places the matching {@link FluidDuctBlock} style; fluid type in NBT for tint/transport.
@@ -66,7 +67,11 @@ public class FluidDuctItem extends Item implements ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        // Original ItemFluidDuct hat kein addInformation - das Fluid steht nur im Namen (getName).
+        FluidStack fluid = getFluidType(stack);
+        if (!fluid.isEmpty()) {
+            tooltip.add(Component.literal("Fluid: ").withStyle(ChatFormatting.GRAY)
+                    .append(fluid.getName().copy().withStyle(ChatFormatting.AQUA)));
+        }
     }
 
     @Override
@@ -120,8 +125,8 @@ public class FluidDuctItem extends Item implements ITooltipProvider {
     }
 
     public static FluidStack getFluidType(ItemStack stack) {
-        if (PlatformHooks.hasItemTag(stack) && PlatformHooks.contains(stack, NBT_FLUID_TYPE)) {
-            String fluidName = PlatformHooks.getString(stack, NBT_FLUID_TYPE);
+        if (StackNbt.has(stack) && StackNbt.contains(stack, NBT_FLUID_TYPE)) {
+            String fluidName = StackNbt.getString(stack, NBT_FLUID_TYPE);
             Fluid fluid = BuiltInRegistries.FLUID.get(ResourceLocation.parse(fluidName));
             if (fluid != null && fluid != net.minecraft.world.level.material.Fluids.EMPTY) {
                 return FluidStack.create(fluid, 1);
@@ -133,7 +138,7 @@ public class FluidDuctItem extends Item implements ITooltipProvider {
     public static void setFluidType(ItemStack stack, Fluid fluid) {
         ResourceLocation loc = BuiltInRegistries.FLUID.getKey(fluid);
         if (loc != null) {
-            PlatformHooks.putString(stack, NBT_FLUID_TYPE, loc.toString());
+            StackNbt.putString(stack, NBT_FLUID_TYPE, loc.toString());
         }
     }
 

@@ -20,13 +20,7 @@ import org.joml.Matrix4f;
  * ({@code SmallBlockPronter.drawSmolBlockAt}, Deckkraft 0.75) um den Aufbaukern, gedreht nach dessen Ausrichtung.
  * Meta 0 = icf_component, 2 = .vessel_welded, 4 = .structure_bolted (alle Seiten gleich).
  */
-//? if forge {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class ICFStructRenderer implements com.hbm_m.client.render.HbmBerBounds<ICFStructBlockEntity> {
 
     private static final float MIN = 11F / 32F;

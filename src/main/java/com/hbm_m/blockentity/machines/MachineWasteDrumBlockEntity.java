@@ -22,6 +22,7 @@ import net.minecraft.world.level.material.Fluids;
  * <p>
  * Alles andere aus {@link com.hbm_m.inventory.recipes.FuelPoolRecipes} (heisser Abfall, heisse PWR-Staebe)
  * kuehlt zufaellig ab: Chance 1 / (60 * 60 * 20 / Wasserseiten) pro Tick und Slot.
+
  */
 public class MachineWasteDrumBlockEntity extends BaseMachineBlockEntity {
 
@@ -44,6 +45,7 @@ public class MachineWasteDrumBlockEntity extends BaseMachineBlockEntity {
 
         int r = 60 * 60 * 20 / water;
 
+        long before = be.inventoryFingerprint();
         for (int i = 0; i < INVENTORY_SIZE; i++) {
             ItemStack stack = be.inventory.getStackInSlot(i);
             if (stack.isEmpty()) continue;
@@ -56,12 +58,21 @@ public class MachineWasteDrumBlockEntity extends BaseMachineBlockEntity {
                 if (out != null) be.inventory.setStackInSlot(i, out.copy());
             }
         }
-        be.setChanged();
+        if (be.inventoryFingerprint() != before) be.setChanged();
+    }
+
+    private long inventoryFingerprint() {
+        long h = 0L;
+        for (int i = 0; i < INVENTORY_SIZE; i++) {
+            h = h * 31L + com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(i));
+        }
+        return h;
     }
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return com.hbm_m.inventory.recipes.FuelPoolRecipes.isInput(stack) || stack.getItem() instanceof RBMKRodItem;
+
     }
 
     @Override
@@ -126,4 +137,5 @@ public class MachineWasteDrumBlockEntity extends BaseMachineBlockEntity {
         sidedItems.invalidate();
     }
     *///?}
+
 }

@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:bismuth_ingot"
+      "item": "hbm_m:nugget_bismuth"
     },
     "title": {
       "translate": "advancements.hbm_m.bismuth.title"

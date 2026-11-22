@@ -22,6 +22,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code com.hbm.entity.projectile.EntitySiegeLaser} ("entity_ntm_siege_laser"): schwerelose Laserbolzen des
@@ -126,7 +127,7 @@ public class EntitySiegeLaser extends ThrowableProjectile {
                 this.discard();
 
                 if (this.incendiary)
-                    PlatformHooks.setSecondsOnFire(entityHit, 3);
+                    MobHooks.setSecondsOnFire(entityHit, 3);
 
                 // newExplosion(..., smoking = false): keine Blockzerstoerung
                 if (this.explosive > 0 && !level().isClientSide)

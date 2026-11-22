@@ -27,6 +27,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code TileEntityFileCabinet}: 8 Faecher, abschliessbar ({@link LockState}), keine Automatisierung. Wer die
@@ -147,13 +148,13 @@ public class FileCabinetBlockEntity extends BaseHbmBlockEntity implements MenuPr
 
     @Override
     protected void writeNbtData(@NotNull CompoundTag nbt, @Nullable HolderLookup.Provider registries) {
-        nbt.put("items", com.hbm_m.platform.ItemStackSerialization.serialize(items, com.hbm_m.platform.BlockHooks.registriesOr(registries, this)));
+        nbt.put("items", items.serialize( com.hbm_m.platform.BlockHooks.registriesOr(registries, this)));
         lockState.write(nbt);
     }
 
     @Override
     protected void readNbtData(@NotNull CompoundTag nbt, @Nullable HolderLookup.Provider registries) {
-        if (nbt.contains("items")) com.hbm_m.platform.ItemStackSerialization.deserialize(items, nbt.getCompound("items"), com.hbm_m.platform.BlockHooks.registriesOr(registries, this));
+        if (nbt.contains("items")) items.deserialize(nbt.getCompound("items"), com.hbm_m.platform.BlockHooks.registriesOr(registries, this));
         lockState.read(nbt);
     }
 

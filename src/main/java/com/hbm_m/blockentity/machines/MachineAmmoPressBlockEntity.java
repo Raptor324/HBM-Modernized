@@ -132,7 +132,7 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
         ItemStack output = recipe.getOutput();
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
         if (!outSlot.isEmpty()) {
-            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outSlot, output)) return false;
+            if (!com.hbm_m.platform.StackNbt.sameItemSameTags(outSlot, output)) return false;
             if (outSlot.getCount() + output.getCount() > outSlot.getMaxStackSize()) return false;
         }
 
@@ -152,9 +152,6 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
             grown.grow(output.getCount());
             inventory.setStackInSlot(SLOT_OUTPUT, grown);
         }
-
-        animTicks = 40;
-        setChanged();
         return true;
     }
 
@@ -255,7 +252,6 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new MachineAmmoPressMenu(containerId, playerInventory, this);
     }
-
     //? if forge {
     /** Original {@code ISidedInventory}: Slots {0-9}; Zutaten nach Rezept in 0-8, nur das Ergebnis heraus. */
     private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
@@ -277,24 +273,17 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
         sidedItems.invalidate();
     }
     //?} elif neoforge {
-    /*/^* Original {@code ISidedInventory}: Slots {0-9}; Zutaten nach Rezept in 0-8, nur das Ergebnis heraus. ^/
-    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+    /*private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
             new com.hbm_m.blockentity.SidedItemAccess.Rules() {
                 @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }; }
                 @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot < 9 && isItemValidForSlot(slot, stack); }
                 @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 9; }
             });
-
-    @Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
-        return super.getHbmCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateHbmCaps() {
-        super.invalidateHbmCaps();
-        sidedItems.invalidate();
-    }
     *///?}
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
+    }
 }

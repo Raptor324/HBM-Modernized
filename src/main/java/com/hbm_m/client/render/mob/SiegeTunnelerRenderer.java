@@ -17,11 +17,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 /**
- * 1:1 {@code RenderSiegeTunneler}: Bohrerkoerper ({@code tunneler.obj}) entlang der Bewegung ausgerichtet, der
- * Bohrkopf dreht sich nach Systemzeit. Kein Schatten.
+ * 1:1 {@code RenderSiegeTunneler}: drill body ({@code tunneler.obj}) aligned with movement vector,
+ * drill head rotates via system time. No shadow.
  *
- * <p>Das Original sucht {@code siege_drill_<stufe>.png}, die es nicht gibt; im Port wird die vorhandene
- * {@code siege_drill.png} fuer alle Stufen genommen.</p>
+ * <p>Original looked for {@code siege_drill_<tier>.png} which does not exist; port uses
+ * {@code siege_drill.png} across all tiers.</p>
  */
 public class SiegeTunnelerRenderer extends EntityRenderer<EntitySiegeTunneler> {
 
@@ -38,7 +38,7 @@ public class SiegeTunnelerRenderer extends EntityRenderer<EntitySiegeTunneler> {
     public void render(@NotNull EntitySiegeTunneler entity, float yaw, float f1, @NotNull PoseStack ps, @NotNull MultiBufferSource buffers, int light) {
 
         ps.pushPose();
-        // 1.7.10: yOffset 0,5 - die Position lag in der Mitte des Wesens
+        // 1.7.10: yOffset 0.5 - position centered in entity
         ps.translate(0, 0.5, 0);
 
         ps.mulPose(Axis.YP.rotationDegrees(Mth.lerp(f1, entity.yRotO, entity.getYRot()) - 90.0F));

@@ -26,6 +26,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -66,7 +67,7 @@ public class ModArmorFSB extends ArmorItem implements com.hbm_m.item.ITooltipPro
         //? if forge {
         super(material, type, properties.stacksTo(1));
         //?} elif neoforge {
-        /*super(com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess.holder(material), type, properties.stacksTo(1));
+        /*super(ModArmorMaterialsAccess.holder(material), type, properties.stacksTo(1));
         *///?}
         this.texture = texture;
     }
@@ -350,6 +351,20 @@ public class ModArmorFSB extends ArmorItem implements com.hbm_m.item.ITooltipPro
         }
     }
 
+    /** The stack is actually worn, not just sitting in the inventory. Used by the subclass too. */
+    protected static boolean stackIsEquippedArmor(Player player, ItemStack stack) {
+        for (EquipmentSlot s : ARMOR_SLOTS) {
+            if (player.getItemBySlot(s) == stack) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static final EquipmentSlot[] ARMOR_SLOTS = {
+            EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD
+    };
+
     public boolean isArmorEnabled(ItemStack stack) {
         return true;
     }
@@ -385,6 +400,7 @@ public class ModArmorFSB extends ArmorItem implements com.hbm_m.item.ITooltipPro
 
     //? if forge {
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
             private com.hbm_m.powerarmor.layer.PowerArmorEmptyModel model;
@@ -408,13 +424,18 @@ public class ModArmorFSB extends ArmorItem implements com.hbm_m.item.ITooltipPro
     }
     //?} elif neoforge {
     /*@Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        // Powered-броня (ModPowerArmorItem) на NeoForge регистрирует свои расширения через
+        // RegisterClientExtensionsEvent (ClientSetup.onRegisterClientExtensions) — вторая
+        // регистрация на тот же предмет роняет клиент (Duplicate client extensions).
+        if (this instanceof ModPowerArmorItem) return;
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             private com.hbm_m.powerarmor.layer.PowerArmorEmptyModel model;
 
             @Override
-            public void renderHelmetOverlay(ItemStack stack, Player player, int width, int height, float partialTick) {
-                ModArmorFSB.this.renderHelmetOverlay(stack, player, width, height, partialTick);
+            public void renderHelmetOverlay(ItemStack stack, Player player, net.minecraft.client.gui.GuiGraphics gui, net.minecraft.client.DeltaTracker delta) {
+                ModArmorFSB.this.renderHelmetOverlay(stack, player, gui.guiWidth(), gui.guiHeight(), delta.getGameTimeDeltaPartialTick(true));
             }
 
             @Override

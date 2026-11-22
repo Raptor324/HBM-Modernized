@@ -18,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Порт {@code BlockLoot.TileEntityLoot} (1.7.10) — содержимое «груды лута»
@@ -128,7 +129,7 @@ public class DecoLootBlockEntity extends BaseHbmBlockEntity {
         for (LootEntry entry : items) {
             if (entry.stack().isEmpty()) continue;
             CompoundTag itemTag = new CompoundTag();
-            itemTag.put("stack", PlatformHooks.saveItemStack(entry.stack(), new CompoundTag(), registries));
+            itemTag.put("stack", StackNbt.save(entry.stack(), new CompoundTag(), registries));
             itemTag.putDouble("dx", entry.dx());
             itemTag.putDouble("dy", entry.dy());
             itemTag.putDouble("dz", entry.dz());
@@ -143,7 +144,7 @@ public class DecoLootBlockEntity extends BaseHbmBlockEntity {
         ListTag list = tag.getList("items", Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) {
             CompoundTag itemTag = list.getCompound(i);
-            ItemStack stack = PlatformHooks.itemStackOf(itemTag.getCompound("stack"), registries);
+            ItemStack stack = StackNbt.parse(itemTag.getCompound("stack"), registries);
             if (stack.isEmpty()) continue;
             items.add(new LootEntry(stack,
                     itemTag.getDouble("dx"), itemTag.getDouble("dy"), itemTag.getDouble("dz")));

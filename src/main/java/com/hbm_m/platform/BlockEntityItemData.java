@@ -16,6 +16,23 @@ public final class BlockEntityItemData {
     private BlockEntityItemData() {}
 
     public static final String KEY = "BlockEntityTag";
+    public static final String STATE_KEY = "BlockStateTag";
+
+    /**
+     * Blockzustand am Gegenstand ({@code BlockStateTag}; бывший BlockStateItemData).
+     * 1.20.1: Unter-Tag {@code BlockStateTag} im Item-NBT; Vanilla-BlockItem wendet ihn beim Setzen an.
+     * 1.21.1: derselbe Unter-Tag bleibt in CUSTOM_DATA (eigene Leser, Rezepte), zusaetzlich die
+     * Komponente {@code DataComponents.BLOCK_STATE}. Скаляры — через {@link StackNbt#scalarToString}
+     * (getAsString на NumericTag даёт суффиксы "1b", которые BlockItemStateProperties не парсит).
+     */
+    public static void putState(ItemStack stack, CompoundTag bst) {
+        StackNbt.edit(stack, tag -> tag.put(STATE_KEY, bst.copy()));
+        //? if >= 1.21.1 {
+        /*java.util.Map<String, String> props = new java.util.LinkedHashMap<>();
+        for (String k : bst.getAllKeys()) props.put(k, StackNbt.scalarToString(bst.get(k)));
+        stack.set(net.minecraft.core.component.DataComponents.BLOCK_STATE, new net.minecraft.world.item.component.BlockItemStateProperties(props));
+        *///?}
+    }
 
     /**
      * BE-Daten oder {@code null}. 1.20.1: lebender Unter-Tag ({@code getTagElement}); 1.21.1: Kopie -

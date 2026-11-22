@@ -7,8 +7,8 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.client.render.machine.MachineRenderers;
 
 /**
- * Декоративная ракета Союз на фабрике {@link MachineRenderers}: единственная часть
- * ROCKET (~52 блока высотой, multi-material mesh).
+ * Decorative Soyuz rocket on the {@link MachineRenderers} factory: a single part
+ * ROCKET (~52 blocks tall, multi-material mesh).
  */
 public final class SoyuzRocketRenderer {
 

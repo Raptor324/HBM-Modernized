@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1 {@code ModuleMachineRockMill}: drei Item-Eingaenge und -Ausgaenge, je ein Fluid-Ein- und -Ausgang; das Rezept

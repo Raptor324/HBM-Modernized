@@ -11,11 +11,7 @@ import net.minecraft.world.level.block.Block;
 public class ModTags {
 
     private static ResourceLocation modIdPath(String name) {
-        //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(MainRegistry.MOD_ID, name);
-        *///?} else {
         return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name);
-        //?}
     }
 
     public static class Blocks {
@@ -67,6 +63,12 @@ public class ModTags {
         public static final TagKey<Item> SLABS_HARD = tag("slabs/hard");
         public static final TagKey<Item> RUBBER_BAR = tag("rubber_bar");
         public static final TagKey<Item> ZIRNOX_RODS = tag("zirnox_rods");
+
+        // --- ТЕГИ OREDICT (hbm_m:oredict/*, датаген OreDictTagData; оригинальные имена словаря OreDictionary) ---
+        public static final TagKey<Item> OREDICT_LOG_WOOD = tag("oredict/log_wood");
+        public static final TagKey<Item> OREDICT_PLANK_WOOD = tag("oredict/plank_wood");
+        public static final TagKey<Item> OREDICT_STICK_WOOD = tag("oredict/stick_wood");
+        public static final TagKey<Item> OREDICT_TREE_SAPLING = tag("oredict/tree_sapling");
 
         private static TagKey<Item> tag(String name) {
             return TagKey.create(Registries.ITEM, modIdPath(name));

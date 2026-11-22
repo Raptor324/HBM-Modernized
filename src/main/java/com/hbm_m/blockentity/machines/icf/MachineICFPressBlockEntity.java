@@ -1,6 +1,5 @@
 package com.hbm_m.blockentity.machines.icf;
 
-import com.hbm_m.platform.StackNbt;
 
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
@@ -129,7 +128,7 @@ public class MachineICFPressBlockEntity extends BaseMachineBlockEntity implement
             if (outSlot.isEmpty()) {
                 getInventory().setStackInSlot(SLOT_MUON_EMPTY, container.copy());
                 canStore = true;
-            } else if (StackNbt.sameItemSameTags(outSlot, container)
+            } else if (com.hbm_m.platform.StackNbt.sameItemSameTags(outSlot, container)
                     && outSlot.getCount() < outSlot.getMaxStackSize()) {
                 outSlot.grow(1);
                 canStore = true;
@@ -284,4 +283,16 @@ public class MachineICFPressBlockEntity extends BaseMachineBlockEntity implement
         sidedItems.invalidate();
     }
     *///?}
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        //? if forge {
+        return getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, side).resolve().orElse(null);
+        //?} elif neoforge {
+        /*return getHbmCapability(com.hbm_m.platform.HbmCap.ITEM_HANDLER, side).orElse(null);
+        *///?} else {
+        /*return this.inventory;
+        *///?}
+    }
 }

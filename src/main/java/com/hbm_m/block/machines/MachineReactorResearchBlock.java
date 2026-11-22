@@ -185,15 +185,13 @@ public class MachineReactorResearchBlock extends BaseEntityBlock implements IMul
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
-
         return open(level, pos, player);
-        }
+    }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-
         return open(level, pos, player);
-        }
+    }
     *///?}
 
 

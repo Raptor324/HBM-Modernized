@@ -1,0 +1,121 @@
+package com.hbm_m.particle;
+
+import com.hbm_m.lib.RefStrings;
+import com.hbm_m.particle.nt.ParticleNT;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.client.Camera;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+
+import java.awt.Color;
+
+/**
+ * Порт {@code ParticleGasFlame} (1.7.10): факельное пламя газовой факела.
+ * Дымовой квайд с цветом, уходящим по HSB от жёлтого к красному за время жизни,
+ * полный яр свет, noClip, подъём и затухание.
+ */
+public class ParticleGasFlame extends ParticleNT {
+
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+            com.hbm_m.lib.RefStrings.MODID, "textures/particle/particle_base.png");
+
+    private final float colorMod;
+
+    public ParticleGasFlame(ClientLevel level, double x, double y, double z, double mx, double my, double mz, float scale) {
+        super(level, x, y, z);
+        this.xd = mx;
+        this.yd = my * 1.5D;
+        this.zd = mz;
+        // Протокол несёт scale 1.7.10 (particleScale), где рендер давал полуразмер 0.1 * scale;
+        // современный quadSize = полуразмер, поэтому 8F -> 0.8 (квад 1.6 м, как в оригинале).
+        this.quadSize = scale * 0.1F;
+        this.colorMod = 0.8F + this.random.nextFloat() * 0.2F;
+        this.noClip = true;
+        this.gravity = 0;
+        this.lifetime = 30 + this.random.nextInt(13);
+        updateColor();
+    }
+
+    @Override
+    public void tick() {
+        this.xo = this.x;
+        this.yo = this.y;
+        this.zo = this.z;
+
+        // Оригинал: движение, трение по XZ и подъём; гравитации нет (motionY сохранялся).
+        this.xd *= 0.75D;
+        this.zd *= 0.75D;
+        this.yd += 0.005D;
+
+        this.age++;
+        if (this.age >= this.lifetime) {
+            this.dead = true;
+        }
+
+        this.move(this.xd, this.yd, this.zd);
+        updateColor();
+    }
+
+    /** HSB-цвет: жёлтый (60°) → красный, светлота падает со временем (1:1 с оригиналом). */
+    private void updateColor() {
+        float time = (float) this.age / (float) this.lifetime;
+        Color color = Color.getHSBColor(Math.max((60 - time * 100) / 360F, 0.0F), 1 - time * 0.25F, 1 - time * 0.5F);
+        this.rCol = color.getRed() / 255F * colorMod;
+        this.gCol = color.getGreen() / 255F * colorMod;
+        this.bCol = color.getBlue() / 255F * colorMod;
+        this.alpha = 1.0F - time;
+    }
+
+    @Override
+    public void render(VertexConsumer consumer, Camera camera, float partialTicks, PoseStack levelPoseStack) {
+        Vec3 off = virtualizedOffset(
+                Mth.lerp(partialTicks, this.xo, this.x),
+                Mth.lerp(partialTicks, this.yo, this.y),
+                Mth.lerp(partialTicks, this.zo, this.z),
+                camera);
+        float pX = (float) off.x;
+        float pY = (float) off.y;
+        float pZ = (float) off.z;
+
+        float scale = this.quadSize;
+        int light = 15728880; // Оригинал getBrightnessForRender: полный яр свет
+        int r = Mth.clamp((int) (this.rCol * 255F), 0, 255);
+        int g = Mth.clamp((int) (this.gCol * 255F), 0, 255);
+        int b = Mth.clamp((int) (this.bCol * 255F), 0, 255);
+        int a = Mth.clamp((int) (this.alpha * 255F), 0, 255);
+
+        org.joml.Quaternionf camQ = new org.joml.Quaternionf(camera.rotation());
+        org.joml.Vector3f left = new org.joml.Vector3f(-1, 0, 0).rotate(camQ);
+        org.joml.Vector3f up = new org.joml.Vector3f(0, 1, 0);
+
+        float[][] corners = {
+                { -1, -1, 1, 1 },
+                { -1,  1, 1, 0 },
+                {  1,  1, 0, 0 },
+                {  1, -1, 0, 1 },
+        };
+        for (float[] cn : corners) {
+            float ox = left.x * cn[0] * scale + up.x * cn[1] * scale;
+            float oy = left.y * cn[0] * scale + up.y * cn[1] * scale;
+            float oz = left.z * cn[0] * scale + up.z * cn[1] * scale;
+            float u = cn[2];
+            float v = cn[3];
+            com.hbm_m.platform.RenderHooks.vertexTexColorLight(consumer, pX + ox, pY + oy, pZ + oz, u, v, r, g, b, a, light);
+        }
+    }
+
+    @Override
+    public RenderType getRenderType() {
+        // Селектор с ветвлением: под паком - наш клон position_color_tex_lightmap
+        // (прямой рендер с ванильным цветом), без пака - прежний рендертайп.
+        // Определения обоих типов - в CustomRenderTypes (GAS_FIRE_PARTICLES /
+        // GAS_FIRE_DIRECT); приватный класс здесь больше не нужен: Photon гнал
+        // пламя через свой translucent-материал (color x alpha x scene light) и
+        // делал его бледно-серым.
+        return com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.gasFireParticles(TEXTURE);
+    }
+}

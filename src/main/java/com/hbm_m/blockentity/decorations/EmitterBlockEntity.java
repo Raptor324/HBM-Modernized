@@ -19,6 +19,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code BlockEmitter.TileEntityEmitter}: misst jede Sekunde die Strahllaenge bis zum ersten festen Block

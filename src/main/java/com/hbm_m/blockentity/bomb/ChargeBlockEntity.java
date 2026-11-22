@@ -17,6 +17,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code TileEntityCharge}: Zuender in Ticks; scharf zaehlt er herunter, piept jede Sekunde und zuendet bei 0.

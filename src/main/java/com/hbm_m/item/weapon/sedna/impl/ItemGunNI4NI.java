@@ -64,7 +64,7 @@ public class ItemGunNI4NI extends ItemGunBaseNT implements com.hbm_m.item.ICusto
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
     //?} else {
     /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
-        Level level = com.hbm_m.platform.PlatformHooks.tooltipLevel(hbmTooltipCtx);
+        Level level = com.hbm_m.platform.ItemHooks.tooltipLevel(hbmTooltipCtx);
     *///?}
         list.add(Component.literal("Now, don't get the wrong idea."));
         list.add(Component.literal("I ").append(Component.literal("fucking hate ").withStyle(ChatFormatting.RED)).append(Component.literal("this game.").withStyle(ChatFormatting.GRAY)));

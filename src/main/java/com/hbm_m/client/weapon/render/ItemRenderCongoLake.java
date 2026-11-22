@@ -9,8 +9,6 @@ import com.hbm_m.particle.SpentCasing;
 import com.hbm_m.render.anim.AnimationEnums.GunAnimation;
 import com.hbm_m.render.anim.HbmAnimations;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /** 1:1 {@code ItemRenderCongoLake}. */
@@ -148,49 +146,19 @@ public class ItemRenderCongoLake extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 2.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(0, -1.25, 0);
+		setupInv(stack, 2.5D, 0, -1.25, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -15D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, -1.25, 0);
+		setupModTable(stack, -15D, 0, -1.25, 0);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(WeaponResources.congolake_tex);
 		GunGL.renderAll(WeaponResources.congolake);
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 1.75, 4.25);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(90 * shotRand, 1, 0, 0);
-			GunGL.scale(0.5, 0.5, 0.5);
-			renderMuzzleFlash(shot, 150, 7.5);
-			GunGL.popMatrix();
-		}
+		renderEquippedMuzzleFlash(type, stack, data, 0, 1.75, 4.25, 0.5D, 150, 7.5);
 	}
 }

@@ -20,6 +20,7 @@ import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code EntitySatellitePod} (Landekapsel): bringt die fertige Fracht eines Satelliten zu dem Sat-Dock, das sie
@@ -173,7 +174,7 @@ public class SatellitePodEntity extends Entity {
         for (int i = 0; i < items.size(); i++) {
             CompoundTag itemTag = items.getCompound(i);
             int j = itemTag.getByte("slot") & 255;
-            if (j < this.slots.length) this.slots[j] = PlatformHooks.itemStackOf(itemTag, PlatformHooks.bestEffortProvider());
+            if (j < this.slots.length) this.slots[j] = StackNbt.parse(itemTag, PlatformHooks.bestEffortProvider());
         }
     }
 
@@ -190,7 +191,7 @@ public class SatellitePodEntity extends Entity {
             if (this.slots[i].isEmpty()) continue;
             CompoundTag itemTag = new CompoundTag();
             itemTag.putByte("slot", (byte) i);
-            PlatformHooks.saveItemStack(this.slots[i], itemTag, PlatformHooks.bestEffortProvider());
+            StackNbt.save(this.slots[i], itemTag, PlatformHooks.bestEffortProvider());
             items.add(itemTag);
         }
         nbt.put("items", items);

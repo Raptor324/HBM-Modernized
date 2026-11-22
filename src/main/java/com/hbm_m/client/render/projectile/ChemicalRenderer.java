@@ -64,17 +64,10 @@ public class ChemicalRenderer extends EntityRenderer<EntityChemical> {
         var n = ps.last().normal();
         int r = rgb >> 16 & 255, g = rgb >> 8 & 255, b = rgb & 255;
         int full = 0xF000F0;
-        //? if < 1.21.1 {
-        vc.vertex(m, (float) -size, (float) -size, 0).color(r, g, b, alpha).uv(u1, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
-        vc.vertex(m, (float) size, (float) -size, 0).color(r, g, b, alpha).uv(u0, v1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
-        vc.vertex(m, (float) size, (float) size, 0).color(r, g, b, alpha).uv(u0, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
-        vc.vertex(m, (float) -size, (float) size, 0).color(r, g, b, alpha).uv(u1, v0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
-        //?} else {
-        /*com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, (float) -size, (float) -size, 0).setColor(r, g, b, alpha).setUv(u1, v1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
-        com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, (float) size, (float) -size, 0).setColor(r, g, b, alpha).setUv(u0, v1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
-        com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, (float) size, (float) size, 0).setColor(r, g, b, alpha).setUv(u0, v0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
-        com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, (float) -size, (float) size, 0).setColor(r, g, b, alpha).setUv(u1, v0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, (float) -size, (float) -size, 0, r, g, b, alpha, u1, v1, OverlayTexture.NO_OVERLAY, full, n, 0, 1, 0);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, (float) size, (float) -size, 0, r, g, b, alpha, u0, v1, OverlayTexture.NO_OVERLAY, full, n, 0, 1, 0);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, (float) size, (float) size, 0, r, g, b, alpha, u0, v0, OverlayTexture.NO_OVERLAY, full, n, 0, 1, 0);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, (float) -size, (float) size, 0, r, g, b, alpha, u1, v0, OverlayTexture.NO_OVERLAY, full, n, 0, 1, 0);
     }
 
     private void renderGasFire(EntityChemical chem, float interp, PoseStack ps, MultiBufferSource buf) {
@@ -120,53 +113,25 @@ public class ChemicalRenderer extends EntityRenderer<EntityChemical> {
         var m = ps.last().pose();
 
         // je Seite zwei Kanten bei y = 0 (Alpha o) und y = length (Alpha 0)
-        //? if < 1.21.1 {
-        vc.vertex(m, -size, 0, -size).color(1F, 1F, 1F, o).endVertex();
-        vc.vertex(m, size, 0, -size).color(1F, 1F, 1F, o).endVertex();
-        vc.vertex(m, size, length, -size).color(1F, 1F, 1F, 0F).endVertex();
-        vc.vertex(m, -size, length, -size).color(1F, 1F, 1F, 0F).endVertex();
-        //?} else {
-        /*vc.addVertex(m, -size, 0, -size).setColor(1F, 1F, 1F, o);
-        vc.addVertex(m, size, 0, -size).setColor(1F, 1F, 1F, o);
-        vc.addVertex(m, size, length, -size).setColor(1F, 1F, 1F, 0F);
-        vc.addVertex(m, -size, length, -size).setColor(1F, 1F, 1F, 0F);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -size, 0, -size, 1F, 1F, 1F, o);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, size, 0, -size, 1F, 1F, 1F, o);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, size, length, -size, 1F, 1F, 1F, 0F);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -size, length, -size, 1F, 1F, 1F, 0F);
 
-        //? if < 1.21.1 {
-        vc.vertex(m, -size, 0, size).color(1F, 1F, 1F, o).endVertex();
-        vc.vertex(m, size, 0, size).color(1F, 1F, 1F, o).endVertex();
-        vc.vertex(m, size, length, size).color(1F, 1F, 1F, 0F).endVertex();
-        vc.vertex(m, -size, length, size).color(1F, 1F, 1F, 0F).endVertex();
-        //?} else {
-        /*vc.addVertex(m, -size, 0, size).setColor(1F, 1F, 1F, o);
-        vc.addVertex(m, size, 0, size).setColor(1F, 1F, 1F, o);
-        vc.addVertex(m, size, length, size).setColor(1F, 1F, 1F, 0F);
-        vc.addVertex(m, -size, length, size).setColor(1F, 1F, 1F, 0F);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -size, 0, size, 1F, 1F, 1F, o);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, size, 0, size, 1F, 1F, 1F, o);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, size, length, size, 1F, 1F, 1F, 0F);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -size, length, size, 1F, 1F, 1F, 0F);
 
-        //? if < 1.21.1 {
-        vc.vertex(m, -size, 0, -size).color(1F, 1F, 1F, o).endVertex();
-        vc.vertex(m, -size, 0, size).color(1F, 1F, 1F, o).endVertex();
-        vc.vertex(m, -size, length, size).color(1F, 1F, 1F, 0F).endVertex();
-        vc.vertex(m, -size, length, -size).color(1F, 1F, 1F, 0F).endVertex();
-        //?} else {
-        /*vc.addVertex(m, -size, 0, -size).setColor(1F, 1F, 1F, o);
-        vc.addVertex(m, -size, 0, size).setColor(1F, 1F, 1F, o);
-        vc.addVertex(m, -size, length, size).setColor(1F, 1F, 1F, 0F);
-        vc.addVertex(m, -size, length, -size).setColor(1F, 1F, 1F, 0F);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -size, 0, -size, 1F, 1F, 1F, o);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -size, 0, size, 1F, 1F, 1F, o);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -size, length, size, 1F, 1F, 1F, 0F);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -size, length, -size, 1F, 1F, 1F, 0F);
 
-        //? if < 1.21.1 {
-        vc.vertex(m, size, 0, -size).color(1F, 1F, 1F, o).endVertex();
-        vc.vertex(m, size, 0, size).color(1F, 1F, 1F, o).endVertex();
-        vc.vertex(m, size, length, size).color(1F, 1F, 1F, 0F).endVertex();
-        vc.vertex(m, size, length, -size).color(1F, 1F, 1F, 0F).endVertex();
-        //?} else {
-        /*vc.addVertex(m, size, 0, -size).setColor(1F, 1F, 1F, o);
-        vc.addVertex(m, size, 0, size).setColor(1F, 1F, 1F, o);
-        vc.addVertex(m, size, length, size).setColor(1F, 1F, 1F, 0F);
-        vc.addVertex(m, size, length, -size).setColor(1F, 1F, 1F, 0F);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, size, 0, -size, 1F, 1F, 1F, o);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, size, 0, size, 1F, 1F, 1F, o);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, size, length, size, 1F, 1F, 1F, 0F);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, size, length, -size, 1F, 1F, 1F, 0F);
     }
 
     @Override

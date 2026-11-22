@@ -230,11 +230,7 @@ public class SuperComputerRecipe extends PlatformRecipe {
 
     public static final class Serializer extends PlatformRecipeSerializer<SuperComputerRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "supercomputer");
-        *///?} else {
-                public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "supercomputer");
-        //?}
+        public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "supercomputer");
 
 
         @Override

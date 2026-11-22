@@ -15,7 +15,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
-/** 1:1 {@code RenderTrainCargoTram}: Modell an der Renderposition (Mitte der Drehgestelle), gedreht nach Gier- und Nickwinkel. */
+/** 1:1 {@code RenderTrainCargoTram}: model at render position (bogie center), rotated by yaw and pitch. */
 public class RenderTrainCargoTram<T extends EntityRailCarBase> extends EntityRenderer<T> {
 
     public static final SimpleObjModel train_cargo_tram = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/vehicles/tram.obj"));
@@ -29,12 +29,12 @@ public class RenderTrainCargoTram<T extends EntityRailCarBase> extends EntityRen
     public void render(@NotNull T train, float swing, float interp, @NotNull PoseStack ps, @NotNull MultiBufferSource buffers, int light) {
         ps.pushPose();
         applyTrainTransform(train, interp, ps);
-        // GL_CULL_FACE aus
+        // Disable GL_CULL_FACE
         train_cargo_tram.renderAll(ps, buffers.getBuffer(RenderType.entityCutoutNoCull(train_tram)), light);
         ps.popPose();
     }
 
-    /** Gemeinsame Verschiebung/Drehung beider Tram-Renderer. */
+    /** Shared offset and rotation for both tram renderers. */
     static void applyTrainTransform(EntityRailCarBase train, float interp, PoseStack ps) {
         double iX = Mth.lerp(interp, train.xo, train.getX());
         double iY = Mth.lerp(interp, train.yo, train.getY());

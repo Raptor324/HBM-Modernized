@@ -235,6 +235,11 @@ public abstract class MachineFireboxBaseBlockEntity extends MachinePollutingBloc
     public int getBurnTime() { return burnTime; }
     public int getMaxBurnTime() { return maxBurnTime; }
 
+    /** Original-Renderer-API: interpolierter Klappenwinkel (0..135) fuer den Client-Tick-Lerp. */
+    public float getInterpolatedDoorAngle(float partialTick) {
+        return Mth.lerp(partialTick, prevDoorAngle, doorAngle);
+    }
+
     @Override public int getHeatStored() { return heatEnergy; }
     @Override public int getMaxHeatStored() { return getMaxHeat(); }
 

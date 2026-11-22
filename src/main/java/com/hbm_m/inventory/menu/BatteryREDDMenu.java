@@ -10,6 +10,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** 1:1 {@code ContainerBatteryREDD}: Ladeplatz (26,53), Entladeplatz (80,53), Spielerinventar ab Y 99. */
 public class BatteryREDDMenu extends AbstractContainerMenu {

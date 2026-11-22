@@ -31,7 +31,6 @@ public final class NeoForgeEntrypoint {
         // Alte Port-IDs -> Registry-Alias (Forge: MissingMappingsEvent)
         modBus.addListener(NeoForgeMainEvents::onRegister);
         NeoForge.EVENT_BUS.addListener(NeoForgeMainEvents::onPlayerTick);
-
         // Worldgen + fluids registration (Architectury DeferredRegister сам резолвит шину).
         // NeoForge использует datapack biome-modifiers (JSON), поэтому BIOME_MODIFIERS
         // DeferredRegister здесь не нужен — только FEATURES/PROCESSORS.

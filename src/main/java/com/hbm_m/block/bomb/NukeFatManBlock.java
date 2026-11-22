@@ -131,13 +131,13 @@ public class NukeFatManBlock extends BaseEntityBlock implements IMultiblockContr
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS;
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS;
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
@@ -178,7 +178,6 @@ public class NukeFatManBlock extends BaseEntityBlock implements IMultiblockContr
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof NukeFatManBlockEntity nukeBe) {
             if (nukeBe.isReady()) {
-                Containers.dropContents(level, pos, nukeBe);
                 nukeBe.clearContent();
                 Direction facing = level.getBlockState(pos).getValue(FACING);
                 structureHelper.destroyStructure(level, pos, facing);
@@ -187,7 +186,6 @@ public class NukeFatManBlock extends BaseEntityBlock implements IMultiblockContr
                 return BombReturnCode.DETONATED;
             }
             if (nukeBe.isFilled()) {
-                Containers.dropContents(level, pos, nukeBe);
                 nukeBe.clearContent();
                 Direction facing = level.getBlockState(pos).getValue(FACING);
                 structureHelper.destroyStructure(level, pos, facing);

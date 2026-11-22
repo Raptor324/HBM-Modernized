@@ -89,13 +89,6 @@ public final class MachineCraftingRecipeGenerator {
                 'C', ModItems.COIL_COPPER.get(),
                 'B', ModBlocks.BRICK_CONCRETE.get());
 
-        shaped(writer, "large_pylon", ModBlocks.LARGE_PYLON.get(), 1,
-                new String[]{"SCS", "SPS", "SBS"},
-                'S', ModBlocks.STEEL_SCAFFOLD.get(),
-                'C', ModItems.COIL_COPPER.get(),
-                'P', polymer(MaterialShape.PLATE),
-                'B', ModBlocks.BRICK_CONCRETE.get());
-
         // Kondensatoren: im Original ueber die Baugruppen, hier als einfache Werkbankstufe,
         // damit Energiepufferung ueberhaupt erreichbar ist.
         capacitor(writer, "capacitor_copper", ModBlocks.CAPACITOR_COPPER.get(),
@@ -108,19 +101,6 @@ public final class MachineCraftingRecipeGenerator {
                 new String[]{"PPP", "CCC", "PPP"},
                 'P', mat(ModMaterials.STEEL, MaterialShape.PLATE),
                 'C', mat(ModMaterials.RED_COPPER, MaterialShape.WIRE));
-
-        // Original: "RRR", "WWW", "III"
-        shaped(writer, "machine_converter_he_rf", ModBlocks.MACHINE_CONVERTER_HE_RF.get(), 1,
-                new String[]{"RRR", "WWW", "III"},
-                'R', ModItems.CAPACITOR_BOARD.get(),
-                'W', Items.REDSTONE,
-                'I', mat(ModMaterials.STEEL, MaterialShape.INGOT));
-
-        shaped(writer, "machine_converter_rf_he", ModBlocks.MACHINE_CONVERTER_RF_HE.get(), 1,
-                new String[]{"RRR", "WWW", "III"},
-                'R', Items.REDSTONE,
-                'W', mat(ModMaterials.RED_COPPER, MaterialShape.WIRE),
-                'I', mat(ModMaterials.STEEL, MaterialShape.INGOT));
     }
 
     private static void capacitor(Consumer<FinishedRecipe> writer, String name, ItemLike out, ItemLike metal) {

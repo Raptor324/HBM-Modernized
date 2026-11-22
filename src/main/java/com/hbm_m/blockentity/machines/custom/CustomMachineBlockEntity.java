@@ -486,7 +486,7 @@ public class CustomMachineBlockEntity extends MachinePollutingBlockEntity
         @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { int r = real(slot); return r >= 0 && isValidInput(r, stack); }
     }
     //?} elif neoforge {
-    /*private final com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> automationHandler =
+    /*private final com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> automationHandler =
             com.hbm_m.platform.LazyCap.of(AutomationHandler::new);
 
     @Override
@@ -501,7 +501,7 @@ public class CustomMachineBlockEntity extends MachinePollutingBlockEntity
         automationHandler.invalidate();
     }
 
-    private class AutomationHandler implements net.neoforged.neoforge.items.IItemHandler {
+    private class AutomationHandler implements net.minecraftforge.items.IItemHandler {
         private int real(int slot) {
             int[] acc = getAccessibleSlots();
             return slot >= 0 && slot < acc.length ? acc[slot] : -1;

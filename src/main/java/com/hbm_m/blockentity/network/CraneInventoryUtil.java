@@ -19,9 +19,9 @@ import net.minecraft.world.phys.Vec3;
 
 //? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.wrapper.InvWrapper;
 //?}
+import net.minecraftforge.items.IItemHandler;
 
 /** Gemeinsame Helfer der Krane: {@code CraneInserter.addToInventory}, {@code InventoryUtil.masquerade}, Band-Ausgabe. */
 public final class CraneInventoryUtil {
@@ -96,7 +96,7 @@ public final class CraneInventoryUtil {
      * nehmen von jeder Seite Brennstoff (1) und Eingabe (0) an.
      ^/
     @Nullable
-    public static net.neoforged.neoforge.items.IItemHandler inventoryAt(Level level, BlockPos pos, Direction side) {
+    public static net.minecraftforge.items.IItemHandler inventoryAt(Level level, BlockPos pos, Direction side) {
         BlockEntity te = level.getBlockEntity(pos);
         if (te == null) return null;
         if (te instanceof AbstractFurnaceBlockEntity furnace) return new SlotView(new net.neoforged.neoforge.items.wrapper.InvWrapper(furnace), new int[] { 1, 0 });
@@ -107,7 +107,7 @@ public final class CraneInventoryUtil {
      * 1:1 {@code CraneInserter.addToInventory}: erst auf gleiche Stapel auffuellen, dann leere Plaetze belegen.
      * Veraendert {@code toAdd}; gibt den Rest zurueck ({@link ItemStack#EMPTY} = alles untergebracht).
      ^/
-    public static ItemStack addToInventory(net.neoforged.neoforge.items.IItemHandler inv, ItemStack toAdd) {
+    public static ItemStack addToInventory(net.minecraftforge.items.IItemHandler inv, ItemStack toAdd) {
         for (int i = 0; i < inv.getSlots() && !toAdd.isEmpty(); i++) {
             ItemStack stack = inv.getStackInSlot(i);
             if (!stack.isEmpty() && ItemStack.isSameItemSameComponents(stack, toAdd)
@@ -126,10 +126,10 @@ public final class CraneInventoryUtil {
     }
 
     /^* Sicht auf ausgewaehlte Plaetze eines Inventars (Original: {@code access}-Array). ^/
-    public static class SlotView implements net.neoforged.neoforge.items.IItemHandler {
-        private final net.neoforged.neoforge.items.IItemHandler inv;
+    public static class SlotView implements net.minecraftforge.items.IItemHandler {
+        private final net.minecraftforge.items.IItemHandler inv;
         private final int[] access;
-        public SlotView(net.neoforged.neoforge.items.IItemHandler inv, int[] access) { this.inv = inv; this.access = access; }
+        public SlotView(net.minecraftforge.items.IItemHandler inv, int[] access) { this.inv = inv; this.access = access; }
         @Override public int getSlots() { return access.length; }
         @Override public ItemStack getStackInSlot(int slot) { return inv.getStackInSlot(access[slot]); }
         @Override public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) { return inv.insertItem(access[slot], stack, simulate); }
@@ -139,7 +139,7 @@ public final class CraneInventoryUtil {
     }
 
     /^* Vanilla {@code Container.calcRedstoneFromInventory} fuer einen Item-Handler. ^/
-    public static int comparator(net.neoforged.neoforge.items.IItemHandler inv) {
+    public static int comparator(net.minecraftforge.items.IItemHandler inv) {
         int nonEmpty = 0;
         float f = 0.0F;
         for (int i = 0; i < inv.getSlots(); i++) {

@@ -1,7 +1,5 @@
 package com.hbm_m.blockentity.machines;
 
-import com.hbm_m.platform.StackNbt;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -15,21 +13,20 @@ import com.hbm_m.block.machines.DummyableMachineBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.interfaces.IUpgradeInfoProvider;
 import com.hbm_m.inventory.UpgradeManager;
-import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.inventory.material.MaterialShapes;
 import com.hbm_m.inventory.material.Mats;
 import com.hbm_m.inventory.material.Mats.MaterialStack;
 import com.hbm_m.inventory.material.NTMMaterial;
-import com.hbm_m.inventory.menu.MachineArcFurnaceMenu;
 import com.hbm_m.inventory.recipes.ArcFurnaceRecipes;
-import com.hbm_m.inventory.recipes.ArcFurnaceRecipes.ArcFurnaceRecipe;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemArcElectrode;
 import com.hbm_m.item.industrial.ItemArcElectrodeBurnt;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
+import com.hbm_m.platform.StackNbt;
 import com.hbm_m.sound.ClientSoundBootstrap;
 import com.hbm_m.sound.HbmSoundsNT;
 import com.hbm_m.util.CrucibleUtil;
@@ -43,6 +40,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import com.hbm_m.inventory.menu.MachineArcFurnaceMenu;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -277,6 +275,12 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
         }
     }
 
+    /** 1:1 {@code ArcFurnaceRecipes.getOutput}: feste Liste plus Autogen; {@code level} fuer die Ofenrezepte. */
+    @Nullable
+    private ArcFurnaceRecipes.ArcFurnaceRecipe findRecipe(ItemStack stack) {
+        return ArcFurnaceRecipes.getOutput(stack, this.liquidMode, level);
+    }
+
     /** Moves items from the input queue to the main grid */
     public void loadIngredients() {
 
@@ -284,7 +288,7 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
 
         for (int q /* queue */ = 25; q < 30; q++) {
             if (slot(q).isEmpty()) continue;
-            ArcFurnaceRecipe recipe = ArcFurnaceRecipes.getOutput(slot(q), this.liquidMode, level);
+            ArcFurnaceRecipes.ArcFurnaceRecipe recipe = findRecipe(slot(q));
             if (recipe == null) continue;
             int max = this.getMaxInputSize();
             int recipeMax = this.liquidMode ? max : slot(q).getMaxStackSize() / recipe.solidOutput.getCount();
@@ -339,7 +343,7 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
 
         for (int i = 5; i < 25; i++) {
             if (slot(i).isEmpty()) continue;
-            ArcFurnaceRecipe recipe = ArcFurnaceRecipes.getOutput(slot(i), this.liquidMode, level);
+            ArcFurnaceRecipes.ArcFurnaceRecipe recipe = findRecipe(slot(i));
             if (recipe == null) continue;
 
             if (!liquidMode && recipe.solidOutput != null) {
@@ -352,8 +356,8 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
             if (liquidMode && recipe.fluidOutput != null) {
 
                 while (!slot(i).isEmpty() && slot(i).getCount() > 0) {
-                    int liquid = getStackAmount(liquids);
-                    int toAdd = getStackAmount(recipe.fluidOutput);
+                    int liquid = this.getStackAmount(liquids);
+                    int toAdd = this.getStackAmount(recipe.fluidOutput);
 
                     if (liquid + toAdd <= maxLiquid) {
                         this.decrStackSize(i, 1);
@@ -390,7 +394,7 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
 
         for (int i = 5; i < 25; i++) {
             if (slot(i).isEmpty()) continue;
-            ArcFurnaceRecipe recipe = ArcFurnaceRecipes.getOutput(slot(i), this.liquidMode, level);
+            ArcFurnaceRecipes.ArcFurnaceRecipe recipe = findRecipe(slot(i));
             if (recipe == null) continue;
             if (liquidMode && recipe.fluidOutput != null) return true;
             if (!liquidMode && recipe.solidOutput != null) return true;
@@ -438,27 +442,30 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
         if (slot < 3) return stack.getItem() instanceof ItemArcElectrode;
         if (slot == 3) return isEnergyProviderItem(stack);
         if (slot == 4) return stack.getItem() instanceof ItemMachineUpgrade;
-        ArcFurnaceRecipe recipe = ArcFurnaceRecipes.getOutput(stack, this.liquidMode, level);
-        if (recipe == null) return false;
-        if (liquidMode) {
-            return recipe.fluidOutput != null;
-        } else {
-            return recipe.solidOutput != null;
+        if (slot > 4) {
+            ArcFurnaceRecipes.ArcFurnaceRecipe recipe = findRecipe(stack);
+            if (recipe == null) return false;
+            return liquidMode ? recipe.fluidOutput != null : recipe.solidOutput != null;
         }
+        return false;
     }
 
     /** Original {@code canInsertItem}. */
     public boolean canInsertItem(int slot, ItemStack stack) {
         if (slot < 3) return stack.getItem() instanceof ItemArcElectrode;
-        if (slot >= 25) return ArcFurnaceRecipes.getOutput(stack, this.liquidMode, level) != null;
+        if (slot >= 25) {
+            ArcFurnaceRecipes.ArcFurnaceRecipe recipe = findRecipe(stack);
+            if (recipe == null) return false;
+            return true;
+        }
         return false;
     }
 
     /** Original {@code canExtractItem}. */
     public boolean canExtractItem(int slot, ItemStack stack) {
         if (slot < 3) return lid >= 1 && !(stack.getItem() instanceof ItemArcElectrode);
-        if (slot > 4 && slot < 25) return lid > 0 && ArcFurnaceRecipes.getOutput(stack, this.liquidMode, level) == null;
-        if (slot >= 25) return ArcFurnaceRecipes.getOutput(stack, this.liquidMode, level) == null;
+        if (slot > 4 && slot < 25) return lid > 0 && findRecipe(stack) == null;
+        if (slot >= 25) return findRecipe(stack) == null;
         return false;
     }
 
@@ -502,12 +509,12 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
         sided = null;
     }
     //?} elif neoforge {
-    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> sided;
+    /*private com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> sided;
 
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
-            if (sided == null) sided = com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+            if (sided == null) sided = com.hbm_m.platform.LazyCap.of(() -> new net.minecraftforge.items.IItemHandler() {
                 @Override public int getSlots() { return ACCESSIBLE.length; }
                 @Override public @NotNull ItemStack getStackInSlot(int s) { return inventory.getStackInSlot(ACCESSIBLE[s]); }
                 @Override public @NotNull ItemStack insertItem(int s, @NotNull ItemStack stack, boolean simulate) {
@@ -645,5 +652,10 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
         if (bb == null) bb = new AABB(worldPosition.getX() - 3, worldPosition.getY(), worldPosition.getZ() - 3,
                 worldPosition.getX() + 4, worldPosition.getY() + 6, worldPosition.getZ() + 4);
         return bb;
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
     }
 }

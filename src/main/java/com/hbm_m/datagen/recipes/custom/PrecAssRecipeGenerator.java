@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.industrial.BlueprintPools;
 import com.hbm_m.recipe.PrecAssRecipe;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -20,9 +21,13 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
+import static com.hbm_m.datagen.recipes.custom.OreDictIngredients.item;
+import static com.hbm_m.datagen.recipes.custom.OreDictIngredients.stack;
+
 /**
- * 1:1 {@code PrecAssRecipes.registerDefaults}: Bauplanmappen aus Papier, Farbstoff/Zinnober und Kugelfisch. Die
- * Rezepte des 528-Modus ({@code if(GeneralConfig.enable528)}) stehen in {@link PrecAss528RecipeGenerator}.
+ * 1:1 {@code PrecAssRecipes.registerDefaults}: Bauplanmappen aus Papier, Farbstoff/Zinnober und Kugelfisch sowie die
+ * entdeckbaren RPA-Panzerrezepte (Blaupausen-Pool {@code discover..rpa}). Die Rezepte des 528-Modus
+ * ({@code if(GeneralConfig.enable528)}) stehen in {@link PrecAss528RecipeGenerator}.
  */
 public final class PrecAssRecipeGenerator {
 
@@ -45,6 +50,41 @@ public final class PrecAssRecipeGenerator {
                 .in(Ingredient.of(Items.PUFFERFISH), 8)
                 .out(1F, new ItemStack(ModItems.BLUEPRINT_FOLDER_DISCOVER.get()), 5, new ItemStack(Items.PAPER, 24), 95)
                 .save(writer, "precass/beigeprints");
+
+        // Discoverbare RPA-Panzerrezepte (Original: BIGMT = Saturnite im Port, parts_legendary TIER2 = parts_legendary_tier2)
+        new Builder(3 * min, 25_000L)
+                .in(Ingredient.of(item("hbm_m:plate_armor_ajr")), 12)
+                .in(Ingredient.of(item("hbm_m:plate_cast_saturnite")), 4)
+                .in(Ingredient.of(item("hbm_m:advanced_circuit")), 4)
+                .in(Ingredient.of(item("hbm_m:plate_kevlar")), 8)
+                .out(1F, stack("hbm_m:rpa_helmet", 1), 1)
+                .pool(BlueprintPools.RPA_DISCOVER_POOL)
+                .save(writer, "precass/rpahelmet");
+        new Builder(3 * min, 25_000L)
+                .in(Ingredient.of(item("hbm_m:plate_armor_ajr")), 24)
+                .in(Ingredient.of(item("hbm_m:plate_cast_saturnite")), 8)
+                .in(Ingredient.of(item("hbm_m:part_mechanism_saturnite")), 8)
+                .in(Ingredient.of(item("hbm_m:motor_desh")), 8)
+                .in(Ingredient.of(item("hbm_m:plate_kevlar")), 16)
+                .in(Ingredient.of(item("hbm_m:parts_legendary_tier2")), 1)
+                .out(1F, stack("hbm_m:rpa_plate", 1), 1)
+                .pool(BlueprintPools.RPA_DISCOVER_POOL)
+                .save(writer, "precass/rpaplate");
+        new Builder(3 * min, 25_000L)
+                .in(Ingredient.of(item("hbm_m:plate_armor_ajr")), 24)
+                .in(Ingredient.of(item("hbm_m:plate_cast_saturnite")), 8)
+                .in(Ingredient.of(item("hbm_m:motor_desh")), 8)
+                .in(Ingredient.of(item("hbm_m:plate_kevlar")), 16)
+                .out(1F, stack("hbm_m:rpa_legs", 1), 1)
+                .pool(BlueprintPools.RPA_DISCOVER_POOL)
+                .save(writer, "precass/rpalegs");
+        new Builder(3 * min, 25_000L)
+                .in(Ingredient.of(item("hbm_m:plate_armor_ajr")), 12)
+                .in(Ingredient.of(item("hbm_m:plate_cast_saturnite")), 4)
+                .in(Ingredient.of(item("hbm_m:plate_kevlar")), 8)
+                .out(1F, stack("hbm_m:rpa_boots", 1), 1)
+                .pool(BlueprintPools.RPA_DISCOVER_POOL)
+                .save(writer, "precass/rpaboots");
 
         PrecAss528RecipeGenerator.crystalCircuit(writer);
         PrecAss528RecipeGenerator.generate(writer);

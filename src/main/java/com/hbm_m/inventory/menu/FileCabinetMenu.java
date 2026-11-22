@@ -12,6 +12,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** 1:1 {@code ContainerFileCabinet}: 2x4 Faecher (53/18, Zeilenabstand 36), Spielerinventar ab 8/88. */
 public class FileCabinetMenu extends AbstractContainerMenu {

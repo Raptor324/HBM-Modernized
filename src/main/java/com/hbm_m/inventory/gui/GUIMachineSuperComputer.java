@@ -57,7 +57,7 @@ public class GUIMachineSuperComputer extends GuiInfoScreen<MachineSuperComputerM
             if (isPointInRect(7, 80, 18, 18, mouseX, mouseY)) {
                 SuperComputerRecipe recipe = computer.getSelectedRecipe();
                 if (recipe != null) {
-                    g.renderTooltip(this.font, buildRecipeTooltip(recipe), Optional.empty(), mouseX, mouseY);
+                    com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(g, this.font, buildRecipeTooltip(recipe), mouseX, mouseY);
                 } else {
                     g.renderTooltip(this.font, Component.translatable("gui.recipe.setRecipe").withStyle(ChatFormatting.YELLOW), mouseX, mouseY);
                 }

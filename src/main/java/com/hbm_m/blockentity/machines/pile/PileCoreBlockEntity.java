@@ -44,7 +44,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link #MAX_HEAT}, geht der ganze Meiler hoch.</p>
  *
  * <p>Geht er hoch, bleibt es nicht bei dem einen Knall: fuenfzehn brennende Graphitbrocken
- * ({@link #pile_debris} auf {@code EntityBulletBaseMK4}) steigen aus der Mitte auf und sprengen
+ * ({@link com.hbm_m.entity.projectile.PileDebrisEntity}) steigen aus der Mitte auf und sprengen
  * dort, wo sie wieder herunterkommen, ein weiteres Loch. Wer einen Meiler durchgehen laesst,
  * verliert nicht nur den Reaktor, sondern das halbe Gelaende.</p>
  */
@@ -55,6 +55,10 @@ public class PileCoreBlockEntity extends LoadedMachineBlockEntity {
 
     /** Wird waehrend der Explosion gesetzt, damit die zerberstenden Bloecke nicht nachziehen. */
     public static boolean meltingDown = false;
+
+    // ── FFA: SEDNA-BulletConfig fuer die Original-Graphitbrocken ─────────────────────
+    // (FFA loeste die Explosion ueber EntityBulletBaseMK4 auf; der Port der Maschinen-Seite
+    // nutzt PileDebrisEntity, die Config bleibt fuer GunFactory/GunFactoryClient bestehen.)
 
     /** 1:1 {@code pile_debris}: brennender Graphitbrocken (SEDNA-BulletConfig, Renderer RENDER_GRAPHITE in GunFactoryClient). */
     public static com.hbm_m.item.weapon.sedna.BulletConfig pile_debris;
@@ -416,9 +420,8 @@ public class PileCoreBlockEntity extends LoadedMachineBlockEntity {
         // wieder herunter - jeder von ihnen mit einer eigenen kleinen Explosion.
         for (int i = 0; i < 15; i++) {
             double mY = level.getRandom().nextDouble() * 0.5D + 1D;
-            com.hbm_m.entity.projectile.EntityBulletBaseMK4 fragment = new com.hbm_m.entity.projectile.EntityBulletBaseMK4(
-                    level, null, pile_debris, 100F, 0.35F, avgX, pos.getY() + up + 1, avgZ, 0, mY, 0);
-            level.addFreshEntity(fragment);
+            level.addFreshEntity(com.hbm_m.entity.projectile.PileDebrisEntity.create(
+                    level, avgX, pos.getY() + up + 1, avgZ, 0D, mY, 0D));
         }
     }
 
@@ -498,9 +501,9 @@ public class PileCoreBlockEntity extends LoadedMachineBlockEntity {
         tag.putByte("vc", (byte) ventilationChannels.size());
         tag.putByte("cc", (byte) controlChannels.size());
 
-        for (int i = 0; i < fuelChannels.size(); i++)         fuelChannels.get(i).save(tag, "f" + i);
-        for (int i = 0; i < ventilationChannels.size(); i++)  ventilationChannels.get(i).save(tag, "v" + i);
-        for (int i = 0; i < controlChannels.size(); i++)      controlChannels.get(i).save(tag, "c" + i);
+        for (int i = 0; i < fuelChannels.size(); i++)         fuelChannels.get(i).save(tag, "f" + i, registries);
+        for (int i = 0; i < ventilationChannels.size(); i++)  ventilationChannels.get(i).save(tag, "v" + i, registries);
+        for (int i = 0; i < controlChannels.size(); i++)      controlChannels.get(i).save(tag, "c" + i, registries);
     }
 
     @Override
@@ -528,9 +531,9 @@ public class PileCoreBlockEntity extends LoadedMachineBlockEntity {
         int ventCount = tag.getByte("vc") & 0xFF;
         int contCount = tag.getByte("cc") & 0xFF;
 
-        for (int i = 0; i < fuelCount; i++) fuelChannels.add(PileChannel.load(tag, "f" + i, this));
-        for (int i = 0; i < ventCount; i++) ventilationChannels.add(PileChannel.load(tag, "v" + i, this));
-        for (int i = 0; i < contCount; i++) controlChannels.add(PileChannel.load(tag, "c" + i, this));
+        for (int i = 0; i < fuelCount; i++) fuelChannels.add(PileChannel.load(tag, "f" + i, this, registries));
+        for (int i = 0; i < ventCount; i++) ventilationChannels.add(PileChannel.load(tag, "v" + i, this, registries));
+        for (int i = 0; i < contCount; i++) controlChannels.add(PileChannel.load(tag, "c" + i, this, registries));
 
         recalculateSegments();
     }

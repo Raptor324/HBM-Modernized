@@ -1,60 +1,161 @@
 {
-  "loader": "forge:composite",
+  "loader": "hbm_m:machine_parts_loader",
+  "model": "hbm_m:models/block/breeder.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
   "textures": {
-    "particle": "hbm_m:block/machine/breeder"
-  },
-  "children": {
-    "breeder_model": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/breeder.obj",
-      "flip_v": true,
-      "render_type": "minecraft:cutout",
-      "textures": {
-        "default": "hbm_m:block/machine/breeder"
-      }
-    }
+    "particle": "hbm_m:block/machine/breeder",
+    "default": "hbm_m:block/machine/breeder"
   },
   "transform": {
-    "translation": [0.5, 0, 0.5],
-    "rotation": [0, 0, 0],
+    "translation": [
+      0.5,
+      0,
+      0.5
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
     "scale": 1.0
   },
   "display": {
     "thirdperson_righthand": {
-      "rotation": [75, 45, 0],
-      "translation": [0.00, 2.50, 0.00],
-      "scale": [0.22, 0.22, 0.22]
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        2.5,
+        0.0
+      ],
+      "scale": [
+        0.22,
+        0.22,
+        0.22
+      ]
     },
     "thirdperson_lefthand": {
-      "rotation": [75, 45, 0],
-      "translation": [0.00, 2.50, 0.00],
-      "scale": [0.22, 0.22, 0.22]
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        2.5,
+        0.0
+      ],
+      "scale": [
+        0.22,
+        0.22,
+        0.22
+      ]
     },
     "firstperson_righthand": {
-      "rotation": [0, 45, 0],
-      "translation": [0.25, 0.75, 0.00],
-      "scale": [0.10, 0.10, 0.10]
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0.25,
+        0.75,
+        0.0
+      ],
+      "scale": [
+        0.1,
+        0.1,
+        0.1
+      ]
     },
     "firstperson_lefthand": {
-      "rotation": [0, 45, 0],
-      "translation": [0.00, 0.00, 0.00],
-      "scale": [0.22, 0.22, 0.22]
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.22,
+        0.22,
+        0.22
+      ]
     },
-    "gui": {"rotation": [30.0, -135.0, 0.0], "translation": [0.0, -3.949, -1.125], "scale": [0.2812, 0.2812, 0.2812]},
+    "gui": {
+      "rotation": [
+        30.0,
+        -135.0,
+        0.0
+      ],
+      "translation": [
+        0.0,
+        -3.949,
+        -1.125
+      ],
+      "scale": [
+        0.2812,
+        0.2812,
+        0.2812
+      ]
+    },
     "head": {
-      "rotation": [0, 0, 0],
-      "translation": [0.00, 0.00, 0.00],
-      "scale": [1.00, 1.00, 1.00]
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ]
     },
     "fixed": {
-      "rotation": [0, 180, 0],
-      "translation": [0.00, 0.00, 0.00],
-      "scale": [0.30, 0.30, 0.30]
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "translation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.3,
+        0.3,
+        0.3
+      ]
     },
     "ground": {
-      "rotation": [0, 0, 0],
-      "translation": [0.00, 3.00, 0.00],
-      "scale": [0.18, 0.18, 0.18]
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0.0,
+        3.0,
+        0.0
+      ],
+      "scale": [
+        0.18,
+        0.18,
+        0.18
+      ]
     }
   }
 }

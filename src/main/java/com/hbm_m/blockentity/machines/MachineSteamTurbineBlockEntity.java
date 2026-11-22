@@ -28,15 +28,16 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import com.hbm_m.platform.StackNbt;
 
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 //?}
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
-public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder {
+public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
 
     public static final int SLOT_FLUID_ID_IN = 0;
     public static final int SLOT_FLUID_ID_OUT = 1;
@@ -66,7 +67,6 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
     public static void tick(Level level, BlockPos pos, BlockState state, MachineSteamTurbineBlockEntity be) {
         if (level.isClientSide()) return;
         be.ensureNetworkInitialized();
-        boolean wasActive = be.active;
 
         // Original TileEntityMachineTurbine: tanks[0].setType(0, 1, slots); tanks[0].loadTank(2, 3, slots);
         // chargeItemsFromTE(slots, 4, ...); ... tanks[1].unloadTank(5, 6, slots) - fehlte im Port ganz.
@@ -92,10 +92,26 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
             be.updateEnergyDelta(be.getEnergyStored());
         }
 
-        if (wasActive != be.active || be.active) {
-            be.setChanged();
-            be.sendUpdateToClient();
-        }
+        // Анти-спам синхронизации: был безусловный 'wasActive != active || active' (тавтология,
+        // активная турбина синхронизировалась каждый тик). Теперь пакет только при реальном
+        // изменении состояния, которое уезжает в NBT/клиенту (энергия, active|progress, баки, инвентарь).
+        long lo = com.hbm_m.recipe.index.CachedRecipeResolver.sign(7,
+                be.energy, be.progress, be.active ? 1L : 0L,
+                tankFingerprint(be.tanks[0]), tankFingerprint(be.tanks[1]));
+        long hi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(8,
+                StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_FLUID_ID_IN)),
+                StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_FLUID_ID_OUT)),
+                StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_INPUT_IO_IN)),
+                StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_INPUT_IO_OUT)),
+                StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_BATTERY)),
+                StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_OUTPUT_IO_IN)),
+                StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_OUTPUT_IO_OUT)));
+        be.syncIfStateChanged(lo, hi);
+    }
+
+    /** Фингерпринт HBM-бака: тип жидкости + заполнение. */
+    private static long tankFingerprint(FluidTank tank) {
+        return (tank.getTankType() == null ? 0L : tank.getTankType().hashCode()) * 31L + tank.getFill();
     }
 
     /**
@@ -110,16 +126,16 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
      * Verarbeitung, seit diese ueber {@link FT_Coolable} laeuft - sonst nimmt die Turbine Dampf an,
      * den sie anschliessend nicht verwerten kann.
      */
-    private void applySlots(ItemStack[] slots) {
-        for (int i = 0; i < slots.length; i++) inventory.setStackInSlot(i, slots[i]);
-    }
-
     private boolean acceptsAsSteam(Fluid fluid) {
         FT_Coolable trait = FluidType.getTrait(fluid, FT_Coolable.class);
         return trait != null
                 && trait.amountReq > 0
                 && trait.amountProduced > 0
                 && trait.getEfficiency(CoolingType.TURBINE) > 0;
+    }
+
+    private void applySlots(ItemStack[] slots) {
+        for (int i = 0; i < slots.length; i++) inventory.setStackInSlot(i, slots[i]);
     }
 
     private boolean processSteam() {
@@ -147,7 +163,6 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
 
         tanks[0].drainMb(ops * trait.amountReq);
         tanks[1].fillMb(trait.coolsTo, ops * trait.amountProduced);
-
         long output = (long) (ops * trait.heatEnergy * eff);
         setEnergyStored(Math.min(getMaxEnergyStored(), getEnergyStored() + output));
         return true;
@@ -222,6 +237,30 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
             case SLOT_BATTERY -> stack.getItem() instanceof ItemCreativeBattery || isEnergyProviderItem(stack) || isEnergyReceiverItem(stack);
             default -> false;
         };
+    }
+
+    // ==================== IFluidUserMK2 / MK2 network ====================
+    // The fluid handler binding below lives in //? if forge, and BaseMachineBlockEntity only hands
+    // out the NeoForge wrapper to classes implementing IFluidUserMK2 - without this the turbine had
+    // no fluid capability at all on NeoForge and took no steam from pipes.
+
+    @Override
+    public FluidTank[] getAllTanks() { return tanks; }
+
+    @Override
+    public FluidTank[] getReceivingTanks() { return new FluidTank[] { tanks[0] }; }
+
+    @Override
+    public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[1] }; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(Fluid fluid, Direction fromDir) {
+        return fromDir != null;
     }
 
     //? if forge {
@@ -306,7 +345,7 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
         setFluidHandler(new UnifiedFluidHandler(this));
     }
 
-    private static class UnifiedFluidHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+    private static class UnifiedFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
         private final MachineSteamTurbineBlockEntity be;
 
         UnifiedFluidHandler(MachineSteamTurbineBlockEntity be) {
@@ -317,14 +356,14 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
         public int getTanks() { return 2; }
 
         @Override
-        public @NotNull net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+        public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
             if (tank == 0) {
-                return new net.neoforged.neoforge.fluids.FluidStack(be.tanks[0].getTankType(), be.tanks[0].getFill());
+                return new net.minecraftforge.fluids.FluidStack(be.tanks[0].getTankType(), be.tanks[0].getFill());
             }
             if (tank == 1) {
-                return new net.neoforged.neoforge.fluids.FluidStack(be.tanks[1].getTankType(), be.tanks[1].getFill());
+                return new net.minecraftforge.fluids.FluidStack(be.tanks[1].getTankType(), be.tanks[1].getFill());
             }
-            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
         }
 
         @Override
@@ -335,12 +374,12 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
         }
 
         @Override
-        public boolean isFluidValid(int tank, @NotNull net.neoforged.neoforge.fluids.FluidStack stack) {
+        public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
             return tank == 0 && be.acceptsAsSteam(stack.getFluid());
         }
 
         @Override
-        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (resource.isEmpty() || !be.acceptsAsSteam(resource.getFluid())) return 0;
             int space = be.tanks[0].getMaxFill() - be.tanks[0].getFill();
             int toFill = Math.min(space, resource.getAmount());
@@ -352,13 +391,13 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
         }
 
         @Override
-        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || be.tanks[1].getFill() <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || be.tanks[1].getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
             if (!VanillaFluidEquivalence.sameSubstance(resource.getFluid(), be.tanks[1].getTankType())) {
-                return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+                return net.minecraftforge.fluids.FluidStack.EMPTY;
             }
             int toDrain = Math.min(resource.getAmount(), be.tanks[1].getFill());
-            net.neoforged.neoforge.fluids.FluidStack drained = new net.neoforged.neoforge.fluids.FluidStack(be.tanks[1].getTankType(), toDrain);
+            net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(be.tanks[1].getTankType(), toDrain);
             if (action.execute()) {
                 be.tanks[1].drainMb(toDrain);
             }
@@ -366,10 +405,10 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
         }
 
         @Override
-        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-            if (maxDrain <= 0 || be.tanks[1].getFill() <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (maxDrain <= 0 || be.tanks[1].getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
             int toDrain = Math.min(maxDrain, be.tanks[1].getFill());
-            net.neoforged.neoforge.fluids.FluidStack drained = new net.neoforged.neoforge.fluids.FluidStack(be.tanks[1].getTankType(), toDrain);
+            net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(be.tanks[1].getTankType(), toDrain);
             if (action.execute()) {
                 be.tanks[1].drainMb(toDrain);
             }

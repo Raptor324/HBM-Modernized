@@ -1,28 +1,58 @@
 package com.hbm_m.compat.jei;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.ShredderRecipe;
 
+import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
+import mezz.jei.api.gui.drawable.IDrawable;
+import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
+import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
+import mezz.jei.api.recipe.category.IRecipeCategory;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
- * JEI category for shredder recipes (single item -> output).
+ * JEI port of {@code ShredderRecipeHandler}: dedicated {@code gui_nei_shredder.png} background
+ * with input left (39, 24), output right (129, 24) and the cycling blade pair in the middle.
  */
-public class ShredderJeiCategory extends JeiGenericRecipeCategory<ShredderRecipe> {
+@OnlyIn(Dist.CLIENT)
+public class ShredderJeiCategory implements IRecipeCategory<ShredderRecipe> {
 
     public static final RecipeType<ShredderRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "shredding", ShredderRecipe.class);
 
+    /** Input slot — {@code PositionedStack(input, 83 - 27 - 18 + 1, 5 + 18 + 1)} */
+    private static final int INPUT_X = 39;
+    private static final int INPUT_Y = 24;
+
+    /** Output slot — {@code PositionedStack(result, 83 + 27 + 18 + 1, 5 + 18 + 1)} */
+    private static final int OUTPUT_X = 129;
+    private static final int OUTPUT_Y = 24;
+
+    /** Blade slots — {@code PositionedStack(ingred, 83 + 1, 5 + 1)} / {@code (83 + 1, 5 + 36 + 1)} */
+    private static final int BLADE_TOP_X = 84;
+    private static final int BLADE_TOP_Y = 6;
+    private static final int BLADE_BOTTOM_X = 84;
+    private static final int BLADE_BOTTOM_Y = 42;
+
+    private final IDrawable background;
+    private final IDrawable icon;
+
     public ShredderJeiCategory(IGuiHelper guiHelper) {
-        super(guiHelper, new ItemStack[]{
-                new ItemStack(ModBlocks.SHREDDER.get())
-        });
+        this.background = JeiShredderTextures.createRecipeBackground(guiHelper);
+        this.icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK,
+                new ItemStack(ModBlocks.SHREDDER.get()));
     }
 
     @Override
@@ -32,40 +62,58 @@ public class ShredderJeiCategory extends JeiGenericRecipeCategory<ShredderRecipe
 
     @Override
     public Component getTitle() {
-        return Component.translatable("block.hbm_m.shredder");
+        return Component.translatable("container.hbm_m.shredder");
     }
 
     @Override
-    protected int getInputCount(ShredderRecipe recipe) {
-        return 1;
+    @SuppressWarnings("removal")
+    public IDrawable getBackground() {
+        return background;
     }
 
     @Override
-    protected int getOutputCount(ShredderRecipe recipe) {
-        return 1;
+    public IDrawable getIcon() {
+        return icon;
     }
 
     @Override
-    protected boolean hasBlueprintTemplate(ShredderRecipe recipe) {
-        return false;
+    public int getWidth() {
+        return JeiShredderTextures.RECIPE_WIDTH;
     }
 
     @Override
-    protected void addInputSlots(IRecipeLayoutBuilder builder, ShredderRecipe recipe, int inputXOffset) {
-        int[][] positions = JeiNeiLayout.getGenericInputSlotPositions(1);
-        var slot = addItemSlot(builder, RecipeIngredientRole.INPUT, positions[0][0] + inputXOffset, positions[0][1]);
-        JeiIngredientSlots.addCountedIngredient(slot, recipe.getInput(), 1);
+    public int getHeight() {
+        return JeiShredderTextures.RECIPE_HEIGHT;
     }
 
     @Override
-    protected void addOutputSlots(IRecipeLayoutBuilder builder, ShredderRecipe recipe, int outputXOffset) {
-        int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(1);
-        addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[0][0] + outputXOffset, positions[0][1])
+    public void setRecipe(IRecipeLayoutBuilder builder, ShredderRecipe recipe, IFocusGroup focuses) {
+        builder.addSlot(RecipeIngredientRole.INPUT, INPUT_X, INPUT_Y)
+                .addIngredients(recipe.getInput());
+        builder.addSlot(RecipeIngredientRole.OUTPUT, OUTPUT_X, OUTPUT_Y)
                 .addItemStack(recipe.getOutput());
+
+        // NEI getOtherStacks: the blade pair, cycling steel -> titanium -> desh
+        List<ItemStack> blades = getBlades();
+        builder.addSlot(RecipeIngredientRole.CATALYST, BLADE_TOP_X, BLADE_TOP_Y)
+                .addItemStacks(blades);
+        builder.addSlot(RecipeIngredientRole.CATALYST, BLADE_BOTTOM_X, BLADE_BOTTOM_Y)
+                .addItemStacks(blades);
     }
 
     @Override
-    protected void addBlueprintSlot(IRecipeLayoutBuilder builder, ShredderRecipe recipe, int machineXOffset) {
-        // No blueprint slot for shredder recipes.
+    public void draw(ShredderRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics,
+                     double mouseX, double mouseY) {
+        JeiShredderRendering.drawPowerBar(guiGraphics);
+        JeiShredderRendering.drawProgressArrow(guiGraphics);
+    }
+
+    /** Port of {@code ShredderRecipeHandler.getBlades()}. */
+    public static List<ItemStack> getBlades() {
+        List<ItemStack> blades = new ArrayList<ItemStack>();
+        blades.add(new ItemStack(ModItems.BLADES_STEEL.get()));
+        blades.add(new ItemStack(ModItems.BLADES_TITANIUM.get()));
+        blades.add(new ItemStack(ModItems.BLADES_DESH.get()));
+        return blades;
     }
 }

@@ -18,8 +18,8 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * 1:1 {@code MissilePronter} + {@code MissilePart}: zeichnet eine Baukasten-Rakete von unten nach oben - Triebwerk,
- * dann Leitwerk und Rumpf auf derselben Hoehe, darueber der Sprengkopf. Jede Stufe rueckt um ihre Hoehe nach oben.
+ * 1:1 {@code MissilePronter} + {@code MissilePart}: renders modular missile from bottom to top - thruster,
+ * then fins and body at equal elevation, topped by warhead. Each stage offsets upward by its height.
  */
 public final class MissilePronter {
 
@@ -38,7 +38,7 @@ public final class MissilePronter {
         return info != null && info.type() == expected ? info : null;
     }
 
-    /** Einzelnes Teil (Montage, Item-Vorschau). */
+    /** Single part (assembly, item preview). */
     public static void prontPart(MissilePartItems.RenderInfo info, PoseStack ps, MultiBufferSource buffers, int light) {
         model(info.model()).renderAll(ps, buffers.getBuffer(RenderType.entityCutout(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, info.texture()))), light);
     }
@@ -67,7 +67,7 @@ public final class MissilePronter {
         ps.popPose();
     }
 
-    /** Gesamthoehe (fuer GUI-Skalierung): Summe der GUI-Hoehen. */
+    /** Total height (for GUI scaling): sum of GUI heights. */
     public static double guiHeight(MissileStruct missile) {
         double h = 0;
         MissilePartItems.RenderInfo t = info(missile.thruster, PartType.THRUSTER);

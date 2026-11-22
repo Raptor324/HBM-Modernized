@@ -20,25 +20,15 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-
 /**
  * Реестр моделей и скинов дверей.
  * Загружает конфигурацию из JSON файлов и предоставляет доступ к моделям и скинам.
  * 
  * @author HBM-M Team
  */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public class DoorModelRegistry implements ResourceManagerReloadListener {
     
     private static final DoorModelRegistry INSTANCE = new DoorModelRegistry();
@@ -203,7 +193,11 @@ public class DoorModelRegistry implements ResourceManagerReloadListener {
     @Override
     public void onResourceManagerReload(ResourceManager resourceManager) {
         MainRegistry.LOGGER.info("Reloading door model configurations...");
-        
+
+        // Canonical-бейки дверных частей держат спрайты прошлого стича атласа.
+        com.hbm_m.client.loader.DoorModelLoader.clearCanonicalCache();
+        com.hbm_m.client.render.implementations.MachineDoorRenderer.clearPartSpriteCache();
+
         // Сохраняем пользовательские настройки по умолчанию
         Map<String, DoorModelSelection> savedDefaults = new LinkedHashMap<>(defaultSelections);
         
@@ -224,24 +218,17 @@ public class DoorModelRegistry implements ResourceManagerReloadListener {
             "large_vehicle_door", "round_airlock_door", "fire_door",
             "sliding_blast_door", "sliding_seal_door", "secure_access_door",
             "qe_sliding_door", "qe_containment_door", "water_door", "silo_hatch", "silo_hatch_large",
-            "vault_door", "cargo_door"
+            "vault_door", "cargo_door", "blast_door"
         };
         
         for (String namespace : resourceManager.getNamespaces()) {
             for (String doorType : knownDoorTypes) {
                 // Путь к конфигу рядом с моделью
                 // models/block/doors/large_vehicle_door_config.json
-                //? if fabric && < 1.21.1 {
-                /*ResourceLocation configPath = new ResourceLocation(
-                    namespace, 
-                    CONFIG_PATH + doorType + CONFIG_SUFFIX
-                );
-                *///?} else {
                                 ResourceLocation configPath = ResourceLocation.fromNamespaceAndPath(
                     namespace, 
                     CONFIG_PATH + doorType + CONFIG_SUFFIX
                 );
-                //?}
 
                 
                 try {

@@ -12,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineStorageDrumMenu extends AbstractContainerMenu {
 
@@ -63,7 +64,7 @@ public class MachineStorageDrumMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineStorageDrumBlockEntity drumBlockEntity) {
             return drumBlockEntity;
         }
-        throw new IllegalStateException("No MachineStorageDrumBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":machine_storage_drum_menu");
+        throw new MenuBlockEntityMissingException("No MachineStorageDrumBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":machine_storage_drum_menu");
     }
 
     public MachineStorageDrumBlockEntity getBlockEntity() {
@@ -72,11 +73,7 @@ public class MachineStorageDrumMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

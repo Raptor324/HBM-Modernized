@@ -26,7 +26,138 @@ public class ParticleEngineNT {
     // Очередь для новых частиц. Спасает от ConcurrentModificationException, если частица спавнит другую частицу внутри tick().
     private final List<ParticleNT> newParticles = new ArrayList<>();
 
+    // ═══ Откат таймлайна (реплееры вроде Flashback) ═══
+    // Собственный счётчик тиков движка: клиентский gameTime зернистый
+    // (ClientboundSetTimePacket раз в 20 тиков), им нельзя резать шлейф.
+    private long tickCounter = 0;
+    /**
+     * Активная граница отката: частицы с spawnTick > cutoff — «будущее»,
+     * их удаляем. MAX = нормальный режим. Новые частицы в режиме отката
+     * получают spawnTick = cutoff, чтобы шлейф у отмотанной ракеты
+     * продолжал строиться и не удалял сам себя.
+     */
+    private long purgeCutoff = Long.MAX_VALUE;
+    private long lastWorldGameTime = Long.MIN_VALUE;
+    /** История «тик движка → gameTime» для точного поиска границы отката (~2.7 ч при 20 tps). */
+    private static final int GAME_TIME_HISTORY = 200_000;
+    private final long[] gameTimeHistory = new long[GAME_TIME_HISTORY];
+
+    /**
+     * Раз в клиентский тик ПЕРЕД tick(): записывает мировое время в историю
+     * и при уменьшении (реплеер отмотал таймлайн назад) вычисляет границу
+     * отката и удаляет частицы «из будущего».
+     *
+     * @param rewindPurgeAllowed false на время экспорта Flashback: его
+     *        setup-отмотка к startTick-40 понижает gameTime (SetTime из
+     *        снапшота чанка записи), но поток далее переигрывает окно
+     *        ВПЕРЁД — эффекты, пере-доставленные до момента обнаружения
+     *        понижения, purge вычистил бы навсегда (их payload остался до
+     *        окна, повторной доставки не будет). История и штамп ведутся
+     *        как обычно, гасится только сама зачистка.
+     */
+    public void onWorldGameTime(long gameTime, boolean rewindPurgeAllowed) {
+        // Сначала purge-проверка и поиск границы, ПОТОМ штамп: слот текущего тика
+        // уже перезаписан отмотанным временем, и скан с него давал всегда
+        // cutoff == tickCounter (no-op). Скан ведётся с tickCounter-1 — по истории
+        // ДО отмотки; сам слот текущего тика штампуется ниже честным значением.
+        if (rewindPurgeAllowed && gameTime < this.lastWorldGameTime) {
+            this.purgeCutoff = findRewindCutoff(gameTime);
+            purgeFutureParticles();
+        }
+        this.gameTimeHistory[(int) (this.tickCounter % GAME_TIME_HISTORY)] = gameTime;
+        this.lastWorldGameTime = gameTime;
+    }
+
+    /** Новейший тик движка, на котором мировое время было <= gameTime. */
+    private long findRewindCutoff(long gameTime) {
+        long oldest = Math.max(0, this.tickCounter - GAME_TIME_HISTORY + 1);
+        // tickCounter-1: слот tickCounter на момент скана ещё не штампован/перезаписан
+        // (см. onWorldGameTime) — история прошлого начинается с предыдущего тика.
+        for (long e = this.tickCounter - 1; e >= oldest; e--) {
+            if (this.gameTimeHistory[(int) (e % GAME_TIME_HISTORY)] <= gameTime) {
+                return e;
+            }
+        }
+        return oldest;
+    }
+
+    private void purgeFutureParticles() {
+        for (List<ParticleNT> list : this.particlesByType.values()) {
+            list.removeIf(p -> p != null && p.spawnTick > this.purgeCutoff);
+        }
+        this.newParticles.removeIf(p -> p != null && p.spawnTick > this.purgeCutoff);
+    }
+
+    /**
+     * Сбор до {@code maxK} живых NukeTorex для света взрыва (RawScreenSpaceLight):
+     * в {@code out} кладутся четвёрки (x, y, z, heat), в параллельный
+     * {@code outScale} - масштаб гриба (NukeTorex.getScale, clamp 0.5..5 из
+     * NukeTorexCreator): радиус света считается на источник как R_UNIT * масштаб
+     * (round-5, находки R-1/R-2/R-3 - раньше усилитель вообще не доходил до света).
+     * Возвращает число заполненных; порядок outScale совпадает с порядком четвёрок.
+     */
+    public int collectNukeSources(float[] out, float[] outScale, int maxK) {
+        int n = 0;
+        for (List<ParticleNT> list : this.particlesByType.values()) {
+            for (ParticleNT p : list) {
+                if (n >= maxK) {
+                    return n;
+                }
+                if (p instanceof NukeTorex t && !p.dead) {
+                    out[n * 4] = (float) p.x;
+                    out[n * 4 + 1] = (float) p.y;
+                    out[n * 4 + 2] = (float) p.z;
+                    out[n * 4 + 3] = (float) t.heat;
+                    outScale[n] = (float) t.getScale();
+                    n++;
+                }
+            }
+        }
+        return n;
+    }
+
     public void add(ParticleNT effect) {
+        // This engine draws in world space and knows nothing of Sable ships: a particle born at a
+        // ship machine's block position sits in the plot grid, millions of blocks away. The vanilla
+        // engine gets the same treatment from Sable itself (ParticleExtension.initialKickOut).
+        if (com.hbm_m.compat.sable.SableCompat.isLoaded()) {
+            net.minecraft.world.phys.Vec3 world = com.hbm_m.compat.sable.SableCompat.toWorld(effect.level, effect.x, effect.y, effect.z);
+            if (world.x != effect.x || world.y != effect.y || world.z != effect.z) {
+                // Скорость задана в осях корабля (plot-сетки): без поворота вместе с позицией
+                // пламя форсажа на повёрнутом судне улетает не в ту сторону.
+                net.minecraft.world.phys.Vec3 motion = com.hbm_m.compat.sable.SableCompat.toWorldVector(
+                        effect.level, new net.minecraft.world.phys.Vec3(effect.x, effect.y, effect.z),
+                        new net.minecraft.world.phys.Vec3(effect.xd, effect.yd, effect.zd));
+                effect.setPos(world.x, world.y, world.z);
+                effect.xo = world.x;
+                effect.yo = world.y;
+                effect.zo = world.z;
+                effect.xd = motion.x;
+                effect.yd = motion.y;
+                effect.zd = motion.z;
+            }
+        }
+        // В нормальном режиме = текущий тик; в режиме отката новые частицы
+        // (шлейф у отмотанной ракеты) штампуются границей и выживают.
+        effect.spawnTick = Math.min(this.tickCounter, this.purgeCutoff);
+        // Повторная доставка пакета (реплеер перематывает таймлайн и отыгрывает
+        // пакеты заново; дубликат от сервера) не должна наслаивать второй гриб:
+        // помеченные ReplaceOnRespawn эффекты заменяют старый экземпляр своего
+        // класса поблизости вместо наложения.
+        if (effect instanceof ReplaceOnRespawn) {
+            double rr = 32 * 32;
+            for (List<ParticleNT> list : this.particlesByType.values()) {
+                for (int i = list.size() - 1; i >= 0; i--) {
+                    ParticleNT p = list.get(i);
+                    if (p == null || p.getClass() != effect.getClass()) continue;
+                    double dx = p.x - effect.x, dy = p.y - effect.y, dz = p.z - effect.z;
+                    if (dx * dx + dy * dy + dz * dz <= rr) {
+                        p.remove();
+                        list.remove(i);
+                    }
+                }
+            }
+        }
         this.newParticles.add(effect);
     }
 
@@ -103,6 +234,17 @@ public class ParticleEngineNT {
         this.renderOrderNormal.clear();
         this.renderOrderAshes.clear();
         this.newParticles.clear();
+        this.purgeCutoff = Long.MAX_VALUE;
+        this.lastWorldGameTime = Long.MIN_VALUE;
+    }
+
+    /** Живые частицы (батчи + очередь новых) — для диагностического лога экспорта. */
+    public int countParticles() {
+        int n = this.newParticles.size();
+        for (List<ParticleNT> list : this.particlesByType.values()) {
+            n += list.size();
+        }
+        return n;
     }
 
     public void render(MultiBufferSource.BufferSource buffer, Camera camera, float partialTick, PoseStack levelPoseStack) {
@@ -137,6 +279,11 @@ public class ParticleEngineNT {
             List<ParticleNT> list = this.particlesByType.get(type);
             if (list == null || list.isEmpty()) continue;
 
+            if (list.get(0) instanceof com.hbm_m.client.particle.ParticleSpentCasing) {
+                com.hbm_m.client.particle.ParticleSpentCasing.renderBatch(list, camera, partialTick, 0.0D, false, false);
+                continue;
+            }
+
             // Порядок отрисовки ВНУТРИ батча: от дальних к ближним (painter).
             // sortOnUpload у наших RenderType выключен (нестабилен в модпаке —
             // «Sorting state uninitialized»), поэтому порядок квайдов задаём
@@ -158,6 +305,11 @@ public class ParticleEngineNT {
             net.minecraft.client.renderer.RenderType type = ordered.get(i);
             List<ParticleNT> list = this.particlesByType.get(type);
             if (list == null || list.isEmpty()) continue;
+
+            if (list.get(0) instanceof com.hbm_m.client.particle.ParticleSpentCasing) {
+                com.hbm_m.client.particle.ParticleSpentCasing.renderBatch(list, camera, partialTick, splitSq, true, renderFar);
+                continue;
+            }
 
             sortFarToNear(list, camera);
 
@@ -247,6 +399,10 @@ public class ParticleEngineNT {
     }
 
     public void tick() {
+        this.tickCounter++;
+        // Догнали таймлайн после отката — выходим из «режима прошлого».
+        if (this.tickCounter >= this.purgeCutoff) this.purgeCutoff = Long.MAX_VALUE;
+
         // 1. Распределяем новые частицы в правильные батчи (один раз за всю их жизнь)
         if (!this.newParticles.isEmpty()) {
             for (int i = 0, size = this.newParticles.size(); i < size; i++) {

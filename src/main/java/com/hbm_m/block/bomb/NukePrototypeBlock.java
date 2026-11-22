@@ -153,7 +153,6 @@ public class NukePrototypeBlock extends BaseEntityBlock implements IBomb, IDeton
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof NukePrototypeBlockEntity nukeBe) {
             if (nukeBe.isReady()) {
-                Containers.dropContents(level, pos, nukeBe);
                 nukeBe.clearContent();
                 level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
                 NuclearScenarioLaunchers.launchPrototype((ServerLevel) level, pos, ExplosionCommandOptions.DEFAULT);

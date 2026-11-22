@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'casings.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o ShotgunCase
 v -0.353356 -0.353356 1.148335
 v 0.000000 -0.499721 1.148335

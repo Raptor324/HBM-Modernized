@@ -2,7 +2,6 @@ package com.hbm_m.powerarmor;
 
 import com.hbm_m.platform.PlatformHooks;
 
-import com.hbm_m.platform.AttributeOps;
 
 import com.google.common.collect.Multimap;
 import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
@@ -15,6 +14,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.AttributeHooks;
 
 /** 1:1 {@code com.hbm.items.armor.ArmorLiquidator}: schwerer Bleianzug (kein Rueckstoss, langsamer, dunkle Sicht). */
 public class ArmorLiquidator extends ModArmorFSB {
@@ -41,8 +41,8 @@ public class ArmorLiquidator extends ModArmorFSB {
     *///?}
         if (slot != this.getEquipmentSlot()) return base;
         return ArmorAttributes.with(base,
-                java.util.Map.entry(Attributes.KNOCKBACK_RESISTANCE, PlatformHooks.attributeModifier(ArmorAttributes.fixed(this.getType()), "Armor modifier", 100D, AttributeOps.ADDITION)),
-                java.util.Map.entry(Attributes.MOVEMENT_SPEED, PlatformHooks.attributeModifier(ArmorAttributes.fixed(this.getType()), "Armor modifier", -0.1D, AttributeOps.MULTIPLY_BASE)));
+                java.util.Map.entry(Attributes.KNOCKBACK_RESISTANCE, AttributeHooks.modifier(ArmorAttributes.fixed(this.getType()), "Armor modifier", 100D, AttributeHooks.ADDITION)),
+                java.util.Map.entry(Attributes.MOVEMENT_SPEED, AttributeHooks.modifier(ArmorAttributes.fixed(this.getType()), "Armor modifier", -0.1D, AttributeHooks.MULTIPLY_BASE)));
     }
 
     /** Original getArmorModel: die Liquidatorhaube nutzt das M65-Modell (GasMaskLayer). */

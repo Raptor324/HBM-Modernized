@@ -1,5 +1,4 @@
 package com.hbm_m.compat.jei;
-//? if forge || neoforge {
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,7 +78,3 @@ public class FluidContainerJeiCategory implements IRecipeCategory<FluidContainer
         builder.addSlot(RecipeIngredientRole.OUTPUT, 120, 24).addItemStack(recipe.fullContainer());
     }
 }
-//?} else {
-/*public final class FluidContainerJeiCategory {
-    private FluidContainerJeiCategory() {}
-}*///?}

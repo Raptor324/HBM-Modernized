@@ -50,7 +50,7 @@ public class CogEntity extends EntityThrowableInterp {
     public static CogEntity create(Level level, double x, double y, double z, Direction facing) {
         CogEntity cog = new CogEntity(ModEntities.COG.get(), level);
         cog.setPos(x, y, z);
-        cog.entityData.set(ORIENTATION, facing.ordinal());
+        cog.setOrientationValue(facing.ordinal());
         return cog;
     }
 
@@ -103,20 +103,11 @@ public class CogEntity extends EntityThrowableInterp {
     }
 
     @Override
-    public boolean isPickable() {
-        return true;
-    }
-
-    @Override
     protected void onImpact(HitResult mop) {
 
         if (mop instanceof EntityHitResult ehr && ehr.getEntity().isAlive()) {
             Entity e = ehr.getEntity();
-            //? if < 1.21.1 {
             e.hurt(com.hbm_m.damagesource.ModDamageSources.rubble(level()), 1000);
-            //?} else {
-            /*e.hurt(com.hbm_m.damagesource.ModDamageSources.rubble(level()), 1000);
-            *///?}
             if (!e.isAlive() && e instanceof LivingEntity && level() instanceof ServerLevel sl) {
                 CompoundTag vdat = new CompoundTag();
                 vdat.putString("type", "giblets");

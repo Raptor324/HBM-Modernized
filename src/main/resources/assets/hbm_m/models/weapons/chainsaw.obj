@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'chainsaw.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Tooth
 v -0.421875 0.562500 0.625000
 v -0.390625 0.562500 0.625000

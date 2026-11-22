@@ -5,7 +5,7 @@
   },
   "children": {
     "pad_model": {
-      "loader": "forge:obj",
+      "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/machines/launch_pad_large.obj",
       "flip_v": true
     }

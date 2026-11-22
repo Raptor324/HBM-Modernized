@@ -23,21 +23,19 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1-Port von {@code GUIFusionTorus} (1.7.10). Alle Koordinaten, Balken, LEDs und Zeiger sind
  * unveraendert uebernommen; die Rezeptauswahl laeuft ueber den bereits vorhandenen
  * {@link GUIScreenRecipeSelector}.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineFusionTorus extends GuiInfoScreen<MachineFusionTorusMenu> {
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
-            RefStrings.MODID, "textures/gui/reactors/gui_fusion_torus.png");
-    *///?} else {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/reactors/gui_fusion_torus.png");
-    //?}
 
     public GUIMachineFusionTorus(MachineFusionTorusMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

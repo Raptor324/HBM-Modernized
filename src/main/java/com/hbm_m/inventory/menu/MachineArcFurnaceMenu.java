@@ -3,11 +3,10 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.blockentity.machines.MachineArcFurnaceBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.inventory.recipes.ArcFurnaceRecipes;
-import com.hbm_m.inventory.recipes.ArcFurnaceRecipes.ArcFurnaceRecipe;
 import com.hbm_m.item.industrial.ItemArcElectrode;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
+import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -17,7 +16,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 1:1 {@code ContainerMachineArcFurnaceLarge}: Elektroden (62-98,22), Batterie (8,108), Upgrade (152,108), 4x5
@@ -35,8 +37,10 @@ public class MachineArcFurnaceMenu extends AbstractContainerMenu {
         super(ModMenuTypes.ARC_FURNACE_MENU.get(), id);
         this.furnace = tile;
 
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         Container c = new ModItemStackHandlerContainer(
-                tile != null ? tile.getInventory() : new DummyItemStackHandler(MachineArcFurnaceBlockEntity.INVENTORY_SIZE),
+                tile != null ? tile.getInventory() : new ModItemStackHandler.Dummy(MachineArcFurnaceBlockEntity.INVENTORY_SIZE),
                 tile != null ? tile::setChanged : null);
 
         //Electrodes
@@ -61,6 +65,15 @@ public class MachineArcFurnaceMenu extends AbstractContainerMenu {
         }
     }
 
+    /**
+     * 1:1 {@code ArcFurnaceRecipes.getOutput}: feste Rezeptliste plus Autogen; {@code level}
+     * fuer die Ofenrezepte (Original: FurnaceRecipes, hier der RecipeManager).
+     */
+    @Nullable
+    private static ArcFurnaceRecipes.ArcFurnaceRecipe findRecipe(@Nullable Level level, ItemStack stack, boolean liquid) {
+        return ArcFurnaceRecipes.getOutput(stack, liquid, level);
+    }
+
     /** Original {@code SlotArcFurnace}: im Fest-Modus nur passende Mengen, Stapelgrenze nach Upgrade. */
     private class SlotArcFurnace extends Slot {
 
@@ -72,9 +85,10 @@ public class MachineArcFurnaceMenu extends AbstractContainerMenu {
         public boolean mayPlace(ItemStack stack) {
             if (furnace == null) return false;
             if (furnace.liquidMode) return true;
-            ArcFurnaceRecipe recipe = ArcFurnaceRecipes.getOutput(stack, furnace.liquidMode, furnace.getLevel());
+            ArcFurnaceRecipes.ArcFurnaceRecipe recipe = findRecipe(furnace.getLevel(), stack, furnace.liquidMode);
             if (recipe != null && recipe.solidOutput != null) {
-                return recipe.solidOutput.getCount() * stack.getCount() <= recipe.solidOutput.getMaxStackSize() && stack.getCount() <= furnace.getMaxInputSize();
+                ItemStack output = recipe.solidOutput;
+                return output.getCount() * stack.getCount() <= output.getMaxStackSize() && stack.getCount() <= furnace.getMaxInputSize();
             }
             return false;
         }
@@ -93,10 +107,16 @@ public class MachineArcFurnaceMenu extends AbstractContainerMenu {
 
     private static MachineArcFurnaceBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
         BlockPos pos = buffer.readBlockPos();
-        BlockEntity be = inventory.player.level().getBlockEntity(pos);
-        if (be instanceof MachineArcFurnaceBlockEntity f) return f;
-        if (inventory.player.level().isClientSide) return null;
-        throw new IllegalStateException("No MachineArcFurnaceBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":arc_furnace_menu");
+        BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
+        if (blockEntity instanceof MachineArcFurnaceBlockEntity arcFurnace) {
+            return arcFurnace;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
+        }
+        throw new MenuBlockEntityMissingException("No MachineArcFurnaceBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":arc_furnace_menu");
     }
 
     public MachineArcFurnaceBlockEntity getBlockEntity() {
@@ -105,9 +125,7 @@ public class MachineArcFurnaceMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (furnace == null || furnace.getLevel() != player.level()) return false;
-        BlockPos pos = furnace.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 128.0D;
+        return MenuReach.stillValid(player, furnace);
     }
 
     @Override

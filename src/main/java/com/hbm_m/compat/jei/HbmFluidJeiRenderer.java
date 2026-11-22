@@ -1,15 +1,14 @@
 package com.hbm_m.compat.jei;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
 import java.util.List;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.client.gui.FluidGuiRendering;
 
-//? if forge {
 import net.minecraftforge.fluids.FluidStack;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.fluids.FluidStack;
-*///?}
 import mezz.jei.api.ingredients.IIngredientRenderer;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -28,13 +27,7 @@ import net.minecraft.world.level.material.Fluids;
  * instead of the vanilla extension mechanism; this renderer reuses that same path for JEI.
  */
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public class HbmFluidJeiRenderer implements IIngredientRenderer<FluidStack> {
 
     private final int width;
@@ -56,8 +49,7 @@ public class HbmFluidJeiRenderer implements IIngredientRenderer<FluidStack> {
         ResourceLocation fluidPng = FluidGuiRendering.guiTexturePngForFluid(fluid, fStack);
         if (fluidPng == null) return;
 
-        // wie FluidTank.renderTank: GUI-Tint des Typs (0xFFFFFF), Textur ist bereits eingefaerbt
-        int tint = com.hbm_m.inventory.fluid.FluidType.forFluid(fluid).getTint() & 0xFFFFFF;
+        int tint = HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
         float r = (tint >> 16 & 255) / 255.0F;
         float g = (tint >> 8 & 255) / 255.0F;
         float b = (tint & 255) / 255.0F;

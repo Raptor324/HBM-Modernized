@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'minigun.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o GunDual
 v 0.000000 1.500000 -2.000000
 v 0.574025 1.385819 -2.000000

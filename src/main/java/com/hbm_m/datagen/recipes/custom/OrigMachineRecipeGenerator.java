@@ -323,12 +323,13 @@ public final class OrigMachineRecipeGenerator {
     }
 
     private static void crystallizerRecipes(Consumer<FinishedRecipe> w) {
-        // CrystallizerRecipes:72
-        CrystallizerRecipeBuilder.crystallizerRecipe(ore("oredict/ore/saltpeter"), 1, fl(ModFluids.PEROXIDE, 500), stack("hbm_m:crystal_niter", 1), 600, 0.05F).save(w, "orig_machines/crystallizer/crystal_niter_1");
+        // CrystallizerRecipes:72 (KNO.ore -> crystal_niter) и :86 (oreRareEarth -> crystal_rare)
+        // портированы в CrystallizerRecipeGenerator (crystallizer/ore_niter, crystallizer/ore_rare_earth) —
+        // здесь НЕ дублируем: оригинал держал HashMap-ключ и показывал каждый рецепт один раз,
+        // а двойная генерация давала две одинаковые строки в JEI (RecipeHooks.getAllRecipes
+        // возвращает все записи RecipeManager).
         // CrystallizerRecipes:83
         CrystallizerRecipeBuilder.crystallizerRecipe(Ingredient.of(item("hbm_m:calcium_powder")), 1, fl(ModFluids.REDMUD, 75), stack("hbm_m:cement_powder", 8), 100, 0.1F).save(w, "orig_machines/crystallizer/cement_powder_1");
-        // CrystallizerRecipes:86
-        CrystallizerRecipeBuilder.crystallizerRecipe(ore("oredict/ore/rare_earth"), 1, fl(ModFluids.SULFURIC_ACID, 500), stack("hbm_m:crystal_rare", 1), 600, 0.05F).save(w, "orig_machines/crystallizer/crystal_rare_1");
         // CrystallizerRecipes:89
         CrystallizerRecipeBuilder.crystallizerRecipe(Ingredient.of(item("hbm_m:nether_fire_ore")), 1, fl(ModFluids.PEROXIDE, 500), stack("hbm_m:crystal_phosphorus", 1), 600, 0.05F).save(w, "orig_machines/crystallizer/crystal_phosphorus_1");
         // CrystallizerRecipes:90
@@ -383,16 +384,10 @@ public final class OrigMachineRecipeGenerator {
         CrystallizerRecipeBuilder.crystallizerRecipe(Ingredient.of(item("hbm_m:sawdust_powder")), 1, fl(ModFluids.NITROGLYCERIN, 250), stack("hbm_m:cordite", 1), 20, 0.25F).save(w, "orig_machines/crystallizer/cordite_1");
         // CrystallizerRecipes:124
         CrystallizerRecipeBuilder.crystallizerRecipe(Ingredient.of(item("hbm_m:powder_impure_osmiridium")), 1, fl(ModFluids.SCHRABIDIC, 1000), stack("hbm_m:crystal_osmiridium", 1), 600, 0.0F).save(w, "orig_machines/crystallizer/crystal_osmiridium_1");
-        // CrystallizerRecipes:212
-        CrystallizerRecipeBuilder.crystallizerRecipe(Ingredient.of(item("hbm_m:oil_tar_crude")), 1, fl(ModFluids.CHLORINE, 250), stack("hbm_m:oil_tar_wax", 1), 20, 0.0F).save(w, "orig_machines/crystallizer/oil_tar_wax_1");
-        // CrystallizerRecipes:213
-        CrystallizerRecipeBuilder.crystallizerRecipe(Ingredient.of(item("hbm_m:oil_tar_crack")), 1, fl(ModFluids.CHLORINE, 100), stack("hbm_m:oil_tar_wax", 1), 20, 0.0F).save(w, "orig_machines/crystallizer/oil_tar_wax_2");
-        // CrystallizerRecipes:214
-        CrystallizerRecipeBuilder.crystallizerRecipe(Ingredient.of(item("hbm_m:oil_tar_paraffin")), 1, fl(ModFluids.CHLORINE, 100), stack("hbm_m:oil_tar_wax", 1), 20, 0.0F).save(w, "orig_machines/crystallizer/oil_tar_wax_3");
-        // CrystallizerRecipes:215
-        CrystallizerRecipeBuilder.crystallizerRecipe(Ingredient.of(item("hbm_m:oil_tar_wax")), 1, fl(ModFluids.IONGEL, 500), stack("hbm_m:pellet_charged", 1), 200, 0.0F).save(w, "orig_machines/crystallizer/pellet_charged_1");
-        // CrystallizerRecipes:216
-        CrystallizerRecipeBuilder.crystallizerRecipe(Ingredient.of(item("hbm_m:oil_tar_paraffin")), 1, fl(ModFluids.ESTRADIOL, 250), stack("hbm_m:pill_red", 1), 200, 0.0F).save(w, "orig_machines/crystallizer/pill_red_1");
+        // CrystallizerRecipes:212-216 (нефтяные смолы -> воск / заряженная гранула / красная таблетка)
+        // портированы в CrystallizerRecipeGenerator как crystallizer/tar_* — здесь НЕ дублируем,
+        // иначе RecipeManager содержит каждый рецепт дважды и JEI показывает две строки
+        // (у оригинала HashMap-ключ давал одну).
         // CrystallizerRecipes:218
         CrystallizerRecipeBuilder.crystallizerRecipe(ore("oredict/sand"), 1, fl(ModFluids.COLLOID, 1000), stack("minecraft:clay", 1), 20, 0.0F).save(w, "orig_machines/crystallizer/clay_1");
         // CrystallizerRecipes:219
@@ -569,8 +564,8 @@ public final class OrigMachineRecipeGenerator {
         PressRecipeBuilder.pressRecipe(stack("hbm_m:coal_briquette", 1)).stamp(Ingredient.of(oreTag("stamps/flat"))).material(ore("oredict/dust/coal")).save(w, "orig_machines/press/coal_briquette_1");
         // PressRecipes:71
         PressRecipeBuilder.pressRecipe(stack("hbm_m:lignite_briquette", 1)).stamp(Ingredient.of(oreTag("stamps/flat"))).material(ore("oredict/dust/lignite")).save(w, "orig_machines/press/lignite_briquette_1");
-        // PressRecipes:72
-        PressRecipeBuilder.pressRecipe(stack("hbm_m:sawdust_briquette", 1)).stamp(Ingredient.of(oreTag("stamps/flat"))).material(Ingredient.of(item("hbm_m:sawdust_powder"))).save(w, "orig_machines/press/sawdust_briquette_1");
+        // PressRecipes:72 — in PressRecipeGenerator als "sawdust_briquette" portiert (beide Varianten
+        // nutzen denselben Gegenstand hbm_m:sawdust_powder; Duplikat entfernt, Original: HashMap ohne Doppelungen).
         // PressRecipes:84
         PressRecipeBuilder.pressRecipe(stack("hbm_m:plate_weaponsteel", 1)).stamp(Ingredient.of(oreTag("stamps/plate"))).material(ore("oredict/ingot/weapon_steel")).save(w, "orig_machines/press/plate_weaponsteel_1");
         // PressRecipes:88

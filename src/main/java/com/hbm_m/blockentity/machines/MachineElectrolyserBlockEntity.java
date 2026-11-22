@@ -367,6 +367,10 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
         inventory.setStackInSlot(14, crystal.isEmpty() ? ItemStack.EMPTY : crystal);
     }
 
+    /** GUI-Fortschritt wie der Machines-Port (skaliert auf die dynamische Dauer). */
+    public int getProgressFluidScaled(int scale) { return progressFluid * scale / Math.max(1, getDurationFluid()); }
+    public int getProgressMetalScaled(int scale) { return progressOre * scale / Math.max(1, getDurationMetal()); }
+
     public int getDurationMetal() {
         ElectrolysisMetalRecipe result = ElectrolyserMetalRecipes.getRecipe(inventory.getStackInSlot(14));
         int base = result != null ? result.duration : 600;
@@ -450,13 +454,13 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
         sided = null;
     }
     //?} elif neoforge {
-    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> sided;
+    /*private com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> sided;
 
     /^* Original {@code getAccessibleSlotsFromSide {11-20}}: nur Slot 14 einfuegbar, alles ausser 14 entnehmbar. ^/
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
-            if (sided == null) sided = com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+            if (sided == null) sided = com.hbm_m.platform.LazyCap.of(() -> new net.minecraftforge.items.IItemHandler() {
                 @Override public int getSlots() { return 10; }
                 @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(11 + slot); }
                 @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {

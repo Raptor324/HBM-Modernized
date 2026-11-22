@@ -15,9 +15,12 @@ public final class ParticleCreators {
         CREATORS.put("skeleton", new SkeletonCreator());
         CREATORS.put("ashes", new AshesCreator());
         CREATORS.put("explosionLarge", new ExplosionClientCreator());
+        CREATORS.put("foundry", new FoundryCreator());
         CREATORS.put("tower", new CoolingTowerCreator());
+        CREATORS.put("gasfire", new GasFireCreator());
         CREATORS.put("hadron", new HadronCreator());
         CREATORS.put("tau", new TauCreator());
+        CREATORS.put("giblets", new GibletCreator());
         CREATORS.put("explosionSmall", new ExplosionSmallClientCreator());
         CREATORS.put("flamethrower", new FlameClientCreator());
         CREATORS.put("blackPowder", new BlackPowderClientCreator());

@@ -5,7 +5,7 @@
 	"loader": "forge:composite",
 	"children": {
 		"bat9000_model": {
-			"loader": "forge:obj",
+			"loader": "hbm_m:nmesh_obj",
 			"model": "hbm_m:models/block/machines/bat9000.obj",
 			"flip_v": true,
 			"render_type": "minecraft:cutout",

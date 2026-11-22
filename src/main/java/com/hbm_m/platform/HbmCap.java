@@ -19,13 +19,13 @@ import com.hbm_m.interfaces.IEnergyReceiver;
  ^/
 public final class HbmCap<T> {
 
-    public static final HbmCap<net.neoforged.neoforge.items.IItemHandler> ITEM_HANDLER =
+    public static final HbmCap<net.minecraftforge.items.IItemHandler> ITEM_HANDLER =
             new HbmCap<>("item_handler", Capabilities.ItemHandler.BLOCK, Capabilities.ItemHandler.ITEM);
-    public static final HbmCap<net.neoforged.neoforge.fluids.capability.IFluidHandler> FLUID_HANDLER =
+    public static final HbmCap<net.minecraftforge.fluids.capability.IFluidHandler> FLUID_HANDLER =
             new HbmCap<>("fluid_handler", Capabilities.FluidHandler.BLOCK, null);
-    public static final HbmCap<net.neoforged.neoforge.fluids.capability.IFluidHandlerItem> FLUID_HANDLER_ITEM =
+    public static final HbmCap<net.minecraftforge.fluids.capability.IFluidHandlerItem> FLUID_HANDLER_ITEM =
             new HbmCap<>("fluid_handler_item", null, Capabilities.FluidHandler.ITEM);
-    public static final HbmCap<net.neoforged.neoforge.energy.IEnergyStorage> ENERGY =
+    public static final HbmCap<net.minecraftforge.energy.IEnergyStorage> ENERGY =
             new HbmCap<>("energy", Capabilities.EnergyStorage.BLOCK, Capabilities.EnergyStorage.ITEM);
     public static final HbmCap<IEnergyProvider> HBM_ENERGY_PROVIDER =
             new HbmCap<>("hbm_energy_provider", ModCapabilities.HBM_ENERGY_PROVIDER, ModCapabilities.HBM_ITEM_ENERGY_PROVIDER);

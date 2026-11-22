@@ -239,8 +239,14 @@ public class MachineFurnaceSteelBlockEntity extends com.hbm_m.blockentity.BaseHb
         return true;
     }
 
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<SmeltingRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     private java.util.Optional<SmeltingRecipe> getRecipe(Level level, ItemStack input) {
-        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(level, RecipeType.SMELTING, input);
+        SmeltingRecipe cached = recipeResolver.resolve(level, RecipeType.SMELTING,
+                com.hbm_m.platform.StackNbt.fingerprint(input),
+                (lvl, all) -> com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(lvl, RecipeType.SMELTING, input).orElse(null));
+        return java.util.Optional.ofNullable(cached);
     }
 
     /** Original: nur Schmelzbares in die Eingaenge. */
@@ -263,7 +269,7 @@ public class MachineFurnaceSteelBlockEntity extends com.hbm_m.blockentity.BaseHb
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
+        tag.put("inventory", inventory.serialize( registries));
         tag.putIntArray("progress", progress);
         tag.putIntArray("bonus", bonus);
         tag.putInt("heat", heat);
@@ -272,7 +278,7 @@ public class MachineFurnaceSteelBlockEntity extends com.hbm_m.blockentity.BaseHb
         ListTag list = new ListTag();
         for (int i = 0; i < lastItems.length; i++) {
             if (!lastItems[i].isEmpty()) {
-                CompoundTag nbt1 = com.hbm_m.platform.PlatformHooks.saveItemStack(lastItems[i], new CompoundTag(), registries);
+                CompoundTag nbt1 = com.hbm_m.platform.StackNbt.save(lastItems[i], new CompoundTag(), registries);
                 nbt1.putByte("lastItem", (byte) i);
                 list.add(nbt1);
             }
@@ -283,7 +289,7 @@ public class MachineFurnaceSteelBlockEntity extends com.hbm_m.blockentity.BaseHb
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
+        inventory.deserialize(tag.getCompound("inventory"), registries);
         int[] p = tag.getIntArray("progress");
         int[] b = tag.getIntArray("bonus");
         if (p.length == 3) progress = p;
@@ -297,7 +303,7 @@ public class MachineFurnaceSteelBlockEntity extends com.hbm_m.blockentity.BaseHb
             CompoundTag nbt1 = list.getCompound(i);
             byte b0 = nbt1.getByte("lastItem");
             if (b0 >= 0 && b0 < lastItems.length) {
-                lastItems[b0] = com.hbm_m.platform.PlatformHooks.itemStackOf(nbt1, registries);
+                lastItems[b0] = com.hbm_m.platform.StackNbt.parse(nbt1, registries);
             }
         }
     }
@@ -367,4 +373,10 @@ public class MachineFurnaceSteelBlockEntity extends com.hbm_m.blockentity.BaseHb
         sidedItems.invalidate();
     }
     *///?}
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
+    }
 }

@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** 1:1 {@code ContainerOilburner}: Behaelter rein (26,17), leer raus (26,53, nur entnehmen), Fluid-ID (44,71). */
 public class MachineOilburnerMenu extends AbstractContainerMenu {
@@ -60,7 +61,7 @@ public class MachineOilburnerMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineOilburnerBlockEntity oilburnerBlockEntity) {
             return oilburnerBlockEntity;
         }
-        throw new IllegalStateException("No MachineOilburnerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":oilburner_menu");
+        throw new MenuBlockEntityMissingException("No MachineOilburnerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":oilburner_menu");
     }
 
     public MachineOilburnerBlockEntity getBlockEntity() {

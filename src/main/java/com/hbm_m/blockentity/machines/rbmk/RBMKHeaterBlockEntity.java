@@ -121,7 +121,7 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
      */
     private void exchangeFluids(Level level) {
         BlockPos pos = getBlockPos();
-        trySubscribe(inputTank.getTankType(), level, pos.below(), Direction.DOWN);
+        trySubscribe(inputTank, level, pos.below(), Direction.DOWN);
 
         if (outputTank.getFill() <= 0) return;
         for (com.mojang.datafixers.util.Pair<BlockPos, Direction> target : getOutputPos(level)) {
@@ -189,18 +189,21 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?} elif neoforge {
-    /*/^* Bottom face takes the feed, every other face hands out the heated product. ^/
+    //?}
+
+    // The Forge getCapability above was the only place these were exposed, so on NeoForge the heater
+    // had neither an item slot for automation nor the per-side fluid split (feed in from below,
+    // heated product out of every other face).
     @Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
-            if (side == Direction.DOWN || side == null) return com.hbm_m.platform.LazyCap.ofObj(inputTank.getCapability()).cast();
-            return com.hbm_m.platform.LazyCap.ofObj(outputTank.getCapability()).cast();
-        }
-        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
-            return com.hbm_m.platform.LazyCap.of(() -> inventory).cast();
-        }
-        return super.getHbmCapability(cap, side);
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        return inventory;
+    }
+
+    //? if neoforge {
+    /*@Override
+    public @org.jetbrains.annotations.Nullable Object getFluidHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        FluidTank tank = (side == Direction.DOWN || side == null) ? inputTank : outputTank;
+        return tank.getCapability();
     }
     *///?}
 
@@ -229,7 +232,6 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
                 net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluid);
         return id == null ? "" : "fluid." + id.getNamespace() + "." + id.getPath();
     }
-
     @Override public Component getDisplayName() { return Component.translatable("block.hbm_m.rbmk_heater"); }
     @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return new RBMKHeaterMenu(id, inv, this); }
 

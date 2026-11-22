@@ -2,8 +2,6 @@ package com.hbm_m.block.machines.dfc;
 
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.dfc.DFCStabilizerBlockEntity;
-
-import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,9 +13,7 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -28,25 +24,15 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * 1:1-Port von {@code CoreComponent} in der Ausfuehrung als Stabilisator (1.7.10).
- *
- * <p>Er schiesst in seine Blickrichtung. Anders als die waagerecht ausgerichteten Maschinen dieses
- * Ports nutzt er die volle Sechsrichtungs-Ausrichtung: das Feld laesst sich auch von oben oder
- * unten aufbauen, und im Original ist genau das der uebliche Aufbau.</p>
- */
+import dev.architectury.registry.menu.MenuRegistry;
+
 public class DFCStabilizerBlock extends BaseEntityBlock {
 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
     public DFCStabilizerBlock(Properties properties) {
         super(properties);
-        registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
     /** Original {@code isOpaqueCube() = false}: der unsichtbare Block darf Nachbarflaechen nicht verdecken. */
@@ -60,21 +46,16 @@ public class DFCStabilizerBlock extends BaseEntityBlock {
         return RenderShape.ENTITYBLOCK_ANIMATED; // Gehaeuse und Strahl zeichnet DFCRenderers.Stabilizer (RenderCoreComponent)
     }
 
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
         // Original: BlockPistonBase.determineOrientation - der Block zeigt zum Spieler.
         return defaultBlockState().setValue(FACING, DFCOrientation.determineOrientation(ctx));
-    }
-
-    @Override
-    public BlockState rotate(BlockState state, Rotation rotation) {
-        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
-    }
-
-    @Override
-    public BlockState mirror(BlockState state, Mirror mirror) {
-        return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
 
     @Nullable
@@ -85,18 +66,8 @@ public class DFCStabilizerBlock extends BaseEntityBlock {
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.DFC_STABILIZER_BE.get(),
-                (lvl, pos, st, be) -> DFCStabilizerBlockEntity.tick(lvl, pos, st, (DFCStabilizerBlockEntity) be));
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (state.getBlock() != newState.getBlock()
-                && level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.BaseMachineBlockEntity machine) {
-            machine.dropInventoryContents();
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
+        return createTickerHelper(blockEntityType, ModBlockEntities.DFC_STABILIZER_BE.get(), DFCStabilizerBlockEntity::tick);
     }
 
     //? if < 1.21.1 {
@@ -118,8 +89,13 @@ public class DFCStabilizerBlock extends BaseEntityBlock {
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
     *///?}
-    //? if >= 1.21.1 {
+
+    //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<DFCStabilizerBlock> CODEC = simpleCodec(DFCStabilizerBlock::new);
-    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
+    }
     *///?}
 }

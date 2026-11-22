@@ -36,16 +36,17 @@ public class RBMKDisassemblyJeiCategory extends JeiGenericRecipeCategory<RBMKDis
     @Override protected int getOutputCount(RBMKDisassemblyJeiRecipe recipe) { return 1; }
     @Override protected boolean hasBlueprintTemplate(RBMKDisassemblyJeiRecipe recipe) { return false; }
 
+    // Original extends NEIUniversalHandler, not NEIGenericRecipeHandler - use its slot coords.
     @Override
     protected void addInputSlots(IRecipeLayoutBuilder builder, RBMKDisassemblyJeiRecipe recipe, int inputXOffset) {
-        int[][] positions = JeiNeiLayout.getGenericInputSlotPositions(1);
+        int[][] positions = JeiNeiLayout.getUniversalInputCoords(1);
         addItemSlot(builder, RecipeIngredientRole.INPUT, positions[0][0] + inputXOffset, positions[0][1])
                 .addItemStack(recipe.rod());
     }
 
     @Override
     protected void addOutputSlots(IRecipeLayoutBuilder builder, RBMKDisassemblyJeiRecipe recipe, int outputXOffset) {
-        int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(1);
+        int[][] positions = JeiNeiLayout.getUniversalOutputCoords(1);
         addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[0][0] + outputXOffset, positions[0][1])
                 .addItemStack(recipe.pellets());
     }

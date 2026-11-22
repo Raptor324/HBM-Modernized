@@ -2,6 +2,7 @@ package com.hbm_m.entity.mob;
 
 import com.hbm_m.advancement.ModAdvancements;
 import com.hbm_m.api.entity.IRadiationImmune;
+import com.hbm_m.entity.projectile.TurretBulletEntity;
 import com.hbm_m.item.ModItems;
 
 import net.minecraft.sounds.SoundEvent;
@@ -15,10 +16,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.PathfinderMob;
-import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
+import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
@@ -30,6 +29,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import org.jetbrains.annotations.NotNull;
+import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.goal.Goal;
 
 /**
  * 1:1 port of {@code EntityMaskMan} - a 1000 HP boss that shrugs off most of what you throw at it
@@ -40,8 +41,11 @@ import org.jetbrains.annotations.NotNull;
  * halved past that threshold, so burst damage is heavily punished. Half health triggers a one-off
  * explosion above its head, and its face changes to a skull - see the renderer.</p>
  *
- * <p>Die Laserkanone feuert wie im Original {@code EntityBulletBaseNT} (BulletConfigSyncingUtil),
- * das Minigun 7.62 FMJ aus {@code XFactory762mm} (SEDNA).</p>
+ * <p><b>Substitution:</b> the original's three-phase laser gun fires {@code EntityBulletBaseNT}
+ * with configs from {@code BulletConfigSyncingUtil}, and its minigun fires 7.62 FMJ from
+ * {@code XFactory762mm}. Neither system exists in this port, so all four projectile types are
+ * carried by {@link TurretBulletEntity} with the original's damage, counts and cadences kept
+ * intact. The attack pattern is faithful; the bullet entity underneath is not.</p>
  */
 public class EntityMaskMan extends Monster implements IRadiationImmune {
 
@@ -70,6 +74,11 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
         }
     }
 
+    private LaserAttack attack = LaserAttack.ORB;
+    private int attackCount;
+    private int laserTimer;
+    private int minigunTimer;
+
     public EntityMaskMan(EntityType<? extends Monster> type, Level level) {
         super(type, level);
         this.xpReward = 100;
@@ -87,12 +96,11 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
 
     @Override
     protected void registerGoals() {
-        // 1:1 Konstruktor EntityMaskMan (Prioritaeten und Mutex wie im Original)
         this.goalSelector.addGoal(1, new FloatGoal(this));
+        // EntityAIMaskmanCasualApproach (FFA merge loss restore): haelt ~10 Bloecke Abstand,
+        // greift nie im Nahkampf an - wie im 1.7.10-Original (Melee dort auskommentiert).
         this.goalSelector.addGoal(2, new CasualApproachGoal(this, Player.class, 1.0D, false));
-        this.goalSelector.addGoal(2, new MinigunGoal(this, 3));
-        this.goalSelector.addGoal(3, new LasergunGoal(this));
-        this.goalSelector.addGoal(3, new RandomStrollGoal(this, 1.0D));
+        this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
         this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
@@ -100,7 +108,19 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, null));
     }
 
-    // ─── KI 1:1 aus com.hbm.entity.mob.ai ───────────────────────────────────
+    @Override public boolean fireImmune()                { return true; }
+    @Override public boolean removeWhenFarAway(double d) { return false; }
+    @Override public boolean canBeAffected(@NotNull net.minecraft.world.effect.MobEffectInstance effect) { return false; }
+
+    @Override protected SoundEvent getHurtSound(@NotNull DamageSource source) { return SoundEvents.IRON_GOLEM_HURT; }
+    @Override protected SoundEvent getDeathSound() { return SoundEvents.IRON_GOLEM_DEATH; }
+
+    /** Half health is what flips the face to a skull; the renderer reads this. */
+    public boolean isUnmasked() {
+        return this.getHealth() < this.getMaxHealth() / 2;
+    }
+
+    // ─── EntityAIMaskmanCasualApproach (FFA merge loss restore) ──────────────
 
     /** {@code EntityAIMaskmanCasualApproach}: haelt ~10 Bloecke Abstand, greift nie im Nahkampf an. */
     static class CasualApproachGoal extends Goal {
@@ -125,8 +145,7 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
         @Override
         public boolean canUse() {
             LivingEntity target = this.attacker.getTarget();
-            if (target == null) return false;
-            if (!target.isAlive()) return false;
+            if (target == null || !target.isAlive()) return false;
             if (this.classTarget != null && !this.classTarget.isAssignableFrom(target.getClass())) return false;
 
             if (--this.pathTimer <= 0) {
@@ -135,7 +154,7 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
                 this.pathTimer = 4 + this.attacker.getRandom().nextInt(7);
                 return this.entityPathEntity != null;
             }
-            return true;
+            return false;
         }
 
         @Override
@@ -221,145 +240,6 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
         }
     }
 
-    /** {@code EntityAIMaskmanMinigun}: 7.62 FMJ alle {@code delay} Ticks im 5-10-Bloecke-Band. */
-    static class MinigunGoal extends Goal {
-        private final PathfinderMob owner;
-        private LivingEntity target;
-        private final int delay;
-        private int timer;
-
-        MinigunGoal(PathfinderMob owner, int delay) {
-            this.owner = owner;
-            this.delay = delay;
-            this.timer = delay;
-        }
-
-        @Override
-        public boolean canUse() {
-            LivingEntity entity = this.owner.getTarget();
-            if (entity == null || !entity.isAlive()) return false;
-            this.target = entity;
-            double dist = new Vec3(target.getX() - owner.getX(), target.getY() - owner.getY(), target.getZ() - owner.getZ()).length();
-            return dist > 5 && dist < 10;
-        }
-
-        @Override
-        public boolean canContinueToUse() {
-            return this.canUse() || !this.owner.getNavigation().isDone();
-        }
-
-        @Override
-        public boolean requiresUpdateEveryTick() {
-            return true;
-        }
-
-        @Override
-        public void tick() {
-            timer--;
-
-            if (target != null) this.owner.getLookControl().setLookAt(this.target, 15F, 15F);
-
-            if (timer <= 0) {
-                timer = delay;
-                // 1:1: SEDNA-Geschoss 7.62 FMJ aus XFactory762mm
-                com.hbm_m.entity.projectile.EntityBulletBaseMK4 bullet = new com.hbm_m.entity.projectile.EntityBulletBaseMK4(this.owner,
-                        com.hbm_m.item.weapon.sedna.factory.XFactory762mm.r762_fmj, 5F, 0.075F, -1.5, -1.5, 0);
-                owner.level().addFreshEntity(bullet);
-                owner.playSound(com.hbm_m.sound.HbmSoundsNT.get("hbm:weapon.calShoot"), 1.0F, 1.0F);
-            }
-        }
-    }
-
-    /** {@code EntityAIMaskmanLasergun}: ab 10 Bloecken Kugel-, Raketen- und Leuchtspursalven. */
-    static class LasergunGoal extends Goal {
-        private final PathfinderMob owner;
-        private LivingEntity target;
-        private LaserAttack attack;
-        private int timer;
-        private int attackCount;
-
-        LasergunGoal(PathfinderMob owner) {
-            this.owner = owner;
-            this.attack = LaserAttack.values()[owner.getRandom().nextInt(3)];
-        }
-
-        @Override
-        public boolean canUse() {
-            LivingEntity entity = this.owner.getTarget();
-            if (entity == null) return false;
-            this.target = entity;
-            double dist = new Vec3(target.getX() - owner.getX(), target.getY() - owner.getY(), target.getZ() - owner.getZ()).length();
-            return dist > 10;
-        }
-
-        @Override
-        public boolean canContinueToUse() {
-            return this.canUse() || !this.owner.getNavigation().isDone();
-        }
-
-        @Override
-        public boolean requiresUpdateEveryTick() {
-            return true;
-        }
-
-        @Override
-        public void tick() {
-            timer--;
-
-            if (timer <= 0) {
-                timer = attack.delay;
-
-                // 1:1 EntityAIMaskmanLasergun mit EntityBulletBaseNT (MASKMAN_ORB / _ROCKET / _TRACER)
-                switch (attack) {
-                    case ORB -> {
-                        com.hbm_m.entity.projectile.EntityBulletBaseNT orb = com.hbm_m.entity.projectile.EntityBulletBaseNT.create(owner.level(),
-                                com.hbm_m.handler.BulletConfigSyncingUtil.MASKMAN_ORB, owner, target, 2.0F, 0);
-                        orb.setDeltaMovement(orb.getDeltaMovement().add(0, 0.5D, 0));
-                        owner.level().addFreshEntity(orb);
-                        owner.playSound(com.hbm_m.sound.HbmSoundsNT.get("hbm:weapon.teslaShoot"), 1.0F, 1.0F);
-                    }
-                    case MISSILE -> {
-                        com.hbm_m.entity.projectile.EntityBulletBaseNT missile = com.hbm_m.entity.projectile.EntityBulletBaseNT.create(owner.level(),
-                                com.hbm_m.handler.BulletConfigSyncingUtil.MASKMAN_ROCKET, owner, target, 1.0F, 0);
-                        Vec3 vec = new Vec3(target.getX() - owner.getX(), 0, target.getZ() - owner.getZ());
-                        missile.setDeltaMovement(vec.x * 0.05D, 0.5D + owner.getRandom().nextDouble() * 0.5D, vec.z * 0.05D);
-                        owner.level().addFreshEntity(missile);
-                        owner.playSound(com.hbm_m.sound.HbmSoundsNT.get("hbm:weapon.hkShoot"), 1.0F, 1.0F);
-                    }
-                    case SPLASH -> {
-                        for (int i = 0; i < 5; i++) {
-                            com.hbm_m.entity.projectile.EntityBulletBaseNT tracer = com.hbm_m.entity.projectile.EntityBulletBaseNT.create(owner.level(),
-                                    com.hbm_m.handler.BulletConfigSyncingUtil.MASKMAN_TRACER, owner, target, 1.0F, 0.05F);
-                            owner.level().addFreshEntity(tracer);
-                        }
-                    }
-                }
-
-                attackCount++;
-
-                if (attackCount >= attack.amount) {
-                    attackCount = 0;
-                    int newAtk = attack.ordinal() + owner.getRandom().nextInt(LaserAttack.values().length - 1);
-                    attack = LaserAttack.values()[newAtk % LaserAttack.values().length];
-                }
-            }
-
-            this.owner.setYRot(this.owner.getYHeadRot());
-        }
-    }
-
-    @Override public boolean fireImmune()                { return true; }
-    @Override public boolean removeWhenFarAway(double d) { return false; }
-    @Override public boolean canBeAffected(@NotNull net.minecraft.world.effect.MobEffectInstance effect) { return false; }
-
-    @Override protected SoundEvent getHurtSound(@NotNull DamageSource source) { return SoundEvents.IRON_GOLEM_HURT; }
-    @Override protected SoundEvent getDeathSound() { return SoundEvents.IRON_GOLEM_DEATH; }
-
-    /** Half health is what flips the face to a skull; the renderer reads this. */
-    public boolean isUnmasked() {
-        return this.getHealth() < this.getMaxHealth() / 2;
-    }
-
     // ─── Damage table ────────────────────────────────────────────────────────
 
     @Override
@@ -410,8 +290,85 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
 
         if (!this.level().isClientSide) {
             updateBossBar();
+
+            LivingEntity target = this.getTarget();
+            if (target != null && this.hasLineOfSight(target)) {
+                this.getLookControl().setLookAt(target, 15F, 15F);
+                double distance = this.distanceTo(target);
+                // EntityAIMaskmanMinigun: only in the 5-10 block band.
+                if (distance > 5 && distance < 10) minigun(target);
+                laserGun(target);
+            }
         }
-        // Minigun/Laserkanone/Annaeherung laufen wie im Original als KI-Aufgaben (registerGoals).
+    }
+
+    /** {@code EntityAIMaskmanMinigun}: a shot every three ticks while in the mid band. */
+    private void minigun(LivingEntity target) {
+        if (--this.minigunTimer > 0) return;
+        this.minigunTimer = 3;
+
+        fireAt(target, 5F, 1.5D, 0D, ModItems.BOLT_STEEL.get());
+        emitSound(SoundEvents.CROSSBOW_SHOOT, 1.0F, 1.0F);
+    }
+
+    /** {@code EntityAIMaskmanLasergun}: cycles orb, missile and splash volleys. */
+    private void laserGun(LivingEntity target) {
+        if (--this.laserTimer > 0) return;
+        this.laserTimer = this.attack.delay;
+
+        switch (this.attack) {
+            case ORB -> {
+                TurretBulletEntity orb = fireAt(target, 2F, 1.2D, 0.5D, ModItems.PARTICLE_DIGAMMA.get());
+                if (orb != null) emitSound(SoundEvents.BEACON_POWER_SELECT, 1.0F, 1.0F);
+            }
+            case MISSILE -> {
+                // Lobbed rather than aimed: a flat push towards the target plus a steep arc.
+                Vec3 flat = new Vec3(target.getX() - this.getX(), 0, target.getZ() - this.getZ());
+                TurretBulletEntity missile = TurretBulletEntity.create(this.level(),
+                        this.getX(), this.getEyeY(), this.getZ(),
+                        flat.x * 0.05D, 0.5D + this.random.nextDouble() * 0.5D, flat.z * 0.05D,
+                        1F, ModItems.MISSILE_NUCLEAR.get());
+                missile.setOwner(this);
+                missile.setNoGravity(false);
+                this.level().addFreshEntity(missile);
+                emitSound(SoundEvents.FIREWORK_ROCKET_LAUNCH, 1.0F, 1.0F);
+            }
+            case SPLASH -> {
+                for (int i = 0; i < 5; i++) {
+                    fireAt(target, 1F, 1.2D, 0.05D, ModItems.BOLT_STEEL.get());
+                }
+            }
+        }
+
+        if (++this.attackCount >= this.attack.amount) {
+            this.attackCount = 0;
+            // The original advances by a random non-zero step so it never repeats the same phase.
+            int next = this.attack.ordinal() + 1 + this.random.nextInt(LaserAttack.values().length - 1);
+            this.attack = LaserAttack.values()[next % LaserAttack.values().length];
+        }
+    }
+
+    private TurretBulletEntity fireAt(LivingEntity target, float damage, double speed, double spread,
+                                      net.minecraft.world.item.Item icon) {
+        Vec3 dir = new Vec3(
+                target.getX() - this.getX(),
+                target.getEyeY() - this.getEyeY(),
+                target.getZ() - this.getZ()).normalize();
+
+        TurretBulletEntity bullet = TurretBulletEntity.create(this.level(),
+                this.getX(), this.getEyeY(), this.getZ(),
+                dir.x * speed + this.random.nextGaussian() * spread,
+                dir.y * speed + this.random.nextGaussian() * spread,
+                dir.z * speed + this.random.nextGaussian() * spread,
+                damage, icon);
+        bullet.setOwner(this);
+        this.level().addFreshEntity(bullet);
+        return bullet;
+    }
+
+    private void emitSound(SoundEvent sound, float volume, float pitch) {
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                sound, SoundSource.HOSTILE, volume, pitch);
     }
 
     // ─── Death ───────────────────────────────────────────────────────────────

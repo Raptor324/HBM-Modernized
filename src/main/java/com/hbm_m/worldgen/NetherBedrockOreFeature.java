@@ -7,6 +7,7 @@ import com.hbm_m.item.ModItems;
 import com.mojang.serialization.Codec;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.LevelAccessor;
@@ -72,10 +73,10 @@ public class NetherBedrockOreFeature extends Feature<NoneFeatureConfiguration> {
                     for (int iy = baseY + 1; iy <= baseY + 6; iy++) {
                         BlockPos pos = new BlockPos(ix, iy, iz);
                         BlockState existing = level.getBlockState(pos);
-                        if ((iy < baseY + 3 || existing.is(net.minecraft.world.level.block.Blocks.BEDROCK))
-                                && (existing.is(net.minecraft.world.level.block.Blocks.BEDROCK)
-                                || existing.is(net.minecraft.tags.BlockTags.STONE_ORE_REPLACEABLES)
-                                || existing.is(net.minecraft.tags.BlockTags.DEEPSLATE_ORE_REPLACEABLES))) {
+                        if ((iy < baseY + 3 || existing.is(Blocks.BEDROCK))
+                                && (existing.is(Blocks.BEDROCK)
+                                || existing.is(BlockTags.STONE_ORE_REPLACEABLES)
+                                || existing.is(BlockTags.DEEPSLATE_ORE_REPLACEABLES))) {
                             level.setBlock(pos, depthRock.defaultBlockState(), 3);
                         }
                     }
@@ -98,7 +99,7 @@ public class NetherBedrockOreFeature extends Feature<NoneFeatureConfiguration> {
         if (total <= 0) return new ItemStack(Items.GLOWSTONE_DUST, 4);
         int roll = rand.nextInt(total);
         if (roll < glow) return new ItemStack(Items.GLOWSTONE_DUST, 4);
-        if (roll < glow + phos) return new ItemStack(com.hbm_m.item.ModItems.FIRE_POWDER.get(), 4); // Original: powder_fire
+        if (roll < glow + phos) return new ItemStack(ModItems.FIRE_POWDER.get(), 4); // Original: powder_fire
         return new ItemStack(Items.QUARTZ, 4);
     }
 }

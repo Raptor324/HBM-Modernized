@@ -1,5 +1,4 @@
 package com.hbm_m.compat.jei;
-//? if forge || neoforge {
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -32,6 +31,8 @@ import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.item.nuclear.PWRFuelType;
 import com.hbm_m.item.nuclear.WatzPelletType;
+import com.hbm_m.item.rbmk.RBMKRodItem;
+import com.hbm_m.item.tags_and_tiers.ModTags;
 import com.hbm_m.item.weapon.grenade.GrenadeItems;
 import com.hbm_m.item.weapon.grenade.ItemGrenadeExtra.EnumGrenadeExtra;
 import com.hbm_m.item.weapon.grenade.ItemGrenadeFilling.EnumGrenadeFilling;
@@ -47,7 +48,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -116,6 +116,18 @@ public final class NeiUniversalJeiRecipes {
         return list;
     }
 
+    /** {@code ItemStackUtil.addStackSizeLabel}: rote Zeile "Nx64 + M" an Stapeln ueber 64. */
+    private static Slot sized(ItemStack stack) {
+        int count = stack.getCount();
+        return count > 64 ? Slot.of(stack).tip(red(sizeLabel(count))) : Slot.of(stack);
+    }
+
+    private static String sizeLabel(int count) {
+        int stacks = count / 64;
+        int items = count % 64;
+        return stacks + "x64" + (items > 0 ? (" + " + items) : "");
+    }
+
     // ---- ToolingHandler / BlockToolConversion.getRecipes ----
 
     public static List<Entry> tooling() {
@@ -171,22 +183,23 @@ public final class NeiUniversalJeiRecipes {
         /* SOYUZ LAUNCHER */
         list.add(new Entry(List.of(
                 Slot.of(it(ModBlocks.STRUCT_LAUNCHER.get().asItem(), 30)),
-                Slot.of(it(ModBlocks.STRUCT_LAUNCHER.get().asItem(), 384)),
-                Slot.of(it(ModBlocks.STRUCT_SCAFFOLD.get().asItem(), 63)),
-                Slot.of(it(ModBlocks.STRUCT_SCAFFOLD.get().asItem(), 384)),
+                sized(it(ModBlocks.STRUCT_LAUNCHER.get().asItem(), 384)),
+                Slot.of(it(ModBlocks.STRUCT_SCAFFOLD.get().asItem(), 11)),
+                sized(it(ModBlocks.STRUCT_SCAFFOLD.get().asItem(), 384)),
                 Slot.of(it(ModBlocks.CONCRETE_SMOOTH.get().asItem(), 38)),
-                Slot.of(it(ModBlocks.CONCRETE_SMOOTH.get().asItem(), 320))),
+                sized(it(ModBlocks.CONCRETE_SMOOTH.get().asItem(), 320))),
                 List.of(Slot.of(new ItemStack(ModItems.SOYUZ_LAUNCHER.get()))),
                 List.of(new ItemStack(ModBlocks.STRUCT_SOYUZ_CORE.get()))));
 
         /* ICF */
         list.add(new Entry(clean(
                 Slot.of(it(ModBlocks.ICF_COMPONENT.get().asItem(), 50)),
-                Slot.of(it(ModBlocks.ICF_COMPONENT_STRUCTURE.get().asItem(), 240)),
-                Slot.of(it(duraBolt, 960)),
-                Slot.of(mat(ModMaterials.STEEL, MaterialShape.PLATE_CAST, 240)),
-                Slot.of(it(ModBlocks.ICF_COMPONENT_VESSEL.get().asItem(), 117)),
-                Slot.of(mat(ModMaterials.BBRONZE, MaterialShape.PLATE_CAST, 117), mat(ModMaterials.ABRONZE, MaterialShape.PLATE_CAST, 117)),
+                sized(it(ModBlocks.ICF_COMPONENT_STRUCTURE.get().asItem(), 240)),
+                sized(it(duraBolt, 960)),
+                sized(mat(ModMaterials.STEEL, MaterialShape.PLATE_CAST, 240)),
+                sized(it(ModBlocks.ICF_COMPONENT_VESSEL.get().asItem(), 117)),
+                Slot.of(mat(ModMaterials.BBRONZE, MaterialShape.PLATE_CAST, 117), mat(ModMaterials.ABRONZE, MaterialShape.PLATE_CAST, 117))
+                        .tip(red(sizeLabel(117))),
                 Slot.of(new ItemStack(ModItems.BLOWTORCH.get())),
                 Slot.of(new ItemStack(ModItems.BOLTGUN.get()))),
                 List.of(Slot.of(new ItemStack(ModBlocks.ICF.get()))),
@@ -208,11 +221,11 @@ public final class NeiUniversalJeiRecipes {
         }
         List<Slot> torus = new ArrayList<>();
         int plateCount = wallCount;
-        while (wallCount > 0) { int a = Math.min(wallCount, 256); torus.add(Slot.of(it(ModBlocks.FUSION_COMPONENT.get().asItem(), a))); wallCount -= a; }
-        while (plateCount > 0) { int a = Math.min(plateCount, 256); torus.add(Slot.of(mat(ModMaterials.STEEL, MaterialShape.PLATE_CAST, a))); plateCount -= a; }
-        while (blanketCount > 0) { int a = Math.min(blanketCount, 256); torus.add(Slot.of(it(ModBlocks.FUSION_COMPONENT_BLANKET.get().asItem(), a))); blanketCount -= a; }
-        while (pipeCount > 0) { int a = Math.min(pipeCount, 256); torus.add(Slot.of(it(ModBlocks.FUSION_COMPONENT_MOTOR.get().asItem(), a))); pipeCount -= a; }
-        torus.add(Slot.of(new ItemStack(ModItems.BLOWTORCH.get())));
+        while (wallCount > 0) { int a = Math.min(wallCount, 256); torus.add(sized(it(ModBlocks.FUSION_COMPONENT.get().asItem(), a))); wallCount -= a; }
+        while (plateCount > 0) { int a = Math.min(plateCount, 256); torus.add(sized(mat(ModMaterials.STEEL, MaterialShape.PLATE_CAST, a))); plateCount -= a; }
+        while (blanketCount > 0) { int a = Math.min(blanketCount, 256); torus.add(sized(it(ModBlocks.FUSION_COMPONENT_BLANKET.get().asItem(), a))); blanketCount -= a; }
+        while (pipeCount > 0) { int a = Math.min(pipeCount, 256); torus.add(sized(it(ModBlocks.FUSION_COMPONENT_MOTOR.get().asItem(), a))); pipeCount -= a; }
+        torus.add(sized(new ItemStack(ModItems.BLOWTORCH.get())));
         list.add(new Entry(clean(torus.toArray(new Slot[0])),
                 List.of(Slot.of(new ItemStack(ModItems.FUSION_TORUS_ITEM.get()))),
                 List.of(new ItemStack(ModBlocks.STRUCT_TORUS_CORE.get()))));
@@ -287,6 +300,21 @@ public final class NeiUniversalJeiRecipes {
         for (Map.Entry<Item, ItemStack> e : FuelPoolRecipes.recipes().entrySet()) {
             list.add(new Entry(List.of(Slot.of(new ItemStack(e.getKey()))), List.of(Slot.of(e.getValue().copy()))));
         }
+        // Das Referenzregister haengt ausserdem je RBMK-Stab einen Eintrag an (FuelPoolRecipes
+        // registerDefaults, Original FuelPoolRecipes.java:46-50): heisser Stab mit 20 % Restbrand
+        // (Kern 100 / Huelle 50, so zeigt ihn ComparableStackHeat(rod, true).toStack(),
+        // RBMKRodDisassemblyHandler.java:73-81) -> kalter Stab mit gleichem Restbrand. Im Fass
+        // kuehlen Staebe organisch statt ueber die Rezeptmap (TileEntityWasteDrum updateEntity,
+        // Zeile 212-217), die Maschinenmap im Port enthaelt sie darum zu Recht nicht - in der
+        // NEI-Liste des Originals stehen sie trotzdem, also genau hier.
+        for (RBMKRodItem rod : RBMKRodItem.craftableRods) {
+            ItemStack out = new ItemStack(rod);
+            RBMKRodItem.setYield(out, 0.2 * rod.yield);
+            ItemStack in = out.copy();
+            RBMKRodItem.setCoreHeat(in, 100);
+            RBMKRodItem.setHullHeat(in, 50);
+            list.add(new Entry(List.of(Slot.of(in)), List.of(Slot.of(out))));
+        }
         return list;
     }
 
@@ -359,9 +387,18 @@ public final class NeiUniversalJeiRecipes {
     // ---- BoilingHandler ----
 
     public static List<Entry> boiling() {
-        Set<Fluid> order = new LinkedHashSet<>();
-        for (ModFluids.FluidEntry e : HbmFluidRegistry.getOrderedFluids()) order.add(e.getSource());
-        for (Fluid f : BuiltInRegistries.FLUID) if (f.isSource(f.defaultFluidState())) order.add(f);
+        // 1:1 BoilingHandler.generateRecipes(): Fluids.getInNiceOrder() -> jeder FluidType genau einmal.
+        // Der Port haengt Alias-Fluessigkeiten (vanilla Wasser) dieselben Traits an wie das hbm-Pendant;
+        // ohne Dedup ueber den FluidType-Namen erschiene Wasser -> Dampf zweimal in der Kategorie.
+        Set<String> seenNames = new LinkedHashSet<>();
+        List<Fluid> order = new ArrayList<>();
+        for (ModFluids.FluidEntry e : HbmFluidRegistry.getOrderedFluids()) {
+            if (seenNames.add(FluidType.forFluid(e.getSource()).getName())) order.add(e.getSource());
+        }
+        for (Fluid f : BuiltInRegistries.FLUID) {
+            if (!f.isSource(f.defaultFluidState())) continue;
+            if (seenNames.add(FluidType.forFluid(f).getName())) order.add(f);
+        }
 
         List<Entry> list = new ArrayList<>();
         for (Fluid type : order) {
@@ -393,15 +430,18 @@ public final class NeiUniversalJeiRecipes {
 
     // ---- SawmillHandler / TileEntitySawmill.getRecipes ----
 
+    /** Eingaenge wie die Maschine ueber die hbm_m:oredict/*-Tags: logWood/plankWood wechseln im Original auch
+     *  pink_log/pink_planks durch (OreDictManager 588-591), stickWood entspricht #forge:rods/wooden (ModTags). */
     public static List<Entry> sawmill() {
         ItemStack sawdust = new ItemStack(ModItems.POWDER_SAWDUST.get());
         List<Entry> list = new ArrayList<>();
-        list.add(new Entry(List.of(Slot.of(items(Ingredient.of(ItemTags.LOGS), 1))),
+        list.add(new Entry(List.of(Slot.of(items(Ingredient.of(ModTags.Items.OREDICT_LOG_WOOD), 1))),
                 List.of(Slot.of(new ItemStack(Items.OAK_PLANKS, 6)), Slot.of(sawdust.copy()).tip(red("50%")))));
-        list.add(new Entry(List.of(Slot.of(items(Ingredient.of(ItemTags.PLANKS), 1))),
+        list.add(new Entry(List.of(Slot.of(items(Ingredient.of(ModTags.Items.OREDICT_PLANK_WOOD), 1))),
                 List.of(Slot.of(new ItemStack(Items.STICK, 6)), Slot.of(sawdust.copy()).tip(red("10%")))));
-        list.add(new Entry(List.of(Slot.of(new ItemStack(Items.STICK))), List.of(Slot.of(sawdust.copy()))));
-        list.add(new Entry(List.of(Slot.of(items(Ingredient.of(ItemTags.SAPLINGS), 1))),
+        list.add(new Entry(List.of(Slot.of(items(Ingredient.of(ModTags.Items.OREDICT_STICK_WOOD), 1))),
+                List.of(Slot.of(sawdust.copy()))));
+        list.add(new Entry(List.of(Slot.of(items(Ingredient.of(ModTags.Items.OREDICT_TREE_SAPLING), 1))),
                 List.of(Slot.of(new ItemStack(Items.STICK, 1)), Slot.of(sawdust.copy()).tip(red("10%")))));
         return list;
     }
@@ -443,7 +483,8 @@ public final class NeiUniversalJeiRecipes {
         Slot ovens = Slot.of(it("firebox"), it("heating_oven"));
         Slot chimneys = Slot.of(it("chimney_brick"), it("chimney_industrial"));
         Slot coals = Slot.of(new ItemStack(Items.COAL), it("lignite"), it("coal_coke"));
-        Slot wood = Slot.of(new ItemStack(Items.OAK_LOG), new ItemStack(Items.ACACIA_LOG), new ItemStack(Items.OAK_PLANKS), new ItemStack(Items.OAK_SAPLING));
+        // Original: log, log2, planks, sapling, Items.coal meta 1 (= Holzkohle)
+        Slot wood = Slot.of(new ItemStack(Items.OAK_LOG), new ItemStack(Items.ACACIA_LOG), new ItemStack(Items.OAK_PLANKS), new ItemStack(Items.OAK_SAPLING), new ItemStack(Items.CHARCOAL));
         // ModItems.scrap = ModMaterialItems SCRAP/SCRAP (ID "scrap").
         Slot misc = Slot.of(it("solid_fuel"), new ItemStack(ModMaterialItems.item(ModMaterials.SCRAP, MaterialShape.SCRAP)), it("dust"), it("rocket_fuel"));
         Fluid[] smokes = {ModFluids.SMOKE.getSource(), ModFluids.SMOKE_LEADED.getSource(), ModFluids.SMOKE_POISON.getSource()};
@@ -500,7 +541,3 @@ public final class NeiUniversalJeiRecipes {
         return new Entry(ins, List.of(Slot.of(ItemGrenadeUniversal.make(shell, filling, fuze, extra))));
     }
 }
-//?} else {
-/*public final class NeiUniversalJeiRecipes {
-    private NeiUniversalJeiRecipes() {}
-}*///?}

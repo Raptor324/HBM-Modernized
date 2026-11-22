@@ -45,7 +45,6 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineDeuteriumTowerBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
-
     /** w16b: Original {@code DeuteriumTower.printHook}: Energie (rot unter 1/20 Maximum) und beide Tanks. */
     @Override
     public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {

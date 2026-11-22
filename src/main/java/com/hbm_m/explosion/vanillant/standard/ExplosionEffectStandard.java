@@ -11,11 +11,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-
 import java.util.List;
 
 public class ExplosionEffectStandard implements IExplosionSFX {
@@ -32,9 +29,7 @@ public class ExplosionEffectStandard implements IExplosionSFX {
         }
     }
 
-    //? if forge {
     @OnlyIn(Dist.CLIENT)
-    //?}
     public static void performClient(ClientLevel level, double x, double y, double z, float size, List<BlockPos> affectedBlocks) {
         if (size >= 2.0F) {
             level.addParticle(ParticleTypes.EXPLOSION_EMITTER, x, y, z, 1.0D, 0.0D, 0.0D);

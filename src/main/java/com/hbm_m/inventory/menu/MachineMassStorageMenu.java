@@ -12,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Port of {@code ContainerMassStorage} (1.7.10 Original). */
 public class MachineMassStorageMenu extends AbstractContainerMenu {
@@ -62,7 +63,7 @@ public class MachineMassStorageMenu extends AbstractContainerMenu {
         BlockPos p = blockEntity.getBlockPos();
         blockEntity.getLevel().playSound(null, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5,
                 sound, net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
-    }
+   }
 
     public static MachineMassStorageMenu create(int id, Inventory inventory, MachineMassStorageBlockEntity blockEntity) {
         return new MachineMassStorageMenu(id, inventory, blockEntity);
@@ -74,8 +75,8 @@ public class MachineMassStorageMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineMassStorageBlockEntity massStorageBlockEntity) {
             return massStorageBlockEntity;
         }
-        throw new IllegalStateException("No MachineMassStorageBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mass_storage_menu");
-    }
+        throw new MenuBlockEntityMissingException("No MachineMassStorageBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mass_storage_menu");
+   }
 
     public MachineMassStorageBlockEntity getBlockEntity() {
         return blockEntity;
@@ -83,12 +84,8 @@ public class MachineMassStorageMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
-    }
+        return MenuReach.stillValid(player, blockEntity);
+   }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {

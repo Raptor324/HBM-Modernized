@@ -11,12 +11,15 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.util.Mth;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1-Port von {@code GUIElements.drawSmoothGauge} (1.7.10): ein Zeiger als zwei Dreiecke -
  * aussen eine um Faktor 1,5 vergroesserte Kontur, innen der eigentliche Zeiger. Der Ausschlag
  * laeuft ueber 270 Grad und beginnt bei -45 Grad, genau wie im Original.
  */
+@OnlyIn(Dist.CLIENT)
 public final class GuiGaugeNeedle {
 
     private GuiGaugeNeedle() {}
@@ -65,18 +68,12 @@ public final class GuiGaugeNeedle {
     private static void addTriangle(BufferBuilder buffer, Matrix4f matrix, int x, int y,
                                     double tipX, double tipY, double leftX, double leftY,
                                     double rightX, double rightY, int color) {
-        float r = ((color >> 16) & 0xFF) / 255F;
-        float g = ((color >> 8) & 0xFF) / 255F;
-        float b = (color & 0xFF) / 255F;
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
 
-        //? if < 1.21.1 {
-        buffer.vertex(matrix, (float) (x + tipX), (float) (y + tipY), 0F).color(r, g, b, 1F).endVertex();
-        buffer.vertex(matrix, (float) (x + leftX), (float) (y + leftY), 0F).color(r, g, b, 1F).endVertex();
-        buffer.vertex(matrix, (float) (x + rightX), (float) (y + rightY), 0F).color(r, g, b, 1F).endVertex();
-        //?} else {
-        /*buffer.addVertex(matrix, (float) (x + tipX), (float) (y + tipY), 0F).setColor(r, g, b, 1F);
-        buffer.addVertex(matrix, (float) (x + leftX), (float) (y + leftY), 0F).setColor(r, g, b, 1F);
-        buffer.addVertex(matrix, (float) (x + rightX), (float) (y + rightY), 0F).setColor(r, g, b, 1F);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, (float) (x + tipX), (float) (y + tipY), 0F, r, g, b, 255);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, (float) (x + leftX), (float) (y + leftY), 0F, r, g, b, 255);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, (float) (x + rightX), (float) (y + rightY), 0F, r, g, b, 255);
     }
 }

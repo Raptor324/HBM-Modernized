@@ -34,6 +34,8 @@ public class PlasmaForgeRecipeBuilder extends BaseRecipeBuilder<PlasmaForgeRecip
 
     private final List<CountedIngredient> itemInputs = new ArrayList<>();
     private final List<FluidAmount> fluidInputs = new ArrayList<>();
+    /** Original: {@code outputFluids(...)} - reine NEI/JEI-Anzeige, die Maschine hat keinen Ausgangstank. */
+    private final List<FluidAmount> fluidOutputs = new ArrayList<>();
 
     @Nullable
     private String blueprintPool;
@@ -68,6 +70,12 @@ public class PlasmaForgeRecipeBuilder extends BaseRecipeBuilder<PlasmaForgeRecip
 
     public PlasmaForgeRecipeBuilder addFluidInput(Fluid fluid, int amount) {
         this.fluidInputs.add(new FluidAmount(fluid, amount));
+        return this;
+    }
+
+    /** Original: {@code outputFluids(new FluidStack(Fluids.PERFLUOROMETHYL, 4_000))} ({@code plsm.bronzetubes}). */
+    public PlasmaForgeRecipeBuilder outputFluid(Fluid fluid, int amount) {
+        this.fluidOutputs.add(new FluidAmount(fluid, amount));
         return this;
     }
 
@@ -107,6 +115,15 @@ public class PlasmaForgeRecipeBuilder extends BaseRecipeBuilder<PlasmaForgeRecip
             fluidInputsJson.add(fluidStackToJson(FluidStack.create(fa.fluid(), fa.amount())));
         }
         json.add("fluid_inputs", fluidInputsJson);
+
+        if (!fluidOutputs.isEmpty()) {
+            JsonArray fluidOutputsJson = new JsonArray();
+            for (FluidAmount fa : fluidOutputs) {
+                if (fa.fluid() == null) continue;
+                fluidOutputsJson.add(fluidStackToJson(FluidStack.create(fa.fluid(), fa.amount())));
+            }
+            json.add("fluid_outputs", fluidOutputsJson);
+        }
 
         json.add("result", stackToJson(output));
     }

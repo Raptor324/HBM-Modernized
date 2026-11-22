@@ -15,11 +15,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1 {@code GUINukeFstbmb} (176x222): Ei-/Batterie-Overlays, Startfeld (142,35) solange nicht scharf,
  * Timer-Eingabefeld in Sekunden (94,40; 1-999) und rote Restzeitanzeige (nur mit Batterie).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUINukeFstbmb extends GuiInfoScreen<NukeFstbmbMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -107,6 +110,13 @@ public class GUINukeFstbmb extends GuiInfoScreen<NukeFstbmbMenu> {
 
         if (be.started)
             guiGraphics.blit(TEXTURE, leftPos + 142, topPos + 35, 176, 26, 18, 18);
+
+        // Bereitschaftsanzeige (Machines-Seite)
+        if (be.isReady()) {
+            guiGraphics.blit(TEXTURE, this.leftPos + imageWidth - 42, this.topPos + 6, 176, 48, 16, 16);
+        }
+
+        this.drawInfoPanel(guiGraphics, -16, 16, PanelType.LARGE_BLUE_INFO);
     }
 
     @Override

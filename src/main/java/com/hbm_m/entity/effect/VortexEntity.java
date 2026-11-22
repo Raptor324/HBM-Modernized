@@ -30,11 +30,15 @@ public class VortexEntity extends BlackHoleEntity {
 
     @Override
     public void tick() {
-        float next = this.getSize() - this.getShrinkRate();
-        this.setSize(next);
-        if (next <= 0) {
-            this.discard();
-            return;
+        // SynchedEntityData is server-authoritative: shrinking it on the client produced a value the
+        // next sync overwrote, and discarding there removed the vortex locally until then.
+        if (!this.level().isClientSide) {
+            float next = this.getSize() - this.getShrinkRate();
+            this.setSize(next);
+            if (next <= 0) {
+                this.discard();
+                return;
+            }
         }
         super.tick();
     }
@@ -44,17 +48,19 @@ public class VortexEntity extends BlackHoleEntity {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(SHRINK_RATE, 0.0025F);
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-
         super.defineSynchedData(builder);
-        builder.define(SHRINK_RATE, 0.0025F);
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    *///?}
+
+        defs.define(SHRINK_RATE, 0.0025F);
     
     }
-    *///?}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {

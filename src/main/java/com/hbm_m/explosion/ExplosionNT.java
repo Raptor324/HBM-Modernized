@@ -33,6 +33,7 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1-Port von {@code ExplosionNT} (1.7.10): die Vanilla-Explosion mit Zusatzattributen
@@ -174,7 +175,7 @@ public class ExplosionNT {
                         double d10 = Explosion.getSeenPercent(vec3, entity);
                         double d11 = (1.0D - d4) * d10;
                         entity.hurt(worldObj.damageSources().explosion(vanilla), (float) ((int) ((d11 * d11 + d11) / 2.0D * 8.0D * this.explosionSize + 1.0D)));
-                        double d8 = entity instanceof LivingEntity le ? com.hbm_m.platform.PlatformHooks.getExplosionKnockbackAfterDampener(le, d11) : d11;
+                        double d8 = entity instanceof LivingEntity le ? com.hbm_m.platform.MobHooks.getExplosionKnockbackAfterDampener(le, d11) : d11;
                         entity.setDeltaMovement(entity.getDeltaMovement().add(cx * d8, cy * d8, cz * d8));
                         if (entity instanceof Player p) {
                             this.affectedEntities.put(p, new Vec3(cx * d11, cy * d11, cz * d11));

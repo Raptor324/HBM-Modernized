@@ -16,9 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-//? if forge {
 import net.minecraftforge.items.IItemHandler;
-//?}
 
 /**
  * 1:1 {@code TileEntityCraneInserter}: 21 Pufferplaetze. Jeden Tick (ohne Redstone) wird der erste Stapel, von dem etwas in
@@ -77,7 +75,7 @@ public class MachineCraneInserterBlockEntity extends CraneBaseBlockEntity implem
             }
             //?} elif neoforge {
             /*Direction outputSide = getOutputSide();
-            net.neoforged.neoforge.items.IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputSide), outputSide.getOpposite());
+            net.minecraftforge.items.IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputSide), outputSide.getOpposite());
 
             boolean didSomething = false;
 
@@ -128,7 +126,7 @@ public class MachineCraneInserterBlockEntity extends CraneBaseBlockEntity implem
         //?} elif neoforge {
         /*Direction outputDirection = getOutputSide();
         if (!level.hasNeighborSignal(pos)) {
-            net.neoforged.neoforge.items.IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputDirection), outputDirection.getOpposite());
+            net.minecraftforge.items.IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputDirection), outputDirection.getOpposite());
             if (te != null) CraneInventoryUtil.addToInventory(te, toAdd);
         }
         if (!toAdd.isEmpty()) CraneInventoryUtil.addToInventory(inventory, toAdd);
@@ -156,7 +154,7 @@ public class MachineCraneInserterBlockEntity extends CraneBaseBlockEntity implem
         //?} elif neoforge {
         /*Direction outputDirection = getOutputSide();
         if (!level.hasNeighborSignal(pos)) {
-            net.neoforged.neoforge.items.IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputDirection), outputDirection.getOpposite());
+            net.minecraftforge.items.IItemHandler te = CraneInventoryUtil.inventoryAt(level, pos.relative(outputDirection), outputDirection.getOpposite());
             if (te != null) for (ItemStack stack : toAdd) CraneInventoryUtil.addToInventory(te, stack);
         }
         for (ItemStack stack : toAdd) {

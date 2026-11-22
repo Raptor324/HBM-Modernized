@@ -37,13 +37,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.AABB;
 
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 //?}
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, IMultiblockSidedIO,
@@ -153,9 +154,19 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
             if (level != null && level.getGameTime() % 100 == 0) {
                 com.hbm_m.satellite.RayScanEvents.reportEvent(level, worldPosition, com.hbm_m.satellite.RayScanEvents.INFO_NUCLEAR, 200);
             }
+
+            if (level != null && level.getGameTime() % 100 == 0) {
+                com.hbm_m.satellite.RayScanEvents.reportEvent(level, worldPosition, com.hbm_m.satellite.RayScanEvents.INFO_NUCLEAR, 200);
+            }
         }
 
         // Push steam out / pull water in via pipes (Original: gekippt keine Anschluesse)
+        // trySubscribe (registration only, idempotent) stays behind the probeDue(20) gate —
+        // pipe connections don't change per-tick, event/miss self-heals within 1 s.
+        // tryProvide runs EVERY tick: its second branch is a DIRECT push to the adjacent
+        // receiver, and gating it would divide steam throughput. The fill check skips the
+        // probe while the steam tank is empty.
+        boolean subscribeDue = probeDue(20);
         if (!this.tilted) for (Direction dir : Direction.values()) {
             if (fluidSidesFromMultiblockStructure) {
                 if (!allowedFluidSides.contains(dir)) continue;
@@ -163,12 +174,12 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
                 continue;
             }
             BlockPos pipePos = pos.relative(dir);
-            BlockEntity pipeBe = level.getBlockEntity(pipePos);
-            if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
-
             if (steamTank.getFill() > 0) {
                 tryProvide(steamTank, level, pipePos, dir);
             }
+            if (!subscribeDue) continue;
+            BlockEntity pipeBe = level.getBlockEntity(pipePos);
+            if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
             if (waterTank.getFill() < waterTank.getMaxFill()) {
                 trySubscribe(Fluids.WATER, level, pipePos, dir);
             }
@@ -261,6 +272,13 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         tag.putBoolean("isOn", isOn);
         tag.putBoolean("redstonePowered", redstonePowered);
         tag.putInt("output", output);
+        // The multiblock's controller side configuration is applied only when the structure is
+        // placed or rebuilt, never on chunk load: without persisting it, a restart re-opened the
+        // face the structure had deliberately closed.
+        int fluidSideMask = 0;
+        for (Direction dir : allowedFluidSides) fluidSideMask |= (1 << dir.get3DDataValue());
+        tag.putInt("AllowedFluidSides", fluidSideMask);
+        tag.putBoolean("FluidSidesFromMbStructure", fluidSidesFromMultiblockStructure);
     }
 
     @Override
@@ -277,6 +295,14 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         isOn           = tag.getBoolean("isOn");
         redstonePowered= tag.getBoolean("redstonePowered");
         output         = tag.getInt("output");
+        if (tag.contains("AllowedFluidSides")) {
+            int fluidSideMask = tag.getInt("AllowedFluidSides");
+            allowedFluidSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((fluidSideMask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
+            }
+        }
+        fluidSidesFromMultiblockStructure = tag.getBoolean("FluidSidesFromMbStructure");
     }
 
     // ── Redstone ──────────────────────────────────────────────────────────
@@ -352,13 +378,11 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
                 12.0F, Level.ExplosionInteraction.BLOCK);
             zirnoxDebris();
             ExplosionNukeGeneric.waste(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), 35);
-
             // Everyone within 100 blocks gets credited, exactly as the original does - there is
             // no single player to blame for a runaway reactor.
             com.hbm_m.advancement.ModAdvancements.grantNearby(level,
                 worldPosition.getX() + 0.5D, worldPosition.getY() + 0.5D, worldPosition.getZ() + 0.5D,
                 100D, com.hbm_m.advancement.ModAdvancements.ZIRNOX_BOOM);
-
             // Original: radMark fuer die Strahlungs-Elementare
             if (com.hbm_m.config.MobConfig.enableElementals()) {
                 for (net.minecraft.world.entity.player.Player p : level.getEntitiesOfClass(net.minecraft.world.entity.player.Player.class,
@@ -490,6 +514,19 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
     }
 
     // ── Misc ──────────────────────────────────────────────────────────────
+
+    /**
+     * Мультиблок 5×5×5 с ядром в центре основания; OBJ-модель простирается на
+     * ±2.5 по X/Z и 0..5 по Y от ядра. Дефолтный 1-блочный AABB ошибочно
+     * культил бы рендер, когда ядро за кадром.
+     */
+    //? if forge {
+    @Override
+    //?}
+    public AABB getRenderBoundingBox() {
+        return new AABB(worldPosition.getX() - 2, worldPosition.getY(), worldPosition.getZ() - 2,
+                worldPosition.getX() + 3, worldPosition.getY() + 5, worldPosition.getZ() + 3);
+    }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static BlockState copyPropertyUnsafe(BlockState target, BlockState source,
@@ -670,7 +707,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         return super.getHbmCapability(cap, side);
     }
 
-    private static class UnifiedFluidHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+    private static class UnifiedFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
         private final MachineZirnoxBlockEntity be;
 
         UnifiedFluidHandler(MachineZirnoxBlockEntity be) {
@@ -680,12 +717,12 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         @Override public int getTanks() { return 3; }
 
         @Override
-        public @NotNull net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+        public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
             return switch (tank) {
-                case 0 -> new net.neoforged.neoforge.fluids.FluidStack(be.waterTank.getTankType(), be.waterTank.getFill());
-                case 1 -> new net.neoforged.neoforge.fluids.FluidStack(be.co2Tank.getTankType(), be.co2Tank.getFill());
-                case 2 -> new net.neoforged.neoforge.fluids.FluidStack(be.steamTank.getTankType(), be.steamTank.getFill());
-                default -> net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+                case 0 -> new net.minecraftforge.fluids.FluidStack(be.waterTank.getTankType(), be.waterTank.getFill());
+                case 1 -> new net.minecraftforge.fluids.FluidStack(be.co2Tank.getTankType(), be.co2Tank.getFill());
+                case 2 -> new net.minecraftforge.fluids.FluidStack(be.steamTank.getTankType(), be.steamTank.getFill());
+                default -> net.minecraftforge.fluids.FluidStack.EMPTY;
             };
         }
 
@@ -700,14 +737,14 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         }
 
         @Override
-        public boolean isFluidValid(int tank, @NotNull net.neoforged.neoforge.fluids.FluidStack stack) {
+        public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
             if (tank == 0) return VanillaFluidEquivalence.sameSubstance(stack.getFluid(), Fluids.WATER);
             if (tank == 1) return VanillaFluidEquivalence.sameSubstance(stack.getFluid(), ModFluids.CARBONDIOXIDE.getSource());
             return false;
         }
 
         @Override
-        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (resource.isEmpty()) return 0;
             if (VanillaFluidEquivalence.sameSubstance(resource.getFluid(), Fluids.WATER)) {
                 int space = be.waterTank.getMaxFill() - be.waterTank.getFill();
@@ -727,28 +764,28 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         }
 
         @Override
-        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (resource.isEmpty() || be.steamTank.getFill() <= 0) {
-                return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+                return net.minecraftforge.fluids.FluidStack.EMPTY;
             }
             if (!VanillaFluidEquivalence.sameSubstance(resource.getFluid(), be.steamTank.getTankType())) {
-                return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+                return net.minecraftforge.fluids.FluidStack.EMPTY;
             }
             int toDrain = Math.min(resource.getAmount(), be.steamTank.getFill());
-            net.neoforged.neoforge.fluids.FluidStack drained =
-                    new net.neoforged.neoforge.fluids.FluidStack(be.steamTank.getTankType(), toDrain);
+            net.minecraftforge.fluids.FluidStack drained =
+                    new net.minecraftforge.fluids.FluidStack(be.steamTank.getTankType(), toDrain);
             if (action.execute()) be.steamTank.drainMb(toDrain);
             return drained;
         }
 
         @Override
-        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
             if (maxDrain <= 0 || be.steamTank.getFill() <= 0) {
-                return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+                return net.minecraftforge.fluids.FluidStack.EMPTY;
             }
             int toDrain = Math.min(maxDrain, be.steamTank.getFill());
-            net.neoforged.neoforge.fluids.FluidStack drained =
-                    new net.neoforged.neoforge.fluids.FluidStack(be.steamTank.getTankType(), toDrain);
+            net.minecraftforge.fluids.FluidStack drained =
+                    new net.minecraftforge.fluids.FluidStack(be.steamTank.getTankType(), toDrain);
             if (action.execute()) be.steamTank.drainMb(toDrain);
             return drained;
         }

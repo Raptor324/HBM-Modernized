@@ -15,6 +15,11 @@ import net.minecraft.world.entity.player.Inventory;
 /**
  * 1:1 {@code GUIMachineDiesel} (176x203): Tank (35,17), Stromanzeige (141,17), Zuendknopf (89,61),
  * Laufanzeige, Info-Panel zum Verbrauch und Fehler-Panel bei ungeeignetem Treibstoff. Kein Titel (Original).
+ *
+ * <p>Merge note: the machines-side variant extended {@code AbstractContainerScreen} directly and
+ * toggled via {@code DieselGeneratorToggleC2SPacket}; this resolution keeps the FFA 1:1 port on
+ * {@link GuiInfoScreen} with the {@code NBTControlPacket} {@code turnOn} message, which the
+ * machines-branch BE handles in {@code receiveControl}.</p>
  */
 public class GUIMachineDieselGenerator extends GuiInfoScreen<MachineDieselGeneratorMenu> {
 

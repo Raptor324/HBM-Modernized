@@ -12,9 +12,9 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//? if forge {
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 //?}
 
@@ -23,15 +23,12 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
  * которая густеет по мере выработки фильтра (6 стадий).
  * Порт {@code ArmorGasMask.renderHelmetOverlay} (1.7.10).
  */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
 public class OverlayGasMask {
 
     private static final String BASE_GASMASK = "textures/misc/overlay_gasmask.png";
     private static final String BASE_GOGGLES = "textures/misc/overlay_goggles.png";
 
-    // neo-pendant: ClientSetup.onRegisterGuiOverlays (neoforge-Zweig)
     //? if forge {
     public static final IGuiOverlay OVERLAY = (gui, gfx, partialTick, screenWidth, screenHeight) ->
             render(gfx);
@@ -43,16 +40,36 @@ public class OverlayGasMask {
         if (player == null || mc.options.hideGui) {
             return;
         }
+        // Оригинал: GuiIngameForge рисует helmet-хов только от первого лица (thirdPersonView == 0).
+        if (!mc.options.getCameraType().isFirstPerson()) {
+            return;
+        }
 
         ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
         // Маска-шлем на голове или маска в слоте лица Curios (опционально).
         ItemStack maskStack = head.getItem() instanceof ArmorGasMaskItem
                 ? head
                 : com.hbm_m.client.compat.curios.CuriosClientCompat.getFaceMask(player);
-        if (!(maskStack.getItem() instanceof ArmorGasMaskItem mask)) {
+        if (maskStack.getItem() instanceof ArmorGasMaskItem mask) {
+            renderGasmask(gfx, maskStack, mask);
             return;
         }
+        // Шлемы костюмов химзащиты: жёлтый - сплошная маска, красный/серый - стадия по износу фильтра.
+        // Порт ArmorHazmat.renderHelmetOverlay / ArmorModel.renderHelmetOverlay (1.7.10).
+        if (head.getItem() instanceof com.hbm_m.item.hazmat.HazmatArmorItem hazmat
+                && hazmat.getEquipmentSlot() == EquipmentSlot.HEAD) {
+            if (hazmat.variant == com.hbm_m.item.hazmat.HazmatArmorItem.Variant.YELLOW) {
+                drawOverlay(gfx, ResourceLocation.fromNamespaceAndPath("hbm_m", HAZMAT_SUIT), gfx.guiWidth(), gfx.guiHeight());
+            } else {
+                renderStageOverlay(gfx, head, BASE_GOGGLES);
+            }
+        }
+    }
 
+    private static final String HAZMAT_SUIT = "textures/misc/overlay_hazmat.png";
+
+    /** Оверлей противогаза (6 стадий замутнённости по износу фильтра). */
+    private static void renderGasmask(GuiGraphics gfx, ItemStack maskStack, ArmorGasMaskItem mask) {
         boolean gasmaskBase = mask.variant == ArmorGasMaskItem.Variant.GAS_MASK;
 
         // Без фильтра — базовая (наиболее плотная) текстура; с фильтром — стадия по износу.
@@ -60,14 +77,30 @@ public class OverlayGasMask {
         if (!IGasMask.hasFilter(maskStack)) {
             path = gasmaskBase ? BASE_GASMASK : BASE_GOGGLES;
         } else {
-            int max = maskStack.getItem() instanceof ItemGasMaskFilter f ? f.maxFilterDamage : ItemGasMaskFilter.DEFAULT_MAX_DAMAGE;
-            int dmg = IGasMask.getFilterDamage(maskStack);
-            int stage = Math.min((int) (dmg / (float) max * 6F), 5);
-            path = String.format(mask.variant.overlayPattern, stage);
+            // The mask is never an ItemGasMaskFilter - the capacity has to come from the filter
+            // actually screwed into it, the way both tooltip paths resolve it.
+            path = String.format(mask.variant.overlayPattern, wearStage(maskStack));
         }
 
         drawOverlay(gfx, ResourceLocation.fromNamespaceAndPath("hbm_m", path), gfx.guiWidth(), gfx.guiHeight());
     }
+
+    /** Оверлей очков по стадиям износа фильтра (0 - чистые, 5 - глухая муть). */
+    private static void renderStageOverlay(GuiGraphics gfx, ItemStack maskStack, String basePattern) {
+        String path = IGasMask.hasFilter(maskStack)
+                ? String.format("textures/misc/overlay_goggles_%d.png", wearStage(maskStack))
+                : basePattern;
+        drawOverlay(gfx, ResourceLocation.fromNamespaceAndPath("hbm_m", path), gfx.guiWidth(), gfx.guiHeight());
+    }
+
+    /** Стадия износа 0..5 по повреждению установленного фильтра. */
+    private static int wearStage(ItemStack maskStack) {
+        net.minecraft.world.item.Item filterItem = IGasMask.getFilterItem(IGasMask.getFilterId(maskStack));
+        int max = filterItem instanceof ItemGasMaskFilter f ? f.maxFilterDamage : ItemGasMaskFilter.DEFAULT_MAX_DAMAGE;
+        int dmg = IGasMask.getFilterDamage(maskStack);
+        return Math.min((int) (dmg / (float) max * 6F), 5);
+    }
+
 
     private static void drawOverlay(GuiGraphics gfx, ResourceLocation texture, int width, int height) {
         RenderSystem.enableBlend();

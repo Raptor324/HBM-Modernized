@@ -8,13 +8,15 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  * Das Original hatte NIE ein GUI ({@code provideGUI()} gab {@code null} zurueck - der Block war
  * faktisch tot, siehe Klassenkommentar in {@link MachineIndustrialGeneratorBlockEntity}). Da keine
  * Original-Textur existiert, wird das Panel rein aus Fuellrechtecken gezeichnet statt eine Textur
  * zu erfinden.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineIndustrialGenerator extends AbstractContainerScreen<MachineIndustrialGeneratorMenu> {
 
     private final MachineIndustrialGeneratorBlockEntity blockEntity;

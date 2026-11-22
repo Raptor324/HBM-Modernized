@@ -1,5 +1,4 @@
 package com.hbm_m.compat.jei;
-//? if forge || neoforge {
 
 import java.util.ArrayList;
 import java.util.List;
@@ -144,7 +143,3 @@ public class CustomMachineJeiCategory implements IRecipeCategory<CustomMachineRe
         }
     }
 }
-//?} else {
-/*public final class CustomMachineJeiCategory {
-    private CustomMachineJeiCategory() {}
-}*///?}

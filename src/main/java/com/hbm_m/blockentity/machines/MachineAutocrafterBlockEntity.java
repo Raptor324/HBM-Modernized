@@ -130,23 +130,20 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
     private boolean recipesLoaded = false;
     private int recipeCountClient = 0;
 
+    /** Sucht alle zur Vorlage passenden Rezepte neu - im Gegensatz zu {@link #updateTemplateGrid()} bleibt der gewaehlte {@code recipeIndex} erhalten. */
+    private void reloadRecipes() {
+        int keep = recipeIndex;
+        recipes = com.hbm_m.platform.recipe.RecipeHooks.getAllCraftingRecipesFor(level, buildGrid(TEMPLATE_START));
+        recipeIndex = recipes.isEmpty() ? 0 : Math.min(keep, recipes.size() - 1);
+        updateTemplateResult();
+    }
+
     private void serverTick(Level level) {
         if (!recipesLoaded) {
+            reloadRecipes();
             recipesLoaded = true;
-            int keep = recipeIndex;
-            recipes = com.hbm_m.platform.recipe.RecipeHooks.getAllCraftingRecipesFor(level, buildGrid(TEMPLATE_START));
-            recipeIndex = recipes.isEmpty() ? 0 : Math.min(keep, recipes.size() - 1);
-            updateTemplateResult();
         }
-
         chargeFromBatterySlot(SLOT_BATTERY);
-        if (level instanceof net.minecraft.server.level.ServerLevel world) {
-            for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
-                BlockPos p = worldPosition.relative(dir);
-                this.trySubscribe(world, p.getX(), p.getY(), p.getZ(), dir);
-            }
-        }
-        sendUpdateToClient();
         if (getEnergyStored() < CONSUMPTION) return;
         if (recipes.isEmpty()) return;
 
@@ -161,28 +158,23 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
 
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
         if (!outSlot.isEmpty()) {
-            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outSlot, result)) return;
+            if (!com.hbm_m.platform.StackNbt.sameItemSameTags(outSlot, result)) return;
             if (outSlot.getCount() + result.getCount() > outSlot.getMaxStackSize()) return;
         }
 
-        //? if < 1.21.1 {
-        NonNullList<ItemStack> remaining = recipe.getRemainingItems(grid);
-        //?} else {
-        /*NonNullList<ItemStack> remaining = recipe.getRemainingItems(grid.toCraftingInput());
-        *///?}
+        NonNullList<ItemStack> remaining =
+                com.hbm_m.platform.recipe.RecipeHooks.getRemainingItemsCrafting(recipe, grid);
         for (int i = 0; i < GRID_SIZE; i++) {
-            ItemStack ingredient = inventory.getStackInSlot(RECIPE_START + i);
-            if (ingredient.isEmpty()) continue;
+            inventory.getStackInSlot(RECIPE_START + i).shrink(1);
 
-            ItemStack shrunk = ingredient.copy();
-            shrunk.shrink(1);
-            inventory.setStackInSlot(RECIPE_START + i, shrunk);
-
-            // Original: der Behaelter kommt nur in einen leer gewordenen Platz, kaputte Werkzeuge verschwinden
             ItemStack leftover = remaining.get(i);
-            if (shrunk.isEmpty() && !leftover.isEmpty()) {
-                if (leftover.isDamageableItem() && leftover.getDamageValue() > leftover.getMaxDamage()) continue;
-                inventory.setStackInSlot(RECIPE_START + i, leftover);
+            if (!leftover.isEmpty()) {
+                ItemStack slotStack = inventory.getStackInSlot(RECIPE_START + i);
+                if (slotStack.isEmpty()) {
+                    inventory.setStackInSlot(RECIPE_START + i, leftover);
+                } else if (level != null) {
+                    net.minecraft.world.level.block.Block.popResource(level, worldPosition, leftover);
+                }
             }
         }
 
@@ -367,4 +359,10 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         sidedItems.invalidate();
     }
     *///?}
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
+    }
 }

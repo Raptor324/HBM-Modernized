@@ -1,20 +1,21 @@
 {
-	"loader": "hbm_m:battery_socket_loader",
-	"model": "hbm_m:models/block/machines/machine_battery_socket.obj",
+	"loader": "hbm_m:machine_parts_loader",
+	"model": "hbm_m:models/machines/battery.obj",
 	"flip_v": true,
+	"render_type": "minecraft:cutout",
 	"textures": {
 		"particle": "hbm_m:block/machine/battery_socket",
-		"texture": "hbm_m:block/machine/battery_socket"
+		"default": "hbm_m:block/machine/battery_socket"
 	},
 	"transform": {
-		"translation": [ -2, 0, -2 ],
-		"rotation": [ 0, 180, 0 ],
+		"translation": [ 0.0, 0.0, 0.0 ],
+		"rotation": [ 0, 0, 0 ],
 		"scale": 1.0
 	},
 	"display": {
 		"thirdperson_righthand": {
 			"rotation": [ 75, 45, 0 ],
-			"translation": [ -1.25, 2.50, 0.00 ],
+			"translation": [ 0.00, 2.50, 0.00 ],
 			"scale": [ 0.15, 0.15, 0.15 ]
 		},
 		"thirdperson_lefthand": {
@@ -23,19 +24,19 @@
 			"scale": [ 0.12, 0.12, 0.12 ]
 		},
 		"firstperson_righthand": {
-			"rotation": [ 0, 0, 0 ],
-			"translation": [ 2.50, -2.75, -13.50 ],
-			"scale": [ 0.40, 0.40, 0.40 ]
+			"rotation": [ 0, 45, 0 ],
+			"translation": [ 0.75, 1.00, 0.00 ],
+			"scale": [ 0.25, 0.25, 0.25 ]
 		},
 		"firstperson_lefthand": {
-			"rotation": [ 0, 0, 0 ],
-			"translation": [ 0.00, 0.00, 0.00 ],
-			"scale": [ 1.00, 1.00, 1.00 ]
+			"rotation": [ 0, 45, 0 ],
+			"translation": [ 0.75, 1.00, 0.00 ],
+			"scale": [ 0.25, 0.25, 0.25 ]
 		},
 		"gui": {
 			"rotation": [ 30, 225, 0 ],
-			"translation": [ 3.50, -2.00, 0.00 ],
-			"scale": [ 0.30, 0.30, 0.30 ]
+			"translation": [ 0.00, -2.00, 0.00 ],
+			"scale": [ 0.28, 0.28, 0.28 ]
 		},
 		"head": {
 			"rotation": [ 0, 0, 0 ],

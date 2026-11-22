@@ -49,7 +49,6 @@ public class RedBrickBlock extends Block {
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(RED_FACE);
     }
-
     /**
      * audit10: Original {@code onBlockPlacedBy} -> {@code BlockPistonBase.determineOrientation}: steht der Spieler
      * nah (unter 2 Bloecke waagrecht), zeigt die rote Seite nach oben/unten, sonst zum Spieler hin.

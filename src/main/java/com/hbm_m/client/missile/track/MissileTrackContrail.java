@@ -18,27 +18,54 @@ public final class MissileTrackContrail {
                       double fromX, double fromY, double fromZ,
                       double toX, double toY, double toZ,
                       float scale) {
-        Vec3 motion = new Vec3(toX - fromX, toY - fromY, toZ - fromZ);
+        // Вектор НАЗАД (от текущей позиции к предыдущей) — как в entity-пути
+        // (MissileBaseEntity.spawnContrailWithOffset: xOld - getX()) и в оригинале
+        // 1.7.10 (lastTickPos - pos). spawnSegments ставит сегменты вдоль этого
+        // вектора: при векторе вперёд они ложились ПО КУРСУ ракеты, а не позади.
+        Vec3 motion = new Vec3(fromX - toX, fromY - toY, fromZ - toZ);
         double len = motion.length();
         if (len <= 1.0E-6D) {
             return;
         }
         Vec3 motionNorm = motion.normalize();
-        Vec3 exhaust = motionNorm.scale(-1.0D);
+        // Выхлоп дует назад — противоположно полёту, т.е. вдоль motionNorm.
+        Vec3 exhaust = motionNorm;
         spawnSegments(level, toX, toY, toZ, motionNorm, len, exhaust, scale, 0.0D, 0.0D, 0.0D);
     }
 
-    public static void spawnSegments(ClientLevel level,
-                              double anchorX, double anchorY, double anchorZ,
-                              Vec3 motionNorm, double len,
-                              Vec3 exhaustVelocity, float scale,
-                              double offsetX, double offsetY, double offsetZ) {
+        /** Пар привязан к настройке частиц: на «минимум» не спавнится вовсе, на «меньше» — вдвое реже. */
+        public static boolean allowVapor() {
+            return particleStatus() != net.minecraft.client.ParticleStatus.MINIMAL;
+        }
+
+        public static boolean isVaporHalved() {
+            return particleStatus() == net.minecraft.client.ParticleStatus.DECREASED;
+        }
+
+        /** Горячий contrail на «минимум» и «меньше» — вдвое реже. */
+        private static boolean halveContrail() {
+            return particleStatus() != net.minecraft.client.ParticleStatus.ALL;
+        }
+
+        private static net.minecraft.client.ParticleStatus particleStatus() {
+            return net.minecraft.client.Minecraft.getInstance().options.particles().get();
+        }
+
+        public static void spawnSegments(ClientLevel level,
+                                  double anchorX, double anchorY, double anchorZ,
+                                  Vec3 motionNorm, double len,
+                                  Vec3 exhaustVelocity, float scale,
+                                  double offsetX, double offsetY, double offsetZ) {
         int segmentCount = Math.max(1, Math.min((int) len, 10));
+        boolean halve = halveContrail();
 
         if (MissileContrailNT.sprites == null) {
             return; // Провайдеры ещё не зарегистрированы (ранний кадр)
         }
         for (int i = 0; i < segmentCount; i++) {
+            if (halve && (i & 1) == 1) {
+                continue;
+            }
             double j = i - len;
             double px = anchorX - motionNorm.x * j + offsetX;
             double py = anchorY - motionNorm.y * j + offsetY;

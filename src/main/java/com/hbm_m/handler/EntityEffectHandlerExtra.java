@@ -42,6 +42,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * Die Zweige von {@code EntityEffectHandler} (1.7.10), die dem Port fehlten: Schild-Regeneration
@@ -87,7 +88,7 @@ public final class EntityEffectHandlerExtra {
         // only sets players on fire so mod compatibility doesnt die
         if (com.hbm_m.config.GeneralConfig.enable528 && ModClothConfig.get().enable528NetherBurn && entity instanceof Player && !entity.fireImmune()
                 && entity.level().dimensionType().ultraWarm()) {
-            PlatformHooks.setSecondsOnFire(entity, 5);
+            MobHooks.setSecondsOnFire(entity, 5);
         }
     }
 
@@ -217,8 +218,10 @@ public final class EntityEffectHandlerExtra {
                 if ((contagion + entity.getId()) % 200 == 19) EntityEffectHandler.vomitSound(world, entity);
             }
 
-            // end of contagion, drop dead
-            if (contagion == 0) entity.hurt(ModDamageSources.create(world, ModDamageTypes.MKU), 1000F);
+            // end of contagion, drop dead.
+            // Original 1.7.10 checked `contagion == 0` on the pre-decrement value inside the
+            // `contagion > 0` block - dead code upstream. Fire on the tick the counter hits 0.
+            if (contagion == 1) entity.hurt(ModDamageSources.create(world, ModDamageTypes.MKU), 1000F);
         }
     }
 

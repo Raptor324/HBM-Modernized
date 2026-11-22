@@ -26,6 +26,7 @@ import com.hbm_m.inventory.menu.ModMenuTypes;
 import com.hbm_m.sound.ModSounds;
 
 import java.util.Map;
+import com.hbm_m.platform.StackNbt;
 
 public class ArmorTableMenu extends AbstractContainerMenu {
 
@@ -285,7 +286,7 @@ public class ArmorTableMenu extends AbstractContainerMenu {
         public void set(ItemStack pStack) {
             ItemStack oldStack = this.getItem();
             if (!ArmorTableMenu.this.player.level().isClientSide && !oldStack.isEmpty()
-                    && (pStack.isEmpty() || !PlatformHooks.isSameItemSameTags(oldStack, pStack))) {
+                    && (pStack.isEmpty() || !StackNbt.sameItemSameTags(oldStack, pStack))) {
                 ArmorModificationHelper.flushTableToArmor(oldStack, ArmorTableMenu.this.modsInventory, ArmorTableMenu.this.player);
             }
 

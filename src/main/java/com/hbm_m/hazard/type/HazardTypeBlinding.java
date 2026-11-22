@@ -22,6 +22,12 @@ public class HazardTypeBlinding extends HazardTypeBase {
             return;
         }
 
+        // The original gates this on HazardClass.LIGHT head protection; without the check a gas
+        // mask or goggles did nothing and blinding items blinded through any headgear.
+        if (com.hbm_m.handler.ArmorRegistry.hasProtection(target, 3, com.hbm_m.handler.HazardClass.LIGHT)) {
+            return;
+        }
+
         target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, (int) Math.ceil(level), 0));
     }
 

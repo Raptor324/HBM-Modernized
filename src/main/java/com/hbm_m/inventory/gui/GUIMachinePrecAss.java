@@ -52,7 +52,7 @@ public class GUIMachinePrecAss extends GuiInfoScreen<MachinePrecAssMenu> {
             if (isPointInRect(7, 125, 18, 18, mouseX, mouseY)) {
                 PrecAssRecipe recipe = assembler.getSelectedRecipe();
                 if (recipe != null) {
-                    g.renderTooltip(this.font, buildTooltip(recipe), Optional.empty(), mouseX, mouseY);
+                    com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(g, this.font, buildTooltip(recipe), mouseX, mouseY);
                 } else {
                     g.renderTooltip(this.font, Component.translatable("gui.recipe.setRecipe").withStyle(ChatFormatting.YELLOW), mouseX, mouseY);
                 }

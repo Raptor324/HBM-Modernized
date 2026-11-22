@@ -4,11 +4,13 @@ import com.hbm_m.particle.explosions.AbstractExplosionParticle;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SpriteSet;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  *  ТЁМНЫЙ ДЫМ (средне-серый)
  * Для реалистичных взрывов и пожаров
  */
+@OnlyIn(Dist.CLIENT)
 public class DarkSmokeParticle extends AbstractExplosionParticle {
 
     public DarkSmokeParticle(ClientLevel level, double x, double y, double z,

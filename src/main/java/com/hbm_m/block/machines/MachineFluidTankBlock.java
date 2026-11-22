@@ -1,26 +1,40 @@
 package com.hbm_m.block.machines;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.block.IPersistentInfoProvider;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.blockentity.IPersistentNBT;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.registry.menu.MenuRegistry;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -34,18 +48,20 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.StackNbt;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 
 
 import net.minecraft.world.level.Explosion;
 
-public class MachineFluidTankBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.api.block.IToolable, com.hbm_m.interfaces.ILookOverlay {
+public class MachineFluidTankBlock extends BaseEntityBlock implements IMultiblockController, IPersistentInfoProvider, com.hbm_m.api.block.IToolable, com.hbm_m.interfaces.ILookOverlay {
 
     /** Original {@code onScrew}: Schweissbrenner repariert ueber {@code IRepairable.tryRepairMultiblock}. */
     @Override
@@ -53,12 +69,6 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         if (tool != com.hbm_m.api.block.IToolable.ToolType.TORCH) return false;
         return com.hbm_m.api.tile.IRepairable.tryRepairMultiblock(world, pos, player);
     }
-
-    @Override
-    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
-        com.hbm_m.api.tile.IRepairable.addGenericOverlay(g, world, pos, net.minecraft.network.chat.Component.translatable(getDescriptionId()));
-    }
-
 
     /**
      * Whether this machine has been blown up. Drives the model swap to the wrecked variant - the
@@ -179,18 +189,105 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     @Override
     public void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            Direction facing = state.getValue(FACING);
-
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {
-                be.dropInventoryContents();
+            // Паритет NEXT BlockEntityMachineBase.preRemoveSideEffects → spillInventory: слоты
+            // выбрасываются в мир при фактическом разрушении. НЕ через setRemoved — ваниль зовёт
+            // его и при выгрузке чанка/сохранении, что дюпало бы предметы (BaseHbmBlockEntity).
+            if (level.getBlockEntity(pos) instanceof MachineFluidTankBlockEntity tank) {
+                tank.dropInventory();
             }
+            Direction facing = state.getValue(FACING);
             // Kernverschiebung der Migration: die Teile raeumt attemptAutoRepair selbst um - hier nichts abreissen
             if (!MultiblockStructureHelper.isRepairing()) {
                 structureHelper.destroyStructure(level, pos, facing);
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
+    }
+
+
+    // ═══════════════ IPersistentNBT (порт 1.7.10): дроп и восстановление ═══════════════
+
+    /**
+     * 1:1 порт {@code MachineFluidTank.getDrops} → {@code IPersistentNBT.getDrops}:
+     * дропнутый предмет несёт {@code persistent}-тег с жидкостью, режимом и состоянием
+     * взрыва. Пустой целый бак дропается чистым предметом (writeNBT оставляет тег пустым).
+     */
+    @Override
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        BlockEntity be = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
+        if (be instanceof IPersistentNBT persistent) {
+            ItemStack stack = new ItemStack(this.asItem());
+            CompoundTag data = new CompoundTag();
+            persistent.writeNBT(data);
+            // Контракт оригинала: writeNBT сам кладёт payload под "persistent",
+            // тег предмета = data целиком (1.7.10: stack.stackTagCompound = data).
+            if (!data.isEmpty()) {
+                StackNbt.set(stack, data);
+            }
+            return List.of(stack);
+        }
+        return super.getDrops(state, builder);
+    }
+
+    /**
+     * Порт {@code BlockDummyable.onBlockPlacedBy} → {@code IPersistentNBT.restoreData}:
+     * установленный из дропнутого предмета бак восстанавливает своё состояние.
+     */
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (level.isClientSide) return;
+        CompoundTag tag = StackNbt.copy(stack);
+        if (tag == null || !tag.contains(IPersistentNBT.NBT_PERSISTENT_KEY)) return;
+        if (level.getBlockEntity(pos) instanceof IPersistentNBT persistent) {
+            persistent.readNBT(tag);
+            if (persistent instanceof MachineFluidTankBlockEntity tank && tank.hasExploded
+                    && state.hasProperty(EXPLODED) && !state.getValue(EXPLODED)) {
+                // Дропнутая взорванная руина переустанавливается такой же руиной
+                // (вторая детонация её добьёт — как в 1.7.10).
+                level.setBlock(pos, state.setValue(EXPLODED, true), Block.UPDATE_ALL);
+            }
+            // NBT (тип бака) восстановлен ПОСЛЕ onPlace→placeStructure: пересчёт труб при
+            // постановке видел пустой бак — обновляем трубы вокруг коннекторов заново.
+            structureHelper.refreshFluidConnectorDucts(level, pos, state.getValue(FACING), this);
+        }
+    }
+
+    /** Порт {@code IPersistentInfoProvider.addInformation}: "x/y mB ИмяЖидкости". */
+    @Override
+    public void addInformation(ItemStack stack, CompoundTag persistentTag, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+        FluidTank tank = new FluidTank(ModFluids.NONE.getSource(),
+                persistentTag.contains("tank_max") ? persistentTag.getInt("tank_max") : 0);
+        tank.readFromNBT(persistentTag, "tank");
+        Component name = FluidType.forFluid(tank.getTankType()).getLocalizedName();
+        list.add(Component.literal(tank.getFill() + "/" + tank.getMaxFill() + "mB ")
+                .append(name)
+                .withStyle(ChatFormatting.YELLOW));
+    }
+
+    /**
+     * Порт {@code MachineFluidTank.printHook} → {@code IRepairable.addGenericOverlay}: список
+     * материалов ремонта ("Repair with:"). Как и в оригинале, показывается ТОЛЬКО когда игрок
+     * держит газовую горелку в главной руке и бак взорван; иначе HUD вообще не выводится.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        com.hbm_m.api.tile.IRepairable.addGenericOverlay(guiGraphics, level, pos, net.minecraft.network.chat.Component.translatable(getDescriptionId()));
+    }
+
+    // ═══════════════ Компаратор (порт hasComparatorInputOverride) ═══════════════
+
+    @Override
+    public boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+        if (level.getBlockEntity(pos) instanceof MachineFluidTankBlockEntity tank) {
+            return tank.getComparatorPower();
+        }
+        return 0;
     }
 
     // 1. РАМКА ВЫДЕЛЕНИЯ: Показывает всю структуру целиком (3x3x3)
@@ -241,6 +338,14 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         BlockEntity entity = level.getBlockEntity(pos);
         if (!(entity instanceof MachineFluidTankBlockEntity tank)) {
             return InteractionResult.PASS;
+        }
+
+        // Порт 1.7.10 onScrew(TORCH) → IRepairable.tryRepairMultiblock: клик газовой
+        // горелкой по взорванному баку чинит его за материалы с игрока; на целый бак
+        // горелка не открывает GUI (клик уходит инструменту, как в оригинале).
+        if (player.getItemInHand(hand).getItem() == ModItems.BLOWTORCH.get()) {
+            return com.hbm_m.api.tile.IRepairable.tryRepairMultiblock(level, pos, player)
+                    ? InteractionResult.sidedSuccess(false) : InteractionResult.PASS;
         }
 
         MenuRegistry.openExtendedMenu((ServerPlayer) player, tank, buf -> buf.writeBlockPos(pos));
@@ -330,16 +435,4 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         return CODEC;
     }
     *///?}
-
-    /** Original {@code getComparatorInputOverride}: Fuellstand des Tanks (gilt auch fuer BAT9000). */
-    @Override
-    public boolean hasAnalogOutputSignal(net.minecraft.world.level.block.state.BlockState state) {
-        return true;
-    }
-
-    @Override
-    public int getAnalogOutputSignal(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos) {
-        net.minecraft.world.level.block.entity.BlockEntity te = level.getBlockEntity(pos);
-        return te instanceof com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity tank ? tank.getComparatorPower() : 0;
-    }
 }

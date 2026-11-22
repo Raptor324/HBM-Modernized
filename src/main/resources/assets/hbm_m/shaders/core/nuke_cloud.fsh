@@ -8,8 +8,8 @@ in vec4 vertexColor;
 in float vDhWinZ;
 
 uniform sampler2D Sampler0;
-// Depth-текстура DH (DEPTH32F, forward-Z). Активен только в дальнем
-// проходе (DhDepthTest > 0.5): попиксельная окклюзия против LOD-рельефа.
+// DH depth texture (DEPTH32F, forward-Z). Active only in the distant
+// pass (DhDepthTest > 0.5): per-pixel occlusion against LOD terrain.
 uniform sampler2D Sampler1;
 uniform vec4 ColorModulator;
 uniform vec4 FogColor;
@@ -22,20 +22,17 @@ out vec4 fragColor;
 
 void main() {
     if (DhDepthTest > 1.5) {
-        // ДИАГНОСТИКА: R = наш window-Z (DhProjMat*MVM*pos), G = сэмпл DH-глубины.
-        // Оба канала меняются => сэмплер и математика работают.
-        // G == 0 везде => сэмплер не привязан/читает мусор.
-        // R == 0 или > 1 везде => DhProjMat не применился.
+        // DIAGNOSTICS: R = window-Z (DhProjMat*MVM*pos), G = sampled DH depth.
+        // Both channels varying => sampler and math are active.
+        // G == 0 everywhere => sampler unassigned or reading uninitialized memory.
+        // R == 0 or > 1 everywhere => DhProjMat not applied.
         fragColor = vec4(vDhWinZ, texture(Sampler1, gl_FragCoord.xy / DhViewport).r, 0.0, 1.0);
-        return;
+    } else {
+        // Occlusion against distant LOD terrain is handled via hardware GL depth test against copied DH depth buffer.
+        vec4 color = texture(Sampler0, texCoord0) * vertexColor * ColorModulator;
+        if (color.a <= 0.005) {
+            discard;
+        }
+        fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);
     }
-    // ОККЛЮЗИЯ ПРОТИВ LOD — ТОЛЬКО через GL depth-тест против копии DH-глубины
-    // (DhDepthCopy.copyToMain в главный z-buffer). Раньше здесь был ДОПОЛНИТЕЛЬНЫЙ
-    // discard «vDhWinZ > lodDepth»: он дублировал GL-тест, но с худшей точностью
-    // (сравнение window-Z разных конвенций) и резал гриб по НЕвидимым источникам
-    // глубины DH — затуманенным дальним LOD'ам и собственным облакам DH — что
-    // при движении камеры выглядело как «гриб улетает/отступает». При
-    // несработавшем копировании глубины пустой Sampler1 вообще убивал весь гриб.
-    vec4 color = texture(Sampler0, texCoord0) * vertexColor * ColorModulator;
-    fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);
 }

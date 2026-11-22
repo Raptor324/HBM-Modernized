@@ -101,6 +101,7 @@ public class MachinePumpjackBlockEntity extends OilDrillBaseBlockEntity {
         return 0.5D;
     }
 
+
     @Override
     public Direction[] getConPos() {
         return new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};

@@ -132,11 +132,7 @@ public class CrystallizerRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<CrystallizerRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "crystallizer");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "crystallizer");
-        //?}
 
         @Override
         public CrystallizerRecipe readJson(ResourceLocation recipeId, JsonObject json) {

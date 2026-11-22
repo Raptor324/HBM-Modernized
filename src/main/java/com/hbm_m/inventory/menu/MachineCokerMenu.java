@@ -12,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineCokerMenu extends AbstractContainerMenu {
 
@@ -55,7 +56,7 @@ public class MachineCokerMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineCokerBlockEntity cokerBlockEntity) {
             return cokerBlockEntity;
         }
-        throw new IllegalStateException("No MachineCokerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":coker_menu");
+        throw new MenuBlockEntityMissingException("No MachineCokerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":coker_menu");
     }
 
     public MachineCokerBlockEntity getBlockEntity() {
@@ -64,8 +65,7 @@ public class MachineCokerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

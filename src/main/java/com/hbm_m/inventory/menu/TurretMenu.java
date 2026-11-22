@@ -5,16 +5,15 @@ import com.hbm_m.blockentity.machines.TurretBaseBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Generisches Menu fuer alle Turret-Varianten - siehe {@link TurretBaseBlockEntity}. */
 @SuppressWarnings("UnstableApiUsage")
@@ -46,7 +45,7 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
         // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
         // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
         if (inv.player.level().isClientSide) return null;
-        throw new IllegalStateException("BlockEntity is not a TurretBaseBlockEntity");
+        throw new MenuBlockEntityMissingException("BlockEntity is not a TurretBaseBlockEntity");
     }
 
     public TurretMenu(int id, Inventory inv, BlockEntity entity) {
@@ -58,7 +57,7 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
         // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
         var handler = this.blockEntity != null
                 ? this.blockEntity.getInventory()
-                : new DummyItemStackHandler(TurretBaseBlockEntity.CHIP_SLOT + 1);
+                : new ModItemStackHandler.Dummy(TurretBaseBlockEntity.CHIP_SLOT + 1);
         var container = new ModItemStackHandlerContainer(handler,
                 this.blockEntity != null ? this.blockEntity::setChanged : () -> {});
 
@@ -210,21 +209,24 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
 
     @Override
     public boolean stillValid(Player pPlayer) {
-        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
-        return MultiblockMenuReach.stillValidCore(blockEntity, pPlayer, 128.0D);
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        if (blockEntity == null) {
+            return false;
+        }
+        return MenuReach.stillValid(pPlayer, blockEntity, blockEntity.getBlockState().getBlock());
     }
 
     private void addPlayerInventory(Inventory i) {
         for (int y = 0; y < 3; ++y) {
             for (int x = 0; x < 9; ++x) {
-                this.addSlot(new Slot(i, x + y * 9 + 9, 8 + x * 18, 84 + y * 18 + (18 * 3) + 2));
+                this.addSlot(new Slot(i, x + y * 9 + 9, 8 + x * 18, 140 + y * 18));
             }
         }
     }
 
     private void addPlayerHotbar(Inventory i) {
         for (int x = 0; x < 9; ++x) {
-            this.addSlot(new Slot(i, x, 8 + x * 18, 142 + (18 * 3) + 2));
+            this.addSlot(new Slot(i, x, 8 + x * 18, 198));
         }
     }
 }

@@ -81,6 +81,11 @@ public abstract class TurretMultiblockBlock extends DummyableMachineBlock {
                 .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
+    @Override
+    public boolean hasControllerEnergy() {
+        return true;
+    }
+
     /** Altbestand aus der Einzelblock-Zeit, dessen Struktur (noch) nicht steht. */
     protected static boolean isLegacy(BlockGetter level, BlockPos pos) {
         return level.getBlockEntity(pos) instanceof TurretBaseBlockEntity turret && turret.isLegacySingle();
@@ -178,6 +183,20 @@ public abstract class TurretMultiblockBlock extends DummyableMachineBlock {
         @Override
         protected VoxelShape getCellShape() {
             return CELL;
+        }
+
+        @Override
+        public int[][] getAllPorts(Direction facing) {
+            return rotatePorts(new int[][] {
+                { 1, 0,  0, Direction.SOUTH.get3DDataValue() },
+                { 0, 0,  0, Direction.SOUTH.get3DDataValue() },
+                { 0, 0, -1, Direction.NORTH.get3DDataValue() },
+                { 1, 0, -1, Direction.NORTH.get3DDataValue() },
+                { 1, 0,  0, Direction.EAST.get3DDataValue() },
+                { 1, 0, -1, Direction.EAST.get3DDataValue() },
+                { 0, 0,  0, Direction.WEST.get3DDataValue() },
+                { 0, 0, -1, Direction.WEST.get3DDataValue() }
+            }, facing);
         }
 
         /** {@code setBlockBoundsBasedOnState}/{@code getCollisionBoundingBoxFromPool}: jede Zelle 0..0.5. */

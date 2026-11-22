@@ -1,6 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
-import com.hbm_m.client.render.SimpleObjModel;
+import com.hbm_m.client.render.weapon.WeaponJointRig;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.lib.RefStrings;
@@ -17,7 +19,7 @@ import net.minecraft.world.item.ItemStack;
  */
 public class ItemRenderBoltgun extends ItemRenderWeaponBase {
 
-    public static final SimpleObjModel boltgun = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/weapons/boltgun.obj"));
+    public static final ResourceLocation boltgun_loc = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/weapons/boltgun.obj");
     public static final ResourceLocation boltgun_tex = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/weapons/boltgun.png");
 
     @Override public boolean customFirstPerson() { return false; }
@@ -42,12 +44,10 @@ public class ItemRenderBoltgun extends ItemRenderWeaponBase {
                 GunGL.rotate(80, 0, 1, 0);
                 GunGL.scale(s0, s0, s0);
 
-                GunGL.pushMatrix();
                 double[] anim = HbmAnimations.getRelevantTransformation("RECOIL");
-                GunGL.translate(0, 0, -anim[0]);
                 if (anim[0] != 0 && player != null) player.swinging = false;
-                GunGL.renderPart(boltgun, "Barrel");
-                GunGL.popMatrix();
+                WeaponJointRig rig = WeaponRenderRegistry.getRig(boltgun_loc);
+                WeaponKinematics.renderPartWithJoint(rig, "Barrel", GunGL.pose(), (float) anim[0]);
             }
 
             case EQUIPPED -> {
@@ -75,9 +75,9 @@ public class ItemRenderBoltgun extends ItemRenderWeaponBase {
             default -> { }
         }
 
-        GunGL.renderPart(boltgun, "Gun");
+        GunGL.renderPart(boltgun_loc, "Gun");
         if (type != ItemRenderType.EQUIPPED_FIRST_PERSON) {
-            GunGL.renderPart(boltgun, "Barrel");
+            GunGL.renderPart(boltgun_loc, "Barrel");
         }
 
         GunGL.popMatrix();

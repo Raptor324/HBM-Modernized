@@ -5,7 +5,7 @@
   },
   "children": {
     "gen": {
-      "loader": "forge:obj",
+      "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/machines/rtg.obj",
       "flip_v": true,
       "visibility": {"Gen": true, "Connector": false}

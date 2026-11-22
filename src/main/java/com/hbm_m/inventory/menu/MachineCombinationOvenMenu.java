@@ -3,7 +3,6 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.blockentity.machines.MachineCombinationOvenBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -13,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineCombinationOvenMenu extends AbstractContainerMenu {
 
@@ -35,7 +35,7 @@ public class MachineCombinationOvenMenu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         var container = new ModItemStackHandlerContainer(
-                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOT_COUNT),
                 blockEntity != null ? blockEntity::setChanged : null);
 
         // Eingangsslot - Koordinaten aus dem 1.7.10-Original (ContainerFurnaceCombo, Slot 0).
@@ -81,7 +81,7 @@ public class MachineCombinationOvenMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineCombinationOvenBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":combination_oven_menu");
+        throw new MenuBlockEntityMissingException("No MachineCombinationOvenBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":combination_oven_menu");
     }
 
     public MachineCombinationOvenBlockEntity getBlockEntity() {
@@ -90,8 +90,7 @@ public class MachineCombinationOvenMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

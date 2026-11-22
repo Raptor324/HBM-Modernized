@@ -1,8 +1,6 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineCompressorBaseBlockEntity;
-import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -12,13 +10,14 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.items.SlotItemHandler;
 
-/** 1:1 {@code ContainerCompressor}: Fluidkennung, Batterie, zwei Upgrades - fuer beide Kompressoren. */
+/** Slot-Koordinaten 1:1 aus {@code ContainerCompressor} (1.7.10 Original): Fluid-ID (17,72),
+ *  Batterie (152,72), Upgrades (52,72) und (70,72). Fuer beide Kompressoren (Normal + Compact). */
 public class MachineCompressorMenu extends AbstractContainerMenu {
 
-    private static final int MACHINE_SLOTS = 4;
-
     private final MachineCompressorBaseBlockEntity blockEntity;
+    private static final int MACHINE_SLOTS = 4;
 
     public MachineCompressorMenu(int id, Inventory inv, FriendlyByteBuf buf) {
         this(id, inv, getBlockEntity(inv, buf));
@@ -28,25 +27,19 @@ public class MachineCompressorMenu extends AbstractContainerMenu {
         super(ModMenuTypes.COMPRESSOR_MENU.get(), id);
         this.blockEntity = be;
 
-        var tile = new ModItemStackHandlerContainer(
-                be != null ? be.getInventory() : new DummyItemStackHandler(MACHINE_SLOTS),
-                be != null ? be::setChanged : null);
+        var handler = be.getInventory();
+        addSlot(new SlotItemHandler(handler, MachineCompressorBaseBlockEntity.SLOT_FLUID_ID, 17, 72));
+        addSlot(new SlotItemHandler(handler, MachineCompressorBaseBlockEntity.SLOT_BATTERY, 152, 72));
+        addSlot(new SlotItemHandler(handler, MachineCompressorBaseBlockEntity.SLOT_UPGRADE_1, 52, 72));
+        addSlot(new SlotItemHandler(handler, MachineCompressorBaseBlockEntity.SLOT_UPGRADE_2, 70, 72));
 
-        // Fluidkennung
-        addSlot(new Slot(tile, 0, 17, 72));
-        // Batterie
-        addSlot(new Slot(tile, 1, 152, 72));
-        // Upgrades
-        addSlot(new Slot(tile, 2, 52, 72));
-        addSlot(new Slot(tile, 3, 70, 72));
-
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 9; j++) {
-                addSlot(new Slot(inv, j + i * 9 + 9, 8 + j * 18, 122 + i * 18));
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 122 + row * 18));
             }
         }
-        for (int i = 0; i < 9; i++) {
-            addSlot(new Slot(inv, i, 8 + i * 18, 180));
+        for (int col = 0; col < 9; col++) {
+            addSlot(new Slot(inv, col, 8 + col * 18, 180));
         }
     }
 
@@ -58,42 +51,39 @@ public class MachineCompressorMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof MachineCompressorBaseBlockEntity c) return c;
-        if (inv.player.level().isClientSide) return null;
-        throw new IllegalStateException("No compressor at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineCompressorBlockEntity at " + pos);
     }
 
     public MachineCompressorBaseBlockEntity getBlockEntity() { return blockEntity; }
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack var3 = ItemStack.EMPTY;
-        Slot var4 = slots.get(index);
+        ItemStack result = ItemStack.EMPTY;
+        Slot slot = slots.get(index);
+        if (slot == null || !slot.hasItem()) return result;
 
-        if (var4 != null && var4.hasItem()) {
-            ItemStack var5 = var4.getItem();
-            var3 = var5.copy();
+        ItemStack stack = slot.getItem();
+        result = stack.copy();
 
-            if (index <= 3) {
-                if (!moveItemStackTo(var5, MACHINE_SLOTS, slots.size(), true)) return ItemStack.EMPTY;
-            } else {
-                if (var3.getItem() instanceof com.hbm_m.api.item.IBatteryItem) {
-                    if (!moveItemStackTo(var5, 1, 2, false)) return ItemStack.EMPTY;
-                } else if (var3.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier) {
-                    if (!moveItemStackTo(var5, 0, 1, false)) return ItemStack.EMPTY;
-                } else {
-                    if (!moveItemStackTo(var5, 2, 4, false)) return ItemStack.EMPTY;
-                }
+        if (index < MACHINE_SLOTS) {
+            if (!moveItemStackTo(stack, MACHINE_SLOTS, slots.size(), true)) return ItemStack.EMPTY;
+        } else {
+            if (stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
+                if (!moveItemStackTo(stack, MachineCompressorBaseBlockEntity.SLOT_UPGRADE_1, MachineCompressorBaseBlockEntity.SLOT_UPGRADE_2 + 1, false))
+                    return ItemStack.EMPTY;
+            } else if (!moveItemStackTo(stack, MachineCompressorBaseBlockEntity.SLOT_BATTERY, MachineCompressorBaseBlockEntity.SLOT_BATTERY + 1, false)
+                    && !moveItemStackTo(stack, MachineCompressorBaseBlockEntity.SLOT_FLUID_ID, MachineCompressorBaseBlockEntity.SLOT_FLUID_ID + 1, false)) {
+                return ItemStack.EMPTY;
             }
-
-            if (var5.isEmpty()) var4.set(ItemStack.EMPTY);
-            else var4.setChanged();
         }
-        return var3;
+
+        if (stack.isEmpty()) slot.set(ItemStack.EMPTY);
+        else slot.setChanged();
+        return result;
     }
 }

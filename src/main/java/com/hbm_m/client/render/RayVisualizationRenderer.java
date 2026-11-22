@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.render;
 
 import com.hbm_m.util.explosions.nuclear.CraterGenerator;
@@ -9,16 +8,13 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+//? if forge {
 import net.minecraftforge.fml.common.Mod;
 //?} else {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
+/*import net.neoforged.fml.common.EventBusSubscriber;
 *///?}
 import org.joml.Matrix4f;
 
@@ -27,14 +23,14 @@ import java.util.List;
 //? if forge {
 @Mod.EventBusSubscriber(modid = "hbm_m", bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 //?} else {
-/*@EventBusSubscriber(modid = "hbm_m", bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+/*@EventBusSubscriber(modid = "hbm_m", value = Dist.CLIENT)
 *///?}
 public class RayVisualizationRenderer {
 
-    // ОПТИМИЗАЦИЯ: Рисуем каждый 5-й луч
+    // Optimization: draw every 5th ray
     private static final int RENDER_STEP = 5;
 
-    // ПРОЗРАЧНОСТЬ: Вернули 0.25 (для debugLineStrip это оптимально)
+    // Transparency: settled on 0.25 (optimal for debugLineStrip)
     private static final float RAY_ALPHA_BASE = 0.25f;
 
     @SubscribeEvent
@@ -101,11 +97,4 @@ public class RayVisualizationRenderer {
         bufferSource.endBatch(RenderType.debugLineStrip(2.0));
     }
 }
-//?}
 
-//? if fabric {
-/*package com.hbm_m.client.render;
-
-/^* Fabric: Forge render event bus subscriber isn't wired yet. ^/
-public class RayVisualizationRenderer { }
-*///?}

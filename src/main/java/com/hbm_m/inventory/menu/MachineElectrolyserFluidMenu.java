@@ -5,7 +5,6 @@ import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -16,6 +15,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1 {@code ContainerElectrolyserFluid}: Batterie (186,109), Upgrades (186,140/158), Fluid-ID, Ein-/Ausgabebehaelter,
@@ -69,7 +69,7 @@ public class MachineElectrolyserFluidMenu extends AbstractContainerMenu {
 
     static Container container(MachineElectrolyserBlockEntity tedf) {
         return new ModItemStackHandlerContainer(
-                tedf != null ? tedf.getInventory() : new DummyItemStackHandler(MachineElectrolyserBlockEntity.INVENTORY_SIZE),
+                tedf != null ? tedf.getInventory() : new ModItemStackHandler.Dummy(MachineElectrolyserBlockEntity.INVENTORY_SIZE),
                 tedf != null ? tedf::setChanged : null);
     }
 

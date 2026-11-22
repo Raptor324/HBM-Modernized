@@ -29,13 +29,8 @@ import net.minecraft.world.item.ItemStack;
  */
 public class GuiQMAW extends Screen {
 
-    //? if fabric && < 1.21.1 {
-    /*protected static final ResourceLocation texture = new ResourceLocation(RefStrings.MODID, "textures/gui/gui_wiki.png");
-    protected static final ResourceLocation the_man = new ResourceLocation(RefStrings.MODID, "textures/gui/gui_wiki_flix.png");
-    *///?} else {
     protected static final ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_wiki.png");
     protected static final ResourceLocation the_man = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_wiki_flix.png");
-    //?}
 
     public String pageTitle; // Original: title (kollidiert mit Screen.title)
     public String qmawID;

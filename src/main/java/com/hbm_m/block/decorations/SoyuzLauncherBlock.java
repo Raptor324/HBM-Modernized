@@ -1,11 +1,17 @@
 package com.hbm_m.block.decorations;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.machines.DummyableMachineBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.SoyuzLauncherBlockEntity;
+import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
@@ -17,67 +23,96 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.BlockHooks;
 
-/**
- * 1:1 {@code SoyuzLauncher} (BlockDummyable): die Sojus-Startrampe. Immer nach Osten ausgerichtet, Kern vier Bloecke
- * ueber dem Setzpunkt. Struktur aus den sieben Quadern von {@code getAllDimensions} (Tisch 13x13x2, vier Beine,
- * Stuetze und Turmsockel); der Rand des Tisches auf Kernhoehe sind Anschluesse. Wird normalerweise vom
- * {@code struct_soyuz_core} errichtet; beim Abbau faellt kein Block, sondern das Baumaterial heraus.
- */
-public class SoyuzLauncherBlock extends DummyableMachineBlock {
+public class SoyuzLauncherBlock extends BaseEntityBlock implements IMultiblockController {
 
+    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final EnumProperty<PartRole> PART_ROLE = EnumProperty.create("part_role", PartRole.class);
+
+    /** Original: Kern vier Bloecke ueber dem Setzpunkt ({@code struct_soyuz_core} platziert den Kern hierueber). */
     public static final int HEIGHT = 4;
 
-    public SoyuzLauncherBlock(BlockBehaviour.Properties props) {
-        super(props);
+    private final MultiblockStructureHelper structureHelper;
+
+    public SoyuzLauncherBlock(Properties properties) {
+        super(properties);
+        registerDefaultState(stateDefinition.any()
+                .setValue(FACING, Direction.NORTH)
+                .setValue(PART_ROLE, PartRole.CONTROLLER));
+
+        Supplier<BlockState> phantomSupplier = () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState();
+        Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
+
+        for (int y = 0; y < 2; y++) {
+            for (int x = -1; x <= 1; x++) {
+                for (int z = -1; z <= 1; z++) {
+                    if (x == 0 && y == 0 && z == 0) continue;
+                    structureMap.put(new BlockPos(x, y, z), phantomSupplier);
+                }
+            }
+        }
+
+        this.structureHelper = new MultiblockStructureHelper(
+                structureMap,
+                phantomSupplier,
+                null,
+                null,
+                null,
+                null,
+                BlockPos.ZERO
+        );
     }
 
     @Override
-    protected com.hbm_m.multiblock.MultiblockStructureHelper defineStructure() {
-        var b = com.hbm_m.multiblock.DummyableStructureBuilder.create()
-                .box(0, 1, 6, 6, 6, 6)
-                .box(-2, 4, -3, 6, -3, 6)
-                .box(-2, 4, 6, -3, -3, 6)
-                .box(-2, 4, 6, -3, 6, -3)
-                .box(-2, 4, -3, 6, 6, -3)
-                .box(0, 4, 1, 1, -6, 8)
-                .box(0, 4, 2, 2, 9, -5);
-        for (int ix = -6; ix <= 6; ix++) for (int iz = -6; iz <= 6; iz++) {
-            if (ix == 6 || ix == -6 || iz == 6 || iz == -6) b.extra(iz, 0, ix);
-        }
-        return b.placementOffset(0)
-                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING, PART_ROLE);
     }
 
-    /** {@code ForgeDirection dir = ForgeDirection.EAST} - die Rampe dreht sich nie. */
-    @Nullable
+    @Override
+    public MultiblockStructureHelper getStructureHelper() {
+        return this.structureHelper;
+    }
+
+    @Override
+    public PartRole getPartRole(BlockPos localOffset) {
+        // Answered directly: the helper is built without symbol maps, so delegating to
+        // resolvePartRole would fall back to this very method and recurse to a
+        // StackOverflowError (hit whenever the item is held — port-square derivation calls
+        // getPartRole(BlockPos.ZERO) on MultiblockStructureHelper.getAutoPorts).
+        return localOffset.equals(BlockPos.ZERO) ? PartRole.CONTROLLER : PartRole.DEFAULT;
+    }
+
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, Direction.EAST);
-    }
-
-    @Override
-    public int getHeightOffset() {
-        return HEIGHT;
-    }
-
-    @Override
-    public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
+        return defaultBlockState()
+                .setValue(FACING, context.getHorizontalDirection().getOpposite())
+                .setValue(PART_ROLE, PartRole.CONTROLLER);
     }
 
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new SoyuzLauncherBlockEntity(pos, state);
+        return state.getValue(PART_ROLE) == PartRole.CONTROLLER
+                ? new SoyuzLauncherBlockEntity(pos, state)
+                : null;
     }
 
     @Nullable
@@ -87,17 +122,35 @@ public class SoyuzLauncherBlock extends DummyableMachineBlock {
         return createTickerHelper(type, ModBlockEntities.SOYUZ_LAUNCHER_BE.get(), SoyuzLauncherBlockEntity::serverTick);
     }
 
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
+            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
+        }
+    }
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return state.getValue(PART_ROLE) == PartRole.CONTROLLER ? RenderShape.MODEL : RenderShape.INVISIBLE;
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return Shapes.block();
+    }
+
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     //?} else {
     /*@Override
     protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, level, pos, player, hand, hit));
+        return com.hbm_m.platform.BlockHooks.useItemResult(hbmUse(state, level, pos, player, hand, hit));
     }
     private InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     *///?}
-        if (player.isShiftKeyDown()) return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS; // Original: Client true, Server geschlichen false
+        if (player.isShiftKeyDown()) return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS;
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof SoyuzLauncherBlockEntity be) {
             com.hbm_m.handler.BossSpawnHandler.markFBI((ServerPlayer) player);
             MenuRegistry.openExtendedMenu((ServerPlayer) player, be, buf -> buf.writeBlockPos(pos));
@@ -105,7 +158,6 @@ public class SoyuzLauncherBlock extends DummyableMachineBlock {
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
-    /** Original {@code breakBlock}: Inhalt und das gesamte Baumaterial samt Strukturkern fallen heraus. */
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
@@ -117,6 +169,7 @@ public class SoyuzLauncherBlock extends DummyableMachineBlock {
             Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.STRUCT_SCAFFOLD.get(), 63));
             Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.CONCRETE_SMOOTH.get(), 38));
             Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.STRUCT_SOYUZ_CORE.get(), 1));
+            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }

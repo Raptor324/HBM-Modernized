@@ -11,22 +11,6 @@ uniform float WorldTime; // World time for day/night transitions
 
 out vec4 fragColor;
 
-// Noise function for interference
-float rand(vec2 n) {
-    return fract(sin(dot(n, vec2(12.9898, 78.233))) * 43758.5453);
-}
-
-float noise(vec2 x) {
-    vec2 i = floor(x);
-    vec2 f = fract(x);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    float a = rand(i + vec2(0.0, 0.0));
-    float b = rand(i + vec2(1.0, 0.0));
-    float c = rand(i + vec2(0.0, 1.0));
-    float d = rand(i + vec2(1.0, 1.0));
-    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-}
-
 float smoothTransition(float time) {
     if (time >= 0.0 && time <= 1000.0) {
         return time / 1000.0;
@@ -37,48 +21,6 @@ float smoothTransition(float time) {
     } else {
         return 0.0;
     }
-}
-
-// Bayer dithering (from original shader)
-float Bayer2(vec2 c) { 
-    c = 0.5 * floor(c); 
-    return fract(1.5 * fract(c.y) + c.x); 
-}
-float Bayer4(vec2 c) { 
-    return 0.25 * Bayer2(0.5 * c) + Bayer2(c); 
-}
-float Bayer8(vec2 c) { 
-    return 0.25 * Bayer4(0.5 * c) + Bayer2(c); 
-}
-
-// Reduced blur to preserve more detail for better visibility
-vec3 blurSample(sampler2D tex, vec2 uv, vec2 texelSize) {
-    // Use center sample with slight blur instead of full 3x3 blur
-    // This preserves more detail while still removing texture colors
-    vec3 center = texture(tex, uv).rgb;
-    float centerLum = dot(center, vec3(0.299, 0.587, 0.114));
-    
-    // Light blur: only sample 4 neighbors instead of 9
-    vec3 sum = vec3(centerLum) * 2.0; // Center sample weighted more
-    float weight = 2.0;
-    
-    // Sample only 4 diagonal neighbors for lighter blur
-    vec2 offsets[4] = vec2[](
-        vec2(-1.0, -1.0),
-        vec2(1.0, -1.0),
-        vec2(-1.0, 1.0),
-        vec2(1.0, 1.0)
-    );
-    
-    for (int i = 0; i < 4; i++) {
-        vec2 offset = offsets[i] * texelSize;
-        vec3 sample = texture(tex, uv + offset).rgb;
-        float lum = dot(sample, vec3(0.299, 0.587, 0.114));
-        sum += vec3(lum);
-        weight += 1.0;
-    }
-    
-    return sum / weight;
 }
 
 void main() {
@@ -96,17 +38,10 @@ void main() {
     // Clamp UVs to avoid edge artifacts from sampling outside the framebuffer
     vec2 uv = clamp(pixelCenter, vec2(0.001), vec2(0.999));
     
-    // Get texture size for blur sampling
-    vec2 texelSize = vec2(1.0 / texSize.x, 1.0 / texSize.y);
-    
     // CRITICAL: Get ORIGINAL luminance BEFORE blur to preserve lighting information
     // This captures the actual block brightness/lightmap data from the game
     vec3 originalColor = texture(Sampler0, uv).rgb;
     float originalLuminance = dot(originalColor, vec3(0.299, 0.587, 0.114));
-    
-    // Apply reduced blur to preserve more detail while removing texture colors
-    // This improves visibility at low brightness settings
-    vec3 blurred = blurSample(Sampler0, uv, texelSize);
     
     float timeOfDay = mod(WorldTime, 24000.0);
     float state = smoothTransition(timeOfDay);
@@ -141,10 +76,6 @@ void main() {
     // No dithering - it creates visible patterns that interfere with pixelization effect
     // The pixelization itself provides enough smoothing, and 12 levels is sufficient
 
-    // INCREASED CONTRAST: Less compression to maintain visibility at low brightness
-    // Full contrast range (1.0) for maximum separation between light and dark areas
-    quantized = 0.5 + (quantized - 0.5) * 1.0;
-    
     // Boost hot areas (simulate bright entities/torches) as white highlights
     float heat = pow(quantized, 0.45);
     heat = smoothstep(0.35, 0.9, heat);

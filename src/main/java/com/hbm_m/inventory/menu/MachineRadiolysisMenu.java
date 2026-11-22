@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineRadiolysisBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -10,11 +11,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.items.SlotItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.items.SlotItemHandler;
-*///?}
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Slot-Koordinaten angelehnt an {@code ContainerRadiolysis} (1.7.10 Original): Fluid-ID (34,17),
  *  Batterie (8,53). RTG- und Sterilisations-Slots des Originals entfallen (siehe
@@ -22,7 +19,7 @@ import net.minecraftforge.items.SlotItemHandler;
 public class MachineRadiolysisMenu extends AbstractContainerMenu {
 
     private final MachineRadiolysisBlockEntity blockEntity;
-    private static final int MACHINE_SLOTS = 2;
+    private static final int MACHINE_SLOTS = 15;
 
     public MachineRadiolysisMenu(int id, Inventory inv, FriendlyByteBuf buf) {
         this(id, inv, getBlockEntity(inv, buf));
@@ -32,23 +29,23 @@ public class MachineRadiolysisMenu extends AbstractContainerMenu {
         super(ModMenuTypes.RADIOLYSIS_MENU.get(), id);
         this.blockEntity = be;
 
-        // NeoForge: gleiche SlotItemHandler-API (ModItemStackHandler ist dort IItemHandler)
-        //? if forge || neoforge {
-        var handler = be.getInventory();
+        // Platform-neutral adapter (SlotItemHandler is forge-only): on NeoForge the machine slots
+        // used to be missing entirely and quickMoveStack shuffled the player's own inventory.
+        ModItemStackHandlerContainer machineContainer =
+                new ModItemStackHandlerContainer(be.getInventory(), be::setChanged);
 
         // 1:1 aus {@code ContainerRadiolysis}: zwei Spalten zu fuenf Pelletplaetzen rechts aussen.
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 5; j++) {
-                addSlot(new SlotItemHandler(handler, j + i * 5, 188 + i * 18, 8 + j * 18));
+                addSlot(new Slot(machineContainer, j + i * 5, 188 + i * 18, 8 + j * 18));
             }
         }
 
-        addSlot(new SlotItemHandler(handler, MachineRadiolysisBlockEntity.SLOT_FLUID_ID, 34, 17));
-        addSlot(new TakeOnlySlot(handler, MachineRadiolysisBlockEntity.SLOT_FLUID_ID_OUT, 34, 53));
-        addSlot(new SlotItemHandler(handler, MachineRadiolysisBlockEntity.SLOT_IRRADIATE_IN, 148, 17));
-        addSlot(new TakeOnlySlot(handler, MachineRadiolysisBlockEntity.SLOT_IRRADIATE_OUT, 148, 53));
-        addSlot(new SlotItemHandler(handler, MachineRadiolysisBlockEntity.SLOT_BATTERY, 8, 53));
-        //?}
+        addSlot(new Slot(machineContainer, MachineRadiolysisBlockEntity.SLOT_FLUID_ID, 34, 17));
+        addSlot(new TakeOnlySlot(machineContainer, MachineRadiolysisBlockEntity.SLOT_FLUID_ID_OUT, 34, 53));
+        addSlot(new Slot(machineContainer, MachineRadiolysisBlockEntity.SLOT_IRRADIATE_IN, 148, 17));
+        addSlot(new TakeOnlySlot(machineContainer, MachineRadiolysisBlockEntity.SLOT_IRRADIATE_OUT, 148, 53));
+        addSlot(new Slot(machineContainer, MachineRadiolysisBlockEntity.SLOT_BATTERY, 8, 53));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -61,22 +58,16 @@ public class MachineRadiolysisMenu extends AbstractContainerMenu {
     }
 
     /** Original: {@code SlotTakeOnly} - herausnehmen ja, hineinlegen nein. */
-    //? if forge || neoforge {
-    private static class TakeOnlySlot extends SlotItemHandler {
-        //? if forge {
-        TakeOnlySlot(net.minecraftforge.items.IItemHandler handler, int index, int x, int y) {
-        //?} else {
-        /*TakeOnlySlot(net.neoforged.neoforge.items.IItemHandler handler, int index, int x, int y) {
-        *///?}
-            super(handler, index, x, y);
+    private static class TakeOnlySlot extends Slot {
+        TakeOnlySlot(net.minecraft.world.Container container, int index, int x, int y) {
+            super(container, index, x, y);
         }
 
         @Override
-        public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
+        public boolean mayPlace(ItemStack stack) {
             return false;
         }
     }
-    //?}
 
     public static MachineRadiolysisMenu create(int id, Inventory inv, MachineRadiolysisBlockEntity be) {
         return new MachineRadiolysisMenu(id, inv, be);
@@ -86,15 +77,14 @@ public class MachineRadiolysisMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof MachineRadiolysisBlockEntity r) return r;
-        throw new IllegalStateException("No MachineRadiolysisBlockEntity at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineRadiolysisBlockEntity at " + pos);
     }
 
     public MachineRadiolysisBlockEntity getBlockEntity() { return blockEntity; }
 
     @Override
     public boolean stillValid(Player player) {
-        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

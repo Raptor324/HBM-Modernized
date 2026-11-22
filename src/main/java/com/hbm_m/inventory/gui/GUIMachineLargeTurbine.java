@@ -14,6 +14,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class GUIMachineLargeTurbine extends GuiInfoScreen<MachineLargeTurbineMenu> {
 
@@ -56,9 +58,9 @@ public class GUIMachineLargeTurbine extends GuiInfoScreen<MachineLargeTurbineMen
                 drawInfoPanel(guiGraphics, -16, 68, PanelType.LARGE_RED_EXCLAMATION);
             }
 
-            turbine.getTanks()[0].renderTank(guiGraphics, this.leftPos + 62, this.topPos + 17, 16, 52);
-            turbine.getTanks()[1].renderTank(guiGraphics, this.leftPos + 134, this.topPos + 17, 16, 52);
-        }
+            turbine.getTanks()[0].renderTank(guiGraphics, this.leftPos + 62, this.topPos + 69, 16, 52);
+            turbine.getTanks()[1].renderTank(guiGraphics, this.leftPos + 134, this.topPos + 69, 16, 52);
+       }
     }
 
     @Override

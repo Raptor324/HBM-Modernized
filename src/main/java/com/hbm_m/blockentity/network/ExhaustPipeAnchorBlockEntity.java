@@ -153,14 +153,12 @@ public class ExhaustPipeAnchorBlockEntity extends BaseHbmBlockEntity implements 
         super.setRemoved();
     }
 
-    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         unloaded = true;
         for (FluidNode n : nodes) if (n != null) n.expired = true;
         super.onChunkUnloaded();
     }
-    //?}
 
     @Override
     public AABB getRenderBoundingBox() {

@@ -34,6 +34,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -44,14 +45,18 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 import dev.architectury.registry.menu.MenuRegistry;
 
-public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    /** Рама видима, когда над верхним поясом структуры стоят блоки (хелпер {{@code MultiblockFrameHelper}}). */
+    public static final BooleanProperty FRAME = BooleanProperty.create("frame");
     private final MultiblockStructureHelper structureHelper;
 
     public MachineChemicalFactoryBlock(BlockBehaviour.Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(FACING, Direction.NORTH)
+                .setValue(FRAME, false));
         this.structureHelper = defineStructureNew();
     }
 
@@ -125,6 +130,9 @@ public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMul
             if (core == null) {
                 return;
             }
+            if (level.getBlockEntity(core) instanceof com.hbm_m.interfaces.IFrameSupportable be) {
+                be.checkForFrame();
+            }
         }
     }
 
@@ -159,13 +167,38 @@ public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMul
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, FRAME);
     }
 
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    }
+
+    /**
+     * Порт {@code MachineChemicalFactory.printHook} (охлаждающие порты): зелёная подача воды и
+     * красный выход отработанного пара — как в оригинале, только имена жидкостей. Отличие от
+     * оригинала: там строки показывались лишь при взгляде на блок рядом с портом, а строка
+     * "Recipe field [n]" — у IO-портов; порт делегирует HUD частей контроллеру без позиции
+     * взгляда, поэтому охлаждающие строки показываются всегда, а IO-строка опущена.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineChemicalFactoryBlockEntity chemfac)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal("")
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(chemfac.getWaterTank().getTankType()).getLocalizedName())
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                .append(net.minecraft.network.chat.Component.literal("")
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(chemfac.getSpentSteamTank().getTankType()).getLocalizedName())
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable
@@ -219,5 +252,41 @@ public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMul
     /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
+    // Verbatim port of the original MachineChemicalFactory.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {-2, 0, -2, Direction.WEST.get3DDataValue()},
+            {-2, 0, -2, Direction.NORTH.get3DDataValue()},
+            {-1, 0, -2, Direction.NORTH.get3DDataValue()},
+            {0, 0, -2, Direction.NORTH.get3DDataValue()},
+            {1, 0, -2, Direction.NORTH.get3DDataValue()},
+            {2, 0, -2, Direction.NORTH.get3DDataValue()},
+            {2, 0, -2, Direction.EAST.get3DDataValue()},
+            {-2, 0, -1, Direction.WEST.get3DDataValue()},
+            {2, 0, -1, Direction.EAST.get3DDataValue()},
+            {-2, 0, 0, Direction.WEST.get3DDataValue()},
+            {2, 0, 0, Direction.EAST.get3DDataValue()},
+            {-2, 0, 1, Direction.WEST.get3DDataValue()},
+            {2, 0, 1, Direction.EAST.get3DDataValue()},
+            {-2, 0, 2, Direction.WEST.get3DDataValue()},
+            {-2, 0, 2, Direction.SOUTH.get3DDataValue()},
+            {-1, 0, 2, Direction.SOUTH.get3DDataValue()},
+            {0, 0, 2, Direction.SOUTH.get3DDataValue()},
+            {1, 0, 2, Direction.SOUTH.get3DDataValue()},
+            {2, 0, 2, Direction.SOUTH.get3DDataValue()},
+            {2, 0, 2, Direction.EAST.get3DDataValue()},
+            {-2, 2, -2, Direction.UP.get3DDataValue()},
+            {-2, 2, -1, Direction.UP.get3DDataValue()},
+            {-2, 2, 0, Direction.UP.get3DDataValue()},
+            {-2, 2, 1, Direction.UP.get3DDataValue()},
+            {-2, 2, 2, Direction.UP.get3DDataValue()},
+            {2, 2, -2, Direction.UP.get3DDataValue()},
+            {2, 2, -1, Direction.UP.get3DDataValue()},
+            {2, 2, 0, Direction.UP.get3DDataValue()},
+            {2, 2, 1, Direction.UP.get3DDataValue()},
+            {2, 2, 2, Direction.UP.get3DDataValue()}
+        }, facing);
     }
 }

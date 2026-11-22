@@ -1,8 +1,6 @@
 package com.hbm_m.mixin;
 
-//? if forge || neoforge {
 import com.hbm_m.interfaces.IMultiblockController;
-import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.multiblock.ContraptionAssemblyGuard;
 
 import net.minecraft.core.BlockPos;
@@ -10,6 +8,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
+
+import java.util.Collection;
+import java.util.function.Consumer;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -45,7 +46,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public abstract class LevelChunkSilentRemovalMixin {
 
     static {
-        com.hbm_m.main.MainRegistry.LOGGER.info("[HBM][Mixin] LevelChunkSilentRemovalMixin применён к LevelChunk");
+        com.hbm_m.main.MainRegistry.LOGGER.info("[HBM][Mixin] LevelChunkSilentRemovalMixin applied to LevelChunk");
     }
 
     @Redirect(
@@ -58,19 +59,65 @@ public abstract class LevelChunkSilentRemovalMixin {
     private void hbm_m$silentRemovalDuringContraptionMove(BlockState receiver, Level level, BlockPos pos,
                                                           BlockState otherState, boolean isMoving) {
         if (ContraptionAssemblyGuard.isMoving()) {
+            // IMultiblockPart is implemented by the part's BlockEntity, not by its Block, so the old
+            // test against the Block never matched and only the controller half of this guard worked.
             Block receiverBlock = receiver.getBlock();
-            boolean receiverOurs = receiverBlock instanceof IMultiblockPart || receiverBlock instanceof IMultiblockController;
+            boolean receiverOurs = receiverBlock instanceof IMultiblockController
+                    || receiverBlock instanceof com.hbm_m.block.UniversalMachinePartBlock;
             if (!receiverOurs && receiver.isAir()) {
                 Block otherBlock = otherState.getBlock();
-                receiverOurs = otherBlock instanceof IMultiblockPart || otherBlock instanceof IMultiblockController;
+                receiverOurs = otherBlock instanceof IMultiblockController
+                        || otherBlock instanceof com.hbm_m.block.UniversalMachinePartBlock;
             }
             if (receiverOurs) {
-                com.hbm_m.main.MainRegistry.LOGGER.info(
+                com.hbm_m.main.MainRegistry.LOGGER.debug(
                     "[HBM] onRemove подавлен при переносе, блок {} @ {}", receiverBlock, pos.toShortString());
+                // Only the multiblock cascade is skipped. Block.onRemove is also the one place that drops
+                // the block entity out of the chunk; without this the BE stayed under the air block
+                // ("invalid for ticking" every tick, "Failed to create block entity ... got air" on the
+                // next chunk load). Sable has already serialized it for the sub-level by now.
+                if (receiver.hasBlockEntity() && !receiver.is(otherState.getBlock())) {
+                    level.removeBlockEntity(pos);
+                }
                 return; // Перенос блока движком сборки — разрушение подавляем.
             }
         }
         receiver.onRemove(level, pos, otherState, isMoving);
     }
+
+    /**
+     * Prevents {@link java.util.ConcurrentModificationException} when clearing
+     * block entities during chunk unload / bulk chunk resend (e.g. nuke crater
+     * light updates).
+     *
+     * <p>In vanilla {@code LevelChunk#clearAllBlockEntities()}:
+     * <pre>
+     * this.blockEntities.values().forEach(BlockEntity::onChunkUnloaded);
+     * this.blockEntities.values().forEach(BlockEntity::setRemoved);
+     * this.blockEntities.clear();
+     * </pre>
+     * As block entities execute {@code setRemoved()}, multiblock part BEs trigger
+     * controller teardown hooks (or other mods execute block queries). Any lookup
+     * calling {@code chunk.getBlockEntity(pos, IMMEDIATE)} detects that a removed
+     * BE is marked as removed and invokes {@code this.blockEntities.remove(pos)},
+     * mutating the map mid-iteration of {@code values().forEach(...)}.
+     *
+     * <p>Redirecting the {@code Collection.forEach} invocation to iterate over a
+     * snapshot array ({@code collection.toArray()}) makes iteration completely
+     * immune to concurrent map mutations during the clear loop.
+     */
+    @Redirect(
+        method = "clearAllBlockEntities",
+        at = @At(
+            value = "INVOKE",
+            target = "Ljava/util/Collection;forEach(Ljava/util/function/Consumer;)V"
+        )
+    )
+    private <T> void hbm_m$safeForEachInClear(Collection<T> collection, Consumer<? super T> action) {
+        for (Object item : collection.toArray()) {
+            @SuppressWarnings("unchecked")
+            T casted = (T) item;
+            action.accept(casted);
+        }
+    }
 }
-//?}

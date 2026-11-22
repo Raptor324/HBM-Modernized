@@ -1,7 +1,10 @@
 package com.hbm_m.item.grenades_and_activators;
 
 import com.hbm_m.item.ITooltipProvider;
+import com.hbm_m.api.bomb.IBomb.BombReturnCode;
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.interfaces.IDetonatable;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -27,7 +30,6 @@ import java.util.List;
 
 public class RangeDetonatorItem extends Item implements ITooltipProvider {
 
-    /** Original {@code Library.rayTrace(player, 500, 1)}. */
     private static final int MAX_RANGE = 500;
 
     public RangeDetonatorItem(Properties properties) {
@@ -36,6 +38,7 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
 
     //? if forge {
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -46,6 +49,7 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
     }
     //?} elif neoforge {
     /*@Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -59,45 +63,62 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        // Original Library.rayTrace(player, 500, 1) mit mopOnMiss: auch ohne Treffer zaehlt der Block am Strahlende
-        BlockHitResult hitResult = (BlockHitResult) player.pick(MAX_RANGE, 1.0F, false);
-        BlockPos targetPos = hitResult.getBlockPos();
+        HitResult hitResult = player.pick(MAX_RANGE, 1.0F, false);
+        Vec3 target = (hitResult.getType() == HitResult.Type.BLOCK && hitResult instanceof BlockHitResult bHit)
+                ? Vec3.atCenterOf(bHit.getBlockPos())
+                : hitResult.getLocation();
 
-        if (!level.isClientSide) {
-            BlockState state = level.getBlockState(targetPos);
-            Block block = state.getBlock();
-
-            if (block instanceof com.hbm_m.api.bomb.IBomb bomb) {
-                com.hbm_m.api.bomb.IBomb.BombReturnCode ret = bomb.explode(level, targetPos);
-
-                if (com.hbm_m.config.ModClothConfig.get().enableExtendedLogging)
-                    com.hbm_m.main.MainRegistry.LOGGER.info("[DET] Tried to detonate block at " + targetPos.getX() + " / " + targetPos.getY() + " / " + targetPos.getZ() + " by " + player.getName().getString() + "!");
-
-                level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.TOOL_TECH_BLEEP.get(), player.getSoundSource(), 1.0F, 1.0F);
-                inform(player, ret.getUnlocalizedMessage(), ret.wasSuccessful());
-
-            } else if (block instanceof IDetonatable detonatable) {
-                // Port: Sprengkoerper, die im Port ueber IDetonatable statt IBomb laufen
-                boolean success = detonatable.onDetonate(level, targetPos, state, player);
-                level.playSound(null, player.getX(), player.getY(), player.getZ(), success ? ModSounds.TOOL_TECH_BLEEP.get() : ModSounds.TOOL_TECH_BOOP.get(), player.getSoundSource(), 1.0F, 1.0F);
-                inform(player, (success ? com.hbm_m.api.bomb.IBomb.BombReturnCode.DETONATED : com.hbm_m.api.bomb.IBomb.BombReturnCode.ERROR_INCOMPATIBLE).getUnlocalizedMessage(), success);
-
-            } else {
-                level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.TOOL_TECH_BOOP.get(), player.getSoundSource(), 1.0F, 1.0F);
-                inform(player, com.hbm_m.api.bomb.IBomb.BombReturnCode.ERROR_NO_BOMB.getUnlocalizedMessage(), false);
-            }
-        } else {
-            spawnLaserBeam(level, player, Vec3.atCenterOf(targetPos));
+        if (level.isClientSide) {
+            spawnLaserBeam(level, player, target);
+            return InteractionResultHolder.sidedSuccess(stack, true);
         }
 
-        return InteractionResultHolder.pass(stack);
-    }
+        if (hitResult.getType() == HitResult.Type.BLOCK && hitResult instanceof BlockHitResult blockHit) {
+            BlockPos targetPos = blockHit.getBlockPos();
+            BombReturnCode ret = DetonatorItem.triggerDetonation(level, targetPos, player);
 
-    /** Original {@code PlayerInformPacket(..., ID_DETONATOR)}: gelb bei Erfolg, sonst rot. */
-    private static void inform(Player player, String key, boolean success) {
-        if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
-            com.hbm_m.network.InfoToastPacket.sendTo(sp, Component.translatable(key).withStyle(success ? ChatFormatting.YELLOW : ChatFormatting.RED),
-                    60, com.hbm_m.client.overlay.OverlayInfoToast.ID_DETONATOR, success ? 0xFFFF55 : 0xFF5555);
+            if (ret != BombReturnCode.ERROR_NO_BOMB && ret != BombReturnCode.UNDEFINED) {
+                if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
+                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                            soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                }
+
+                if (ModClothConfig.get().enableExtendedLogging) {
+                    MainRegistry.LOGGER.info("[DET] Tried to detonate block at {} / {} / {} by {}!",
+                            targetPos.getX(), targetPos.getY(), targetPos.getZ(), player.getName().getString());
+                }
+
+                player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
+                        Component.translatable(ret.getUnlocalizedMessage())
+                                .withStyle(ret.wasSuccessful() ? ChatFormatting.YELLOW : ChatFormatting.RED)));
+
+                return InteractionResultHolder.success(stack);
+            } else {
+                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
+                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                            soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                }
+
+                player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
+                        Component.translatable(BombReturnCode.ERROR_NO_BOMB.getUnlocalizedMessage())
+                                .withStyle(ChatFormatting.RED)));
+
+                return InteractionResultHolder.fail(stack);
+            }
+        } else {
+            if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
+                SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
+                level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+            }
+
+            player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
+                    Component.translatable(BombReturnCode.ERROR_NO_BOMB.getUnlocalizedMessage())
+                            .withStyle(ChatFormatting.RED)));
+
+            return InteractionResultHolder.fail(stack);
         }
     }
 
@@ -111,7 +132,7 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
         if (len < 1.0E-4D) {
             return;
         }
-        vec = vec.normalize();
+        vec = vec.scale(1.0D / len);
 
         DustParticleOptions dust = new DustParticleOptions(DustParticleOptions.REDSTONE_PARTICLE_COLOR, 1.0F);
         for (int i = 0; i < len; i++) {

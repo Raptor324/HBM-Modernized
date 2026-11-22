@@ -1,5 +1,4 @@
 package com.hbm_m.compat.jei;
-//? if forge || neoforge {
 
 import java.util.ArrayList;
 import java.util.List;
@@ -111,7 +110,3 @@ public class FoundryJeiCategory extends JeiUniversalRecipeCategory<FoundryJeiCat
         return list;
     }
 }
-//?} else {
-/*public final class FoundryJeiCategory {
-    private FoundryJeiCategory() {}
-}*///?}

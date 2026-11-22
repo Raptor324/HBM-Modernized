@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:missile_soyuz"
+      "item": "hbm_m:missile_soyuz_lander"
     },
     "title": {
       "translate": "advancements.hbm_m.space.title"

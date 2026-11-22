@@ -1,5 +1,7 @@
 # Blender v2.76 (sub 0) OBJ File: 'grenade_smooth_base.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Sphere_Sphere.002
 v -0.015157 -1.305031 -0.096303
 v 0.253283 0.416750 -0.812925

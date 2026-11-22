@@ -23,8 +23,7 @@ public class ConveyorBlock extends ConveyorBendableBlock {
     @Override
     protected BlockState onScrewSneak(Level level, BlockPos pos, BlockState state, Player player) {
         if (state.getValue(BEND) == ConveyorBend.RIGHT) {
-            level.setBlock(pos, ModBlocks.CONVEYOR_LIFT.get().defaultBlockState().setValue(ConveyorBlockBase.FACING, state.getValue(FACING)), 3);
-            return state; // block already swapped directly; caller's setBlock would be a redundant no-op on the new block
+            return ModBlocks.CONVEYOR_LIFT.get().defaultBlockState().setValue(ConveyorBlockBase.FACING, state.getValue(FACING));
         }
         return super.onScrewSneak(level, pos, state, player);
     }

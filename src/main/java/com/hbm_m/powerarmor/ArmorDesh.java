@@ -2,7 +2,6 @@ package com.hbm_m.powerarmor;
 
 import com.hbm_m.platform.PlatformHooks;
 
-import com.hbm_m.platform.AttributeOps;
 
 import java.util.function.Supplier;
 
@@ -14,6 +13,7 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.material.Fluid;
+import com.hbm_m.platform.AttributeHooks;
 
 /** 1:1 {@code com.hbm.items.armor.ArmorDesh}: Dampfanzug ({@code steamsuit_*}. */
 public class ArmorDesh extends ModArmorFSBFueled {
@@ -44,6 +44,6 @@ public class ArmorDesh extends ModArmorFSBFueled {
     *///?}
         if (slot != this.getEquipmentSlot()) return base;
         return ArmorAttributes.with(base, java.util.Map.entry(Attributes.MOVEMENT_SPEED,
-                PlatformHooks.attributeModifier(ArmorAttributes.fixed(this.getType()), "Armor modifier", -0.025D, AttributeOps.MULTIPLY_BASE)));
+                AttributeHooks.modifier(ArmorAttributes.fixed(this.getType()), "Armor modifier", -0.025D, AttributeHooks.MULTIPLY_BASE)));
     }
 }

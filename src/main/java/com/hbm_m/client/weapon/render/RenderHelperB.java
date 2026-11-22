@@ -15,6 +15,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -105,6 +106,18 @@ public final class RenderHelperB {
         clipInverse.set(GunGL.pose().last().pose()).invert();
     }
 
+    public static void renderPart(ResourceLocation modelLocation, String part) {
+        if (!clipEnabled) {
+            GunGL.renderPart(modelLocation, part);
+            return;
+        }
+        ClipConsumer clip = new ClipConsumer(GunGL.buffer());
+        com.hbm_m.client.render.weapon.WeaponRenderRegistry.renderPartQuads(modelLocation, part, GunGL.pose(), clip,
+                GunGL.light(), OverlayTexture.NO_OVERLAY,
+                GunGL.red(), GunGL.green(), GunGL.blue(), GunGL.alpha());
+        clip.flush();
+    }
+
     /** {@code model.renderPart(part)} unter Beachtung von {@code GL_CLIP_PLANE0}. */
     public static void renderPart(SimpleObjModel model, String part) {
         if (!clipEnabled) {
@@ -177,13 +190,12 @@ public final class RenderHelperB {
         }
 
         private void emit(float[] v) {
-            //? if < 1.21.1 {
-            delegate.vertex(v[0], v[1], v[2]).color((int) (v[3] * 255), (int) (v[4] * 255), (int) (v[5] * 255), (int) (v[6] * 255))
-                    .uv(v[7], v[8]).overlayCoords((int) v[9], (int) v[10]).uv2((int) v[11], (int) v[12]).normal(v[13], v[14], v[15]).endVertex();
-            //?} else {
-            /*delegate.addVertex(v[0], v[1], v[2]).setColor((int) (v[3] * 255), (int) (v[4] * 255), (int) (v[5] * 255), (int) (v[6] * 255))
-                    .setUv(v[7], v[8]).setUv1((int) v[9], (int) v[10]).setUv2((int) v[11], (int) v[12]).setNormal(v[13], v[14], v[15]);
-            *///?}
+            // x y z r g b a u v overlayU overlayV lightU lightV nx ny nz
+            int packedOverlay = ((int) v[9] & 0xFFFF) | ((int) v[10] << 16);
+            int packedLight = ((int) v[11] & 0xFFFF) | ((int) v[12] << 16);
+            com.hbm_m.platform.RenderHooks.vertexFull(delegate, v[0], v[1], v[2],
+                    (int) (v[3] * 255), (int) (v[4] * 255), (int) (v[5] * 255), (int) (v[6] * 255),
+                    v[7], v[8], packedOverlay, packedLight, v[13], v[14], v[15]);
         }
 
         //? if < 1.21.1 {

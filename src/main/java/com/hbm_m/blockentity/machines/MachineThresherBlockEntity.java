@@ -196,7 +196,7 @@ public class MachineThresherBlockEntity extends com.hbm_m.blockentity.BaseHbmBlo
         }
 
         setChanged();
-        world.sendBlockUpdated(pos, blockState, blockState, 3);
+        this.syncIfChangedOrEvery(Float.floatToIntBits(this.angle), (this.isOn ? 1L : 0L) | ((long) this.state << 1) | ((long) this.tank.getFill() << 4), 2);
     }
 
     private void clientTick(Level world, BlockPos pos) {

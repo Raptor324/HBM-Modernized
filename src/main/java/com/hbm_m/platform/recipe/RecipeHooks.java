@@ -1,6 +1,5 @@
 package com.hbm_m.platform.recipe;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.network.FriendlyByteBuf;
@@ -12,7 +11,6 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,7 +19,10 @@ import java.util.Optional;
 /*import net.minecraft.world.item.crafting.RecipeHolder;
 *///?}
 
-public class RecipeHooks {
+public final class RecipeHooks {
+
+    private RecipeHooks() {}
+
     public static ItemStack readItem(FriendlyByteBuf buf) {
         //? if < 1.21.1 {
         return buf.readItem();
@@ -83,9 +84,16 @@ public class RecipeHooks {
     }
 
     //? if >= 1.21.1 {
-    
 
-    /*// =====================================================================================
+    /*private static <R extends Recipe<?>> R unwrap(net.minecraft.world.item.crafting.RecipeHolder<R> holder) {
+        R recipe = holder.value();
+        if (recipe instanceof PlatformRecipe pr) {
+            pr.setRecipeId(holder.id());
+        }
+        return recipe;
+    }
+
+    // =====================================================================================
     //  Legacy JSON normalization (1.21.1 only).
     //
     //  Datagen генерирует рецепты в формате 1.20.1: {"item": "...", "count": N}.
@@ -105,6 +113,16 @@ public class RecipeHooks {
         if (copy.has("nbt") && !copy.has("components")) {
             try {
                 JsonElement nbtJson = copy.remove("nbt");
+                // BlockStateTag читаем из ИСХОДНОГО JsonObject: после конвертации JsonOps->NbtOps
+                // числовые/булевы значения превращаются в ByteTag и getAsString() даёт суффиксы
+                // типа "1b", которые BlockItemStateProperties не парсит.
+                JsonObject bstFromJson = null;
+                if (nbtJson.isJsonObject()) {
+                    JsonObject nbtObj = nbtJson.getAsJsonObject();
+                    if (nbtObj.has("BlockStateTag") && nbtObj.get("BlockStateTag").isJsonObject()) {
+                        bstFromJson = nbtObj.getAsJsonObject("BlockStateTag");
+                    }
+                }
                 net.minecraft.nbt.CompoundTag nbt = nbtJson.isJsonPrimitive()
                         ? net.minecraft.nbt.TagParser.parseTag(nbtJson.getAsString())
                         : (net.minecraft.nbt.CompoundTag) com.mojang.serialization.JsonOps.INSTANCE.convertTo(net.minecraft.nbt.NbtOps.INSTANCE, nbtJson);
@@ -113,10 +131,19 @@ public class RecipeHooks {
                     comps.addProperty("minecraft:damage", nbt.getInt("Damage"));
                     nbt.remove("Damage");
                 }
-                if (nbt.contains("BlockStateTag", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+                if (bstFromJson != null) {
+                    JsonObject props = new JsonObject();
+                    for (java.util.Map.Entry<String, JsonElement> e : bstFromJson.entrySet()) {
+                        if (e.getValue().isJsonPrimitive()) {
+                            props.addProperty(e.getKey(), e.getValue().getAsString());
+                        }
+                    }
+                    comps.add("minecraft:block_state", props);
+                } else if (nbt.contains("BlockStateTag", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
+                    // Fallback (SNBT-строка): из NBT, скаляры — без NBT-суффиксов типов
                     net.minecraft.nbt.CompoundTag bst = nbt.getCompound("BlockStateTag");
                     JsonObject props = new JsonObject();
-                    for (String k : bst.getAllKeys()) props.addProperty(k, bst.get(k).getAsString());
+                    for (String k : bst.getAllKeys()) props.addProperty(k, com.hbm_m.platform.StackNbt.scalarToString(bst.get(k)));
                     comps.add("minecraft:block_state", props);
                 }
                 if (!nbt.isEmpty()) comps.addProperty("minecraft:custom_data", nbt.toString());
@@ -141,20 +168,10 @@ public class RecipeHooks {
     // =====================================================================================
 
     public static dev.architectury.fluid.FluidStack readFluidStack(FriendlyByteBuf buf) {
-        boolean present = buf.readBoolean();
-        if (!present) {
-            return dev.architectury.fluid.FluidStack.empty();
-        }
-        ResourceLocation id = buf.readResourceLocation();
-        long amount = buf.readVarLong();
-        net.minecraft.world.level.material.Fluid fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(id);
-        if (fluid == null || fluid == net.minecraft.world.level.material.Fluids.EMPTY) {
-            return dev.architectury.fluid.FluidStack.empty();
-        }
-        if (amount <= 0) {
-            return dev.architectury.fluid.FluidStack.empty();
-        }
-        return dev.architectury.fluid.FluidStack.create(fluid, amount);
+        // Резолв/валидация жидкости — в fluidStackOf (единая точка)
+        return buf.readBoolean()
+                ? fluidStackOf(buf.readResourceLocation(), buf.readVarLong())
+                : dev.architectury.fluid.FluidStack.empty();
     }
 
     public static void writeFluidStack(FriendlyByteBuf buf, dev.architectury.fluid.FluidStack stack) {
@@ -199,36 +216,33 @@ public class RecipeHooks {
         //? if < 1.21.1 {
         return (List<R>) manager.getAllRecipesFor((RecipeType) type);
         //?} else {
-        /*return ((List<RecipeHolder<R>>) (Object) manager.getAllRecipesFor((RecipeType) type)).stream()
-                .map(RecipeHolder::value)
+        /*return ((List<net.minecraft.world.item.crafting.RecipeHolder<R>>) (Object) manager.getAllRecipesFor((RecipeType) type)).stream()
+                .map(RecipeHooks::unwrap)
                 .toList();
         *///?}
     }
 
-    /** Удобная обёртка: {@code getAllRecipes(level.getRecipeManager(), type)}. */
+    /**
+     * Удобная обёртка: {@code getAllRecipes(level.getRecipeManager(), type)}.
+     * ВНИМАНИЕ: делает копию списка на каждый вызов. Для per-tick кэшированного
+     * скана рецептов используйте {@link com.hbm_m.recipe.index.CachedRecipeResolver}
+     * (сканит по общему PerManagerCache-списку ModRecipeIndex без копии).
+     */
     public static <R extends Recipe<?>> List<R> getAllRecipes(Level level, RecipeType<R> type) {
         return getAllRecipes(level.getRecipeManager(), type);
     }
 
     /**
-     * id → recipe. На 1.21.1 id берётся из {@code holder.id()} (recipe.id ненадёжен — dummy).
+     * id → recipe. Возвращается кэшированная (неизменяемая, разделяемая) карта из
+     * {@link com.hbm_m.recipe.index.ModRecipeIndex} — без перестройки LinkedHashMap на каждый вызов.
+     * На 1.21.1 id берётся из {@code holder.id()} (recipe.id ненадёжен — dummy).
      * Заменяет итерации с {@code recipe.getId()} в потребителях.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static <R extends Recipe<?>> Map<ResourceLocation, R> getAllRecipesById(RecipeManager manager, RecipeType<R> type) {
-        Map<ResourceLocation, R> map = new LinkedHashMap<>();
-        //? if < 1.21.1 {
-        List<R> recipes = (List<R>) manager.getAllRecipesFor((RecipeType) type);
-        for (R r : recipes) {
-            map.put(r.getId(), r);
-        }
-        //?} else {
-        /*List<RecipeHolder<R>> holders = (List<RecipeHolder<R>>) (Object) manager.getAllRecipesFor((RecipeType) type);
-        for (RecipeHolder<R> holder : holders) {
-            map.put(holder.id(), holder.value());
-        }
-        *///?}
-        return map;
+        // Cached shared map from the central index (rebuilt only on reload/sync/tag events or
+        // a genuine recipe-count change) — callers must treat it as unmodifiable.
+        return (Map<ResourceLocation, R>) com.hbm_m.recipe.index.ModRecipeIndex.of(manager).getByIdMap(type);
     }
 
     /** Удобная обёртка: {@code getAllRecipesById(level.getRecipeManager(), type)}. */
@@ -248,7 +262,7 @@ public class RecipeHooks {
         //?} else {
         /*return ((Optional<net.minecraft.world.item.crafting.RecipeHolder<R>>) (Object)
                 level.getRecipeManager().getRecipeFor((RecipeType) type, new net.minecraft.world.item.crafting.SingleRecipeInput(input), level))
-                .map(net.minecraft.world.item.crafting.RecipeHolder::value);
+                .map(RecipeHooks::unwrap);
         *///?}
     }
 
@@ -260,7 +274,7 @@ public class RecipeHooks {
         //? if < 1.21.1 {
         return (Optional<Recipe<?>>) (Object) manager.byKey(id);
         //?} else {
-        /*return ((Optional<RecipeHolder<?>>) (Object) manager.byKey(id)).map(RecipeHolder::value);
+        /*return ((Optional<net.minecraft.world.item.crafting.RecipeHolder<?>>) (Object) manager.byKey(id)).map(RecipeHooks::unwrap);
         *///?}
     }
 
@@ -278,7 +292,7 @@ public class RecipeHooks {
         //?} else {
         /*return ((Optional<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>>) (Object)
                 level.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, grid.toCraftingInput(), level))
-                .map(net.minecraft.world.item.crafting.RecipeHolder::value);
+                .map(RecipeHooks::unwrap);
         *///?}
     }
 
@@ -300,11 +314,22 @@ public class RecipeHooks {
         //?} else {
         /*var input = grid.toCraftingInput();
         for (var holder : level.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING)) {
-            if (holder.value().matches(input, level)) out.add(holder.value());
+            if (holder.value().matches(input, level)) out.add(unwrap(holder));
         }
         *///?}
 
         return out;
+    }
+
+    /** {@code CraftingRecipe.getRemainingItems} mit versionsuebergreifender Eingabe. */
+    public static net.minecraft.core.NonNullList<net.minecraft.world.item.ItemStack> getRemainingItemsCrafting(
+            net.minecraft.world.item.crafting.CraftingRecipe recipe,
+            com.hbm_m.util.SimpleCraftingContainer grid) {
+        //? if < 1.21.1 {
+        return recipe.getRemainingItems(grid);
+        //?} else {
+        /*return recipe.getRemainingItems(grid.toCraftingInput());
+        *///?}
     }
 
     /** {@code CraftingRecipe.matches} mit versionsuebergreifender Eingabe. */
@@ -328,22 +353,15 @@ public class RecipeHooks {
     }
 
     /**
-     * Reverse-lookup id рецепта по ссылке. На 1.20.1 — {@code recipe.getId()} напрямую;
-     * на 1.21.1 — поиск по {@link #getAllRecipesById} (id живёт на holder, не на recipe,
-     * т.к. сериализатор передаёт dummy-id при декоде).
+     * Reverse-lookup id рецепта по ссылке — O(1) через кэшированную карту byRecipe
+     * в {@link com.hbm_m.recipe.index.ModRecipeIndex} (IdentityHashMap, строится в build()).
+     * getById отображает только id→recipe и не может дать обратное соответствие.
      *
      * <p>Drop-in замена для {@code recipe.getId()}. Для редких UI/модульных вызовов;
      * в per-tick hot-loop кэшируйте результат или итерируйте id-карту напрямую.
      */
     public static <R extends Recipe<?>> ResourceLocation recipeId(RecipeManager manager, RecipeType<R> type, R recipe) {
         if (recipe == null) return null;
-        //? if < 1.21.1 {
-        return recipe.getId();
-        //?} else {
-        /*for (Map.Entry<ResourceLocation, R> e : getAllRecipesById(manager, type).entrySet()) {
-            if (e.getValue() == recipe) return e.getKey();
-        }
-        return null;
-        *///?}
+        return com.hbm_m.recipe.index.ModRecipeIndex.of(manager).getIdOf(type, recipe);
     }
 }

@@ -38,7 +38,9 @@ public final class JeiNeiTextures {
     }
 
     public static IDrawable createRecipeBackground(IGuiHelper guiHelper) {
-        return guiHelper.createDrawable(GUI_NEI, 0, 0, RECIPE_WIDTH, RECIPE_HEIGHT);
+        // NEI TemplateRecipeHandler.drawBackground: "drawTexturedModalRect(0, 0, 5, 11, 166, 65)" -
+        // der 166x65-Panel sitzt im Atlas bei (5,11), nicht bei (0,0).
+        return guiHelper.createDrawable(GUI_NEI, 5, 11, RECIPE_WIDTH, RECIPE_HEIGHT);
     }
 
     public static IDrawable createItemSlotBackground(IGuiHelper guiHelper) {

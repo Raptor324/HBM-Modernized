@@ -6,8 +6,10 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.effect.VortexEntity;
+import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.item.ModItems;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -25,13 +27,8 @@ import net.minecraft.world.level.Level;
  * 1:1-Port von {@code com.hbm.items.food.ItemConserve}: Konservendosen. Im Original ein
  * {@code ItemEnumMulti} ueber {@link EnumFoodType}; der Port folgt seiner Konvention mit einem Item
  * pro Sorte ({@code canned_<sorte>}, genau die Namen aus {@code getUnlocalizedName}).
- *
- * <p>Keine {@code FoodProperties}: das Original ist kein {@code ItemFood}, sondern ruft
- * {@code getFoodStats().addStats} selbst, raelpst und gibt den Dosenschluessel zurueck. Das schwarze
- * Loch beschwoert einen Vortex, die Rekursion gibt mit 9:10 eine neue Rekursion, die Faust
- * schlaegt mit 2 Magieschaden zu.</p>
  */
-public class ItemConserve extends Item {
+public class ItemConserve extends Item implements ITooltipProvider {
 
     public enum EnumFoodType {
         BEEF(8, 0.75F),
@@ -105,7 +102,6 @@ public class ItemConserve extends Item {
         }
     }
 
-    @Override
     //? if < 1.21.1 {
     public int getUseDuration(ItemStack stack) {
     //?} else {
@@ -127,11 +123,10 @@ public class ItemConserve extends Item {
     }
 
     @Override
-    //? if < 1.21.1 {
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-    //?} else {
-    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> tooltip, TooltipFlag flag) {
-    *///?}
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         HbmFoodItem.addDescLines(this.getDescriptionId() + ".desc", tooltip);
+        if (stack.is(ModItems.CANNED_BHOLE.get())) {
+            tooltip.add(Component.translatable("item.hbm_m.canned_bhole.desc").withStyle(ChatFormatting.GRAY));
+        }
     }
 }

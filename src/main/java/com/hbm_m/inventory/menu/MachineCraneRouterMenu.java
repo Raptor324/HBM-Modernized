@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineCraneRouterMenu extends AbstractContainerMenu {
 
@@ -59,7 +60,7 @@ public class MachineCraneRouterMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineCraneRouterBlockEntity routerBlockEntity) {
             return routerBlockEntity;
         }
-        throw new IllegalStateException("No MachineCraneRouterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":crane_router_menu");
+        throw new MenuBlockEntityMissingException("No MachineCraneRouterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":crane_router_menu");
     }
 
     public MachineCraneRouterBlockEntity getBlockEntity() {
@@ -68,15 +69,13 @@ public class MachineCraneRouterMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
-    /** Filter slots are never shift-click transferable, matching the original. */
-    /** Original {@code ContainerCraneRouter.slotClick}: alle 30 Filterplaetze als Geister. */
+    /**
+     * Original {@code ContainerCraneRouter.slotClick}: alle 30 Filterplaetze als Geister;
+     * Rechtsklick auf einen belegten Filter schaltet den Modus weiter.
+     */
     @Override
     public void clicked(int slotId, int button, ClickType clickType, Player player) {
         if (blockEntity != null && PatternSlot.handle(this, slotId, button, clickType, player, 0, 29,
@@ -84,6 +83,7 @@ public class MachineCraneRouterMenu extends AbstractContainerMenu {
         super.clicked(slotId, button, clickType, player);
     }
 
+    /** Filter slots are never shift-click transferable, matching the original. */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         return ItemStack.EMPTY;

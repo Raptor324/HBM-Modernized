@@ -1,6 +1,5 @@
 package com.hbm_m.client.weapon.render;
 
-import com.hbm_m.client.render.SimpleObjModel;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.WeaponResources;
 import com.hbm_m.lib.RefStrings;
@@ -18,7 +17,8 @@ public final class PAMeleeRenders {
 
     private PAMeleeRenders() { }
 
-    public static final SimpleObjModel armor_remnant = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/armor/remnant.obj"));
+    public static final ResourceLocation armor_remnant = WeaponResources.armor_remnant_loc;
+    public static final ResourceLocation armor_remnant_loc = armor_remnant;
     public static final ResourceLocation rpa_arm = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/armor/rpa_arm.png");
 
     /** 1:1 {@code ArmorNCRPAMelee.renderFirstPerson}. */

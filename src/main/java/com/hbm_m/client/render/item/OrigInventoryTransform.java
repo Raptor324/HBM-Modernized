@@ -4,13 +4,13 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
 /**
- * vI: Inventar-Kette des Original-{@code ItemRenderBase} (Fall INVENTORY) fuer BEWLR-Gegenstaende, deren
- * builtin/entity-Modell vom Anzeige-Waechter keine Display-Transformation bekommt.
+ * Inventory matrix chain reproducing original {@code ItemRenderBase} (INVENTORY case) for BEWLR items
+ * whose builtin/entity model receives no display transforms from the display wrapper.
  *
- * <p>Eingang: Pose von {@code renderByItem} im GUI = T(x+8, y+8) S(16,-16,16) T(-0.5). Danach steht die Pose genau
- * dort, wo das Original nach {@code GL11.glTranslated(8, 10, 0); glRotated(-30, 1,0,0); glRotated(45, 0,1,0);
- * glScaled(-1,-1,-1)} stand (Ursprung = linke obere Slotecke); es folgen {@code renderInventory()} und
- * {@code renderCommon*()} wie im Original.</p>
+ * <p>Input: {@code renderByItem} pose in GUI = T(x+8, y+8) S(16,-16,16) T(-0.5). Output pose aligns
+ * exactly with original post-{@code GL11.glTranslated(8, 10, 0); glRotated(-30, 1,0,0); glRotated(45, 0,1,0);
+ * glScaled(-1,-1,-1)} (origin = top-left slot corner); followed by {@code renderInventory()} and
+ * {@code renderCommon*()} matching original.</p>
  */
 public final class OrigInventoryTransform {
 
@@ -31,9 +31,9 @@ public final class OrigInventoryTransform {
     }
 
     /**
-     * vJ: Normalenmatrix exakt aus der eigenen Kette (Eingangsnormalen * inverse Transponierte der lokalen Matrix).
-     * {@code PoseStack#scale} verliert bei gespiegelten nicht-uniformen Skalierungen (hier S(1/16,-1/16,1/16))
-     * das Vorzeichen (fastInvCubeRoot einer negativen Zahl) -> Flaechen wurden von der falschen Seite beleuchtet.
+     * Compute normal matrix from local transform chain (input normal * inverse transpose of local matrix).
+     * {@code PoseStack#scale} loses sign on mirrored non-uniform scales (e.g. S(1/16,-1/16,1/16)) due to
+     * fastInvCubeRoot on negative values, which causes faces to be lit from the wrong side.
      */
     public static void fixNormals(PoseStack ps, org.joml.Matrix4f baseP, org.joml.Matrix3f baseN) {
         org.joml.Matrix4f local = new org.joml.Matrix4f(baseP).invert().mul(ps.last().pose());
@@ -41,9 +41,8 @@ public final class OrigInventoryTransform {
     }
 
     /**
-     * vJ: {@code PoseStack#scale} mit korrekten Normalen auch fuer gespiegelte, nicht-uniforme Skalierungen.
-     * 1.20.1 rechnet dort {@code fastInvCubeRoot} einer negativen Zahl (~1e25) -> Normalen saettigen beim Schreiben
-     * (je Komponente +-1), Flaechen erscheinen schwarz/zu dunkel. Sonst identisch mit {@code ps.scale}.
+     * Safe scale preserving normal orientations on mirrored non-uniform scales where standard
+     * {@code PoseStack#scale} overflows fastInvCubeRoot with negative values. Otherwise identical to {@code ps.scale}.
      */
     public static void scaleSafe(PoseStack ps, float x, float y, float z) {
         if ((x == y && y == z) || x * y * z > 0) {

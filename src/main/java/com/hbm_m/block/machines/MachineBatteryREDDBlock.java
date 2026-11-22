@@ -35,6 +35,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code MachineBatteryREDD}: FEnSU, BlockDummyable {9, 0, 2, 2, 4, 4} - 10 hoch, 5 tief, 9 breit. Die sechs
@@ -83,6 +84,7 @@ public class MachineBatteryREDDBlock extends BaseEntityBlock implements IMultibl
     }
 
     @Override public MultiblockStructureHelper getStructureHelper() { return structureHelper; }
+    @Override public boolean hasControllerEnergy() { return true; }
     @Override public PartRole getPartRole(BlockPos localOffset) { return structureHelper.resolvePartRole(localOffset, this); }
 
     @Override
@@ -131,7 +133,7 @@ public class MachineBatteryREDDBlock extends BaseEntityBlock implements IMultibl
     //?} else {
     /*@Override
     protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, level, pos, player, hand, hit));
+        return com.hbm_m.platform.BlockHooks.useItemResult(hbmUse(state, level, pos, player, hand, hit));
     }
     private InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     *///?}

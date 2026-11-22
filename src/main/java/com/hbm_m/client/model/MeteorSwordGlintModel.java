@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.model;
 
 import java.util.List;
@@ -24,11 +23,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-//? if forge {
 import net.minecraftforge.client.model.BakedModelWrapper;
-//?} else {
-/*import net.neoforged.neoforge.client.model.BakedModelWrapper;
-*///?}
 
 /**
  * 1:1 {@code ItemRendererMeteorSword}: das flache Schwertsymbol plus ein eingefaerbter Glanz in zwei Lagen
@@ -183,4 +178,3 @@ public class MeteorSwordGlintModel extends BakedModelWrapper<BakedModel> {
         models.put(loc, new MeteorSwordGlintModel(baked, r, g, b));
     }
 }
-//?}

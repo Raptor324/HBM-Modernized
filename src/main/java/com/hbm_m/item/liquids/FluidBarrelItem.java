@@ -12,19 +12,17 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.StackNbt;
 
 // Forge/NeoForge: сигнатуры IFluidHandlerItem идентичны, различаются только пакеты.
 // Логика — общая (BarrelAccess ниже), эти импорты нужны лишь обёртке-адаптеру.
-//? if forge {
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+//? if forge {
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-//?}
-//? if neoforge {
-/*import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
+//?} elif neoforge {
+/*import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 *///?}
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
@@ -64,11 +62,7 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
      * 16000 для Forge и 1296000 (16000 * 81) для Fabric.
      */
     public static long getPlatformCapacity() {
-        //? if fabric {
-        /*return CAPACITY * 81L;
-        *///?} else {
         return CAPACITY;
-         //?}
     }
 
     @Override
@@ -90,9 +84,6 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
             tooltip.add(Component.literal("Empty").withStyle(ChatFormatting.GRAY));
         } else {
             long amount = fluid.getAmount();
-            //? if fabric {
-            /*amount /= 81L;
-            *///?}
             tooltip.add(Component.literal("Fluid: ").withStyle(ChatFormatting.GRAY)
                     .append(fluid.getName().copy().withStyle(ChatFormatting.AQUA)));
             tooltip.add(Component.literal("Amount: ").withStyle(ChatFormatting.GRAY)
@@ -105,9 +96,6 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
         dev.architectury.fluid.FluidStack fluid = getFluid(stack);
         if (fluid.isEmpty()) return false;
         long amount = fluid.getAmount();
-        //? if fabric {
-        /*amount /= 81L;
-        *///?}
         return amount < CAPACITY;
     }
 
@@ -116,9 +104,6 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
         dev.architectury.fluid.FluidStack fluid = getFluid(stack);
         if (fluid.isEmpty()) return 0;
         long amount = fluid.getAmount();
-        //? if fabric {
-        /*amount /= 81L;
-        *///?}
         return Math.round(13.0F * amount / CAPACITY);
     }
 
@@ -137,7 +122,7 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
 
     // Static helper methods for NBT access
     public static dev.architectury.fluid.FluidStack getFluid(ItemStack stack) {
-        CompoundTag tag = PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.read(stack);
         if (tag != null && tag.contains(NBT_FLUID)) {
             CompoundTag fluidTag = tag.getCompound(NBT_FLUID);
             // Читаем напрямую по ключам, чтобы избежать проблем с разными форматами Architectury
@@ -154,11 +139,11 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
 
     public static void setFluid(ItemStack stack, dev.architectury.fluid.FluidStack fluid) {
         if (fluid.isEmpty() || fluid.getAmount() <= 0) {
-            PlatformHooks.remove(stack, NBT_FLUID);
+            StackNbt.removeKey(stack, NBT_FLUID);
             // Если после удаления тега он пустой — удаляем весь CompoundTag, чтобы стакалось с чистыми бочками
-            CompoundTag existing = PlatformHooks.getItemTag(stack);
+            CompoundTag existing = StackNbt.read(stack);
             if (existing != null && existing.isEmpty()) {
-                PlatformHooks.setItemTag(stack, null);
+                StackNbt.set(stack, null);
             }
         } else {
             CompoundTag fluidTag = new CompoundTag();
@@ -170,7 +155,7 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
             // Явно используем Long, чтобы NBT-тип всегда был одинаковым (Long)
             fluidTag.putLong("amount", fluid.getAmount());
 
-            PlatformHooks.put(stack, NBT_FLUID, fluidTag);
+            StackNbt.put(stack, NBT_FLUID, fluidTag);
         }
     }
 
@@ -268,7 +253,6 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
     //  initCapabilities/ICapabilityProvider).                              //
     // ================================================================== //
 
-    //? if forge || neoforge {
     public static class FluidBarrelCapabilityHandler implements IFluidHandlerItem {
         protected final BarrelAccess access;
 
@@ -313,7 +297,6 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
                     : new FluidStack(arch.getFluid(), (int) arch.getAmount());
         }
     }
-    //?}
 
     // neo-pendant: ModCapabilities.registerBatteryItemCaps (RegisterCapabilitiesEvent, Item-Capabilities)
     //? if forge {

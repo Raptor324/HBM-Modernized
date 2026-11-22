@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1 {@code ModuleMachinePUREX}: drei Item- und drei Fluid-Eingaenge, sechs Item- und ein Fluid-Ausgang; das Rezept

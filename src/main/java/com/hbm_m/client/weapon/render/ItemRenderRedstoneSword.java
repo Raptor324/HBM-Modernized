@@ -26,6 +26,9 @@ public class ItemRenderRedstoneSword extends ItemRenderWeaponBase {
 
     @Override public boolean customFirstPerson() { return false; }
 
+    /** Original {@code RedstoneSword.isFull3D}. */
+    @Override public boolean isFull3D() { return true; }
+
     @Override public void renderFirstPerson(ItemStack stack) { }
 
     /** Original {@code ModelSword}: alle Teile ohne Drehung ({@code mirror = true} steht erst nach {@code addBox} und wirkt nicht). */

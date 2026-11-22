@@ -34,10 +34,8 @@ public class MachineCraneExtractorBlock extends CraneBaseBlock {
     @Override
     public boolean isSignalSource(BlockState state) { return false; }
 
-    //? if forge || neoforge {
     @Override
     public boolean canConnectRedstone(BlockState state, BlockGetter level, BlockPos pos, @Nullable Direction direction) { return true; }
-    //?}
 
     @Override protected int[] getDropRange() { return new int[] { 9, 20 }; }
 

@@ -1,20 +1,22 @@
 package com.hbm_m.blockentity.machines;
 
-import com.hbm_m.platform.StackNbt;
-
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
+import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.api.redstoneoverradio.IRORValueProvider;
 import com.hbm_m.api.tile.IControlReceiver;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.entity.projectile.EntityShrapnel;
+import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -25,6 +27,7 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.item.nuclear.WatzPelletItem;
 import com.hbm_m.item.nuclear.WatzPelletType;
 import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.platform.StackNbt;
 import com.hbm_m.radiation.ChunkRadiationManager;
 
 import net.minecraft.core.BlockPos;
@@ -44,29 +47,42 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
 
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
 //?}
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import net.minecraftforge.items.IItemHandler;
 
 /**
  * 1:1 {@code TileEntityWatz}. Mehrere Watz-Segmente (je 3 Bloecke hoch) lassen sich uebereinander stapeln: das oberste
  * Segment steuert alle darunter, die Tanks werden jeden Tick zu gemeinsamen Tanks zusammengelegt, die Reaktion laeuft
  * von oben nach unten, Pellets fallen in leere Plaetze des Segments darunter bzw. tauschen mit verbrauchten.
- * Eingeschaltet wird ueber eine Watz-Pumpe direkt auf dem obersten Segment, die von oben mit Redstone versorgt wird.
+ * Eingeschaltet wird ueber eine Watz-Pumpe direkt auf dem obersten Segment, die von oben mit Redstone versorgt wird,
+ * oder ueber GUI / Redstone-Steuerung.
  * Laeuft der Schlammtank ueber, zerlegt sich der Reaktor.
  */
 public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
-        implements IFluidStandardTransceiverMK2, IControlReceiver, IRORValueProvider {
+        implements IFluidStandardTransceiverMK2, IMultiblockSidedIO, IControlReceiver, IRORValueProvider {
 
     public static final int PELLET_SLOTS = 24;
 
+    public static final int COOLANT_MAX = 64_000;
+    public static final int COOLANT_HOT_MAX = 64_000;
+    public static final int WASTE_MAX = 64_000;
+    public static final double MAX_SAFE_HEAT = 1_000_000D;
+
     public FluidTank[] tanks;
     public FluidTank[] sharedTanks;
+    public final FluidTank coolantTank;
+    public final FluidTank coolantHotTank;
+    public final FluidTank wasteTank;
+
     public int heat;
     /** Fluss aus der passiven Emission (nur Anzeige). */
     public double fluxLastBase;
@@ -74,26 +90,35 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
     public double fluxLastReaction;
     public double fluxDisplay;
     public boolean isOn;
+    public boolean redstonePowered = false;
 
     /* Sperrtypen fuer Item-IO */
     public boolean isLocked = false;
     public ItemStack[] locks;
 
+    private Set<Direction> allowedFluidSides = EnumSet.noneOf(Direction.class);
+    private boolean fluidSidesFromMultiblockStructure = false;
+
     //? if forge {
+    private final LazyOptional<IFluidHandler> lazyFluidHandler;
     private final LazyOptional<IItemHandler> automationHandler;
     //?} elif neoforge {
-    /*private final com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> automationHandler;
+    /*private final com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> automationHandler;
     *///?}
 
     public MachineWatzPowerplantBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.WATZ_POWERPLANT_BE.get(), pos, state, PELLET_SLOTS, 0L, 0L);
         this.locks = emptyLocks();
         this.tanks = new FluidTank[3];
-        this.tanks[0] = new FluidTank(ModFluids.COOLANT.getSource(), 64_000);
-        this.tanks[1] = new FluidTank(ModFluids.COOLANT_HOT.getSource(), 64_000);
-        this.tanks[2] = new FluidTank(ModFluids.WATZ.getSource(), 64_000);
+        this.tanks[0] = new FluidTank(ModFluids.COOLANT.getSource(), COOLANT_MAX);
+        this.tanks[1] = new FluidTank(ModFluids.COOLANT_HOT.getSource(), COOLANT_HOT_MAX);
+        this.tanks[2] = new FluidTank(ModFluids.WATZ.getSource(), WASTE_MAX);
+        this.coolantTank = this.tanks[0];
+        this.coolantHotTank = this.tanks[1];
+        this.wasteTank = this.tanks[2];
         resetSharedTanks();
         //? if forge {
+        this.lazyFluidHandler = LazyOptional.of(() -> new UnifiedFluidHandler(this));
         this.automationHandler = LazyOptional.of(() -> new AutomationHandler(inventory));
         //?} elif neoforge {
         /*this.automationHandler = com.hbm_m.platform.LazyCap.of(() -> new AutomationHandler(inventory));
@@ -110,7 +135,10 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
     protected ModItemStackHandler createInventoryHandler(int size) {
         return new ModItemStackHandler(size) {
             @Override
-            protected void onContentsChanged(int slot) { setChanged(); }
+            protected void onContentsChanged(int slot) {
+                setChanged();
+                if (isCriticalSlot(slot)) sendUpdateToClient();
+            }
 
             @Override
             public boolean isItemValid(int slot, @NotNull ItemStack stack) { return isItemValidForSlot(slot, stack); }
@@ -123,9 +151,9 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
     protected void resetSharedTanks() {
         this.sharedTanks = new FluidTank[3];
-        this.sharedTanks[0] = new FluidTank(ModFluids.COOLANT.getSource(), 64_000);
-        this.sharedTanks[1] = new FluidTank(ModFluids.COOLANT_HOT.getSource(), 64_000);
-        this.sharedTanks[2] = new FluidTank(ModFluids.WATZ.getSource(), 64_000);
+        this.sharedTanks[0] = new FluidTank(ModFluids.COOLANT.getSource(), COOLANT_MAX);
+        this.sharedTanks[1] = new FluidTank(ModFluids.COOLANT_HOT.getSource(), COOLANT_HOT_MAX);
+        this.sharedTanks[2] = new FluidTank(ModFluids.WATZ.getSource(), WASTE_MAX);
         this.sharedTanks[0].setFill(tanks[0].getFill());
         this.sharedTanks[1].setFill(tanks[1].getFill());
         this.sharedTanks[2].setFill(tanks[2].getFill());
@@ -133,6 +161,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineWatzPowerplantBlockEntity be) {
         if (level.isClientSide) return;
+        be.ensureNetworkInitialized();
         be.updateEntity(level, pos);
     }
 
@@ -142,8 +171,9 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
         if (updateLock()) return;
 
-        boolean turnedOn = level.getBlockState(pos.above(3)).is(ModBlocks.WATZ_PUMP.get())
-                && level.getSignal(pos.above(5), Direction.DOWN) > 0;
+        boolean turnedOn = (level.getBlockState(pos.above(3)).is(ModBlocks.WATZ_PUMP.get())
+                && level.getSignal(pos.above(5), Direction.DOWN) > 0)
+                || redstonePowered || isOn;
         List<MachineWatzPowerplantBlockEntity> segments = new ArrayList<>();
         segments.add(this);
         this.subscribeToTop();
@@ -181,15 +211,27 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
             segments.get(i).updateReaction(segments.get(i - 1), shared, turnedOn);
         }
 
-        /* Sync (Reihenfolge egal) */
+        /* Sync (Reihenfolge egal) & anti-sync spam */
+        boolean syncDue = probeDue(20);
         for (MachineWatzPowerplantBlockEntity segment : segments) {
+            int oldHeat = segment.heat;
+            int oldFill0 = segment.sharedTanks[0].getFill();
+            int oldFill1 = segment.sharedTanks[1].getFill();
+            int oldFill2 = segment.sharedTanks[2].getFill();
+            boolean oldOn = segment.isOn;
+
             segment.sharedTanks[0] = shared[0];
             segment.sharedTanks[1] = shared[1];
             segment.sharedTanks[2] = shared[2];
             segment.isOn = turnedOn;
-            segment.setChanged();
-            segment.sendUpdateToClient();
-            segment.heat *= 0.99; // 1% Abkuehlung pro Tick
+            segment.heat = (int) (segment.heat * 0.99); // 1% Abkuehlung pro Tick
+
+            if (oldOn != segment.isOn || Math.abs(oldHeat - segment.heat) > 50
+                    || oldFill0 != shared[0].getFill() || oldFill1 != shared[1].getFill() || oldFill2 != shared[2].getFill()
+                    || syncDue) {
+                segment.setChanged();
+                segment.sendUpdateToClient();
+            }
         }
 
         /* Fluessigkeit aus den gemeinsamen Tanks zurueckverteilen, unten nach oben */
@@ -300,7 +342,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
                 }
             }
 
-            this.heat += addedHeat;
+            this.heat += (int) addedHeat;
             this.fluxLastBase = baseFlux;
             this.fluxLastReaction = addedFlux;
 
@@ -457,7 +499,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
             if (!locks[i].isEmpty()) {
                 CompoundTag nbt1 = new CompoundTag();
                 nbt1.putByte("slot", (byte) i);
-                com.hbm_m.platform.StackNbt.save(locks[i], nbt1);
+                StackNbt.save(locks[i], nbt1);
                 list.add(nbt1);
             }
         }
@@ -471,11 +513,17 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
         // Original: serialize() schickt die gemeinsamen Tanks und die Flussanzeige an den Client
         nbt.putBoolean("isOn", isOn);
+        nbt.putBoolean("redstonePowered", redstonePowered);
         nbt.putDouble("fluxDisplay", this.fluxLastReaction + this.fluxLastBase);
         for (int i = 0; i < sharedTanks.length; i++) {
             sharedTanks[i].writeToNBT(nbt, "s" + i);
             nbt.putInt("sc" + i, sharedTanks[i].getMaxFill());
         }
+
+        int fluidSideMask = 0;
+        for (Direction dir : allowedFluidSides) fluidSideMask |= (1 << dir.get3DDataValue());
+        nbt.putInt("AllowedFluidSides", fluidSideMask);
+        nbt.putBoolean("FluidSidesFromMbStructure", fluidSidesFromMultiblockStructure);
     }
 
     @Override
@@ -495,6 +543,16 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         this.fluxLastBase = nbt.getDouble("lastFluxB");
         this.fluxLastReaction = nbt.getDouble("lastFluxR");
         this.isLocked = nbt.getBoolean("isLocked");
+        this.redstonePowered = nbt.getBoolean("redstonePowered");
+
+        if (nbt.contains("AllowedFluidSides")) {
+            int fluidSideMask = nbt.getInt("AllowedFluidSides");
+            allowedFluidSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((fluidSideMask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
+            }
+        }
+        this.fluidSidesFromMultiblockStructure = nbt.getBoolean("FluidSidesFromMbStructure");
     }
 
     /** Original: {@code deserialize} liest die gemeinsamen Tanks in die eigenen Tanks. */
@@ -514,6 +572,14 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
     @Override
     public boolean hasPermission(Player player) {
         return player.distanceToSqr(worldPosition.getX() + 0.5D, worldPosition.getY() + 0.5D, worldPosition.getZ() + 0.5D) <= 64.0D;
+    }
+
+    public void handleButtonPress(int action) {
+        if (action == 0) {
+            this.isOn = !this.isOn;
+            setChanged();
+            sendUpdateToClient();
+        }
     }
 
     @Override
@@ -551,6 +617,35 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public void setAllowedFluidSidesFromMultiblockStructure(Set<Direction> sides) {
+        this.allowedFluidSides = safeCopyDirectionSet(sides);
+        this.fluidSidesFromMultiblockStructure = true;
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    @Override
+    public void setAllowedFluidSides(Set<Direction> sides) {
+        this.allowedFluidSides = safeCopyDirectionSet(sides);
+        this.fluidSidesFromMultiblockStructure = false;
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    @Override
+    public Set<Direction> getAllowedFluidSides() {
+        return this.allowedFluidSides;
+    }
+
+    private static EnumSet<Direction> safeCopyDirectionSet(Set<Direction> sides) {
+        EnumSet<Direction> out = EnumSet.noneOf(Direction.class);
+        if (sides != null && !sides.isEmpty()) {
+            out.addAll(sides);
+        }
+        return out;
     }
 
     // ── ROR ─────────────────────────────────────────────────────────────────
@@ -604,18 +699,28 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) return automationHandler.cast();
+        if (cap == ForgeCapabilities.FLUID_HANDLER) {
+            if (side != null) {
+                if (fluidSidesFromMultiblockStructure && !allowedFluidSides.contains(side)) return LazyOptional.empty();
+                if (!fluidSidesFromMultiblockStructure && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
+                    return LazyOptional.empty();
+                }
+            }
+            return lazyFluidHandler.cast();
+        }
         return super.getCapability(cap, side);
-    }
-
-    @Override
-    public @Nullable Object getItemHandler(@Nullable Direction side) {
-        return automationHandler.orElse(null);
     }
 
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
+        lazyFluidHandler.invalidate();
         automationHandler.invalidate();
+    }
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
+        return automationHandler.orElse(null);
     }
 
     /** Automatisierungszugriff mit den Regeln von {@code isItemValidForSlot} / {@code canExtractItem}. */
@@ -631,6 +736,79 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         }
         @Override public int getSlotLimit(int slot) { return 1; }
         @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return inv.isItemValid(slot, stack); }
+    }
+
+    private static class UnifiedFluidHandler implements IFluidHandler {
+        private final MachineWatzPowerplantBlockEntity be;
+
+        UnifiedFluidHandler(MachineWatzPowerplantBlockEntity be) {
+            this.be = be;
+        }
+
+        @Override public int getTanks() { return 3; }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            return switch (tank) {
+                case 0 -> new net.minecraftforge.fluids.FluidStack(be.tanks[0].getTankType(), be.tanks[0].getFill());
+                case 1 -> new net.minecraftforge.fluids.FluidStack(be.tanks[1].getTankType(), be.tanks[1].getFill());
+                case 2 -> new net.minecraftforge.fluids.FluidStack(be.tanks[2].getTankType(), be.tanks[2].getFill());
+                default -> net.minecraftforge.fluids.FluidStack.EMPTY;
+            };
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return switch (tank) {
+                case 0 -> be.tanks[0].getMaxFill();
+                case 1 -> be.tanks[1].getMaxFill();
+                case 2 -> be.tanks[2].getMaxFill();
+                default -> 0;
+            };
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
+            return tank == 0 && VanillaFluidEquivalence.sameSubstance(stack.getFluid(), ModFluids.COOLANT.getSource());
+        }
+
+        @Override
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty()) return 0;
+            if (!VanillaFluidEquivalence.sameSubstance(resource.getFluid(), ModFluids.COOLANT.getSource())) return 0;
+            int space = be.tanks[0].getMaxFill() - be.tanks[0].getFill();
+            int toFill = Math.min(space, resource.getAmount());
+            if (toFill <= 0) return 0;
+            if (action.execute()) be.tanks[0].fillMb(ModFluids.COOLANT.getSource(), toFill);
+            return toFill;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            FluidTank source = pickDrainTank(resource.getFluid());
+            if (source == null || source.getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            int toDrain = Math.min(resource.getAmount(), source.getFill());
+            net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(source.getTankType(), toDrain);
+            if (action.execute()) source.drainMb(toDrain);
+            return drained;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            FluidTank source = be.tanks[1].getFill() > 0 ? be.tanks[1] : be.tanks[2];
+            if (maxDrain <= 0 || source.getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            int toDrain = Math.min(maxDrain, source.getFill());
+            net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(source.getTankType(), toDrain);
+            if (action.execute()) source.drainMb(toDrain);
+            return drained;
+        }
+
+        private FluidTank pickDrainTank(Fluid fluid) {
+            if (VanillaFluidEquivalence.sameSubstance(fluid, be.tanks[1].getTankType())) return be.tanks[1];
+            if (VanillaFluidEquivalence.sameSubstance(fluid, be.tanks[2].getTankType())) return be.tanks[2];
+            return null;
+        }
     }
     //?} elif neoforge {
     /*@Override
@@ -650,8 +828,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         automationHandler.invalidate();
     }
 
-    /^* Automatisierungszugriff mit den Regeln von {@code isItemValidForSlot} / {@code canExtractItem}. ^/
-    private class AutomationHandler implements net.neoforged.neoforge.items.IItemHandler {
+    private class AutomationHandler implements net.minecraftforge.items.IItemHandler {
         private final ModItemStackHandler inv;
         AutomationHandler(ModItemStackHandler inv) { this.inv = inv; }
         @Override public int getSlots() { return inv.getSlots(); }

@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.blockentity.machines.CustomLauncherBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -13,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1 {@code ContainerCompactLauncher} / {@code ContainerLaunchTable} (identische Belegung): Rakete, Zielgeber,
@@ -35,7 +35,7 @@ public class CustomLauncherMenu extends AbstractContainerMenu {
         // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
         var container = this.blockEntity != null
                 ? new ModItemStackHandlerContainer(this.blockEntity.getInventory(), this.blockEntity::setChanged)
-                : new ModItemStackHandlerContainer(new DummyItemStackHandler(TE_SLOTS), () -> {});
+                : new ModItemStackHandlerContainer(new ModItemStackHandler.Dummy(TE_SLOTS), () -> {});
 
         addSlot(new Slot(container, 0, 26, 36));
         addSlot(new Slot(container, 1, 26, 72));

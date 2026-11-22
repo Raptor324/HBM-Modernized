@@ -124,21 +124,14 @@ public final class MissileRenderHelper {
         }
     }
 
-    // Phase C (mechanisch): Forge-Pfade mit ItemTransformHelperCompat gelten jetzt auch fuer NeoForge,
-    // weil die Anzeige-Waechter dort ebenfalls installiert werden (else = nur noch Fabric).
+    // Forge paths with ItemTransformHelperCompat also apply to NeoForge where display wrappers are installed.
     @Nullable
     public static MissileBakedModel resolveMissileModel(ResourceLocation itemId) {
         BakedModel model = resolveBakedModel(itemId);
-        //? if forge || neoforge {
         MissileBakedModel missileModel = com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapMissileDelegate(model);
         if (missileModel != null) {
             return missileModel;
         }
-        //?} else {
-        /*if (model instanceof MissileBakedModel missileModel) {
-            return missileModel;
-        }
-        *///?}
         debugMissile("resolveMissileModel: {} is not MissileBakedModel", itemId);
         return null;
     }
@@ -148,7 +141,6 @@ public final class MissileRenderHelper {
         if (stack.isEmpty()) {
             return null;
         }
-        //? if forge || neoforge {
         BakedModel shaperModel = Minecraft.getInstance().getItemRenderer()
                 .getItemModelShaper()
                 .getItemModel(stack);
@@ -156,7 +148,6 @@ public final class MissileRenderHelper {
                 && shaperModel != Minecraft.getInstance().getModelManager().getMissingModel()) {
             return AbstractPartBasedRenderer.unwrapFabricForwardingModels(shaperModel);
         }
-        //?}
         return resolveBakedModel(BuiltInRegistries.ITEM.getKey(stack.getItem()));
     }
 
@@ -168,28 +159,16 @@ public final class MissileRenderHelper {
         var modelManager = Minecraft.getInstance().getModelManager();
         BakedModel itemModel = modelManager.getModel(new ModelResourceLocation(itemId, "inventory"));
         itemModel = AbstractPartBasedRenderer.unwrapFabricForwardingModels(itemModel);
-        //? if forge || neoforge {
         if (com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapMissileDelegate(itemModel) != null) {
             return itemModel;
         }
-        //?} else {
-        /*if (itemModel instanceof MissileBakedModel) {
-            return itemModel;
-        }
-        *///?}
         ResourceLocation meshId = meshModelId(itemId);
         if (!meshId.equals(itemId)) {
             BakedModel meshModel = modelManager.getModel(new ModelResourceLocation(meshId, "inventory"));
             meshModel = AbstractPartBasedRenderer.unwrapFabricForwardingModels(meshModel);
-            //? if forge || neoforge {
             if (com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapMissileDelegate(meshModel) != null) {
                 return meshModel;
             }
-            //?} else {
-            /*if (meshModel instanceof MissileBakedModel) {
-                return meshModel;
-            }
-            *///?}
         }
         return itemModel;
     }
@@ -204,7 +183,7 @@ public final class MissileRenderHelper {
             return;
         }
         RandomSource random = RandomSource.create(42L);
-        // Кросс-лоадерно: forge/neoforge — ModelData+RenderType, fabric — 3-arg.
+        // Cross-loader: forge/neoforge - ModelData+RenderType, fabric - 3-arg.
         List<BakedQuad> quads = com.hbm_m.platform.RenderHooks.getPartQuads(model, null, null, random);
         if (quads.isEmpty()) {
             debugMissile("drawBakedQuads: no quads for {}", BuiltInRegistries.ITEM.getKey(stack.getItem()));
@@ -234,6 +213,30 @@ public final class MissileRenderHelper {
                                        @Nullable MultiBufferSource bufferSource,
                                        @Nullable BlockEntity blockEntity) {
         bindBlockAtlas();
+        // The missile does not participate in the machines' distance fade - draw
+        // strictly opaque. fade is SingleMeshVboRenderer static; force 1.0,
+        // otherwise (a leak from another BER) the draw would go with blend +
+        // depthMask(false) - a translucent mesh without depth writes that later
+        // machine flushes draw on top of.
+        float prevFadeAlpha = SingleMeshVboRenderer.getFadeAlpha();
+        SingleMeshVboRenderer.setFadeAlpha(1.0F);
+        // The GPU fade ramp never applied to missiles - but the old global
+        // pendingFadeMode arming here was consumed by nothing: the missile path
+        // draws through SingleMeshVboRenderer only, which never reaches
+        // addInstance. Per-instance fade MODE now travels in PartEnqueueRequest;
+        // there is no global to arm (and no stale FADE_MODE_NONE that a later
+        // machine record could have consumed).
+        try {
+            drawMissileMeshInner(stack, missileModel, poseStack, packedLight, lightPos, bufferSource, blockEntity);
+        } finally {
+            SingleMeshVboRenderer.setFadeAlpha(prevFadeAlpha);
+        }
+    }
+
+    private static void drawMissileMeshInner(ItemStack stack, MissileBakedModel missileModel, PoseStack poseStack,
+                                             int packedLight, BlockPos lightPos,
+                                             @Nullable MultiBufferSource bufferSource,
+                                             @Nullable BlockEntity blockEntity) {
         String cachePrefix = missileModel.getModelId().toString();
         boolean drewAny = false;
         for (String partName : missileModel.getRenderablePartNames()) {

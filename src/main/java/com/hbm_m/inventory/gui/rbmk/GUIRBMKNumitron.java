@@ -11,6 +11,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Port of {@code GUIScreenRBMKNumitron} - two numitron tubes, each with an RTTY channel, a label,
@@ -18,6 +20,7 @@ import net.minecraft.network.chat.Component;
  * seven digits are lit, whether large values are SI-shortened, and whether the number is padded
  * with zeroes or spaces.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKNumitron extends Screen {
 
     private static final int UNITS  = RBMKNumitronBlockEntity.UNITS;

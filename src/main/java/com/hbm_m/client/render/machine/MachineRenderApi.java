@@ -4,20 +4,31 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 /**
- * Контекст, доступный {@link MachineRenderHook}'ам при рендеринге кадра станка.
+ * Context available to {@link MachineRenderHook}s while rendering a machine frame.
  */
 public interface MachineRenderApi {
 
-    /** Итоговый fade этого BE в этом кадре (min(static, animated)). */
+    /** Final fade of this BE in this frame (min(static, animated)). */
     float fadeAlpha();
 
     /**
-     * Итоговая матрица части в этом кадре (block-relative, как на стеке после аниматора),
-     * или {@code null}, если часть не рендерилась. Копия — мутировать безопасно.
-     * Так хуки (предметы-штампы и т.п.) позиционируются относительно анимированной части.
+     * Transform of the part RELATIVE TO THE BLOCK-TRANSFORM BASIS in this frame,
+     * or {@code null} if the part was not rendered (or was culled/frozen this
+     * frame without a saved pose).
+     * <p>
+     * Contract: apply with {@code poseStack.mulPose(matrix)} immediately after
+     * your own {@code pushPose()} - the hook receives the stack already carrying
+     * the block transform, and the returned delta is exactly what is missing
+     * from it. Static parts resolve to identity, animator-driven parts to the
+     * animator's delta, parametric parts to recordStatics * jointDelta.
+     * <p>
+     * The returned matrix is a LIVE reference into this frame's transform slot,
+     * NOT a copy: mutating it corrupts the value seen by every hook that runs
+     * later in the same frame, and it is overwritten at the next machine frame.
+     * Copy it ({@code new Matrix4f(m)}) if you need to change or hold it.
      */
     @Nullable Matrix4f partTransform(String partName);
 
-    /** Позиция BlockEntity. */
+    /** BlockEntity position. */
     net.minecraft.core.BlockPos blockPos();
 }

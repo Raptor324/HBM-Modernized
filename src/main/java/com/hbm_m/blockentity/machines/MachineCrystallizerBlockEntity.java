@@ -19,6 +19,7 @@ import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.CrystallizerRecipe;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 
 import dev.architectury.fluid.FluidStack;
 
@@ -38,20 +39,16 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.StackNbt;
+import com.hbm_m.platform.ModItemStackHandler;
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 //?}
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-*///?}
 
 
 public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
@@ -122,6 +119,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
     private int duration = DEFAULT_DURATION;
     private boolean isOn = false;
 
+    /** Кэш скана рецептов: подпись = фингерпринт входного стека + жидкости бака (CachedRecipeResolver CONTRACT 2). */
+    private final CachedRecipeResolver<CrystallizerRecipe> recipeResolver = new CachedRecipeResolver<>();
+
     // Client-side visual state for the rotating center part.
     public float angle = 0.0F;
     public float prevAngle = 0.0F;
@@ -166,11 +166,16 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
 
         ItemStack inputStack = entity.inventory.getStackInSlot(SLOT_INPUT);
         FluidStack tankFluid = entity.getTankFluidStack();
-        // Рецепты теперь data-driven (JSON) — поиск через RecipeManager (кросс-версионный RecipeHooks).
-        CrystallizerRecipe recipe = RecipeHooks.getAllRecipes(level, CrystallizerRecipe.Type.INSTANCE).stream()
-                .filter(r -> r.matchesInput(inputStack) && r.matchesAcid(tankFluid))
-                .findFirst()
-                .orElse(null);
+        // Рецепты теперь data-driven (JSON) — поиск через RecipeManager (кросс-версионный RecipeHooks),
+        // кэшированный на тик+подпись через CachedRecipeResolver.
+        CrystallizerRecipe recipe = entity.recipeResolver.resolve(level, CrystallizerRecipe.Type.INSTANCE,
+                CachedRecipeResolver.sign(0L,
+                        StackNbt.fingerprint(inputStack),
+                        FluidHooks.fingerprint(tankFluid)),
+                (lvl, all) -> all.stream()
+                        .filter(r -> r.matchesInput(inputStack) && r.matchesAcid(tankFluid))
+                        .findFirst()
+                        .orElse(null));
 
         boolean wasOn = entity.isOn;
         entity.isOn = false;
@@ -193,7 +198,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
                     ItemStack in = entity.inventory.getStackInSlot(SLOT_INPUT);
                     if (in.isEmpty() || in.getCount() < recipe.getInputCount()) recipe = null;
                 }
-                entity.setChanged();
+                // Анти-sync-spam: пакет только при изменении отрисовываемого состояния (P6).
+                entity.syncIfStateChanged(entity.getEnergyStored(),
+                        (long) entity.progress | ((long) entity.duration << 32));
             } else {
                 entity.progress = 0;
             }
@@ -262,7 +269,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
         ItemStack out = recipe.getOutput();
         if (!outSlot.isEmpty()) {
-            if (!PlatformHooks.isSameItemSameTags(outSlot, out)) return false;
+            if (!StackNbt.sameItemSameTags(outSlot, out)) return false;
             if (outSlot.getCount() + out.getCount() > outSlot.getMaxStackSize()) return false;
         }
 
@@ -528,12 +535,10 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         }
     }
 
-    //? if forge || neoforge {
     @Override
     protected void setupFluidCapability() {
         setFluidHandler(tank);
     }
-    //?}
 
     //? if forge {
     /** Original {@code ISidedInventory}: Slots {0, 2}; nur der Eingang hinein, nur das Ergebnis heraus. */

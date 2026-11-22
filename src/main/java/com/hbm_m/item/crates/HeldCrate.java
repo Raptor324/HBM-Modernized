@@ -33,6 +33,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1-Port von {@code ItemBlockStorageCrate.onItemRightClick} + {@code InventoryCrate}: mit
@@ -57,7 +58,7 @@ public final class HeldCrate {
             for (ItemStack item : player.getInventory().items) {
                 if (item.isEmpty()) continue; // kein Item
                 if (!(item.getItem() instanceof ItemKey)) continue; // kein Schluessel
-                if (!PlatformHooks.hasItemTag(item)) continue; // ohne NBT oeffnet er sowieso nichts
+                if (!StackNbt.has(item)) continue; // ohne NBT oeffnet er sowieso nichts
                 if (ItemKeyPin.getPins(item) == lock) { // passende Stifte
                     spawnSpiders(player, stack);
                     open(player, stack, block);
@@ -79,11 +80,11 @@ public final class HeldCrate {
         if (!(be instanceof BaseCrateBlockEntity crate)) return;
 
         CompoundTag beTag = readBlockEntityTag(stack);
-        if (beTag != null) PlatformHooks.loadBlockEntityTag(crate, beTag, player.level().registryAccess());
+        if (beTag != null) BlockHooks.loadCustomOnly(crate, beTag, player.level().registryAccess());
 
         // InventoryCrate: ohne NBT ein Zufallsschluessel, damit sich die offene Kiste nicht stapelt
-        if (!PlatformHooks.hasItemTag(stack) && beTag == null) {
-            PlatformHooks.putLong(stack, "stacklock", rand.nextLong());
+        if (!StackNbt.has(stack) && beTag == null) {
+            StackNbt.putLong(stack, "stacklock", rand.nextLong());
         }
 
         MenuProvider provider = new MenuProvider() {
@@ -133,7 +134,7 @@ public final class HeldCrate {
         if (!crate.isEmpty() || crate.isLocked() || crate.hasSpiders) crate.saveToItem(target);
         // nie den ganzen Tag entfernen - ohne ihn wuerde die offene Kiste stapelbar
         removeRootKey(target, "stacklock");
-        PlatformHooks.putLong(target, "stacklock", rand.nextLong());
+        StackNbt.putLong(target, "stacklock", rand.nextLong());
     }
 
     /** Original {@code InventoryCrate.closeInventory}: 6-kB-Pruefung, dann Stapelsperre nur, wenn noch Daten da sind. */
@@ -143,8 +144,8 @@ public final class HeldCrate {
 
         removeRootKey(target, "stacklock");
         // keine Daten mehr -> Tag weg, Kiste wieder stapelbar; sonst neue Stapelsperre
-        if (PlatformHooks.hasItemTag(target) || readBlockEntityTag(target) != null) {
-            PlatformHooks.putLong(target, "stacklock", rand.nextLong());
+        if (StackNbt.has(target) || readBlockEntityTag(target) != null) {
+            StackNbt.putLong(target, "stacklock", rand.nextLong());
         }
     }
 
@@ -172,7 +173,7 @@ public final class HeldCrate {
                     }
                 }
                 // return null; // Reset.
-                PlatformHooks.setItemTag(target, null);
+                StackNbt.set(target, null);
                 clearBlockEntityTag(target);
             }
         } catch (IOException ignored) { }
@@ -212,8 +213,8 @@ public final class HeldCrate {
         //? if < 1.21.1 {
         stack.removeTagKey(key);
         //?} else {
-        /*CompoundTag t = PlatformHooks.getItemTag(stack);
-        if (t != null && t.contains(key)) { t.remove(key); PlatformHooks.setItemTag(stack, t); }
+        /*CompoundTag t = StackNbt.copy(stack);
+        if (t != null && t.contains(key)) { t.remove(key); StackNbt.set(stack, t); }
         *///?}
     }
 }

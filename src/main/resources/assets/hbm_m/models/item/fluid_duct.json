@@ -1,7 +1,176 @@
 {
-  "parent": "minecraft:item/generated",
+  "loader": "forge:composite",
+  "ambientocclusion": false,
+  "gui_light": "side",
   "textures": {
-    "layer0": "hbm_m:item/duct",
-    "layer1": "hbm_m:item/duct_overlay"
+    "particle": "hbm_m:block/pipe_neo"
+  },
+  "children": {
+    "base": {
+      "loader": "hbm_m:nmesh_obj",
+      "model": "hbm_m:models/block/pipe_neo.obj",
+      "flip_v": true,
+      "render_type": "minecraft:solid",
+      "textures": {
+        "particle": "hbm_m:block/pipe_neo",
+        "base": "hbm_m:block/pipe_neo"
+      },
+      "visibility": {
+        "pX": true,
+        "nX": true,
+        "pZ": true,
+        "nZ": true,
+        "pY": false,
+        "nY": false,
+        "nnn": false,
+        "nnp": false,
+        "pnp": false,
+        "pnn": false,
+        "ppn": false,
+        "npn": false,
+        "npp": false,
+        "ppp": false
+      }
+    },
+    "overlay": {
+      "loader": "hbm_m:nmesh_obj",
+      "model": "hbm_m:models/block/pipe_neo.obj",
+      "flip_v": true,
+      "texture": "hbm_m:block/pipe_neo_overlay",
+      "tint_index": 1,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "particle": "hbm_m:block/pipe_neo",
+        "base": "hbm_m:block/pipe_neo",
+        "overlay": "hbm_m:block/pipe_neo_overlay"
+      },
+      "visibility": {
+        "pX": true,
+        "nX": true,
+        "pZ": true,
+        "nZ": true,
+        "pY": false,
+        "nY": false,
+        "nnn": false,
+        "nnp": false,
+        "pnp": false,
+        "pnn": false,
+        "ppn": false,
+        "npn": false,
+        "npp": false,
+        "ppp": false
+      }
+    }
+  },
+  "transform": {
+    "translation": [
+      0.5,
+      0.5,
+      0.5
+    ]
+  },
+  "display": {
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.78125,
+        0.78125,
+        0.78125
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.3125,
+        0.3125,
+        0.3125
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ],
+      "scale": [
+        0.375,
+        0.375,
+        0.375
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ]
+    }
   }
 }

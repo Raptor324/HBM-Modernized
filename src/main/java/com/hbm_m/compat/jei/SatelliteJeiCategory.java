@@ -1,15 +1,13 @@
 package com.hbm_m.compat.jei;
-//? if forge || neoforge {
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.itempool.ItemPool;
-import com.hbm_m.itempool.ItemPool.WeightedContent;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.satellite.SatelliteMiner;
+import com.hbm_m.satellite.SatellitePools;
 
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
@@ -45,7 +43,9 @@ public class SatelliteJeiCategory implements IRecipeCategory<SatelliteJeiCategor
         this.icon = guiHelper.createDrawableItemStack(new ItemStack(ModBlocks.SAT_DOCK.get()));
     }
 
-    /** Original {@code getMiningSatellites}; Gegenstaende ohne Ladung ({@code getCargoForItem == null}) fallen weg. */
+    /** Original {@code getMiningSatellites}; Gegenstaende ohne Ladung ({@code getCargoForItem == null}) fallen weg.
+     *  <p>Die Pools liegen im Port bei {@link SatellitePools} (nicht in {@code ItemPool}, wo sie nur den
+     *  Ersatzpool liefert), gespeist wird darueber auch das Sat-Dock im Spiel. */
     public static List<Recipe> recipes() {
         List<Recipe> list = new ArrayList<>();
         ItemStack[] sats = {
@@ -57,12 +57,13 @@ public class SatelliteJeiCategory implements IRecipeCategory<SatelliteJeiCategor
         for (ItemStack sat : sats) {
             String poolName = SatelliteMiner.getCargoForItem(sat);
             if (poolName == null) continue;
-            WeightedContent[] pool = ItemPool.getPool(poolName);
+            List<SatellitePools.WeightedEntry> pool = SatellitePools.getPool(poolName);
+            if (pool.isEmpty()) continue;
             int weight = 0;
-            for (WeightedContent e : pool) weight += e.weight;
+            for (SatellitePools.WeightedEntry e : pool) weight += e.weight();
             List<Outcome> outs = new ArrayList<>();
-            for (WeightedContent e : pool) {
-                outs.add(new Outcome(e.stack.copy(), weight > 0 ? 100F * e.weight / weight : 0F));
+            for (SatellitePools.WeightedEntry e : pool) {
+                outs.add(new Outcome(e.stack().copy(), weight > 0 ? 100F * e.weight() / weight : 0F));
             }
             list.add(new Recipe(sat, outs));
         }
@@ -111,7 +112,3 @@ public class SatelliteJeiCategory implements IRecipeCategory<SatelliteJeiCategor
         JeiAnvilRendering.blit(guiGraphics, 29, 14, 131, 96, 18, 36);   // operation
     }
 }
-//?} else {
-/*public final class SatelliteJeiCategory {
-    private SatelliteJeiCategory() {}
-}*///?}

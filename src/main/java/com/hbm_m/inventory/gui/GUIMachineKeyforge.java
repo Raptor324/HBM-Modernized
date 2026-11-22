@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.inventory.menu.MachineKeyforgeMenu;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -9,8 +10,11 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /** 1:1-Port von {@code GUIMachineKeyForge} (1.7.10 Original): weisser Titel, zwei Info-Panels links. */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineKeyforge extends GuiInfoScreen<MachineKeyforgeMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -37,7 +41,7 @@ public class GUIMachineKeyforge extends GuiInfoScreen<MachineKeyforgeMenu> {
         String name = this.title.getString();
         guiGraphics.drawString(this.font, name, this.imageWidth / 2 - this.font.width(name) / 2, 6, 0xffffff, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
-    }
+   }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
@@ -49,6 +53,6 @@ public class GUIMachineKeyforge extends GuiInfoScreen<MachineKeyforgeMenu> {
         this.drawCustomInfoStat(guiGraphics, mouseX, mouseY, 12, 28 + 16, 16, 16, leftPos - 8, topPos + 36 + 16,
                 resolveKeyArray("desc.gui.keyforge.random"));
 
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
+       this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 }

@@ -58,6 +58,13 @@ public class MachineSawmillBlock extends DummyableMachineBlock implements com.hb
                     { -0.625D, 1D, -1D, 1.375D, 2D, 1D } });
 
     @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            {0, 0, 0.5, -0.3, 0.4, -0.4, 1}
+        };
+    }
+
+    @Override
     public net.minecraft.world.phys.shapes.VoxelShape getCustomMasterVoxelShape(BlockState state) {
         return BOUNDING.get(state.getValue(FACING));
     }
@@ -172,7 +179,7 @@ public class MachineSawmillBlock extends DummyableMachineBlock implements com.hb
         BlockEntity be = params.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
         if (be instanceof MachineSawmillBlockEntity sawmill && !sawmill.hasBlade) {
             for (ItemStack drop : drops) {
-                if (drop.getItem() == this.asItem()) com.hbm_m.platform.PlatformHooks.editItemTag(drop, t -> t.putBoolean(NO_BLADE, true));
+                if (drop.getItem() == this.asItem()) com.hbm_m.platform.StackNbt.edit(drop, t -> t.putBoolean(NO_BLADE, true));
             }
         }
         return drops;
@@ -236,7 +243,7 @@ public class MachineSawmillBlock extends DummyableMachineBlock implements com.hb
     /** Kleiner Helfer: liest das Item-NBT, falls vorhanden. */
     private static final class CompoundTagView {
         static void read(ItemStack stack, java.util.function.Consumer<net.minecraft.nbt.CompoundTag> consumer) {
-            net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+            net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.StackNbt.copy(stack);
             if (tag != null) consumer.accept(tag);
         }
     }

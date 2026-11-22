@@ -32,6 +32,7 @@ public class PollutionHandler {
     /** Original {@code targetCoords}: letzter Schlafplatz (Rampant-Lenkung der Glyphiden-Spaeher). */
     public static net.minecraft.world.phys.Vec3 targetCoords;
 
+
     public static final float SOOT_PER_SECOND = 1F / 25F;
     /** Original: Schwermetall je Sekunde, geeicht auf die Russwerte von Verbrennungsmotoren. */
     public static final float HEAVY_METAL_PER_SECOND = 1F / 50F;

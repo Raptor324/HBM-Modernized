@@ -22,10 +22,33 @@ import net.minecraft.world.level.block.state.BlockState;
  * (Mining Drill) koennen es abbauen. Die eigentlichen Erz-/Tier-/Fluid-Daten stecken in der
  * {@link OreBedrockBlockEntity}, gesetzt von {@link com.hbm_m.worldgen.BedrockOreFeature}.
  */
-public class OreBedrockBlock extends BaseEntityBlock {
+public class OreBedrockBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public OreBedrockBlock(Properties properties) {
         super(properties);
+    }
+
+    /**
+     * Порт {@code BlockBedrockOreTE.printHook}: имя ресурса (если задан мирогенерацией), тир
+     * бура и требуемая кислота. Данные берутся из {@link OreBedrockBlockEntity}, синхронизируются
+     * базовым {@code getUpdateTag} (полный NBT).
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, net.minecraft.world.level.Level level, BlockPos pos) {
+        BlockEntity te = level.getBlockEntity(pos);
+        if (!(te instanceof OreBedrockBlockEntity ore)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        if (!ore.resource.isEmpty()) {
+            text.add(ore.resource.getHoverName());
+        }
+        text.add(net.minecraft.network.chat.Component.literal("Tier: " + ore.tier));
+        if (ore.acidType != net.minecraft.world.level.material.Fluids.EMPTY && ore.acidAmountMb > 0) {
+            text.add(net.minecraft.network.chat.Component.literal("Requires: " + ore.acidAmountMb + "mB ")
+                    .append(com.hbm_m.inventory.fluid.FluidType.forFluid(ore.acidType).getLocalizedName()));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Override

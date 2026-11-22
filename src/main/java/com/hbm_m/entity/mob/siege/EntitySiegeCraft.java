@@ -42,6 +42,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code com.hbm.entity.mob.siege.EntitySiegeCraft}: Belagerungsschiff (7x1). Feuert alle 30-40 Ticks einen Faecher
@@ -292,7 +293,7 @@ public class EntitySiegeCraft extends EntityUFOBase {
                         if (canAttackClass(e)) {
                             // Original causeCombineDamage(this, e): direkte Quelle das Schiff, Verursacher das Opfer
                             e.hurt(ModDamageSources.create(e, this, ModDamageTypes.CMB), 1000F);
-                            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(e, 5);
+                            com.hbm_m.platform.MobHooks.setSecondsOnFire(e, 5);
 
                             if (e instanceof LivingEntity living)
                                 ContaminationUtil.contaminate(living, HazardType.RADIATION, ContaminationType.CREATIVE, 5F);

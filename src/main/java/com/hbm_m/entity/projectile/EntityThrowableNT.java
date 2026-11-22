@@ -33,7 +33,11 @@ import net.minecraft.world.phys.Vec3;
  * Bewegung mit Luft-/Wasserwiderstand und Schwerkraft, Treffer gegen Bloecke (Strahl) und Wesen (aufgeweitete
  * Hitbox 0,3, Werfer erst nach {@link #selfDamageDelay()} Ticks), Stecken im Block.
  */
-public abstract class EntityThrowableNT extends Entity {
+public abstract class EntityThrowableNT extends Entity
+        //? if neoforge {
+        /*implements net.neoforged.neoforge.entity.IEntityWithComplexSpawn
+        *///?}
+{
 
     private static final EntityDataAccessor<Byte> STUCK_IN = SynchedEntityData.defineId(EntityThrowableNT.class, EntityDataSerializers.BYTE);
 
@@ -98,6 +102,25 @@ public abstract class EntityThrowableNT extends Entity {
     public void setStuckIn(int side) { this.entityData.set(STUCK_IN, (byte) side); }
     public int getStuckIn() { return this.entityData.get(STUCK_IN); }
 
+    //? if neoforge {
+    /*// DEF-13: vanilla 1.21.1 ClientboundAddEntityPacket strips motion for custom entities, so the
+    // client bullet spawns with deltaMovement = (0,0,0), never moves and its tracer never renders.
+    // Serialize deltaMovement through the NeoForge complex-spawn data (1.20.1 Forge syncs velocity
+    // automatically via the vanilla spawn packet, so nothing is needed there).
+    @Override
+    public void writeSpawnData(net.minecraft.network.RegistryFriendlyByteBuf buf) {
+        Vec3 m = this.getDeltaMovement();
+        buf.writeDouble(m.x);
+        buf.writeDouble(m.y);
+        buf.writeDouble(m.z);
+    }
+
+    @Override
+    public void readSpawnData(net.minecraft.network.RegistryFriendlyByteBuf buf) {
+        this.lerpMotion(buf.readDouble(), buf.readDouble(), buf.readDouble());
+    }
+    *///?}
+
     @Override
     public boolean shouldRenderAtSqrDistance(double dist) {
         double perimeter = this.getBoundingBox().getSize() * 4.0D;
@@ -123,6 +146,7 @@ public abstract class EntityThrowableNT extends Entity {
         motionZ *= velocity;
         this.setDeltaMovement(motionX, motionY, motionZ);
         float hyp = (float) Math.sqrt(motionX * motionX + motionZ * motionZ);
+        // 1.7.10 convention (RenderBulletMK4 rotates by yaw-90 / pitch+180): yaw = atan2(mx, mz), pitch positive up
         this.setYRot((float) (Math.atan2(motionX, motionZ) * 180.0D / Math.PI));
         this.setXRot((float) (Math.atan2(motionY, hyp) * 180.0D / Math.PI));
         this.yRotO = this.getYRot();
@@ -135,6 +159,7 @@ public abstract class EntityThrowableNT extends Entity {
         this.setDeltaMovement(x, y, z);
         if (this.xRotO == 0.0F && this.yRotO == 0.0F) {
             float hyp = (float) Math.sqrt(x * x + z * z);
+            // 1.7.10 convention, see setThrowableHeading
             this.setYRot((float) (Math.atan2(x, z) * 180.0D / Math.PI));
             this.setXRot((float) (Math.atan2(y, hyp) * 180.0D / Math.PI));
             this.yRotO = this.getYRot();
@@ -242,16 +267,26 @@ public abstract class EntityThrowableNT extends Entity {
 
             if (!this.onGround()) {
                 float hyp = (float) Math.sqrt(motion.x * motion.x + motion.z * motion.z);
+                // 1.7.10 convention, see setThrowableHeading
                 float yaw = (float) (Math.atan2(motion.x, motion.z) * 180.0D / Math.PI);
                 float pitch = (float) (Math.atan2(motion.y, hyp) * 180.0D / Math.PI);
 
-                while (pitch - this.xRotO < -180.0F) this.xRotO -= 360.0F;
-                while (pitch - this.xRotO >= 180.0F) this.xRotO += 360.0F;
-                while (yaw - this.yRotO < -180.0F) this.yRotO -= 360.0F;
-                while (yaw - this.yRotO >= 180.0F) this.yRotO += 360.0F;
+                if (this.tickCount <= 1) {
+                    // DEF-09: snap rotation instantly on the spawn tick so client tracers align immediately
+                    // instead of wobbling for 4-5 ticks under the 0.2F/tick damping below.
+                    this.setXRot(pitch);
+                    this.setYRot(yaw);
+                    this.xRotO = pitch;
+                    this.yRotO = yaw;
+                } else {
+                    while (pitch - this.xRotO < -180.0F) this.xRotO -= 360.0F;
+                    while (pitch - this.xRotO >= 180.0F) this.xRotO += 360.0F;
+                    while (yaw - this.yRotO < -180.0F) this.yRotO -= 360.0F;
+                    while (yaw - this.yRotO >= 180.0F) this.yRotO += 360.0F;
 
-                this.setXRot(this.xRotO + (pitch - this.xRotO) * 0.2F);
-                this.setYRot(this.yRotO + (yaw - this.yRotO) * 0.2F);
+                    this.setXRot(this.xRotO + (pitch - this.xRotO) * 0.2F);
+                    this.setYRot(this.yRotO + (yaw - this.yRotO) * 0.2F);
+                }
             }
 
             float drag = this.getAirDrag();

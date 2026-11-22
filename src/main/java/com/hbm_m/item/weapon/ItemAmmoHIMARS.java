@@ -42,6 +42,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code ItemAmmoHIMARS} (ammo_himars, Meta = Raketentyp, Stapel 1). Im Port je Meta ein Gegenstand
@@ -205,7 +206,7 @@ public class ItemAmmoHIMARS extends Item implements ITooltipProvider {
                 int radius = 30;
                 List<Entity> hit = rocket.level().getEntities(rocket, new AABB(rocket.getX() - radius, rocket.getY() - radius, rocket.getZ() - radius, rocket.getX() + radius, rocket.getY() + radius, rocket.getZ() + radius));
                 for (Entity e : hit) {
-                    PlatformHooks.setSecondsOnFire(e, 5);
+                    MobHooks.setSecondsOnFire(e, 5);
                     if (e instanceof LivingEntity living) {
                         MobEffectInstance eff = new MobEffectInstance(EffectHooks.of(ModEffects.PHOSPHORUS), 30 * 20, 0, true, true);
                         //? if forge {

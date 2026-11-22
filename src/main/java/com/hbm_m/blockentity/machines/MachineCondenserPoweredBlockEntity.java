@@ -110,8 +110,9 @@ public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity i
             this.tryProvide(this.tanks[1], world, con.pos, con.dir);
         }
 
-        setChanged();
-        sendUpdateToClient();
+        long lo = (long) throughput | (((long) waterTimer) << 16) | (damaged ? 1L << 31 : 0L);
+        long hi = (long) tanks[0].getFill() | (((long) tanks[1].getFill()) << 32);
+        syncIfStateChanged(lo, hi);
     }
 
     private void clientTick(Level world, BlockPos pos) {
@@ -174,6 +175,14 @@ public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity i
 
     public int getThroughput() { return throughput; }
 
+        @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
+        return fromDir != null;
+    }
+
+    public FluidTank getSpentSteamTank() { return tanks[0]; }
+    public FluidTank getWaterTank()      { return tanks[1]; }
+
     // ==================== NBT ====================
 
     @Override
@@ -188,8 +197,10 @@ public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity i
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        tanks[0].readFromNBT(tag, "water");
-        tanks[1].readFromNBT(tag, "steam");
+        if (tag.contains("water")) tanks[0].readFromNBT(tag, "water");
+        else if (tag.contains("tank_spentsteam")) tanks[0].readFromNBT(tag, "tank_spentsteam");
+        if (tag.contains("steam")) tanks[1].readFromNBT(tag, "steam");
+        else if (tag.contains("tank_water")) tanks[1].readFromNBT(tag, "tank_water");
         waterTimer = tag.getByte("waterTimer");
         damaged = tag.getBoolean("damaged");
     }
@@ -213,8 +224,9 @@ public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity i
     @Override
     public void repair() {
         damaged = false;
-        setChanged();
-        sendUpdateToClient();
+        long lo = (long) throughput | (((long) waterTimer) << 16) | (damaged ? 1L << 31 : 0L);
+        long hi = (long) tanks[0].getFill() | (((long) tanks[1].getFill()) << 32);
+        syncIfStateChanged(lo, hi);
     }
 
     @Override
@@ -235,8 +247,9 @@ public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity i
     /** Space {@code onBlockExploded}: erster Treffer beschaedigt. */
     public void markDamaged() {
         damaged = true;
-        setChanged();
-        sendUpdateToClient();
+        long lo = (long) throughput | (((long) waterTimer) << 16) | (damaged ? 1L << 31 : 0L);
+        long hi = (long) tanks[0].getFill() | (((long) tanks[1].getFill()) << 32);
+        syncIfStateChanged(lo, hi);
     }
 
     // ==================== Sonstiges ====================

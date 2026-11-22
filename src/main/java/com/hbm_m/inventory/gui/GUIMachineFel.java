@@ -15,11 +15,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+@OnlyIn(Dist.CLIENT)
 
-/**
- * 1:1 {@code GUIFEL}: 203x169, Energiesaeule rechts, Ein/Aus-Schalter, "LIVE"/"ERR."-Anzeige und der farbige
- * Strahlstrich (sichtbares Licht im Regenbogen).
- */
 public class GUIMachineFel extends GuiInfoScreen<MachineFelMenu> {
 
     private static final ResourceLocation TEXTURE =

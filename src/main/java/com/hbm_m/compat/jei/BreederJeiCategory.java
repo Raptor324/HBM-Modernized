@@ -14,7 +14,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
-//? if forge || neoforge {
 /**
  * JEI-Kategorie des Brutreaktors (siehe {@link BreederRecipe}).
  *
@@ -59,7 +58,3 @@ public class BreederJeiCategory extends JeiFluidRecipeCategory<BreederRecipe> {
         return List.of(recipe.getOutput());
     }
 }
-//?} else {
-/*public final class BreederJeiCategory {
-    private BreederJeiCategory() {}
-}*///?}

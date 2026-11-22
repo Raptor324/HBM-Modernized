@@ -118,15 +118,20 @@ public class AnvilBlock extends FallingBlock {
     }
     *///?}
 
+    // Оригинал NTMAnvil.addInformation: золотой «Tier N Anvil»
     //? if < 1.21.1 {
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.literal("Tier " + tier.getLegacyId() + " Anvil").withStyle(ChatFormatting.GOLD));
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> tooltip, net.minecraft.world.item.TooltipFlag flag) {
+        tooltip.add(net.minecraft.network.chat.Component.literal("Tier " + tier.getLegacyId() + " Anvil")
+                .withStyle(net.minecraft.ChatFormatting.GOLD));
     }
     //?} else {
     /*@Override
-    public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.literal("Tier " + tier.getLegacyId() + " Anvil").withStyle(ChatFormatting.GOLD));
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext level,
+                                java.util.List<net.minecraft.network.chat.Component> tooltip, net.minecraft.world.item.TooltipFlag flag) {
+        tooltip.add(net.minecraft.network.chat.Component.literal("Tier " + tier.getLegacyId() + " Anvil")
+                .withStyle(net.minecraft.ChatFormatting.GOLD));
     }
     *///?}
 

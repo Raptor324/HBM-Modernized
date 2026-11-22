@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:achievement_icon_digammafeel"
+      "item": "hbm_m:particle_digamma"
     },
     "title": {
       "translate": "advancements.hbm_m.digamma_feel.title"

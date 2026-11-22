@@ -7,8 +7,6 @@ import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
 import com.hbm_m.item.weapon.sedna.mods.XWeaponModManager;
 import com.hbm_m.render.anim.HbmAnimations;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /** 1:1 {@code ItemRenderPanzerschreck}. */
@@ -72,59 +70,26 @@ public class ItemRenderPanzerschreck extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 3D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, 0.5, 1);
-
+		setupThirdPerson(stack, 3.0D, 0, 0.5, 1);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 1.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(-0.5, 0.5, 0);
+		setupInv(stack, 1.5D, -0.5, 0.5, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -10D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
+		setupModTable(stack, -10D, 0, 0, 0);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(WeaponResources.panzerschreck_tex);
 		GunGL.renderPart(WeaponResources.panzerschreck, "Tube");
 		if(hasShield(stack)) GunGL.renderPart(WeaponResources.panzerschreck, "Shield");
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 0, 6.5);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(90 * shotRand, 1, 0, 0);
-			GunGL.scale(0.75, 0.75, 0.75);
-			this.renderMuzzleFlash(shot, 150, 7.5);
-			GunGL.popMatrix();
-		}
+		renderEquippedMuzzleFlash(type, stack, data, 0, 0, 6.5, 0.75D, 150, 7.5);
 	}
 
 	public boolean hasShield(ItemStack stack) {

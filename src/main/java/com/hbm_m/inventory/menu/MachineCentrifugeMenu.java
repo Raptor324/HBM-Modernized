@@ -5,7 +5,6 @@ import com.hbm_m.blockentity.machines.MachineCentrifugeBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
-import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -58,7 +57,7 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
     }
 
     public MachineCentrifugeMenu(int containerId, Inventory playerInventory, MachineCentrifugeBlockEntity blockEntity, ContainerData data) {
-        super(ModMenuTypes.CENTRIFUGE_MENU.get(), containerId);
+        super(ModMenuTypes.MACHINE_CENTRIFUGE_MENU.get(), containerId);
 
         checkContainerDataCount(data, 2);
 
@@ -73,7 +72,7 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         ModItemStackHandler itemHandler = this.blockEntity != null
                 ? this.blockEntity.getInventory()
-                : new DummyItemStackHandler(MACHINE_SLOTS);
+                : new ModItemStackHandler.Dummy(MACHINE_SLOTS);
         this.machineInventory = new HandlerContainer(itemHandler);
 
         // Reihenfolge wie Original ContainerCentrifuge: Menue-Slot 0 = Eingang, 1 = Batterie (BE-Slots bleiben 1/0)
@@ -248,8 +247,10 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        if (blockEntity == null) {
+            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
+        }
+        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.MACHINE_CENTRIFUGE.get());
     }
 
     /** Vanilla-адаптер для {@link ModItemStackHandler}, чтобы использовать обычные {@link Slot}. */

@@ -5,11 +5,7 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 
@@ -20,8 +16,8 @@ import net.minecraft.world.level.material.Fluid;
  * horizontally adjacent RBMK columns while the ReaSim boiler dial is on, and pushes it into the
  * fluid network on every face.</p>
  */
-public class RBMKSteamOutletBlockEntity extends BlockEntity
-        implements com.hbm_m.api.fluids.IFluidStandardSenderMK2, com.hbm_m.platform.HbmCapabilityProvider {
+public class RBMKSteamOutletBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity
+        implements com.hbm_m.api.fluids.IFluidStandardSenderMK2 {
 
     /**
      * CE types this tank as <b>superhot</b> steam ({@code new FluidTankNTM(Fluids.SUPERHOTSTEAM, 32000)}),
@@ -93,68 +89,26 @@ public class RBMKSteamOutletBlockEntity extends BlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?} elif neoforge {
-    /*/^*
-     * Without this the tank existed but nothing could ever reach it - pipes and tanks had no
-     * handler to talk to, so the channel simply refused every connection.
-     ^/
-    @Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
-            return com.hbm_m.platform.LazyCap.ofObj(steamTank.getCapability()).cast();
-        }
-        return com.hbm_m.platform.HbmCapabilityProvider.super.getHbmCapability(cap, side);
+    //?}
+
+    //? if neoforge {
+    /*@Override
+    public @org.jetbrains.annotations.Nullable Object getFluidHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        return steamTank.getCapability();
     }
     *///?}
 
     // ─── NBT / Sync ──────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         steamTank.writeToNBT(tag, "tank");
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        steamTank.writeToNBT(tag, "tank");
-    }
-    *///?}
 
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         steamTank.readFromNBT(tag, "tank");
-    }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        steamTank.readFromNBT(tag, "tank");
-    }
-    *///?}
-
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
-        saveAdditional(tag, registries);
-        return tag;
-    }
-    *///?}
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 }

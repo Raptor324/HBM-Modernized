@@ -44,30 +44,11 @@ AGENTS.md
 build-logic/build
 build-logic/.gradle
 build-logic/build
-versions/1.20.1-fabric/build
-versions/1.20.1-fabric/.gradle
-versions/1.20.1-fabric/run
-versions/1.21.1-fabric/.eclipse
-versions/1.20.1-forge/build
-versions/1.20.1-forge/.gradle
-versions/1.20.1-forge/run
-versions/1.20.1-forge/.eclipse
-versions/1.21.1-fabric/build
-versions/1.21.1-fabric/.gradle
-versions/1.21.1-fabric/run
-versions/1.21.1-fabric/.eclipse
-versions/1.21.1-neoforge/build
-versions/1.21.1-neoforge/.gradle
-versions/1.21.1-neoforge/run
-versions/1.21.1-neoforge/.eclipse
-versions/1.21.11-neoforge/build
-versions/1.21.11-neoforge/.gradle
-versions/1.21.11-neoforge/run
-versions/1.21.11-neoforge/.eclipse
-versions/1.21.11-fabric/build
-versions/1.21.11-fabric/.gradle
-versions/1.21.11-fabric/run
-versions/1.21.11-fabric/.eclipse
+versions/*/build
+versions/*/.gradle
+versions/*/run
+versions/*/.eclipse
+versions/*/runGameTest
 versions/datagen/
 legacy/forgegradle/.gradle
 legacy/forgegradle/build
@@ -79,11 +60,12 @@ hs_err_pid*
 replay_pid*
 temp/
 logs/
+tools/nightly/
 /ExampleProject/
 /OLD/
 agent
 ideas
-libs/
+libs/*
 design.md
 # ================= OS Specific =================
 # Системные файлы, которые могут случайно появиться.
@@ -108,3 +90,53 @@ java_pid*
 AGENTS.md
 libs/
 .aider*
+.agents/
+# Локальный контекст для Claude Code
+CLAUDE.md
+
+# Датаген пишет в assets только blockstates, models и lang. Первые два игнорируются выше,
+# lang отслеживается намеренно (его забирают переводчики), а всё остальное, что провайдеры
+# сгенерируют в будущем, в репозиторий попадать не должно.
+src/generated/resources/assets/*
+!src/generated/resources/assets/hbm_m/
+src/generated/resources/assets/hbm_m/*
+!src/generated/resources/assets/hbm_m/lang/
+
+# Черновики и следы инструментов: nul появляется от перенаправления вывода в git bash,
+# остальное — резервные копии редакторов и хвосты неудачных патчей.
+nul
+NUL
+*.bak
+*.orig
+*.rej
+*.tmp
+scratch/
+notes/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# nightly porting pipeline state, machine-local
+docs/porting/machine_porting_matrix.json
+
+# ================= Workflow reports (local working journal) =================
+# Рабочие отчёты воркфлоу-аудитов не коммитятся; справочные доки в docs/render
+# (crankshaft study, engine architecture, cpu audit 09-25) удержаны negation'ом.
+docs/render/*
+!docs/render/crankshaft_nucleus_comparative_study.md
+!docs/render/crankshaft_nucleus_comparative_study_ru.md
+!docs/render/nucleus_cpu_audit_2026-09-25.md
+!docs/render/nucleus_engine_architecture.md
+docs/audit/
+docs/replay/
+docs/weekly_report_*.md
+docs/ntm_upstream_week*.md
+build_out_*.txt
+
+# Декомпайл Minecraft и одноразовые стресс-харнессы
+/net/
+tools/*.class
+docs/*_2026-*.md
+docs/render_gl_*.md
+

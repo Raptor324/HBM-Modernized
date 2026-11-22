@@ -26,6 +26,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.HitResult;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code ItemDesignatorArtyRange}: Rechtsklick auf ein Artilleriegeschuetz (Arty/HIMARS) verknuepft es,
@@ -39,10 +40,10 @@ public class ItemDesignatorArtyRange extends Item implements ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
-        if (!PlatformHooks.hasItemTag(stack)) {
+        if (!StackNbt.has(stack)) {
             list.add(Component.literal("No turret linked!").withStyle(ChatFormatting.RED));
         } else {
-            list.add(Component.literal("Linked to " + PlatformHooks.getInt(stack, "x") + ", " + PlatformHooks.getInt(stack, "y") + ", " + PlatformHooks.getInt(stack, "z")).withStyle(ChatFormatting.YELLOW));
+            list.add(Component.literal("Linked to " + StackNbt.getInt(stack, "x") + ", " + StackNbt.getInt(stack, "y") + ", " + StackNbt.getInt(stack, "z")).withStyle(ChatFormatting.YELLOW));
         }
     }
 
@@ -66,9 +67,9 @@ public class ItemDesignatorArtyRange extends Item implements ITooltipProvider {
                 return InteractionResult.SUCCESS;
 
             ItemStack stack = ctx.getItemInHand();
-            PlatformHooks.putInt(stack, "x", core.getX());
-            PlatformHooks.putInt(stack, "y", core.getY());
-            PlatformHooks.putInt(stack, "z", core.getZ());
+            StackNbt.putInt(stack, "x", core.getX());
+            StackNbt.putInt(stack, "y", core.getY());
+            StackNbt.putInt(stack, "z", core.getZ());
             Player player = ctx.getPlayer();
             if (player != null) world.playSound(null, player.getX(), player.getY(), player.getZ(), HbmSoundsNT.get("hbm:item.techBleep"), SoundSource.PLAYERS, 1.0F, 1.0F);
             return InteractionResult.SUCCESS;
@@ -81,7 +82,7 @@ public class ItemDesignatorArtyRange extends Item implements ITooltipProvider {
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (!PlatformHooks.hasItemTag(stack))
+        if (!StackNbt.has(stack))
             return InteractionResultHolder.pass(stack);
 
         // Library.rayTrace(player, 500, 1)
@@ -93,7 +94,7 @@ public class ItemDesignatorArtyRange extends Item implements ITooltipProvider {
         int z = pos.getZ();
 
         if (!world.isClientSide) {
-            TurretBaseBlockEntity arty = arty(world.getBlockEntity(new BlockPos(PlatformHooks.getInt(stack, "x"), PlatformHooks.getInt(stack, "y"), PlatformHooks.getInt(stack, "z"))));
+            TurretBaseBlockEntity arty = arty(world.getBlockEntity(new BlockPos(StackNbt.getInt(stack, "x"), StackNbt.getInt(stack, "y"), StackNbt.getInt(stack, "z"))));
 
             if (arty != null) {
                 arty.enqueueTarget(x + 0.5, y + 0.5, z + 0.5);

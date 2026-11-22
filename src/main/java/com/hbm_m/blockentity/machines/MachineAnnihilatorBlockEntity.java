@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.annihilator.AnnihilatorPoolManager;
+
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -28,6 +29,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -57,9 +59,11 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
     public final FluidTank tank = new FluidTank(ModFluids.NONE.getSource(), 2_500_000);
     public BigInteger monitorBigInt = BigInteger.ZERO;
 
+
     public MachineAnnihilatorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ANNIHILATOR_BE.get(), pos, state, SLOT_COUNT, 0L, 0L, 0L);
     }
+
 
     /** Original {@code ForgeDirection.getOrientation(meta - 10)} - im Port die FACING-Richtung. */
     private Direction dir() {
@@ -229,6 +233,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
         return com.hbm_m.api.fluids.ConnectionPriority.LOW;
     }
 
+
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
@@ -258,6 +263,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
     public String getPoolName() { return pool; }
     public FluidTank getTank() { return tank; }
 
+
     // ==================== NBT ====================
 
     @Override
@@ -266,11 +272,13 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
         tank.writeToNBT(tag, "t");
         tag.putString("pool", pool == null ? "" : pool);
         tag.putByteArray("monitor", monitorBigInt.toByteArray());
+
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+
         tank.readFromNBT(tag, "t");
         pool = tag.getString("pool");
         byte[] mon = tag.getByteArray("monitor");
@@ -282,12 +290,14 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
     @Override
     protected Component getDefaultName() {
         return Component.translatable("container.annihilator");
+
     }
 
     @Override
     public Component getDisplayName() {
         return getDefaultName();
     }
+
 
     @Nullable
     @Override
@@ -347,4 +357,5 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
         sidedItems.invalidate();
     }
     *///?}
+
 }

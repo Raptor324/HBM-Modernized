@@ -20,6 +20,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class GUIMachineDroneCrate extends GuiInfoScreen<MachineDroneCrateMenu> {
 
@@ -62,8 +64,7 @@ public class GUIMachineDroneCrate extends GuiInfoScreen<MachineDroneCrateMenu> {
         if (pixelHeight == 0 && amountMb > 0) pixelHeight = 1;
         if (pixelHeight > TANK_HEIGHT) pixelHeight = TANK_HEIGHT;
 
-        // Original crate.tank.renderTank: GUI-Tint des Typs (0xFFFFFF), Textur ist bereits eingefaerbt
-        int fluidColor = com.hbm_m.inventory.fluid.FluidType.forFluid(fluid).getTint() & 0xFFFFFF;
+        int fluidColor = HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
         float r = (fluidColor >> 16 & 255) / 255.0F;
         float g = (fluidColor >> 8 & 255) / 255.0F;
         float b = (fluidColor & 255) / 255.0F;

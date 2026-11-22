@@ -4,7 +4,6 @@ import com.hbm_m.blockentity.machines.MachineCyclotronBlockEntity;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
@@ -48,7 +47,7 @@ public class MachineCyclotronMenu extends AbstractContainerMenu {
                 : ContainerLevelAccess.NULL;
         this.machineInventory = new HandlerContainer(blockEntity != null
                 ? blockEntity.getInventory()
-                : new DummyItemStackHandler(SLOT_MACHINE_END_EXCLUSIVE));
+                : new ModItemStackHandler.Dummy(SLOT_MACHINE_END_EXCLUSIVE));
 
         // Input (rendered on the left, as in the 1.7.10 original)
         this.addSlot(new Slot(machineInventory, 0, 11, 18));
@@ -98,7 +97,7 @@ public class MachineCyclotronMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineCyclotronBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":cyclotron_menu");
+        throw new MenuBlockEntityMissingException("No MachineCyclotronBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":cyclotron_menu");
     }
 
     public MachineCyclotronBlockEntity getBlockEntity() {
@@ -107,8 +106,10 @@ public class MachineCyclotronMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        if (blockEntity == null) {
+            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
+        }
+        return MenuReach.stillValid(player, blockEntity, this.blockEntity.getBlockState().getBlock());
     }
 
     @Override

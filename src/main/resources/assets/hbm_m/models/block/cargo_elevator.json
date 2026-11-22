@@ -1,9 +1,44 @@
 {
-  "loader": "hbm_m:cargo_elevator",
+  "loader": "hbm_m:machine_parts_loader",
   "model": "hbm_m:models/block/cargo_elevator.obj",
-  "parts": ["Base", "Platform", "Piston", "Guides"],
+  "flip_v": true,
   "textures": {
-    "default": "hbm_m:block/cargo_elevator",
-    "particle": "hbm_m:block/cargo_elevator"
+    "particle": "hbm_m:block/cargo_elevator",
+    "default": "hbm_m:block/cargo_elevator"
+  },
+  "display": {
+    "gui": {
+      "rotation": [30, -45, 0],
+      "translation": [0.0, -1.0, 0.0],
+      "scale": [0.22, 0.22, 0.22]
+    },
+    "ground": {
+      "translation": [0.0, 2.0, 0.0],
+      "scale": [0.15, 0.15, 0.15]
+    },
+    "fixed": {
+      "rotation": [0, 90, 0],
+      "scale": [0.35, 0.35, 0.35]
+    },
+    "thirdperson_righthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0.0, 2.0, 0.0],
+      "scale": [0.15, 0.15, 0.15]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0.0, 2.0, 0.0],
+      "scale": [0.15, 0.15, 0.15]
+    },
+    "firstperson_righthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0.75, 1.0, 0.0],
+      "scale": [0.20, 0.20, 0.20]
+    },
+    "firstperson_lefthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0.75, 1.0, 0.0],
+      "scale": [0.20, 0.20, 0.20]
+    }
   }
 }

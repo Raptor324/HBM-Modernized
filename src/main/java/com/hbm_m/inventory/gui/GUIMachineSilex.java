@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import java.awt.Color;
 
@@ -17,11 +18,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+@OnlyIn(Dist.CLIENT)
 
-/**
- * 1:1 {@code GUISILEX}: Peroxidtank als waagerechter Balken, Ladeleiste mit Inhaltsangabe, Fortschritt, "Inhalt
- * verwerfen"-Knopf, Name und Sinuswelle der anliegenden Laser-Wellenlaenge (Frequenz verdoppelt sich je Stufe).
- */
 public class GUIMachineSilex extends GuiInfoScreen<MachineSilexMenu> {
 
     private static final ResourceLocation TEXTURE =

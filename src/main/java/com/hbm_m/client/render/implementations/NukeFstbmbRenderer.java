@@ -20,10 +20,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
- * Dynamischer Teil von {@code RenderNukeFstbmb}: Body und Balefire zeichnet das Blockmodell
- * ({@code block/bomb/nuke_fstbmb_placed}), hier kommen nur der Balefire-Schimmer
- * ({@code renderClassicGlint(..., "Balefire", 0.0F, 0.8F, 0.15F, 5, 2F)}) und die rote Zeitanzeige dazu,
- * beides nur, wenn die Bombe geladen ist. Gezeichnet wird im Rahmen des Blockmodells (dessen Drehung je FACING).
+ * Dynamic part of {@code RenderNukeFstbmb}: body and Balefire are drawn by the block model
+ * ({@code block/bomb/nuke_fstbmb_placed}); only the Balefire glint
+ * ({@code renderClassicGlint(..., "Balefire", 0.0F, 0.8F, 0.15F, 5, 2F)}) and red timer display are added here,
+ * both only when the bomb is primed. Drawn within block model frame (rotated by FACING).
  */
 public class NukeFstbmbRenderer implements com.hbm_m.client.render.HbmBerBounds<NukeFstbmbBlockEntity> {
 
@@ -41,7 +41,7 @@ public class NukeFstbmbRenderer implements com.hbm_m.client.render.HbmBerBounds<
         ps.pushPose();
         ps.translate(0.5D, 0D, 0.5D);
 
-        // gleiche Lage wie das Blockmodell (horizontalBlock: north 0, east y90, south y180, west y270)
+        // Same alignment as block model (horizontalBlock: north 0, east y90, south y180, west y270)
         Direction facing = bf.getBlockState().hasProperty(BlockStateProperties.HORIZONTAL_FACING)
                 ? bf.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING) : Direction.NORTH;
         switch (facing) {
@@ -51,7 +51,7 @@ public class NukeFstbmbRenderer implements com.hbm_m.client.render.HbmBerBounds<
             default -> { }
         }
 
-        // Balefire noch einmal in den Tiefenpuffer, damit der GL_EQUAL-Schimmer sicher deckungsgleich liegt
+        // Balefire depth pass to ensure GL_EQUAL glint matches depth
         MODEL.renderPartEntity("Balefire", ps, buffers.getBuffer(RenderType.entityCutoutNoCull(TEX)), light, OverlayTexture.NO_OVERLAY, 1F, 1F, 1F, 1F);
 
         // RenderMiscEffects.renderClassicGlint(world, f, fstbmb, "Balefire", 0.0F, 0.8F, 0.15F, 5, 2F)
@@ -71,7 +71,7 @@ public class NukeFstbmbRenderer implements com.hbm_m.client.render.HbmBerBounds<
         ps.scale(f3, -f3, f3);
         ps.mulPose(Axis.YP.rotationDegrees(90));
         ps.translate(0, 1, 0);
-        // glDepthMask(false): Schrift liegt auf der Oberflaeche -> Polygon-Offset statt Z-Kampf
+        // glDepthMask(false): text lies on surface -> polygon offset prevents z-fighting
         font.drawInBatch(bf.getMinutes() + ":" + bf.getSeconds(), 0, 0, 0xFFFF0000, false, ps.last().pose(), buffers,
                 Font.DisplayMode.POLYGON_OFFSET, 0, light);
 

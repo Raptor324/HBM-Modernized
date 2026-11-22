@@ -69,7 +69,7 @@ public class RadLavaBlock extends VolcanicBlock {
         if (s.is(BlockTags.PLANKS)) return ModBlocks.WASTE_PLANKS.get().defaultBlockState();
         if (s.is(BlockTags.LEAVES)) return Blocks.FIRE.defaultBlockState();
         if (s.getBlock() == Blocks.DIAMOND_ORE || s.getBlock() == Blocks.DEEPSLATE_DIAMOND_ORE) return ModBlocks.ORE_SELLAFIELD_RADGEM.get().defaultBlockState();
-        if (s.getBlock() == ModBlocks.URANIUM_ORE.get() || s.getBlock() == ModBlocks.GNEISS_URANIUM_ORE.get() || s.getBlock() == ModBlocks.GNEISS_URANIUM_ORE.get()) {
+        if (s.getBlock() == ModBlocks.URANIUM_ORE.get() || s.getBlock() == ModBlocks.GNEISS_URANIUM_ORE.get()) {
             return level.random.nextInt(5) == 0 ? ModBlocks.ORE_SELLAFIELD_SCHRABIDIUM.get().defaultBlockState() : ModBlocks.ORE_SELLAFIELD_URANIUM_SCORCHED.get().defaultBlockState();
         }
         return null;

@@ -12,6 +12,8 @@ import com.hbm_m.util.CrucibleUtil;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -19,7 +21,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * 1:1 {@code TileEntityFoundryTank}: Speicher fuer 4 Bloecke fluessiges Material. Laeuft zuerst in einen Tank darunter,
  * sonst in einen seitlichen Abnehmer (keine Rinne), sonst gleicht er sich mit Nachbartanks aus.
  */
-public class MachineFoundryTankBlockEntity extends MachineFoundryBaseBlockEntity {
+public class MachineFoundryTankBlockEntity extends MachineFoundryBaseBlockEntity implements com.hbm_m.interfaces.ICopiable {
 
     public int nextUpdate;
 
@@ -118,11 +120,21 @@ public class MachineFoundryTankBlockEntity extends MachineFoundryBaseBlockEntity
     }
 
     /* Original FoundryTank: nur von oben befuellbar */
-    @Override public boolean canAcceptPartialFlow(net.minecraft.world.level.Level world, BlockPos pos, Direction side, MaterialStack stack) { return false; }
-    @Override @org.jetbrains.annotations.Nullable public MaterialStack flow(net.minecraft.world.level.Level world, BlockPos pos, Direction side, MaterialStack stack) { return stack; }
+    @Override public boolean canAcceptPartialFlow(Level world, BlockPos pos, Direction side, MaterialStack stack) { return false; }
+    @Override @org.jetbrains.annotations.Nullable public MaterialStack flow(Level world, BlockPos pos, Direction side, MaterialStack stack) { return stack; }
 
     @Override
     public int getCapacity() {
         return MaterialShapes.BLOCK.q(4);
     }
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        if (type != null) nbt.putIntArray("matFilter", new int[]{ type.id });
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) { }
 }

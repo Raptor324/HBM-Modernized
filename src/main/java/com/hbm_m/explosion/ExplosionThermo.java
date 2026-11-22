@@ -21,6 +21,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code com.hbm.explosion.ExplosionThermo}: Frost- und Glutwirkung der Thermobomben und ihrer Raketen.
@@ -164,7 +165,7 @@ public final class ExplosionThermo {
             if (Math.sqrt(e.distanceToSqr(x, y, z)) <= radius) {
                 if (!(e instanceof Player p && ArmorUtil.checkForAsbestos(p))) {
                     if (e instanceof LivingEntity l) l.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 15 * 20, 4));
-                    PlatformHooks.setSecondsOnFire(e, 10);
+                    MobHooks.setSecondsOnFire(e, 10);
                 }
             }
         }

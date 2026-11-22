@@ -1,5 +1,5 @@
 [versions]
-stonecutter = "0.8"
+stonecutter = "0.9.8"
 stonecutter-postprocess = "2.1-beta.8"
 mod-publish = "1.1.0"
 dotenv-gradle = "4.0.0"

@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1-Aequivalent zu {@code BlockBedrockOreTE.TileEntityBedrockOre} aus dem 1.7.10-Original:
@@ -39,7 +40,7 @@ public class OreBedrockBlockEntity extends BaseHbmBlockEntity {
         super.writeNbtData(tag, registries);
         if (!resource.isEmpty()) {
             // PlatformHooks.saveItemStack null-safe: 1.20.1 — stack.save(tag), 1.21.1 — через Provider
-            tag.put("resource", PlatformHooks.saveItemStack(resource, new CompoundTag(), registries));
+            tag.put("resource", StackNbt.save(resource, new CompoundTag(), registries));
         }
         tag.putString("acid_type", BuiltInRegistries.FLUID.getKey(acidType).toString());
         tag.putInt("acid_amount", acidAmountMb);
@@ -51,7 +52,7 @@ public class OreBedrockBlockEntity extends BaseHbmBlockEntity {
         super.readNbtData(tag, registries);
         if (tag.contains("resource")) {
             // PlatformHooks.itemStackOf null-safe: 1.20.1 — ItemStack.of, 1.21.1 — через Provider
-            resource = PlatformHooks.itemStackOf(tag.getCompound("resource"), registries);
+            resource = StackNbt.parse(tag.getCompound("resource"), registries);
         }
         if (tag.contains("acid_type")) {
             ResourceLocation id = ResourceLocation.tryParse(tag.getString("acid_type"));

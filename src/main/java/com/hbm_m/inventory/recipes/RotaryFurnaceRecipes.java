@@ -1,30 +1,27 @@
 package com.hbm_m.inventory.recipes;
 
-import static com.hbm_m.inventory.material.MaterialShapes.*;
-import static com.hbm_m.inventory.material.Mats.*;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.inventory.fluid.ModFluids;
-import com.hbm_m.inventory.material.MaterialShapes;
 import com.hbm_m.inventory.material.Mats;
 import com.hbm_m.inventory.material.Mats.MaterialStack;
-import com.hbm_m.inventory.material.NTMMaterial;
-import com.hbm_m.item.ModItems;
 
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.material.Fluid;
 
 /**
  * 1:1 {@code RotaryFurnaceRecipes}: bis zu drei Eingaben plus optionales Fluid werden unter Dampfverbrauch zu einer
- * Schmelze ({@link MaterialStack}), die der Drehrohrofen in eine Giessanlage giesst.
+ * Schmelze ({@link MaterialStack}), die der Drehrohrofen in eine Giessanlage giesst. Der Inhalt der Code-Tabelle ist
+ * seit der Datapack-Umstellung leer — Quelle sind die {@code hbm_m:rotary_furnace}-JSONs (Datagen:
+ * {@code RotaryFurnaceRecipeGenerator}). Weil das BlockEntity die Tabelle ohne Level abfragt, materialisiert
+ * {@link #noteManager} die JSONs direkt in die Liste (remove-then-reapply); {@link #all(net.minecraft.world.item.crafting.RecipeManager)}
+ * liefert sie daneben als Merge-Ansicht (MERGED-Cache je RecipeManager, Reihenfolge Rezept-ID).
  */
 public final class RotaryFurnaceRecipes {
 
@@ -43,6 +40,7 @@ public final class RotaryFurnaceRecipes {
     public static synchronized void addExternal(RotaryFurnaceRecipe recipe) {
         ensureLoaded();
         recipes.add(recipe);
+        baseVersion++;
     }
 
     public static List<RotaryFurnaceRecipe> all() {
@@ -50,28 +48,110 @@ public final class RotaryFurnaceRecipes {
         return recipes;
     }
 
-    private static void registerDefaults() {
+    // ---------------------------------------------------------------- Datapack-Rezepte (hbm_m:rotary_furnace)
 
-        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(1)), 100, 100, shape(MAT_IRON, INGOT, 1), coal()));
-        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(1)), 100, 100, shape(MAT_IRON, INGOT, 1), anyCoke()));
+    private static int baseVersion;
 
-        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(2)), 200, 25, shape(MAT_IRON, FRAGMENT, 9), coal()));
-        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(3)), 200, 25, shape(MAT_IRON, FRAGMENT, 9), anyCoke()));
-        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_STEEL, INGOT.q(4)), 400, 25, shape(MAT_IRON, FRAGMENT, 9), anyCoke(), item(ModItems.POWDER_FLUX.get(), 1)));
+    private record Merged(int baseVersion, int fingerprint, List<RotaryFurnaceRecipe> list) { }
 
-        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_DESH, INGOT.q(1)), 100, 200, fluid(ModFluids.LIGHTOIL.getSource(), 100), item(ModItems.POWDER_DESH_READY.get(), 1)));
+    private static final java.util.WeakHashMap<net.minecraft.world.item.crafting.RecipeManager, Merged> MERGED = new java.util.WeakHashMap<>();
 
-        // E8 (Fork, nur mit Space-Addon): Zink statt Aluminium
-        NTMMaterial zinc = com.hbm_m.api.space.SpaceApi.forkActive() ? com.hbm_m.api.space.SpaceApi.fork().gunmetalZinc() : null;
-        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_GUNMETAL, INGOT.q(4)), 200, 100, shape(MAT_COPPER, INGOT, 3), shape(zinc != null ? zinc : MAT_ALUMINIUM, INGOT, 1)));
-        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_WEAPONSTEEL, INGOT.q(1)), 200, 400, fluid(ModFluids.GAS_COKER.getSource(), 100), shape(MAT_STEEL, INGOT, 1), item(ModItems.POWDER_FLUX.get(), 2)));
-        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_SATURN, INGOT.q(2)), 200, 400, fluid(ModFluids.REFORMGAS.getSource(), 250), shape(MAT_DURA, DUST, 4), shape(MAT_COPPER, DUST, 1)));
-        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_SATURN, INGOT.q(4)), 200, 300, fluid(ModFluids.REFORMGAS.getSource(), 250), shape(MAT_DURA, DUST, 4), shape(MAT_COPPER, DUST, 1), shape(MAT_BORAX, DUST, 1)));
-        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_ALUMINIUM, INGOT.q(2)), 100, 400, fluid(ModFluids.SODIUM_ALUMINATE.getSource(), 150)));
-        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_ALUMINIUM, INGOT.q(3)), 40, 200, fluid(ModFluids.SODIUM_ALUMINATE.getSource(), 150), item(ModItems.POWDER_FLUX.get(), 2)));
-        // Original l.53: Titan aus Titantetrachlorid + Flussmittel
-        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_TITANIUM, INGOT.q(4)), 40, 100, fluid(ModFluids.TITANIUM_TETRACHLORIDE.getSource(), 1_000), item(ModItems.POWDER_FLUX.get(), 1)));
+    private static java.lang.ref.WeakReference<net.minecraft.world.item.crafting.RecipeManager> notedManager;
+    private static int notedFingerprint;
+    /** Zuletzt eingetragene Datapack-Eintraege — wird beim Neuaufbau zuerst wieder entfernt. */
+    private static final List<RotaryFurnaceRecipe> appliedDatapack = new ArrayList<>();
+
+    /**
+     * Uebernimmt die {@code hbm_m:rotary_furnace}-JSONs des Managers in die Tabelle (remove-then-reapply,
+     * deterministische Reihenfolge nach Rezept-ID; gleicher Manager + unveraenderter Rezeptbestand = nichts zu
+     * tun). Per {@link #addExternal} eingetragene Fremdeintraege bleiben erhalten.
+     */
+    public static synchronized void noteManager(@Nullable net.minecraft.world.item.crafting.RecipeManager manager) {
+        if (manager == null) return;
+        Map<net.minecraft.resources.ResourceLocation, com.hbm_m.recipe.RotaryFurnaceRecipe> data =
+                com.hbm_m.platform.recipe.RecipeHooks.getAllRecipesById(manager, com.hbm_m.recipe.RotaryFurnaceRecipe.Type.INSTANCE);
+        int fp = 1;
+        for (Object r : data.values()) fp = 31 * fp + System.identityHashCode(r);
+        if (notedManager != null && manager == notedManager.get() && fp == notedFingerprint) return;
+
+        recipes.removeAll(appliedDatapack);
+        appliedDatapack.clear();
+        ensureLoaded();
+        data.entrySet().stream().sorted(Map.Entry.comparingByKey(java.util.Comparator.comparing(Object::toString))).forEach(e -> {
+            RotaryFurnaceRecipe rec = toInner(e.getValue());
+            if (rec != null) {
+                recipes.add(rec);
+                appliedDatapack.add(rec);
+            }
+        });
+        notedManager = new java.lang.ref.WeakReference<>(manager);
+        notedFingerprint = fp;
     }
+
+    /**
+     * Tabelle inkl. Datapack als Merge-Ansicht: Code-Tabelle plus {@code hbm_m:rotary_furnace}-Rezepte des
+     * RecipeManagers (deterministisch nach Rezept-ID sortiert, Cache je Manager). Der Manager wird daneben an
+     * {@link #noteManager} weitergereicht — das BlockEntity fragt dieselbe Tabelle ohne Level ab und sieht die
+     * JSONs deshalb ueber die materialisierten Eintraege (siehe oben).
+     */
+    public static synchronized List<RotaryFurnaceRecipe> all(@Nullable net.minecraft.world.item.crafting.RecipeManager manager) {
+        if (manager == null) return all();
+        noteManager(manager);
+        Map<net.minecraft.resources.ResourceLocation, com.hbm_m.recipe.RotaryFurnaceRecipe> data =
+                com.hbm_m.platform.recipe.RecipeHooks.getAllRecipesById(manager, com.hbm_m.recipe.RotaryFurnaceRecipe.Type.INSTANCE);
+        if (data.isEmpty()) return all();
+        int fp = 1;
+        for (Object r : data.values()) fp = 31 * fp + System.identityHashCode(r);
+        Merged m = MERGED.get(manager);
+        if (m != null && m.baseVersion == baseVersion && m.fingerprint == fp) return m.list;
+        List<RotaryFurnaceRecipe> merged = new ArrayList<>(recipes);
+        merged.removeAll(appliedDatapack); // JSONs laufen unten frisch ein, nicht doppelt
+        data.entrySet().stream().sorted(Map.Entry.comparingByKey(java.util.Comparator.comparing(Object::toString))).forEach(e -> {
+            RotaryFurnaceRecipe rec = toInner(e.getValue());
+            if (rec != null) merged.add(rec);
+        });
+        MERGED.put(manager, new Merged(baseVersion, fp, merged));
+        return merged;
+    }
+
+    /** {@code com.hbm_m.recipe.RotaryFurnaceRecipe} (JSON) als Code-Rezept der Maschinentabelle. */
+    @Nullable
+    private static RotaryFurnaceRecipe toInner(com.hbm_m.recipe.RotaryFurnaceRecipe r) {
+        MaterialStack output = molten(r.getOutput());
+        if (output == null) return null; // Ausgabe ist kein Formen-Item -> fuer den Ofen unbrauchbar
+
+        RecipeInput[] ingredients = new RecipeInput[r.getInputs().length];
+        for (int i = 0; i < ingredients.length; i++) {
+            Ingredient ingredient = r.getInputs()[i];
+            int count = r.getInputCount(i);
+            List<ItemStack> display = new ArrayList<>();
+            for (ItemStack s : ingredient.getItems()) {
+                ItemStack copy = s.copy();
+                copy.setCount(count);
+                display.add(copy);
+            }
+            ingredients[i] = new RecipeInput(ingredient::test, display, count);
+        }
+        FluidInput fluid = r.getFluid() != null ? new FluidInput(r.getFluid().getFluid(), r.getFluidAmountMb()) : null;
+        return new RotaryFurnaceRecipe(output, r.getDuration(), r.getSteam(), fluid, ingredients);
+    }
+
+    /** Formen-Item (Barren/Pulver/Fragment) des Ausgangs als Schmelzmenge in Quanten; {@code null} = kein Formen-Item. */
+    @Nullable
+    private static MaterialStack molten(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return null;
+        Mats.MatShape shape = Mats.getShape(stack);
+        if (shape == null) return null;
+        return new MaterialStack(shape.material(), shape.shape().q(stack.getCount()));
+    }
+
+    /**
+     * Datapack-Umstellung: die 13 FFA-Standardeintraege (fuenfmal Stahl aus Eisen/Kohle-Koks/Flussmittel, Desh aus
+     * Oel, Rotguss, Waffenstahl aus Koksgas, zweimal Saturnit aus Reformgas, zweimal Aluminium aus Natriumaluminat,
+     * Titan aus Titantetrachlorid) liegen als {@code hbm_m:rotary_furnace}-JSONs im Datagen
+     * ({@code RotaryFurnaceRecipeGenerator}); die Code-Tabelle bleibt leer.
+     */
+    private static void registerDefaults() { }
 
     // ═══════════════════════════ Eingaben ═══════════════════════════
 
@@ -85,41 +165,6 @@ public final class RotaryFurnaceRecipes {
 
     /** Gegenstueck zu {@code FluidStack}. */
     public record FluidInput(Fluid type, int fill) { }
-
-    /** {@code OreDictStack(MAT.shape(), n)}: jedes Item, das das Materialsystem als diese Form erkennt. */
-    private static RecipeInput shape(NTMMaterial mat, MaterialShapes shape, int count) {
-        Item display = Mats.getItemForShape(mat, shape);
-        List<ItemStack> list = display == null ? List.of() : List.of(new ItemStack(display, count));
-        return new RecipeInput(stack -> {
-            Mats.MatShape ms = Mats.getShape(stack);
-            return ms != null && ms.material() == mat && ms.shape() == shape;
-        }, list, count);
-    }
-
-    /** {@code ComparableStack(item, n)}. */
-    private static RecipeInput item(Item item, int count) {
-        return new RecipeInput(stack -> stack.is(item), List.of(new ItemStack(item, count)), count);
-    }
-
-    /** {@code OreDictStack(COAL.gem())}. */
-    private static RecipeInput coal() {
-        return new RecipeInput(stack -> stack.is(Items.COAL), List.of(new ItemStack(Items.COAL)), 1);
-    }
-
-    /** {@code OreDictStack(ANY_COKE.gem())}: Kohle-, Petrol- und Braunkohlekoks. */
-    private static RecipeInput anyCoke() {
-        Item[] cokes = { ModItems.COAL_COKE.get(), ModItems.COKE_PETROLEUM.get(), ModItems.LIGNITE_COKE.get() };
-        List<ItemStack> list = new ArrayList<>();
-        for (Item i : cokes) list.add(new ItemStack(i));
-        return new RecipeInput(stack -> {
-            for (Item i : cokes) if (stack.is(i)) return true;
-            return false;
-        }, list, 1);
-    }
-
-    private static FluidInput fluid(Fluid type, int fill) {
-        return new FluidInput(type, fill);
-    }
 
     // ═══════════════════════════ Suche ═══════════════════════════
 
@@ -160,6 +205,13 @@ public final class RotaryFurnaceRecipes {
         }
 
         return null;
+    }
+
+    /** Rezept inkl. Datapack ({@code level} null = nur Code-Tabelle). */
+    @Nullable
+    public static RotaryFurnaceRecipe getRecipe(@Nullable net.minecraft.world.level.Level level, ItemStack... inputs) {
+        if (level != null) noteManager(level.getRecipeManager());
+        return getRecipe(inputs);
     }
 
     public static class RotaryFurnaceRecipe {

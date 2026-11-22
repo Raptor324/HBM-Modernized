@@ -91,11 +91,17 @@ public class CrackingTowerRecipe extends PlatformRecipe {
         return VanillaFluidEquivalence.sameSubstance(fluid, input.getFluid());
     }
 
-    /** Data-driven поиск рецепта по входной жидкости (заменяет статический {@code CrackingTowerRecipes.get}). */
+    /**
+     * Data-driven поиск рецепта по входной жидкости (заменяет статический {@code CrackingTowerRecipes.get}).
+     * Скан идёт по общему кэш-списку {@link com.hbm_m.recipe.index.ModRecipeIndex} (без копии списка
+     * на каждый вызов, как у {@code RecipeHooks.getAllRecipes}); содержимое списка то же,
+     * поэтому найденный рецепт не меняется.
+     */
     @Nullable
     public static CrackingTowerRecipe getRecipe(Level level, Fluid input) {
         if (level == null || input == null) return null;
-        for (CrackingTowerRecipe recipe : RecipeHooks.getAllRecipes(level, CrackingTowerRecipe.Type.INSTANCE)) {
+        for (CrackingTowerRecipe recipe : com.hbm_m.recipe.index.ModRecipeIndex
+                .of(level.getRecipeManager()).getAll(CrackingTowerRecipe.Type.INSTANCE)) {
             if (recipe.matches(input)) return recipe;
         }
         return null;
@@ -131,11 +137,7 @@ public class CrackingTowerRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<CrackingTowerRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "cracking_tower");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "cracking_tower");
-        //?}
 
         @Override
         public CrackingTowerRecipe readJson(ResourceLocation recipeId, JsonObject json) {

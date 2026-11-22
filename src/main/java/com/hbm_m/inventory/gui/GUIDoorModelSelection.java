@@ -10,6 +10,7 @@ import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.model.variant.DoorModelType;
 import com.hbm_m.client.model.variant.DoorSkin;
 import com.hbm_m.client.overlay.DoorModelFakeItemRenderer;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ServerboundDoorModelPacket;
@@ -34,15 +35,11 @@ import net.minecraft.world.item.ItemStack;
  *
  * @author HBM-M Team
  */
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//? if forge {
 /*@OnlyIn(Dist.CLIENT)
 *///?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-@Environment(EnvType.CLIENT)*///?}
 public class GUIDoorModelSelection extends Screen {
 
     // Масштаб GUI. Масштабирование через PoseStack - без дублирования текстуры.
@@ -91,11 +88,7 @@ public class GUIDoorModelSelection extends Screen {
     private static final int ITEMS_PER_PAGE = SKIN_GRID_COLS * SKIN_GRID_ROWS;
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/gui_door_modification.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_door_modification.png");
-            //?}
 
 
     // Данные двери
@@ -260,6 +253,7 @@ public class GUIDoorModelSelection extends Screen {
             case "silo_hatch_large" -> ModItems.SILO_HATCH_LARGE.get();
             case "vault_door" -> ModItems.VAULT_DOOR.get();
             case "cargo_door" -> ModItems.CARGO_DOOR.get();
+            case "blast_door" -> com.hbm_m.block.ModBlocks.BLAST_DOOR.get().asItem();
             default -> ModItems.LARGE_VEHICLE_DOOR.get();
         };
     }

@@ -10,12 +10,8 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.inventory.material.MaterialShapes;
 import com.hbm_m.inventory.material.Mats;
 import com.hbm_m.inventory.material.Mats.MaterialStack;
-import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.BedrockOreType;
 import com.hbm_m.item.industrial.BedrockOreType.BedrockOreOutput;
-import com.hbm_m.item.material.MaterialShape;
-import com.hbm_m.item.material.ModMaterialItems;
-import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -24,6 +20,12 @@ import net.minecraft.world.item.ItemStack;
  * 1:1 {@code ElectrolyserMetalRecipes}: Kristalle und Grundgestein-Erze werden in zwei Schmelzen plus feste
  * Nebenprodukte zerlegt. Die Grundgestein-Erzrezepte entstehen wie im Original aus den Primaerausgaben der
  * sechs Erztypen ({@code makeBedrockOreProduct}).
+ *
+ * <p>Seit der Datapack-Umstellung ist die Code-Tabelle leer — Quelle sind die {@code hbm_m:electrolyser_metal}-
+ * JSONs (Datagen: {@code ElectrolyserMetalRecipeGenerator}). Weil das BlockEntity (und die Item-Erkennung von
+ * Slot 14) die Tabelle <i>ohne</i> Level abfragt, materialisiert {@link #noteManager} die JSONs direkt in die
+ * statische Map; angestossen wird das vom Fluid-Shim ({@code ElectrolyserFluidRecipes.all}), den das BlockEntity
+ * im selben Tick vor der Metallpruefung laeuft (beide Energie-Schwellen sind identisch).</p>
  */
 public final class ElectrolyserMetalRecipes {
 
@@ -43,132 +45,73 @@ public final class ElectrolyserMetalRecipes {
         return recipes;
     }
 
-    private static Item crystal(ModMaterials mat) { return ModMaterialItems.item(mat, MaterialShape.CRYSTAL); }
-    private static ItemStack lithiumTiny() { return new ItemStack(ModMaterialItems.item(ModMaterials.LITHIUM, MaterialShape.POWDER_TINY), 3); }
+    // ---------------------------------------------------------------- Datapack-Rezepte (hbm_m:electrolyser_metal)
 
-    private static void registerDefaults() {
+    private static java.lang.ref.WeakReference<net.minecraft.world.item.crafting.RecipeManager> notedManager;
+    private static int notedFingerprint;
+    /** Zuletzt eingetragene Datapack-Schluessel — wird beim Neuaufbau zuerst wieder entfernt. */
+    private static final Map<Item, ElectrolysisMetalRecipe> appliedDatapack = new LinkedHashMap<>();
 
-        recipes.put(crystal(ModMaterials.IRON), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_IRON, MaterialShapes.INGOT.q(6)),
-                new MaterialStack(Mats.MAT_TITANIUM, MaterialShapes.INGOT.q(2)),
-                lithiumTiny()));
+    /**
+     * Uebernimmt die {@code hbm_m:electrolyser_metal}-JSONs des Managers in die Tabelle (gleiches Eingangs-Item =
+     * ersetzt, deterministische Reihenfolge nach Rezept-ID; gleicher Manager + unveraenderter Rezeptbestand =
+     * nichts zu tun). Vorherige Datapack-Eintraege werden zuerst entfernt, per Map eingetragene Fremdeintraege
+     * bleiben erhalten.
+     */
+    public static synchronized void noteManager(@Nullable net.minecraft.world.item.crafting.RecipeManager manager) {
+        if (manager == null) return;
+        Map<net.minecraft.resources.ResourceLocation, com.hbm_m.recipe.ElectrolyserMetalRecipe> data =
+                com.hbm_m.platform.recipe.RecipeHooks.getAllRecipesById(manager, com.hbm_m.recipe.ElectrolyserMetalRecipe.Type.INSTANCE);
+        int fp = 1;
+        for (Object r : data.values()) fp = 31 * fp + System.identityHashCode(r);
+        if (notedManager != null && manager == notedManager.get() && fp == notedFingerprint) return;
 
-        recipes.put(crystal(ModMaterials.GOLD), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_GOLD, MaterialShapes.INGOT.q(6)),
-                new MaterialStack(Mats.MAT_LEAD, MaterialShapes.INGOT.q(2)),
-                lithiumTiny(),
-                new ItemStack(ModItems.NUGGET_MERCURY.get(), 2)));
-
-        recipes.put(crystal(ModMaterials.URANIUM), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_URANIUM, MaterialShapes.INGOT.q(6)),
-                new MaterialStack(Mats.MAT_RADIUM, MaterialShapes.NUGGET.q(4)),
-                lithiumTiny()));
-
-        recipes.put(crystal(ModMaterials.THORIUM), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_THORIUM, MaterialShapes.INGOT.q(6)),
-                new MaterialStack(Mats.MAT_URANIUM, MaterialShapes.INGOT.q(2)),
-                lithiumTiny()));
-
-        recipes.put(crystal(ModMaterials.PLUTONIUM), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_PLUTONIUM, MaterialShapes.INGOT.q(6)),
-                new MaterialStack(Mats.MAT_POLONIUM, MaterialShapes.INGOT.q(2)),
-                lithiumTiny()));
-
-        recipes.put(crystal(ModMaterials.TITANIUM), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_TITANIUM, MaterialShapes.INGOT.q(6)),
-                new MaterialStack(Mats.MAT_IRON, MaterialShapes.INGOT.q(2)),
-                lithiumTiny()));
-
-        recipes.put(crystal(ModMaterials.COPPER), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_COPPER, MaterialShapes.INGOT.q(6)),
-                new MaterialStack(Mats.MAT_LEAD, MaterialShapes.NUGGET.q(4)),
-                lithiumTiny(),
-                new ItemStack(ModItems.SULFUR.get(), 2)));
-
-        recipes.put(crystal(ModMaterials.TUNGSTEN), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_TUNGSTEN, MaterialShapes.INGOT.q(6)),
-                new MaterialStack(Mats.MAT_IRON, MaterialShapes.INGOT.q(2)),
-                lithiumTiny()));
-
-        recipes.put(crystal(ModMaterials.ALUMINIUM), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_ALUMINIUM, MaterialShapes.INGOT.q(2)),
-                new MaterialStack(Mats.MAT_IRON, MaterialShapes.INGOT.q(2)),
-                new ItemStack(ModItems.CRYOLITE.get(), 4),
-                lithiumTiny()));
-
-        recipes.put(crystal(ModMaterials.BERYLLIUM), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_BERYLLIUM, MaterialShapes.INGOT.q(6)),
-                new MaterialStack(Mats.MAT_LEAD, MaterialShapes.NUGGET.q(4)),
-                lithiumTiny(),
-                new ItemStack(ModMaterialItems.item(ModMaterials.QUARTZ, MaterialShape.POWDER), 2)));
-
-        recipes.put(crystal(ModMaterials.LEAD), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_LEAD, MaterialShapes.INGOT.q(6)),
-                new MaterialStack(Mats.MAT_GOLD, MaterialShapes.INGOT.q(2)),
-                lithiumTiny()));
-
-        recipes.put(crystal(ModMaterials.SCHRARANIUM), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_SCHRABIDIUM, MaterialShapes.NUGGET.q(5)),
-                new MaterialStack(Mats.MAT_URANIUM, MaterialShapes.NUGGET.q(2)),
-                new ItemStack(ModMaterialItems.item(ModMaterials.NEPTUNIUM, MaterialShape.NUGGET), 2)));
-
-        recipes.put(crystal(ModMaterials.SCHRABIDIUM), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_SCHRABIDIUM, MaterialShapes.INGOT.q(6)),
-                new MaterialStack(Mats.MAT_PLUTONIUM, MaterialShapes.INGOT.q(2)),
-                lithiumTiny()));
-
-        recipes.put(crystal(ModMaterials.RARE), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_ZIRCONIUM, MaterialShapes.NUGGET.q(6)),
-                new MaterialStack(Mats.MAT_BORON, MaterialShapes.NUGGET.q(2)),
-                new ItemStack(ModItems.POWDER_DESH_MIX.get(), 3)));
-
-        recipes.put(crystal(ModMaterials.TRIXITE), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_PLUTONIUM, MaterialShapes.INGOT.q(3)),
-                new MaterialStack(Mats.MAT_COBALT, MaterialShapes.INGOT.q(4)),
-                new ItemStack(ModMaterialItems.item(ModMaterials.NIOBIUM, MaterialShape.POWDER), 4),
-                new ItemStack(ModItems.POWDER_NITAN_MIX.get(), 2)));
-
-        recipes.put(crystal(ModMaterials.LITHIUM), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_LITHIUM, MaterialShapes.INGOT.q(6)),
-                new MaterialStack(Mats.MAT_BORON, MaterialShapes.INGOT.q(2)),
-                new ItemStack(ModMaterialItems.item(ModMaterials.QUARTZ, MaterialShape.POWDER), 2),
-                new ItemStack(ModItems.FLUORITE.get(), 2)));
-
-        recipes.put(crystal(ModMaterials.STARMETAL), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_DURA, MaterialShapes.INGOT.q(4)),
-                new MaterialStack(Mats.MAT_COBALT, MaterialShapes.INGOT.q(4)),
-                new ItemStack(ModMaterialItems.item(ModMaterials.ASTATINE, MaterialShape.POWDER), 3),
-                new ItemStack(ModItems.NUGGET_MERCURY.get(), 8)));
-
-        recipes.put(crystal(ModMaterials.COBALT), new ElectrolysisMetalRecipe(
-                new MaterialStack(Mats.MAT_COBALT, MaterialShapes.INGOT.q(3)),
-                new MaterialStack(Mats.MAT_IRON, MaterialShapes.INGOT.q(4)),
-                new ItemStack(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.POWDER), 4),
-                lithiumTiny()));
-
-        for (BedrockOreType type : BedrockOreType.values()) {
-            Item crumbs = type.item("crumbs");
-
-            List<Object[]> productsF = new ArrayList<>();
-            productsF.add(new Object[] { type.primary1, 8 });
-            productsF.add(new Object[] { type.primary2, 4 });
-            if (crumbs != null) productsF.add(new Object[] { new ItemStack(crumbs), 1 });
-            Item first = type.item("primary_first");
-            if (first != null) recipes.put(first, makeBedrockOreProduct(productsF));
-
-            List<Object[]> productsS = new ArrayList<>();
-            productsS.add(new Object[] { type.primary1, 4 });
-            productsS.add(new Object[] { type.primary2, 8 });
-            if (crumbs != null) productsS.add(new Object[] { new ItemStack(crumbs), 1 });
-            Item second = type.item("primary_second");
-            if (second != null) recipes.put(second, makeBedrockOreProduct(productsS));
-
-            List<Object[]> productsC = new ArrayList<>();
-            productsC.add(new Object[] { type.primary1, 2 });
-            productsC.add(new Object[] { type.primary2, 2 });
-            if (crumbs != null) recipes.put(crumbs, makeBedrockOreProduct(productsC));
-        }
+        for (Item key : appliedDatapack.keySet()) recipes.remove(key);
+        appliedDatapack.clear();
+        ensureLoaded();
+        data.entrySet().stream().sorted(Map.Entry.comparingByKey(java.util.Comparator.comparing(Object::toString))).forEach(e -> {
+            Item in = inputItem(e.getValue());
+            ElectrolysisMetalRecipe rec = toElectrolysis(e.getValue());
+            if (in != null && rec != null) {
+                recipes.put(in, rec);
+                appliedDatapack.put(in, rec);
+            }
+        });
+        notedManager = new java.lang.ref.WeakReference<>(manager);
+        notedFingerprint = fp;
     }
+
+    /** Tabelle inkl. Datapack ({@code level} null = nur Code-Tabelle). */
+    public static synchronized Map<Item, ElectrolysisMetalRecipe> all(@Nullable net.minecraft.world.item.crafting.RecipeManager manager) {
+        noteManager(manager);
+        return all();
+    }
+
+    /** {@code ElectrolyserMetalRecipe} (JSON) als Code-{@code ElectrolysisMetalRecipe}: Schmelzausgänge über die Formen-Items. */
+    private static ElectrolysisMetalRecipe toElectrolysis(com.hbm_m.recipe.ElectrolyserMetalRecipe r) {
+        ItemStack[] bp = new ItemStack[r.getByproducts().length];
+        for (int i = 0; i < bp.length; i++) bp[i] = r.getByproducts()[i].copy();
+        return new ElectrolysisMetalRecipe(molten(r.getOutputA()), molten(r.getOutputB()), r.getDuration(), bp);
+    }
+
+    /** Formen-Item (Barren/Pulver/Klumpen) als Schmelzmenge in Quanten; {@code null} = kein Schmelzausgang. */
+    @Nullable
+    private static MaterialStack molten(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return null;
+        Mats.MatShape shape = Mats.getShape(stack);
+        if (shape == null) return null;
+        return new MaterialStack(shape.material(), shape.shape().q(stack.getCount()));
+    }
+
+    @Nullable
+    private static Item inputItem(com.hbm_m.recipe.ElectrolyserMetalRecipe r) {
+        ItemStack[] items = r.getInput().getItems();
+        return items != null && items.length > 0 ? items[0].getItem() : null;
+    }
+
+    /** Datapack-Umstellung: die 18 Kristall- und 18 Grundgestein-Erzrezepte liegen als {@code hbm_m:electrolyser_metal}-
+     * JSONs im Datagen ({@code ElectrolyserMetalRecipeGenerator}); die Code-Tabelle bleibt leer. */
+    private static void registerDefaults() { }
 
     /** 1:1 {@code makeBedrockOreProduct}. */
     public static ElectrolysisMetalRecipe makeBedrockOreProduct(List<Object[]> products) {
@@ -204,6 +147,13 @@ public final class ElectrolyserMetalRecipes {
         if (stack == null || stack.isEmpty()) return null;
         ensureLoaded();
         return recipes.get(stack.getItem());
+    }
+
+    /** Rezept inkl. Datapack ({@code level} null = nur Code-Tabelle). */
+    @Nullable
+    public static ElectrolysisMetalRecipe getRecipe(@Nullable net.minecraft.world.level.Level level, ItemStack stack) {
+        if (level != null) noteManager(level.getRecipeManager());
+        return getRecipe(stack);
     }
 
     public static class ElectrolysisMetalRecipe {

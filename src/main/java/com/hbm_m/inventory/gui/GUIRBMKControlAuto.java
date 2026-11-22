@@ -13,6 +13,8 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Port of {@code GUIRBMKControlAuto} (1.7.10 Original), rendered with the real
@@ -27,8 +29,11 @@ import net.minecraft.world.entity.player.Inventory;
  * manual {@link GUIRBMKControl} sibling, where it manifested as the rod level being
  * stuck at 0% and unselectable).
  *
- * <p>Stromanzeige/-tooltip wie im Original bei (136, 21).
+ * <p>Ported from FFA: the power icon/tooltip at (136, 21) - the modernized
+ * {@code RBMKControlBlockEntity} hierarchy provides {@code isPowered()}/{@code hasPower}/
+ * {@code getEnergyStored()}/{@code getMaxEnergyStored()}, same as {@link GUIRBMKControl}.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKControlAuto extends GuiInfoScreen<RBMKControlAutoMenu> {
 
     private static final ResourceLocation TEXTURE =

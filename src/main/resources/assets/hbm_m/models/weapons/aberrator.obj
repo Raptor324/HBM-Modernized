@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'aberrator2.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Misc
 v -5.125000 5.875000 -2.750000
 v -4.875000 5.875000 -2.750000

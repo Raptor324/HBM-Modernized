@@ -17,6 +17,7 @@ import com.hbm_m.inventory.fluid.trait.FT_Combustible;
 import com.hbm_m.inventory.fluid.trait.FT_Combustible.FuelGrade;
 import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.inventory.menu.MachineTurbineGasMenu;
+import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 
 import net.minecraft.core.BlockPos;
@@ -520,7 +521,7 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return switch (slot) {
-            case SLOT_BATTERY -> isEnergyProviderItem(stack) || isEnergyReceiverItem(stack);
+            case SLOT_BATTERY -> stack.getItem() instanceof ItemCreativeBattery || isEnergyProviderItem(stack) || isEnergyReceiverItem(stack);
             case SLOT_FLUID_ID -> stack.getItem() instanceof FluidIdentifierItem;
             default -> false;
         };

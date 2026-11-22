@@ -29,7 +29,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * wieder wie im Original ein - siehe {@link #injectIntoCore}. Befuellen laesst er sich weiter per
  * Pumpe oder Rohr ueber {@link CoreInjectorFluidHandler}.
  */
-public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity {
+public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
 
     public static final int TANK_DEUTERIUM = 0;
     public static final int TANK_TRITIUM = 1;
@@ -44,6 +44,28 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity {
     public MachineCoreInjectorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CORE_INJECTOR_BE.get(), pos, state, 4, 2_000_000L, 40_000L);
     }
+
+    // ==================== IFluidUserMK2 / MK2-ÑÐµÑÑ ====================
+    // ÐÑÐ¸Ð²ÑÐ·ÐºÐ° Ð¾Ð±ÑÐ°Ð±Ð¾ÑÑÐ¸ÐºÐ° Ð¶Ð¸Ð´ÐºÐ¾ÑÑÐ¸ Ð½Ð¸Ð¶Ðµ Ð¶Ð¸Ð²ÑÑ Ð² //? if forge, Ð° BaseMachineBlockEntity
+    // Ð¾ÑÐ´Ð°ÑÑ NeoForge-Ð¾Ð±ÑÑÑÐºÑ ÑÐ¾Ð»ÑÐºÐ¾ ÑÐµÐ°Ð»Ð¸Ð·Ð°ÑÐ¸ÑÐ¼ IFluidUserMK2 â Ð±ÐµÐ· ÑÑÐ¾Ð³Ð¾ Ñ Ð¼Ð°ÑÐ¸Ð½Ñ
+    // Ð½Ð° NeoForge Ð½Ðµ Ð±ÑÐ»Ð¾ fluid-ÐºÐ°Ð¿Ð°Ð±Ð¸Ð»Ð¸ÑÐ¸ Ð²Ð¾Ð¾Ð±ÑÐµ, Ð¸ ÑÑÑÐ±Ñ Ðº Ð½ÐµÐ¹ Ð½Ðµ Ð¿Ð¾Ð´ÐºÐ»ÑÑÐ°Ð»Ð¸ÑÑ.
+
+    @Override
+    public FluidTank[] getAllTanks() { return tanks; }
+
+    @Override
+    public FluidTank[] getReceivingTanks() { return tanks; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, net.minecraft.core.Direction fromDir) {
+        return fromDir != null;
+    }
+
 
     //? if forge {
     @Override
@@ -96,6 +118,11 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity {
     private void injectIntoCore(Level level, BlockPos pos, BlockState state) {
         beam = 0;
 
+        // Нечего впрыскивать — 15-блочный марш до ядра не запускаем (каждый тик по 15 BE-чтений).
+        if (tanks[TANK_DEUTERIUM].getFill() == 0 && tanks[TANK_TRITIUM].getFill() == 0) {
+            return;
+        }
+
         // Original: ForgeDirection.getOrientation(getBlockMetadata()) - die Blickrichtung des Blocks.
         // Der Port-Block fuehrt dafuer die volle Sechsrichtungs-FACING (DFCOrientation).
         net.minecraft.core.Direction dir;
@@ -106,7 +133,6 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity {
         } else {
             dir = net.minecraft.core.Direction.NORTH;
         }
-
         for (int i = 1; i <= RANGE; i++) {
             BlockPos at = pos.relative(dir, i);
             net.minecraft.world.level.block.entity.BlockEntity te = level.getBlockEntity(at);

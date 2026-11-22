@@ -62,6 +62,13 @@ public class MachineStirlingBlock extends DummyableMachineBlock implements com.h
     }
 
     @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            {0, 0, 0.5, -0.3, 0.4, -0.4, 1}
+        };
+    }
+
+    @Override
     public RenderShape getRenderShape(BlockState state) {
         // Zahnraeder und Kolben zeichnet der StirlingRenderer (RenderStirling); das Blockmodell bleibt fuer Partikel.
         return RenderShape.ENTITYBLOCK_ANIMATED;

@@ -27,6 +27,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import com.hbm_m.platform.ItemHooks;
 
 /**
  * Radiolysis Collector: Direktport der Fluid-Crack-Kernmechanik aus
@@ -182,7 +183,7 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
         ItemStack in = inventory.getStackInSlot(SLOT_IRRADIATE_IN);
         if (in.isEmpty()) return;
 
-        if (PlatformHooks.isEdible(in.getItem()) && in.getItem() != com.hbm_m.item.ModItems.PANCAKE.get()) {
+        if (ItemHooks.isEdible(in.getItem()) && in.getItem() != com.hbm_m.item.ModItems.PANCAKE.get()) {
             in = in.copy();
             in.shrink(1);
             inventory.setStackInSlot(SLOT_IRRADIATE_IN, in);

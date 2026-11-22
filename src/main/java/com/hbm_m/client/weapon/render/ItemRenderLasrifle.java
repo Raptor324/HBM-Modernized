@@ -7,8 +7,6 @@ import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
 import com.hbm_m.item.weapon.sedna.mods.XWeaponModManager;
 import com.hbm_m.render.anim.HbmAnimations;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /** 1:1 {@code ItemRenderLasrifle}. */
@@ -93,35 +91,22 @@ public class ItemRenderLasrifle extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 1.25D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, 0, 4);
-
+		setupThirdPerson(stack, 1.25D, 0, 0, 4);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 1.03125D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(0.75, 0, 0);
+		setupInv(stack, 1.03125D, 0.75, 0, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -6.25D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, -1, -1);
+		setupModTable(stack, -6.25D, 0, -1, -1);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(WeaponResources.lasrifle_tex);
 		GunGL.renderPart(WeaponResources.lasrifle, "Gun");
 		GunGL.renderPart(WeaponResources.lasrifle, "Stock");
@@ -132,26 +117,7 @@ public class ItemRenderLasrifle extends ItemRenderWeaponBase {
 		GunGL.bindTexture(WeaponResources.lasrifle_mods_tex);
 		if(hasShotgun(stack)) GunGL.renderPart(WeaponResources.lasrifle_mods, "BarrelShotgun");
 		if(hasCapacitor(stack)) GunGL.renderPart(WeaponResources.lasrifle_mods, "UnderBarrel");
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 1.5, 12);
-			GunGL.rotate(90, 0, 1, 0);
-			renderLaserFlash(shot, 150, 1.5D, 0xff0000);
-			GunGL.translate(0, 0, -0.25);
-			renderLaserFlash(shot, 150, 0.75D, 0xff8000);
-			GunGL.popMatrix();
-		}
+		renderEquippedLaserFlash(type, stack, data, 0, 1.5, 12, 150, 1.5D, 0xff0000, -0.25D, 0.75D, 0xff8000);
 	}
 
 	public boolean hasScope(ItemStack stack) {

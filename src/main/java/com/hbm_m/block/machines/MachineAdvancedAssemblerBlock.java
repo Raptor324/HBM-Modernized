@@ -224,6 +224,24 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
     //     return builder.build();
     // }
     
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            { -1, 0, -1, Direction.WEST.get3DDataValue() },
+            { -1, 0, -1, Direction.NORTH.get3DDataValue() },
+            { -1, 0,  0, Direction.WEST.get3DDataValue() },
+            { -1, 0,  1, Direction.WEST.get3DDataValue() },
+            { -1, 0,  1, Direction.SOUTH.get3DDataValue() },
+            {  0, 0, -1, Direction.NORTH.get3DDataValue() },
+            {  0, 0,  1, Direction.SOUTH.get3DDataValue() },
+            {  1, 0, -1, Direction.EAST.get3DDataValue() },
+            {  1, 0, -1, Direction.NORTH.get3DDataValue() },
+            {  1, 0,  0, Direction.EAST.get3DDataValue() },
+            {  1, 0,  1, Direction.EAST.get3DDataValue() },
+            {  1, 0,  1, Direction.SOUTH.get3DDataValue() }
+        }, facing);
+    }
+
     @Override 
     public PartRole getPartRole(BlockPos localOffset) { 
         // Используем универсальный метод разрешения ролей из хелпера

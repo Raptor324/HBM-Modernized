@@ -12,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Slot-Koordinaten 1:1 aus {@code ContainerMachineVacuumDistill} (1.7.10 Original) uebernommen,
  *  wo relevant - die Fluid-Ein/Ausgabe-Slots des Originals entfallen, weil das MK2-Rohrnetz die
@@ -66,7 +67,7 @@ public class MachineVacuumDistillMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineVacuumDistillBlockEntity be) {
             return be;
         }
-        throw new IllegalStateException("No MachineVacuumDistillBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":vacuum_distill_menu");
+        throw new MenuBlockEntityMissingException("No MachineVacuumDistillBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":vacuum_distill_menu");
     }
 
     public MachineVacuumDistillBlockEntity getBlockEntity() {
@@ -75,8 +76,7 @@ public class MachineVacuumDistillMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

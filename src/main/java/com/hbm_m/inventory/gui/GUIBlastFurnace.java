@@ -13,14 +13,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+@OnlyIn(Dist.CLIENT)
 public class GUIBlastFurnace extends AbstractContainerScreen<BlastFurnaceMenu> {
     private static final ResourceLocation GUI_TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/gui_blast_furnace_legacy.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/gui_blast_furnace_legacy.png");
-            //?}
 
     public GUIBlastFurnace(BlastFurnaceMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -102,12 +101,11 @@ public class GUIBlastFurnace extends AbstractContainerScreen<BlastFurnaceMenu> {
 
         for (int i = 0; i < slots.length; i++) {
             Slot slot = slots[i];
-            if (slot != null && isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY)) {
+            if (slot != null && !slot.hasItem() && isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY)) {
                 Component direction = Component.translatable("direction.hbm_m." + menu.getConfiguredDirectionForSlot(i).getName());
                 Component tooltip = Component.translatable("gui.hbm_m.blast_furnace.accepts", direction)
                         .withStyle(ChatFormatting.YELLOW);
-                // Original: bei belegtem Slot 15 px hoeher, damit der Gegenstands-Tooltip frei bleibt
-                guiGraphics.renderTooltip(this.font, tooltip, mouseX, mouseY - (slot.hasItem() ? 15 : 0));
+                guiGraphics.renderTooltip(this.font, tooltip, mouseX, mouseY);
                 break;
             }
         }

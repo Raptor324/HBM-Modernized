@@ -33,6 +33,10 @@ public class RadioTorchSenderBlockEntity extends RadioTorchBaseBlockEntity {
             be.setChanged();
             be.syncToClient();
             shouldSend = true;
+            boolean lit = input > 0;
+            if (state.hasProperty(RadioTorchBaseBlock.LIT) && state.getValue(RadioTorchBaseBlock.LIT) != lit) {
+                level.setBlock(pos, state.setValue(RadioTorchBaseBlock.LIT, lit), 3);
+            }
         }
 
         if (shouldSend && !be.channel.isEmpty()) {

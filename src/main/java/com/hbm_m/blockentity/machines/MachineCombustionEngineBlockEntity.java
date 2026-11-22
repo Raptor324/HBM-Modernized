@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.interfaces.IControlReceiver;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -11,6 +12,7 @@ import com.hbm_m.inventory.fluid.trait.FT_Combustible;
 import com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType;
 import com.hbm_m.inventory.menu.MachineCombustionEngineMenu;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.liquids.FluidIdentifierItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -31,14 +33,11 @@ import net.minecraft.world.phys.AABB;
 /**
  * 1:1 {@code TileEntityMachineCombustionEngine}: Verbrennungsmotor fuer jedes {@link FT_Combustible}-Fluid. Mit
  * Zuendung und Drossel ({@code setting}, 0-30) verbrennt er {@code setting * 2} Zehntel-mB je Tick; der Kolbensatz
- * bestimmt je Treibstoffgrad den Wirkungsgrad (Stahl, Dura, Desh, Sternmetall). Abgas geht in die Rauchtanks und ueber
- * die vier Anschluesse hinaus; Strom geht dort ebenfalls hinaus. Die Wartungsklappe oeffnet sich, solange jemand die
- * GUI offen hat.
+ * bestimmt ueber {@link #efficiency} den Ertrag.
  */
 public class MachineCombustionEngineBlockEntity extends com.hbm_m.blockentity.MachinePollutingBlockEntity
-        implements IFluidStandardTransceiverMK2,
-                   com.hbm_m.api.redstoneoverradio.IRORValueProvider,
-                   com.hbm_m.api.redstoneoverradio.IRORInteractive {
+        implements IFluidStandardTransceiverMK2, IControlReceiver,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     public static final int SLOT_FLUID_IN = 0;
     public static final int SLOT_FLUID_OUT = 1;
@@ -268,15 +267,13 @@ public class MachineCombustionEngineBlockEntity extends com.hbm_m.blockentity.Ma
     /** Original {@code receiveControl("turnOn")}. */
     public void toggleIgnition() {
         isOn = !isOn;
-        setChanged();
-        sendUpdateToClient();
+        syncIfStateChanged(getEnergyStored(), (isOn ? 1L : 0L) | (wasOn ? 2L : 0L) | (((long) setting) << 2) | (((long) tank.getFill()) << 8) | (((long) playersUsing) << 32));
     }
 
     /** Original {@code receiveControl("setting")}. */
     public void setThrottle(int throttle) {
         setting = throttle;
-        setChanged();
-        sendUpdateToClient();
+        syncIfStateChanged(getEnergyStored(), (isOn ? 1L : 0L) | (wasOn ? 2L : 0L) | (((long) setting) << 2) | (((long) tank.getFill()) << 8) | (((long) playersUsing) << 32));
     }
 
     // ==================== Fluid ====================
@@ -294,6 +291,19 @@ public class MachineCombustionEngineBlockEntity extends com.hbm_m.blockentity.Ma
     @Override
     public boolean canConnectEnergy(Direction side) {
         return side != Direction.DOWN;
+    }
+
+    @Override
+    public boolean hasPermission(Player player) {
+        return player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) < 625;
+    }
+
+    @Override
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("turnOn")) this.isOn = !this.isOn;
+        if (data.contains("setting")) this.setting = data.getInt("setting");
+        setChanged();
+        sendUpdateToClient();
     }
 
     @Override
@@ -337,10 +347,16 @@ public class MachineCombustionEngineBlockEntity extends com.hbm_m.blockentity.Ma
         return getDefaultName();
     }
 
-    /** Original {@code TileEntityMachineBase.isItemValidForSlot}: nichts per Automatisierung. */
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return false;
+        return switch (slot) {
+            case SLOT_FLUID_IN -> com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack);
+            case SLOT_FLUID_OUT -> false;
+            case SLOT_PISTON -> pistonType(stack.getItem()) >= 0;
+            case SLOT_BATTERY -> isEnergyReceiverItem(stack) || isEnergyProviderItem(stack);
+            case SLOT_FLUID_ID -> stack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier || stack.getItem() instanceof FluidIdentifierItem;
+            default -> false;
+        };
     }
 
     @Nullable

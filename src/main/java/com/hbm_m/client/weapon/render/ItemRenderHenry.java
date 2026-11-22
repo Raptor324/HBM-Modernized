@@ -1,5 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
+import com.hbm_m.client.render.weapon.WeaponJointRig;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.client.weapon.WeaponResources;
@@ -88,40 +91,18 @@ public class ItemRenderHenry extends ItemRenderWeaponBase {
 		renderSmokeNodes(gun.getConfig(stack, 0).smokeNodes, 0.25D);
 		GunGL.popMatrix();
 
-		GunGL.renderPart(WeaponResources.henry, "Gun");
+		WeaponRenderRegistry.renderPart(WeaponResources.henry, "Gun", GunGL.pose());
 
-		GunGL.pushMatrix();
-		GunGL.translate(0, 1.25, -0.1875);
-		GunGL.rotate(sight[0], 1, 0, 0);
-		GunGL.translate(0, -1.25, 0.1875);
-		GunGL.renderPart(WeaponResources.henry, "Sight");
-		GunGL.popMatrix();
+		WeaponJointRig rig = WeaponRenderRegistry.getRig(WeaponResources.henry);
+		WeaponKinematics.renderPartWithJoint(rig, "Sight", GunGL.pose(), (float) sight[0]);
+		WeaponKinematics.renderPartWithJoint(rig, "Hammer", GunGL.pose(), (float) (-30 + hammer[0]));
+		WeaponKinematics.renderPartWithJoint(rig, "Lever", GunGL.pose(), (float) lever[0]);
+		WeaponKinematics.renderPartWithJoint(rig, "Front", GunGL.pose(), (float) twist[2]);
 
-		GunGL.pushMatrix();
-		GunGL.translate(0, 0.625, -3);
-		GunGL.rotate(-30 + hammer[0], 1, 0, 0);
-		GunGL.translate(0, -0.625, 3);
-		GunGL.renderPart(WeaponResources.henry, "Hammer");
-		GunGL.popMatrix();
-
-		GunGL.pushMatrix();
-		GunGL.translate(0, 0.25, -2.3125);
-		GunGL.rotate(lever[0], 1, 0, 0);
-		GunGL.translate(0, -0.25, 2.3125);
-		GunGL.renderPart(WeaponResources.henry, "Lever");
-		GunGL.popMatrix();
-
-		GunGL.pushMatrix();
-		GunGL.translate(0, 1, 0);
-		GunGL.rotate(twist[2], 0, 0, 1);
-		GunGL.translate(0, -1, 0);
-		GunGL.renderPart(WeaponResources.henry, "Front");
-		GunGL.popMatrix();
-
-		GunGL.pushMatrix();
-		GunGL.translate(bullet[0], bullet[1], bullet[2] - 1);
-		GunGL.renderPart(WeaponResources.henry, "Bullet");
-		GunGL.popMatrix();
+		WeaponKinematics.scoped(GunGL.pose(), ps -> {
+			WeaponKinematics.applyVectorTranslate(ps, (float) bullet[0], (float) bullet[1], (float) (bullet[2] - 1));
+			WeaponRenderRegistry.renderPart(WeaponResources.henry, "Bullet", ps);
+		});
 
 		GunGL.pushMatrix();
 		GunGL.translate(0, 1, 8);
@@ -133,56 +114,24 @@ public class ItemRenderHenry extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 1.75D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, 0.25, 3);
-
+		setupThirdPerson(stack, 1.75D, 0, 0.25, 3);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 1.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(-0.5, 0.5, 0);
+		setupInv(stack, 1.5D, -0.5, 0.5, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -7.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
+		setupModTable(stack, -7.5D, 0, 0, 0);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(texture);
 		GunGL.renderAll(WeaponResources.henry);
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 1, 8);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(90 * shotRand, 1, 0, 0);
-			renderMuzzleFlash(shot, 75, 5);
-			GunGL.popMatrix();
-		}
+		renderEquippedMuzzleFlash(type, stack, data, 0, 1, 8, 1.0D, 75, 5);
 	}
 }

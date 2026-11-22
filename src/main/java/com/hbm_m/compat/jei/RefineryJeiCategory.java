@@ -1,5 +1,4 @@
 package com.hbm_m.compat.jei;
-//? if forge || neoforge {
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,9 +50,11 @@ public class RefineryJeiCategory implements IRecipeCategory<RefineryJeiCategory.
         // TemplateRecipeHandler.drawBackground: drawTexturedModalRect(0, 0, 5, 11, 166, 65)
         this.background = guiHelper.drawableBuilder(TEXTURE, 5, 11, 166, 65).setTextureSize(256, 256).build();
         this.icon = guiHelper.createDrawableItemStack(new ItemStack(ModItems.REFINERY.get()));
-        // drawProgressBar(83 - 72 - 9 + 1, 6, 0, 86, 16, 52, 480, 7): nach oben, ablaufend
+        // drawProgressBar(83 - 72 - 9 + 1, 6, 0, 86, 16, 52, 480, 7): Richtung 7 = schrumpfend von
+        // unten (Richtung "up" + Bit 3). JEI klemmt bei invert=true die Startrichtung um (TOP ->
+        // maskTop steigt), sichtbar bleibt also der untere Teil am Boden verankert - wie im Original.
         this.tank = guiHelper.drawableBuilder(TEXTURE, 0, 86, 16, 52).setTextureSize(256, 256)
-                .buildAnimated(480, IDrawableAnimated.StartDirection.BOTTOM, true);
+                .buildAnimated(480, IDrawableAnimated.StartDirection.TOP, true);
         // drawProgressBar(56 + 22, 5 + 19, 16, 86, 24, 17, 48, 0)
         this.arrow = guiHelper.drawableBuilder(TEXTURE, 16, 86, 24, 17).setTextureSize(256, 256)
                 .buildAnimated(48, IDrawableAnimated.StartDirection.LEFT, false);
@@ -97,7 +98,3 @@ public class RefineryJeiCategory implements IRecipeCategory<RefineryJeiCategory.
         arrow.draw(guiGraphics, 78, 24);
     }
 }
-//?} else {
-/*public final class RefineryJeiCategory {
-    private RefineryJeiCategory() {}
-}*///?}

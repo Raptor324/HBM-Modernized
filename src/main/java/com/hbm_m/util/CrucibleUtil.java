@@ -1,25 +1,28 @@
 package com.hbm_m.util;
 
-import java.util.List;
-
-import org.jetbrains.annotations.Nullable;
-
 import com.hbm_m.api.block.ICrucibleAcceptor;
 import com.hbm_m.inventory.material.Mats.MaterialStack;
 import com.hbm_m.inventory.material.NTMMaterial.SmeltingBehavior;
-
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
- * 1:1 {@code com.hbm.util.CrucibleUtil}: Giessen per Strahl senkrecht nach unten auf den ersten Block (auch Fluessig-
- * keiten halten ihn auf). Ist er ein {@link ICrucibleAcceptor}, wird dorthin gegossen, sonst - wenn nicht sicher -
- * verschuettet. {@code impactPosHolder} (drei Werte) bekommt die Auftreffstelle des Strahls.
+ * Порт {@code com.hbm.util.CrucibleUtil} (1.7.10): вертикальный хитскан вниз
+ * от точки налива до первого блока с {@link ICrucibleAcceptor}; розлив
+ * стаканов порциями не меньше {@code minQuanta} квантов; «safe»-семантика —
+ * без приёмника ничего не теряется. Количество — в квантах, 1:1 с оригиналом.
  */
 public class CrucibleUtil {
 
@@ -174,5 +177,26 @@ public class CrucibleUtil {
         }
 
         return toWaste;
+    }
+
+    /**
+     * Шлак-предмет из MaterialStack: количество уже в квантах (1:1 с тегом
+     * {@code amount} предмета), материал — по имени MaterialType через
+     * {@link ModMaterials#byId}; без предмета шлака для материала возвращает EMPTY.
+     */
+    public static ItemStack createScrap(com.hbm_m.inventory.material.MaterialStack stack) {
+        if (stack == null || stack.isEmpty()) return ItemStack.EMPTY;
+        ModMaterials mat = ModMaterials.byId(stack.type.name);
+        if (mat == null) return ItemStack.EMPTY;
+        Item item = ModMaterialItems.scrapItem(mat);
+        if (item == null) return ItemStack.EMPTY;
+
+        int quanta = stack.amount;
+        if (quanta <= 0) return ItemStack.EMPTY;
+
+        ItemStack out = new ItemStack(item, 1);
+        // ScrapItem читает количество из тега "amount"
+        com.hbm_m.platform.StackNbt.edit(out, tag -> tag.putInt("amount", quanta));
+        return out;
     }
 }

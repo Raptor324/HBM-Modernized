@@ -14,20 +14,18 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
- * 1:1-Port der Slot-Koordinaten aus {@code ContainerMachineTurbofan} (1.7.10-Original), abzueglich
- * des Upgrade-Slots (Original-Slot 2 bei 98,71) - dieser Block hat kein Upgrade-System, siehe
- * {@link MachineTurbofanBlockEntity}. Die verbleibenden 4 Original-Slots behalten ihre Original-
- * Koordinaten:
+ * 1:1-Port der Slot-Koordinaten aus {@code ContainerMachineTurbofan} (1.7.10-Original). Die
+ * Upgrade- und Identifier-Slots behalten ihre Original-Koordinaten; die Indizes verschoben
+ * (Upgrade = Original-Slot 2 -> hier Slot 4), um alte gespeicherte Inventare nicht zu brechen:
  * <pre>
- * Original-Slot 0 (Treibstoff-Behaelter)   -> hier Slot 0, (17, 17)
+ * Original-Slot 0 (Treibstoff-Behaelter)     -> hier Slot 0, (17, 17)
  * Original-Slot 1 (Leer-Behaelter, TakeOnly) -> hier Slot 1, (17, 53)
- * Original-Slot 3 (Batterie)               -> hier Slot 2, (143, 71)
- * Original-Slot 4 (Fluid-Identifier)       -> hier Slot 3, (44, 71)
+ * Original-Slot 2 (Upgrade AFTERBURN/flame_pony) -> hier Slot 4, (98, 71)
+ * Original-Slot 3 (Batterie)                 -> hier Slot 2, (143, 71)
+ * Original-Slot 4 (Fluid-Identifier)         -> hier Slot 3, (44, 71)
  * </pre>
  */
 public class MachineTurbofanMenu extends AbstractContainerMenu {
@@ -82,7 +80,7 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineTurbofanBlockEntity turbofan) {
             return turbofan;
         }
-        throw new IllegalStateException("No MachineTurbofanBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":turbofan_menu");
+        throw new MenuBlockEntityMissingException("No MachineTurbofanBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":turbofan_menu");
     }
 
     public MachineTurbofanBlockEntity getBlockEntity() {
@@ -91,19 +89,17 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
+    }
+
+    /** Оригинал: ItemMachineUpgrade и flame_pony идут в слот форсажа. */
+    private static boolean isAfterburnerUpgrade(ItemStack stack) {
+        return stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade
+                || stack.is(com.hbm_m.item.ModItems.FLAME_PONY.get());
     }
 
     private static boolean isEnergySource(ItemStack stack) {
-        if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
-        //? if forge {
-        if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
-        //?}
-        //? if neoforge {
-        /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
-        *///?}
-        return false;
+        return ItemEnergyAccess.isEnergySource(stack);
     }
 
     @Override
@@ -124,7 +120,7 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
                     if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (slotStack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
+                } else if (isAfterburnerUpgrade(slotStack)) {
                     if (!this.moveItemStackTo(slotStack, SLOT_UPGRADE, SLOT_UPGRADE + 1, false)) {
                         return ItemStack.EMPTY;
                     }

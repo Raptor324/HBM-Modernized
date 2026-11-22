@@ -4,10 +4,10 @@ import java.util.function.Consumer;
 
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.nuclear.WatzPelletType;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
+import com.hbm_m.item.nuclear.WatzPelletType;
 
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;

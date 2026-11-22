@@ -23,6 +23,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Port of {@code com.hbm.entity.item.EntityMovingItem} (which extends the abstract
@@ -58,14 +59,14 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
     //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
-        this.entityData.define(ITEM, ItemStack.EMPTY);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-        builder.define(ITEM, ItemStack.EMPTY);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     *///?}
+        defs.define(ITEM, ItemStack.EMPTY);
+    }
 
     @Override
     public ItemStack getItem() {
@@ -91,16 +92,21 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (!this.level().isClientSide && !this.isRemoved()) {
-            knockOff();
+        if (this.level().isClientSide || this.isRemoved()) {
+            return false;
         }
-        return true;
+        if (source.getEntity() instanceof Player || source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION)) {
+            knockOff();
+            return true;
+        }
+        return false;
     }
 
-    /** Original: {@code hitByEntity} - das Teil faellt ohne Schwung herunter. */
     private void knockOff() {
         this.discard();
-        this.level().addFreshEntity(new ItemEntity(this.level(), getX(), getY(), getZ(), this.getItem()));
+        ItemEntity item = new ItemEntity(this.level(), getX(), getY(), getZ(), this.getItem());
+        item.setDeltaMovement(getDeltaMovement());
+        this.level().addFreshEntity(item);
     }
 
     /** Original: {@code onLeaveConveyor} - mit doppeltem Schwung abwerfen, 60 s Lebensdauer. */
@@ -108,9 +114,7 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
         this.discard();
         Vec3 m = getDeltaMovement();
         ItemEntity item = new ItemEntity(this.level(), getX() + m.x * 2, getY() + m.y * 2, getZ() + m.z * 2, this.getItem());
-        //? if forge || neoforge {
         item.lifespan = 60 * 20;
-        //?}
         item.setDeltaMovement(m.x * 2, 0.1, m.z * 2);
         this.level().addFreshEntity(item);
     }
@@ -141,7 +145,10 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
                 for (Entity obj : nearby) obj.discard();
                 BlockPos pos = BlockPos.containing(getX(), getY(), getZ());
                 this.level().explode(this, getX(), getY() + 0.125, getZ(), 1.0F, Level.ExplosionInteraction.BLOCK);
-                if (this.level().getBlockState(pos).getBlock() instanceof IConveyorBelt) {
+                // The original also requires the entity to be older than 400 ticks before it takes
+                // the belt with it, so a freshly spawned item whose id happens to align with the
+                // 400-tick cram check cannot blow up the line.
+                if (this.tickCount > 400 && this.level().getBlockState(pos).getBlock() instanceof IConveyorBelt) {
                     this.level().removeBlock(pos, false);
                 }
                 return;
@@ -171,19 +178,24 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
         if (!before.equals(after)) {
             Block enteredBlock = this.level().getBlockState(after).getBlock();
             if (enteredBlock instanceof com.hbm_m.block.network.IEnterableBlock enterable) {
-                // Eintrittsseite wie EntityMovingConveyorObject (nur bei genau einem Achsenschritt, sonst UNKNOWN)
                 net.minecraft.core.Direction dir = null;
                 BlockPos d = before.subtract(after);
                 if (d.distManhattan(BlockPos.ZERO) == 1) dir = net.minecraft.core.Direction.fromDelta(d.getX(), d.getY(), d.getZ());
-                if (enterable.canItemEnter(this.level(), after, dir, this)) enterable.onItemEnter(this.level(), after, this);
+                enterBlock(enterable, after, dir);
             } else if (!this.level().getBlockState(after).isSolid()) {
-                // enterBlockFalling: in einen darunterliegenden Block von oben
                 BlockPos below = after.below();
-                if (this.level().getBlockState(below).getBlock() instanceof com.hbm_m.block.network.IEnterableBlock enterable
-                        && enterable.canItemEnter(this.level(), below, net.minecraft.core.Direction.UP, this)) {
-                    enterable.onItemEnter(this.level(), below, this);
+                if (this.level().getBlockState(below).getBlock() instanceof com.hbm_m.block.network.IEnterableBlock enterable) {
+                    enterBlock(enterable, below, net.minecraft.core.Direction.UP);
                 }
             }
+        }
+    }
+
+    public void enterBlock(com.hbm_m.block.network.IEnterableBlock enterable, BlockPos pos, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction dir) {
+        if (this.isRemoved()) return;
+        if (enterable.canItemEnter(this.level(), pos, dir, this)) {
+            enterable.onItemEnter(this.level(), pos, dir, this);
+            this.discard();
         }
     }
 
@@ -198,7 +210,7 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         if (tag.contains("Item")) {
-            ItemStack stack = PlatformHooks.itemStackOf(tag.getCompound("Item"), this.level().registryAccess());
+            ItemStack stack = StackNbt.parse(tag.getCompound("Item"), this.level().registryAccess());
             if (stack.isEmpty()) {
                 this.discard();
             } else {
@@ -211,7 +223,7 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
     protected void addAdditionalSaveData(CompoundTag tag) {
         ItemStack stack = getItem();
         if (!stack.isEmpty()) {
-            tag.put("Item", PlatformHooks.safeItemSave(stack, this.level().registryAccess()));
+            tag.put("Item", StackNbt.saveNew(stack, this.level().registryAccess()));
         }
     }
 

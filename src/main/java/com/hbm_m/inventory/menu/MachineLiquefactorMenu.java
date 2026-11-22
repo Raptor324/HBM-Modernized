@@ -12,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Slot-Koordinaten 1:1 aus {@code ContainerLiquefactor} (1.7.10 Original), inkl. der zwei Upgrade-Plaetze (98,36/54). */
 public class MachineLiquefactorMenu extends AbstractContainerMenu {
@@ -20,7 +21,7 @@ public class MachineLiquefactorMenu extends AbstractContainerMenu {
     private static final int SLOT_INPUT = MachineLiquefactorBlockEntity.SLOT_INPUT;
     private static final int SLOT_BATTERY = MachineLiquefactorBlockEntity.SLOT_BATTERY;
     private static final int MACHINE_SLOT_COUNT = MachineLiquefactorBlockEntity.SLOT_COUNT;
-    private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
+   private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
     public MachineLiquefactorMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
@@ -41,7 +42,6 @@ public class MachineLiquefactorMenu extends AbstractContainerMenu {
                 @Override public boolean mayPlace(ItemStack stack) { return stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade; }
             });
         }
-
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 122 + row * 18));
@@ -62,8 +62,8 @@ public class MachineLiquefactorMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineLiquefactorBlockEntity be) {
             return be;
         }
-        throw new IllegalStateException("No MachineLiquefactorBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":liquefactor_menu");
-    }
+        throw new MenuBlockEntityMissingException("No MachineLiquefactorBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":liquefactor_menu");
+   }
 
     public MachineLiquefactorBlockEntity getBlockEntity() {
         return blockEntity;
@@ -71,9 +71,8 @@ public class MachineLiquefactorMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
-    }
+        return MenuReach.stillValid(player, blockEntity);
+   }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
@@ -90,7 +89,7 @@ public class MachineLiquefactorMenu extends AbstractContainerMenu {
                 }
             } else if (slotStack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
                 if (!this.moveItemStackTo(slotStack, 2, 4, false)) return ItemStack.EMPTY;
-            } else {
+           } else {
                 if (!this.moveItemStackTo(slotStack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
                     return ItemStack.EMPTY;
                 }

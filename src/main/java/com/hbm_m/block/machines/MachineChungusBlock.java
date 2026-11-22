@@ -125,6 +125,51 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
         return new MachineChungusBlockEntity(pos, state);
     }
 
+    /** Порт MachineChungus.printHook: входной/выходной бак и буфер HE. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineChungusBlockEntity chungus)) return;
+
+        if (chungus.damaged) {
+            com.hbm_m.api.tile.IRepairable.addGenericOverlay(guiGraphics, level, pos, Component.translatable(getDescriptionId()));
+            return;
+        }
+
+        var inputTank = chungus.getSteamTank();
+        var outputTank = chungus.getSpentSteamTank();
+        net.minecraft.world.level.material.Fluid inputType = inputTank.getTankType();
+        net.minecraft.world.level.material.Fluid outputType = com.hbm_m.inventory.fluid.ModFluids.NONE.getSource();
+        com.hbm_m.inventory.fluid.trait.FT_Coolable trait =
+                com.hbm_m.inventory.fluid.FluidType.getTrait(inputType, com.hbm_m.inventory.fluid.trait.FT_Coolable.class);
+        if (trait != null) outputType = trait.coolsTo;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal("")
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(inputType).getLocalizedName())
+                        .withStyle(net.minecraft.ChatFormatting.WHITE))
+                .append(net.minecraft.network.chat.Component.literal(
+                        ": " + String.format(java.util.Locale.US, "%,d", inputTank.getFill())
+                        + "/" + String.format(java.util.Locale.US, "%,d", inputTank.getMaxFill()) + "mB")
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                .append(net.minecraft.network.chat.Component.literal("")
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(outputType).getLocalizedName())
+                        .withStyle(net.minecraft.ChatFormatting.WHITE))
+                .append(net.minecraft.network.chat.Component.literal(
+                        ": " + String.format(java.util.Locale.US, "%,d", outputTank.getFill())
+                        + "/" + String.format(java.util.Locale.US, "%,d", outputTank.getMaxFill()) + "mB")
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                .append(net.minecraft.network.chat.Component.literal(
+                        com.hbm_m.util.EnergyFormatter.format(chungus.getEnergyStored()) + "HE")
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
+
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
@@ -186,7 +231,7 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
     }
 
 
-    // ==================== E9 (Fork, nur mit Space-Addon): Schaden + Reparatur ====================
+    // -------------------- E9 (Fork, nur mit Space-Addon): Schaden + Reparatur --------------------
 
     /** Space {@code onScrew}: Schweissbrenner repariert ueber {@code IRepairable.tryRepairMultiblock}. */
     @Override
@@ -224,13 +269,7 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
         return !com.hbm_m.api.space.SpaceApi.forkActive() && super.dropFromExplosion(explosion);
     }
 
-    /** Space {@code printHook}: beschaedigt die Reparaturliste (HBM hat sonst kein Overlay fuer die Turbine). */
-    @Override
-    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
-        if (world.getBlockEntity(pos) instanceof MachineChungusBlockEntity chungus && chungus.damaged) {
-            com.hbm_m.api.tile.IRepairable.addGenericOverlay(g, world, pos, Component.translatable(getDescriptionId()));
-        }
-    }
+
 
     // --- IMultiblockController ---
 
@@ -262,5 +301,15 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
     /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
+    // Verbatim port of the original MachineChungus.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {0, 2, 4, Direction.SOUTH.get3DDataValue()},
+            {0, 0, -10, Direction.NORTH.get3DDataValue()},
+            {2, 0, 0, Direction.EAST.get3DDataValue()},
+            {-2, 0, 0, Direction.WEST.get3DDataValue()}
+        }, facing);
     }
 }

@@ -16,9 +16,9 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.Mth;
 
 /**
- * 1:1-Port von {@code RenderFusionMHDT} (1.7.10): das Turbinengehaeuse steckt im Blockmodell,
- * hier laufen nur die Spulen - Drehung um die lokale X-Achse auf Hoehe 1,5, der Winkel wird wie
- * im Original modulo 15 genommen (die Spulen wiederholen sich alle 15 Grad).
+ * 1:1 port of {@code RenderFusionMHDT} (1.7.10): turbine housing is in the block model;
+ * only coils rotate here - rotation around local X axis at height 1.5, angle taken
+ * modulo 15 as in original (coils repeat every 15 degrees).
  */
 public class FusionMhdtRenderer implements com.hbm_m.client.render.HbmBerBounds<FusionMhdtBlockEntity> {
 
@@ -48,9 +48,7 @@ public class FusionMhdtRenderer implements com.hbm_m.client.render.HbmBerBounds<
 
         pose.pushPose();
         pose.translate(0.5D, 0D, 0.5D);
-        // 90 degrees to match transform.rotation in models/block/machines/mhdt.json - the mesh
-        // is built along X, the machine's structure runs along Z. See that model file.
-        FusionTorusRenderer.applyFacing(be.getBlockState(), pose, 90F);
+        MachineFusionComplexRenderer.applyFacing(be.getBlockState(), pose);
 
         float rot = Mth.lerp(partialTick, be.prevRotor, be.rotor) % 15F;
         pose.translate(0D, 1.5D, 0D);

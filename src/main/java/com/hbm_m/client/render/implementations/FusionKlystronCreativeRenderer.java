@@ -47,8 +47,7 @@ public class FusionKlystronCreativeRenderer implements com.hbm_m.client.render.H
 
         pose.pushPose();
         pose.translate(0.5D, 0D, 0.5D);
-        // Original-Drehschalter (2: 90, 4: 180, 3: 270, 5: 0) = applyFacing + 90
-        FusionTorusRenderer.applyFacing(be.getBlockState(), pose, 90F);
+        MachineFusionComplexRenderer.applyFacing(be.getBlockState(), pose);
         pose.translate(-1D, 0D, 0D);
 
         float rot = Mth.lerp(partialTick, be.prevFan, be.fan);

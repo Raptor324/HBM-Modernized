@@ -2,7 +2,6 @@ package com.hbm_m.item.tool;
 
 import com.hbm_m.platform.PlatformHooks;
 
-import com.hbm_m.platform.AttributeOps;
 
 import com.hbm_m.platform.ItemHooks;
 
@@ -55,6 +54,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.AttributeHooks;
 
 /**
  * 1:1 {@code com.hbm.items.tool.WeaponSpecial}: Schrabidium-Hammer (toetet sofort), Flaschenoeffner,
@@ -257,7 +257,7 @@ public class WeaponSpecial extends SwordItem implements ITooltipProvider {
         /*ImmutableMultimap.Builder<net.minecraft.core.Holder<Attribute>, AttributeModifier> builder = ImmutableMultimap.builder();
         *///?}
         builder.putAll(base);
-        builder.put(Attributes.MOVEMENT_SPEED, PlatformHooks.attributeModifier(WEAPON_MODIFIER, "Weapon modifier", speed, AttributeOps.MULTIPLY_BASE));
+        builder.put(Attributes.MOVEMENT_SPEED, AttributeHooks.modifier(WEAPON_MODIFIER, "Weapon modifier", speed, AttributeHooks.MULTIPLY_BASE));
         return builder.build();
     }
 
@@ -334,6 +334,7 @@ public class WeaponSpecial extends SwordItem implements ITooltipProvider {
     /** BEWLR fuer die 1.7-IItemRenderer (ItemRenderGavel/Shim/RedstoneSword); greift nur bei builtin/entity-Itemmodellen. */
     //? if forge {
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -344,6 +345,7 @@ public class WeaponSpecial extends SwordItem implements ITooltipProvider {
     }
     //?} elif neoforge {
     /*@Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             @Override

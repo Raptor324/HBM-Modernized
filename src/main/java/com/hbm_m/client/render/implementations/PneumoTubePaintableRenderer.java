@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * 1:1-Port des Zweipass-Renderns aus {@code PneumoTubePaintableBlock.getIcon}.
  *
- * <p>Erster Durchgang: der Tarnblock, oder - solange keiner gesetzt ist - der nackte Wuerfel des
+ * <p>First pass: camouflage block, or - if none set - the unpainted cube of the
  * Rohrs. Zweiter Durchgang: die Seitenmarkierung. Die Einzugsseite und die Ausgabeseite tragen ein
  * eigenes Zeichen, alle uebrigen ein neutrales; der Entschaerfer schaltet den ganzen zweiten
  * Durchgang ab.</p>
@@ -71,7 +71,7 @@ public class PneumoTubePaintableRenderer implements com.hbm_m.client.render.HbmB
         return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(tex);
     }
 
-    /** Der nackte Wuerfel, wenn kein Anstrich gesetzt ist. */
+    /** Unpainted cube when no camouflage color is assigned. */
     private static void drawCube(PoseStack ps, MultiBufferSource buffer, TextureAtlasSprite sprite, float alpha) {
         for (Direction dir : Direction.values()) drawFace(ps, buffer, sprite, dir, alpha, 0F);
     }
@@ -106,19 +106,9 @@ public class PneumoTubePaintableRenderer implements com.hbm_m.client.render.HbmB
 
     private static void vert(VertexConsumer vc, PoseStack.Pose pose, TextureAtlasSprite sprite,
                              float x, float y, float z, float u, float v, float alpha) {
-        // u/v 0..1: 1.20.1 erwartet Pixel 0..16, 1.21.1 den Anteil 0..1
-        //? if < 1.21.1 {
-        float uu = sprite.getU(u * 16F);
-        float vv = sprite.getV(v * 16F);
-        //?} else {
-        /*float uu = sprite.getU(u);
-        float vv = sprite.getV(v);
-        *///?}
+        float uu = com.hbm_m.platform.RenderHooks.spriteU(sprite, u);
+        float vv = com.hbm_m.platform.RenderHooks.spriteV(sprite, v);
 
-        //? if < 1.21.1 {
-        vc.vertex(pose.pose(), x, y, z).color(1F, 1F, 1F, alpha).uv(uu, vv).endVertex();
-        //?} else {
-        /*vc.addVertex(pose, x, y, z).setColor(1F, 1F, 1F, alpha).setUv(uu, vv);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexTexColor(vc, pose, x, y, z, uu, vv, 1F, 1F, 1F, alpha);
     }
 }

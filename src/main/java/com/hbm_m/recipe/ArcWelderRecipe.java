@@ -149,11 +149,7 @@ public class ArcWelderRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<ArcWelderRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "arc_welder");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "arc_welder");
-        //?}
 
         @Override
         public ArcWelderRecipe readJson(ResourceLocation recipeId, JsonObject json) {

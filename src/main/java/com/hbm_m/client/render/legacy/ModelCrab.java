@@ -14,7 +14,7 @@ import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 
-/** 1:1 {@code ModelCrab} (Flan's Toolbox, 20 Quader): Beine schwingen um Y, Modell um -90 Grad gedreht. */
+/** 1:1 {@code ModelCrab} (Flan's Toolbox, 20 boxes): legs swing around Y, model rotated by -90 degrees. */
 public class ModelCrab<T extends Entity> extends EntityModel<T> {
 
     private final ModelPart[] crabModel = new ModelPart[20];
@@ -74,11 +74,7 @@ public class ModelCrab<T extends Entity> extends EntityModel<T> {
         ps.pushPose();
         ps.translate(0, 1.5F, 0);
         ps.mulPose(Axis.YP.rotationDegrees(-90));
-        //? if < 1.21.1 {
-        for (int i = 0; i < 20; i++) this.crabModel[i].render(ps, vc, light, overlay, r, g, b, a);
-        //?} else {
-        /*for (int i = 0; i < 20; i++) this.crabModel[i].render(ps, vc, light, overlay, hbmColor);
-        *///?}
+        for (int i = 0; i < 20; i++) com.hbm_m.platform.RenderHooks.renderPart(this.crabModel[i], ps, vc, light, overlay, r, g, b, a);
         ps.popPose();
     }
 }

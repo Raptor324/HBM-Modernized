@@ -44,20 +44,19 @@ public class AchievementHandler {
     static {
         item(ModItems.PISTON_SELENIUM,         ModAdvancements.SELENIUM);
         item(ModItems.GUN_B92,                 ModAdvancements.SELENIUM);
-        item(ModItems.BATTERY_POTATOS,         ModAdvancements.POTATO);
-        block(ModBlocks.PRESS,         ModAdvancements.BURNER_PRESS);
+        item(ModItems.BATTERY_POTATO,          ModAdvancements.POTATO);
+        block(ModBlocks.MACHINE_PRESS,         ModAdvancements.BURNER_PRESS);
         item(ModItems.RBMK_FUEL_EMPTY,         ModAdvancements.RBMK);
         block(ModBlocks.CHEMICAL_PLANT,        ModAdvancements.CHEMPLANT);
-        block(ModBlocks.CONCRETE_SMOOTH,       ModAdvancements.CONCRETE); // Original: concrete_smooth
+        block(ModBlocks.CONCRETE,              ModAdvancements.CONCRETE);
         block(ModBlocks.CONCRETE_ASBESTOS,     ModAdvancements.CONCRETE);
-        item(ModMaterialItems.get(ModMaterials.POLYMER, MaterialShape.INGOT), ModAdvancements.POLYMER); // Original: ingot_polymer
-        item(ModMaterialItems.get(ModMaterials.DESH, MaterialShape.INGOT),  ModAdvancements.DESH); // Original: ingot_desh
+        item(ModMaterialItems.get(ModMaterials.POLYMER, MaterialShape.PLATE), ModAdvancements.POLYMER);
+        item(ModMaterialItems.get(ModMaterials.DESH, MaterialShape.NUGGET),  ModAdvancements.DESH);
         item(ModItems.GEM_TANTALIUM,           ModAdvancements.TANTALUM);
-        item(ModItems.GAS_CENTRIFUGE,          ModAdvancements.GAS_CENT);
-        block(ModBlocks.CENTRIFUGE,    ModAdvancements.CENTRIFUGE);
-        item(ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.INGOT), ModAdvancements.SCHRAB);
+        item(ModItems.MACHINE_GASCENT,          ModAdvancements.GAS_CENT);
+        item(ModItems.MACHINE_CENTRIFUGE,       ModAdvancements.CENTRIFUGE);
         item(ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.NUGGET), ModAdvancements.SCHRAB);
-        block(ModBlocks.CRYSTALLIZER,  ModAdvancements.ACIDIZER);
+        item(ModItems.CRYSTALLIZER,            ModAdvancements.ACIDIZER);
         block(ModBlocks.SILEX,                 ModAdvancements.SILEX);
         item(ModMaterialItems.get(ModMaterials.TECHNETIUM, MaterialShape.NUGGET),     ModAdvancements.TECHNETIUM);
         block(ModBlocks.STRUCT_WATZ_CORE,      ModAdvancements.WATZ);

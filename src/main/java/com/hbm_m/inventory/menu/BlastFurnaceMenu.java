@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.inventory.ClickType;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class BlastFurnaceMenu extends AbstractContainerMenu {
     public final BlastFurnaceBlockEntity blockEntity;
@@ -38,7 +39,7 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
     public BlastFurnaceMenu(int containerId, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.BLAST_FURNACE_MENU.get(), containerId);
         if (entity == null || !(entity instanceof BlastFurnaceBlockEntity)) {
-            throw new IllegalStateException("Expected BlastFurnaceBlockEntity at position, got: " + entity);
+            throw new MenuBlockEntityMissingException("Expected BlastFurnaceBlockEntity at position, got: " + entity);
         }
         blockEntity = (BlastFurnaceBlockEntity) entity;
         checkContainerDataCount(data, 7);
@@ -50,7 +51,7 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
 
         var handler = this.blockEntity.getInventory();
         var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
-        this.addSlot(new Slot(container, 0, 8, 36)); // Brennstoff (Original: einfacher Slot, nimmt alles)
+        this.addSlot(new FuelSlot(container, 0, 8, 36)); // Топливо (лава ведро)
         this.addSlot(new Slot(container, 1, 80, 18)); // Первый входной слот
         this.addSlot(new Slot(container, 2, 80, 54)); // Второй входной слот
         this.addSlot(new OutputSlot(container, 3, 134, 36)); // Выходной слот
@@ -63,13 +64,12 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
         Slot slot = slotId >= 0 && slotId < this.slots.size() ? this.slots.get(slotId) : null;
         int configSlot = resolveConfigSlotIndex(slotId);
         if (slot != null && configSlot >= 0 && clickType == ClickType.PICKUP && dragType == 1 && getCarried().isEmpty()) {
-            // Original slotClick: nur leerer Platz mit leerer Hand schaltet die Seite um, sonst normales Klicken
             if (!slot.hasItem()) {
                 if (!player.level().isClientSide()) {
                     blockEntity.cycleSide(configSlot);
                 }
-                return;
             }
+            return;
         }
         super.clicked(slotId, dragType, clickType, player);
     }
@@ -93,7 +93,7 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
     public int getScaledFuelProgress() {
         int fuelLevel = this.data.get(DATA_INDEX_FUEL);
         int maxFuelLevel = this.data.get(DATA_INDEX_MAX_FUEL);
-        int fuelPixelHeight = 52; // Original getPowerRemainingScaled(52)
+        int fuelPixelHeight = 53; // Высота индикатора топлива
 
         return maxFuelLevel != 0 ? fuelLevel * fuelPixelHeight / maxFuelLevel : 0;
     }
@@ -137,6 +137,9 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
     private static final int VANILLA_FIRST_SLOT_INDEX = 0;
     private static final int TE_INVENTORY_FIRST_SLOT_INDEX = VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT;
     private static final int TE_INVENTORY_SLOT_COUNT = 4;
+    /** Fuel and the two inputs. The output is last and must stay out of the insert range: vanilla
+     * moveItemStackTo does not consult mayPlace when it merges onto an existing stack. */
+    private static final int TE_INSERTABLE_SLOT_COUNT = 3;
 
     public int getMachineSlotOffset() {
         return TE_INVENTORY_FIRST_SLOT_INDEX;
@@ -149,16 +152,16 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
         ItemStack sourceStack = sourceSlot.getItem();
         ItemStack copyOfSourceStack = sourceStack.copy();
 
-        // Original ContainerDiFurnace.transferStackInSlot: Spieler -> obere Zutat, untere Zutat, Brennstoff (in dieser Reihenfolge)
+        // Check if the slot clicked is one of the vanilla container slots
         if (index < VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT) {
-            if (!moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX + 1, TE_INVENTORY_FIRST_SLOT_INDEX + 3, false)
-                    && !moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX + 1, false)) {
+            // This is a vanilla container slot so merge the stack into the tile inventory
+            if (!moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX
+                    + TE_INSERTABLE_SLOT_COUNT, false)) {
                 return ItemStack.EMPTY;
             }
         } else if (index < TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT) {
-            // Maschine -> Spieler, rueckwaerts (Original mergeItemStack(..., true): Schnellleiste zuerst)
-            if (!moveItemStackTo(sourceStack, VANILLA_FIRST_SLOT_INDEX + PLAYER_INVENTORY_SLOT_COUNT, VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT, true)
-                    && !moveItemStackTo(sourceStack, VANILLA_FIRST_SLOT_INDEX, VANILLA_FIRST_SLOT_INDEX + PLAYER_INVENTORY_SLOT_COUNT, true)) {
+            // This is a TE slot so merge the stack into the players inventory
+            if (!moveItemStackTo(sourceStack, VANILLA_FIRST_SLOT_INDEX, VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT, false)) {
                 return ItemStack.EMPTY;
             }
         } else {
@@ -178,8 +181,7 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
-                player, ModBlocks.BLAST_FURNACE.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.BLAST_FURNACE.get());
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

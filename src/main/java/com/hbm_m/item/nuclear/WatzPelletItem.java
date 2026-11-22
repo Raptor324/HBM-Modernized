@@ -16,6 +16,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code ItemWatzPellet} fuer {@code watz_pellet} und {@code watz_pellet_depleted}. Die Metadaten des Originals
@@ -59,20 +60,20 @@ public class WatzPelletItem extends Item implements com.hbm_m.item.ITooltipProvi
     public static void setYield(ItemStack stack, double yield) { setDouble(stack, "yield", yield); }
 
     public static void setDouble(ItemStack stack, String key, double value) {
-        if (PlatformHooks.getItemTag(stack) == null) setNBTDefaults(stack);
-        PlatformHooks.editItemTag(stack, t -> t.putDouble(key, value));
+        if (StackNbt.read(stack) == null) setNBTDefaults(stack);
+        StackNbt.edit(stack, t -> t.putDouble(key, value));
     }
 
     public static double getDouble(ItemStack stack, String key) {
-        if (PlatformHooks.getItemTag(stack) == null) setNBTDefaults(stack);
-        CompoundTag tag = PlatformHooks.getItemTag(stack);
+        if (StackNbt.read(stack) == null) setNBTDefaults(stack);
+        CompoundTag tag = StackNbt.read(stack);
         return tag == null ? 0D : tag.getDouble(key);
     }
 
     private static void setNBTDefaults(ItemStack stack) {
         WatzPelletType num = typeOf(stack);
         if (num == null) return;
-        PlatformHooks.editItemTag(stack, t -> t.putDouble("yield", num.yield));
+        StackNbt.edit(stack, t -> t.putDouble("yield", num.yield));
     }
 
     @Override

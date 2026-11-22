@@ -16,14 +16,10 @@ import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-
-//? if forge {
-import net.minecraftforge.event.ForgeEventFactory;
-//?}
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import com.hbm_m.platform.MobHooks;
 
 public class EntityProcessorCross implements IEntityProcessor {
 
@@ -66,20 +62,21 @@ public class EntityProcessorCross implements IEntityProcessor {
         double maxZ = z + (double) size + 1.0D;
 
         List<Entity> list = level.getEntities(allowSelfDamage ? null : explosion.exploder, new AABB(minX, minY, minZ, maxX, maxY, maxZ));
-        //? if forge {
-        ForgeEventFactory.onExplosionDetonate(level, explosion.compat, list, size);
-        //?} elif neoforge {
-        /*net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(level, explosion.compat, list, size);
-        *///?}
+        com.hbm_m.platform.LevelHooks.fireExplosionDetonate(level, explosion.compat, list, size);
 
         Vec3[] nodes;
 
         if (this.nodeDist > 0) {
+            // Six directions plus the centre. The loop ran to 7 over from3DDataValue, which wraps
+            // modulo 6, so node 6 was a second DOWN and the centre node was missing entirely - an
+            // entity with clear line of sight to the blast got density 0 when all six offset nodes
+            // sat inside blocks.
             nodes = new Vec3[7];
-            for (int i = 0; i < 7; i++) {
+            for (int i = 0; i < 6; i++) {
                 Direction dir = Direction.from3DDataValue(i);
                 nodes[i] = new Vec3(x + dir.getStepX() * nodeDist, y + dir.getStepY() * nodeDist, z + dir.getStepZ() * nodeDist);
             }
+            nodes[6] = new Vec3(x, y, z);
         } else {
             nodes = new Vec3[1];
             nodes[0] = new Vec3(x, y, z);
@@ -130,7 +127,7 @@ public class EntityProcessorCross implements IEntityProcessor {
 
                         double enchKnockback;
                         if (entity instanceof LivingEntity livingEntity) {
-                            enchKnockback = PlatformHooks.getExplosionKnockbackAfterDampener(livingEntity, knockback);
+                            enchKnockback = MobHooks.getExplosionKnockbackAfterDampener(livingEntity, knockback);
                         } else {
                             enchKnockback = knockback;
                         }

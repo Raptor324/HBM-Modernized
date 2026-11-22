@@ -74,7 +74,7 @@ public class DecoLootBlock extends BaseEntityBlock {
     *///?}
 
     private static InteractionResult takeLoot(BlockState state, Level level, BlockPos pos, Player player) {
-        if (player.isSecondaryUseActive()) return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS; // Original: Client true, Server geschlichen false
+        if (player.isSecondaryUseActive()) return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS;
         if (!level.isClientSide) {
             level.removeBlock(pos, false);
         }
@@ -87,7 +87,6 @@ public class DecoLootBlock extends BaseEntityBlock {
             for (DecoLootBlockEntity.LootEntry entry : loot.getItems()) {
                 if (entry.stack().isEmpty()) continue;
                 ItemStack stack = entry.stack().copy();
-                // Original breakBlock: alle Gegenstaende fallen in der Blockmitte am Boden heraus
                 ItemEntity entity = new ItemEntity(level, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, stack);
                 level.addFreshEntity(entity);
             }

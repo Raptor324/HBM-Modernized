@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.compat.create;
 
 import net.minecraft.world.level.Level;
@@ -41,4 +40,3 @@ public final class CreateLevelAccess {
         }
     }
 }
-//?}

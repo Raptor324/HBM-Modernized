@@ -112,11 +112,7 @@ public class ParticleAcceleratorRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<ParticleAcceleratorRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "particle_accelerator");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "particle_accelerator");
-        //?}
 
         @Override
         public ParticleAcceleratorRecipe readJson(ResourceLocation recipeId, JsonObject json) {

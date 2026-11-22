@@ -15,20 +15,18 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1-Port von {@code GUIFusionKlystron} (1.7.10). Das Textfeld schickt bei jeder Aenderung den
  * neuen Zielwert an den Server - genau wie das {@code NBTControlPacket} des Originals.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineFusionKlystron extends GuiInfoScreen<MachineFusionKlystronMenu> {
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
-            RefStrings.MODID, "textures/gui/reactors/gui_fusion_klystron.png");
-    *///?} else {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/reactors/gui_fusion_klystron.png");
-    //?}
 
     private EditBox field;
 

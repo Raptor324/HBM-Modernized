@@ -10,14 +10,15 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Slot-Koordinaten (176x166 Textur) 1:1 aus {@code ContainerFurnaceIron} (1.7.10 Original)
- *  uebernommen: Input (53,17), Brennstoff (53,53)+(71,53), Output (125,35), Upgrade (17,35). */
+ *  uebernommen: Input (53,17), Brennstoff (53,53)+(71,53), Output (125,35), Upgrade (17,35)
+ *  (Upgrade-Slot vom {@link MachineFurnaceIronBlockEntity} verwaltet). */
 public class MachineFurnaceIronMenu extends AbstractContainerMenu {
 
     public final MachineFurnaceIronBlockEntity blockEntity;
@@ -76,7 +77,7 @@ public class MachineFurnaceIronMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineFurnaceIronBlockEntity be) {
             return be;
         }
-        throw new IllegalStateException("No MachineFurnaceIronBlockEntity found at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineFurnaceIronBlockEntity found at " + pos);
     }
 
     public int getLitTime() { return data.get(DATA_LIT_TIME); }
@@ -84,7 +85,8 @@ public class MachineFurnaceIronMenu extends AbstractContainerMenu {
     public int getProgress() { return data.get(DATA_PROGRESS); }
 
     public int getBurnProgressScaled(int scale) {
-        return getLitTime() * scale / Math.max(getLitDuration(), 1);
+        int duration = getLitDuration();
+        return duration > 0 ? getLitTime() * scale / duration : 0;
     }
 
     public int getProcessingTime() { return data.get(3); }
@@ -101,8 +103,7 @@ public class MachineFurnaceIronMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.FURNACE_IRON.get());
     }
 
     @Override
@@ -118,8 +119,16 @@ public class MachineFurnaceIronMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (!this.moveItemStackTo(slotStack, 0, 5, false)) { // Original: mergeItemStack(0, 5)
-                return ItemStack.EMPTY;
+            } else {
+                if (MachineFurnaceIronBlockEntity.isFuel(slotStack)) {
+                    if (!this.moveItemStackTo(slotStack, SLOT_FUEL_1, SLOT_FUEL_2 + 1, false)) {
+                        if (!this.moveItemStackTo(slotStack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
+                            return ItemStack.EMPTY;
+                        }
+                    }
+                } else if (!this.moveItemStackTo(slotStack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
+                    return ItemStack.EMPTY;
+                }
             }
 
             if (slotStack.isEmpty()) {

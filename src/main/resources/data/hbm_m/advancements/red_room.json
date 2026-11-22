@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:key_red"
+      "id": "hbm_m:key_red"
     },
     "title": {
       "translate": "advancements.hbm_m.red_room.title"

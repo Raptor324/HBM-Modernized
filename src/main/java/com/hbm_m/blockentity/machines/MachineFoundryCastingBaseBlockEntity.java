@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code TileEntityFoundryCastingBase}: Form bzw. Becken mit Formplatz (0) und Gussplatz (1). Ist die Form voll und
@@ -120,7 +121,7 @@ public abstract class MachineFoundryCastingBaseBlockEntity extends MachineFoundr
             CompoundTag nbt1 = list.getCompound(i);
             byte b0 = nbt1.getByte("slot");
             if (b0 >= 0 && b0 < slots.length) {
-                slots[b0] = PlatformHooks.itemStackOf(nbt1, registries);
+                slots[b0] = StackNbt.parse(nbt1, registries);
             }
         }
     }
@@ -134,7 +135,7 @@ public abstract class MachineFoundryCastingBaseBlockEntity extends MachineFoundr
             if (!slots[i].isEmpty()) {
                 CompoundTag nbt1 = new CompoundTag();
                 nbt1.putByte("slot", (byte) i);
-                PlatformHooks.saveItemStack(slots[i], nbt1, registries);
+                StackNbt.save(slots[i], nbt1, registries);
                 list.add(nbt1);
             }
         }
@@ -179,14 +180,14 @@ public abstract class MachineFoundryCastingBaseBlockEntity extends MachineFoundr
         outputHandler = null;
     }
     //?} elif neoforge {
-    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> outputHandler;
+    /*private com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> outputHandler;
 
     /^* Original {@code ISidedInventory}: von allen Seiten nur Platz 1 entnehmbar, nichts einfuegbar. ^/
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
             if (outputHandler == null) {
-                outputHandler = com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+                outputHandler = com.hbm_m.platform.LazyCap.of(() -> new net.minecraftforge.items.IItemHandler() {
                     @Override public int getSlots() { return 1; }
                     @Override public @NotNull ItemStack getStackInSlot(int slot) { return slots[1]; }
                     @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) { return stack; }

@@ -4,7 +4,6 @@ import com.hbm_m.blockentity.machines.MachineDerrickBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -14,6 +13,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineDerrickMenu extends AbstractContainerMenu {
 
@@ -30,7 +30,7 @@ public class MachineDerrickMenu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         var container = new ModItemStackHandlerContainer(
-                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(8),
+                blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(8),
                 blockEntity != null ? blockEntity::setChanged : null);
 
         // Original ContainerMachineOilWell: Positionen 1:1
@@ -78,7 +78,7 @@ public class MachineDerrickMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineDerrickBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":derrick_menu");
+        throw new MenuBlockEntityMissingException("No MachineDerrickBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":derrick_menu");
     }
 
     public MachineDerrickBlockEntity getBlockEntity() {
@@ -87,8 +87,7 @@ public class MachineDerrickMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override
@@ -113,8 +112,10 @@ public class MachineDerrickMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
+                // Slots 2 and 4 are take-only outputs and must stay out of the insert ranges: vanilla
+                // moveItemStackTo skips mayPlace when it merges onto an existing stack.
                 if (!this.moveItemStackTo(stack, 0, 2, false)) {
-                    if (!this.moveItemStackTo(stack, 3, 5, false)) {
+                    if (!this.moveItemStackTo(stack, 3, 4, false)) {
                         return ItemStack.EMPTY;
                     }
                 }

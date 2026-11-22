@@ -13,11 +13,11 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Menue des RTG-Generators. Die Steckplatzkoordinaten sind 1:1 aus
@@ -180,6 +180,6 @@ public class MachineRTGMenu extends AbstractContainerMenu implements ILongEnergy
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.MACHINE_RTG.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.MACHINE_RTG.get());
     }
 }

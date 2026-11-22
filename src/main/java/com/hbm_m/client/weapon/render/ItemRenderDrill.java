@@ -1,5 +1,8 @@
 package com.hbm_m.client.weapon.render;
 
+import com.hbm_m.client.render.weapon.WeaponJointRig;
+import com.hbm_m.client.render.weapon.WeaponKinematics;
+import com.hbm_m.client.render.weapon.WeaponRenderRegistry;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.hbm_m.client.weapon.WeaponResources;
@@ -71,56 +74,27 @@ public class ItemRenderDrill extends ItemRenderWeaponBase {
 		double rot = spin[0];
 		double rot2 = rot * 5;
 
-		GunGL.pushMatrix();
-		GunGL.translate(0, Math.sin(rot2 * Math.PI / 180) * 0.125 - 0.125, 0);
-		GunGL.renderPart(WeaponResources.drill, "Piston1");
-		GunGL.popMatrix();
-
-		GunGL.pushMatrix();
-		GunGL.translate(0, Math.sin(rot2 * Math.PI / 180 + Math.PI * 2D / 3D) * 0.125 - 0.125, 0);
-		GunGL.renderPart(WeaponResources.drill, "Piston2");
-		GunGL.popMatrix();
-
-		GunGL.pushMatrix();
-		GunGL.translate(0, Math.sin(rot2 * Math.PI / 180 + Math.PI * 4D / 3D) * 0.125 - 0.125, 0);
-		GunGL.renderPart(WeaponResources.drill, "Piston3");
-		GunGL.popMatrix();
-
-		GunGL.pushMatrix();
-		GunGL.rotate(rot, 0, 0, -1);
-		GunGL.renderPart(WeaponResources.drill, "DrillBack");
-		GunGL.popMatrix();
-
-		GunGL.pushMatrix();
-		GunGL.rotate(rot, 0, 0, 1);
-		GunGL.renderPart(WeaponResources.drill, "DrillFront");
-		GunGL.popMatrix();
+		WeaponJointRig rig = WeaponRenderRegistry.getRig(WeaponResources.drill);
+		WeaponKinematics.renderPartWithVector(rig, "Piston1", GunGL.pose(), 0f, (float) (Math.sin(rot2 * Math.PI / 180) * 0.125 - 0.125), 0f);
+		WeaponKinematics.renderPartWithVector(rig, "Piston2", GunGL.pose(), 0f, (float) (Math.sin(rot2 * Math.PI / 180 + Math.PI * 2D / 3D) * 0.125 - 0.125), 0f);
+		WeaponKinematics.renderPartWithVector(rig, "Piston3", GunGL.pose(), 0f, (float) (Math.sin(rot2 * Math.PI / 180 + Math.PI * 4D / 3D) * 0.125 - 0.125), 0f);
+		WeaponKinematics.renderPartWithJoint(rig, "DrillBack", GunGL.pose(), (float) rot);
+		WeaponKinematics.renderPartWithJoint(rig, "DrillFront", GunGL.pose(), (float) rot);
 	}
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 2.25D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(1, -2, 6);
+		setupThirdPerson(stack, 2.25D, 1, -2, 6);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 1.25D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(-0.5, 0, 0);
+		setupInv(stack, 1.25D, -0.5, 0, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -8.75D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, 0, 0);
+		setupModTable(stack, -8.75D, 0, 0, 0);
 	}
 
 	@Override

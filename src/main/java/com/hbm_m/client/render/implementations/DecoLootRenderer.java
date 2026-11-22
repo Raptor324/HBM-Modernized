@@ -23,13 +23,13 @@ import com.hbm_m.powerarmor.ArmorTrenchmaster;
 //? if forge {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 //?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 *///?}
 /**
- * 1:1 {@code RenderLoot}: jeder Gegenstand der Lootkiste an seiner gespeicherten Stelle (ab Blockecke). Sonderfaelle
- * wie im Original: Mini-Nuke-Munition (NUKE_STANDARD..NUKE_HIVE) als Mini-Nuke-Modell, die Maresleg als Waffenmodell,
- * Trenchmaster-/NCR-Powerruestung als Ruestungsmodell auf unsichtbarer Figur; alles andere flach liegend
- * ({@code renderItemIn2D}). GL-Zustaende: Mischung -> translucent, Lichtkarte 240 -> volle Helligkeit.
+ * 1:1 {@code RenderLoot}: each item in the loot chest rendered at its stored position (relative to block corner). Special cases
+ * match original: mini nuke ammo (NUKE_STANDARD..NUKE_HIVE) as mini nuke model, maresleg as weapon model,
+ * Trenchmaster / NCR Power Armor as armor model on invisible stand; all other items rendered flat
+ * ({@code renderItemIn2D}). GL states: blend -> translucent, lightmap 240 -> fullbright.
  */
 public class DecoLootRenderer implements HbmBerBounds<DecoLootBlockEntity> {
 
@@ -47,6 +47,10 @@ public class DecoLootRenderer implements HbmBerBounds<DecoLootBlockEntity> {
     public static final ResourceLocation NCRPA_CHEST = rl("textures/armor/ncrpa_chest.png");
     public static final ResourceLocation NCRPA_ARM = rl("textures/armor/ncrpa_arm.png");
     public static final ResourceLocation NCRPA_LEG = rl("textures/armor/ncrpa_leg.png");
+
+    // Wrap weapon ResourceLocations in SimpleObjModel locally.
+    private static final com.hbm_m.client.render.SimpleObjModel MARESLEG = new com.hbm_m.client.render.SimpleObjModel(WeaponResources.maresleg);
+    private static final com.hbm_m.client.render.SimpleObjModel ARMOR_NCR = new com.hbm_m.client.render.SimpleObjModel(WeaponResources.armor_ncr);
 
     public DecoLootRenderer(BlockEntityRendererProvider.Context context) {}
 
@@ -76,7 +80,7 @@ public class DecoLootRenderer implements HbmBerBounds<DecoLootBlockEntity> {
         }
     }
 
-    /** Original: ammo_standard mit Meta zwischen NUKE_STANDARD und NUKE_HIVE (je Meta eine eigene ID im Port). */
+    /** Original: ammo_standard with metadata between NUKE_STANDARD and NUKE_HIVE (each meta has its own ID in the port). */
     private static boolean isMiniNuke(ItemStack stack) {
         for (int i = EnumAmmo.NUKE_STANDARD.ordinal(); i <= EnumAmmo.NUKE_HIVE.ordinal(); i++) {
             if (stack.getItem() == WeaponItems.ammo(EnumAmmo.values()[i])) return true;
@@ -131,32 +135,32 @@ public class DecoLootRenderer implements HbmBerBounds<DecoLootBlockEntity> {
         armorBase(pose);
         Item item = stack.getItem();
         if (item == ModItems.NCRPA_HELMET.get()) {
-            WeaponResources.armor_ncr.renderPart("Helmet", pose, buf.getBuffer(RenderType.entityTranslucent(NCRPA_HELMET)), light);
-            WeaponResources.armor_ncr.renderPart("Eyes", pose, buf.getBuffer(RenderType.entityCutout(NCRPA_HELMET)), TrinketRenderer.FULLBRIGHT);
+            ARMOR_NCR.renderPart("Helmet", pose, buf.getBuffer(RenderType.entityTranslucent(NCRPA_HELMET)), light);
+            ARMOR_NCR.renderPart("Eyes", pose, buf.getBuffer(RenderType.entityCutout(NCRPA_HELMET)), TrinketRenderer.FULLBRIGHT);
         }
         if (item == ModItems.NCRPA_PLATE.get()) {
-            WeaponResources.armor_ncr.renderPart("Chest", pose, buf.getBuffer(RenderType.entityCutout(NCRPA_CHEST)), light);
+            ARMOR_NCR.renderPart("Chest", pose, buf.getBuffer(RenderType.entityCutout(NCRPA_CHEST)), light);
             pose.pushPose();
             pose.mulPose(Axis.XP.rotationDegrees(-3));
             var vc = buf.getBuffer(RenderType.entityCutout(NCRPA_ARM));
-            WeaponResources.armor_ncr.renderPart("LeftArm", pose, vc, light);
-            WeaponResources.armor_ncr.renderPart("RightArm", pose, vc, light);
+            ARMOR_NCR.renderPart("LeftArm", pose, vc, light);
+            ARMOR_NCR.renderPart("RightArm", pose, vc, light);
             pose.popPose();
         }
         if (item == ModItems.NCRPA_LEGS.get()) {
             var vc = buf.getBuffer(RenderType.entityCutout(NCRPA_LEG));
-            WeaponResources.armor_ncr.renderPart("LeftLeg", pose, vc, light);
+            ARMOR_NCR.renderPart("LeftLeg", pose, vc, light);
             pose.pushPose();
             pose.mulPose(Axis.XP.rotationDegrees(-0.1F));
-            WeaponResources.armor_ncr.renderPart("RightLeg", pose, vc, light);
+            ARMOR_NCR.renderPart("RightLeg", pose, vc, light);
             pose.popPose();
         }
         if (item == ModItems.NCRPA_BOOTS.get()) {
             var vc = buf.getBuffer(RenderType.entityCutout(NCRPA_LEG));
-            WeaponResources.armor_ncr.renderPart("LeftBoot", pose, vc, light);
+            ARMOR_NCR.renderPart("LeftBoot", pose, vc, light);
             pose.pushPose();
             pose.mulPose(Axis.XP.rotationDegrees(-0.1F));
-            WeaponResources.armor_ncr.renderPart("RightBoot", pose, vc, light);
+            ARMOR_NCR.renderPart("RightBoot", pose, vc, light);
             pose.popPose();
         }
         pose.popPose();
@@ -174,14 +178,14 @@ public class DecoLootRenderer implements HbmBerBounds<DecoLootBlockEntity> {
         pose.mulPose(Axis.YP.rotationDegrees(25));
         pose.mulPose(Axis.XP.rotationDegrees(90));
         pose.mulPose(Axis.YP.rotationDegrees(90));
-        WeaponResources.maresleg.renderAll(pose, buf.getBuffer(RenderType.entityCutout(WeaponResources.maresleg_tex)), light);
+        MARESLEG.renderAll(pose, buf.getBuffer(RenderType.entityCutout(WeaponResources.maresleg_tex)), light);
     }
 
     private static void renderStandardItem(ItemStack stack, PoseStack pose, MultiBufferSource buf, int light) {
         pose.translate(0.25, 0, 0.25);
         pose.scale(0.5F, 0.5F, 0.5F);
         pose.mulPose(Axis.XP.rotationDegrees(90));
-        // renderItemIn2D mit allen Renderdurchgaengen und Faerbung: flaches Itemmodell (0,0)-(1,1), 1/16 dick
+        // renderItemIn2D with all render passes and tinting: flat item model (0,0)-(1,1), 1/16 thick
         TrinketRenderer.renderItem2D(pose, buf, stack, light);
     }
 }

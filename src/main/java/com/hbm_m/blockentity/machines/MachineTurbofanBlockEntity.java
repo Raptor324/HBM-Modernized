@@ -1,35 +1,40 @@
 package com.hbm_m.blockentity.machines;
 
-import com.hbm_m.platform.PlatformHooks;
-
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
-import com.hbm_m.block.machines.DummyableMachineBlock;
+import com.hbm_m.block.machines.MachineTurbofanBlock;
+import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.blockentity.MachinePollutingBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.compat.sable.TurbofanVehiclePhysics;
 import com.hbm_m.damagesource.ModDamageSources;
+import com.hbm_m.interfaces.IItemFluidIdentifier;
+import com.hbm_m.interfaces.TurbofanAirflowFrame;
 import com.hbm_m.inventory.UpgradeManager;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.FT_Combustible;
 import com.hbm_m.inventory.fluid.trait.FT_Combustible.FuelGrade;
-import com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType;
-import com.hbm_m.inventory.menu.MachineTurbofanMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.particle.helper.IParticleCreator;
+import com.hbm_m.sound.ClientSoundBootstrap;
+import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -41,332 +46,733 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
+import com.hbm_m.platform.LevelHooks;
 
 /**
- * 1:1 {@code TileEntityMachineTurbofan}: Strahltriebwerk fuer AERO-Treibstoff, 1 mB/t (+1 je Nachbrennerstufe, die
- * Flammenpony setzt 100), Leistung {@code burnValue * menge * (1 + min(ab/3, 4))}. Redstone an einem der vier
- * Anschluesse haelt es an. Hinten ein Abgasstrahl (19,5 Bloecke, mit Nachbrenner brennend + Feuerpartikel), vorne der
- * Ansog (8,5 Bloecke) und die Schaufelebene, die alles zerlegt und daraus Blut in einen eigenen Tank macht. Rotor und
- * Laufgeraeusch folgen einem Schwung von 0-100; der lokale Spieler wird clientseitig mitgezogen.
+ * Турбовентилятор - 1:1-порт {@code TileEntityMachineTurbofan} (1.7.10).
+ * Сжигает топливо AERO-грейда (керосин): {@code amountToBurn = min(1 + afterburner, fill)} mB,
+ * {@code output = burnValue * amountToBurn * (1 + min(afterburner/3, 4))},
+ * {@code burnValue = combustionEnergy / 1000}. Буфер 1 000 000 HE (оригинальный maxPower).
+ * <p>
+ * Красный камень останавливает горение по внешним соседям четырёх портов (оригинальный
+ * {@code getConPos()}). Behlтер-слоты: идентификатор жидкости задаёт тип бака
+ * ({@code tank.setType}), контейнер в слоте 0 сливается в бак, пустой уходит в слот 1
+ * ({@code tank.loadTank(0, 1)}). Кровь: 50 mB за существо, убитое лопастями; гиблетсы и
+ * звук сломанной двери при смерти. Форсаж-частицы - gasfire (scale 8/4), при форсаже >90
+ * - звук перегрузки 1/30 тиков. Дым - заглушка {@link #emitBurnPollution()} (TODO, раз в 20 тиков).
+ * <p>
+ * Анимация ротора: поля spin/lastSpin/momentum продвигаются ТОЛЬКО на клиенте
+ * (по флагу wasOn), идемпотентный тик безопасен и для BER. Толчок/застревание локального
+ * игрока повторяются на клиенте, как в оригинале. На движущихся конструкциях зоны
+ * эффектов пересчитываются через {@link TurbofanAirflowFrame} (compat-mixin, без него -
+ * мировые координаты). См. также {@link TurbofanVehiclePhysics} - общие константы тяги.
  */
-public class MachineTurbofanBlockEntity extends com.hbm_m.blockentity.MachinePollutingBlockEntity
-        implements IFluidStandardTransceiverMK2, com.hbm_m.interfaces.IUpgradeInfoProvider {
+public class MachineTurbofanBlockEntity extends MachinePollutingBlockEntity
+        implements com.hbm_m.api.fluids.IFluidStandardTransceiverMK2, com.hbm_m.interfaces.IUpgradeInfoProvider {
 
-    /** Original: 0 Kanister rein, 1 Kanister raus, 2 Aufwertung, 3 Batterie, 4 Fluidkennung. */
     public static final int SLOT_FUEL_CONTAINER = 0;
     public static final int SLOT_EMPTY_CONTAINER = 1;
-    public static final int SLOT_UPGRADE = 2;
-    public static final int SLOT_BATTERY = 3;
-    public static final int SLOT_FLUID_IDENTIFIER = 4;
+    public static final int SLOT_BATTERY = 2;
+    public static final int SLOT_FLUID_IDENTIFIER = 3;
+    /**
+     * Слот форсажного улучшения. В оригинале это слот 2; здесь висит в конце, чтобы не
+     * менять уже сохранённые инвентари по прежним индексам.
+     */
+    public static final int SLOT_UPGRADE = 4;
+    private static final int INVENTORY_SIZE = 5;
 
-    public static final long maxPower = 1_000_000;
+    private static final long MAX_POWER = 1_000_000L;
+    private static final int TANK_CAPACITY_MB = 24_000;
+    private static final int BASE_BURN_MB_PER_TICK = 1;
+    /** Оригинал: {@code blood = new FluidTank(Fluids.BLOOD, 24000)}. */
+    private static final int BLOOD_CAPACITY_MB = 24_000;
+    /** Оригинал: {@code blood.setFill(blood.getFill() + 50)} за каждое разобранное существо. */
+    private static final int BLOOD_PER_KILL_MB = 50;
+    /** Базовая дальность слышимости цикла (запас над слышимыми ~128 при attenuation 64). */
+    public static final double SOUND_RANGE_BASE = 192.0D;
+    /** Прибавка дальности звука и зон воздействия за уровень форсажа (клэмп 3, как сам форсаж). */
+    public static final double SOUND_RANGE_PER_AFTERBURN_LEVEL = 64.0D;
+    /**
+     * Зоны выхлопа/забора и пламя форсажа: +20% НАРУЖНОЙ дальности за уровень форсажа.
+     * Внутренние границы зон прижаты к машине (лопасти физически не двигаются) - иначе
+     * перед лопастями возникает безопасный карман.
+     */
+    public static final double ZONE_REACH_PER_AFTERBURN_LEVEL = 0.20D;
 
-    public final FluidTank tank = new FluidTank(ModFluids.KEROSENE.getSource(), 24000);
-    public final FluidTank blood = new FluidTank(ModFluids.BLOOD.getSource(), 24000);
+    private final FluidTank tank = new FluidTank(ModFluids.KEROSENE.getSource(), TANK_CAPACITY_MB);
+    private final FluidTank blood = new FluidTank(ModFluids.BLOOD.getSource(), BLOOD_CAPACITY_MB);
 
-    public int afterburner;
-    public boolean wasOn;
-    public boolean showBlood = false;
-    protected int output;
-    protected int consumption;
+    private final UpgradeManager upgradeManager = new UpgradeManager();
+    /** Оригинал: {@code afterburner} - уровень форсажа, 100 с Фламенпони. */
+    private int afterburner = 0;
+    /** Оригинал: {@code showBlood} - включает датчик крови в GUI. */
+    private boolean showBlood = false;
+    private boolean wasOn = false;
+    private int output = 0;
+    private int consumption = 0;
 
-    public float spin;
-    public float lastSpin;
-    public int momentum = 0;
+    // Клиентская анимация ротора (в NBT не пишется - восстанавливается с нуля, как в оригинале).
+    private float spin;
+    private float lastSpin;
+    private int momentum;
+    private long lastClientAnimationTick = Long.MIN_VALUE;
 
-    public final UpgradeManager upgradeManager = new UpgradeManager();
-
-    private static final Map<UpgradeType, Integer> VALID_UPGRADES = new EnumMap<>(UpgradeType.class);
-    static {
-        VALID_UPGRADES.put(UpgradeType.AFTERBURN, 3);
-    }
+    /**
+     * Клиентский накал сопла 0..1 (в NBT не пишется): НЕ накопление от времени работы,
+     * а плавное приближение к цели из синкнутой мощности ({@link #output} - она кодирует
+     * и калорийность топлива, и уровень форсажа). Рендер сопла читает его для тинта/света.
+     */
+    private float glowHeat;
+    private float lastGlowHeat;
+    /** База накала: керосин без форсажа (burnValue 3850 * 1 mB) свечения не даёт. */
+    private static final float GLOW_OUTPUT_BASE = 4000.0F;
+    /** Верхняя реперная точка лог-шкалы: ~реформатор на полном форсаже даёт 1.0. */
+    private static final float GLOW_OUTPUT_MAX = 50_000.0F;
+    /** Скорость прогрева/остывания (доли шкалы за тик): разогрев быстрее остывания. */
+    private static final float GLOW_HEAT_RATE_UP = 1.0F / 40.0F;
+    private static final float GLOW_HEAT_RATE_DOWN = 1.0F / 70.0F;
 
     public MachineTurbofanBlockEntity(BlockPos pos, BlockState state) {
-        // Original: super(5, 150) - 150 mB Rauchpuffer je Sorte
-        super(ModBlockEntities.TURBOFAN_BE.get(), pos, state, 5, maxPower, 0L, maxPower, 150);
+        // Оригинал: super(5, 150) - 5 слотов и 150 mB дымового буфера на сорт.
+        super(ModBlockEntities.TURBOFAN_BE.get(), pos, state, INVENTORY_SIZE, MAX_POWER, 0L, 80_000L, 150);
     }
 
-    private Direction facing() {
-        BlockState state = getBlockState();
-        return state.hasProperty(DummyableMachineBlock.FACING) ? state.getValue(DummyableMachineBlock.FACING) : Direction.NORTH;
-    }
-
-    /** Anschluss samt Richtung (Original {@code DirPos}). */
-    private record DirPos(BlockPos pos, Direction dir) { }
-
-    protected DirPos[] getConPos() {
-        // Original: dir = orientation(meta - 10).getRotation(UP), rot = dir.getRotation(DOWN)
-        Direction dir = facing().getClockWise();
-        Direction rot = dir.getCounterClockWise();
-        BlockPos p = worldPosition;
-
-        return new DirPos[] {
-                new DirPos(p.relative(rot, 2), rot),
-                new DirPos(p.relative(rot, 2).relative(dir, -1), rot),
-                new DirPos(p.relative(rot, -2), rot.getOpposite()),
-                new DirPos(p.relative(rot, -2).relative(dir, -1), rot.getOpposite())
-        };
-    }
+    // ═══════════════════════════ Тик ═══════════════════════════
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineTurbofanBlockEntity be) {
-        if (level instanceof ServerLevel server) be.serverTick(server, pos);
-        else be.clientTick(level, pos);
+        if (level.isClientSide()) {
+            be.clientTick();
+            return;
+        }
+        be.serverTick(level, pos, state);
     }
 
-    private ItemStack[] slotArray() {
-        ItemStack[] arr = new ItemStack[5];
-        for (int i = 0; i < 5; i++) arr[i] = inventory.getStackInSlot(i);
-        return arr;
+    private void serverTick(Level level, BlockPos pos, BlockState state) {
+        ensureNetworkInitialized();
+
+        // Behlтер-слоты: тип бака по идентификатору, слив контейнера слот 0 -> бак, пустой -> слот 1.
+        ItemStack[] slots = getSlotsArray();
+        boolean slotsChanged = false;
+        if (tank.setType(SLOT_FLUID_IDENTIFIER, slots)) slotsChanged = true;
+        if (tank.loadTank(SLOT_FUEL_CONTAINER, SLOT_EMPTY_CONTAINER, slots)) slotsChanged = true;
+        if (slotsChanged) {
+            applySlotsArray(slots);
+            // Оба метода выше срабатывают только на изменение (edge-triggered), так что
+            // лишних синков нет. Без этого при простаивающей турбине смена типа/заливка
+            // бочки не доходили до клиента: GUI показывал протухший бак до первого
+            // синка горения - "бочка пропала, бак пуст, турбина не стартует".
+            setChanged();
+            sendUpdateToClient();
+        }
+
+        // Подписка бака на трубу за внешней гранью каждого порта; кровь - только НА ВЫДАЧУ
+        // (оригинальный трансивер: getReceivingTanks = только топливо, getSendingTanks = кровь),
+        // так что труба забирает её сама, без типизации бака идентификатором.
+        // trySubscribe — раз в 20 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
+        // его вторая ветка — прямой пуш крови в соседний приёмник, гейт делит пропускную
+        // способность выдачи. Fill-проверка пропускает зонд, пока бак крови пуст.
+        boolean subscribeDue = level.getGameTime() % 20 == 0;
+        for (PortInfo port : getPorts()) {
+            if (blood.getFill() > 0) tryProvide(blood, level, port.target(), port.outward());
+            if (subscribeDue) trySubscribe(tank, level, port.target(), port.outward());
+        }
+
+        output = 0;
+        consumption = 0;
+        wasOn = false;
+        chargeItemInSlot(SLOT_BATTERY);
+        updateAfterburner();
+
+        Fluid fuel = tank.getStoredFluid();
+        FT_Combustible combustible = FluidType.getTrait(fuel, FT_Combustible.class);
+
+        // Оригинал: блокировка по красному камню на четырёх точках подключения.
+        boolean redstone = hasPortRedstone(level);
+
+        int amount = BASE_BURN_MB_PER_TICK + afterburner;
+        int amountToBurn = Math.min(amount, tank.getFill());
+        long burnValue = 0L;
+        // Оригинал: burnValue вычисляется ВНУТРИ проверки красного камня, поэтому глушение
+        // выключает сразу всё - горение, эффекты и зоны (wasOn=false, ротор и звук докручиваются).
+        if (!redstone && combustible != null && combustible.getGrade() == FuelGrade.AERO) {
+            burnValue = combustible.getCombustionEnergy() / 1_000L;
+        }
+
+        if (!redstone && burnValue > 0 && amountToBurn > 0) {
+            wasOn = true;
+            tank.drainMb(amountToBurn);
+            // Оригинал: output = burnValue * amountToBurn * (1 + min(afterburner / 3, 4)).
+            output = (int) (burnValue * amountToBurn * (1 + Math.min(afterburner / 3D, 4)));
+            energy += output;
+            consumption = amountToBurn;
+
+            // Оригинал: раз в 20 тиков pollute(BURN, amountToBurn * 5) - аргумент amount
+            // в оригинале игнорируется, дым считается от карты FT_Polluting (см. заглушку).
+            if (level.getGameTime() % 20 == 0) {
+                emitBurnPollution();
+            }
+        }
+
+        sendSmokeAllDirections();
+
+        // Оригинал (TileEntityMachineTurbofan.updateEntity, серверная ветка): зоны
+        // выхлопа/забора/лопастей, толчок 0.2/тик и частицы форсажа выполняются
+        // КАЖДЫЙ ТИК горения - без прореживания. Тот же ритм здесь.
+        if (burnValue > 0 && amountToBurn > 0) {
+            runCombustionEffects(level, pos, state);
+        }
+
+        // Зажим - последним: батарея и сеть сначала разбирают избыток.
+        if (energy > MAX_POWER) energy = MAX_POWER;
+        if (energy < 0L) energy = 0L;
+
+        // Оригинал синкается безусловно каждый тик; здесь - по подписи отрисовываемого
+        // состояния (энергия, мощность/расход, бак, кровь, форсаж, wasOn/showBlood) —
+        // при горении подпись меняется каждый тик (энергия/бак), при глушении шлётся
+        // ровно один переходный пакет (wasOn в подписи), плюс heartbeat раз в 20 тиков.
+        syncIfChangedOrEvery(syncEnergyBucket(), syncStateBucket(), 20);
     }
 
-    private void applySlotArray(ItemStack[] arr) {
-        for (int i = 0; i < 5; i++) inventory.setStackInSlot(i, arr[i] == null ? ItemStack.EMPTY : arr[i]);
+    /** lo-часть подписи: энергия + мощность/расход (меняются каждый тик горения). */
+    private long syncEnergyBucket() {
+        return (energy * 31L + output) * 31L + consumption;
     }
 
-    private void serverTick(ServerLevel world, BlockPos pos) {
+    /** hi-часть подписи: баки, форсаж и флаги wasOn/showBlood. */
+    private long syncStateBucket() {
+        long h = tankFingerprint(tank);
+        h = h * 31L + tankFingerprint(blood);
+        h = h * 31L + afterburner;
+        h = h * 31L + (wasOn ? 1L : 0L) + (showBlood ? 2L : 0L);
+        return h;
+    }
 
-        this.output = 0;
-        this.consumption = 0;
+    private static long tankFingerprint(FluidTank t) {
+        Fluid type = t.getTankType();
+        return (type == null ? 0L : type.hashCode() * 31L) + t.getFill();
+    }
 
-        ItemStack[] slots = slotArray();
-        boolean changed = tank.setType(SLOT_FLUID_IDENTIFIER, slots);
-        changed |= tank.loadTank(SLOT_FUEL_CONTAINER, SLOT_EMPTY_CONTAINER, slots);
-        if (changed) applySlotArray(slots);
-        blood.setTankType(ModFluids.BLOOD.getSource());
+    private void clientTick() {
+        ensureClientAnimationTick();
+        repeatLocalPlayerMotion();
+        // Радиус чуть шире слышимости (attenuation 64 * volume ~2..3 = 128..192), чтобы звук
+        // не пересоздавался на границе; каждый уровень форсажа добавляет дальности.
+        // BE на корабле в plot-координатах - сравниваем в мировых, иначе дистанция
+        // до игрока гигантская и звук молчит/чурнится.
+        ClientSoundBootstrap.updateSound(this, momentum > 0 && isLoopAudible(getSoundRange()),
+                this::createLoopSoundReflect, getSoundRange());
+    }
 
-        this.wasOn = false;
+    /** Дальность слышимости цикла: база + прибавка за уровень форсажа (клиент читает синкнутый afterburner). */
+    public double getSoundRange() {
+        return SOUND_RANGE_BASE + Math.min(afterburner, 3) * SOUND_RANGE_PER_AFTERBURN_LEVEL;
+    }
 
-        upgradeManager.checkSlots(inventory, SLOT_UPGRADE, SLOT_UPGRADE, VALID_UPGRADES);
-        this.afterburner = upgradeManager.getLevel(UpgradeType.AFTERBURN);
+    /** Масштаб дальности зон воздействия (выхлоп/забор/лопасти) и пламени форсажа. */
+    public double getZoneReachScale() {
+        return 1.0D + Math.min(afterburner, 3) * ZONE_REACH_PER_AFTERBURN_LEVEL;
+    }
 
-        if (inventory.getStackInSlot(SLOT_UPGRADE).is(ModItems.FLAME_PONY.get()))
+    /** Клиентская проверка слышимости цикла в мировых координатах (мост Sable - тождество вне кораблей). */
+    private boolean isLoopAudible(double range) {
+        Level level = getLevel();
+        if (level == null) return false;
+        net.minecraft.world.phys.Vec3 world = com.hbm_m.compat.sable.SableCompat.toWorld(level,
+                getBlockPos().getX() + 0.5D, getBlockPos().getY() + 1.5D, getBlockPos().getZ() + 0.5D);
+        for (Player player : level.players()) {
+            if (player.isLocalPlayer()
+                    && player.distanceToSqr(world.x, world.y, world.z) <= range * range) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Оригинал: цикл звука TURBOFAN_LOOP с миксом по momentum/форсажу. Клиентский класс — через звуковой мост. */
+    private Object createLoopSoundReflect() {
+        return com.hbm_m.sound.ClientSoundBootstrap.createTurbofanLoop(this);
+    }
+
+    // ═══════════════════════════ Анимация ротора ═══════════════════════════
+
+    /**
+     * Один тик ротора на игровой тик, идемпотентно: вызывается и тикером блока, и BER
+     * (который может отработать раньше тикера, например на саб-уровне движущейся конструкции).
+     */
+    public void ensureClientAnimationTick() {
+        Level level = getLevel();
+        if (level == null || !level.isClientSide()) return;
+        long gameTime = level.getGameTime();
+        if (lastClientAnimationTick == gameTime) return;
+        if (lastClientAnimationTick == Long.MIN_VALUE || gameTime < lastClientAnimationTick) {
+            lastClientAnimationTick = gameTime - 1L;
+        }
+        // Догоняем чуть-чуть, не до тепловой смерти вселенной.
+        long elapsed = Math.min(gameTime - lastClientAnimationTick, 200L);
+        for (long tick = 0; tick < elapsed; tick++) advanceClientAnimationOneTick();
+        lastClientAnimationTick = gameTime;
+    }
+
+    private void advanceClientAnimationOneTick() {
+        lastSpin = spin;
+        if (wasOn) {
+            if (momentum < 100) momentum++;
+        } else if (momentum > 0) {
+            momentum--;
+        }
+        // Целочисленное деление даёт ротору его фирменную механическую медлительность.
+        spin += momentum / 2;
+        if (spin >= 360.0F) {
+            spin -= 360.0F;
+            lastSpin -= 360.0F;
+        }
+
+        // Накал сопла: монотонное приближение к цели без перелёта (сходимость точная,
+        // чтобы skip-write тинта в рендере не «дрожал» младшими битами).
+        lastGlowHeat = glowHeat;
+        float target = glowTarget();
+        if (glowHeat < target) {
+            glowHeat = Math.min(glowHeat + GLOW_HEAT_RATE_UP, target);
+        } else if (glowHeat > target) {
+            glowHeat = Math.max(glowHeat - GLOW_HEAT_RATE_DOWN, target);
+        }
+        // Смена кванта накала = событие для рендера: статичный Body иначе обновляет
+        // тинт/эмиссию только по TTL-пересбору (лесенка вместо плавного хода).
+        if (Math.round(glowHeat * 64.0F) != Math.round(lastGlowHeat * 64.0F)) {
+            markRenderDirty();
+        }
+    }
+
+    /**
+     * Цель накала из синкнутой мощности: лог-шкала output между базой (без свечения)
+     * и репером ~50k HE/тик. Отдельного бонуса за форсаж нет - он уже внутри output
+     * (количество сжигаемого топлива и множитель), а пламя позади даёт
+     * {@code afterburner > 0} переключение сопла на горячую текстуру.
+     */
+    private float glowTarget() {
+        if (!wasOn || output <= 0) return 0.0F;
+        if (output <= GLOW_OUTPUT_BASE) return 0.0F;
+        float t = (float) (Math.log((double) output / GLOW_OUTPUT_BASE)
+                / Math.log(GLOW_OUTPUT_MAX / (double) GLOW_OUTPUT_BASE));
+        return net.minecraft.util.Mth.clamp(t, 0.0F, 1.0F);
+    }
+
+    public float getSpin() { return spin; }
+    public float getLastSpin() { return lastSpin; }
+    public int getMomentum() { return momentum; }
+    public boolean wasOn() { return wasOn; }
+    public int getOutput() { return output; }
+    public int getConsumption() { return consumption; }
+    public float getGlowHeat() { return glowHeat; }
+    public float getLastGlowHeat() { return lastGlowHeat; }
+
+    // ═══════════════════════════ Порты мультиблока ═══════════════════════════
+
+    private record PortInfo(BlockPos portPos, BlockPos target, Direction outward) { }
+
+    /** Раскладка фиксирована после установки, кэшируем как оригинальный cachedPorts. */
+    private java.util.List<PortInfo> cachedPorts;
+
+    /** Четыре порта: позиция порта в мире, внешняя клетка и наружное направление. */
+    private java.util.List<PortInfo> getPorts() {
+        java.util.List<PortInfo> cached = cachedPorts;
+        if (cached != null) return cached;
+
+        java.util.List<PortInfo> ports = new java.util.ArrayList<>();
+        if (getBlockState().getBlock() instanceof MachineTurbofanBlock block) {
+            MultiblockStructureHelper helper = block.getStructureHelper();
+            Direction facing = getBlockState().getValue(MachineTurbofanBlock.FACING);
+            BlockPos core = getBlockPos();
+            for (BlockPos localPos : helper.getStructureMap().keySet()) {
+                if (!helper.resolvePartRole(localPos, block).canReceiveEnergy()) continue;
+                BlockPos portPos = helper.getRotatedPos(core, localPos, facing);
+                // Ряд порта относительно ядра по оси FACING: передний ряд наружу по FACING,
+                // задний - против (оригинальный getConPos: ±rot). Проекция мирового смещения
+                // на ось FACING; сравнение по мировой Z-компоненте работало только при
+                // ориентации на север.
+                BlockPos offset = portPos.subtract(core);
+                int axisOffset = offset.getX() * facing.getStepX() + offset.getZ() * facing.getStepZ();
+                Direction outward = axisOffset > 0 ? facing : facing.getOpposite();
+                ports.add(new PortInfo(portPos, portPos.relative(outward), outward));
+            }
+        }
+        return cachedPorts = java.util.List.copyOf(ports);
+    }
+
+    /** Оригинал: isBlockIndirectlyGettingPowered на точках подключения (не на ядре). */
+    private boolean hasPortRedstone(Level level) {
+        for (PortInfo port : getPorts()) {
+            if (level.hasNeighborSignal(port.target())) return true;
+        }
+        return false;
+    }
+
+    /** Энергопорты мультиблока для сети (образец - промышленная турбина). */
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (PortInfo port : getPorts()) {
+            ports.add(port.portPos());
+        }
+        return ports.toArray(new BlockPos[0]);
+    }
+
+    // ═══════════════════════════ Форсаж и слоты ═══════════════════════════
+
+    /** Оригинал: getValidUpgrades() -> AFTERBURN -> 3 (UpgradeManagerNT клэмпит сумму тиров). */
+    private static final java.util.Map<ItemMachineUpgrade.UpgradeType, Integer> UPGRADE_CAPS =
+            java.util.Map.of(ItemMachineUpgrade.UpgradeType.AFTERBURN, 3);
+
+    /** Оригинал: уровень AFTERBURN из слота улучшений (клэмп 3); Фламенпони ставит уровень 100. */
+    private static final int FLAME_PONY_AFTERBURNER = 100;
+
+    private void updateAfterburner() {
+        upgradeManager.checkSlots(getInventory(), SLOT_UPGRADE, SLOT_UPGRADE, UPGRADE_CAPS);
+        this.afterburner = upgradeManager.getLevel(ItemMachineUpgrade.UpgradeType.AFTERBURN);
+
+        if (getInventory().getStackInSlot(SLOT_UPGRADE).is(ModItems.FLAME_PONY.get())) {
             this.afterburner = 100;
+        }
+    }
 
-        long burnValue = 0;
-        int amount = 1 + this.afterburner;
-        int amountToBurn = Math.min(amount, this.tank.getFill());
+    // ═══════════════════════════ Зоны воздействия ═══════════════════════════
 
-        boolean redstone = false;
+    /**
+     * Три зоны оригинала вдоль оси забора воздуха ({@code airflow = FACING.getClockWise()},
+     * как в оригинальной развёртке модели). Форсаж ({@link #getZoneReachScale()}) растягивает
+     * зоны наружу, внутренние границы всегда прижаты к машине:
+     * <ul>
+     *   <li><b>Выхлоп</b> (-3.5..-19.5×reach позади): сдувает всё прочь; с форсажом поджигает
+     *       на 5 с и наносит 5 урона.</li>
+     *   <li><b>Забор</b> (+3.5..+8.5×reach впереди): затягивает всё к машине.</li>
+     *   <li><b>Плоскость лопастей</b> (+3.5..+3.75, не масштабируется): 1000 абсолютного урона,
+     *       застревание в паутине, гиблетсы и 50 mB крови за существо.</li>
+     * </ul>
+     */
+    private void runCombustionEffects(Level level, BlockPos pos, BlockState state) {
+        // Модель развёрнута вбок относительно установки - ось эффектов тоже.
+        Direction airflow = state.getValue(MachineTurbofanBlock.FACING).getClockWise();
+        Direction width = airflow.getClockWise();
+        Vec3 airflowPush = localVectorToWorld(
+                Vec3.atLowerCornerOf(airflow.getNormal()).scale(-0.2D));
 
-        for (DirPos con : getConPos()) {
-            if (world.hasNeighborSignal(con.pos)) {
-                redstone = true;
+        // Уровень форсажа растягивает зоны НАРУЖУ (дальше забор и выхлоп), но внутренние
+        // границы прижаты к машине: физические лопасти не двигаются, и безопасного кармана
+        // перед ними возникать не должно (иначе сущность, подошедшая вплотную, выживает).
+        double reach = getZoneReachScale();
+
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel && afterburner > 0) {
+            emitAfterburnerParticles(serverLevel, pos, airflow, width, reach);
+        }
+
+        // Выхлоп позади машины (дальняя граница растягивается с форсажем).
+        AABB exhaustLocal = directionalBounds(pos, airflow, width, -3.5D, -19.5D * reach);
+        // Забор перед машиной (дальняя граница растягивается с форсажем).
+        AABB intakeLocal = directionalBounds(pos, airflow, width, 3.5D, 8.5D * reach);
+        // Плоскость лопастей - всегда вплотную к грани, физические лопасти на месте.
+        AABB bladesLocal = directionalBounds(pos, airflow, width, 3.5D, 3.75D);
+
+        // На движущейся конструкции BE лежит в plot-чанках родительского уровня (за 20 млн),
+        // а сущности - в том же уровне, но в мировых координатах: зоны переводятся мостом
+        // конструкции в мир (вне конструкции мост - тождество, боксы остаются локальными).
+        AABB exhaust = worldBoundsFromLocal(exhaustLocal);
+        AABB intake = worldBoundsFromLocal(intakeLocal);
+        AABB blades = worldBoundsFromLocal(bladesLocal);
+        processAirflowZones(level, exhaust, intake, blades, airflowPush);
+
+        // Flame pony (afterburner = 100): турбина "плюётся" пламенем во все стороны -
+        // поджигает всех в радиусе 3 блоков, кроме огнестойких (иммунитет к огню,
+        // зелье огнестойкости, асбестовая броня - аналог ArmorAsbestos из оригинала).
+        if (afterburner >= FLAME_PONY_AFTERBURNER) {
+            AABB hotZone = new AABB(pos).inflate(3.0D);
+            for (Entity entity : level.getEntitiesOfClass(Entity.class, hotZone)) {
+                if (!entity.isAlive() || isProtectedFromFire(entity)) continue;
+                MobHooks.setSecondsOnFire(entity, 5);
+            }
+        }
+    }
+
+    /** Огнестойкость сущности: иммунитет к огню, зелье или асбестовая броня (хотя бы одна деталь). */
+    private static boolean isProtectedFromFire(Entity entity) {
+        if (entity.fireImmune()) return true;
+        if (entity instanceof LivingEntity living
+                && living.hasEffect(net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE)) {
+            return true;
+        }
+        if (entity instanceof LivingEntity living2) {
+            for (var slot : living2.getArmorSlots()) {
+                if (slot.is(ModItems.ASBESTOS_HELMET.get()) || slot.is(ModItems.ASBESTOS_CHESTPLATE.get())
+                        || slot.is(ModItems.ASBESTOS_LEGGINGS.get()) || slot.is(ModItems.ASBESTOS_BOOTS.get())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Три зоны оригинала: выхлоп (сдув/поджог), забор (затягивание), лопасти (блендер). */
+    private void processAirflowZones(Level level, AABB exhaust, AABB intake, AABB blades, Vec3 airflowPush) {
+        // Сущности и зоны в одном пространстве (локальном или мировом) - прямая проверка;
+        // обратный transformInverse здесь портил бы интерсекцию.
+        for (Entity entity : level.getEntitiesOfClass(Entity.class, exhaust)) {
+            if (!entity.getBoundingBox().intersects(exhaust)) continue;
+            if (afterburner > 0) {
+                MobHooks.setSecondsOnFire(entity, 5);
+                entity.hurt(level.damageSources().onFire(), 5F);
+            }
+            push(entity, airflowPush);
+        }
+
+        for (Entity entity : level.getEntitiesOfClass(Entity.class, intake)) {
+            if (!entity.getBoundingBox().intersects(intake)) continue;
+            push(entity, airflowPush);
+        }
+
+        for (Entity entity : level.getEntitiesOfClass(Entity.class, blades)) {
+            if (!entity.getBoundingBox().intersects(blades)) continue;
+            entity.hurt(ModDamageSources.blender(level), 1000F);
+            entity.makeStuckInBlock(Blocks.COBWEB.defaultBlockState(), new Vec3(0.25D, 0.05D, 0.25D));
+
+            if (!entity.isAlive() && entity instanceof LivingEntity) {
+                CompoundTag gib = new CompoundTag();
+                gib.putString("type", "giblets");
+                gib.putInt("ent", entity.getId());
+                IParticleCreator.sendPacket((net.minecraft.server.level.ServerLevel) level,
+                        entity.getX(), entity.getY() + entity.getBbHeight() * 0.5D, entity.getZ(), 150, gib);
+                level.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+                        SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR, SoundSource.BLOCKS,
+                        2.0F, 0.95F + level.random.nextFloat() * 0.2F);
+
+                blood.setFill(Math.min(blood.getFill() + BLOOD_PER_KILL_MB, blood.getMaxFill()));
+                showBlood = true;
+                setChanged();
+            }
+        }
+    }
+
+    /** Мировой AABB локальной зоны: углы через мост конструкции, обёртка по min/max. */
+    private AABB worldBoundsFromLocal(AABB localBounds) {
+        Vec3 first = hbm$localPosToWorld(new Vec3(localBounds.minX, localBounds.minY, localBounds.minZ));
+        Vec3 second = hbm$localPosToWorld(new Vec3(localBounds.maxX, localBounds.maxY, localBounds.maxZ));
+        return new AABB(
+                Math.min(first.x, second.x), Math.min(first.y, second.y), Math.min(first.z, second.z),
+                Math.max(first.x, second.x), Math.max(first.y, second.y), Math.max(first.z, second.z));
+    }
+
+    /**
+     * TODO(parité-turbofan): реальная логика дымообразования при горении. Вызывается раз в 20
+     * тиков при активном горении (в оригинале - {@code super.pollute(tankType, BURN, amountToBurn * 5)},
+     * где аргумент amount ИГНОРИРУЕТСЯ). Алгоритм 1.7.10 ({@code TileEntityMachinePolluting.pollute}):
+     * <ol>
+     *   <li>Взять {@code FT_Polluting}-трейт типа бака; при горении используется его {@code burnMap}.</li>
+     *   <li>Для каждого {@code (PollutionType, value)}: дым в бак {@code ceil(value * 100)} mB
+     *       (для керосина/P_FUEL: SOOT 0.001 -> 1 mB, POISON 0.00005 -> 1 mB за вызов, т.е. в секунду).</li>
+     *   <li>Излишек сверх ёмкости смок-бака (150 mB) уходит в мировое загрязнение
+     *       ({@code PollutionHandler}) с шипением (оригинальный FIRE_EXTINGUISH-звук, как в NTM-Reworked).</li>
+     * </ol>
+     * Пока заглушка: дым не выделяется (прежний вызов с amountToBurn * 5 завышал выброс и был удалён).
+     */
+    private void emitBurnPollution() {
+        // TODO(turbofan-parity): implement per algorithm above; remove this stub body then.
+    }
+
+    /** Оригинал: газовое пламя (AuxParticle gasfire) позади и над машиной при форсаже. */
+    private void emitAfterburnerParticles(net.minecraft.server.level.ServerLevel level, BlockPos pos,
+                                          Direction airflow, Direction width, double reach) {
+        for (int index = 0; index < 2; index++) {
+            double speed = 2.0D + level.random.nextDouble() * 3.0D;
+            double deviation = level.random.nextGaussian() * 0.2D;
+            // Оригинал ставит струю на -dir*(3-i) БЕЗ масштабирования (в 1.7.10 нет
+            // понятия reach); здесь reach растягивает зоны, и струя тянется вместе
+            // с ними - симметрично по обеим горизонтальным осям.
+            double x = pos.getX() + 0.5D - airflow.getStepX() * (3 - index) * reach;
+            double y = pos.getY() + 1.5D;
+            double z = pos.getZ() + 0.5D - airflow.getStepZ() * (3 - index) * reach;
+
+            CompoundTag data = new CompoundTag();
+            data.putString("type", "gasfire");
+            data.putDouble("mX", -airflow.getStepX() * speed + deviation);
+            data.putDouble("mY", 0.0D);
+            data.putDouble("mZ", -airflow.getStepZ() * speed + deviation);
+            data.putFloat("scale", 8.0F);
+            IParticleCreator.sendPacket(level, x, y, z, 100, data);
+        }
+
+        if (afterburner <= 90) return;
+        if (level.random.nextInt(30) == 0) {
+            LevelHooks.playSound(level, pos, ModSounds.MACHINE_DAMAGE.get(),
+                    SoundSource.BLOCKS, 3.0F, 0.95F + level.random.nextFloat() * 0.2F);
+        }
+
+        double along = level.random.nextDouble() * 4.0D - 2.0D;
+        double across = level.random.nextDouble() * 2.0D - 1.0D;
+        double x = pos.getX() + 0.5D + airflow.getStepX() * along + width.getStepX() * across;
+        double y = pos.getY() + 1.0D + level.random.nextDouble() * 2.0D;
+        double z = pos.getZ() + 0.5D + airflow.getStepZ() * along + width.getStepZ() * across;
+
+        CompoundTag data = new CompoundTag();
+        data.putString("type", "gasfire");
+        data.putDouble("mX", 0.0D);
+        data.putDouble("mY", level.random.nextDouble() * 0.1D);
+        data.putDouble("mZ", 0.0D);
+        data.putFloat("scale", 4.0F);
+        IParticleCreator.sendPacket(level, x, y, z, 100, data);
+    }
+
+    /** Повтор толчка и застревания для локального игрока (клиент): оригинальный клиентский дубль зон. */
+    private void repeatLocalPlayerMotion() {
+        if (!wasOn || getLevel() == null) return;
+        Player localPlayer = null;
+        for (Player player : getLevel().players()) {
+            if (player.isLocalPlayer()) {
+                localPlayer = player;
                 break;
             }
         }
+        if (localPlayer == null || localPlayer.getAbilities().instabuild) return;
 
-        if (!redstone) {
+        BlockPos pos = getBlockPos();
+        Direction airflow = getBlockState().getValue(MachineTurbofanBlock.FACING).getClockWise();
+        Direction width = airflow.getClockWise();
+        AABB playerBounds = worldBoundsToAirflowFrame(localPlayer.getBoundingBox());
+        Vec3 airflowPush = localVectorToWorld(
+                Vec3.atLowerCornerOf(airflow.getNormal()).scale(-0.2D));
+        double reach = getZoneReachScale();
 
-            FT_Combustible combustible = FluidType.getTrait(tank.getTankType(), FT_Combustible.class);
-            if (combustible != null && combustible.getGrade() == FuelGrade.AERO) {
-                burnValue = combustible.getCombustionEnergy() / 1_000;
-            }
-
-            // NTM Space - ohne Space-Addon immer true
-            if (amountToBurn > 0 && !breatheAir(amountToBurn)) amountToBurn = 0;
-
-            if (amountToBurn > 0) {
-                this.wasOn = true;
-                this.tank.setFill(this.tank.getFill() - amountToBurn);
-                this.output = (int) (burnValue * amountToBurn * (1 + Math.min(this.afterburner / 3D, 4)));
-                setEnergyStored(getEnergyStored() + this.output);
-                this.consumption = amountToBurn;
-
-                if (world.getGameTime() % 20 == 0) super.pollute(tank.getTankType(), FluidReleaseType.BURN, amountToBurn * 5);
-            }
+        if (playerBounds.intersects(directionalBounds(pos, airflow, width, -3.5D, -19.5D * reach))
+                || playerBounds.intersects(directionalBounds(pos, airflow, width, 3.5D, 8.5D * reach))) {
+            push(localPlayer, airflowPush);
         }
-
-        chargeItemInSlot(SLOT_BATTERY);
-
-        for (DirPos con : getConPos()) {
-            this.tryProvide(world, con.pos.getX(), con.pos.getY(), con.pos.getZ(), con.dir);
-            this.trySubscribe(tank.getTankType(), world, con.pos, con.dir);
-            if (this.blood.getFill() > 0) this.tryProvide(blood, world, con.pos, con.dir);
-            this.sendSmoke(world, con.pos, con.dir);
-        }
-
-        if (burnValue > 0 && amountToBurn > 0) {
-
-            Direction dir = facing().getClockWise();
-            Direction rot = dir.getClockWise();
-
-            if (this.afterburner > 0) {
-
-                for (int i = 0; i < 2; i++) {
-                    double speed = 2 + world.random.nextDouble() * 3;
-                    double deviation = world.random.nextGaussian() * 0.2;
-                    CompoundTag data = new CompoundTag();
-                    data.putString("type", "gasfire");
-                    data.putDouble("mX", -dir.getStepX() * speed + deviation);
-                    data.putDouble("mZ", -dir.getStepZ() * speed + deviation);
-                    data.putFloat("scale", 8F);
-                    com.hbm_m.particle.helper.IParticleCreator.sendPacket(world, pos.getX() + 0.5F - dir.getStepX() * (3 - i), pos.getY() + 1.5F, pos.getZ() + 0.5F - dir.getStepZ() * (3 - i), 150, data);
-                }
-
-                if (this.afterburner > 90 && world.random.nextInt(30) == 0) {
-                    world.playSound(null, pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5, com.hbm_m.sound.HbmSoundsNT.get("hbm:block.damage"), SoundSource.BLOCKS, 3.0F, 0.95F + world.random.nextFloat() * 0.2F);
-                }
-
-                if (this.afterburner > 90) {
-                    CompoundTag data = new CompoundTag();
-                    data.putString("type", "gasfire");
-                    data.putDouble("mY", 0.1 * world.random.nextDouble());
-                    data.putFloat("scale", 4F);
-                    com.hbm_m.particle.helper.IParticleCreator.sendPacket(world,
-                            pos.getX() + 0.5F + dir.getStepX() * (world.random.nextDouble() * 4 - 2) + rot.getStepX() * (world.random.nextDouble() * 2 - 1),
-                            pos.getY() + 1F + world.random.nextDouble() * 2,
-                            pos.getZ() + 0.5F - dir.getStepZ() * (world.random.nextDouble() * 4 - 2) + rot.getStepZ() * (world.random.nextDouble() * 2 - 1),
-                            150, data);
-                }
-            }
-
-            for (Entity e : world.getEntitiesOfClass(Entity.class, zone(pos, dir, rot, -3.5, -19.5))) {
-                if (this.afterburner > 0) {
-                    PlatformHooks.setSecondsOnFire(e, 5);
-                    e.hurt(world.damageSources().onFire(), 5F);
-                }
-                push(e, dir);
-            }
-
-            for (Entity e : world.getEntitiesOfClass(Entity.class, zone(pos, dir, rot, 3.5, 8.5))) {
-                push(e, dir);
-            }
-
-            for (Entity e : world.getEntitiesOfClass(Entity.class, zone(pos, dir, rot, 3.5, 3.75))) {
-                e.hurt(ModDamageSources.blender(world), 1000);
-                e.makeStuckInBlock(Blocks.COBWEB.defaultBlockState(), new Vec3(0.25D, 0.05D, 0.25D));
-
-                if (!e.isAlive() && e instanceof LivingEntity) {
-                    CompoundTag vdat = new CompoundTag();
-                    vdat.putString("type", "giblets");
-                    vdat.putInt("ent", e.getId());
-                    vdat.putInt("cDiv", 5);
-                    com.hbm_m.particle.helper.IParticleCreator.sendPacket(world, e.getX(), e.getY() + e.getBbHeight() * 0.5, e.getZ(), 150, vdat);
-
-                    world.playSound(null, e.getX(), e.getY(), e.getZ(), SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR, SoundSource.BLOCKS, 2.0F, 0.95F + world.random.nextFloat() * 0.2F);
-
-                    blood.setFill(blood.getFill() + 50);
-                    if (blood.getFill() > blood.getMaxFill()) {
-                        blood.setFill(blood.getMaxFill());
-                    }
-                    this.showBlood = true;
-                }
-            }
-        }
-
-        if (getEnergyStored() > maxPower) {
-            setEnergyStored(maxPower);
-        }
-
-        setChanged();
-        sendUpdateToClient();
-    }
-
-    private void clientTick(Level world, BlockPos pos) {
-
-        this.lastSpin = this.spin;
-
-        if (wasOn) {
-            if (this.momentum < 100F)
-                this.momentum++;
-        } else {
-            if (this.momentum > 0)
-                this.momentum--;
-        }
-
-        this.spin += momentum / 2;
-
-        if (this.spin >= 360) {
-            this.spin -= 360F;
-            this.lastSpin -= 360F;
-        }
-
-        com.hbm_m.sound.ClientSoundBootstrap.updateSound(this, momentum > 0, this::createAudioLoop);
-
-        // Wie im Original nur fuer den eigenen Spieler: der Server schickt keine Bewegung mit.
-        Player me = null;
-        for (Player p : world.players()) if (p.isLocalPlayer()) me = p;
-
-        if (wasOn && me != null && !me.isCreative()) {
-            Direction dir = facing().getClockWise();
-            Direction rot = dir.getClockWise();
-
-            if (world.getEntitiesOfClass(Entity.class, zone(pos, dir, rot, -3.5, -19.5)).contains(me)) push(me, dir);
-            if (world.getEntitiesOfClass(Entity.class, zone(pos, dir, rot, 3.5, 8.5)).contains(me)) push(me, dir);
-            if (world.getEntitiesOfClass(Entity.class, zone(pos, dir, rot, 3.5, 3.75)).contains(me))
-                me.makeStuckInBlock(Blocks.COBWEB.defaultBlockState(), new Vec3(0.25D, 0.05D, 0.25D));
+        if (playerBounds.intersects(directionalBounds(pos, airflow, width, 3.5D, 3.75D))) {
+            localPlayer.makeStuckInBlock(Blocks.COBWEB.defaultBlockState(), new Vec3(0.25D, 0.05D, 0.25D));
         }
     }
 
-    private Object createAudioLoop() {
-        try {
-            return Class.forName("com.hbm_m.client.sound.TurbofanLoopSoundFactory").getMethod("create", MachineTurbofanBlockEntity.class).invoke(null, this);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
+    private static void push(Entity entity, Vec3 impulse) {
+        entity.setDeltaMovement(entity.getDeltaMovement().add(impulse));
+        entity.hurtMarked = true;
+    }
+
+    private static AABB directionalBounds(BlockPos pos, Direction axis, Direction width, double first, double second) {
+        double centerX = pos.getX() + 0.5D;
+        double centerZ = pos.getZ() + 0.5D;
+        double firstX = centerX + axis.getStepX() * first - width.getStepX() * 1.5D;
+        double firstZ = centerZ + axis.getStepZ() * first - width.getStepZ() * 1.5D;
+        double secondX = centerX + axis.getStepX() * second + width.getStepX() * 1.5D;
+        double secondZ = centerZ + axis.getStepZ() * second + width.getStepZ() * 1.5D;
+        return new AABB(Math.min(firstX, secondX), pos.getY(), Math.min(firstZ, secondZ),
+                Math.max(firstX, secondX), pos.getY() + 3.0D, Math.max(firstZ, secondZ));
+    }
+
+    // ═══════════════════════════ Мост системы координат ═══════════════════════════
+
+    private Vec3 localVectorToWorld(Vec3 localVector) {
+        if ((Object) this instanceof TurbofanAirflowFrame frame) {
+            return frame.hbm$localVectorToWorld(localVector);
         }
+        return localVector;
+    }
+
+    private AABB worldBoundsToAirflowFrame(AABB worldBounds) {
+        if ((Object) this instanceof TurbofanAirflowFrame frame) {
+            return frame.hbm$worldBoundsToLocal(worldBounds);
+        }
+        return worldBounds;
+    }
+
+    private Vec3 hbm$localPosToWorld(Vec3 localPos) {
+        if ((Object) this instanceof TurbofanAirflowFrame frame) {
+            return frame.hbm$localPosToWorld(localPos);
+        }
+        return localPos;
+    }
+
+    // ═══════════════════════════ Баки и инвентарь ═══════════════════════════
+
+    private ItemStack[] getSlotsArray() {
+        ItemStack[] slots = new ItemStack[INVENTORY_SIZE];
+        for (int i = 0; i < INVENTORY_SIZE; i++) slots[i] = getInventory().getStackInSlot(i);
+        return slots;
+    }
+
+    private void applySlotsArray(ItemStack[] slots) {
+        for (int i = 0; i < INVENTORY_SIZE; i++) getInventory().setStackInSlot(i, slots[i]);
     }
 
     @Override
-    public void setRemoved() {
-        super.setRemoved();
-        if (level != null && level.isClientSide) com.hbm_m.sound.ClientSoundBootstrap.updateSound(this, false, null);
+    public FluidTank[] getAllTanks() {
+        return new FluidTank[] { tank, blood, smoke, smokeLeaded, smokePoison };
     }
 
-    /** Original {@code e.motionX/Z -= dir.offset * 0.2}. */
-    private static void push(Entity e, Direction dir) {
-        e.setDeltaMovement(e.getDeltaMovement().subtract(dir.getStepX() * 0.2D, 0D, dir.getStepZ() * 0.2D));
-        e.hurtMarked = true;
+    @Override
+    public FluidTank[] getReceivingTanks() {
+        return new FluidTank[] { tank };
     }
 
-    /** Wirkbereich von {@code from} bis {@code to} entlang {@code dir}, 1,5 zur Seite, 3 hoch. */
-    private static AABB zone(BlockPos pos, Direction dir, Direction rot, double from, double to) {
-        double minX = pos.getX() + 0.5 + dir.getStepX() * from - rot.getStepX() * 1.5;
-        double maxX = pos.getX() + 0.5 + dir.getStepX() * to + rot.getStepX() * 1.5;
-        double minZ = pos.getZ() + 0.5 + dir.getStepZ() * from - rot.getStepZ() * 1.5;
-        double maxZ = pos.getZ() + 0.5 + dir.getStepZ() * to + rot.getStepZ() * 1.5;
-        return new AABB(Math.min(minX, maxX), pos.getY(), Math.min(minZ, maxZ), Math.max(minX, maxX), pos.getY() + 3, Math.max(minZ, maxZ));
+    @Override
+    public FluidTank[] getSendingTanks() {
+        // Оригинал: кроме дыма наружу уходит и кровь.
+        FluidTank[] smokeTanks = getSmokeTanks();
+        return new FluidTank[] { blood, smokeTanks[0], smokeTanks[1], smokeTanks[2] };
     }
 
-    public long getPowerScaled(long i) {
-        return (getEnergyStored() * i) / maxPower;
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved();
     }
-
-    // ── Fluid ────────────────────────────────────────────────────────────────
-
-    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }
-    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { blood }; }
-    @Override public FluidTank[] getAllTanks() { return new FluidTank[] { tank, blood, smoke, smokeLeaded, smokePoison }; }
 
     public FluidTank getTank() { return tank; }
     public FluidTank getBloodTank() { return blood; }
     public boolean isShowingBlood() { return showBlood; }
     public int getAfterburner() { return afterburner; }
 
-    // ── NBT ─────────────────────────────────────────────────────────────────
+    @Override
+    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot == SLOT_BATTERY) return isEnergyReceiverItem(stack);
+        if (slot == SLOT_FLUID_IDENTIFIER) return stack.getItem() instanceof IItemFluidIdentifier;
+        if (slot == SLOT_FUEL_CONTAINER) return true;
+        if (slot == SLOT_UPGRADE) {
+            return stack.getItem() instanceof ItemMachineUpgrade || stack.is(ModItems.FLAME_PONY.get());
+        }
+        return false;
+    }
+
+    // ═══════════════════════════ NBT и синхронизация ═══════════════════════════
 
     @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+    protected void writeNbtData(CompoundTag tag, HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
         tank.writeToNBT(tag, "fuel");
         blood.writeToNBT(tag, "blood");
         tag.putBoolean("showBlood", showBlood);
-        tag.putByte("afterburner", (byte) afterburner);
+        tag.putInt("afterburner", afterburner);
         tag.putBoolean("wasOn", wasOn);
+        tag.putInt("output", output);
+        tag.putInt("consumption", consumption);
     }
 
     @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+    protected void readNbtData(CompoundTag tag, HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         tank.readFromNBT(tag, "fuel");
         blood.readFromNBT(tag, "blood");
         showBlood = tag.getBoolean("showBlood");
-        afterburner = tag.getByte("afterburner");
+        afterburner = tag.contains("afterburner") ? tag.getInt("afterburner") : tag.getByte("afterburner");
         wasOn = tag.getBoolean("wasOn");
+        output = Math.max(tag.getInt("output"), 0);
+        consumption = Math.max(tag.getInt("consumption"), 0);
     }
 
     // ── Upgrades ─────────────────────────────────────────────────────────────
+
+    @Override
+    public java.util.Map<ItemMachineUpgrade.UpgradeType, Integer> getValidUpgrades() {
+        return UPGRADE_CAPS;
+    }
 
     @Override
     public boolean canProvideInfo(UpgradeType type, int level, boolean extendedInfo) {
@@ -383,15 +789,14 @@ public class MachineTurbofanBlockEntity extends com.hbm_m.blockentity.MachinePol
     }
 
     @Override
-    public Map<UpgradeType, Integer> getValidUpgrades() {
-        return VALID_UPGRADES;
-    }
-
-    // ── Menue ────────────────────────────────────────────────────────────────
-
-    @Override
     public Component getDisplayName() {
         return Component.translatable("container.hbm_m.turbofan");
+    }
+
+    @Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
+        return new com.hbm_m.inventory.menu.MachineTurbofanMenu(id, inv, this);
     }
 
     @Override
@@ -399,21 +804,17 @@ public class MachineTurbofanBlockEntity extends com.hbm_m.blockentity.MachinePol
         return Component.translatable("container.hbm_m.turbofan");
     }
 
-    @Nullable
-    @Override
-    public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        return new MachineTurbofanMenu(id, inv, this);
-    }
-
-    @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return true;
-    }
-
-    //? if forge {
-    @Override
-    //?}
-    public AABB getRenderBoundingBox() {
-        return AABB.ofSize(worldPosition.getCenter(), 64, 64, 64);
+    /** Границы рендера = весь габарит 7x3x3 (образец - промышленная турбина). */
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        if (!(getBlockState().getBlock() instanceof MachineTurbofanBlock block)) {
+            return new AABB(getBlockPos());
+        }
+        MultiblockStructureHelper helper = block.getStructureHelper();
+        Direction facing = getBlockState().getValue(MachineTurbofanBlock.FACING);
+        AABB bounds = new AABB(getBlockPos());
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            bounds = bounds.minmax(new AABB(helper.getRotatedPos(getBlockPos(), localPos, facing)));
+        }
+        return bounds.inflate(0.25D);
     }
 }

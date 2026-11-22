@@ -94,12 +94,7 @@ public final class RebarPlacerPreview {
         float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (len == 0) len = 1;
         dx /= len; dy /= len; dz /= len;
-        //? if < 1.21.1 {
-        buf.vertex(m, x0, y0, z0).color(1F, 1F, 1F, 1F).normal(dx, dy, dz).endVertex();
-        buf.vertex(m, x1, y1, z1).color(1F, 1F, 1F, 1F).normal(dx, dy, dz).endVertex();
-        //?} else {
-        /*buf.addVertex(m, x0, y0, z0).setColor(1F, 1F, 1F, 1F).setNormal(dx, dy, dz);
-        buf.addVertex(m, x1, y1, z1).setColor(1F, 1F, 1F, 1F).setNormal(dx, dy, dz);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexColorNormal(buf, m, x0, y0, z0, 1F, 1F, 1F, 1F, dx, dy, dz);
+        com.hbm_m.platform.RenderHooks.vertexColorNormal(buf, m, x1, y1, z1, 1F, 1F, 1F, 1F, dx, dy, dz);
     }
 }

@@ -14,7 +14,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 /**
@@ -49,13 +48,14 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         Container machineContainer = new HandlerContainer(blockEntity != null
                 ? blockEntity.getInventory()
-                : new DummyItemStackHandler(MACHINE_SLOTS));
+                : new ModItemStackHandler.Dummy(MACHINE_SLOTS));
 
-        // Выходной слот (нельзя класть предметы)
+        // Слот ракеты: порт принимает missile_doomsday_rusted предметом (в 1.7.10 силос
+        // из SiloComponent спавнился уже заряженным, отдельной загрузки не было)
         this.addSlot(new Slot(machineContainer, SLOT_OUTPUT, 26, 72) {
             @Override
             public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
-                return false;
+                return stack.is(com.hbm_m.item.ModItems.MISSILE_DOOMSDAY_RUSTED.get());
             }
         });
         // Launch codes
@@ -96,7 +96,7 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
         if (inv.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No LaunchPadRustedBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":launch_pad_rusted_menu");
+        throw new MenuBlockEntityMissingException("No LaunchPadRustedBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":launch_pad_rusted_menu");
     }
 
     private static MenuType<?> getMenuType() {
@@ -109,8 +109,16 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
+    }
+
+    /** Tries each machine slot that actually accepts the stack, in order. */
+    private boolean moveIntoMachineSlots(net.minecraft.world.item.ItemStack stack) {
+        for (int i = 0; i < MACHINE_SLOTS; i++) {
+            if (!this.slots.get(i).mayPlace(stack)) continue;
+            if (this.moveItemStackTo(stack, i, i + 1, false)) return true;
+        }
+        return false;
     }
 
     @Override
@@ -126,15 +134,10 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
                     return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             } else {
-                // Original transferStackInSlot: nur Zielgeber -> 3, Startcodes -> 1, Schluessel -> 2
-                if (originalStack.getItem() instanceof IDesignatorItem) {
-                    if (!this.moveItemStackTo(stack, SLOT_DESIGNATOR, SLOT_DESIGNATOR + 1, false)) return ItemStack.EMPTY;
-                } else if (originalStack.getItem() == com.hbm_m.item.ModItems.LAUNCH_CODE.get()) {
-                    if (!this.moveItemStackTo(stack, SLOT_CODES, SLOT_CODES + 1, false)) return ItemStack.EMPTY;
-                } else if (originalStack.getItem() == com.hbm_m.item.ModItems.LAUNCH_KEY.get()) {
-                    if (!this.moveItemStackTo(stack, SLOT_KEY, SLOT_KEY + 1, false)) return ItemStack.EMPTY;
-                } else {
-                    return ItemStack.EMPTY;
+                // Per-slot with mayPlace: vanilla moveItemStackTo skips mayPlace when it merges onto
+                // an existing stack, so a whole-range move could land in a take-only output.
+                if (!moveIntoMachineSlots(stack)) {
+                    return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             }
 

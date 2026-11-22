@@ -7,7 +7,6 @@ import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
 import com.hbm_m.render.anim.HbmAnimations;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -101,58 +100,24 @@ public class ItemRenderQuadro extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 7.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, -0.5, -0.25);
-
+		setupThirdPerson(stack, 7.5D, 0, -0.5, -0.25);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 4.75D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(0, -1, 0);
+		setupInv(stack, 4.75D, 0, -1, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -30D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, -1.125, 0);
+		setupModTable(stack, -30D, 0, -1.125, 0);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(WeaponResources.quadro_tex);
 		GunGL.renderPart(WeaponResources.quadro, "Launcher");
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			double shotRand = 0;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-				shotRand = gun.shotRand;
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix(); //TODO: adjust in third person, flash is too far forward/ large
-			GunGL.translate(0, 0.75, 2);
-			GunGL.rotate(90, 0, 1, 0);
-			GunGL.rotate(90 * shotRand, 1, 0, 0);
-			GunGL.scale(0.75, 0.75, 0.75);
-			this.renderMuzzleFlash(shot, 150, 7.5);
-			GunGL.popMatrix();
-		}
+		renderEquippedMuzzleFlash(type, stack, data, 0, 0.75, 2, 0.75D, 150, 7.5);
 	}
 }

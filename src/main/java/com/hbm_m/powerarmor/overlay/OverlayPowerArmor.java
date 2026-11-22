@@ -6,6 +6,8 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 //? if forge {
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
@@ -16,6 +18,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.mojang.blaze3d.systems.RenderSystem;
 // рендер полосок энергии брони
+@OnlyIn(Dist.CLIENT)
 public class OverlayPowerArmor {
 
     public static void render(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {

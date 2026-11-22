@@ -7,6 +7,7 @@ public class ArmorDigamma extends ModPowerArmorItem {
 
     public ArmorDigamma(ModArmorMaterials material, Type type, Properties properties, String texture,
               long maxPower, long chargeRate, long consumption, long drain) {
-        super(material, type, properties, texture, maxPower, chargeRate, consumption, drain);
+        // Merged ModPowerArmorItem takes PowerArmorSpecs; texture is resolved from the registry id there.
+        super(material, type, properties, new PowerArmorSpecs(maxPower, chargeRate, drain, consumption));
     }
 }

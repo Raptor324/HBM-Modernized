@@ -189,27 +189,18 @@ public class ItemPool {
         //?} elif neoforge {
         /*if (te instanceof net.minecraft.world.level.block.entity.BlockEntity be && be.getLevel() != null) {
             var cap = be.getLevel().getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, be.getBlockPos(), null);
-            if (cap instanceof net.neoforged.neoforge.items.IItemHandlerModifiable h) return handler(h);
+            if (cap instanceof net.minecraftforge.items.IItemHandlerModifiable h) return handler(h);
         }
         *///?}
         return null;
     }
 
-    //? if forge {
     private static Inv handler(net.minecraftforge.items.IItemHandlerModifiable h) {
         return new Inv() {
             public int size() { return h.getSlots(); }
             public void set(int slot, ItemStack stack) { h.setStackInSlot(slot, stack); }
         };
     }
-    //?} elif neoforge {
-    /*private static Inv handler(net.neoforged.neoforge.items.IItemHandlerModifiable h) {
-        return new Inv() {
-            public int size() { return h.getSlots(); }
-            public void set(int slot, ItemStack stack) { h.setStackInSlot(slot, stack); }
-        };
-    }
-    *///?}
 
     /** Ersatzpool des Originals. */
     private static WeightedContent[] backupPool;

@@ -14,16 +14,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
 import org.jetbrains.annotations.Nullable;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  * Baked missile mesh for inventory / BER / entity VBO paths. World chunk mesh is skipped (VBO only).
  */
+@OnlyIn(Dist.CLIENT)
 public class MissileBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
     private final String[] partNames;
@@ -93,15 +91,8 @@ public class MissileBakedModel extends AbstractMultipartBakedModel implements Ab
         return List.of();
         *///?}
 
-        //? if fabric {
-        /*if (state == null) {
-            return getItemQuads(side, rand);
-        }
-        return List.of();
-        *///?}
     }
 
-    //? if forge || neoforge {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand,
                                     ModelData data, @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -110,7 +101,6 @@ public class MissileBakedModel extends AbstractMultipartBakedModel implements Ab
         }
         return List.of();
     }
-    //?}
 
     private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
         if (!itemQuadsCached || cachedItemQuads == null) {

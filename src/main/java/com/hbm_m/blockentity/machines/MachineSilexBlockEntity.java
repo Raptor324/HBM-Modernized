@@ -58,6 +58,11 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
     public int recipeIndex = 0;
     int loadDelay;
 
+    /** Кэш скана рецептов: сигнатура = фингерпринт входного стака (value-keyed — общий
+     * для currentRecipe() и валидации слота хоппером в isItemValidForSlot). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<SilexRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     public MachineSilexBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.SILEX_BE.get(), pos, state, 11, 0L, 0L, 0L);
     }
@@ -323,7 +328,7 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
         if (currentFluid != null) {
             tag.putString("currentFluid", BuiltInRegistries.FLUID.getKey(currentFluid).toString());
         } else if (!currentItem.isEmpty()) {
-            tag.put("currentItem", com.hbm_m.platform.PlatformHooks.safeItemSave(currentItem, registries));
+            tag.put("currentItem", com.hbm_m.platform.StackNbt.saveNew(currentItem, registries));
         }
     }
 
@@ -342,14 +347,14 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
                 ResourceLocation id = ResourceLocation.tryParse(tag.getString("currentFluid"));
                 if (id != null) currentFluid = BuiltInRegistries.FLUID.get(id);
             } else if (tag.contains("currentItem")) {
-                currentItem = com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("currentItem"), registries);
+                currentItem = com.hbm_m.platform.StackNbt.parse(tag.getCompound("currentItem"), registries);
             }
         }
     }
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("block.hbm_m.silex");
+        return Component.translatable("container.hbm_m.silex");
     }
 
     @Override
@@ -412,4 +417,5 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
         sidedItems.invalidate();
     }
     *///?}
+
 }

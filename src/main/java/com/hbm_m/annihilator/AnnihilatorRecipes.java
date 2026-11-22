@@ -45,16 +45,19 @@ public final class AnnihilatorRecipes {
         initialized = true;
 
         if (GeneralConfig.enable528) {
+            // Schluessel = Tag-Orte aus {@link AnnihilatorPoolManager#dictNames}: Oredict-Namen des
+            // Originals (billetSilicon, billetUranium, dustStrontium, ...) sind hier die
+            // hbm_m:oredict/*-Tags; forge:billets/* bzw. forge:dusts/* existieren nicht im Port.
             put("dict:forge:ingots/steel", "256", "steel");
-            put("dict:forge:billets/silicon", "256", "chip");
+            put("dict:hbm_m:oredict/billet/silicon", "256", "chip");
             put("dict:forge:nuggets/bismuth", "128", "chip_bismoid");
             put("item:hbm_m:pellet_charged", "1024", "chip_quantum");
 
-            put("dict:forge:billets/uranium", "256", "gascent");
+            put("dict:hbm_m:oredict/billet/uranium", "256", "gascent");
             put("dict:" + AnnihilatorPoolManager.ANY_PLASTIC, "512", "plastic");
             put("dict:forge:ingots/rubber", "512", "rubber");
             put("dict:forge:ingots/ferrouranium", "1024", "ferrouranium");
-            put("dict:forge:dusts/strontium", "256", "strontium");
+            put("dict:hbm_m:oredict/dust/strontium", "256", "strontium");
             put("dict:" + AnnihilatorPoolManager.ANY_HARDPLASTIC, "1024", "hardplastic");
             put("dict:" + AnnihilatorPoolManager.ANY_RESISTANTALLOY, "1024", "tcalloy");
             put("item:hbm_m:powder_chlorophyte", "1024", "chlorophyte");

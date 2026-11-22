@@ -3,8 +3,8 @@ newmtl default
 Ns 20.0
 d 1.0
 illum 2
-Kd 0.8 0.8 0.8
+Kd 1.0 1.0 1.0
 Ka 0.0 0.0 0.0
 Ks 0.2 0.2 0.2
 Ke 0.0 0.0 0.0
-map_Kd hbm_m:block/machine/heatex
+map_Kd hbm_m:block/machine/heater_heatex

@@ -32,10 +32,9 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.LoaderHooks;
 
-//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?}
 
 /**
  * Абстрактный базовый класс для рендеринга OBJ-брони.
@@ -87,7 +86,7 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
 
         ModelResourceLocation modelLocation = config.getBakedModelLocation();
         BakedModel baked = MODEL_CACHE.computeIfAbsent(modelLocation,
-            loc -> PlatformHooks.getItemModel(Minecraft.getInstance().getModelManager(), PlatformHooks.getModelId(loc)));
+            loc -> LoaderHooks.getItemModel(Minecraft.getInstance().getModelManager(), LoaderHooks.getModelId(loc)));
 
         if (baked == Minecraft.getInstance().getModelManager().getMissingModel()) return;
         if (!(baked instanceof AbstractMultipartBakedModel multipart)) return;
@@ -95,22 +94,19 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
         M parentModel = this.getParentModel();
         final boolean crouching = entity.isCrouching();
 
-        switch (slot) {
-            case HEAD -> renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "Helmet"), parentModel.head, "Helmet", crouching);
-            case CHEST -> {
-                renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "Chest"), parentModel.body, "Chest", crouching);
-                renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "RightArm"), parentModel.rightArm, "RightArm", crouching);
-                renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "LeftArm"), parentModel.leftArm, "LeftArm", crouching);
+        for (IArmorLayerConfig.PartBinding binding : config.getPartsForSlot(slot)) {
+            if (!config.shouldRenderPart(binding.part(), stack, slot)) {
+                continue;
             }
-            case LEGS -> {
-                renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "RightLeg"), parentModel.rightLeg, "RightLeg", crouching);
-                renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "LeftLeg"), parentModel.leftLeg, "LeftLeg", crouching);
-            }
-            case FEET -> {
-                renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "RightBoot"), parentModel.rightLeg, "RightBoot", crouching);
-                renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "LeftBoot"), parentModel.leftLeg, "LeftBoot", crouching);
-            }
-            default -> {}
+            ModelPart bone = switch (binding.bone()) {
+                case HEAD -> parentModel.head;
+                case BODY -> parentModel.body;
+                case RIGHT_ARM -> parentModel.rightArm;
+                case LEFT_ARM -> parentModel.leftArm;
+                case RIGHT_LEG -> parentModel.rightLeg;
+                case LEFT_LEG -> parentModel.leftLeg;
+            };
+            renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, binding.part()), bone, binding.part(), crouching);
         }
     }
 

@@ -30,19 +30,19 @@ public abstract class LoadedMachineBlockEntity extends BaseHbmBlockEntity implem
         super.setRemoved();
         this.isLoaded = false;
     }
-    //? if forge || neoforge {
+
+    // Оба метода добавляются лоадером и есть и на Forge, и на NeoForge.
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
         this.isLoaded = false;
     }
-    
+
     @Override
     public void onLoad() {
         super.onLoad();
         this.isLoaded = true;
     }
-    //?}
     
     public boolean isMuffled() {
         return muffled;
@@ -72,36 +72,19 @@ public abstract class LoadedMachineBlockEntity extends BaseHbmBlockEntity implem
     @Override
     public void clearRemoved() {
         super.clearRemoved();
-        
-        if (this.level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-            serverLevel.getServer().submit(() -> {
-                if (this.isRemoved()) return;
-                
-                BlockState state = this.getBlockState();
-                if (state.getBlock() instanceof com.hbm_m.interfaces.IMultiblockController controller) {
-                    controller.getStructureHelper().attemptAutoRepair(serverLevel, this.worldPosition, state, controller);
-                }
-            });
-        }
-    }
-    
-    /**
-     * Отправляет обновление клиенту
-     */
-    protected void sendUpdateToClient() {
-        if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
-    }
-    
-    /**
-     * Отправляет обновление клиенту с указанием дистанции
-     */
-    protected void sendUpdateToClient(int range) {
-        if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-            // В 1.20.1 нет прямого аналога networkPackNT с радиусом
-            // Используется стандартная синхронизация через getUpdatePacket()
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel && !serverLevel.isClientSide()) {
+            BlockPos pos = this.getBlockPos();
+            serverLevel.getServer().tell(new net.minecraft.server.TickTask(
+                    serverLevel.getServer().getTickCount() + 1,
+                    () -> {
+                        if (serverLevel.isLoaded(pos)) {
+                            BlockState state = serverLevel.getBlockState(pos);
+                            if (state.getBlock() instanceof com.hbm_m.interfaces.IMultiblockController controller) {
+                                controller.getStructureHelper().attemptAutoRepair(serverLevel, pos, state, controller);
+                            }
+                        }
+                    }
+            ));
         }
     }
 }

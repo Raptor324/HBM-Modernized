@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'grenade_aschrab.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Torus
 v 0.535761 1.145096 -0.010591
 v 0.451152 0.966383 -0.287183

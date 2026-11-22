@@ -37,7 +37,8 @@ public class DNTArmor extends ModPowerArmorItem {
 
     public DNTArmor(ModArmorMaterials material, Type type, Properties properties, String texture,
                     long maxPower, long chargeRate, long consumption, long drain) {
-        super(material, type, properties, texture, maxPower, chargeRate, consumption, drain);
+        // Merged ModPowerArmorItem takes PowerArmorSpecs; texture is resolved from the registry id there.
+        super(material, type, properties, new PowerArmorSpecs(maxPower, chargeRate, drain, consumption));
     }
 
     private static final UUID speed = UUID.fromString("6ab858ba-d712-485c-bae9-e5e765fc555a");

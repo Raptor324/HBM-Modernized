@@ -25,7 +25,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 
-/** 1:1 {@code RenderTom} (mit {@code TomPronter.prontTom}) und {@code RenderCloudTom}. */
+/** 1:1 {@code RenderTom} (with {@code TomPronter.prontTom}) and {@code RenderCloudTom}. */
 public final class TomRenderers {
 
     private TomRenderers() { }
@@ -40,7 +40,7 @@ public final class TomRenderers {
     private static final ResourceLocation TOM_FLAME_TEX = rl("textures/models/weapons/tom_flame.png");
     private static final ResourceLocation TOMBLAST = rl("textures/models/explosion/tomblast.png");
 
-    /** {@code RenderTom}: Tom 50 Bloecke unter der Entity, 100-fach, mit 20 rotierenden Flammenschalen. */
+    /** {@code RenderTom}: Tom 50 blocks below entity, 100x scale, with 20 rotating flame bowls. */
     public static class Tom extends EntityRenderer<TomEntity> {
 
         public Tom(EntityRendererProvider.Context ctx) {
@@ -66,7 +66,7 @@ public final class TomRenderers {
         }
     }
 
-    /** {@code TomPronter.prontTom}: HMF-Flammen mit Texturlauf {@code (ms % 50000) / 2500}, additiv. */
+    /** {@code TomPronter.prontTom}: HMF flames with texture scroll {@code (ms % 50000) / 2500}, additive. */
     public static void prontTom(PoseStack ps, MultiBufferSource buffers) {
         ps.pushPose();
         ps.scale(100F, 100F, 100F);
@@ -94,7 +94,7 @@ public final class TomRenderers {
         ps.popPose();
     }
 
-    /** {@code RenderCloudTom}: 16 Segmente x 5 Lagen, nach oben ausblendende Feuerwand mit laufender Textur. */
+    /** {@code RenderCloudTom}: 16 segments x 5 layers, fire wall fading upward with scrolling texture. */
     public static class CloudTom extends EntityRenderer<EntityCloudTom> {
 
         public CloudTom(EntityRendererProvider.Context ctx) {
@@ -144,11 +144,7 @@ public final class TomRenderers {
         }
 
         private static void vertex(VertexConsumer vc, Matrix4f m, float x, float y, float z, float u, float v, float a) {
-            //? if < 1.21.1 {
-            vc.vertex(m, x, y, z).color(1F, 1F, 1F, a).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(0, 1, 0).endVertex();
-            //?} else {
-            /*vc.addVertex(m, x, y, z).setColor(1F, 1F, 1F, a).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(0, 1, 0);
-            *///?}
+            com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x, y, z, 1F, 1F, 1F, a, u, v, OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT, 0, 1, 0);
         }
 
         @Override

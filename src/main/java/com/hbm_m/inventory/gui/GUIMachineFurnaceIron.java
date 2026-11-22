@@ -60,7 +60,7 @@ public class GUIMachineFurnaceIron extends AbstractContainerScreen<MachineFurnac
             for (int i = 1; i < 3; ++i) {
                 net.minecraft.world.inventory.Slot slot = this.menu.slots.get(i);
                 if (this.isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY) && !slot.hasItem()) {
-                    var bonuses = com.hbm_m.blockentity.machines.MachineFurnaceIronBlockEntity.burnModule.getTimeDesc();
+                    var bonuses = com.hbm_m.blockentity.machines.MachineFurnaceIronBlockEntity.burnModule.getDesc();
                     if (!bonuses.isEmpty()) guiGraphics.renderComponentTooltip(font, bonuses, mouseX, mouseY);
                 }
             }

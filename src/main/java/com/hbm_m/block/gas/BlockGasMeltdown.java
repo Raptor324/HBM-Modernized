@@ -1,12 +1,11 @@
 package com.hbm_m.block.gas;
 
-import com.hbm_m.platform.EffectHooks;
-
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.extprop.HbmLivingProps;
 import com.hbm_m.handler.ArmorRegistry;
 import com.hbm_m.handler.HazardClass;
+import com.hbm_m.platform.EffectHooks;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.util.ContaminationUtil;
 import com.hbm_m.util.ContaminationUtil.ContaminationType;
@@ -41,14 +40,12 @@ public class BlockGasMeltdown extends BlockGasBase {
         if (ArmorRegistry.hasProtection(living, 3, HazardClass.PARTICLE_FINE)) {
             damageWornFilter(living);
         } else {
-            // Mesotheliom kann auch aus Strahlenbelastung der Lunge entstehen (Originalkommentar).
             HbmLivingProps.incrementAsbestos(living, 5);
         }
     }
 
     @Override
     protected boolean onGasTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-
         Direction dir = randomAny(random);
         BlockPos target = pos.relative(dir);
 
@@ -69,18 +66,19 @@ public class BlockGasMeltdown extends BlockGasBase {
     }
 
     @Override
-    public Direction getFirstDirection(ServerLevel level, BlockPos pos, RandomSource random) {
+    public Direction getFirstDirection(Level level, BlockPos pos, RandomSource random) {
         if (random.nextInt(2) == 0) return Direction.UP;
         return Direction.DOWN;
     }
 
     @Override
-    public Direction getSecondDirection(ServerLevel level, BlockPos pos, RandomSource random) {
+    public Direction getSecondDirection(Level level, BlockPos pos, RandomSource random) {
         return randomHorizontal(random);
     }
 
     @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+        super.animateTick(state, level, pos, random);
         level.addParticle(ParticleTypes.MYCELIUM,
                 pos.getX() + random.nextFloat(), pos.getY() + random.nextFloat(), pos.getZ() + random.nextFloat(),
                 0.0D, 0.0D, 0.0D);

@@ -2,7 +2,6 @@ package com.hbm_m.item.tool;
 
 import com.hbm_m.platform.PlatformHooks;
 
-import com.hbm_m.platform.AttributeOps;
 
 import com.hbm_m.platform.ItemHooks;
 
@@ -70,6 +69,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import com.hbm_m.platform.AttributeHooks;
 
 /**
  * 1:1 {@code com.hbm.items.tool.ItemToolAbility}: Werkzeug mit Flaechen- und Erntefaehigkeiten, Presets
@@ -301,8 +301,8 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
         if (slot != EquipmentSlot.MAINHAND) return ImmutableMultimap.of();
         ImmutableMultimap.Builder<net.minecraft.core.Holder<Attribute>, AttributeModifier> builder = ImmutableMultimap.builder();
     *///?}
-        builder.put(Attributes.ATTACK_DAMAGE, com.hbm_m.platform.AttributeHooks.modifier(ITEM_MODIFIER_UUID, "Tool modifier", this.damage, AttributeOps.ADDITION));
-        builder.put(Attributes.MOVEMENT_SPEED, com.hbm_m.platform.AttributeHooks.modifier(ITEM_MODIFIER_UUID, "Tool modifier", movement, AttributeOps.MULTIPLY_BASE));
+        builder.put(Attributes.ATTACK_DAMAGE, com.hbm_m.platform.AttributeHooks.modifier(ITEM_MODIFIER_UUID, "Tool modifier", this.damage, AttributeHooks.ADDITION));
+        builder.put(Attributes.MOVEMENT_SPEED, com.hbm_m.platform.AttributeHooks.modifier(ITEM_MODIFIER_UUID, "Tool modifier", movement, AttributeHooks.MULTIPLY_BASE));
         return builder.build();
     }
 
@@ -370,11 +370,7 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
 
     /** {@code ForgeHooks.canHarvestBlock(block, player, meta)} */
     private static boolean canHarvestWithHand(BlockState state, Level world, BlockPos pos, Player player) {
-        //? if forge {
         return state.canHarvestBlock(world, pos, player);
-        //?} else {
-        /*return state.canHarvestBlock(world, pos, player);
-        *///?}
     }
 
     /** Assumes a canShearBlock check has passed, will most likely crash otherwise! */

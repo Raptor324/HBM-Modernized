@@ -13,10 +13,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
-
+import com.hbm_m.platform.ModItemStackHandler;
 public class MachineMiningLaserMenu extends AbstractContainerMenu {
 
     private final MachineMiningLaserBlockEntity blockEntity;
@@ -70,14 +67,7 @@ public class MachineMiningLaserMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(container, SLOT_BATTERY, 8, 108) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
-                //? if forge {
-                return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                //?} elif neoforge {
-                /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
-                *///?} else {
-                /*return false;
-                *///?}
+                return ItemEnergyAccess.isEnergySource(stack);
             }
         });
 
@@ -100,7 +90,7 @@ public class MachineMiningLaserMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineMiningLaserBlockEntity miningLaser) {
             return miningLaser;
         }
-        throw new IllegalStateException("No MachineMiningLaserBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mining_laser_menu");
+        throw new MenuBlockEntityMissingException("No MachineMiningLaserBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mining_laser_menu");
     }
 
     public MachineMiningLaserBlockEntity getBlockEntity() {
@@ -109,8 +99,7 @@ public class MachineMiningLaserMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

@@ -10,7 +10,9 @@ import org.jetbrains.annotations.NotNull;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.datagen.recipes.custom.AmmoPressRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.AnvilRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.ArcFurnaceRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.ArcWelderRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.CombinationOvenRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.PurexRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.AssemblerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.BlastFurnaceRecipeGenerator;
@@ -23,19 +25,26 @@ import com.hbm_m.datagen.recipes.custom.CokerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.CompressorRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.CrackingTowerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.CrystallizerRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.CrucibleSmeltingRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.CyclotronRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.FusionRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.FusionAssemblerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.PlasmaForgeRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.ElectrolyserFluidRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.ElectrolyserMetalRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.ExposureChamberRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.FractionTowerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.GasCentrifugeRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.HydrotreaterRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.LiquefactorRecipeGenerator;
-import com.hbm_m.datagen.recipes.custom.MachineCraftingRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.MixerRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.MoldCastingRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.MoltenAlloyRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.PressRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.PyroOvenRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.RadGenRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.RadiolysisRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.RotaryFurnaceRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.ShredderRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.SilexRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.SolidificationRecipeGenerator;
@@ -82,13 +91,22 @@ public class ModRecipeProvider extends RecipeProvider {
         AssemblerRecipeGenerator.generate(pWriter);
         ChemicalPlantRecipeGenerator.generate(pWriter);
         AnvilRecipeGenerator.generate(pWriter);
-        MachineCraftingRecipeGenerator.generate(pWriter);
+        ArcFurnaceRecipeGenerator.generate(pWriter);
+        CombinationOvenRecipeGenerator.generate(pWriter);
+        // FFA: machine-frame crafting recipes
+        com.hbm_m.datagen.recipes.custom.MachineCraftingRecipeGenerator.generate(pWriter);
         ShredderRecipeGenerator.generate(pWriter, ModRecipeProvider::unlockedByItem);
         CentrifugeRecipeGenerator.generate(pWriter);
         CrystallizerRecipeGenerator.generate(pWriter);
         CyclotronRecipeGenerator.generate(pWriter);
         FusionRecipeGenerator.generate(pWriter);
         PlasmaForgeRecipeGenerator.generate(pWriter);
+        FusionAssemblerRecipeGenerator.generate(pWriter);
+        MixerRecipeGenerator.generate(pWriter);
+        CrucibleSmeltingRecipeGenerator.generate(pWriter);
+        MoltenAlloyRecipeGenerator.generate(pWriter);
+        MoldCastingRecipeGenerator.generate(pWriter);
+        // FFA: item-category and bedrock-fragment recipe generators
         com.hbm_m.datagen.recipes.custom.ConsumableRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.RodRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.WeaponRecipeGenerator.generate(pWriter);
@@ -98,12 +116,12 @@ public class ModRecipeProvider extends RecipeProvider {
         com.hbm_m.datagen.recipes.custom.LegacyBedrockOreRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.BedrockFragmentRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.ToolRecipeGenerator.generate(pWriter);
-        // Mischer: Rezepte wie im Original statisch in com.hbm_m.recipe.MixerRecipes
         ArcWelderRecipeGenerator.generate(pWriter);
         SolderingRecipeGenerator.generate(pWriter);
         GasCentrifugeRecipeGenerator.generate(pWriter);
         AmmoPressRecipeGenerator.generate(pWriter);
         PurexRecipeGenerator.generate(pWriter);
+        // FFA: super-computer, rock mill and PrecAss generators
         com.hbm_m.datagen.recipes.custom.SuperComputerRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.RockMillRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.PrecAssRecipeGenerator.generate(pWriter);
@@ -121,13 +139,15 @@ public class ModRecipeProvider extends RecipeProvider {
         LiquefactorRecipeGenerator.generate(pWriter);
         PyroOvenRecipeGenerator.generate(pWriter);
         RadiolysisRecipeGenerator.generate(pWriter);
+        RotaryFurnaceRecipeGenerator.generate(pWriter);
         SolidificationRecipeGenerator.generate(pWriter);
         VacuumDistillRecipeGenerator.generate(pWriter);
+        ElectrolyserFluidRecipeGenerator.generate(pWriter);
+        ElectrolyserMetalRecipeGenerator.generate(pWriter);
 
         // ==================== АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ РЕЦЕПТОВ ДЛЯ БЛОКОВ СЛИТКОВ ====================
         for (ModMaterials mat : ModMaterials.values()) {
-            // Barren ueber ModMaterialItems.ingotMaterial (block_thorium <-> th232_ingot wie Original)
-            if (!ModMaterialItems.has(ModMaterialItems.ingotMaterial(mat), MaterialShape.INGOT)) continue;
+            if (!mat.has(MaterialShape.INGOT)) continue;
 
             // !!! ВАЖНОЕ ИСПРАВЛЕНИЕ !!!
             // Сначала проверяем, есть ли вообще блок у этого слитка.
@@ -137,7 +157,7 @@ public class ModRecipeProvider extends RecipeProvider {
             }
 
             // Теперь безопасно получаем предмет и блок
-            var ingotItem = ModMaterialItems.get(ModMaterialItems.ingotMaterial(mat), MaterialShape.INGOT);
+            var ingotItem = ModMaterialItems.get(mat, MaterialShape.INGOT);
             var ingotBlock = ModBlocks.getIngotBlock(mat);
 
             if (ingotItem != null && ingotItem.isPresent() && ingotBlock != null && ingotBlock.isPresent()) {
@@ -175,6 +195,48 @@ public class ModRecipeProvider extends RecipeProvider {
                 .requires(ModBlocks.BLOCK_FALLOUT.get())
                 .unlockedBy("has_block_fallout", has(ModBlocks.BLOCK_FALLOUT.get()))
                 .save(pWriter, "fallout_from_block_fallout");
+
+        // Блоки кокса (1.7.10 MineralRecipes.add1To9PairSameMeta: 9 coke ↔ block_coke по вариантам).
+        // 9→1: дефолтный save() даёт id = hbm_m:coal_coke_block; 1→9: явные id — иначе конфликт
+        // с coker-рецептом coal_coke.json.
+        ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, ModBlocks.BLOCK_COAL_COKE.get())
+                .pattern("###")
+                .pattern("###")
+                .pattern("###")
+                .define('#', ModItems.COAL_COKE.get())
+                .unlockedBy("has_coal_coke", has(ModItems.COAL_COKE.get()))
+                .save(pWriter);
+
+        ShapelessRecipeBuilder.shapeless(net.minecraft.data.recipes.RecipeCategory.MISC, ModItems.COAL_COKE.get(), 9)
+                .requires(ModBlocks.BLOCK_COAL_COKE.get())
+                .unlockedBy("has_coal_coke_block", has(ModBlocks.BLOCK_COAL_COKE.get()))
+                .save(pWriter, "hbm_m:coal_coke_from_block");
+
+        ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, ModBlocks.BLOCK_LIGNITE_COKE.get())
+                .pattern("###")
+                .pattern("###")
+                .pattern("###")
+                .define('#', ModItems.LIGNITE_COKE.get())
+                .unlockedBy("has_lignite_coke", has(ModItems.LIGNITE_COKE.get()))
+                .save(pWriter);
+
+        ShapelessRecipeBuilder.shapeless(net.minecraft.data.recipes.RecipeCategory.MISC, ModItems.LIGNITE_COKE.get(), 9)
+                .requires(ModBlocks.BLOCK_LIGNITE_COKE.get())
+                .unlockedBy("has_lignite_coke_block", has(ModBlocks.BLOCK_LIGNITE_COKE.get()))
+                .save(pWriter, "hbm_m:lignite_coke_from_block");
+
+        ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, ModBlocks.BLOCK_PETROLEUM_COKE.get())
+                .pattern("###")
+                .pattern("###")
+                .pattern("###")
+                .define('#', ModItems.COKE_PETROLEUM.get())
+                .unlockedBy("has_coke_petroleum", has(ModItems.COKE_PETROLEUM.get()))
+                .save(pWriter);
+
+        ShapelessRecipeBuilder.shapeless(net.minecraft.data.recipes.RecipeCategory.MISC, ModItems.COKE_PETROLEUM.get(), 9)
+                .requires(ModBlocks.BLOCK_PETROLEUM_COKE.get())
+                .unlockedBy("has_petroleum_coke_block", has(ModBlocks.BLOCK_PETROLEUM_COKE.get()))
+                .save(pWriter, "hbm_m:petroleum_coke_from_block");
 
         ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, ModBlocks.NUCLEAR_FALLOUT.get(), 2)
                 .pattern("##")

@@ -9,11 +9,11 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1-Port von {@code ContainerMachinePlasmaForge} (1.7.10): Batterie (152/82), Blaupause (35/81),
@@ -94,7 +94,7 @@ public class MachineFusionPlasmaForgeMenu extends AbstractContainerMenu {
             if (!moveItemStackTo(stack, MACHINE_SLOTS, slots.size(), true)) return ItemStack.EMPTY;
         } else {
             // Original: Blaupause -> Slot 1, Batterie -> Slot 0, alles andere in Booster/Eingaben.
-            if (copy.is(ModItems.BLUEPRINTS.get())) {
+            if (copy.is(ModItems.BLUEPRINT_FOLDER.get())) {
                 if (!moveItemStackTo(stack, FusionPlasmaForgeBlockEntity.SLOT_BLUEPRINT,
                         FusionPlasmaForgeBlockEntity.SLOT_BLUEPRINT + 1, false)) return ItemStack.EMPTY;
             } else if (!moveItemStackTo(stack, FusionPlasmaForgeBlockEntity.SLOT_BOOSTER,
@@ -112,8 +112,6 @@ public class MachineFusionPlasmaForgeMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // Not vanilla's stillValid: that one measures to the controller cell in the middle of
-        // the structure, which this machine is far too wide for - see MultiblockMenuReach.
-        return MultiblockMenuReach.stillValid(level, blockEntity.getBlockPos(), ModBlocks.PLASMA_FORGE.get(), player);
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.PLASMA_FORGE.get());
     }
 }

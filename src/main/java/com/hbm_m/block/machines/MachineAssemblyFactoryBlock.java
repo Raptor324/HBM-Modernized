@@ -107,6 +107,32 @@ public class MachineAssemblyFactoryBlock extends BaseEntityBlock implements IMul
         );
     }
 
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            { -2, 0, -2, Direction.WEST.get3DDataValue() },
+            { -2, 0, -2, Direction.NORTH.get3DDataValue() },
+            { -1, 0, -2, Direction.NORTH.get3DDataValue() },
+            {  0, 0, -2, Direction.NORTH.get3DDataValue() },
+            {  1, 0, -2, Direction.NORTH.get3DDataValue() },
+            {  2, 0, -2, Direction.NORTH.get3DDataValue() },
+            {  2, 0, -2, Direction.EAST.get3DDataValue() },
+            { -2, 0, -1, Direction.WEST.get3DDataValue() },
+            {  2, 0, -1, Direction.EAST.get3DDataValue() },
+            { -2, 0,  0, Direction.WEST.get3DDataValue() },
+            {  2, 0,  0, Direction.EAST.get3DDataValue() },
+            { -2, 0,  1, Direction.WEST.get3DDataValue() },
+            {  2, 0,  1, Direction.EAST.get3DDataValue() },
+            { -2, 0,  2, Direction.WEST.get3DDataValue() },
+            { -2, 0,  2, Direction.SOUTH.get3DDataValue() },
+            { -1, 0,  2, Direction.SOUTH.get3DDataValue() },
+            {  0, 0,  2, Direction.SOUTH.get3DDataValue() },
+            {  1, 0,  2, Direction.SOUTH.get3DDataValue() },
+            {  2, 0,  2, Direction.SOUTH.get3DDataValue() },
+            {  2, 0,  2, Direction.EAST.get3DDataValue() }
+        }, facing);
+    }
+
     /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
     @Override
     //? if < 1.21.1 {

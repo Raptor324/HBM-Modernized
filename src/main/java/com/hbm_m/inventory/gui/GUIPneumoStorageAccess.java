@@ -17,6 +17,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 
 import java.util.List;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1-Port von {@code GUIPneumoStorageAccess} (1.7.10), 210x251.
@@ -32,6 +34,7 @@ import java.util.List;
  * sich der Bildschirm ueber die Sitzung hinweg - im Original sind das ebenfalls statische
  * Felder.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIPneumoStorageAccess extends AbstractContainerScreen<PneumoStorageAccessMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
@@ -78,8 +81,6 @@ public class GUIPneumoStorageAccess extends AbstractContainerScreen<PneumoStorag
     @Override
     protected void init() {
         super.init();
-        // Original: 34 + 176 / 2 - Breite / 2
-        this.titleLabelX = H_OFFSET + 88 - this.font.width(this.title) / 2;
 
         String previous = search != null ? search.getValue() : "";
 
@@ -200,10 +201,10 @@ public class GUIPneumoStorageAccess extends AbstractContainerScreen<PneumoStorag
             if (!slot.hasItem()) continue;
             if (!isOverSlot(slot, mouseX, mouseY)) continue;
 
-            guiGraphics.renderComponentTooltip(font, List.of(
+            com.hbm_m.inventory.gui.element.GUIElements.drawHoveringText(guiGraphics, font, List.of(
                     slot.getItem().getHoverName(),
                     Component.translatable("gui.hbm_m.pneumo.access.count", menu.getAmount(i))),
-                    mouseX, mouseY);
+                    mouseX, mouseY, 0xD57C4F, 0xAB4223);
             break;
         }
     }
@@ -288,13 +289,16 @@ public class GUIPneumoStorageAccess extends AbstractContainerScreen<PneumoStorag
     //? if < 1.21.1 {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-    //?} else {
-    /*@Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
-    *///?}
         setScroll(scrollIndex - (int) Math.signum(delta));
         return true;
     }
+    //?} else {
+    /*@Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        setScroll(scrollIndex - (int) Math.signum(scrollY));
+        return true;
+    }
+    *///?}
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {

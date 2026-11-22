@@ -10,7 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.monster.Creeper;
 
 /**
- * Слой «брони» крипера с настраиваемой текстурой (аналог {@code shouldRenderPass} + overlay в 1.7.10).
+ * Creeper "armor" layer with a configurable texture (analog of {@code shouldRenderPass} + overlay in 1.7.10).
  */
 public class CreeperUniversalPowerLayer extends EnergySwirlLayer<Creeper, CreeperModel<Creeper>> {
 

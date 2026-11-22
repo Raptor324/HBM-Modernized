@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
 
@@ -127,7 +128,7 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity i
         for (int i = 0; i < SLOTS; i++) slotArr[i] = be.inventory.getStackInSlot(i);
         be.tank.setType(SLOT_FLUID, slotArr);
 
-        SolderingRecipe recipe = findSolderingRecipe(level, be);
+        SolderingRecipe recipe = be.findSolderingRecipe(level);
         // Original serialize: das Rezeptergebnis geht als display an den Client (Renderer zeigt es auf dem Tisch)
         be.display = recipe != null ? recipe.getOutput() : ItemStack.EMPTY;
         long intendedMaxPower;
@@ -188,7 +189,30 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity i
             be.progress = 0;
         }
 
-        level.sendBlockUpdated(pos, state, state, 3);
+        // Анти-спам синхронизации: пакет только при реальном изменении состояния,
+        // которое уезжает в NBT/клиенту (энергия, прогресс, флаги, бак, инвентарь).
+        long lo = com.hbm_m.recipe.index.CachedRecipeResolver.sign(11,
+                be.energy, be.progress, be.processTime, be.consumption,
+                be.collisionPrevention ? 1L : 0L,
+                tankFingerprint(be.tank));
+        long hi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(12,
+                com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_TOP0)),
+                com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_TOP1)),
+                com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_TOP2)),
+                com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_PCB0)),
+                com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_PCB1)),
+                com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_SOLDER)),
+                com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_OUT)),
+                com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_BAT)),
+                com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_FLUID)),
+                com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_UPG1)),
+                com.hbm_m.platform.StackNbt.fingerprint(be.inventory.getStackInSlot(SLOT_UPG2)));
+        be.syncIfStateChanged(lo, hi);
+    }
+
+    /** Фингерпринт HBM-бака: тип жидкости + заполнение. */
+    private static long tankFingerprint(FluidTank tank) {
+        return (tank.getTankType() == null ? 0L : tank.getTankType().hashCode()) * 31L + tank.getFill();
     }
 
     private void consumeItems(SolderingRecipe recipe) {
@@ -210,17 +234,34 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity i
         }
     }
 
-    /** Data-driven поиск SolderingRecipe по 6 слотам машины (заменяет статический SolderingRecipes.getRecipe). */
+    /**
+     * Data-driven поиск SolderingRecipe по 6 слотам машины (заменяет статический SolderingRecipes.getRecipe).
+     * Кэшируется через {@link CachedRecipeResolver}: подпись — фингерпринты входных стаков,
+     * сканер — только матч по списку рецептов (CONTRACT 1).
+     */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<SolderingRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     @org.jetbrains.annotations.Nullable
-    private static SolderingRecipe findSolderingRecipe(Level level, MachineSolderingStationBlockEntity be) {
-        for (SolderingRecipe recipe : RecipeHooks.getAllRecipes(level, SolderingRecipe.Type.INSTANCE)) {
-            if (recipe.matches(be.inventory.getStackInSlot(SLOT_TOP0), be.inventory.getStackInSlot(SLOT_TOP1), be.inventory.getStackInSlot(SLOT_TOP2),
-                              be.inventory.getStackInSlot(SLOT_PCB0), be.inventory.getStackInSlot(SLOT_PCB1),
-                              be.inventory.getStackInSlot(SLOT_SOLDER))) {
-                return recipe;
+    private SolderingRecipe findSolderingRecipe(Level level) {
+        if (level == null) return null;
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(3,
+                com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_TOP0)),
+                com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_TOP1)),
+                com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_TOP2)),
+                com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_PCB0)),
+                com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_PCB1)),
+                com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_SOLDER)));
+        return recipeResolver.resolve(level, SolderingRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            for (SolderingRecipe recipe : all) {
+                if (recipe.matches(inventory.getStackInSlot(SLOT_TOP0), inventory.getStackInSlot(SLOT_TOP1), inventory.getStackInSlot(SLOT_TOP2),
+                                  inventory.getStackInSlot(SLOT_PCB0), inventory.getStackInSlot(SLOT_PCB1),
+                                  inventory.getStackInSlot(SLOT_SOLDER))) {
+                    return recipe;
+                }
             }
-        }
-        return null;
+            return null;
+        });
     }
 
     /** 1:1 Original {@code canProcess(recipe)}. */
@@ -231,7 +272,7 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity i
         ItemStack out = inventory.getStackInSlot(SLOT_OUT);
         if (!out.isEmpty()) {
             ItemStack result = recipe.getOutput();
-            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(out, result)) return false;
+            if (!com.hbm_m.platform.StackNbt.sameItemSameTags(out, result)) return false;
             if (out.getCount() + result.getCount() > out.getMaxStackSize()) return false;
         }
         return true;
@@ -294,9 +335,24 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity i
     // ─── NBT ──────────────────────────────────────────────────────────────────
 
     @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() {
+        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank };
+    }
+
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getReceivingTanks() {
+        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank };
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        if (!display.isEmpty()) tag.put("display", com.hbm_m.platform.PlatformHooks.saveItemStack(display, new CompoundTag(), registries));
+        if (!display.isEmpty()) com.hbm_m.platform.StackNbt.save(display, tag, registries);
         tag.putInt("progress",    progress);
         tag.putInt("processTime", processTime);
         tag.putBoolean("collision", collisionPrevention);
@@ -306,7 +362,7 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity i
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        display = tag.contains("display") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("display"), registries) : ItemStack.EMPTY;
+        display = tag.contains("display") ? com.hbm_m.platform.StackNbt.parse(tag.getCompound("display"), registries) : ItemStack.EMPTY;
         progress            = tag.getInt("progress");
         processTime         = tag.getInt("processTime");
         if (processTime <= 0) processTime = 1;
@@ -316,6 +372,12 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity i
 
     //? if forge {
     /** Original {@code ISidedInventory}: Slots {0-6}; Bauteile nach isItemValidForSlot hinein, nur das Ergebnis heraus. */
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
+    }
+
     private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
             new com.hbm_m.blockentity.SidedItemAccess.Rules() {
                 @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1, 2, 3, 4, 5, 6 }; }
@@ -394,14 +456,6 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity i
                 if (!cells.contains(n)) trySubscribe(tank.getTankType(), level, n, dir);
             }
         }
-    }
-
-    @Override public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() { return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank }; }
-    @Override public com.hbm_m.inventory.fluid.tank.FluidTank[] getReceivingTanks() { return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank }; }
-
-    @Override
-    public boolean isLoaded() {
-        return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
     /** 1:1 TileEntityMachineSolderingStation.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */

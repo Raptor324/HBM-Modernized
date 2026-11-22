@@ -20,20 +20,18 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1-Port von {@code GUIMachinePlasmaForge} (1.7.10) - Koordinaten, Balken, LEDs und Zeiger
  * unveraendert; die Rezeptauswahl laeuft ueber {@link GUIScreenRecipeSelector}.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineFusionPlasmaForge extends GuiInfoScreen<MachineFusionPlasmaForgeMenu> {
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
-            RefStrings.MODID, "textures/gui/reactors/gui_fusion_plasmaforge.png");
-    *///?} else {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/reactors/gui_fusion_plasmaforge.png");
-    //?}
 
     public GUIMachineFusionPlasmaForge(MachineFusionPlasmaForgeMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

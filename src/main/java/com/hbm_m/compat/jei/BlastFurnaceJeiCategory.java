@@ -8,12 +8,16 @@ import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
 /**
  * JEI category for blast furnace recipes (two items -> output).
+ * Port of {@code BlastFurnaceHandler}: only NT recipes ({@code BlastFurnaceRecipesNT}, {@code isNT()}),
+ * machine {@code machine_blast_furnace}; the legacy {@code blast_furnace} block (orig. MachineDifurnace)
+ * uses the alloy furnace recipe set and is NOT part of this category.
  */
 public class BlastFurnaceJeiCategory extends JeiGenericRecipeCategory<BlastFurnaceRecipe> {
 
@@ -22,7 +26,7 @@ public class BlastFurnaceJeiCategory extends JeiGenericRecipeCategory<BlastFurna
 
     public BlastFurnaceJeiCategory(IGuiHelper guiHelper) {
         super(guiHelper, new ItemStack[]{
-                new ItemStack(ModBlocks.BLAST_FURNACE.get())
+                new ItemStack(ModBlocks.MACHINE_BLAST_FURNACE.get())
         });
     }
 
@@ -33,7 +37,7 @@ public class BlastFurnaceJeiCategory extends JeiGenericRecipeCategory<BlastFurna
 
     @Override
     public Component getTitle() {
-        return Component.translatable("block.hbm_m.blast_furnace");
+        return Component.translatable("block.hbm_m.machine_blast_furnace");
     }
 
     @Override
@@ -79,5 +83,11 @@ public class BlastFurnaceJeiCategory extends JeiGenericRecipeCategory<BlastFurna
     @Override
     protected void addBlueprintSlot(IRecipeLayoutBuilder builder, BlastFurnaceRecipe recipe, int machineXOffset) {
         // No blueprint slot for blast furnace recipes.
+    }
+
+    /** Original drawExtras -> GenericRecipe.printNEIExtras: duration + power (GenericRecipeNoPower = 0 HE/t). */
+    @Override
+    protected void drawRecipeExtras(BlastFurnaceRecipe recipe, GuiGraphics graphics) {
+        JeiNeiRendering.drawGenericRecipeExtras(graphics, recipe.getDuration(), 0);
     }
 }

@@ -1,5 +1,6 @@
 package com.hbm_m.entity.conveyor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm_m.block.network.IConveyorBelt;
@@ -11,6 +12,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -18,19 +22,30 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.ItemSupplier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.StackNbt;
 
 /**
- * 1:1 {@code EntityMovingPackage} (mit der Laufschleife aus {@code EntityMovingConveyorObject}): ein Paket mehrerer Stapel
- * auf dem Band. Es betritt {@link IEnterablePackageBlock}-Bloecke nur, wenn deren {@code canPackageEnter} fuer die
- * Eintrittsseite zustimmt, faellt von oben in solche Bloecke hinein, sprengt bei 25 Objekten auf einem Fleck das Band und
- * wirft beim Verlassen des Bandes seinen Inhalt mit Schwung ab. Gezeichnet wird es als Kiste.
+ * Port von {@code com.hbm.entity.item.EntityMovingPackage} (1.7.10 Original) - traegt mehrere
+ * {@link ItemStack}s gebuendelt als "Paket" ueber Foerderbaender, benutzt von Crane Boxer/Unboxer.
+ * Bewegungslogik 1:1 aus {@link MovingConveyorItemEntity} uebernommen (dort bereits als
+ * "abstrakte Basis in konkrete Klasse gefaltet" dokumentiert - hier fuer den Paket-Payload-Typ
+ * dupliziert, da Java keine Mehrfachvererbung erlaubt und eine gemeinsame Basisklasse fuer nur
+ * zwei Konkretisierungen keinen Mehrwert haette).
+ * <p>
+ * SCOPE-Vereinfachung: Rendering nutzt {@code ThrownItemRenderer} ueber {@link #getItem()} (zeigt
+ * nur den ersten Inhalt), kein eigenes Kisten-Modell - konsistent mit der bereits dokumentierten
+ * Vereinfachung an {@link MovingConveyorItemEntity}.
  */
-public class MovingConveyorPackageEntity extends Entity {
+public class MovingConveyorPackageEntity extends Entity implements ItemSupplier {
+
+    private static final EntityDataAccessor<ItemStack> DISPLAY_ITEM =
+            SynchedEntityData.defineId(MovingConveyorPackageEntity.class, EntityDataSerializers.ITEM_STACK);
 
     private static final double MOVE_SPEED = 0.0625D;
 
@@ -50,56 +65,88 @@ public class MovingConveyorPackageEntity extends Entity {
 
     //? if < 1.21.1 {
     @Override
-    protected void defineSynchedData() { }
+    protected void defineSynchedData() {
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
-    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) { }
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     *///?}
+        defs.define(DISPLAY_ITEM, ItemStack.EMPTY);
+    }
 
     /** Original: {@code setItemStacks} mit {@code carefulCopyArray}. */
     public void setContents(ItemStack[] stacks) {
         ItemStack[] copy = new ItemStack[stacks.length];
         for (int i = 0; i < stacks.length; i++) copy[i] = stacks[i] == null ? ItemStack.EMPTY : stacks[i].copy();
         this.contents = copy;
+        this.entityData.set(DISPLAY_ITEM, contents.length > 0 ? contents[0] : ItemStack.EMPTY);
     }
 
-    public ItemStack[] getContents() { return contents; }
+    public ItemStack[] getContents() {
+        return contents;
+    }
 
-    @Override public boolean isPickable() { return true; }
-    @Override public boolean isAttackable() { return true; }
+    @Override
+    public ItemStack getItem() {
+        return this.entityData.get(DISPLAY_ITEM);
+    }
+
+    @Override
+    public boolean isPickable() {
+        return true;
+    }
+
+    @Override
+    public boolean isAttackable() {
+        return true;
+    }
 
     @Override
     public boolean skipAttackInteraction(Entity attacker) {
-        hitByEntity();
+        if (!this.level().isClientSide && !this.isRemoved()) {
+            dropAll();
+        }
         return true;
     }
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        hitByEntity();
+        // Same as MovingConveyorItemEntity: only a player knocks a package off the belt.
+        if (this.level().isClientSide || this.isRemoved()
+                || !(source.getEntity() instanceof net.minecraft.world.entity.player.Player)) {
+            return false;
+        }
+        dropAll();
         return true;
     }
 
-    private void hitByEntity() {
-        if (!this.level().isClientSide && !this.isRemoved()) {
-            this.discard();
-            for (ItemStack stack : contents) {
-                if (stack.isEmpty()) continue;
-                this.level().addFreshEntity(new ItemEntity(this.level(), getX(), getY() + 0.125, getZ(), stack));
-            }
+    private void dropAll() {
+        this.discard();
+        for (ItemStack stack : contents) {
+            if (stack.isEmpty()) continue;
+            ItemEntity item = new ItemEntity(this.level(), getX(), getY() + 0.125, getZ(), stack);
+            item.setDeltaMovement(getDeltaMovement());
+            this.level().addFreshEntity(item);
         }
     }
 
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
         if (!this.level().isClientSide && !this.isRemoved()) {
+            List<ItemStack> leftover = new ArrayList<>();
             for (ItemStack stack : contents) {
                 if (stack.isEmpty()) continue;
                 if (!player.getInventory().add(stack.copy())) {
-                    this.level().addFreshEntity(new ItemEntity(this.level(), getX(), getY() + 0.125, getZ(), stack));
+                    leftover.add(stack);
                 }
             }
             this.discard();
+            for (ItemStack stack : leftover) {
+                ItemEntity item = new ItemEntity(this.level(), getX(), getY(), getZ(), stack);
+                this.level().addFreshEntity(item);
+            }
+            return InteractionResult.CONSUME;
         }
         return InteractionResult.PASS;
     }
@@ -187,7 +234,7 @@ public class MovingConveyorPackageEntity extends Entity {
         for (int i = 0; i < list.size(); i++) {
             CompoundTag c = list.getCompound(i);
             int j = c.getByte("slot") & 255;
-            if (j >= 0 && j < this.contents.length) this.contents[j] = PlatformHooks.itemStackOf(c, this.level().registryAccess());
+            if (j >= 0 && j < this.contents.length) this.contents[j] = StackNbt.parse(c, this.level().registryAccess());
         }
     }
 
@@ -196,12 +243,17 @@ public class MovingConveyorPackageEntity extends Entity {
         ListTag list = new ListTag();
         for (int i = 0; i < this.contents.length; ++i) {
             if (!this.contents[i].isEmpty()) {
-                CompoundTag c = PlatformHooks.safeItemSave(this.contents[i], this.level().registryAccess());
+                CompoundTag c = StackNbt.saveNew(this.contents[i], this.level().registryAccess());
                 c.putByte("slot", (byte) i);
                 list.add(c);
             }
         }
         nbt.put("contents", list);
         nbt.putInt("count", this.contents.length);
+    }
+
+    @Override
+    public boolean shouldBeSaved() {
+        return contents.length > 0 && super.shouldBeSaved();
     }
 }

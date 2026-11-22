@@ -4,12 +4,14 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.crates.BaseCrateBlockEntity;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,6 +23,8 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import com.hbm_m.platform.StackNbt;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * Базовый блок для всех ящиков HBM.
@@ -49,13 +53,21 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        // Original: mit Schloss oder Nachschluessel-Set in der Hand oeffnet sich nichts (das Item handelt selbst).
+        // 1.21.1 runs useWithoutItem before ItemStack.useOn (ServerPlayerGameMode), so without this
+        // guard ItemLock.useOn could never lock the crate; both hands are checked because
+        // useWithoutItem has no hand parameter and either hand gets its own interaction pass.
+        for (ItemStack held : new ItemStack[] {player.getMainHandItem(), player.getOffhandItem()}) {
+            if (!held.isEmpty() && (held.getItem() instanceof com.hbm_m.item.tool.ItemLock || held.is(com.hbm_m.item.ModItems.KEY_KIT.get()))) return InteractionResult.PASS;
+        }
+        if (player.isShiftKeyDown()) return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS; // Original: Client true, Server geschlichen false
         return openCrateMenu(state, level, pos, player);
     }
     *///?}
 
     private InteractionResult openCrateMenu(BlockState state, Level level, BlockPos pos, Player player) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof BaseCrateBlockEntity crateEntity) {
-            if (!crateEntity.canAccess(player)) return InteractionResult.SUCCESS;
+            if (!crateEntity.canAccess(player)) return InteractionResult.sidedSuccess(level.isClientSide());
             // Генерируем лут из таблицы структуры (если назначена) при первом открытии.
             crateEntity.unpackLootTable(player);
             playOpenSound(level, pos);
@@ -69,12 +81,12 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
     public void setPlacedBy(Level level, BlockPos pos, BlockState state,
                             @Nullable LivingEntity placer, ItemStack stack) {
         //? if < 1.21.1 {
-        if (PlatformHooks.hasItemTag(stack)) {
+        if (StackNbt.has(stack)) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof BaseCrateBlockEntity crateEntity) {
-                CompoundTag tag = PlatformHooks.getItemTag(stack);
+                CompoundTag tag = StackNbt.read(stack);
                 if (tag != null && tag.contains("BlockEntityTag")) {
-                    PlatformHooks.loadBlockEntityTag(crateEntity, tag.getCompound("BlockEntityTag"), level.registryAccess());
+                    BlockHooks.loadCustomOnly(crateEntity, tag.getCompound("BlockEntityTag"), level.registryAccess());
                 }
             }
         }
@@ -98,6 +110,22 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos,
                          BlockState newState, boolean isMoving) {
+        // The loot table is deliberately empty (the crate item carries its contents), and only the
+        // player-mining path packed it, so TNT, a nuke, a creeper or a quarry deleted up to 104
+        // stacks. Upstream BlockStorageCrate.breakBlock drops every slot loose in that case; the
+        // crate item itself must not drop here (see the anti-duplication game test), and
+        // handlePlayerWillDestroy clears the block entity so the two paths cannot both fire.
+        if (!state.is(newState.getBlock()) && !level.isClientSide
+                && level.getBlockEntity(pos) instanceof BaseCrateBlockEntity crate) {
+            ModItemStackHandler handler = crate.getItemHandler();
+            for (int slot = 0; slot < handler.getSlots(); slot++) {
+                ItemStack stack = handler.getStackInSlot(slot);
+                if (!stack.isEmpty()) {
+                    Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, stack);
+                }
+            }
+            crate.clearContents();
+        }
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
@@ -116,20 +144,40 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
     *///?}
 
     private void handlePlayerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (player.getAbilities().instabuild) {
+        if (level.isClientSide || !(level.getBlockEntity(pos) instanceof BaseCrateBlockEntity crateEntity)) {
             return;
         }
 
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (blockEntity instanceof BaseCrateBlockEntity crateEntity) {
-            if (!level.isClientSide) {
-                ItemStack stack = new ItemStack(this);
-                if (!crateEntity.isEmpty() || crateEntity.isLocked() || crateEntity.hasSpiders) {
-                    crateEntity.saveToItem(stack);
-                }
-                popResource(level, pos, stack);
+        // Original removedByPlayer: ohne CRATE_KEEP_CONTENTS droppt die leere Kiste, der Inhalt
+        // verschuettet lose - ausser die Kiste ist abgeschlossen, dann wird er geloescht.
+        if (!com.hbm_m.config.ModClothConfig.get().crateKeepContents) {
+            if (!player.getAbilities().instabuild) {
+                popResource(level, pos, new ItemStack(this));
             }
+            if (!crateEntity.isLocked()) {
+                ModItemStackHandler handler = crateEntity.getItemHandler();
+                for (int slot = 0; slot < handler.getSlots(); slot++) {
+                    ItemStack stack = handler.getStackInSlot(slot);
+                    if (!stack.isEmpty()) {
+                        Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, stack);
+                    }
+                }
+            }
+            crateEntity.clearContents();
+            return;
         }
+
+        if (!player.getAbilities().instabuild) {
+            ItemStack stack = new ItemStack(this);
+            if (!crateEntity.isEmpty() || crateEntity.isLocked() || crateEntity.hasSpiders) {
+                crateEntity.saveToItem(stack);
+            }
+            popResource(level, pos, stack);
+        }
+
+        // onRemove now packs the crate for every other kind of destruction, so clear it here to keep
+        // the player path from producing a second one (and to keep creative breaking silent).
+        crateEntity.clearContents();
     }
 
     @Override public boolean hasAnalogOutputSignal(BlockState state) { return true; }

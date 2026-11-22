@@ -1,12 +1,11 @@
 package com.hbm_m.blockentity.machines;
 
-import java.util.Optional;
-
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineFunnelMenu;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 import com.hbm_m.util.SimpleCraftingContainer;
 
 import net.minecraft.core.BlockPos;
@@ -47,70 +46,109 @@ public class MachineFunnelBlockEntity extends BaseMachineBlockEntity {
 
     private int mode = MODE_3X3_THEN_2X2;
 
+    // Кэш скана CRAFTING-рецепта: по одному резолверу на (пара слотов, размер сетки),
+    // ключ — фингерпринт входного стека + объём сетки. Пока вход не изменился, скан
+    // RecipeManager не повторяется; проверка выходного слота остаётся per-tick.
+    @SuppressWarnings("unchecked")
+    private final CachedRecipeResolver<CraftingRecipe>[] gridResolvers =
+            new CachedRecipeResolver[SLOT_PAIRS * 2];
+
     public MachineFunnelBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FUNNEL_BE.get(), pos, state, SLOT_COUNT, 0L, 0L, 0L);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineFunnelBlockEntity be) {
-        if (level.isClientSide()) return;
+        if (level.isClientSide) return;
         be.serverTick(level);
     }
 
     private void serverTick(Level level) {
-        boolean changed = false;
+        // 1:1 Original: alle 9 Slot-Paare pro Tick durchgehen. Wenn ein Paar verarbeitet
+        // werden konnte, wird sofort der Block getriggert (setChanged) und der Tick fuer
+        // diesen Trichter ist fertig - pro Tick hoechstens eine Verdichtung.
         for (int i = 0; i < SLOT_PAIRS; i++) {
-            if (tryCompress(level, i)) {
-                changed = true;
+            if (processSlotPair(level, i)) {
+                setChanged();
+                return;
             }
-        }
-        if (changed) {
-            setChanged();
-            sendUpdateToClient();
         }
     }
 
-    private boolean tryCompress(Level level, int index) {
-        ItemStack input = inventory.getStackInSlot(INPUT_START + index);
+    private boolean processSlotPair(Level level, int index) {
+        int inputSlot = INPUT_START + index;
+        ItemStack input = inventory.getStackInSlot(inputSlot);
         if (input.isEmpty()) return false;
 
-        if (mode != MODE_2X2_ONLY && input.getCount() >= 9) {
-            if (tryCompressGrid(level, index, input, 9, 3, 3)) return true;
+        if (mode == MODE_3X3_THEN_2X2 || mode == MODE_3X3_ONLY) {
+            if (tryCompact(level, index, input, 3, 3, 9)) return true;
         }
-        if (mode != MODE_3X3_ONLY && input.getCount() >= 4) {
-            if (tryCompressGrid(level, index, input, 4, 2, 2)) return true;
+
+        if (mode == MODE_3X3_THEN_2X2 || mode == MODE_2X2_ONLY) {
+            if (tryCompact(level, index, input, 2, 2, 4)) return true;
         }
+
         return false;
     }
 
-    private boolean tryCompressGrid(Level level, int index, ItemStack input, int count, int width, int height) {
+    private boolean tryCompact(Level level, int index, ItemStack input, int width, int height, int count) {
+        if (input.getCount() < count) return false;
+
+        int inputSlot = INPUT_START + index;
+
+        long sig = CachedRecipeResolver.sign(index,
+                com.hbm_m.platform.StackNbt.fingerprint(input), count);
+        // Scanner чистый: только матч по входам из подписи; выходной слот проверяется per-tick ниже.
+        CraftingRecipe recipe = gridResolver(index, width).resolve(level, RecipeType.CRAFTING, sig, (lvl, all) -> {
+            NonNullList<ItemStack> gridItems = NonNullList.withSize(width * height, ItemStack.EMPTY);
+            ItemStack sample = input.copyWithCount(1);
+            for (int i = 0; i < count; i++) {
+                gridItems.set(i, sample);
+            }
+            // 1.21.1: getRecipeFor/assemble требуют CraftingInput — хелперы RecipeHooks.
+            return com.hbm_m.platform.recipe.RecipeHooks.getCraftingRecipeFor(
+                    lvl, new SimpleCraftingContainer(gridItems, width, height)).orElse(null);
+        });
+        if (recipe == null) return false;
+
+        SimpleCraftingContainer grid = buildGrid(input, count, width, height);
+
+        ItemStack result = com.hbm_m.platform.recipe.RecipeHooks.assembleCrafting(recipe, grid, level);
+        if (result.isEmpty()) return false;
+
+        int outputSlot = OUTPUT_START + index;
+        ItemStack currentOutput = inventory.getStackInSlot(outputSlot);
+
+        if (!currentOutput.isEmpty()) {
+            if (!com.hbm_m.platform.StackNbt.sameItemSameTags(currentOutput, result)) return false;
+            if (currentOutput.getCount() + result.getCount() > currentOutput.getMaxStackSize()) return false;
+        }
+
+        input.shrink(count);
+        inventory.setStackInSlot(inputSlot, input);
+
+        if (currentOutput.isEmpty()) {
+            inventory.setStackInSlot(outputSlot, result.copy());
+        } else {
+            currentOutput.grow(result.getCount());
+            inventory.setStackInSlot(outputSlot, currentOutput);
+        }
+
+        return true;
+    }
+
+    private SimpleCraftingContainer buildGrid(ItemStack input, int count, int width, int height) {
         NonNullList<ItemStack> gridItems = NonNullList.withSize(width * height, ItemStack.EMPTY);
         ItemStack sample = input.copyWithCount(1);
         for (int i = 0; i < count; i++) {
             gridItems.set(i, sample);
         }
-        SimpleCraftingContainer grid = new SimpleCraftingContainer(gridItems, width, height);
+        return new SimpleCraftingContainer(gridItems, width, height);
+    }
 
-        // 1.21.1: getRecipeFor/assemble требуют CraftingInput — хелперы RecipeHooks.
-        Optional<CraftingRecipe> recipeOpt = com.hbm_m.platform.recipe.RecipeHooks.getCraftingRecipeFor(level, grid);
-        if (recipeOpt.isEmpty()) return false;
-
-        ItemStack result = com.hbm_m.platform.recipe.RecipeHooks.assembleCrafting(recipeOpt.get(), grid, level);
-        if (result.isEmpty()) return false;
-
-        int outputSlot = OUTPUT_START + index;
-        ItemStack outSlot = inventory.getStackInSlot(outputSlot);
-        if (!outSlot.isEmpty()) {
-            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outSlot, result)) return false;
-            if (outSlot.getCount() + result.getCount() > outSlot.getMaxStackSize()) return false;
-        }
-
-        input.shrink(count);
-        if (outSlot.isEmpty()) {
-            inventory.setStackInSlot(outputSlot, result);
-        } else {
-            outSlot.grow(result.getCount());
-        }
-        return true;
+    private CachedRecipeResolver<CraftingRecipe> gridResolver(int index, int width) {
+        int slot = index * 2 + (width >= 3 ? 1 : 0);
+        if (gridResolvers[slot] == null) gridResolvers[slot] = new CachedRecipeResolver<>();
+        return gridResolvers[slot];
     }
 
     public void cycleMode() {

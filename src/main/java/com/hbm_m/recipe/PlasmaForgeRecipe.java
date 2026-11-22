@@ -40,6 +40,8 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
 
     private final List<CountedIngredient> itemInputs;
     private final List<FluidStack> fluidInputs;
+    /** Original: {@code GenericRecipe.outputFluid} - reine NEI/JEI-Anzeige ({@code plsm.bronzetubes}). */
+    private final List<FluidStack> fluidOutputs;
     private final ItemStack output;
     private final int duration;
     private final long power;
@@ -52,6 +54,7 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
     public PlasmaForgeRecipe(ResourceLocation id,
                              List<CountedIngredient> itemInputs,
                              List<FluidStack> fluidInputs,
+                             List<FluidStack> fluidOutputs,
                              ItemStack output,
                              int duration,
                              long power,
@@ -61,6 +64,7 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
         super(id);
         this.itemInputs = itemInputs != null ? itemInputs : List.of();
         this.fluidInputs = fluidInputs != null ? fluidInputs : List.of();
+        this.fluidOutputs = fluidOutputs != null ? fluidOutputs : List.of();
         this.output = output != null ? output : ItemStack.EMPTY;
         this.duration = duration;
         this.power = power;
@@ -71,6 +75,8 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
 
     public List<CountedIngredient> getItemInputs() { return itemInputs; }
     public List<FluidStack> getFluidInputs() { return fluidInputs; }
+    /** Original {@code GenericRecipe.outputFluid} - nur Anzeige, die Maschine hat keinen Ausgangstank. */
+    public List<FluidStack> getFluidOutputs() { return fluidOutputs; }
     public ItemStack getOutput() { return output.copy(); }
     public int getDuration() { return duration; }
     public long getPower() { return power; }
@@ -135,11 +141,7 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
 
     public static final class Serializer extends PlatformRecipeSerializer<PlasmaForgeRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "plasma_forge");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plasma_forge");
-        //?}
 
         @Override
         public PlasmaForgeRecipe readJson(@NotNull ResourceLocation recipeId, @NotNull JsonObject json) {
@@ -167,22 +169,29 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
                 }
             }
 
-            List<FluidStack> fluidInputs = new ArrayList<>();
-            if (json.has("fluid_inputs")) {
-                JsonArray arr = GsonHelper.getAsJsonArray(json, "fluid_inputs");
-                for (JsonElement el : arr) {
-                    JsonObject obj = el.getAsJsonObject();
-                    ResourceLocation fid = ResourceLocation.tryParse(GsonHelper.getAsString(obj, "fluid"));
-                    if (fid == null) continue;
-                    fluidInputs.add(RecipeHooks.fluidStackOf(fid, GsonHelper.getAsLong(obj, "amount", 0L)));
-                }
-            }
+            List<FluidStack> fluidInputs = readFluidList(json, "fluid_inputs");
+            List<FluidStack> fluidOutputs = readFluidList(json, "fluid_outputs");
 
             ItemStack output = json.has("result")
                     ? RecipeHooks.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result"))
                     : ItemStack.EMPTY;
 
-            return new PlasmaForgeRecipe(recipeId, itemInputs, fluidInputs, output, duration, power, ignition, pool, group);
+            return new PlasmaForgeRecipe(recipeId, itemInputs, fluidInputs, fluidOutputs, output, duration, power, ignition, pool, group);
+        }
+
+        /** Parst {@code fluid_inputs} / {@code fluid_outputs} - je {@code {"fluid": id, "amount": mB}}. */
+        private static List<FluidStack> readFluidList(JsonObject json, String key) {
+            List<FluidStack> fluids = new ArrayList<>();
+            if (json.has(key)) {
+                JsonArray arr = GsonHelper.getAsJsonArray(json, key);
+                for (JsonElement el : arr) {
+                    JsonObject obj = el.getAsJsonObject();
+                    ResourceLocation fid = ResourceLocation.tryParse(GsonHelper.getAsString(obj, "fluid"));
+                    if (fid == null) continue;
+                    fluids.add(RecipeHooks.fluidStackOf(fid, GsonHelper.getAsLong(obj, "amount", 0L)));
+                }
+            }
+            return fluids;
         }
 
         @Override
@@ -205,9 +214,13 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
             List<FluidStack> fluidInputs = new ArrayList<>(fluidInCount);
             for (int i = 0; i < fluidInCount; i++) fluidInputs.add(RecipeHooks.readFluidStack(buf));
 
+            int fluidOutCount = buf.readVarInt();
+            List<FluidStack> fluidOutputs = new ArrayList<>(fluidOutCount);
+            for (int i = 0; i < fluidOutCount; i++) fluidOutputs.add(RecipeHooks.readFluidStack(buf));
+
             ItemStack output = RecipeHooks.readItem(buf);
 
-            return new PlasmaForgeRecipe(recipeId, itemInputs, fluidInputs, output, duration, power, ignition, pool, group);
+            return new PlasmaForgeRecipe(recipeId, itemInputs, fluidInputs, fluidOutputs, output, duration, power, ignition, pool, group);
         }
 
         @Override
@@ -233,6 +246,9 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
 
             buf.writeVarInt(recipe.fluidInputs.size());
             for (FluidStack fs : recipe.fluidInputs) RecipeHooks.writeFluidStack(buf, fs);
+
+            buf.writeVarInt(recipe.fluidOutputs.size());
+            for (FluidStack fs : recipe.fluidOutputs) RecipeHooks.writeFluidStack(buf, fs);
 
             RecipeHooks.writeItem(buf, recipe.output);
         }

@@ -14,8 +14,8 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.world.inventory.InventoryMenu;
 
 /**
- * 1:1 {@code RenderSoyuzMultiblock}: Bauplan der Sojus-Startrampe als durchscheinende Miniwuerfel (5/16 Block,
- * Deckkraft 0.75) - Startrampenbloecke fuer Tisch und Plattformen, Beton fuer die Beine, Geruest fuer die Tuerme.
+ * 1:1 {@code RenderSoyuzMultiblock}: blueprint overlay for Soyuz launch pad as semitransparent mini cubes (5/16 block,
+ * opacity 0.75) - launch pad blocks for pad and platforms, concrete for legs, scaffolding for towers.
  */
 public class StructSoyuzCoreRenderer implements com.hbm_m.client.render.HbmBerBounds<SoyuzStructBlock.StructBE> {
 

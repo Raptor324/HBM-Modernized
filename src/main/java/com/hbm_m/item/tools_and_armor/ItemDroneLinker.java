@@ -29,7 +29,7 @@ public class ItemDroneLinker extends Item {
     public static final int ID_DRONE = 2101;
 
     public ItemDroneLinker(Properties properties) {
-        super(properties);
+        super(properties.stacksTo(1));
     }
 
     private MutableComponent prefix() {
@@ -49,10 +49,10 @@ public class ItemDroneLinker extends Item {
 
             if (!world.isClientSide && player != null) {
                 ItemStack stack = context.getItemInHand();
-                CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+                CompoundTag tag = com.hbm_m.platform.StackNbt.read(stack);
 
                 if (tag == null || !tag.contains("x")) {
-                    com.hbm_m.platform.PlatformHooks.editItemTag(stack, t -> {
+                    com.hbm_m.platform.StackNbt.edit(stack, t -> {
                         t.putInt("x", pos.getX());
                         t.putInt("y", pos.getY());
                         t.putInt("z", pos.getZ());
@@ -77,7 +77,7 @@ public class ItemDroneLinker extends Item {
                         player.sendSystemMessage(prefix().append(Component.literal("Previous link lost!").withStyle(ChatFormatting.RED)));
                     }
 
-                    com.hbm_m.platform.PlatformHooks.editItemTag(stack, t -> {
+                    com.hbm_m.platform.StackNbt.edit(stack, t -> {
                         t.putInt("x", pos.getX());
                         t.putInt("y", pos.getY());
                         t.putInt("z", pos.getZ());
@@ -94,7 +94,7 @@ public class ItemDroneLinker extends Item {
     @Override
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean inhand) {
         if (world.isClientSide && inhand) {
-            CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+            CompoundTag tag = com.hbm_m.platform.StackNbt.read(stack);
             if (tag != null && tag.contains("x")) {
                 int x = tag.getInt("x");
                 int y = tag.getInt("y");
@@ -107,10 +107,10 @@ public class ItemDroneLinker extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        CompoundTag tag = com.hbm_m.platform.StackNbt.read(stack);
 
         if (!world.isClientSide && tag != null && tag.contains("x")) {
-            com.hbm_m.platform.PlatformHooks.editItemTag(stack, t -> {
+            com.hbm_m.platform.StackNbt.edit(stack, t -> {
                 t.remove("x");
                 t.remove("y");
                 t.remove("z");

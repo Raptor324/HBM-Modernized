@@ -33,6 +33,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code ItemCMStructure}: Klick auf den Custom-Machine-Anker setzt den Kern, danach Position 1 und 2;
@@ -49,16 +50,16 @@ public class ItemCMStructure extends Item implements ILookOverlay, ITooltipProvi
 
     @Nullable
     public static BlockPos getAnchor(ItemStack stack) {
-        if (!PlatformHooks.hasItemTag(stack)) {
+        if (!StackNbt.has(stack)) {
             return null;
         }
-        return new BlockPos(PlatformHooks.getInt(stack, "anchorX"), PlatformHooks.getInt(stack, "anchorY"), PlatformHooks.getInt(stack, "anchorZ"));
+        return new BlockPos(StackNbt.getInt(stack, "anchorX"), StackNbt.getInt(stack, "anchorY"), StackNbt.getInt(stack, "anchorZ"));
     }
 
     public static void setAnchor(ItemStack stack, int x, int y, int z) {
-        PlatformHooks.putInt(stack, "anchorX", x);
-        PlatformHooks.putInt(stack, "anchorY", y);
-        PlatformHooks.putInt(stack, "anchorZ", z);
+        StackNbt.putInt(stack, "anchorX", x);
+        StackNbt.putInt(stack, "anchorY", y);
+        StackNbt.putInt(stack, "anchorZ", z);
     }
 
     /** Alter Blockname + Metadatum: CM-Bloecke als {@code hbm:tile.cm_*} mit Enum-Ordinal (wie sie {@code CustomMachineConfigJSON} liest). */
@@ -84,15 +85,15 @@ public class ItemCMStructure extends Item implements ILookOverlay, ITooltipProvi
     }
 
     public static void writeToFile(File config, ItemStack stack, Level world) {
-        int anchorX = PlatformHooks.getInt(stack, "anchorX");
-        int anchorY = PlatformHooks.getInt(stack, "anchorY");
-        int anchorZ = PlatformHooks.getInt(stack, "anchorZ");
-        int x1 = PlatformHooks.getInt(stack, "x1");
-        int y1 = PlatformHooks.getInt(stack, "y1");
-        int z1 = PlatformHooks.getInt(stack, "z1");
-        int x2 = PlatformHooks.getInt(stack, "x2");
-        int y2 = PlatformHooks.getInt(stack, "y2");
-        int z2 = PlatformHooks.getInt(stack, "z2");
+        int anchorX = StackNbt.getInt(stack, "anchorX");
+        int anchorY = StackNbt.getInt(stack, "anchorY");
+        int anchorZ = StackNbt.getInt(stack, "anchorZ");
+        int x1 = StackNbt.getInt(stack, "x1");
+        int y1 = StackNbt.getInt(stack, "y1");
+        int z1 = StackNbt.getInt(stack, "z1");
+        int x2 = StackNbt.getInt(stack, "x2");
+        int y2 = StackNbt.getInt(stack, "y2");
+        int z2 = StackNbt.getInt(stack, "z2");
         // ForgeDirection.getOrientation(meta des Ankers)
         BlockState anchorState = world.getBlockState(new BlockPos(anchorX, anchorY, anchorZ));
         Direction dir = anchorState.hasProperty(CMBlocks.Anchor.FACING) ? anchorState.getValue(CMBlocks.Anchor.FACING) : Direction.DOWN;
@@ -174,22 +175,22 @@ public class ItemCMStructure extends Item implements ILookOverlay, ITooltipProvi
         if (getAnchor(stack) == null) {
             return InteractionResult.PASS;
         }
-        if (!PlatformHooks.contains(stack, "x1")) {
-            PlatformHooks.putInt(stack, "x1", x);
-            PlatformHooks.putInt(stack, "y1", y);
-            PlatformHooks.putInt(stack, "z1", z);
-        } else if (!PlatformHooks.contains(stack, "x2")) {
-            PlatformHooks.putInt(stack, "x2", x);
-            PlatformHooks.putInt(stack, "y2", y);
-            PlatformHooks.putInt(stack, "z2", z);
+        if (!StackNbt.contains(stack, "x1")) {
+            StackNbt.putInt(stack, "x1", x);
+            StackNbt.putInt(stack, "y1", y);
+            StackNbt.putInt(stack, "z1", z);
+        } else if (!StackNbt.contains(stack, "x2")) {
+            StackNbt.putInt(stack, "x2", x);
+            StackNbt.putInt(stack, "y2", y);
+            StackNbt.putInt(stack, "z2", z);
         } else {
             writeToFile(file, stack, world);
-            PlatformHooks.remove(stack, "x1");
-            PlatformHooks.remove(stack, "y1");
-            PlatformHooks.remove(stack, "z1");
-            PlatformHooks.remove(stack, "x2");
-            PlatformHooks.remove(stack, "y2");
-            PlatformHooks.remove(stack, "z2");
+            StackNbt.removeKey(stack, "x1");
+            StackNbt.removeKey(stack, "y1");
+            StackNbt.removeKey(stack, "z1");
+            StackNbt.removeKey(stack, "x2");
+            StackNbt.removeKey(stack, "y2");
+            StackNbt.removeKey(stack, "z2");
         }
         return InteractionResult.sidedSuccess(world.isClientSide);
     }
@@ -213,21 +214,21 @@ public class ItemCMStructure extends Item implements ILookOverlay, ITooltipProvi
 
             text.add(Component.literal("No Anchor").withStyle(ChatFormatting.RED));
         } else {
-            int anchorX = PlatformHooks.getInt(stack, "anchorX");
-            int anchorY = PlatformHooks.getInt(stack, "anchorY");
-            int anchorZ = PlatformHooks.getInt(stack, "anchorZ");
+            int anchorX = StackNbt.getInt(stack, "anchorX");
+            int anchorY = StackNbt.getInt(stack, "anchorY");
+            int anchorZ = StackNbt.getInt(stack, "anchorZ");
             text.add(Component.literal("Anchor: " + anchorX + " / " + anchorY + " / " + anchorZ).withStyle(ChatFormatting.GOLD));
-            if (PlatformHooks.contains(stack, "x1")) {
-                int x1 = PlatformHooks.getInt(stack, "x1");
-                int y1 = PlatformHooks.getInt(stack, "y1");
-                int z1 = PlatformHooks.getInt(stack, "z1");
+            if (StackNbt.contains(stack, "x1")) {
+                int x1 = StackNbt.getInt(stack, "x1");
+                int y1 = StackNbt.getInt(stack, "y1");
+                int z1 = StackNbt.getInt(stack, "z1");
 
                 text.add(Component.literal("Position1: " + x1 + " / " + y1 + " / " + z1).withStyle(ChatFormatting.YELLOW));
             }
-            if (PlatformHooks.contains(stack, "x2")) {
-                int x2 = PlatformHooks.getInt(stack, "x2");
-                int y2 = PlatformHooks.getInt(stack, "y2");
-                int z2 = PlatformHooks.getInt(stack, "z2");
+            if (StackNbt.contains(stack, "x2")) {
+                int x2 = StackNbt.getInt(stack, "x2");
+                int y2 = StackNbt.getInt(stack, "y2");
+                int z2 = StackNbt.getInt(stack, "z2");
                 text.add(Component.literal("Position2: " + x2 + " / " + y2 + " / " + z2).withStyle(ChatFormatting.YELLOW));
             }
         }

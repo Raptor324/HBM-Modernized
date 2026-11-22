@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client;
 
 import com.hbm_m.handler.ImpactWorldHandler;
@@ -6,17 +5,14 @@ import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.Level;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+//? if forge {
+import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.fml.common.Mod;
 //?} else {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.neoforge.client.event.ViewportEvent;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
+/*import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 *///?}
 
@@ -58,4 +54,3 @@ public class ImpactFogHandler {
         }
     }
 }
-//?}

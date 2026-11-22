@@ -10,6 +10,7 @@ import com.hbm_m.entity.item.EntityTNTPrimedBase;
 import com.hbm_m.explosion.ExplosionLarge;
 import com.hbm_m.explosion.ExplosionNT;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -38,7 +39,10 @@ public class DetMinerBlock extends Block implements IBomb, IFuckingExplode {
                                 @Nullable net.minecraft.world.level.BlockGetter level,
                                 List<Component> tooltip,
                                 TooltipFlag flag) {
-        // Original DetMiner hat keine Tooltipzeilen
+        tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line1")
+                .withStyle(ChatFormatting.YELLOW));
+        tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line4")
+                .withStyle(ChatFormatting.GRAY));
     }
     //?} else {
     /*@Override
@@ -46,7 +50,10 @@ public class DetMinerBlock extends Block implements IBomb, IFuckingExplode {
                                 net.minecraft.world.item.Item.TooltipContext level,
                                 List<Component> tooltip,
                                 TooltipFlag flag) {
-        // Original DetMiner hat keine Tooltipzeilen
+        tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line1")
+                .withStyle(ChatFormatting.YELLOW));
+        tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line4")
+                .withStyle(ChatFormatting.GRAY));
     }
     *///?}
 

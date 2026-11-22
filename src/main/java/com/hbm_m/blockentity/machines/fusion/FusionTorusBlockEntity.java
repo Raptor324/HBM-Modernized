@@ -137,7 +137,6 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
     @Override public BlockPos getFloorPosFromIndex(int index) {
         return new BlockPos(worldPosition.getX() - 5 + (index / 6) * 2, worldPosition.getY() - 1, worldPosition.getZ() - 5 + (index % 6) * 2);
     }
-
     public static void tick(Level level, BlockPos pos, BlockState state, FusionTorusBlockEntity be) {
         if (level instanceof ServerLevel serverLevel) {
             be.serverTick(serverLevel, pos);
@@ -291,6 +290,12 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
             this.magnet -= 360F;
             this.prevMagnet -= 360F;
         }
+
+
+        // Original: looped "fusionReactorLoop" 2.5 above the core within 50 blocks, pitch = magnetSpeed / 30.
+        com.hbm_m.sound.ClientSoundBootstrap.updateMachineLoop(this, this.magnetSpeed > 0F,
+                com.hbm_m.sound.ModSounds.FUSION_REACTOR_LOOP.get(), 2.5D, 50D,
+                be -> ((FusionTorusBlockEntity) be).magnetSpeed / 30F);
     }
 
     // ═════════════════════════════ Rezeptmodul ═════════════════════════════
@@ -518,7 +523,7 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_BATTERY) return true;
-        if (slot == SLOT_BLUEPRINT) return stack.is(ModItems.BLUEPRINTS.get());
+        if (slot == SLOT_BLUEPRINT) return stack.is(ModItems.BLUEPRINTS.get()) || stack.is(ModItems.BLUEPRINT_FOLDER.get());
         return false;
     }
 
@@ -692,4 +697,16 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
         sidedItems.invalidate();
     }
     *///?}
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        //? if forge {
+        return getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, side).resolve().orElse(null);
+        //?} elif neoforge {
+        /*return getHbmCapability(com.hbm_m.platform.HbmCap.ITEM_HANDLER, side).orElse(null);
+        *///?} else {
+        /*return this.inventory;
+        *///?}
+    }
 }

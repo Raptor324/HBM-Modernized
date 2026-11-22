@@ -4,7 +4,6 @@ import com.hbm_m.blockentity.machines.MachineFelBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.machine.ItemFELCrystal;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -14,6 +13,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** 1:1 {@code ContainerFEL}: Batterie (182,144), Laserkristall (141,23), Spielerinventar ab y 83. */
 public class MachineFelMenu extends AbstractContainerMenu {
@@ -30,11 +30,21 @@ public class MachineFelMenu extends AbstractContainerMenu {
         super(ModMenuTypes.FEL_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        var handler = blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOTS);
+        var handler = blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOTS);
         var container = new ModItemStackHandlerContainer(handler, blockEntity != null ? blockEntity::setChanged : () -> { });
 
-        this.addSlot(new Slot(container, 0, 182, 144));
-        this.addSlot(new Slot(container, 1, 141, 23));
+        this.addSlot(new Slot(container, 0, 182, 144) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return MachineFelBlockEntity.isEnergyItem(stack);
+            }
+        });
+        this.addSlot(new Slot(container, 1, 141, 23) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return stack.getItem() instanceof ItemFELCrystal;
+            }
+        });
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -58,10 +68,11 @@ public class MachineFelMenu extends AbstractContainerMenu {
             return felBlockEntity;
         }
         // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineFelBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":fel_menu");
+        throw new MenuBlockEntityMissingException("No MachineFelBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":fel_menu");
     }
 
     public MachineFelBlockEntity getBlockEntity() {
@@ -70,8 +81,7 @@ public class MachineFelMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override
@@ -87,8 +97,10 @@ public class MachineFelMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(stack, MACHINE_SLOTS, this.slots.size(), true)) return ItemStack.EMPTY;
             } else if (stack.getItem() instanceof ItemFELCrystal) {
                 if (!this.moveItemStackTo(stack, 1, 2, false)) return ItemStack.EMPTY;
-            } else {
+            } else if (MachineFelBlockEntity.isEnergyItem(stack)) {
                 if (!this.moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
+            } else {
+                return ItemStack.EMPTY;
             }
 
             if (stack.isEmpty()) slot.set(ItemStack.EMPTY);

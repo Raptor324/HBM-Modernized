@@ -80,7 +80,7 @@ public final class WorldFluids {
             () -> ModBlocks.ACID_BLOCK, () -> ModItems.BUCKET_ACID);
     // toxic_fluid: 2500 / 2000 / 15 / 2773, tickRate 2000 / 200 = 10
     public static final Entry TOXIC = register("toxic_fluid", "toxic", 2500, 2000, 15, 2773, 2, 10,
-            () -> ModBlocks.TOXIC_BLOCK, () -> ModItems.BUCKET_TOXIC);
+            () -> ModBlocks.TOXIC_FLUID_BLOCK, () -> ModItems.BUCKET_TOXIC);
     // schrabidic_fluid: 31200 / 500 / 0 / 273, tickRate 500 / 200 = 2
     public static final Entry SCHRABIDIC = register("schrabidic_fluid", "schrabidic_acid", 31200, 500, 0, 273, 2, 2,
             () -> ModBlocks.SCHRABIDIC_BLOCK, () -> ModItems.BUCKET_SCHRABIDIC_ACID);

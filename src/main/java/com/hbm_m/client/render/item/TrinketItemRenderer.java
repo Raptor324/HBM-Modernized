@@ -18,8 +18,8 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Gegenstandsdarstellung der Sammelfiguren ({@code ItemRenderLibrary}/{@code IItemRendererProvider} des Originals):
- * dieselben Renderroutinen wie im Block, auf die Blockgroesse der Gegenstandsansicht skaliert.
+ * Item renderer for collectible figurines (original {@code ItemRenderLibrary}/{@code IItemRendererProvider}):
+ * identical render routines as block renderer, scaled to item display block size.
  */
 public class TrinketItemRenderer extends BlockEntityWithoutLevelRenderer {
 
@@ -73,8 +73,8 @@ public class TrinketItemRenderer extends BlockEntityWithoutLevelRenderer {
     }
 
     /**
-     * vI: Inventar 1:1 nach Original (ItemRenderLibrary bobblehead, RenderPlushie/RenderSnowglobe#getRenderer):
-     * renderInventory() + renderCommonWithStack() hinter der ItemRenderBase-Inventarkette.
+     * Inventory renderer matching original (ItemRenderLibrary bobblehead, RenderPlushie/RenderSnowglobe#getRenderer):
+     * renderInventory() + renderCommonWithStack() following ItemRenderBase inventory chain.
      */
     private static void renderInventory(TrinketBlock.Kind kind, int type, PoseStack ps, MultiBufferSource buf, int light) {
         ps.pushPose();

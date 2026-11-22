@@ -42,10 +42,11 @@ public final class HbmCaps {
         return item(stack, cap);
     }
 
-    /^* Fuer die Anmeldung in {@code RegisterCapabilitiesEvent}: aufgeloester Wert oder null (nie rekursiv ueber die Welt). ^/
+    /^* Fuer die Anmeldung in {@code RegisterCapabilitiesEvent}: aufgeloester Wert oder null (nie rekursiv ueber die Welt).
+     * Ohne LazyCap-Wrap/Unwrap — {@code defaults} wird ueber denselben Raw-Resolver bedient. ^/
     public static <T> @Nullable T query(BlockEntity be, HbmCap<T> cap, @Nullable Direction side) {
-        LazyCap<T> c = be instanceof HbmCapabilityProvider p ? p.getHbmCapability(cap, side) : defaults(be, cap, side);
-        return c.orElse(null);
+        if (be instanceof HbmCapabilityProvider p) return p.getHbmCapability(cap, side).orElse(null);
+        return resolveDefault(be, cap, side);
     }
 
     /^*
@@ -54,20 +55,25 @@ public final class HbmCaps {
      * Hilfsmethoden von {@link com.hbm_m.blockentity.BaseHbmBlockEntity}.
      ^/
     public static <T> LazyCap<T> defaults(BlockEntity be, HbmCap<T> cap, @Nullable Direction side) {
-        if (cap == HbmCap.HBM_ENERGY_PROVIDER) return be instanceof IEnergyProvider p ? LazyCap.ofObj(p) : LazyCap.empty();
-        if (cap == HbmCap.HBM_ENERGY_RECEIVER) return be instanceof IEnergyReceiver r ? LazyCap.ofObj(r) : LazyCap.empty();
+        T v = resolveDefault(be, cap, side);
+        return v != null ? LazyCap.ofObj(v) : LazyCap.empty();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> @Nullable T resolveDefault(BlockEntity be, HbmCap<T> cap, @Nullable Direction side) {
+        if (cap == HbmCap.HBM_ENERGY_PROVIDER) return be instanceof IEnergyProvider p ? (T) p : null;
+        if (cap == HbmCap.HBM_ENERGY_RECEIVER) return be instanceof IEnergyReceiver r ? (T) r : null;
         if (cap == HbmCap.HBM_ENERGY_CONNECTOR) {
-            return be instanceof IEnergyConnector c && c.canConnectEnergy(side) ? LazyCap.ofObj(c) : LazyCap.empty();
+            return be instanceof IEnergyConnector c && c.canConnectEnergy(side) ? (T) c : null;
         }
         if (be instanceof com.hbm_m.blockentity.BaseHbmBlockEntity hbm) {
-            if (cap == HbmCap.ITEM_HANDLER) return LazyCap.ofObj(hbm.getItemHandler(side));
-            if (cap == HbmCap.FLUID_HANDLER) return LazyCap.ofObj(hbm.getFluidHandler(side));
+            if (cap == HbmCap.ITEM_HANDLER) return (T) hbm.getItemHandler(side);
+            if (cap == HbmCap.FLUID_HANDLER) return (T) hbm.getFluidHandler(side);
             if (cap == HbmCap.ENERGY) {
-                if (be instanceof com.hbm_m.api.energy.ConverterBlockEntity conv) return LazyCap.ofObj(new com.hbm_m.api.energy.HbmForgeWrapper(conv));
-                return LazyCap.ofObj(hbm.getEnergyStorage(side));
+                return (T) hbm.getEnergyStorage(side);
             }
         }
-        return LazyCap.empty();
+        return null;
     }
 }
 *///?}

@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.StackNbt;
 
 public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
 
@@ -230,6 +231,9 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         // it every column that still had a lid dropped it as an item *and* launched it as debris,
         // so a meltdown quietly duplicated the entire reactor's lids across the crater floor.
         com.hbm_m.block.machines.rbmk.RBMKColumnBlock.dropLids = false;
+        // try/finally: without it an exception inside the meltdown left the global flag cleared for
+        // the rest of the process, and RBMK lids stopped dropping when dismantled.
+        try {
         overpressureNets.clear();
 
         BlockPos originPos = origin.getBlockPos();
@@ -280,7 +284,8 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         for (RBMKColumnBlockEntity col : columns) {
             if (!(col instanceof RBMKRodBlockEntity)) continue;
             BlockPos p = col.getBlockPos();
-            if (!level.getBlockState(p).is(com.hbm_m.block.ModBlocks.CORIUM_BLOCK.get())) continue;
+            BlockState coreState = level.getBlockState(p);
+            if (!coreState.is(com.hbm_m.block.ModBlocks.RBMK_CORIUM.get()) && !coreState.is(com.hbm_m.block.ModBlocks.CORIUM_BLOCK.get())) continue;
 
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
@@ -335,8 +340,10 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
             }
         }
 
-        com.hbm_m.block.machines.rbmk.RBMKColumnBlock.dropLids = true;
-        digamma = false;
+        } finally {
+            com.hbm_m.block.machines.rbmk.RBMKColumnBlock.dropLids = true;
+            digamma = false;
+        }
     }
 
     /**
@@ -551,7 +558,7 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
      * Делегирует в {@link PlatformHooks#safeItemSave} (наследники RBMK используют в своём NBT).
      */
     protected static CompoundTag safeItemSave(ItemStack stack) {
-        return PlatformHooks.safeItemSave(stack, PlatformHooks.bestEffortProvider());
+        return StackNbt.saveNew(stack, PlatformHooks.bestEffortProvider());
     }
 
     @Override
@@ -566,10 +573,17 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
     /** Original {@code diag}: waehrend {@link #getDiagData} schreiben die Unterklassen ihre Diagnosewerte statt der Speicherdaten. */
     protected static boolean diag = false;
 
-    /** 1:1 {@code getDiagData} - Datenquelle des DODD-Overlays (ClientConfig.doddRbmkDiagnostic). */
+    /**
+     * Порт оригинального TileEntityRBMKBase.getDiagData — источник данных для DODD-оверлея
+     * («Dump of Ordered Data Diagnostic», см. {@link com.hbm_m.block.machines.rbmk.RBMKColumnBlock#printHook}).
+     * Пишет только данные колонки: x/y/z/id ванилла сюда не добавляет (их пишет
+     * saveWithFullMetadata, а не writeNbtData), а виртуальный вызов writeNbtData доходит
+     * до переопределений конкретного типа колонки. bestEffortProvider() на 1.20.1 возвращает
+     * null (как в load), на 1.21.1 — клиентский Provider, нужный для записи ItemStack'ов.
+     */
     public void getDiagData(CompoundTag nbt) {
         diag = true;
-        this.writeNbtData(nbt, null);
+        this.writeNbtData(nbt, PlatformHooks.bestEffortProvider());
         diag = false;
     }
 
@@ -581,6 +595,5 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         reasimSteam = tag.getInt("reasimSteam");
         lidState    = tag.contains("lidState") ? tag.getInt("lidState") : 1;
     }
-
 }
 

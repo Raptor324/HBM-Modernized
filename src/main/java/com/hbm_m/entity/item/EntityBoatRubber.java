@@ -30,6 +30,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code com.hbm.entity.item.EntityBoatRubber}: Schlauchboot mit eigener Physik (nicht die des Vanilla-Boots).
@@ -418,7 +419,7 @@ public class EntityBoatRubber extends Entity {
         if (this.hasPassenger(passenger)) {
             double offX = Math.cos((double) this.getYRot() * Math.PI / 180.0D) * 0.4D;
             double offZ = Math.sin((double) this.getYRot() * Math.PI / 180.0D) * 0.4D;
-            move.accept(passenger, this.getX() + offX, this.getY() + this.getPassengersRidingOffset() + PlatformHooks.getMyRidingOffset(passenger), this.getZ() + offZ);
+            move.accept(passenger, this.getX() + offX, this.getY() + this.getPassengersRidingOffset() + MobHooks.getMyRidingOffset(passenger), this.getZ() + offZ);
 
             if (passenger instanceof Player player) {
                 player.yBodyRot = Mth.wrapDegrees(this.getYRot() + 90F);

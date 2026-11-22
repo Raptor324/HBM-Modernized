@@ -1,7 +1,6 @@
 package com.hbm_m.blockentity.machines.dfc;
 
 import com.hbm_m.platform.PlatformHooks;
-
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -28,6 +27,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
 
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1-Port von {@code TileEntityCore} (1.7.10): der Kern des Dunklen Fusionsreaktors.
@@ -213,7 +213,7 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
                 level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, size);
         level.addFreshEntity(ex);
 
-        com.hbm_m.platform.PlatformHooks.playSound(level, pos, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE,
+        com.hbm_m.platform.LevelHooks.playSound(level, pos, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE,
                 net.minecraft.sounds.SoundSource.BLOCKS, 100000.0F, 1.0F);
 
         // Original: EntityCloudFleijaRainbow mit dem Radius als Groesse.
@@ -251,17 +251,29 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
         double range = meltdownTick ? 50D : 10D;
         double scale = meltdownTick ? 5D : 3D;
 
+        // Entities are in world space; on a Sable ship the block itself is not.
+        net.minecraft.world.phys.Vec3 centre = com.hbm_m.compat.sable.SableCompat.blockCenterInWorld(level, pos);
         AABB outer = new AABB(pos).inflate(range);
         for (Entity e : level.getEntitiesOfClass(Entity.class, outer)) {
-            // Original prueft hier auf Hazmat und freie Sicht; beides bleibt hier weg.
-            e.hurt(level.damageSources().onFire(), 1000F);
-            PlatformHooks.setSecondsOnFire(e, 3);
+            // Original: hazmat suits shield players, and the burn needs a clear line from 6 above the core.
+            if (e instanceof Player player && com.hbm_m.util.ArmorUtil.checkForHazmat(player)) continue;
+            if (isObstructed(level, centre.x, centre.y + 6D, centre.z, e.getX(), e.getEyeY(), e.getZ())) continue;
+            e.hurt(com.hbm_m.damagesource.ModDamageSources.ams(level), 1000F);
+            com.hbm_m.platform.MobHooks.setSecondsOnFire(e, 3);
         }
 
         AABB inner = new AABB(pos).inflate(scale);
         for (Entity e : level.getEntitiesOfClass(Entity.class, inner)) {
-            e.hurt(level.damageSources().genericKill(), 10000F);
+            if (e instanceof Player player && com.hbm_m.util.ArmorUtil.checkForHaz2(player)) continue;
+            e.hurt(com.hbm_m.damagesource.ModDamageSources.amsCore(level), 10000F);
         }
+    }
+
+    /** Original: {@code Library.isObstructed}. */
+    private static boolean isObstructed(Level level, double x, double y, double z, double tx, double ty, double tz) {
+        return level.clip(com.hbm_m.platform.LevelHooks.clipContext(
+                new net.minecraft.world.phys.Vec3(x, y, z), new net.minecraft.world.phys.Vec3(tx, ty, tz),
+                net.minecraft.world.level.ClipContext.Fluid.NONE)).getType() != net.minecraft.world.phys.HitResult.Type.MISS;
     }
 
     // ── Verbrennung ─────────────────────────────────────────────────────────
@@ -369,6 +381,8 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
         tanks[1].writeToNBT(tag, "fuel2");
         tag.putInt("field", field);
         tag.putInt("color", color);
+        tag.putInt("heat", heat);
+        tag.putBoolean("meltdown", meltdownTick);
         tag.putInt("renderHeat", syncHeat);
         tag.putBoolean("renderMeltdown", syncMeltdown);
     }
@@ -380,10 +394,13 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
         tanks[1].readFromNBT(tag, "fuel2");
         field = tag.getInt("field");
         color = tag.getInt("color");
-        syncHeat = tag.getInt("renderHeat");
-        syncMeltdown = tag.getBoolean("renderMeltdown");
+        heat = tag.getInt("heat");
+        meltdownTick = tag.getBoolean("meltdown");
+        syncHeat = tag.contains("renderHeat") ? tag.getInt("renderHeat") : heat;
+        syncMeltdown = tag.contains("renderMeltdown") ? tag.getBoolean("renderMeltdown") : meltdownTick;
     }
 
+    public boolean isMeltdownTick() { return meltdownTick; }
     /** Fuer RenderCore: Hitze des letzten Ticks (0 = Bereitschaft). */
     public int getRenderHeat() { return syncHeat; }
     /** Fuer RenderCore: Durchschmelzen im letzten Tick (Flare statt Kugel). */

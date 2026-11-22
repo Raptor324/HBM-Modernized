@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
+import com.hbm_m.config.GeneralConfig;
 import com.hbm_m.inventory.fluid.FluidContainerDefs;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -26,6 +27,8 @@ import net.minecraft.world.item.alchemy.PotionUtils;
 //?}
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.material.Fluid;
+
+import dev.architectury.platform.Platform;
 
 /**
  * 1:1 {@code com.hbm.inventory.FluidContainerRegistry}: feste Paare (voller Behaelter, leerer Behaelter oder keiner,
@@ -139,6 +142,24 @@ public final class FluidContainerRegistry {
 
             registerContainer(new FluidContainer(ItemFluidTank.make(ModItems.FLUID_TANK_FULL.get(), type, 1), new ItemStack(ModItems.FLUID_TANK_EMPTY.get()), type, 1000));
             registerContainer(new FluidContainer(ItemFluidTank.make(ModItems.FLUID_BARREL_FULL.get(), type, 1), new ItemStack(ModItems.FLUID_BARREL_EMPTY.get()), type, 16000));
+        }
+
+        registerCompatFluidContainers();
+    }
+
+    /**
+     * Original {@code Compat.registerCompatFluidContainers} (Compat.java:193): Diesel-Kanister von
+     * TrainCraft (Original {@code Compat.MOD_TC} = "tc"), nur wenn das Mod geladen und
+     * {@code GeneralConfig.enableFluidContainerCompat} an ist. Im Port-Umfeld (1.20.1/1.21.1) ist
+     * TrainCraft nicht vorhanden - die Abfrage bleibt wie im Original ohne das Mod ein No-op.
+     */
+    private static void registerCompatFluidContainers() {
+        if (Platform.isModLoaded("tc") && GeneralConfig.enableFluidContainerCompat) {
+            Item canister = item("tc:emptyCanister");
+            Item diesel = item("tc:diesel");
+            Fluid type = fluid("diesel");
+            if (canister != null && diesel != null && type != null)
+                registerContainer(new FluidContainer(new ItemStack(diesel), new ItemStack(canister), type, 1000));
         }
     }
 

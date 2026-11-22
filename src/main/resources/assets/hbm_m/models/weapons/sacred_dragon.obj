@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'sacred_dragon.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Shells
 v 0.312500 0.250000 -1.750000
 v 0.187500 0.216506 -1.750000

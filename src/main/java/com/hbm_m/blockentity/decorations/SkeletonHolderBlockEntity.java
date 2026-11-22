@@ -9,6 +9,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 
 /** 1:1 {@code BlockSkeletonHolder.TileEntitySkeletonHolder}: haelt einen Gegenstand. */
 public class SkeletonHolderBlockEntity extends BaseHbmBlockEntity {
@@ -34,12 +35,12 @@ public class SkeletonHolderBlockEntity extends BaseHbmBlockEntity {
     @Override
     protected void writeNbtData(CompoundTag tag, HolderLookup.Provider registries) {
         if (!item.isEmpty()) {
-            tag.put("item", PlatformHooks.saveItemStack(item, new CompoundTag(), registries));
+            tag.put("item", StackNbt.save(item, new CompoundTag(), registries));
         }
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, HolderLookup.Provider registries) {
-        item = tag.contains("item") ? PlatformHooks.itemStackOf(tag.getCompound("item"), registries) : ItemStack.EMPTY;
+        item = tag.contains("item") ? StackNbt.parse(tag.getCompound("item"), registries) : ItemStack.EMPTY;
     }
 }

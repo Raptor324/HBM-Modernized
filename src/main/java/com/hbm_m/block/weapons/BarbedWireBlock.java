@@ -21,6 +21,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.MobHooks;
 
 public class BarbedWireBlock extends Block {
 
@@ -49,7 +50,7 @@ public class BarbedWireBlock extends Block {
 
         if (self == com.hbm_m.block.ModBlocks.BARBED_WIRE_FIRE.get()) {
             ent.hurt(level.damageSources().cactus(), 2.0F);
-            PlatformHooks.setSecondsOnFire(ent, 1);
+            MobHooks.setSecondsOnFire(ent, 1);
         }
 
         if (self == com.hbm_m.block.ModBlocks.BARBED_WIRE_POISON.get()) {

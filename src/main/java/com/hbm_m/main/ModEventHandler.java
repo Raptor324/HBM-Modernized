@@ -6,6 +6,7 @@ import dev.architectury.event.events.common.PlayerEvent;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import com.hbm_m.platform.MobHooks;
 
 public final class ModEventHandler {
 
@@ -14,6 +15,12 @@ public final class ModEventHandler {
 
 	public static void register() {
 		PlayerEvent.PLAYER_JOIN.register(ModEventHandler::onPlayerJoin);
+		// Debug-дамп серверной стороны конфига: dedicated — при старте сервера,
+		// SP — при входе в мир (стартует интегрированный сервер).
+		dev.architectury.event.events.common.LifecycleEvent.SERVER_STARTED.register(
+				server -> com.hbm_m.config.ConfigDebugLogger.dumpSide(com.hbm_m.config.schema.ConfigSide.SERVER));
+		// Серверная инвалидация кэша рецептов (reload/datapack sync/tags) — loader-gated glue.
+		com.hbm_m.platform.RecipeCacheInvalidationHooks.register();
 		// Original ModEventHandler.onPlayerTick (START): PermaSyncPacket, Abschnitt POLLUTION
 		dev.architectury.event.events.common.TickEvent.PLAYER_PRE.register(player -> {
 			if (player instanceof ServerPlayer sp) com.hbm_m.network.PollutionSyncPacket.sendTo(sp);
@@ -30,7 +37,7 @@ public final class ModEventHandler {
 			ConfigSyncS2CPacket.sendTo(sp);
 
 			// Original ModEventHandler.onPlayerLogin: Enten-Hinweis (PlayerInformPacket, 30 000 ms)
-			net.minecraft.nbt.CompoundTag perDat = com.hbm_m.platform.PlayerPersistentData.get(sp).getCompound(Player.PERSISTED_NBT_TAG);
+			net.minecraft.nbt.CompoundTag perDat = com.hbm_m.platform.MobHooks.getPersistentData(sp).getCompound(Player.PERSISTED_NBT_TAG);
 			if (com.hbm_m.config.MobConfig.enableDucks && !perDat.getBoolean("hasDucked"))
 				com.hbm_m.network.InfoToastPacket.sendTo(sp, net.minecraft.network.chat.Component.literal("Press O to Duck!"), 600, com.hbm_m.network.InfoToastPacket.ID_DUCK, 0xFFFFFF);
 		}

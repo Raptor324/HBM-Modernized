@@ -38,8 +38,8 @@ public class MachineStorageDrumBlock extends BaseEntityBlock {
     /** Original {@code BlockMachineBase.breakBlock}: Inhalt fallen lassen. */
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof MachineStorageDrumBlockEntity drum) {
-            drum.dropInventoryContents();
+        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
+            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }

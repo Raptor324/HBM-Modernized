@@ -3,11 +3,15 @@ package com.hbm_m.blockentity.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.network.radio.IRadioTorchConfigurable;
 import com.hbm_m.blockentity.network.radio.RTTYNetwork;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -62,17 +66,17 @@ public class RadioTelexBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEnt
     }
 
     private void update(Level worldObj) {
-
         this.sendingChar = ' ';
 
         if (this.isSending && this.txChannel.isEmpty()) this.isSending = false;
 
-        if (this.isSending) {
+        boolean changedState = false;
 
+        if (this.isSending) {
+            changedState = true;
             if (sendingWait > 0) {
                 sendingWait--;
             } else {
-
                 String line = txBuffer[sendingLine];
 
                 if (line.length() > sendingIndex) {
@@ -85,7 +89,6 @@ public class RadioTelexBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEnt
                         this.sendingChar = c;
                     }
                 } else {
-
                     if (sendingLine >= 4) {
                         this.isSending = false;
                         RTTYNetwork.broadcast(worldObj, this.txChannel, eot);
@@ -108,6 +111,7 @@ public class RadioTelexBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEnt
                     && chan.timeStamp != lastRxStamp) {
                 lastRxStamp = chan.timeStamp;
                 char c = (Character) chan.signal;
+                changedState = true;
 
                 if (this.deleteOnReceive) {
                     this.deleteOnReceive = false;
@@ -138,13 +142,13 @@ public class RadioTelexBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEnt
             }
         }
 
-        // Original networkPackNT(16): Puffer, Kanaele, gesendetes Zeichen (Oszilloskop)
-        worldObj.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2);
+        if (changedState) {
+            worldObj.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2);
+        }
     }
 
     @Override
     public void receiveControl(CompoundTag data) {
-
         for (int i = 0; i < 5; i++) {
             if (data.contains("tx" + i)) this.txBuffer[i] = data.getString("tx" + i);
         }
@@ -171,7 +175,13 @@ public class RadioTelexBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEnt
             this.rxChannel = data.getString("rxChan");
         }
 
+        if (data.contains("txChannel")) this.txChannel = data.getString("txChannel");
+        if (data.contains("rxChannel")) this.rxChannel = data.getString("rxChannel");
+
         setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
     }
 
     public void print() {
@@ -194,27 +204,36 @@ public class RadioTelexBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEnt
         stack.set(net.minecraft.core.component.DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(lore));
         *///?}
         level.addFreshEntity(new ItemEntity(level, worldPosition.getX() + 0.5, worldPosition.getY() + 1, worldPosition.getZ() + 0.5, stack));
+        com.hbm_m.platform.LevelHooks.playSound(level, worldPosition, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 0.5F, 1.5F);
     }
 
     @Override
-    protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+    protected void writeNbtData(@NotNull CompoundTag nbt, @Nullable HolderLookup.Provider registries) {
+        super.writeNbtData(nbt, registries);
         for (int i = 0; i < 5; i++) {
             nbt.putString("tx" + i, txBuffer[i]);
             nbt.putString("rx" + i, rxBuffer[i]);
         }
         nbt.putString("txChan", txChannel);
         nbt.putString("rxChan", rxChannel);
+        nbt.putBoolean("isSending", isSending);
+        nbt.putInt("sendingLine", sendingLine);
+        nbt.putInt("sendingIndex", sendingIndex);
         nbt.putInt("sendingChar", sendingChar);
     }
 
     @Override
-    protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+    protected void readNbtData(@NotNull CompoundTag nbt, @Nullable HolderLookup.Provider registries) {
+        super.readNbtData(nbt, registries);
         for (int i = 0; i < 5; i++) {
             txBuffer[i] = nbt.getString("tx" + i);
             rxBuffer[i] = nbt.getString("rx" + i);
         }
-        this.txChannel = nbt.getString("txChan");
-        this.rxChannel = nbt.getString("rxChan");
+        this.txChannel = nbt.contains("txChan") ? nbt.getString("txChan") : nbt.getString("txChannel");
+        this.rxChannel = nbt.contains("rxChan") ? nbt.getString("rxChan") : nbt.getString("rxChannel");
+        this.isSending = nbt.getBoolean("isSending");
+        this.sendingLine = nbt.getInt("sendingLine");
+        this.sendingIndex = nbt.getInt("sendingIndex");
         this.sendingChar = (char) nbt.getInt("sendingChar");
     }
 }

@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client;
 
 import com.hbm_m.item.special.ItemHot;
@@ -40,4 +39,3 @@ public final class HotItemDecorator implements IItemDecorator {
         return false;
     }
 }
-//?}

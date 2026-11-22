@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.network.request.RequestNetwork.OfferNode;
+import com.hbm_m.blockentity.network.request.RequestNetwork.PathNode;
 import com.hbm_m.blockentity.network.request.RequestNetwork.RequestNode;
 import com.hbm_m.blockentity.network.request.RequestNetworkParticipant;
 import com.hbm_m.inventory.filter.ModulePatternMatcher;
@@ -21,11 +23,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Drone Requester - Port von {@code TileEntityDroneRequester} (1.7.10 Original, Pipeline B). 9
- * Filter-Slots (0-8) + 9 Lager-Slots (9-17), {@link ModulePatternMatcher} entscheidet pro Filter,
- * ob der zugehoerige Lager-Slot als "ausreichend befuellt" gilt - falls nicht, wird das Filter-Item
- * dem {@link RequestNode}s Wunschzettel hinzugefuegt.
- * Wunschzettel wie im Original als {@code AStack} (RequestNetwork.RequestStack): genau, Wildcard
+ * 1:1 {@code TileEntityDroneRequester}: 9 Filter (Slots 0-8), 9 Vorratsplaetze (Slots 9-17). Fordert an, sobald ein Vorratsplatz
+ * leer ist oder nicht zum Filter darueber passt. Die Anforderung ist entweder genaue Uebereinstimmung (inkl. NBT), Wildcard
  * oder Ore-Dictionary-Schluessel je nach Filtermodus.
  */
 public class MachineDroneRequesterBlockEntity extends BaseMachineBlockEntity {
@@ -168,25 +167,5 @@ public class MachineDroneRequesterBlockEntity extends BaseMachineBlockEntity {
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?} elif neoforge {
-    /*/^* Original {@code ISidedInventory}: Slots {9-17}; nichts hinein, alles heraus. ^/
-    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
-            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
-                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(9, 17); }
-                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
-                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
-            });
-
-    @Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
-        return super.getHbmCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateHbmCaps() {
-        super.invalidateHbmCaps();
-        sidedItems.invalidate();
-    }
-    *///?}
+    //?}
 }

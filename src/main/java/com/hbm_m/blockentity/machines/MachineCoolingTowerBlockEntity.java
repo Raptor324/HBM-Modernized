@@ -103,11 +103,9 @@ public class MachineCoolingTowerBlockEntity extends BaseMachineBlockEntity imple
     }
 
     private void syncIfChanged() {
-        int i = tanks[0].getFill(), o = tanks[1].getFill();
-        if (i != sentIn || o != sentOut || waterTimer != sentTimer) {
-            sentIn = i; sentOut = o; sentTimer = waterTimer;
-            sendUpdateToClient();
-        }
+        long lo = (long) tanks[0].getFill() | (((long) tanks[1].getFill()) << 32);
+        long hi = (long) waterTimer;
+        syncIfStateChanged(lo, hi);
     }
 
     /** Original {@code TileEntityTowerLarge}: Dampfschwaden, solange {@code waterTimer > 0}. */
@@ -146,6 +144,11 @@ public class MachineCoolingTowerBlockEntity extends BaseMachineBlockEntity imple
     // ═══════════════════════════ IFluidStandardTransceiverMK2 ════════════════════════════════
 
     @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
+        return fromDir != null;
+    }
+
+    @Override
     public FluidTank[] getReceivingTanks() {
         return new FluidTank[] { tanks[TANK_HOT_IN] };
     }
@@ -177,17 +180,17 @@ public class MachineCoolingTowerBlockEntity extends BaseMachineBlockEntity imple
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        tanks[0].readFromNBT(tag, "water");
-        tanks[1].readFromNBT(tag, "steam");
+        if (tag.contains("water")) tanks[0].readFromNBT(tag, "water");
+        else if (tag.contains("tank_0")) tanks[0].readFromNBT(tag, "tank_0");
+        if (tag.contains("steam")) tanks[1].readFromNBT(tag, "steam");
+        else if (tag.contains("tank_1")) tanks[1].readFromNBT(tag, "tank_1");
         waterTimer = tag.getByte("waterTimer");
     }
 
-    //? if forge || neoforge {
     @Override
     protected void setupFluidCapability() {
         setFluidHandler(new CoolingTowerFluidHandler(this));
     }
-    //?}
 
     private AABB bb = null;
 

@@ -53,6 +53,14 @@ public final class NuclearExplosionAPI {
             return null;
         }
 
+        // A bomb on a Sable ship reports plot-grid coordinates; the crater entity gets kicked into
+        // world space by Sable anyway, but the particle packet and sound went out at the plot
+        // position and never reached a player.
+        Vec3 world = com.hbm_m.compat.sable.SableCompat.toWorld(level, x, y, z);
+        x = world.x;
+        y = world.y;
+        z = world.z;
+
         int scaled = Math.round(cfg.baseStrength * cmd.amplifier());
         if (scaled <= 0) {
             scaled = 25;

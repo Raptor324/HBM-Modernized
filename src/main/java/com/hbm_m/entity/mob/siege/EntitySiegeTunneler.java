@@ -2,7 +2,6 @@ package com.hbm_m.entity.mob.siege;
 
 import com.hbm_m.platform.PlatformHooks;
 
-import com.hbm_m.platform.AttributeOps;
 
 import java.util.UUID;
 
@@ -29,6 +28,8 @@ import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import com.hbm_m.platform.AttributeHooks;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code com.hbm.entity.mob.siege.EntitySiegeTunneler}: grabender Belagerungsbohrer (1x1). Panzerung, Leben
@@ -104,8 +105,8 @@ public class EntitySiegeTunneler extends EntityBurrowingSwingingBase {
         this.entityData.set(TIER, tier.id);
 
         AttributeInstance attack = this.getAttribute(Attributes.ATTACK_DAMAGE);
-        com.hbm_m.platform.MobHooks.removeModifier(attack, TIER_DAMAGE_UUID);
-        attack.addPermanentModifier(PlatformHooks.attributeModifier(TIER_DAMAGE_UUID, "Tier Damage Mod", tier.damageMod, AttributeOps.MULTIPLY_BASE));
+        com.hbm_m.platform.AttributeHooks.removeModifier(attack, TIER_DAMAGE_UUID);
+        attack.addPermanentModifier(AttributeHooks.modifier(TIER_DAMAGE_UUID, "Tier Damage Mod", tier.damageMod, AttributeHooks.MULTIPLY_BASE));
         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(tier.health * 0.5);
         this.setHealth(this.getMaxHealth());
     }

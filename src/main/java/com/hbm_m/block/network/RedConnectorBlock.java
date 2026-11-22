@@ -131,6 +131,7 @@ public class RedConnectorBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+
     /** audit10: 1:1 {@code PylonBase.onBlockActivated} - nicht schleichend faerbt ein Farbstoff das Kabel ({@code setColor}). */
     //? if < 1.21.1 {
     @Override
@@ -183,7 +184,7 @@ public class RedConnectorBlock extends BaseEntityBlock {
     }
     //?} else {
     /*@Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         addTooltip(tooltip);
     }
     *///?}

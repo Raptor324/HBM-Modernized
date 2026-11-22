@@ -11,6 +11,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.MobHooks;
 
 public class HazardTypeHot extends HazardTypeBase {
 
@@ -21,7 +22,7 @@ public class HazardTypeHot extends HazardTypeBase {
         }
 
         if (!target.isInWaterOrRain() && level > 0) {
-            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(target, (int) Math.ceil(level));
+            com.hbm_m.platform.MobHooks.setSecondsOnFire(target, (int) Math.ceil(level));
         }
     }
 

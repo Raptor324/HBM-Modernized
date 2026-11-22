@@ -13,8 +13,8 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * 1:1 {@code RenderHephaestus}: Gehaeuse, drei drehende Rotoren und der Kern - im Betrieb gluehende Lava (volle
- * Helligkeit), sonst abgedunkelter Bruchstein; die Textur laeuft mit der Rotation nach oben.
+ * 1:1 {@code RenderHephaestus}: casing, three rotating rotors and the core - active with glowing lava (full
+ * brightness), otherwise dimmed cobblestone; texture scrolls upward with rotation.
  */
 public class HephaestusRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineHephaestusBlockEntity> {
 

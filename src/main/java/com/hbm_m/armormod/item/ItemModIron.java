@@ -1,6 +1,5 @@
 package com.hbm_m.armormod.item;
 
-import com.hbm_m.platform.AttributeOps;
 
 import java.util.List;
 
@@ -19,6 +18,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.AttributeHooks;
 
 /** 1:1 {@code ItemModIron} (cladding_iron): +0.5 Rueckstossresistenz. */
 public class ItemModIron extends ItemArmorMod {
@@ -46,7 +46,7 @@ public class ItemModIron extends ItemArmorMod {
     /*public com.google.common.collect.Multimap<net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>, net.minecraft.world.entity.ai.attributes.AttributeModifier> getModifiers(ItemStack armor) {
         com.google.common.collect.Multimap<net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>, net.minecraft.world.entity.ai.attributes.AttributeModifier> multimap = com.google.common.collect.HashMultimap.create();
     *///?}
-        multimap.put(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE, modifier(armor, "NTM Armor Mod Knockback", 0.5, AttributeOps.ADDITION));
+        multimap.put(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE, modifier(armor, "NTM Armor Mod Knockback", 0.5, AttributeHooks.ADDITION));
         return multimap;
     }
 }

@@ -18,6 +18,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 
 import java.util.List;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1-Port von {@code GUIPneumoTube} (1.7.10), 176×185.
@@ -30,6 +32,7 @@ import java.util.List;
  * {@code gui_pneumatic_endpoint.png}: dort gibt es nur den Filter, denn Druckstufe und
  * Reihenfolge betreffen allein das Senden.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIPneumoTube extends AbstractContainerScreen<PneumoTubeMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
@@ -170,13 +173,5 @@ public class GUIPneumoTube extends AbstractContainerScreen<PneumoTubeMenu> {
         int localX = mouseX - this.leftPos;
         int localY = mouseY - this.topPos;
         return localX >= x && localX < x + w && localY >= y && localY < y + h;
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // Original drawGuiContainerForegroundLayer
-        String name = this.title.getString();
-        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 5, 4210752, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 91, 4210752, false);
     }
 }

@@ -9,11 +9,11 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1-Port von {@code ContainerFusionBreeder} (1.7.10): Fluid-Identifier (26/72),
@@ -100,8 +100,6 @@ public class MachineFusionBreederMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // Not vanilla's stillValid: that one measures to the controller cell in the middle of
-        // the structure, which this machine is far too wide for - see MultiblockMenuReach.
-        return MultiblockMenuReach.stillValid(level, blockEntity.getBlockPos(), ModBlocks.BREEDER_FUSION.get(), player);
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.BREEDER_FUSION.get());
     }
 }

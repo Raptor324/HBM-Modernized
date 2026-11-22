@@ -5,6 +5,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 1:1 {@link com.hbm.blocks.generic.BlockCoke} ({@code block_coke}, Metadaten COAL/LIGNITE/PETROLEUM als
@@ -16,13 +17,22 @@ public class BlockCoke extends Block {
         super(properties);
     }
 
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<BlockCoke> CODEC = simpleCodec(BlockCoke::new);
+
     @Override
-    public int getFlammability(BlockState state, BlockGetter world, BlockPos pos, Direction face) {
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.Block> codec() {
+        return CODEC;
+    }
+    *///?}
+
+    @Override
+    public int getFlammability(BlockState state, BlockGetter level, BlockPos pos, @Nullable Direction direction) {
         return 5;
     }
 
     @Override
-    public int getFireSpreadSpeed(BlockState state, BlockGetter world, BlockPos pos, Direction face) {
+    public int getFireSpreadSpeed(BlockState state, BlockGetter level, BlockPos pos, @Nullable Direction direction) {
         return 10;
     }
 }

@@ -14,6 +14,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1 {@code ContainerMachinePUREX}: Batterie (152,81), Ordner (35,126), Upgrades (152,108/126), drei Eingaenge ab
@@ -83,7 +84,7 @@ public class MachinePUREXMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachinePUREXBlockEntity purex) {
             return purex;
         }
-        throw new IllegalStateException("No MachinePUREXBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":purex_menu");
+        throw new MenuBlockEntityMissingException("No MachinePUREXBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":purex_menu");
     }
 
     public MachinePUREXBlockEntity getBlockEntity() {

@@ -12,6 +12,7 @@
         { "name": "DhFar", "type": "float", "count": 1, "values": [ 4096.0 ] },
         { "name": "OutNear", "type": "float", "count": 1, "values": [ 0.05 ] },
         { "name": "OutFar", "type": "float", "count": 1, "values": [ 8000000.0 ] },
-        { "name": "DhFadeMaskDist", "type": "float", "count": 1, "values": [ 0.0 ] }
+        { "name": "DhFadeMaskDist", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "DhReverseZ", "type": "float", "count": 1, "values": [ 0.0 ] }
     ]
 }

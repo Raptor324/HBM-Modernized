@@ -16,8 +16,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 /**
- * 1:1 {@code RenderBombletTheta}: das Bomblet-OBJ nach Flugrichtung gedreht (Gier - 90, dann Nicken um Z);
- * der Zeta-Bomblet wird halb so gross und mit eigener Textur gezeichnet.
+ * 1:1 {@code RenderBombletTheta}: bomblet OBJ rotated along flight vector (yaw - 90, then pitch around Z);
+ * Zeta bomblet rendered half-scale with distinct texture.
  */
 public class BombletThetaRenderer extends EntityRenderer<EntityBombletZeta> {
 

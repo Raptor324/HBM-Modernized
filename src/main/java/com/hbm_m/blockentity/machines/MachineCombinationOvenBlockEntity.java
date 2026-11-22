@@ -1,6 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
 import java.util.EnumMap;
+
 import java.util.List;
 import java.util.Map;
 
@@ -20,6 +21,7 @@ import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.CombinationOvenRecipe;
 import com.hbm_m.sound.HbmSoundsNT;
 
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -36,6 +38,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.StackNbt;
+import com.hbm_m.platform.MobHooks;
+
 
 /**
  * 1:1 {@code TileEntityFurnaceCombination}: Koksofen ohne Strom, beheizt von einer {@link IHeatSource} direkt unter dem
@@ -44,7 +49,7 @@ import net.minecraft.world.phys.AABB;
  * 24000-mB-Tank, dessen Typ sich nach dem Rezept richtet. Alle 20 Ticks werden Fluid und Rauch an allen 3x2 Seiten-
  * und 3x3 Deckzellen angeboten. Waehrend er brennt: Wesen ueber dem Ofen fangen Feuer, Flammenwerfergeraeusch, Russ.
  */
-public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEntity {
+public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEntity implements com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
 
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_OUTPUT = 1;
@@ -62,9 +67,11 @@ public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEnti
 
     private final FluidTank tank = new FluidTank(ModFluids.NONE.getSource(), 24_000);
 
+
     public MachineCombinationOvenBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.COMBINATION_OVEN_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L, 50);
     }
+
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineCombinationOvenBlockEntity be) {
         if (!level.isClientSide()) be.serverTick(level, pos);
@@ -140,7 +147,7 @@ public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEnti
 
                 List<Entity> entities = level.getEntitiesOfClass(Entity.class,
                         new AABB(pos.getX() - 0.5, pos.getY() + 2, pos.getZ() - 0.5, pos.getX() + 1.5, pos.getY() + 4, pos.getZ() + 1.5));
-                for (Entity e : entities) PlatformHooks.setSecondsOnFire(e, 5);
+                for (Entity e : entities) MobHooks.setSecondsOnFire(e, 5);
 
                 if (level.getGameTime() % 10 == 0)
                     level.playSound(null, pos.getX(), pos.getY() + 1, pos.getZ(), HbmSoundsNT.get("hbm:weapon.flamethrowerShoot"), SoundSource.BLOCKS, 0.25F, 0.5F);
@@ -174,6 +181,7 @@ public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEnti
             if (recipe.matchesInput(stack)) return recipe;
         }
         return null;
+
     }
 
     public boolean canSmelt(CombinationOvenRecipe recipe) {
@@ -182,7 +190,7 @@ public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEnti
         if (!out.isEmpty()) {
             ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
             if (!current.isEmpty()) {
-                if (!PlatformHooks.isSameItemSameTags(out, current)) return false;
+                if (!StackNbt.sameItemSameTags(out, current)) return false;
                 if (out.getCount() + current.getCount() > current.getMaxStackSize()) return false;
             }
         }
@@ -191,6 +199,7 @@ public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEnti
             Fluid type = recipe.getOutputFluid();
             if (tank.getTankType() != type && tank.getFill() > 0) return false;
             if (tank.getTankType() == type && tank.getFill() + recipe.getOutputFluidAmount() > tank.getMaxFill()) return false;
+
         }
 
         return true;
@@ -276,13 +285,13 @@ public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEnti
         sided.clear();
     }
     //?} elif neoforge {
-    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
+    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
 
     /^* Original {@code getAccessibleSlotsFromSide {0, 1}}: nur Slot 0 einfuegbar, nur Slot 1 entnehmbar. ^/
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
-            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.minecraftforge.items.IItemHandler() {
                 @Override public int getSlots() { return 2; }
                 @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
                 @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
@@ -311,6 +320,7 @@ public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEnti
     // ── Fluid ────────────────────────────────────────────────────────────────
 
     @Override public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[0]; }
     @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tank, smoke, smokeLeaded, smokePoison }; }
 
     // ── Zugriff ──────────────────────────────────────────────────────────────
@@ -324,6 +334,7 @@ public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEnti
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
+
         tank.writeToNBT(tag, "tank");
         tag.putInt("prog", progress);
         tag.putInt("heat", heat);
@@ -333,6 +344,7 @@ public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEnti
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+
         tank.readFromNBT(tag, "tank");
         progress = tag.getInt("prog");
         heat = tag.getInt("heat");
@@ -351,6 +363,7 @@ public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEnti
         return getDefaultName();
     }
 
+
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
@@ -367,4 +380,18 @@ public class MachineCombinationOvenBlockEntity extends MachinePollutingBlockEnti
                 worldPosition.getX() + 2, worldPosition.getY() + 2.125, worldPosition.getZ() + 2);
         return bb;
     }
+
+    //? if forge {
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sided.get(side);
+    }
+    //?} elif neoforge {
+    /*@Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sided.get(side).resolve().orElse(null);
+    }
+    *///?}
 }

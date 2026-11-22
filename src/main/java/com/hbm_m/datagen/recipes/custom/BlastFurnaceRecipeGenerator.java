@@ -155,7 +155,8 @@ public final class BlastFurnaceRecipeGenerator {
                 .save(writer, "blast_furnace/firebrick");
 
         // blast.firebrickLimestone
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:firebrick", 8), ore("oredict/ore/limestone"), Ingredient.of(item("minecraft:clay_ball"))).nt()
+        // Original: LIMESTONE.dust() -> hbm_m:oredict/dust/limestone (nicht das Erz!)
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:firebrick", 8), ore("oredict/dust/limestone"), Ingredient.of(item("minecraft:clay_ball"))).nt()
                 .counts(1, 6).duration(800)
                 .save(writer, "blast_furnace/firebricklimestone");
     }

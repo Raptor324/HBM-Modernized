@@ -17,9 +17,11 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.PlatformHooks;
 //? if forge {
 import com.hbm_m.api.energy.EnergyCapabilityProvider;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
@@ -37,8 +39,14 @@ public class ModArmorFSBPowered extends ModArmorFSB implements com.hbm_m.api.ite
     public long consumption;
     public long drain;
 
-    public ModArmorFSBPowered(ModArmorMaterials material, Type type, Properties properties, String texture,
-                              long maxPower, long chargeRate, long consumption, long drain) {
+    public static final int ARMOR_SLOT_HEAD = 0;
+    public static final int ARMOR_SLOT_CHEST = 1;
+    public static final int ARMOR_SLOT_LEGS = 2;
+    public static final int ARMOR_SLOT_FEET = 3;
+
+    public ModArmorFSBPowered(ModArmorMaterials material, Type type, Properties properties,
+                              String texture, long maxPower, long chargeRate,
+                              long consumption, long drain) {
         super(material, type, properties, texture);
         this.maxPower = maxPower;
         this.chargeRate = chargeRate;
@@ -57,31 +65,31 @@ public class ModArmorFSBPowered extends ModArmorFSB implements com.hbm_m.api.ite
         return getCharge(stack) > 0;
     }
 
+    @Override
     public void chargeBattery(ItemStack stack, long i) {
         if (stack.getItem() instanceof ModArmorFSBPowered) {
             if (StackNbt.has(stack)) {
                 StackNbt.tag(stack).putLong("charge", StackNbt.read(stack).getLong("charge") + i);
             } else {
-                StackNbt.set(stack, new CompoundTag());
-                StackNbt.tag(stack).putLong("charge", i);
+                StackNbt.orCreate(stack).putLong("charge", i);
             }
         }
     }
 
+    @Override
     public void setCharge(ItemStack stack, long i) {
         if (stack.getItem() instanceof ModArmorFSBPowered) {
-            if (!StackNbt.has(stack)) StackNbt.set(stack, new CompoundTag());
-            StackNbt.tag(stack).putLong("charge", i);
+            StackNbt.orCreate(stack).putLong("charge", i);
         }
     }
 
+    @Override
     public void dischargeBattery(ItemStack stack, long i) {
         if (stack.getItem() instanceof ModArmorFSBPowered) {
             if (StackNbt.has(stack)) {
                 StackNbt.tag(stack).putLong("charge", StackNbt.read(stack).getLong("charge") - i);
             } else {
-                StackNbt.set(stack, new CompoundTag());
-                StackNbt.tag(stack).putLong("charge", getMaxCharge(stack) - i);
+                StackNbt.orCreate(stack).putLong("charge", getMaxCharge(stack) - i);
             }
 
             if (StackNbt.read(stack).getLong("charge") < 0)
@@ -94,9 +102,9 @@ public class ModArmorFSBPowered extends ModArmorFSB implements com.hbm_m.api.ite
             if (StackNbt.has(stack)) {
                 return Math.min(StackNbt.read(stack).getLong("charge"), getMaxCharge(stack));
             } else {
-                StackNbt.set(stack, new CompoundTag());
-                StackNbt.tag(stack).putLong("charge", getMaxCharge(stack));
-                return StackNbt.read(stack).getLong("charge");
+                CompoundTag t = StackNbt.orCreate(stack);
+                t.putLong("charge", getMaxCharge(stack));
+                return t.getLong("charge");
             }
         }
         return 0;
@@ -136,19 +144,34 @@ public class ModArmorFSBPowered extends ModArmorFSB implements com.hbm_m.api.ite
         return 0;
     }
 
-    //? if !fabric {
+    /**
+     * MATCHES 1.7.10 BEHAVIOR
+     * This is called by Minecraft when armor would take damage.
+     * Instead of damaging the item, we drain energy based on consumption.
+     * (Forge/NeoForge: IItemExtension#setDamage; на Fabric такого хука нет.)
+     */
     @Override
     public void setDamage(ItemStack stack, int damage) {
         // 1.20: ItemStack.setTag ruft setDamageValue(0) auf - das darf nichts tun (sonst Endlosschleife).
         if (damage <= 0) return;
         this.dischargeBattery(stack, damage * consumption);
     }
-    //?}
 
     //? if forge {
     @Override
     @SuppressWarnings("removal")
-    //?}
+    //?} else {
+    /*@Override
+    public void inventoryTick(ItemStack stack, Level world, Entity entity, int slotId, boolean selected) {
+        super.inventoryTick(stack, world, entity, slotId, selected);
+        if (world.isClientSide()) return;
+        if (!(entity instanceof Player player)) return;
+        // Both checks exist in the neighbouring overrides: without them spare armour pieces drained
+        // while sitting in the inventory, and the client drained its own copy of the stack too.
+        if (!stackIsEquippedArmor(player, stack)) return;
+        armorTick(stack, world, player);
+    }
+    *///?}
     public void onArmorTick(ItemStack stack, Level world, Player player) {
         super.onArmorTick(stack, world, player);
         armorTick(stack, world, player);
@@ -161,6 +184,37 @@ public class ModArmorFSBPowered extends ModArmorFSB implements com.hbm_m.api.ite
         }
     }
 
+    // ── Energie-Synchronisation (aus machines): nach Dash/grossem Abzug den Ladestand an den Client schicken ──
+
+    private int getArmorContainerId(Player player, EquipmentSlot slot) {
+        int slotIndex = switch (slot) {
+            case HEAD -> ARMOR_SLOT_HEAD;
+            case CHEST -> ARMOR_SLOT_CHEST;
+            case LEGS -> ARMOR_SLOT_LEGS;
+            case FEET -> ARMOR_SLOT_FEET;
+            default -> -1;
+        };
+        // Отрицательное значение = броня (не инвентарь)
+        return -(player.getId() * 4 + slotIndex);
+    }
+
+    public void syncEnergyToClient(Player player, ItemStack stack, Level world, EquipmentSlot slot) {
+        if (world.isClientSide() || !(player instanceof net.minecraft.server.level.ServerPlayer)) return;
+
+        long current = getCharge(stack);
+        long max = getMaxCharge(stack);
+        int containerId = getArmorContainerId(player, slot);
+
+        // Отправляем пакет через существующий канал
+        com.hbm_m.network.packet.PacketSyncEnergy.sendTo(
+                (net.minecraft.server.level.ServerPlayer) player,
+                containerId,
+                current,
+                max,
+                0L
+        );
+    }
+
     // neo-pendant: ModCapabilities.registerBatteryItemCaps (RegisterCapabilitiesEvent, Item-Capabilities)
     //? if forge {
     @Nullable
@@ -171,7 +225,8 @@ public class ModArmorFSBPowered extends ModArmorFSB implements com.hbm_m.api.ite
     }
     //?}
 
-    // Port: Schutzmaske im Curios-Gesichtsslot und Helm schliessen sich aus (siehe GasMaskCurio).
+    // Взаимная блокировка с маской в слоте лица Curios: шлем силовой брони нельзя
+    // надеть, пока там стоит противогаз (и наоборот — см. GasMaskCurio/ArmorGasMaskItem).
     //? if < 1.21.1 {
     @Override
     public boolean canEquip(ItemStack stack, EquipmentSlot slot, Entity entity) {

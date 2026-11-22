@@ -1,11 +1,15 @@
 package com.hbm_m.inventory.fluid.tank;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
 import com.hbm_m.platform.IPlatformFluidHandler;
 import com.hbm_m.platform.FluidHooks;
+import com.hbm_m.platform.StackNbt;
+
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -134,8 +138,9 @@ public class FluidTank implements Cloneable {
         return (net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler>) getCapability();
     }
     //?} elif neoforge {
-    /*/^* NeoForge-Gegenstueck fuer die gespiegelten getHbmCapability-Zweige (Capability-Bruecke, siehe HbmCapabilityProvider). ^/
-    public com.hbm_m.platform.LazyCap<net.neoforged.neoforge.fluids.capability.IFluidHandler> getForgeFluidCapability() {
+    /*
+    // NeoForge-Gegenstueck fuer die gespiegelten getHbmCapability-Zweige (Capability-Bruecke, siehe HbmCapabilityProvider).
+    public com.hbm_m.platform.LazyCap<net.minecraftforge.fluids.capability.IFluidHandler> getForgeFluidCapability() {
         return com.hbm_m.platform.LazyCap.ofObj(getCapability());
     }
     *///?}
@@ -230,14 +235,33 @@ public class FluidTank implements Cloneable {
         if (slots[in] == null || slots[in].isEmpty() || !(slots[in].getItem() instanceof FluidIdentifierItem)) return false;
         Fluid newType = FluidIdentifierItem.resolvePrimaryForTank(slots[in]);
         if (newType == null) return false;
+        // Паритет NEXT FluidTankNTM.setType: "unchanged" = бак уже закреплён (pin) за ТОЧНО этой
+        // жидкостью. Наш эквивалент pin — conformedFluid: бак, заполненный по трубам без
+        // установленного типа (conformedFluid сброшен), считается НЕ закреплённым — как у NEXT —
+        // идентификатор перекрепляет точную жидкость (fill сохраняется) и переезжает в слот приёма.
         if (in == out) {
-            if (getConfiguredFluid() == newType) return false;
+            if (getConfiguredFluid() == newType) {
+                if (!isFluidTypeExplicitlySet(conformedFluid)) {
+                    this.conformedFluid = newType;
+                    return true;
+                }
+                return false;
+            }
             this.conformedFluid = newType;
             drainMb(getFluidAmountMb());
             return true;
         } else {
             if (slots[out] != null && !slots[out].isEmpty()) return false;
-            if (getConfiguredFluid() == newType) return false;
+            if (getConfiguredFluid() == newType) {
+                if (!isFluidTypeExplicitlySet(conformedFluid)) {
+                    // setTankTypeByIdentifier: перекрепление той же жидкости — fill сохраняется.
+                    this.conformedFluid = newType;
+                    slots[out] = slots[in].copy();
+                    slots[in] = ItemStack.EMPTY;
+                    return true;
+                }
+                return false;
+            }
             this.conformedFluid = newType;
             drainMb(getFluidAmountMb());
             slots[out] = slots[in].copy();
@@ -333,7 +357,7 @@ public class FluidTank implements Cloneable {
         if (resultStack.isEmpty()) return true;
         ItemStack stackInSlot = slots[slotOut];
         if (stackInSlot == null || stackInSlot.isEmpty()) return true;
-        return FluidHooks.areItemsStackable(stackInSlot, resultStack) && stackInSlot.getCount() + resultStack.getCount() <= stackInSlot.getMaxStackSize();
+        return StackNbt.sameItemSameTags(stackInSlot, resultStack) && stackInSlot.getCount() + resultStack.getCount() <= stackInSlot.getMaxStackSize();
     }
 
     static void placeItemInSlot(ItemStack[] slots, int slotOut, ItemStack resultStack) {
@@ -346,24 +370,14 @@ public class FluidTank implements Cloneable {
         return type != null && type != Fluids.EMPTY && type != ModFluids.NONE.getSource();
     }
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
+
     public void renderTank(net.minecraft.client.gui.GuiGraphics guiGraphics, int x, int y, int width, int height) {
         renderTank(guiGraphics, x, y, width, height, 0);
     }
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
+
     public void renderTank(net.minecraft.client.gui.GuiGraphics guiGraphics, int x, int y, int width, int height, int orientation) {
         Fluid drawType = getConfiguredFluid();
         int fluidAmt = getFluidAmountMb();
@@ -402,13 +416,8 @@ public class FluidTank implements Cloneable {
         com.mojang.blaze3d.systems.RenderSystem.disableBlend();
     }
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
+
     public void renderTankInfo(net.minecraft.client.gui.GuiGraphics guiGraphics, net.minecraft.client.gui.Font font, int mouseX, int mouseY, int x, int y, int width, int height) {
         if (!(mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height)) return;
 
@@ -431,6 +440,6 @@ public class FluidTank implements Cloneable {
 
         type.addInfo(shift, lines);
 
-        guiGraphics.renderTooltip(font, lines, java.util.Optional.empty(), mouseX, mouseY);
+        com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextFluid(guiGraphics, font, lines, mouseX, mouseY, type);
     }
 }

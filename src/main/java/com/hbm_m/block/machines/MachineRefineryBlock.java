@@ -40,7 +40,6 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 
 
@@ -58,12 +57,6 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
         if (tool != com.hbm_m.api.block.IToolable.ToolType.TORCH) return false;
         return com.hbm_m.api.tile.IRepairable.tryRepairMultiblock(world, pos, player);
     }
-
-    @Override
-    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
-        com.hbm_m.api.tile.IRepairable.addGenericOverlay(g, world, pos, net.minecraft.network.chat.Component.translatable(getDescriptionId()));
-    }
-
 
     /**
      * Whether this machine has been blown up. Drives the model swap to the wrecked variant - the
@@ -163,6 +156,17 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    /**
+     * Порт {@code MachineRefinery.printHook} → {@code IRepairable.addGenericOverlay}: список
+     * материалов ремонта ("Repair with:"). Как и в оригинале, показывается ТОЛЬКО когда игрок
+     * держит газовую горелку в главной руке и завод взорван; иначе HUD вообще не выводится.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        com.hbm_m.api.tile.IRepairable.addGenericOverlay(guiGraphics, level, pos,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()));
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -172,13 +176,13 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
+if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide());
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
+if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide());
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}

@@ -319,11 +319,7 @@ public final class CustomMachineConfigJSON {
 
     /** Original {@code MainRegistry.proxy.getLanguageCode()}: Server "en_us", Client die gewaehlte Sprache. */
     public static String languageCode() {
-        //? if forge {
         if (net.minecraftforge.fml.loading.FMLEnvironment.dist.isClient()) return com.hbm_m.client.util.ClientLang.code();
-        //?} elif neoforge {
-        /*if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) return com.hbm_m.client.util.ClientLang.code();
-        *///?}
         return "en_us";
     }
 

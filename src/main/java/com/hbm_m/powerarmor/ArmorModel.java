@@ -64,6 +64,7 @@ public class ArmorModel extends ArmorItem {
 
     //? if forge {
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
             @Override
@@ -88,11 +89,12 @@ public class ArmorModel extends ArmorItem {
     }
     //?} elif neoforge {
     /*@Override
+@SuppressWarnings("removal")
     public void initializeClient(Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             @Override
-            public void renderHelmetOverlay(ItemStack stack, Player player, int width, int height, float partialTick) {
-                ArmorModel.this.renderHelmetOverlay(stack, width, height);
+            public void renderHelmetOverlay(ItemStack stack, Player player, net.minecraft.client.gui.GuiGraphics gui, net.minecraft.client.DeltaTracker delta) {
+                ArmorModel.this.renderHelmetOverlay(stack, gui.guiWidth(), gui.guiHeight());
             }
 
             private com.hbm_m.powerarmor.layer.PowerArmorEmptyModel model;

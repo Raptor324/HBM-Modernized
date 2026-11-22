@@ -14,14 +14,8 @@ import com.hbm_m.main.MainRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceProvider;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
-
 /**
  * Wraps a {@link ResourceProvider} so that resources matching a target {@link ResourceLocation}
  * are intercepted, their content is run through a {@link ShaderModification}, and the modified
@@ -31,11 +25,7 @@ import net.fabricmc.api.Environment;*///?}
  * variants of the same shader source with different preprocessor defines (e.g. with and
  * without {@code #define USE_INSTANCING}).
  */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class ShaderPreDefinitions {
 
     private ShaderPreDefinitions() {}
@@ -60,10 +50,10 @@ public final class ShaderPreDefinitions {
      * the "vertex"/"fragment" name from the JSON, so two variants pointing at the same name will
      * collide and only the first compilation wins.
      * <p>
-     * Example: {@code block_lit_simple.json} references {@code "vertex": "hbm_m:block_lit"},
-     * {@code block_lit_instanced.json} references {@code "vertex": "hbm_m:block_lit_instanced"}.
-     * Only the latter file does not exist on disk; this provider fabricates it from
-     * {@code hbm_m:shaders/core/block_lit.vsh} + {@code #define USE_INSTANCING}.
+     * Note: the instanced variants used to be fabricated here from
+     * {@code block_lit.vsh} + {@code #define USE_INSTANCING}; they now live as real
+     * files ({@code block_lit_instanced.vsh}, {@code iris/...}), so this redirect
+     * remains for future variant registrations only.
      */
     public static ResourceProvider wrapRedirect(ResourceProvider delegate,
                                                 ResourceLocation virtualTarget,

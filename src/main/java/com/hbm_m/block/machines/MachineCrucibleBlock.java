@@ -54,6 +54,12 @@ public class MachineCrucibleBlock extends DummyableMachineBlock {
     });
 
     @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            {0, 0, 0.5, -0.3, 0.4, -0.4, 1}
+        };
+    }
+
     public net.minecraft.world.phys.shapes.VoxelShape getCustomMasterVoxelShape(BlockState state) {
         return BOUNDING_W16B.get(state.getValue(FACING));
     }

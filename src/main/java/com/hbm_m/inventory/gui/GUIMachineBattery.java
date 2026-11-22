@@ -30,11 +30,7 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
 
     // Используем современный .fromNamespaceAndPath()
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/storage/gui_battery.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/storage/gui_battery.png");
-            //?}
 
 
     public GUIMachineBattery(MachineBatteryMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
@@ -132,7 +128,9 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
 
         // Кнопка приоритета
         int priorityOrdinal = menu.getPriorityOrdinal();
-        int priorityV = 52 + priorityOrdinal * 16;
+        // Иконки приоритета в атласе лежат с v=36 (4 кадра по 16px);
+        // формула 52 + ord*16 уводила HIGH на прозрачный кадр.
+        int priorityV = 36 + priorityOrdinal * 16;
         graphics.blit(TEXTURE, x + 152, y + 35, 194, priorityV, 16, 16);
     }
 
@@ -170,7 +168,8 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
         if (isMouseOver(pMouseX, pMouseY, 152, 35, 16, 16)) {
             List<Component> tooltip = new ArrayList<>();
             // Мы убрали VERY_LOW/VERY_HIGH, поэтому ординалы 0, 1, 2 (LOW, NORMAL, HIGH)
-            int priorityOrdinal = menu.getPriorityOrdinal();
+            // Смещение ключей на -1: ординал 1..3 (LOW..HIGH) -> лейблы .0..2
+            int priorityOrdinal = Math.max(1, Math.min(menu.getPriorityOrdinal(), 3)) - 1;
             String priorityKey = "gui.hbm_m.battery.priority." + priorityOrdinal;
 
             tooltip.add(Component.translatable(priorityKey));

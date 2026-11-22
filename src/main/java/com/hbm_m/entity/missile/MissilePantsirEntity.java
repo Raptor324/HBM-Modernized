@@ -11,12 +11,12 @@ import net.minecraft.world.phys.Vec3;
 /**
  * 57E6, der Flugkoerper des Pantsir-S1: 3,2 Bloecke lang, zweistufig, Reichweite 12 km.
  *
- * <p>Radarverhalten und Zielsuche stammen von {@link MissileABMEntity}. Eigen sind drei Dinge: die
+ * <p>Radarverhalten und Zielsuche stammen von {@link MissileAntiBallisticEntity}. Eigen sind drei Dinge: die
  * Rakete startet in Rohrrichtung, beschleunigt auf {@link #TOP_SPEED} Bloecke pro Tick und prueft den
  * Abstand zum Ziel ueber den ganzen Tick. Eine reine Abstandsmessung am Tickende wuerde bei 140
  * Bloecken Annaeherung pro Tick fast immer danebenliegen.
  */
-public class MissilePantsirEntity extends MissileABMEntity {
+public class MissilePantsirEntity extends MissileAntiBallisticEntity {
 
     /** Hoechstgeschwindigkeit in Bloecken pro Tick, also 1.200 m/s. */
     public static final double TOP_SPEED = 60.0D;

@@ -3,9 +3,13 @@ package com.hbm_m.block.gas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -21,7 +25,6 @@ public class BlockGasFlammable extends BlockGasBase {
         super(0.8F, 0.8F, 0.2F);
     }
 
-    /** Original: {@code fireSources} - Feuer, Lava, Fackeln, Kuerbislaternen. */
     protected static boolean isFireSource(BlockState state) {
         return state.is(Blocks.FIRE)
                 || state.is(Blocks.SOUL_FIRE)
@@ -35,20 +38,37 @@ public class BlockGasFlammable extends BlockGasBase {
                 || state.is(Blocks.SOUL_CAMPFIRE);
     }
 
-    /** Original {@code isFlammable}: immer true (Feuer darf am Gas haften). */
+    public static boolean isHoldingFireSource(Entity entity) {
+        if (entity instanceof LivingEntity living) {
+            return isFireSourceItem(living.getMainHandItem()) || isFireSourceItem(living.getOffhandItem());
+        }
+        return false;
+    }
+
+    public static boolean isFireSourceItem(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+        Item item = stack.getItem();
+        return item == Items.TORCH
+                || item == Items.SOUL_TORCH
+                || item == Items.LAVA_BUCKET
+                || item == Items.FLINT_AND_STEEL
+                || item == Items.FIRE_CHARGE
+                || item == Items.CAMPFIRE
+                || item == Items.SOUL_CAMPFIRE
+                || stack.is(ItemTags.CANDLES);
+    }
+
     @Override
     public boolean isFlammable(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos, Direction direction) {
         return true;
     }
 
-    /** Original: {@code combust} - der Gasblock wird zu Feuer. */
     protected void combust(ServerLevel level, BlockPos pos) {
         level.setBlock(pos, Blocks.FIRE.defaultBlockState(), 3);
     }
 
     @Override
     protected boolean onGasTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-
         for (Direction dir : Direction.values()) {
             if (isFireSource(level.getBlockState(pos.relative(dir)))) {
                 combust(level, pos);
@@ -66,8 +86,7 @@ public class BlockGasFlammable extends BlockGasBase {
 
     @Override
     public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
-        // Original: eine brennende Entitaet zuendet das Gas.
-        if (!level.isClientSide() && entity.isOnFire() && level instanceof ServerLevel serverLevel) {
+        if (!level.isClientSide() && (entity.isOnFire() || isHoldingFireSource(entity)) && level instanceof ServerLevel serverLevel) {
             combust(serverLevel, pos);
             return;
         }
@@ -76,17 +95,22 @@ public class BlockGasFlammable extends BlockGasBase {
 
     @Override
     protected void affect(LivingEntity living) {
-        // Das Gas selbst ist ungiftig - gefaehrlich wird erst die Zuendung.
     }
 
     @Override
-    public Direction getFirstDirection(ServerLevel level, BlockPos pos, RandomSource random) {
+    public Direction getFirstDirection(Level level, BlockPos pos, RandomSource random) {
         if (random.nextInt(3) == 0) return randomVertical(random);
         return randomHorizontal(random);
     }
 
     @Override
-    public Direction getSecondDirection(ServerLevel level, BlockPos pos, RandomSource random) {
+    public Direction getSecondDirection(Level level, BlockPos pos, RandomSource random) {
         return randomHorizontal(random);
+    }
+
+    /** Original: zufaellige Verzoegerung 16..20 Ticks vor der Selbstentzuendung. */
+    @Override
+    public int getDelay(Level level, RandomSource random) {
+        return random.nextInt(5) + 16;
     }
 }

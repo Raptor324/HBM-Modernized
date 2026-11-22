@@ -286,7 +286,7 @@ public class MachineExposureChamberBlockEntity extends BaseMachineBlockEntity im
         tag.putInt("processTime", processTime);
         tag.putInt("consumption", consumption);
         tag.putBoolean("isOn", isOn);
-        if (!loadedParticle.isEmpty()) tag.put("loadedParticle", com.hbm_m.platform.PlatformHooks.saveItemStack(loadedParticle, new CompoundTag(), registries));
+        if (!loadedParticle.isEmpty()) tag.put("loadedParticle", com.hbm_m.platform.StackNbt.save(loadedParticle, new CompoundTag(), registries));
     }
 
     @Override
@@ -297,7 +297,7 @@ public class MachineExposureChamberBlockEntity extends BaseMachineBlockEntity im
         processTime = tag.contains("processTime") ? tag.getInt("processTime") : processTimeBase;
         consumption = tag.contains("consumption") ? tag.getInt("consumption") : consumptionBase;
         isOn = tag.getBoolean("isOn");
-        loadedParticle = tag.contains("loadedParticle") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("loadedParticle"), registries) : ItemStack.EMPTY;
+        loadedParticle = tag.contains("loadedParticle") ? com.hbm_m.platform.StackNbt.parse(tag.getCompound("loadedParticle"), registries) : ItemStack.EMPTY;
     }
 
     // ==================== GUI ====================

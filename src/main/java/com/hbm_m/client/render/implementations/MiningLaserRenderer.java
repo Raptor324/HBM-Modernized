@@ -16,8 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * 1:1 {@code RenderLaserMiner}: Sockel, um die Hochachse schwenkender Drehkranz, auf das Ziel geneigter Emitter und
- * der dreifach gewendelte rote Strahl.
+ * 1:1 {@code RenderLaserMiner}: base, yaw slew ring, pitch-directed emitter, and triple-helical red beam.
  */
 public class MiningLaserRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineMiningLaserBlockEntity> {
 

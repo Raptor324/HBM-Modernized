@@ -1,10 +1,11 @@
 {
-  "loader": "forge:obj",
+  "loader": "hbm_m:nmesh_obj",
   "model": "hbm_m:models/block/red_pylon_large_e.obj",
   "flip_v": true,
   "render_type": "minecraft:solid",
   "textures": {
     "particle": "hbm_m:block/red_pylon_large",
+    "default": "hbm_m:block/red_pylon_large",
     "surface": "hbm_m:block/red_pylon_large"
   },
   "transform": {
@@ -13,5 +14,6 @@
       0,
       0.5
     ]
-  }
+  },
+  "ao": false
 }

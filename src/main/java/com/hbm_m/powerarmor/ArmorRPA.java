@@ -12,7 +12,8 @@ public class ArmorRPA extends ModPowerArmorItem implements IPAWeaponsProvider {
 
     public ArmorRPA(ModArmorMaterials material, Type type, Properties properties, String texture,
               long maxPower, long chargeRate, long consumption, long drain) {
-        super(material, type, properties, texture, maxPower, chargeRate, consumption, drain);
+        // Texture is resolved from the registry id in ModPowerArmorItem (see ArmorHEV).
+        super(material, type, properties, new PowerArmorSpecs(maxPower, chargeRate, drain, consumption));
     }
 
     public static final ArmorRPAMelee meleeComponent = new ArmorRPAMelee();

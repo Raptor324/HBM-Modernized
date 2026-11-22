@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.render.item;
 
 import com.hbm_m.client.render.SimpleObjModel;
@@ -21,10 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * vJ: 1:1 {@code ItemRenderMissilePart}: Sprengkoepfe, Rumpfe, Leitwerke und Triebwerke der Baukasten-Rakete zeigen ihr
- * OBJ-Modell. Inventar (ForgeHooksClient#renderInventoryItem ohne Render-Helfer, Licht aus): Hoehe = guiheight (0 -> 4),
- * Massstab 10/Hoehe, T(h/2*s, 0, 0) Rz(135) Rx(145), Sprengkopf +h/8*s, Rumpf +h/4*s, T(3.5, 14, 0) S(-s), langsame
- * Drehung um -Y (Millisekunden / 25). In der Hand T(0.5, 0, 0) S(0.4), am Boden S(0.4).
+ * 1:1 {@code ItemRenderMissilePart}: warheads, bodies, fins and thrusters of modular missile render their
+ * OBJ model. Inventory (ForgeHooksClient#renderInventoryItem without render helper, lighting disabled): height = guiheight (0 -> 4),
+ * scale 10/height, T(h/2*s, 0, 0) Rz(135) Rx(145), warhead +h/8*s, body +h/4*s, T(3.5, 14, 0) S(-s), slow
+ * rotation around -Y (milliseconds / 25). In hand T(0.5, 0, 0) S(0.4), on ground S(0.4).
  */
 public class ItemRenderMissilePart extends BlockEntityWithoutLevelRenderer {
 
@@ -51,7 +50,7 @@ public class ItemRenderMissilePart extends BlockEntityWithoutLevelRenderer {
 
         ps.pushPose();
         if (ctx == ItemDisplayContext.GUI) {
-            // GUI-Pose von renderByItem (T(x+8,y+8) S(16,-16,16) T(-0.5)) -> linke obere Slotecke, y nach unten
+            // GUI pose from renderByItem (T(x+8,y+8) S(16,-16,16) T(-0.5)) -> top-left slot corner, Y downward
             ps.translate(0.5F, 0.5F, 0.5F);
             ps.scale(1F / 16F, -1F / 16F, 1F / 16F);
             ps.translate(-8F, -8F, 0F);
@@ -67,7 +66,7 @@ public class ItemRenderMissilePart extends BlockEntityWithoutLevelRenderer {
             ps.translate(3.5, 14, 0);
             ps.scale((float) -scale, (float) -scale, (float) -scale);
             ps.mulPose(Axis.YN.rotationDegrees(System.currentTimeMillis() / 25 % 360));
-            // Original: GL_LIGHTING aus -> unbeleuchtet (Textur pur)
+            // Original: GL_LIGHTING disabled -> unlit fullbright (pure texture)
             model.renderAll(ps, buf.getBuffer(RenderType.text(tex)), 0xF000F0);
         } else {
             RBMKColumnItemRenderer.applyDisplay(stack, ctx, ps);
@@ -79,4 +78,3 @@ public class ItemRenderMissilePart extends BlockEntityWithoutLevelRenderer {
         ps.popPose();
     }
 }
-//?}

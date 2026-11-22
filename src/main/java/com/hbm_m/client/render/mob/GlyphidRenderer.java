@@ -92,11 +92,7 @@ public class GlyphidRenderer<T extends EntityGlyphid> extends MobRenderer<T, Gly
         public void render(PoseStack ps, MultiBufferSource buf, int light, T entity, float limbSwing, float limbSwingAmount, float pt, float ageInTicks, float netHeadYaw, float headPitch) {
             if (entity.getSubtype() != EntityGlyphid.TYPE_INFECTED || entity instanceof EntityGlyphidNuclear) return;
             VertexConsumer vc = buf.getBuffer(RenderType.entityTranslucent(glyphid_infested_tex));
-            //? if < 1.21.1 {
-            this.getParentModel().renderToBuffer(ps, vc, light, LivingEntityOverlay.overlay(entity), 1F, 1F, 1F, 1F);
-            //?} else {
-            /*this.getParentModel().renderToBuffer(ps, vc, light, LivingEntityOverlay.overlay(entity));
-            *///?}
+            com.hbm_m.platform.RenderHooks.renderModelToBuffer(this.getParentModel(), ps, vc, light, LivingEntityOverlay.overlay(entity));
         }
     }
 

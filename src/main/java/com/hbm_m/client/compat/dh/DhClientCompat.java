@@ -1,5 +1,7 @@
 package com.hbm_m.client.compat.dh;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix4f;
 
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -16,11 +18,7 @@ import net.minecraft.client.Minecraft;
  * EngineHandler в главном FBO — рисование в DH FBO полностью удалено
  * (запись геометрии в их FBO отравляла композит apply.frag — «чёрная земля»).
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
- *///?}
+@OnlyIn(Dist.CLIENT)
 public final class DhClientCompat {
 
     private DhClientCompat() {}
@@ -179,29 +177,10 @@ public final class DhClientCompat {
     }
 
     // ── Источник 1: Iris CapturedRenderingState ─────────────────────────────
-    private static Object irisCapturedStateInstance;
-    private static java.lang.reflect.Method irisGetGbufferProjection;
-    private static volatile boolean irisCaptureInitialized = false;
 
     private static Matrix4f captureFromIris() {
-        if (!irisCaptureInitialized) {
-            irisCaptureInitialized = true;
-            try {
-                Class<?> cl = Class.forName("net.irisshaders.iris.uniforms.CapturedRenderingState");
-                irisCapturedStateInstance = cl.getField("INSTANCE").get(null);
-                irisGetGbufferProjection = cl.getMethod("getGbufferProjection");
-            } catch (Throwable ignored) {}
-        }
-        if (irisCapturedStateInstance == null || irisGetGbufferProjection == null) {
-            return null;
-        }
-        try {
-            Object proj = irisGetGbufferProjection.invoke(irisCapturedStateInstance);
-            if (proj instanceof org.joml.Matrix4fc m) {
-                return new Matrix4f(m);
-            }
-        } catch (Throwable ignored) {}
-        return null;
+        org.joml.Matrix4fc proj = com.hbm_m.client.render.shader.IrisReflectionBridge.getGbufferProjection();
+        return proj != null ? new Matrix4f(proj) : null;
     }
 
     // ── Источник 2: реконструкция ванильной последовательности кадра ────────

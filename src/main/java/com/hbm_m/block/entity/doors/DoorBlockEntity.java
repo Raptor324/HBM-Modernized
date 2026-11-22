@@ -1,7 +1,12 @@
 package com.hbm_m.block.entity.doors;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import net.minecraft.core.HolderLookup;
 
 import com.hbm_m.api.tile.ILockableTile;
 import com.hbm_m.api.tile.LockState;
@@ -24,6 +29,8 @@ import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import java.util.Map;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
@@ -40,20 +47,24 @@ import net.minecraft.world.phys.AABB;
 // Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
 
 
-public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IMultiblockPart, ILockableTile
-    //? if fabric {
-    /*, net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
-    *///?}
+public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IMultiblockPart, ILockableTile, com.hbm_m.interfaces.ILockable, com.hbm_m.interfaces.IRelocatable
 {
-    private static final String DOOR_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.DoorLoopSoundFactory";
 
     // 0=закрыта, 1=открыта, 2=закрывается, 3=открывается
     public byte state = 0;
     private int openTicks = 0;
+    public int getOpenTicks() { return this.openTicks; }
+    /** Значение openTicks на предыдущем тике — для интерполяции по partialTick (порт 1.7.10 prevOpenTicks). */
+    private int prevOpenTicks = 0;
     public long animStartTime = 0;
     /** Original TileEntityDoorGeneric extends TileEntityLockableBase: Stiftschloss der Tuer. */
     public final LockState lockState = new LockState();
     private boolean lastRedstoneState = false;
+
+    // ==================== Замок (порт TileEntityLockableBase) ====================
+    // Пин/cheesable/lockMod живут ТОЛЬКО в lockState выше (FFA-модель): оба замковых
+    // API (FFA ILockableTile и machines ILockable) делегируют в него — см. секцию
+    // «Schloss» ниже. Отдельные поля не нужны и в NBT не пишутся.
 
     /**
      * Текущий выбор модели и скина
@@ -85,6 +96,16 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     private BlockPos controllerPos = null;
     private PartRole partRole = PartRole.DEFAULT;
 
+    // ==================== Самолечение после Sable/Create переноса ====================
+    // Sable moveBlocks переписывает в NBT только x/y/z; relocate() ремапит controllerPos
+    // сразу после загрузки, но если он всё же протух (старый сейв, сработавший не тот
+    // путь разбора) — serverTick повторяет релинк. Транзиентные, в NBT не пишутся.
+    private boolean pendingRelinkCheck = false;
+    private int relinkAttempts = 0;
+    private int relinkCooldownTicks = 0;
+    private static final int DOOR_RELINK_RETRY_INTERVAL_TICKS = 20;
+    private static final int DOOR_RELINK_MAX_ATTEMPTS = 120; // ~2 минуты, как у UniversalMachinePartBlockEntity
+
     private java.util.Set<Direction> allowedClimbSides = java.util.EnumSet.noneOf(Direction.class);
     // См. комментарий у cachedModelData: @OnlyIn(Dist.CLIENT) на ПОЛЕ ломает загрузку
     // BlockEntity на dedicated-сервере (NoSuchFieldError после RuntimeDistCleaner) и
@@ -93,20 +114,25 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
 
     /** Called from DoorAnimationDelayHelper when delay expires. Client-only. */
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
+
     public void clearAnimationDelayClient() {
         this.cachedModelData = null;
         // requestModelDataUpdate() is Forge-only (model data system). On Fabric it's a no-op.
     }
 
     public DoorBlockEntity(BlockPos pos, BlockState state, String doorDeclId) {
-        super(ModBlockEntities.DOOR_ENTITY.get(), pos, state);
+        this(ModBlockEntities.DOOR_ENTITY.get(), pos, state, doorDeclId);
+    }
+
+    /**
+     * Конструктор с явным BlockEntity-типом: у blast door свой тип
+     * ({@code hbm_m:blast_door}) — иначе при загрузке мира NBT восстанавливает
+     * базовый DOOR_ENTITY и blast-логика (rising-edge редстоун, tryToggle,
+     * BFS-каскад) теряется: в сессии дверь работает, после перезахода «умирает».
+     */
+    protected DoorBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state, String doorDeclId) {
+        super(type, pos, state);
         this.doorDeclId = doorDeclId;
         DoorDecl decl = DoorDeclRegistry.getById(doorDeclId);
         this.modelSelection = decl != null ? decl.getDefaultModelSelection() : DoorModelSelection.DEFAULT;
@@ -123,18 +149,6 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         return modelSelection;
     }
 
-    //? if fabric {
-    /*@Override
-    public @org.jetbrains.annotations.Nullable Object getRenderAttachmentData() {
-        boolean isMoving = state == 2 || state == 3;
-        boolean isOpen = state == 1;
-        boolean isOverlap = !isMoving && cachedModelData != null;
-        return new DoorRenderData(modelSelection, isMoving, isOpen, isOverlap);
-    }
-
-    public record DoorRenderData(DoorModelSelection selection, boolean moving, boolean open, boolean overlap) {}
-    *///?}
-    
     /**
      * Установить выбор модели
      */
@@ -142,15 +156,34 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         if (!this.modelSelection.equals(selection)) {
             this.modelSelection = selection;
             setChanged();
-            
+
             // Инвалидируем кэш
+            this.cachedModelKey = null;
             if (level != null && level.isClientSide) {
                 this.cachedModelData = null;
+                // uvRect-рекорды инстансов больше не валидны (общий VBO-ключ без скина):
+                // полный пересбор записей рендера с новым rect'ом.
+                this.markRenderDirty();
                 DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
+                com.hbm_m.platform.CommonRenderHooks.onDoorSkinChanged(this);
             }
-            
+
             syncToClient();
         }
+    }
+
+    /** Кэш строкового VBO-ключа без скина (doorType_modelType); сбрасывается в setModelSelection. */
+    @Nullable
+    private transient String cachedModelKey;
+
+    /** Кэшированный ключ VBO-кэша без скина (шеринг скинов, см. MachineDoorRenderer.shareSkins). */
+    public String cachedModelKey(String doorTypeKey) {
+        String k = cachedModelKey;
+        if (k == null) {
+            k = doorTypeKey + "_" + modelSelection.getModelType().getId();
+            cachedModelKey = k;
+        }
+        return k;
     }
     
     /**
@@ -265,15 +298,24 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
 
     // ==================== Публичные методы ====================
 
+    @Nullable
+    private transient DoorDecl cachedDoorDecl;
+
     public DoorDecl getDoorDecl() {
+        if (cachedDoorDecl != null) {
+            return cachedDoorDecl;
+        }
         // Если ID потерян, используем fallback
         if (doorDeclId == null || doorDeclId.isEmpty()) {
             if (getBlockState().getBlock() instanceof DoorBlock db) {
-                return DoorDeclRegistry.getById(db.getDoorDeclId());
+                cachedDoorDecl = DoorDeclRegistry.getById(db.getDoorDeclId());
+                return cachedDoorDecl;
             }
-            return DoorDecl.LARGE_VEHICLE_DOOR;
+            cachedDoorDecl = DoorDecl.LARGE_VEHICLE_DOOR;
+            return cachedDoorDecl;
         }
-        return DoorDeclRegistry.getById(doorDeclId);
+        cachedDoorDecl = DoorDeclRegistry.getById(doorDeclId);
+        return cachedDoorDecl;
     }
     
     // Для серверной логики используем строковый ID
@@ -320,23 +362,17 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     private void updateRedstoneState(boolean powered) {
         if (powered == this.lastRedstoneState) return;
         this.lastRedstoneState = powered;
-        // Original: Redstone schaltet ueber tryToggle(-1) - eine verschlossene Tuer reagiert nicht
         if (isLocked() && lockState.lock != -1) return;
 
         if (powered) {
-            // Если дверь закрыта или в процессе закрытия - открываем
-            if (state == 0 || state == 2) {
+            // Паритет 1.7.10: авто-открытие только из полностью закрытого состояния
+            if (state == 0) {
                 open();
             }
         } else {
-            // Сигнал пропал
-            if (state == 1) { // Полностью открыта
+            // Сигнал пропал: авто-закрытие только из полностью открытого состояния
+            if (state == 1) {
                 close();
-            } else if (state == 3) { // В процессе открытия
-                int openTime = getDoorDecl().getOpenTime();
-                if (openTime <= 25) { // Только для быстрых дверей
-                    close();
-                }
             }
         }
         setChanged();
@@ -352,18 +388,13 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     public float getOpenProgress(float partialTick) {
         int openTime = getServerOpenTime();
         if (openTime <= 0) return state == 1 || state == 3 ? 1f : 0f;
-        
-        long currentTime = System.currentTimeMillis();
-        long elapsedTime = currentTime - animStartTime;
-        int totalTimeMs = openTime * 50; 
 
-        return switch (state) {
-            case 0 -> 0f;
-            case 1 -> 1f;
-            case 2 -> Math.max(0f, 1f - ((float) elapsedTime / totalTimeMs));
-            case 3 -> Math.min(1f, (float) elapsedTime / totalTimeMs);
-            default -> 0f;
-        };
+        // Тиковая анимация с интерполяцией по partialTick (как в 1.7.10):
+        // openTicks двигается клиентским тикером синхронно с серверным, без wall-clock.
+        // openTicks ВСЕГДА = текущая позиция створки (0=закрыто, openTime=открыто)
+        // для обоих направлений, поэтому формула единая.
+        float ticks = prevOpenTicks + (openTicks - prevOpenTicks) * partialTick;
+        return Math.max(0f, Math.min(1f, ticks / openTime));
     }
 
     /**
@@ -401,16 +432,49 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     }
 
     public void toggle() {
+        tryToggle(null);
+    }
 
+    /**
+     * Порт {@code TileEntityDoorGeneric.tryToggle(EntityPlayer)}: запертая дверь не
+     * отвечает на редстоун/взрыв (player == null) и на руку без доступа; закрытая
+     * запитанная дверь не открывается рукой (как железная в ваниле).
+     */
+    public boolean tryToggle(@Nullable net.minecraft.world.entity.player.Player player) {
+        if (isLocked() && player == null) return false;
         if (state == 2 || state == 3) {
-            return; // Дверь в процессе движения - игнорируем клик
+            return false; // Дверь в процессе движения - переключение невозможно
         }
-        
-        // Переключаем только если дверь полностью открыта или закрыта
+        if (state == 0 && lastRedstoneState) {
+            return false; // Запитанная закрытая дверь вручную не открывается
+        }
+
         if (state == 0) {
-            open();
+            if (level != null && !level.isClientSide) {
+                if (canAccess(player)) {
+                    open();
+                } else {
+                    notifyLocked(player);
+                }
+            }
+            return true;
         } else if (state == 1) {
-            close();
+            if (level != null && !level.isClientSide) {
+                if (canAccess(player)) {
+                    close();
+                } else {
+                    notifyLocked(player);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /** Поп-ап над хотбаром при отказе доступа (ключ не подошёл, взлом не удался). */
+    private void notifyLocked(@Nullable net.minecraft.world.entity.player.Player player) {
+        if (player != null) {
+            player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.hbm_m.door_locked"), true);
         }
     }
 
@@ -427,7 +491,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         return false;
     }
 
-    private void setState(byte newState) {
+    protected void setState(byte newState) {
         this.state = newState;
         this.animStartTime = System.currentTimeMillis();
         if (newState == 3) {
@@ -435,6 +499,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         } else if (newState == 2) {
             this.openTicks = getServerOpenTime(); // Используем серверный метод
         }
+        this.prevOpenTicks = this.openTicks;
         // Обновляем BlockState с DOOR_MOVING и OPEN при изменении состояния
         if (level != null && !level.isClientSide) {
             boolean isMoving = newState == 2 || newState == 3;
@@ -473,6 +538,11 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     }
 
     // ==================== Schloss (Original TileEntityLockableBase / TileEntityDoorGeneric) ====================
+    // Дверь несёт ОБА замковых API: FFA {@code api/tile.ILockableTile} — его требуют
+    // навесные замки ({@code ItemLock} PADLOCK*, {@code ItemCounterfeitKeys} key_kit,
+    // worldgen {@code LogicBlockActions}) — и machines {@code interfaces.ILockable} —
+    // его использует порт canAccess/tryPick (default-методы интерфейса) и каскад
+    // BlastDoorBlockEntity. Состояние одно — lockState; machines-имена делегируют в него.
 
     @Override public com.hbm_m.api.tile.LockState getLockState() { return lockState; }
     @Override public boolean isLocked() { return lockState.isLocked; }
@@ -490,49 +560,40 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     @Override public void setMod(double mod) { lockState.lockMod = mod; setChanged(); }
     @Override public double getMod() { return lockState.lockMod; }
     @Override public boolean isCheesable() { return lockState.cheesable; }
+    @Override public void setCheesable(boolean cheesable) { lockState.cheesable = cheesable; setChanged(); }
 
-    /** Original {@code TileEntityLockableBase.canAccess}: passender Schluessel, roter Schluessel oder Knackversuch. */
-    public boolean canAccess(@Nullable Player player) {
-        return lockState.canAccess(level, player);
+    /** ILockable (machines): базовый шанс взлома — те же данные, machines-имя. */
+    @Override public double getLockMod() { return lockState.lockMod; }
+    @Override public void setLockMod(double mod) { lockState.lockMod = mod; setChanged(); }
+    @Override public net.minecraft.core.BlockPos getLockPos() { return worldPosition; }
+    @Override public net.minecraft.world.level.Level getLockLevel() { return level; }
+
+    /**
+     * Sable отдаёт свой точный transform блока при переносе (сборка/разборка корабля).
+     * Ремапим controllerPos сразу после загрузки NBT — до первого тика, иначе дверь
+     * на платформе «не открывается» (getController() == null) и рвёт структуру.
+     */
+    @Override
+    public void relocate(java.util.function.UnaryOperator<BlockPos> transform) {
+        if (this.controllerPos != null) {
+            this.controllerPos = transform.apply(this.controllerPos).immutable();
+        }
     }
 
-    /** Original {@code tryToggle(EntityPlayer)}: Spieler-Klick; verschlossene Tueren brauchen Schluessel oder Dietrich. */
-    public boolean tryToggle(@Nullable Player player) {
-        if (this.isLocked() && player == null) return false;
-
-        // audit10: Original - Redstone "verriegelt" geschlossene Tueren wie Eisentueren
-        if (state == 0 && lastRedstoneState) return false;
-
-        if (state == 0) {
-            if (level != null && !level.isClientSide && canAccess(player)) open();
-            return true;
-        } else if (state == 1) {
-            if (level != null && !level.isClientSide && canAccess(player)) close();
-            return true;
-        }
-        return false;
-    }
-
-    /** Original {@code tryToggle(int passcode)}: Logik-/Redstone-Ansteuerung, verschlossen nur mit passendem Code. */
-    public boolean tryToggle(int passcode) {
-        if (this.isLocked() && passcode != lockState.lock) return false;
-
-        if (state == 0) {
-            if (level != null && !level.isClientSide) open();
-            return true;
-        } else if (state == 1) {
-            if (level != null && !level.isClientSide) close();
-            return true;
-        }
-        return false;
+    /** Проверка живости ссылки на контроллер (для самолечения после переноса). */
+    private boolean controllerLinkStale(Level level) {
+        if (this.controllerPos == null) return false; // контроллер сам по себе
+        return !(level.getBlockEntity(this.controllerPos) instanceof DoorBlockEntity);
     }
 
     // ==================== Server Tick ====================
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, DoorBlockEntity be) {
+        be.tickRelinkSelfHeal(level, pos);
         int openTime = be.getServerOpenTime();
         boolean shouldSync = false;
-    
+        be.prevOpenTicks = be.openTicks;
+
         if (be.state == 3) { // Opening
             be.openTicks++;
             if (be.openTicks >= openTime) {
@@ -571,6 +632,62 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         }
     }
 
+    /**
+     * Самолечение осиротевшей части двери после Sable/Create разбора: повторяем
+     * релинк каждые {@link #DOOR_RELINK_RETRY_INTERVAL_TICKS} тиков, пока контроллер
+     * не появится на своём месте (порядок переноса блоков не гарантирован). В отличие
+     * от UniversalMachinePartBlockEntity НЕ удаляем дверь при исчерпании попыток —
+     * ложное срабатывание снесло бы постройку игрока; часть остаётся просто отвязанной.
+     */
+    private void tickRelinkSelfHeal(Level level, BlockPos pos) {
+        if (!pendingRelinkCheck) return;
+        // Во время окна сборки контроллер легитимно отсутствует — попытку не тратим.
+        if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) return;
+
+        if (relinkCooldownTicks > 0) {
+            relinkCooldownTicks--;
+            return;
+        }
+
+        if (!controllerLinkStale(level)) {
+            pendingRelinkCheck = false;
+            relinkAttempts = 0;
+            return;
+        }
+
+        if (relinkAttempts < DOOR_RELINK_MAX_ATTEMPTS) {
+            relinkAttempts++;
+            relinkCooldownTicks = DOOR_RELINK_RETRY_INTERVAL_TICKS;
+            MultiblockStructureHelper.relinkOrphanedPart(level, pos);
+            // Здоровая ссылка после релинка — сбрасываем сразу, не ждём следующего ретрая.
+            if (!controllerLinkStale(level)) {
+                pendingRelinkCheck = false;
+                relinkAttempts = 0;
+            }
+        } else {
+            pendingRelinkCheck = false;
+            relinkAttempts = 0;
+        }
+    }
+
+    /**
+     * Клиентский тикер: двигает openTicks синхронно с сервером (порт механики
+     * 1.7.10, где TE тикал на обеих сторонах). Без синков и block updates.
+     * В терминальных состояниях (0/1) "добегает" до концевого положения, чтобы
+     * финальный sync-пакет (приходящий на 1-2 тика раньше локального счётчика)
+     * не телепортировал створку в конец анимации.
+     */
+    public static void clientTick(Level level, BlockPos pos, BlockState state, DoorBlockEntity be) {
+        be.prevOpenTicks = be.openTicks;
+        int openTime = be.getServerOpenTime();
+        if (openTime <= 0) return;
+
+        switch (be.state) {
+            case 3, 1 -> { if (be.openTicks < openTime) be.openTicks++; } // открытие/добегание до открытой
+            case 2, 0 -> { if (be.openTicks > 0) be.openTicks--; }        // закрытие/добегание до закрытой
+        }
+    }
+
     private void notifyNeighborsOfStateChange(Level level, BlockPos controllerPos) {
         BlockState blockState = getBlockState();
         if (!(blockState.getBlock() instanceof DoorBlock doorBlock)) return;
@@ -603,6 +720,108 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     public DoorDecl getServerDoorDecl() {
         return DoorDeclRegistry.getById(this.doorDeclId);
     }
+
+    // ==================== Пошаговая коллизия (порт 1.7.10) ====================
+
+    /**
+     * Прогресс открытия для коллизии: {@code openTicks / openTime}. Тиковый (без
+     * partialTick — getCollisionShape не получает частичные тики), шаг = 1 тик,
+     * как в 1.7.10, где extras переставлялись раз в тик.
+     */
+    public float getCollisionProgress() {
+        int openTime = getServerOpenTime();
+        if (openTime <= 0) return state == 0 ? 0.0f : 1.0f;
+        float progress = Math.max(0.0f, Math.min(1.0f, openTicks / (float) openTime));
+        DoorDecl decl = getDoorDecl();
+        if (decl == null) return progress;
+        // Двери без «частичной» коллизии: проходимость переключается по окончании
+        // анимации (открытия ИЛИ закрытия), а не по клику.
+        if (decl.flipsPassabilityAtAnimationEnd()) {
+            return (state == 1 || state == 2) ? 1.0f : 0.0f;
+        }
+        return decl.getCollisionProgress(state, progress);
+    }
+
+    /**
+     * Карта «локальная позиция схемы → коллизия клетки» на текущий тик.
+     * Кэш по тику: пересборка не чаще раза в тик на дверь.
+     *
+     * <p>ВАЖНО: ваниль опрашивает коллизию ПОКЛЕТОЧНО — форма, возвращённая
+     * контроллером, учитывается только если позиция контроллера попала в зону
+     * запроса. Поэтому коллизия раздаётся каждой клетке отдельно
+     * (DoorBlock — клетка ZERO, UniversalMachinePartBlock — своя), а не одним
+     * объединённым шейпом на контроллер.
+     *
+     * @return null ТОЛЬКО если у двери нет символьной схемы (легаси-фоллбэк).
+     *         Пустая карта = все клетки ретрактнулись (дверь полностью открыта) —
+     *         это НЕ повод уходить в легаси!
+     */
+    @Nullable
+    public Map<BlockPos, VoxelShape> getProgressCollisionShapes() {
+        // Ключ кэша: тик + состояние (фейсинг на карту не влияет — она в локальных координатах)
+        int key = openTicks | (state << 16);
+        if (cachedProgressShapesValid && key == cachedProgressShapesKey) {
+            return cachedProgressShapes;
+        }
+
+        DoorDecl decl = getDoorDecl();
+        Map<BlockPos, VoxelShape> shapes = decl != null && decl.getStructureDefinition() != null
+                ? decl.getCollisionShapesAt(getCollisionProgress())
+                : null;
+        cachedProgressShapesKey = key;
+        cachedProgressShapes = shapes;
+        cachedProgressShapesValid = true;
+        return shapes;
+    }
+
+    @Nullable
+    private Map<BlockPos, VoxelShape> cachedProgressShapes;
+    private int cachedProgressShapesKey = Integer.MIN_VALUE;
+    private boolean cachedProgressShapesValid = false;
+
+    /**
+     * ЕДИНАЯ рамка выделения двери в текущий момент: объединение форм всех частей
+     * по прогрессу, повёрнутое по FACING. Используется ТОЛЬКО для выделения
+     * (getShape) — коллизия раздаётся поклеточно (см. getProgressCollisionShapes).
+     *
+     * @return null, если у двери нет символьной схемы (fallback-структуры) —
+     *         вызывающий код откатывается на старый дискретный путь.
+     */
+    @Nullable
+    public VoxelShape getUnifiedSelectionShape() {
+        Direction facing = getFacing();
+        DoorDecl decl = getDoorDecl();
+        boolean staticSelection = decl != null && decl.hasStaticSelectionShape();
+        // Статичная рамка: ключ без тиков — считается один раз
+        int key = staticSelection ? 0 : (openTicks | (state << 16)) | (facing.get3DDataValue() << 20);
+        if (key == cachedUnifiedSelectionKey && cachedUnifiedSelection != null) {
+            return cachedUnifiedSelection;
+        }
+
+        if (decl == null || decl.getStructureDefinition() == null) {
+            return null;
+        }
+        Map<BlockPos, VoxelShape> localShapes = decl.getCollisionShapesAt(
+                staticSelection ? 0.0f : getCollisionProgress());
+        if (localShapes.isEmpty()) {
+            return null;
+        }
+
+        VoxelShape combined = net.minecraft.world.phys.shapes.Shapes.empty();
+        for (Map.Entry<BlockPos, VoxelShape> entry : localShapes.entrySet()) {
+            BlockPos rotatedPos = MultiblockStructureHelper.rotate(entry.getKey(), facing);
+            VoxelShape rotatedShape = MultiblockStructureHelper.rotateShape(entry.getValue(), facing);
+            combined = net.minecraft.world.phys.shapes.Shapes.or(combined,
+                    rotatedShape.move(rotatedPos.getX(), rotatedPos.getY(), rotatedPos.getZ()));
+        }
+        cachedUnifiedSelectionKey = key;
+        cachedUnifiedSelection = combined.optimize();
+        return cachedUnifiedSelection;
+    }
+
+    @Nullable
+    private VoxelShape cachedUnifiedSelection;
+    private int cachedUnifiedSelectionKey = Integer.MIN_VALUE;
 
     // private void updatePhantomBlocks(Level level, BlockPos controllerPos, int openTime) {
     //     Direction facing = getFacing();
@@ -668,13 +887,8 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     // }
 
     // ==================== Client Sound Handling ====================
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
+
     private void handleNewState(byte oldState, byte newState) {
         if (oldState == newState) return;
         if (!isController()) return;
@@ -698,13 +912,8 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
             ClientSoundBootstrap.stopSound(level, worldPosition);
         }
     }
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
+
     private void handleSoundTransition(SoundEvent startSound, SoundEvent loopSound, SoundEvent loopSound2) {
         // 1. Разовый звук старта
         if (startSound != null) {
@@ -721,13 +930,8 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
             ClientSoundBootstrap.updateDoorSoundRaw(level, worldPosition, "loop2", true, () -> createLoopingSoundReflect(loopSound2));
         }
     }
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
+
     private void handleSoundEnd(SoundEvent endSound) {
         // Останавливаем ОБА цикла
         ClientSoundBootstrap.stopSpecificSound(level, worldPosition, "loop1");
@@ -739,21 +943,11 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         }
     }
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
     private Object createLoopingSoundReflect(SoundEvent sound) {
-        try {
-            return Class.forName(DOOR_LOOP_SOUND_FACTORY)
-                .getMethod("create", DoorBlockEntity.class, SoundEvent.class)
-                .invoke(null, this, sound);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        // Клиентская loop-фабрика через звуковой мост (без рефлексии); на сервере
+        // мост не установлен и сапплаер не вызывается (updateDoorSoundRaw гейтится).
+        // Только common-код внутри — @OnlyIn не нужен (как в machines).
+        return com.hbm_m.sound.ClientSoundBootstrap.createDoorLoop(this, sound);
     }
 
     @Override
@@ -761,6 +955,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         super.setRemoved();
         if (level != null && level.isClientSide) {
             ClientSoundBootstrap.stopSound(level, worldPosition);
+            com.hbm_m.platform.CommonRenderHooks.onDoorRemoved(this);
         }
     }
 
@@ -773,7 +968,6 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         tag.putInt("openTicks", openTicks);
         tag.putLong("animStartTime", animStartTime);
         tag.putString("doorDeclId", doorDeclId);
-        // Original TileEntityLockableBase: lock, cheesable, isLocked, lockMod
         lockState.write(tag);
         tag.putBoolean("redstoneState", lastRedstoneState);
         modelSelection.save(tag);
@@ -799,8 +993,8 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         if (tag.contains("lockMod")) {
             lockState.read(tag);
         } else {
-            // Alte Spielstaende: nur ein "locked"-Flag ohne Stifte
             lockState.isLocked = tag.getBoolean("locked");
+            lockState.lock = tag.getInt("lock");
         }
         this.lastRedstoneState = tag.getBoolean("redstoneState");
 
@@ -816,9 +1010,16 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         if (tag.contains("controllerPos")) {
             this.controllerPos = BlockPos.of(tag.getLong("controllerPos"));
         }
+        // BE восстановлен из NBT (загрузка мира или перенос Sable/Create) — на первом
+        // серверном тике проверяем живость ссылки на контроллер (см. tickRelinkSelfHeal).
+        this.pendingRelinkCheck = true;
 
         if (tag.contains("doorDeclId")) {
-            this.doorDeclId = tag.getString("doorDeclId");
+            String newDeclId = tag.getString("doorDeclId");
+            if (!java.util.Objects.equals(this.doorDeclId, newDeclId)) {
+                this.doorDeclId = newDeclId;
+                this.cachedDoorDecl = null;
+            }
         }
         
         if (tag.contains("partRole")) {
@@ -842,10 +1043,10 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         if (level != null && level.isClientSide) {
             initModelSelection(!hadModelSelectionInNbt);
             handleNewState(oldState, this.state);
-            // ИСПРАВЛЕНИЕ МОРГАНИЯ: при получении state 2/3 (движение) используем клиентское время.
-            // Серверный animStartTime приводит к рассинхрону часов и скачкам прогресса анимации.
+            // Тиковая анимация: при получении движущегося состояния начинаем
+            // интерполяцию с текущего openTicks (без скачка от устаревшего prev).
             if (this.state == 2 || this.state == 3) {
-                this.animStartTime = System.currentTimeMillis();
+                this.prevOpenTicks = this.openTicks;
             }
             // Задержка: при переходе из moving (2/3) в static (0/1) - анимированная часть остаётся ещё 500ms
             if ((oldState == 2 || oldState == 3) && (this.state == 0 || this.state == 1)) {
@@ -863,13 +1064,8 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
      * (в т.ч. явный выбор LEGACY, который равен DoorModelSelection.DEFAULT).
      */
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
+
     public void initModelSelection(boolean applyConfigDefault) {
         if (!applyConfigDefault) {
             return; // Значение из NBT - не перезаписывать
@@ -888,53 +1084,37 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     }
 
     // getUpdateTag: удалён — BaseHbmBlockEntity уже делает super + writeNbtData.
-    //? if forge {
     @Override
-    //?}
-
-    public void handleUpdateTag(CompoundTag tag) {
-        //? if < 1.21.1 {
-        load(tag);
-        //?} else {
-        /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с registries из level.
-        PlatformHooks.loadBlockEntityTag(this, tag, this.level != null ? this.level.registryAccess() : RegistryAccess.EMPTY);
-        *///?}
-    }
-
-
-    public int getOpenTicks() {
-        return this.openTicks;
-    }
-
-    //? if forge {
-    @Override
-    //?}
-    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
-        CompoundTag tag = PlatformHooks.getItemTag(pkt);
-        if (tag != null) {
-            // Сохраняем предыдущее видимое состояние ДО загрузки - чтобы определить, нужна ли инвалидация
-            byte prevState = this.state;
-            DoorModelSelection prevSelection = this.modelSelection;
-
-            //? if < 1.21.1 {
-            load(tag);
-            //?} else {
-            /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с registries из level.
-            PlatformHooks.loadBlockEntityTag(this, tag, this.level != null ? this.level.registryAccess() : RegistryAccess.EMPTY);
-            *///?}
-
-            if (level != null && level.isClientSide) {
-                // Инвалидируем чанк только при реальном изменении видимого состояния:
-                // DOOR_MOVING/OPEN перехода или смены скина/модели.
-                // Иначе каждый BE-пакет (даже с теми же данными) вызывал пересборку.
-                boolean visibleChange = isVisibleStateChange(prevState, this.state)
-                                     || !prevSelection.equals(this.modelSelection);
-                if (visibleChange) {
-                    DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
-                }
+    protected void applyClientUpdate(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        byte prevState = this.state;
+        DoorModelSelection prevSelection = this.modelSelection;
+        readNbtData(tag, registries);
+        if (level != null && level.isClientSide) {
+            boolean skinChanged = !prevSelection.equals(this.modelSelection);
+            boolean visibleChange = isVisibleStateChange(prevState, this.state) || skinChanged;
+            if (skinChanged) {
+                this.cachedModelKey = null;
+                this.cachedModelData = null;
+                markRenderDirty();
+                com.hbm_m.platform.CommonRenderHooks.onDoorSkinChanged(this);
+            }
+            if (visibleChange) {
+                DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
             }
         }
     }
+
+    //? if forge {
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        super.handleUpdateTag(tag);
+    }
+
+    @Override
+    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
+        super.onDataPacket(net, pkt);
+    }
+    //?}
 
     /** Возвращает true только при переходах DOOR_MOVING или OPEN - то, что видит игрок. */
     private static boolean isVisibleStateChange(byte oldS, byte newS) {
@@ -953,8 +1133,13 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
             // Изменения остальных данных (ModelData, скины) - через явный BE-пакет.
             setChanged();
             var packet = ClientboundBlockEntityDataPacket.create(this);
+            // На Sable-платформе BE живёт в plot-grid (миллионы блоков от игрока) —
+            // проверку дистанции делаем по спроецированной в мир позиции, иначе
+            // пакет не получает никто и анимация на корабле не идёт.
+            net.minecraft.world.phys.Vec3 center = com.hbm_m.compat.sable.SableCompat
+                    .blockCenterInWorld(serverLevel, worldPosition);
             for (ServerPlayer player : serverLevel.players()) {
-                if (player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) < 64 * 64) {
+                if (player.distanceToSqr(center.x, center.y, center.z) < 64 * 64) {
                     player.connection.send(packet);
                 }
             }

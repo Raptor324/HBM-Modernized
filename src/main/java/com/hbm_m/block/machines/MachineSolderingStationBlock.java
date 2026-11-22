@@ -118,6 +118,7 @@ public class MachineSolderingStationBlock extends BaseEntityBlock implements IMu
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
+            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
             structureHelper.destroyStructure(level, pos, state.getValue(FACING));
         }
         super.onRemove(state, level, pos, newState, isMoving);
@@ -190,4 +191,18 @@ public class MachineSolderingStationBlock extends BaseEntityBlock implements IMu
         return CODEC;
     }
     *///?}
+    // Verbatim port of the original MachineSolderingStation.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {0, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {0, 0, -1, Direction.NORTH.get3DDataValue()},
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {1, 0, 0, Direction.EAST.get3DDataValue()},
+            {1, 0, -1, Direction.EAST.get3DDataValue()},
+            {0, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, -1, Direction.WEST.get3DDataValue()}
+        }, facing);
+    }
 }

@@ -10,6 +10,7 @@ import com.hbm_m.util.ContaminationUtil.HazardType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 
@@ -34,13 +35,13 @@ public class BlockGasRadon extends BlockGasBase {
     }
 
     @Override
-    public Direction getFirstDirection(ServerLevel level, BlockPos pos, RandomSource random) {
+    public Direction getFirstDirection(Level level, BlockPos pos, RandomSource random) {
         if (random.nextInt(5) == 0) return Direction.UP;
         return Direction.DOWN;
     }
 
     @Override
-    public Direction getSecondDirection(ServerLevel level, BlockPos pos, RandomSource random) {
+    public Direction getSecondDirection(Level level, BlockPos pos, RandomSource random) {
         return randomHorizontal(random);
     }
 

@@ -3,11 +3,6 @@ package com.hbm_m.client.compat.dh;
 import com.hbm_m.client.render.shader.ModShaders;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -48,6 +43,19 @@ public final class DhDepthCopy {
         if (Minecraft.useShaderTransparency()) {
             return;
         }
+        // Внешний шейдерпак активен: копия глубины DH (энкод OutNear/OutFar)
+        // поверх ванильной глубины (энкод gbufferProjection) делает главный
+        // z-buffer гибридом двух проекций — RawScreenSpaceLight читает uDepthTex0
+        // как единый слой и разворачивает DH-часть в неверные позиции. DH-слой
+        // под паком читается напрямую (uDhDepthTex), копия здесь не нужна.
+        if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()) {
+            return;
+        }
+
+        // Снимок ЧИСТОЙ ванильной глубины ДО перезаписи DH-слоем: с активным
+        // взрывом RawScreenSpaceLight копирует main depth-текстуру, чтобы
+        // разворачивать ванильную геометрию без гибридной проекции.
+        com.hbm_m.client.render.shader.RawScreenSpaceLight.onBeforeDhDepthBlit();
 
         Minecraft mc = Minecraft.getInstance();
         mc.getMainRenderTarget().bindWrite(false);
@@ -62,38 +70,31 @@ public final class DhDepthCopy {
         RenderSystem.setShaderTexture(0, texId);
         shader.safeGetUniform("DhNear").set(dhNear);
         shader.safeGetUniform("DhFar").set(dhFar);
+        // Конвенция глубины DH (DH 3.3.1+ без пака = REVERSE_Z): ветка декода
+        // и порог discard неба в dh_depth_blit.fsh.
+        shader.safeGetUniform("DhReverseZ").set(DhClientState.dhReverseZ() ? 1.0F : 0.0F);
         // Точные плоскости нашей расширенной проекции (для честного энкода)
         shader.safeGetUniform("OutNear").set(com.hbm_m.client.compat.dh.DhClientCompat.extendedNear());
         shader.safeGetUniform("OutFar").set(com.hbm_m.client.compat.dh.DhClientCompat.extendedFar());
         // Маска dither-fade зоны DH («Fade Nearby DH LODs») — там глубина-шум
-        shader.safeGetUniform("DhFadeMaskDist").set(DhOcclusionGpu.ditherFadeMaskDistance());
+        float fadeMaskDist = DhOcclusionGpu.ditherFadeMaskDistance();
+        shader.safeGetUniform("DhFadeMaskDist").set(fadeMaskDist);
 
         // Oculus без пака оставляет GL-программу 0 при «свежем» с точки зрения
         // ванильного кеша шейдере — без этого blit уйдёт в программу 0.
         com.hbm_m.client.render.shader.ShaderBindResync.ensureFreshBind(shader);
 
         try {
-            //? if < 1.21.1 {
-            BufferBuilder bb = Tesselator.getInstance().getBuilder();
-            bb.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-            bb.vertex(-1.0F, -1.0F, 0.0F).endVertex();
-            bb.vertex(1.0F, -1.0F, 0.0F).endVertex();
-            bb.vertex(1.0F, 1.0F, 0.0F).endVertex();
-            bb.vertex(-1.0F, 1.0F, 0.0F).endVertex();
-            Tesselator.getInstance().end();
-            //?} else {
-            /*BufferBuilder bb = Tesselator.getInstance().begin(
-                    VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-            bb.addVertex(-1.0F, -1.0F, 0.0F);
-            bb.addVertex(1.0F, -1.0F, 0.0F);
-            bb.addVertex(1.0F, 1.0F, 0.0F);
-            bb.addVertex(-1.0F, 1.0F, 0.0F);
-            BufferUploader.drawWithShader(bb.build());
-            *///?}
+            com.hbm_m.platform.RenderHooks.drawQuad(-1.0F, -1.0F, 1.0F, 1.0F, 0.0F);
         } finally {
             GlStateManager._colorMask(true, true, true, true);
             RenderSystem.depthFunc(org.lwjgl.opengl.GL43.GL_LEQUAL);
             RenderSystem.setShaderTexture(0, 0);
         }
+
+        // Однокадровая диагностика: сколько текселей шейдер отбросил бы
+        // (небо/fade-маска) и сколько записал бы — путь отказывает молча.
+        com.hbm_m.client.render.shader.DhDepthBlitDiag.onBlitRan(
+                texId, dhNear, dhFar, DhClientState.dhReverseZ(), fadeMaskDist);
     }
 }

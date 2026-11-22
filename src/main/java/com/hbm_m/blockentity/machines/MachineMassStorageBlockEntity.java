@@ -32,6 +32,7 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity implem
     /** Original TileEntityMassStorage extends TileEntityCrateBase extends TileEntityLockableBase: Stiftschloss. */
     public final com.hbm_m.api.tile.LockState lockState = new com.hbm_m.api.tile.LockState();
 
+
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_FILTER = 1;
     public static final int SLOT_OUTPUT = 2;
@@ -43,6 +44,7 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity implem
     private long stockpile = 0L;
     /** Original {@code output}: nur wenn an, fuellt die Kiste den Ausgabeslot nach (Schalter im GUI). */
     public boolean output = false;
+
 
     public MachineMassStorageBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_MASS_STORAGE_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
@@ -71,6 +73,7 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity implem
         int maxStack = com.hbm_m.platform.ItemHooks.getItemMaxStackSize(type);
         int outputSpace = output.isEmpty() ? maxStack : (output.getItem() == type ? maxStack - output.getCount() : 0);
         if (be.output && outputSpace > 0 && be.stockpile > 0) {
+
             int toRelease = (int) Math.min(outputSpace, be.stockpile);
             if (toRelease > 0) {
                 if (output.isEmpty()) {
@@ -132,6 +135,10 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity implem
     public long getStockpile() { return stockpile; }
     /** Original {@code setStockpile}: Vorrat aus dem Item beim Setzen. */
     public void setStockpile(long stockpile) { this.stockpile = stockpile; setChanged(); }
+
+    /** Filter-slot stack (defines the stored item type); empty stack = no type locked. */
+    public ItemStack getFilterStack() { return inventory.getStackInSlot(SLOT_FILTER); }
+
     /** Die Groesse dieser Kiste - sie steht am Block, nicht am Blockentity. */
     public long getCapacity() {
         return getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineMassStorageBlock storage
@@ -186,6 +193,7 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity implem
     @Override public void setPins(int pins) { lockState.lock = pins; setChanged(); }
     @Override public void setMod(double mod) { lockState.lockMod = mod; setChanged(); }
 
+
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
@@ -201,7 +209,7 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity implem
                 @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 2 }; }
                 @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (isLocked() || slot != 0) return false;
                     net.minecraft.world.item.ItemStack type = inventory.getStackInSlot(SLOT_FILTER);
-                    return type.isEmpty() || com.hbm_m.platform.PlatformHooks.isSameItemSameTags(type, stack); }
+                    return type.isEmpty() || com.hbm_m.platform.StackNbt.sameItemSameTags(type, stack); }
                 @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return !isLocked() && slot == 2; }
             });
 
@@ -223,7 +231,7 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity implem
                 @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 2 }; }
                 @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (isLocked() || slot != 0) return false;
                     net.minecraft.world.item.ItemStack type = inventory.getStackInSlot(SLOT_FILTER);
-                    return type.isEmpty() || com.hbm_m.platform.PlatformHooks.isSameItemSameTags(type, stack); }
+                    return type.isEmpty() || com.hbm_m.platform.StackNbt.sameItemSameTags(type, stack); }
                 @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return !isLocked() && slot == 2; }
             });
 
@@ -272,5 +280,6 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity implem
             this.sendUpdateToClient();
         }
         return null;
+
     }
 }

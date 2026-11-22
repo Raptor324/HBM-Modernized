@@ -45,8 +45,12 @@ public class MachineChimneyBlockEntity extends BaseMachineBlockEntity implements
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineChimneyBlockEntity be) {
-        if (!level.isClientSide()) be.serverTick(level, pos);
-        else if (be.onTicks > 0) be.spawnParticles(level, pos);
+        if (!level.isClientSide()) {
+            be.serverTick(level, pos);
+        } else if (be.onTicks > 0) {
+            be.spawnParticles(level, pos);
+            be.onTicks--;
+        }
     }
 
     private static boolean isSmoke(Fluid f) {
@@ -74,9 +78,8 @@ public class MachineChimneyBlockEntity extends BaseMachineBlockEntity implements
             this.sootTick = 0;
         }
 
-        sendUpdateToClient();
-
         if (onTicks > 0) onTicks--;
+        syncIfStateChanged(onTicks > 0 ? 1L : 0L, 0L);
     }
 
     private void spawnParticles(Level level, BlockPos pos) {

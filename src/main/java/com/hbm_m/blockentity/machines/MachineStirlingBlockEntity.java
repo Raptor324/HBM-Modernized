@@ -142,8 +142,7 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
 
         // Original networkPackNT vor dem Nullsetzen: der Client sieht die Waerme dieses Ticks
         this.syncHeat = this.heat;
-        setChanged();
-        sendUpdateToClient();
+        syncIfStateChanged(this.powerBuffer, (((long) this.syncHeat) << 32) | (hasCog ? 1L : 0L) | (((long) overspeedTicks) << 1));
 
         if (hasCog) {
             // Port-Energiemodell: Speicher == Puffer dieses Ticks
@@ -220,6 +219,9 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
         level.addFreshEntity(cog);
 
         hasCog = false;
+        heat = 0;
+        overspeedTicks = 0;
+        setEnergyStored(0);
     }
 
     /** Rechtsklick mit passendem Zahnrad repariert die Maschine (1:1 aus dem Original). */
@@ -255,6 +257,11 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
 
     public boolean hasCog() {
         return hasCog;
+    }
+
+    /** Kreative Variante (kein MaxHeat/kein HUD-Prozent/kein Overspeed, wie im Original). */
+    public boolean isCreative() {
+        return isCreative;
     }
 
     /** Original {@code MachineStirling.onBlockPlacedBy}: Meta-1-Item ohne Zahnrad. */

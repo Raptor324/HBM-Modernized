@@ -6,7 +6,10 @@
 		"skins":[
 			{"id":"default","name":"Standard","texture":"hbm_m:block/doors/large_vehicle_door"},
 			{"id":"rad","name":"Rad","texture":"hbm_m:block/doors/large_vehicle_door_rad", "model":"hbm_m:block/doors/large_vehicle_door_modern_rad"},
-			{"id":"clear","name":"Clear","texture":"hbm_m:block/doors/large_vehicle_door_clean", "model":"hbm_m:block/doors/large_vehicle_door_modern_clean"}
+			{"id":"clear","name":"Clean","texture":"hbm_m:block/doors/large_vehicle_door_clean", "model":"hbm_m:block/doors/large_vehicle_door_modern_clean"},
+			{"id":"black","name":"Black","texture":"hbm_m:block/doors/large_vehicle_door_black", "model":"hbm_m:block/doors/large_vehicle_door_modern_black"},
+			{"id":"blue","name":"Blue","texture":"hbm_m:block/doors/large_vehicle_door_blue", "model":"hbm_m:block/doors/large_vehicle_door_modern_blue"},
+			{"id":"red","name":"Red","texture":"hbm_m:block/doors/large_vehicle_door_red", "model":"hbm_m:block/doors/large_vehicle_door_modern_red"}
 		]
 	},
 	"default":{"type":"modern","skin":"default"}

@@ -245,8 +245,14 @@ public class MachineFurnaceIronBlockEntity extends com.hbm_m.blockentity.BaseHbm
         return true;
     }
 
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<SmeltingRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     private java.util.Optional<SmeltingRecipe> getRecipe(Level level, ItemStack input) {
-        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(level, RecipeType.SMELTING, input);
+        SmeltingRecipe cached = recipeResolver.resolve(level, RecipeType.SMELTING,
+                com.hbm_m.platform.StackNbt.fingerprint(input),
+                (lvl, all) -> com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(lvl, RecipeType.SMELTING, input).orElse(null));
+        return java.util.Optional.ofNullable(cached);
     }
 
     /** Original: Slot 0 nimmt Schmelzbares, 1-2 Brennstoff, sonst nichts. */
@@ -300,7 +306,7 @@ public class MachineFurnaceIronBlockEntity extends com.hbm_m.blockentity.BaseHbm
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
+        tag.put("inventory", inventory.serialize( registries));
         tag.putInt("maxBurnTime", maxBurnTime);
         tag.putInt("burnTime", burnTime);
         tag.putInt("progress", progress);
@@ -311,7 +317,7 @@ public class MachineFurnaceIronBlockEntity extends com.hbm_m.blockentity.BaseHbm
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
+        inventory.deserialize(tag.getCompound("inventory"), registries);
         maxBurnTime = tag.getInt("maxBurnTime");
         burnTime = tag.getInt("burnTime");
         progress = tag.getInt("progress");
@@ -378,5 +384,11 @@ public class MachineFurnaceIronBlockEntity extends com.hbm_m.blockentity.BaseHbm
     @Override
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1, worldPosition.getX() + 2, worldPosition.getY() + 3, worldPosition.getZ() + 2);
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
     }
 }

@@ -188,13 +188,15 @@ public class DamageResistanceHandler {
                 .addCategory(CATEGORY_FIRE, 0.5F, 0.35F)
                 .addCategory(CATEGORY_EXPLOSION, 5F, 0.25F)
                 .addExact("fall", 0F, 1F)
-                .setOther(0F, 0.1F));
+                .setOther(0F, 0.1F)
+                .setDeflectArrows(true));  // ← T-51 отражает стрелы
         registerSet(i(ModItems.AJR_HELMET), i(ModItems.AJR_PLATE), i(ModItems.AJR_LEGS), i(ModItems.AJR_BOOTS), new ResistanceStats()
                 .addCategory(CATEGORY_PHYSICAL, 4F, 0.15F)
                 .addCategory(CATEGORY_FIRE, 0.5F, 0.35F)
                 .addCategory(CATEGORY_EXPLOSION, 7.5F, 0.25F)
                 .addExact("fall", 0F, 1F)
-                .setOther(0F, 0.15F));
+                .setOther(0F, 0.15F)
+                .setDeflectArrows(true));  // ← AJR тоже отражает стрелы
         registerSet(i(ModItems.AJRO_HELMET), i(ModItems.AJRO_PLATE), i(ModItems.AJRO_LEGS), i(ModItems.AJRO_BOOTS), new ResistanceStats()
                 .addCategory(CATEGORY_PHYSICAL, 4F, 0.15F)
                 .addCategory(CATEGORY_FIRE, 0.5F, 0.35F)
@@ -527,6 +529,48 @@ public class DamageResistanceHandler {
         return damageType;
     }
 
+    /**
+     * Check if entity should deflect projectiles (arrows, tridents, etc.).
+     * Called BEFORE damage is applied (from PowerArmorHandlers). Restored from machines:
+     * adapted to the record-based {@link Quartet} set keys of this rewrite.
+     */
+    public static boolean shouldDeflectProjectile(LivingEntity entity, DamageSource damage) {
+        // Проверяем только снаряды
+        if (!damage.is(DamageTypes.ARROW) &&
+            !damage.is(DamageTypes.TRIDENT) &&
+            !damage.is(DamageTypes.THROWN)) {
+            return false;
+        }
+
+        // Проверяем полный сет
+        ResistanceStats setResistance = setStats.get(getWornArmorSet(entity));
+        if (setResistance != null && setResistance.deflectsArrows) {
+            return true;
+        }
+
+        // Проверяем отдельные предметы (если есть флаг на одном - работает на всего игрока)
+        for (EquipmentSlot slot : new EquipmentSlot[] { EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET }) {
+            ItemStack armor = entity.getItemBySlot(slot);
+            if (armor.isEmpty()) continue;
+
+            ResistanceStats stats = itemStats.get(armor.getItem());
+            if (stats != null && stats.deflectsArrows) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Worn set as {@link Quartet} (helmet, plate, legs, boots); incomplete sets never match a registered one. */
+    private static Quartet getWornArmorSet(LivingEntity entity) {
+        return new Quartet(
+                entity.getItemBySlot(EquipmentSlot.HEAD).getItem(),
+                entity.getItemBySlot(EquipmentSlot.CHEST).getItem(),
+                entity.getItemBySlot(EquipmentSlot.LEGS).getItem(),
+                entity.getItemBySlot(EquipmentSlot.FEET).getItem());
+    }
+
     public static float calculateDamage(LivingEntity entity, DamageSource damage, float amount, float pierceDT, float pierce) {
         if (isDamageAbsolute(damage)) return amount;
 
@@ -604,6 +648,14 @@ public class DamageResistanceHandler {
         public HashMap<String, Resistance> exactResistances = new HashMap<>();
         public HashMap<String, Resistance> categoryResistances = new HashMap<>();
         public Resistance otherResistance;
+
+        /** Set whether this armor deflects arrows/projectiles (machines feature, used by PowerArmorHandlers). */
+        public boolean deflectsArrows = false;
+
+        public ResistanceStats setDeflectArrows(boolean deflects) {
+            this.deflectsArrows = deflects;
+            return this;
+        }
 
         public Resistance getResistance(DamageSource source) {
             Resistance exact = exactResistances.get(source.is(ModDamageTypes.LASER) ? "laser" : source.is(ModDamageTypes.MICROWAVE) ? "microwave" : source.getMsgId().toLowerCase());

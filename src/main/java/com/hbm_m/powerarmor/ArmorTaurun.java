@@ -16,7 +16,6 @@ public class ArmorTaurun extends ModArmorFSB {
         return true;
     }
 
-    //? if !fabric {
     @Override
     public boolean isDamageable(ItemStack stack) {
         return false;
@@ -26,5 +25,4 @@ public class ArmorTaurun extends ModArmorFSB {
     public int getMaxDamage(ItemStack stack) {
         return 0;
     }
-    //?}
 }

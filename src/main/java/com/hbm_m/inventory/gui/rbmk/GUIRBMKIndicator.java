@@ -12,8 +12,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-/** Port of {@code GUIScreenRBMKIndicator} - 6 lamp units, each with an RTTY channel, min/max trigger range and invert toggle. */
 public class GUIRBMKIndicator extends Screen {
 
     private final BlockPos pos;

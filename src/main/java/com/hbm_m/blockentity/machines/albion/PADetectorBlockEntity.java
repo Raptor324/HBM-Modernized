@@ -141,7 +141,7 @@ public class PADetectorBlockEntity extends CooledMachineBlockEntity implements I
 
         ItemStack present = getInventory().getStackInSlot(outputSlot);
         if (!present.isEmpty()) {
-            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(present, output)
+            if (!com.hbm_m.platform.StackNbt.sameItemSameTags(present, output)
                     || present.getCount() + output.getCount() > output.getMaxStackSize()) return false;
         }
 
@@ -208,13 +208,13 @@ public class PADetectorBlockEntity extends CooledMachineBlockEntity implements I
         sided.clear();
     }
     //?} elif neoforge {
-    /*private final java.util.Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sided = new java.util.EnumMap<>(Direction.class);
+    /*private final java.util.Map<Direction, com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler>> sided = new java.util.EnumMap<>(Direction.class);
 
     /^* Original: Zugriff auf 1-4, hinein nur in die Behaelterplaetze 1/2, heraus nur aus den Ausgaben 3/4. ^/
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
-            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.minecraftforge.items.IItemHandler() {
                 @Override public int getSlots() { return 4; }
                 @Override public @org.jetbrains.annotations.NotNull ItemStack getStackInSlot(int slot) { return getInventory().getStackInSlot(slot + 1); }
                 @Override public @org.jetbrains.annotations.NotNull ItemStack insertItem(int slot, @org.jetbrains.annotations.NotNull ItemStack stack, boolean simulate) {
@@ -240,6 +240,18 @@ public class PADetectorBlockEntity extends CooledMachineBlockEntity implements I
     }
     *///?}
 
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
+        if (side == null) return this.inventory;
+        //? if forge {
+        return getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, side).resolve().orElse(null);
+        //?} elif neoforge {
+        /*return getHbmCapability(com.hbm_m.platform.HbmCap.ITEM_HANDLER, side).orElse(null);
+        *///?} else {
+        /*return this.inventory;
+        *///?}
+    }
     @Override
     protected Component getDefaultName() {
         return Component.translatable("block.hbm_m.pa_detector");

@@ -1,6 +1,6 @@
 # Blender v2.81 (sub 16) OBJ File: ''
 # www.blender.org
-mtllib stopsign.mtl
+mtllib hbm_m:models/gun.mtl
 o Cube
 v 0.125000 6.000000 -0.500000
 v 0.125000 4.000000 0.500000
@@ -152,7 +152,7 @@ vn -1.0000 0.0000 0.0000
 vn 1.0000 0.0000 0.0000
 vn 0.0000 0.0000 1.0000
 vn 0.0000 0.0000 -1.0000
-usemtl Material
+usemtl gun
 s off
 f 18/1/1 8/2/1 15/3/1
 f 8/4/2 6/5/2 2/6/2

@@ -27,6 +27,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.Container;
+import com.hbm_m.platform.StackNbt;
 //? if >= 1.21.1 {
 /*import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
@@ -120,15 +121,15 @@ public class ArmorModificationHelper {
             return;
         }
 
-        CompoundTag modsTag = PlatformHooks.getCompound(armor, MOD_COMPOUND_KEY);
+        CompoundTag modsTag = StackNbt.getCompound(armor, MOD_COMPOUND_KEY);
 
         // Сохраняем ItemStack модификации в NBT
-        CompoundTag modTag = new CompoundTag();
-        PlatformHooks.saveItemStack(mod, modTag, PlatformHooks.bestEffortProvider());
+        CompoundTag modTag = StackNbt.save(mod, new CompoundTag(), PlatformHooks.bestEffortProvider());
 
         int slot = modItem.type;
         modsTag.put(MOD_SLOT_KEY_PREFIX + slot, modTag);
-        PlatformHooks.put(armor, MOD_COMPOUND_KEY, modsTag);
+        StackNbt.put(armor, MOD_COMPOUND_KEY, modsTag);
+        rebuildAttributeModifiers(armor);
         onPoweredArmorModsChanged(armor);
     }
 
@@ -142,7 +143,7 @@ public class ArmorModificationHelper {
             return;
         }
 
-        CompoundTag armorTag = PlatformHooks.getItemTag(armor);
+        CompoundTag armorTag = StackNbt.copy(armor);
         if (armorTag == null || !armorTag.contains(MOD_COMPOUND_KEY)) {
             return;
         }
@@ -150,12 +151,15 @@ public class ArmorModificationHelper {
         CompoundTag modsTag = armorTag.getCompound(MOD_COMPOUND_KEY);
         modsTag.remove(MOD_SLOT_KEY_PREFIX + slot);
 
-        // Если модификаций не осталось, удаляем весь compound
+        // On 1.21.1 getItemTag returns a COPY (data.copyTag()), so the edit has to be written back
+        // through PlatformHooks the way applyMod does. Without the write, removing a mod was a
+        // silent no-op: the player got both the mod item and the armour with the mod still on it.
         if (modsTag.isEmpty()) {
-            armorTag.remove(MOD_COMPOUND_KEY);
+            StackNbt.removeKey(armor, MOD_COMPOUND_KEY);
         } else {
-            armorTag.put(MOD_COMPOUND_KEY, modsTag);
+            StackNbt.put(armor, MOD_COMPOUND_KEY, modsTag);
         }
+        rebuildAttributeModifiers(armor);
         onPoweredArmorModsChanged(armor);
     }
 
@@ -169,7 +173,7 @@ public class ArmorModificationHelper {
             return false;
         }
 
-        CompoundTag armorTag = PlatformHooks.getItemTag(armor);
+        CompoundTag armorTag = StackNbt.read(armor);
         return armorTag != null && armorTag.contains(MOD_COMPOUND_KEY, Tag.TAG_COMPOUND);
     }
 
@@ -224,7 +228,7 @@ public class ArmorModificationHelper {
             return slots;
         }
 
-        CompoundTag armorTag = PlatformHooks.getItemTag(armor);
+        CompoundTag armorTag = StackNbt.copy(armor);
         if (armorTag == null) {
             return slots;
         }
@@ -234,7 +238,7 @@ public class ArmorModificationHelper {
         for (int i = 0; i < MOD_SLOTS; i++) {
             String key = MOD_SLOT_KEY_PREFIX + i;
             if (modsTag.contains(key)) {
-                ItemStack parsed = PlatformHooks.itemStackOf(modsTag.getCompound(key), PlatformHooks.bestEffortProvider());
+                ItemStack parsed = StackNbt.parse(modsTag.getCompound(key), PlatformHooks.bestEffortProvider());
                 slots[i] = parsed == null ? ItemStack.EMPTY : parsed;
             } else {
                 // Пустые слоты — EMPTY, а не null: вызыватели (GasMaskLayer и др.) не обязаны проверять на null.
@@ -256,7 +260,7 @@ public class ArmorModificationHelper {
             return ItemStack.EMPTY;
         }
 
-        CompoundTag armorTag = PlatformHooks.getItemTag(armor);
+        CompoundTag armorTag = StackNbt.copy(armor);
         if (armorTag == null) {
             return ItemStack.EMPTY;
         }
@@ -265,7 +269,7 @@ public class ArmorModificationHelper {
         String key = MOD_SLOT_KEY_PREFIX + slot;
 
         if (modsTag.contains(key)) {
-            return PlatformHooks.itemStackOf(modsTag.getCompound(key), PlatformHooks.bestEffortProvider());
+            return StackNbt.parse(modsTag.getCompound(key), PlatformHooks.bestEffortProvider());
         }
 
         return ItemStack.EMPTY;
@@ -277,7 +281,7 @@ public class ArmorModificationHelper {
             tableInventory.setItem(i, ItemStack.EMPTY);
         }
 
-        CompoundTag armorTagForMods = PlatformHooks.getItemTag(armorStack);
+        CompoundTag armorTagForMods = StackNbt.copy(armorStack);
         if (armorTagForMods == null || !armorTagForMods.contains(MOD_COMPOUND_KEY)) {
             return;
         }
@@ -286,7 +290,7 @@ public class ArmorModificationHelper {
         for (int i = 0; i < 9; i++) { // 9 слотов модов
             String key = MOD_SLOT_KEY_PREFIX + i;
             if (mods.contains(key)) {
-                ItemStack modStack = PlatformHooks.itemStackOf(mods.getCompound(key), PlatformHooks.bestEffortProvider());
+                ItemStack modStack = StackNbt.parse(mods.getCompound(key), PlatformHooks.bestEffortProvider());
                 tableInventory.setItem(i, modStack);
             }
         }
@@ -303,7 +307,7 @@ public class ArmorModificationHelper {
 
         // ШАГ 1: СОХРАНЕНИЕ КОНФИГУРАЦИИ МОДОВ В NBT (CUSTOM_DATA на 1.21.1).
         // Этот тег — источник правды о том, какие моды установлены (читается pryMod/loadMods).
-        PlatformHooks.editItemTag(armorStack, mainTag -> {
+        StackNbt.edit(armorStack, mainTag -> {
             CompoundTag modsCompound = new CompoundTag();
             for (int i = 0; i < 9; i++) {
                 ItemStack modStack = tableInventory.getItem(i);
@@ -311,7 +315,7 @@ public class ArmorModificationHelper {
                     modStack = pryMod(armorStack, i);
                 }
                 if (!modStack.isEmpty()) {
-                    modsCompound.put(MOD_SLOT_KEY_PREFIX + i, PlatformHooks.saveItemStack(modStack, new CompoundTag(), player != null ? player.level().registryAccess() : PlatformHooks.bestEffortProvider()));
+                    modsCompound.put(MOD_SLOT_KEY_PREFIX + i, StackNbt.save(modStack, new CompoundTag(), player != null ? player.level().registryAccess() : PlatformHooks.bestEffortProvider()));
                 }
             }
             if (modsCompound.isEmpty()) {
@@ -321,11 +325,26 @@ public class ArmorModificationHelper {
             }
         });
 
-        // ШАГ 2: ПЕРЕСБОРКА АТРИБУТОВ.
+        // ШАГ 2: ПЕРЕСБОРКА АТРИБУТОВ по только что записанному NBT.
+        rebuildAttributeModifiers(armorStack);
+
+        // ШАГ 3: ОБРЕЗАНИЕ ЗАРЯДА / capability (силовая броня)
+        onPoweredArmorModsChanged(armorStack);
+    }
+
+    /**
+     * Rebuilds the armour's attribute modifiers from the mods stored in its NBT. Called on every
+     * apply/remove so the effect is there no matter how the armour leaves the table (cursor pickup,
+     * shift-click or closing the GUI) - before, only closing the GUI rebuilt them.
+     */
+    public static void rebuildAttributeModifiers(ItemStack armorStack) {
+        if (!(armorStack.getItem() instanceof ArmorItem armorItem)) {
+            return;
+        }
         // 1.20.1: атрибуты живут в NBT-теге "AttributeModifiers" прямо на стаке.
         // 1.21.1: атрибуты живут в DataComponents.ATTRIBUTE_MODIFIERS (immutable record).
         //? if < 1.21.1 {
-        PlatformHooks.editItemTag(armorStack, mainTag -> {
+        StackNbt.edit(armorStack, mainTag -> {
             ListTag preservedModifiers = new ListTag();
 
             // 2a: Сохраняем немаркированные (ванильные) модификаторы.
@@ -352,11 +371,7 @@ public class ArmorModificationHelper {
             }
 
             // 2b: Добавляем атрибуты от наших модов с маркером.
-            for (int i = 0; i < 9; i++) {
-                ItemStack modStack = tableInventory.getItem(i);
-                if (modStack.isEmpty()) {
-                    modStack = pryMod(armorStack, i);
-                }
+            for (ItemStack modStack : pryMods(armorStack)) {
                 if (modStack.getItem() instanceof ItemArmorMod mod) {
                     if (isApplicable(armorStack, modStack)) {
                         Multimap<Attribute, AttributeModifier> modModifiers = mod.getModifiers(armorStack);
@@ -383,6 +398,14 @@ public class ArmorModificationHelper {
         // (по id-префиксу "am_", который PlatformHooks.attributeModifier ставит на 1.21.1),
         // затем добавить свежие от установленных модов.
         ItemAttributeModifiers current = armorStack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+        // A plain ArmorItem carries no ATTRIBUTE_MODIFIERS component - its armour and toughness come
+        // from the item defaults, and vanilla only falls back to those while the component's list is
+        // empty. Writing the component below therefore replaced the piece's own armour with just the
+        // mod modifiers, so installing any mod dropped the armour to 0. The 1.20.1 branch above
+        // re-adds the defaults in exactly this case; this one never did.
+        if (current.modifiers().isEmpty()) {
+            current = armorItem.getDefaultAttributeModifiers(armorStack);
+        }
         ItemAttributeModifiers.Builder builder = ItemAttributeModifiers.builder();
         for (ItemAttributeModifiers.Entry entry : current.modifiers()) {
             if (!isHbmModAttribute(entry)) {
@@ -390,11 +413,7 @@ public class ArmorModificationHelper {
             }
         }
         EquipmentSlotGroup slotGroup = EquipmentSlotGroup.bySlot(armorItem.getEquipmentSlot());
-        for (int i = 0; i < 9; i++) {
-            ItemStack modStack = tableInventory.getItem(i);
-            if (modStack.isEmpty()) {
-                modStack = pryMod(armorStack, i);
-            }
+        for (ItemStack modStack : pryMods(armorStack)) {
             if (modStack.getItem() instanceof ItemArmorMod mod) {
                 if (isApplicable(armorStack, modStack)) {
                     Multimap<Holder<Attribute>, AttributeModifier> modModifiers = mod.getModifiers(armorStack);
@@ -408,9 +427,6 @@ public class ArmorModificationHelper {
         }
         armorStack.set(DataComponents.ATTRIBUTE_MODIFIERS, builder.build());
         *///?}
-
-        // ШАГ 3: ОБРЕЗАНИЕ ЗАРЯДА / capability (силовая броня)
-        onPoweredArmorModsChanged(armorStack);
     }
 
     //? if >= 1.21.1 {
@@ -435,7 +451,7 @@ public class ArmorModificationHelper {
      * @return Список ItemStack'ов модов или пустой список, если модов нет.
      */
     public static List<ItemStack> getModsFromArmor(ItemStack armorStack) {
-        CompoundTag armorTagForList = PlatformHooks.getItemTag(armorStack);
+        CompoundTag armorTagForList = StackNbt.copy(armorStack);
         if (armorTagForList == null || !armorTagForList.contains(MOD_COMPOUND_KEY, 10)) {
             return Collections.emptyList();
         }
@@ -449,7 +465,7 @@ public class ArmorModificationHelper {
         for (int i = 0; i < 9; i++) { // Проверяем все 9 слотов
             String key = MOD_SLOT_KEY_PREFIX + i;
             if (modsCompound.contains(key)) {
-                ItemStack modStack = PlatformHooks.itemStackOf(modsCompound.getCompound(key), PlatformHooks.bestEffortProvider());
+                ItemStack modStack = StackNbt.parse(modsCompound.getCompound(key), PlatformHooks.bestEffortProvider());
                 if (!modStack.isEmpty()) {
                     modsList.add(modStack);
                 }

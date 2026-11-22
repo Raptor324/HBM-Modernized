@@ -44,6 +44,45 @@ public interface IMultiblockController {
     PartRole getPartRole(BlockPos localOffset);
 
     /**
+     * Ports for multiblock placement highlight (ported from 1.7.10 BlockDummyable.getAllPorts).
+     * Returns an array of [x, y, z, faceDirection3DDataValue] relative to the core in world coordinates.
+     * If empty, MultiblockStructureHelper.getAutoPorts will automatically supply ports based on connectors.
+     */
+    default int[][] getAllPorts(Direction facing) {
+        return new int[0][0];
+    }
+
+    /**
+     * Extra bounding boxes for multiblock placement highlight (ported from 1.7.10 BlockDummyable.getAABBExtras).
+     * Each entry is [upr, lwr, fwd, bwd, lft, rgt, (optional color)] (heat ports have color 1 = orange).
+     */
+    default double[][] getAABBExtras() {
+        return new double[0][0];
+    }
+
+    /**
+     * Whether the controller block itself accepts/provides energy as an energy connector.
+     */
+    default boolean hasControllerEnergy() {
+        return false;
+    }
+
+    /**
+     * Whether the controller block itself accepts/provides fluids.
+     */
+    default boolean hasControllerFluid() {
+        return false;
+    }
+
+    /**
+     * Rotates port definitions (relative to NORTH, matching 1.7.10 convention) into world coordinates.
+     * Each port is [nx, ny, nz, direction3DDataValue].
+     */
+    default int[][] rotatePorts(int[][] ports, Direction facing) {
+        return MultiblockStructureHelper.rotatePorts(ports, facing);
+    }
+
+    /**
      * Позволяет переопределить стандартную VoxelShape для мультиблока.
      * Используется для структур со сложной геометрией (провода, выступы и т.д.).
      * 
@@ -58,6 +97,11 @@ public interface IMultiblockController {
         // По умолчанию возвращаем ПУСТУЮ форму.
         // Это сигнал для системы: "У меня нет кастомной формы, генерируй стандартную".
         return null;
+    }
+
+    @Nullable
+    default VoxelShape getCustomMasterVoxelShape(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos) {
+        return getCustomMasterVoxelShape(state);
     }
 
     /**

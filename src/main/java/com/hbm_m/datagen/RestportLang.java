@@ -1396,6 +1396,7 @@ public final class RestportLang {
         e("item.hbm_m.ammo_standard_r762_he", "7.62mm Round (High-Explosive)", "Патрон 7.62мм (Разрывной)");
         e("item.hbm_m.ammo_standard_r762_jhp", "7.62mm Round (Jacketed Hollow Point)", "Патрон 7.62мм (Полуоболочечный экспансивный)");
         e("item.hbm_m.ammo_standard_r762_sp", "7.62mm Round (Soft Point)", "Патрон 7.62мм (Экспансивный)");
+        e("item.hbm_m.ammo_standard_rocket_micro", "Micro Rocket", "Микроракета");
         e("item.hbm_m.ammo_standard_rocket_demo", "Rocket, Demolition", "Ракета (Штурмовая)");
         e("item.hbm_m.ammo_standard_rocket_he", "Rocket, High-Explosive", "Ракета (Осколочно-фугасная)");
         e("item.hbm_m.ammo_standard_rocket_heat", "Rocket, Shaped Charge", "Ракета (Кумулятивная)");
@@ -2773,6 +2774,7 @@ public final class RestportLang {
         e("jei.hbm_m.satellite", "Satellite", "Спутник");
         e("jei.hbm_m.spent_fuel_pool", "Spent Fuel Pool Drum", "Бочка бассейна выдержки");
         e("jei.hbm_m.tooling", "Tooling", "Работа с инструментами");
+        e("jei.hbm_m.zirnox", "ZIRNOX Nuclear Reactor", "Ядерный реактор Цирнокс");
         e("matshape.block", "%s Block", "Блок %s");
         e("matshape.blocks", "%s Blocks", "Блоки %s");
         e("matshape.ingot", "%s Ingot", "Слиток %s");

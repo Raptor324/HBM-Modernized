@@ -14,6 +14,7 @@ import com.hbm_m.blockentity.machines.PWRControllerBlockEntity;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.PWRPrinterScanPacket;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -57,7 +58,7 @@ public class PWRFuelPrinterItem extends Item implements com.hbm_m.item.ITooltipP
     public InteractionResult useOn(UseOnContext context) {
         Level world = context.getLevel();
         BlockEntity tile = world.getBlockEntity(context.getClickedPos());
-        if (!(tile instanceof PWRControllerBlockEntity pwr)) return InteractionResult.PASS;
+        if (!(tile instanceof PWRControllerBlockEntity pwr) || !pwr.assembled) return InteractionResult.PASS;
         if (world.isClientSide) return InteractionResult.SUCCESS;
 
         if (context.getPlayer() instanceof ServerPlayer player) syncAndScreenshot(world, pwr, player);
@@ -126,6 +127,7 @@ public class PWRFuelPrinterItem extends Item implements com.hbm_m.item.ITooltipP
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.literal("Use on a constructed PWR controller to generate construction diagrams"));
+        tooltip.add(Component.literal("Use on an assembled PWR controller to generate construction diagrams")
+                .withStyle(ChatFormatting.GRAY));
     }
 }

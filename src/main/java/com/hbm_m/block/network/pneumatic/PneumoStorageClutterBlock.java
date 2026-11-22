@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * Port von {@code PneumoStorageClutter} (1.7.10). Das Ramschlager: 54 gewoehnliche Plaetze, nimmt alles an.
@@ -42,8 +43,7 @@ public class PneumoStorageClutterBlock extends PneumaticStorageBlockBase {
     }
 
     /**
-     * audit10: 1:1 {@code removedByPlayer} - ohne CRATE_KEEP_CONTENTS faellt der leere Block (nicht Kreativ) und der Inhalt
-     * heraus; mit: im Ueberlebensmodus der Block mit allen Slots (NBT), ueber 6 kB NBT stattdessen Warnung, leerer Block
+     * audit10: 1:1 {@code removedByPlayer} - im Ueberlebensmodus droppt die Kiste bei {@code crateKeepContents} mit Inhalt
      * und verstreuter Inhalt; im Kreativmodus verschwindet der Inhalt. Keine eigenen Drops ({@code getItemDropped} null).
      */
     //? if < 1.21.1 {
@@ -76,7 +76,7 @@ public class PneumoStorageClutterBlock extends PneumaticStorageBlockBase {
             for (int i = 0; i < inv.getInventory().getSlots(); i++) if (!inv.getInventory().getStackInSlot(i).isEmpty()) any = true;
             if (any) {
                 com.hbm_m.platform.BlockHooks.saveToItem(inv, drop);
-                net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(drop);
+                net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.StackNbt.read(drop);
                 if (tag != null && sizeOf(tag) > 6000) {
                     player.sendSystemMessage(net.minecraft.network.chat.Component.literal("Warning: Container NBT exceeds 6kB, contents will be ejected!")
                             .withStyle(net.minecraft.ChatFormatting.RED));
@@ -104,8 +104,13 @@ public class PneumoStorageClutterBlock extends PneumaticStorageBlockBase {
         super.onRemove(state, level, pos, newState, isMoving);
         if (pos.equals(KEEP.get())) KEEP.remove();
     }
-    //? if >= 1.21.1 {
+
+    //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<PneumoStorageClutterBlock> CODEC = simpleCodec(PneumoStorageClutterBlock::new);
-    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
     *///?}
 }

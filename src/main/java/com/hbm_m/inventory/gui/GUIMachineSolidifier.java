@@ -11,6 +11,8 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class GUIMachineSolidifier extends GuiInfoScreen<MachineSolidifierMenu> {
 
@@ -45,7 +47,7 @@ public class GUIMachineSolidifier extends GuiInfoScreen<MachineSolidifierMenu> {
             guiGraphics.blit(TEXTURE, this.leftPos + 138, this.topPos + 4, 176, 52, 9, 12);
         }
 
-        solidifier.getTank().renderTank(guiGraphics, this.leftPos + 35, this.topPos + 36, 16, 52);
+        solidifier.getTank().renderTank(guiGraphics, this.leftPos + 35, this.topPos + 88, 16, 52);
     }
 
     @Override

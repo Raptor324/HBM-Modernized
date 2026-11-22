@@ -9,22 +9,19 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /** Slot-Koordinaten (176x186 Textur) 1:1 aus {@code ContainerElectricFurnace} (1.7.10 Original)
- *  uebernommen: Batterie (152,54), Input (20,35), Output (80,35), Upgrade (111,34). */
-public class MachineElectricFurnaceMenu extends AbstractContainerMenu implements com.hbm_m.interfaces.ILongEnergyMenu {
+ *  uebernommen: Batterie (152,54), Input (20,35), Output (80,35). Der Upgrade-Slot (152,20) des
+ *  Originals entfaellt - siehe {@link MachineElectricFurnaceBlockEntity}. */
+public class MachineElectricFurnaceMenu extends AbstractContainerMenu {
 
     public final MachineElectricFurnaceBlockEntity blockEntity;
     private final ContainerData data;
-    private final Player player;
-    // Original zeigt den Energiebalken und power/maxPower im Tooltip - per PacketSyncEnergy synchronisiert
-    private long clientEnergy;
-    private long clientMaxEnergy;
 
     private static final int SLOT_BATTERY = MachineElectricFurnaceBlockEntity.SLOT_BATTERY;
     private static final int SLOT_INPUT = MachineElectricFurnaceBlockEntity.SLOT_INPUT;
@@ -48,7 +45,6 @@ public class MachineElectricFurnaceMenu extends AbstractContainerMenu implements
         checkContainerDataCount(data, DATA_COUNT);
         this.blockEntity = (MachineElectricFurnaceBlockEntity) entity;
         this.data = data;
-        this.player = inventory.player;
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
         this.addSlot(new Slot(container, SLOT_BATTERY, 152, 54));
@@ -80,7 +76,7 @@ public class MachineElectricFurnaceMenu extends AbstractContainerMenu implements
         if (blockEntity instanceof MachineElectricFurnaceBlockEntity be) {
             return be;
         }
-        throw new IllegalStateException("No MachineElectricFurnaceBlockEntity found at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineElectricFurnaceBlockEntity found at " + pos);
     }
 
     public int getProgress() { return data.get(DATA_PROGRESS); }
@@ -91,39 +87,9 @@ public class MachineElectricFurnaceMenu extends AbstractContainerMenu implements
         return getProgress() * scale / getMaxProgress();
     }
 
-    public long getEnergyLong() {
-        return blockEntity != null && !blockEntity.getLevel().isClientSide ? blockEntity.getEnergyStored() : clientEnergy;
-    }
-
-    public long getMaxEnergyLong() {
-        return blockEntity != null && !blockEntity.getLevel().isClientSide ? blockEntity.getMaxEnergyStored() : clientMaxEnergy;
-    }
-
-    @Override
-    public void setEnergy(long energy, long maxEnergy, long delta) {
-        this.clientEnergy = energy;
-        this.clientMaxEnergy = maxEnergy;
-    }
-
-    @Override public long getEnergyStatic() { return blockEntity != null ? blockEntity.getEnergyStored() : 0L; }
-    @Override public long getMaxEnergyStatic() { return blockEntity != null ? blockEntity.getMaxEnergyStored() : 0L; }
-    @Override public long getEnergyDeltaStatic() { return 0L; }
-
-    @Override
-    public void broadcastChanges() {
-        super.broadcastChanges();
-        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide
-                && player instanceof net.minecraft.server.level.ServerPlayer sp) {
-            com.hbm_m.network.ModPacketHandler.sendToPlayer(sp, com.hbm_m.network.ModPacketHandler.SYNC_ENERGY,
-                    new com.hbm_m.network.packet.PacketSyncEnergy(this.containerId,
-                            blockEntity.getEnergyStored(), blockEntity.getMaxEnergyStored(), 0L));
-        }
-    }
-
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()),
-                player, ModBlocks.ELECTRIC_FURNACE.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.ELECTRIC_FURNACE.get());
     }
 
     @Override

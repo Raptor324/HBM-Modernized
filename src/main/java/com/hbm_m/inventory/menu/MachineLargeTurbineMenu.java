@@ -12,6 +12,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineLargeTurbineMenu extends AbstractContainerMenu {
 
@@ -59,8 +60,8 @@ public class MachineLargeTurbineMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineLargeTurbineBlockEntity turbineBlockEntity) {
             return turbineBlockEntity;
         }
-        throw new IllegalStateException("No MachineLargeTurbineBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":large_turbine_menu");
-    }
+        throw new MenuBlockEntityMissingException("No MachineLargeTurbineBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":large_turbine_menu");
+   }
 
     public MachineLargeTurbineBlockEntity getBlockEntity() {
         return blockEntity;
@@ -68,9 +69,8 @@ public class MachineLargeTurbineMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
-    }
+        return MenuReach.stillValid(player, blockEntity);
+   }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {

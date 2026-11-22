@@ -85,7 +85,7 @@ public class GUICrucibleRecipeSelector extends Screen {
         super.render(g, mouseX, mouseY, partialTick);
 
         if (tooltip != null) g.renderTooltip(this.font, tooltip, mouseX, mouseY);
-        if (recipeTooltip != null) g.renderComponentTooltip(this.font, recipeTooltip, mouseX, mouseY);
+        if (recipeTooltip != null) com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(g, this.font, recipeTooltip, mouseX, mouseY);
     }
 
     @Override

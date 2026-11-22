@@ -4,7 +4,6 @@ import com.hbm_m.blockentity.machines.MachineRotaryFurnaceBlockEntity;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -15,6 +14,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1 {@code ContainerMachineRotaryFurnace}: Eingaben (8,18)/(26,18)/(44,18), Fluid-ID (8,54), Brennstoff (44,54),
@@ -33,7 +33,7 @@ public class MachineRotaryFurnaceMenu extends AbstractContainerMenu {
         this.furnace = tile;
 
         var container = new ModItemStackHandlerContainer(
-                tile != null ? tile.getInventory() : new DummyItemStackHandler(MachineRotaryFurnaceBlockEntity.INVENTORY_SIZE),
+                tile != null ? tile.getInventory() : new ModItemStackHandler.Dummy(MachineRotaryFurnaceBlockEntity.INVENTORY_SIZE),
                 tile != null ? tile::setChanged : null);
 
         //Inputs
@@ -60,8 +60,7 @@ public class MachineRotaryFurnaceMenu extends AbstractContainerMenu {
         BlockPos pos = buffer.readBlockPos();
         BlockEntity be = inventory.player.level().getBlockEntity(pos);
         if (be instanceof MachineRotaryFurnaceBlockEntity furnace) return furnace;
-        if (inventory.player.level().isClientSide) return null;
-        throw new IllegalStateException("No MachineRotaryFurnaceBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":rotary_furnace_menu");
+        throw new MenuBlockEntityMissingException("No MachineRotaryFurnaceBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":rotary_furnace_menu");
     }
 
     public MachineRotaryFurnaceBlockEntity getBlockEntity() {
@@ -70,9 +69,8 @@ public class MachineRotaryFurnaceMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (furnace == null || furnace.getLevel() != player.level()) return false;
-        BlockPos pos = furnace.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 128.0D;
+        // MenuReach measures reach against the whole structure (DummyableMachineBlock core), not just the BE pos.
+        return MenuReach.stillValid(player, furnace);
     }
 
     @Override

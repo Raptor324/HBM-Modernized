@@ -59,14 +59,14 @@ public class ItemWrench extends SwordItem implements ITooltipProvider {
 
             if (be instanceof IPipelineBase second) {
 
-                if (StackNbt.read(stack) == null)
+                // 1.21.1: set(EMPTY) удаляет компонент, поэтому read()==null остаётся —
+                // единая проверка + orCreate() вместо set(EMPTY)+tag()
+                if (StackNbt.read(stack) == null || !StackNbt.read(stack).contains("x")) {
                     StackNbt.set(stack, new CompoundTag());
-
-                if (!StackNbt.read(stack).contains("x")) {
-                    StackNbt.set(stack, new CompoundTag());
-                    StackNbt.tag(stack).putInt("x", pos.getX());
-                    StackNbt.tag(stack).putInt("y", pos.getY());
-                    StackNbt.tag(stack).putInt("z", pos.getZ());
+                    CompoundTag t = StackNbt.orCreate(stack);
+                    t.putInt("x", pos.getX());
+                    t.putInt("y", pos.getY());
+                    t.putInt("z", pos.getZ());
 
                     if (!world.isClientSide) {
                         player.sendSystemMessage(Component.literal("Pipe start"));

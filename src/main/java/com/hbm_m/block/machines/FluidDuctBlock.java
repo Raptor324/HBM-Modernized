@@ -15,29 +15,20 @@ import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.blockentity.machines.FluidDuctBlockEntity;
-import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.blockentity.machines.UniversalMachinePartBlockEntity;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.interfaces.ILookOverlay;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidDuctItem;
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -72,14 +63,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Fluid duct: multipart blockstate + Forge OBJ visibility on {@code pipe_neo.obj}. Fluid type lives in the block entity.
  * Fluid identifier: normal click sets fluid on one duct; <b>sneak (Shift)</b> + click paints the connected network of the
@@ -135,6 +120,23 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay, com
             Direction.UP, Block.box(4, 12, 4, 12, 16, 12),
             Direction.DOWN, Block.box(4, 0, 4, 12, 4, 12));
 
+    /** Кэш форм по битмаске 6 соединений: getShape вызывается в горячем пути коллизий/рейкаста. */
+    private static final VoxelShape[] SHAPES_BY_MASK = new VoxelShape[64];
+
+    private static VoxelShape shapeForMask(int mask) {
+        VoxelShape shape = SHAPES_BY_MASK[mask];
+        if (shape == null) {
+            shape = CORE;
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.ordinal())) != 0) {
+                    shape = Shapes.or(shape, ARM_SHAPES.get(dir));
+                }
+            }
+            SHAPES_BY_MASK[mask] = shape;
+        }
+        return shape;
+    }
+
     private static final int IDENTIFIER_NETWORK_LIMIT = 512;
 
     /** ResourceLocation "none" mod fluid → cleared duct ({@link Fluids#EMPTY}). */
@@ -169,13 +171,13 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay, com
     @Override
     public VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos,
             @NotNull CollisionContext context) {
-        VoxelShape shape = CORE;
+        int mask = 0;
         for (Direction dir : Direction.values()) {
             if (state.getValue(PROPERTY_BY_DIRECTION.get(dir))) {
-                shape = Shapes.or(shape, ARM_SHAPES.get(dir));
+                mask |= 1 << dir.ordinal();
             }
         }
-        return shape;
+        return shapeForMask(mask);
     }
 
     /** Full connection + render shape for a duct at {@code pos} (block there must be this block type). */
@@ -256,7 +258,6 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay, com
         refreshAdjacentDucts(level, pos);
     }
 
-    @SuppressWarnings("UnstableApiUsage") // Fabric Transfer API в ветке //? if fabric
     private boolean canConnectTo(LevelAccessor level, BlockPos myPos, BlockPos neighborPos, Direction direction) {
         BlockState neighborState = level.getBlockState(neighborPos);
         Block selfBlock = level.getBlockState(myPos).getBlock();
@@ -295,92 +296,31 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay, com
             if (be instanceof UniversalMachinePartBlockEntity part
                     && part.getControllerPos() != null
                     && (part.getPartRole() == PartRole.FLUID_CONNECTOR || part.getPartRole() == PartRole.UNIVERSAL_CONNECTOR)) {
-                // Проверка стороны коннектора: если набор задан, пусто трактуем как "все стороны" (совместимость IMultiblockPart).
-                var allowed = part.getAllowedFluidSides();
-                if (allowed != null && !allowed.isEmpty() && !allowed.contains(direction.getOpposite())) {
-                    return false;
-                }
-                BlockEntity ctrl = level.getBlockEntity(part.getControllerPos());
-                if (ctrl == null) return false;
+                // Паритет 1.7.10 (Library.canConnectFluid): визуальный коннект решает canConnect
+                // САМОГО коннектора-соседа. У частей он безусловен по типу (UniversalMachinePartBlockEntity
+                // #canConnect проверяет только роль и разрешённые стороны) — какой тип у трубы и у баков
+                // мультиблока, неважно; тип гейтит лишь саму передачу (per-type сети + demand баков).
+                // Раньше здесь тип трубы сверялся с receiving-баками контроллера, из-за чего кровяная
+                // труба не липла к турбине (приёмный бак только керосиновый), хотя передача работала.
+                return part.canConnect(ductFluid, direction.getOpposite());
+            }
 
-                // Химическая установка: коннект трубы визуально не фильтруем по краске/наличию рецепта
-                // (входные жидкости задаются рецептом; см. MachineChemicalPlantBlockEntity#getActiveFluidInputSlotCount).
-                if (ctrl instanceof MachineChemicalPlantBlockEntity) {
-                    return true;
-                }
-
-                // Цистерна: более строгая визуальная логика (не показываем "руку" пока тип не задан/не залит)
-                if (ctrl instanceof MachineFluidTankBlockEntity tank) {
+            // Паритет 1.7.10: TileEntityBarrel#canConnect — труба коннектится к бочке только
+            // по совпадению типа (пустая/неокрашенная труба — разрешаем, конвенция для всех баков).
+            // Для МУЛЬТИБЛОК-цистерны остаётся запрет прямого подключения: соединение только
+            // через части-коннекторы (нашей архитектуры правило, оригинальному BE класса не было).
+            if (be instanceof MachineFluidTankBlockEntity tank) {
+                if (neighborState.getBlock() instanceof BarrelTankBlock) {
                     if (ductFluid == Fluids.EMPTY) return true;
                     return ductFluidMatchesTankForVisual(ductFluid, tank);
                 }
-
-                // Остальные MK2-контроллеры (например Crystallizer):
-                // визуальное соединение нельзя определять через Forge fill(SIMULATE), потому что
-                // полностью заполненный бак вернёт 0 и труба визуально "отлипнет" после перезахода,
-                // хотя сеть и тип жидкости корректные. Для MK2 сверяем именно ожидаемый тип бака.
-                if (ctrl instanceof IFluidStandardReceiverMK2 receiver) {
-                    if (ductFluid == Fluids.EMPTY) return true;
-                    FluidTank[] receiving = receiver.getReceivingTanks();
-                    if (receiving == null) return false;
-                    for (FluidTank tank : receiving) {
-                        if (tank == null) continue;
-                        Fluid expected = normalizeDuctPaintFluid(tank.getTankType());
-                        if (expected != null
-                                && expected != Fluids.EMPTY
-                                && VanillaFluidEquivalence.sameSubstance(ductFluid, expected)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-
-                // Остальные контроллеры:
-                // - если труба не окрашена (EMPTY) — показываем соединение просто по наличию fluid handler
-                // - если окрашена — fallback через Forge fill(SIMULATE).
-                //? if forge {
-                var cap = ctrl.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, null);
-                if (!cap.isPresent()) return false;
-                if (ductFluid == Fluids.EMPTY) return true;
-                var handler = cap.resolve().orElse(null);
-                if (handler == null) return false;
-                int canFill = handler.fill(new net.minecraftforge.fluids.FluidStack(ductFluid, 1), net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
-                return canFill > 0;
-                //?} elif neoforge {
-                /*var cap = com.hbm_m.platform.HbmCaps.get(ctrl, com.hbm_m.platform.HbmCap.FLUID_HANDLER, null);
-                if (!cap.isPresent()) return false;
-                if (ductFluid == Fluids.EMPTY) return true;
-                var handler = cap.resolve().orElse(null);
-                if (handler == null) return false;
-                int canFill = handler.fill(new net.neoforged.neoforge.fluids.FluidStack(ductFluid, 1), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
-                return canFill > 0;
-                *///?}
-
-                //? if fabric {
-                /*// Паритет с Forge: capability FLUID_HANDLER с side=null на контроллере.
-                // SIDED.find(..., null) → getFluidStorage(null) у BlockEntity (см. FabricEntrypoint).
-                if (!(level instanceof Level lvl)) {
-                    return false;
-                }
-                BlockPos ctrlPos = part.getControllerPos();
-                BlockState ctrlState = level.getBlockState(ctrlPos);
-                Storage<FluidVariant> storage = FluidStorage.SIDED.find(lvl, ctrlPos, ctrlState, ctrl, null);
-                if (storage == null) {
-                    return false;
-                }
-                if (ductFluid == Fluids.EMPTY) {
-                    return true;
-                }
-                try (Transaction tx = Transaction.openOuter()) {
-                    long inserted = storage.insert(FluidVariant.of(ductFluid), 81L, tx);
-                    return inserted > 0;
-                }
-                *///?}
+                return false;
             }
 
-            // Контроллер цистерны: прямое подключение запрещено правилами мультиблока.
-            // (Иначе при загрузке чанка возможно кратковременное "прилипание" до восстановления ролей/сторон.)
-            if (be instanceof MachineFluidTankBlockEntity) {
+            // Паритет 1.7.10 (Library.canConnectFluid): у мультиблок-контроллеров нет прямого
+            // подключения трубы — только через части-коннекторы (ветка UniversalMachinePart выше).
+            // Без этого трубы визуально "липнут" к контроллеру (хим. установка), а передачи нет.
+            if (neighborState.getBlock() instanceof IMultiblockController) {
                 return false;
             }
 
@@ -395,9 +335,11 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay, com
     private static boolean ductFluidMatchesTankForVisual(Fluid ductFluidNorm, MachineFluidTankBlockEntity tank) {
         Fluid tankType = tank.getFluidTank().getTankType();
         int fill = tank.getFluidTank().getFill();
+        // Паритет 1.7.10: TileEntityMachineFluidTank#canConnect возвращает true безусловно,
+        // пока тип бака не зафиксирован — "рука" трубы не должна пропадать у пустой цистерны.
         boolean tankCommitted = fill > 0 || FluidTank.isFluidTypeExplicitlySet(tankType);
         if (!tankCommitted) {
-            return false;
+            return true;
         }
         return VanillaFluidEquivalence.sameSubstance(ductFluidNorm, tankType);
     }
@@ -484,6 +426,18 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay, com
                 ? InteractionResult.sidedSuccess(level.isClientSide) : InteractionResult.PASS;
     }
 
+    public static void paintConnectedDuctNetwork(Level level, BlockPos start, Fluid fluid) {
+        fluid = normalizeDuctPaintFluid(fluid);
+        if (level.isClientSide || fluid == null) {
+            return;
+        }
+        BlockEntity be = level.getBlockEntity(start);
+        Fluid cur = com.hbm_m.api.fluids.PipeTypeChanger.typeOf(be);
+        if (cur != null) {
+            com.hbm_m.api.fluids.PipeTypeChanger.changeTypeRecursively(level, start, cur, fluid, com.hbm_m.api.fluids.PipeTypeChanger.LOOPS);
+        }
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
@@ -552,11 +506,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay, com
     }
 
     @Override
-//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
     public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof FluidDuctBlockEntity ductBe)) {

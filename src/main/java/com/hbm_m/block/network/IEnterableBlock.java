@@ -13,7 +13,13 @@ import net.minecraft.world.level.Level;
  * steht in {@link IEnterablePackageBlock}; Bloecke, die Pakete im Original ablehnen, implementieren es nicht.
  */
 public interface IEnterableBlock {
-    void onItemEnter(Level level, BlockPos pos, MovingConveyorItemEntity item);
+    default void onItemEnter(Level level, BlockPos pos, MovingConveyorItemEntity item) {
+        onItemEnter(level, pos, null, item);
+    }
+
+    default void onItemEnter(Level level, BlockPos pos, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction dir, MovingConveyorItemEntity item) {
+        onItemEnter(level, pos, item);
+    }
 
     /**
      * 1:1 {@code canItemEnter}: {@code dir} ist die Seite des Blocks, durch die das Teil hereinkommt

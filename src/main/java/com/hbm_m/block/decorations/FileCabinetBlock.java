@@ -37,6 +37,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code filing_cabinet} = {@code BlockDecoContainer(DecoCabinetEnum, TileEntityFileCabinet)}: Ausrichtung und
@@ -138,7 +139,7 @@ public class FileCabinetBlock extends BaseEntityBlock {
         return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
     //? if >= 1.21.1 {
-    /*public static final com.mojang.serialization.MapCodec<FileCabinetBlock> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(FileCabinetBlock.class);
+    /*public static final com.mojang.serialization.MapCodec<FileCabinetBlock> CODEC = com.hbm_m.platform.BlockHooks.unsupportedCodec(FileCabinetBlock.class);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

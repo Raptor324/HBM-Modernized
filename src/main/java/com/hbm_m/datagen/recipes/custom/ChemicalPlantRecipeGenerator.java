@@ -74,7 +74,7 @@ public final class ChemicalPlantRecipeGenerator {
         // chem.helium3
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(25, 2000)
                 .addItemInput(Ingredient.of(item("hbm_m:moon_turf")), 1)
-                .addFluidOutput(ModFluids.HELIUM3.getSource(), 125)
+                .addFluidOutput(ModFluids.HELIUM3.getSource(), 500)
                 .save(writer, "chemplant/helium3");
 
         // chem.co2
@@ -419,6 +419,24 @@ public final class ChemicalPlantRecipeGenerator {
                     .addItemOutput(stack("hbm_m:plate_kevlar", 4))
                     .save(v, "chemplant/kevlar"), "528_pressurized")
                 .save();
+
+        // chem.lightconstruction
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(400, 25000)
+                .addItemInput(ore("oredict/plate/dura_steel"), 2)
+                .addFluidInput(ModFluids.XYLENE.getSource(), 1000)
+                .addFluidInput(ModFluids.PHOSGENE.getSource(), 1000)
+                .addFluidInput(ModFluids.SOURGAS.getSource(), 4000)
+                .addItemOutput(stack("hbm_m:part_generic_alclad", 1))
+                .save(writer, "chemplant/lightconstruction");
+
+        // chem.carboncarbon
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(400, 100000)
+                .addItemInput(ore("oredict/gem/any_coke"), 8)
+                .addItemInput(ore("oredict/plate/titanium"), 1)
+                .addFluidInput(ModFluids.HEAVYOIL_VACUUM.getSource(), 1000)
+                .addFluidInput(ModFluids.SYNGAS.getSource(), 8000)
+                .addItemOutput(stack("hbm_m:part_generic_alclad", 1))
+                .save(writer, "chemplant/carboncarbon");
 
         // chem.meth
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 300)

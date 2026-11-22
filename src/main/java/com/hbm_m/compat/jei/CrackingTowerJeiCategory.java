@@ -7,14 +7,8 @@ import com.hbm_m.recipe.CrackingTowerRecipe;
 
 import dev.architectury.fluid.FluidStack;
 //? if forge {
-//? if forge {
 import mezz.jei.api.forge.ForgeTypes;
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
-//? if forge {
 import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
-//?}
 //?} elif neoforge {
 /*import mezz.jei.api.neoforge.NeoForgeTypes;
 *///?}
@@ -32,7 +26,7 @@ import net.minecraft.world.item.ItemStack;
  * <p>Data-driven: рецепты читаются напрямую из {@code RecipeManager} (JSON {@code hbm_m:cracking_tower}),
  * ранее — статический {@code CrackingTowerRecipes}.</p>
  */
-//? if forge || neoforge {
+
 public class CrackingTowerJeiCategory extends JeiGenericRecipeCategory<CrackingTowerRecipe> {
 
     public static final RecipeType<CrackingTowerRecipe> RECIPE_TYPE =
@@ -75,7 +69,10 @@ public class CrackingTowerJeiCategory extends JeiGenericRecipeCategory<CrackingT
 
     @Override
     protected void addInputSlots(IRecipeLayoutBuilder builder, CrackingTowerRecipe recipe, int inputXOffset) {
-        int[][] positions = JeiNeiLayout.getGenericInputSlotPositions(2);
+        // CrackingHandler extends NEIUniversalHandler: dessen getInputCoords(2) legt das
+        // Eingangsfluid auf {48,24} (direkt am Pfeil) und den Dampf auf {30,24} — genau
+        // umgekehrt zur NEIGenericRecipeHandler-Reihenfolge. getUniversalInputCoords spiegelt das.
+        int[][] positions = JeiNeiLayout.getUniversalInputCoords(2);
         addFluidSlot(builder, RecipeIngredientRole.INPUT,
                 positions[0][0] + inputXOffset, positions[0][1],
                 FluidStack.create(recipe.getInputFluid(), recipe.getInputMb()));
@@ -114,7 +111,7 @@ public class CrackingTowerJeiCategory extends JeiGenericRecipeCategory<CrackingT
                 .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
                 //?} elif neoforge {
                 /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
+                .addIngredient(NeoForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
                 *///?}
     }
 
@@ -123,7 +120,3 @@ public class CrackingTowerJeiCategory extends JeiGenericRecipeCategory<CrackingT
         // Kein Blueprint-Slot fuer Cracking-Tower-Rezepte.
     }
 }
-//?} else {
-/*public final class CrackingTowerJeiCategory {
-    private CrackingTowerJeiCategory() {}
-}*///?}

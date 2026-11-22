@@ -124,13 +124,11 @@ public class BlockTaint extends Block {
         Vec3 motion = entity.getDeltaMovement();
         entity.setDeltaMovement(motion.x * 0.6, motion.y, motion.z * 0.6);
 
-        if (entity instanceof LivingEntity living) {
+        // Server only: a client-side addEffect() lands under a second map key next to the
+        // server-synced instance, so the HUD showed the effect twice.
+        if (!level.isClientSide && entity instanceof LivingEntity living) {
             if (level.random.nextInt(50) == 0) {
-                //? if < 1.21.1 {
-                living.addEffect(new MobEffectInstance(ModEffects.TAINT.get(), 15 * 20, effectLevel));
-                //?} else {
-                /*living.addEffect(new MobEffectInstance(net.minecraft.core.Holder.direct(ModEffects.TAINT.get()), 15 * 20, effectLevel));
-                *///?}
+                com.hbm_m.platform.EffectHooks.addEffect(living, ModEffects.TAINT, 15 * 20, effectLevel);
             }
         }
 
@@ -154,14 +152,13 @@ public class BlockTaint extends Block {
     //? if < 1.21.1 {
     @Override
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.literal("DO NOT TOUCH, BREATHE OR STARE AT.").withStyle(ChatFormatting.GRAY));
-    }
     //?} else {
     /*@Override
     public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext level, List<Component> tooltip, TooltipFlag flag) {
+    *///?}
         tooltip.add(Component.literal("DO NOT TOUCH, BREATHE OR STARE AT.").withStyle(ChatFormatting.GRAY));
     }
-    *///?}
+
 
     /** Устанавливает блок порчи с заданным «возрастом» (бывш. metadata). */
     public static BlockState stateWithAge(int age) {

@@ -4,6 +4,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineHeatexBlockEntity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -49,6 +50,12 @@ public class MachineHeatexBlock extends DummyableMachineBlock {
     }
 
     @Nullable @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            {1, 1, 0.5, -0.3, 0.4, -0.4, 1}
+        };
+    }
+
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineHeatexBlockEntity(pos, state);
     }
@@ -132,5 +139,15 @@ public class MachineHeatexBlock extends DummyableMachineBlock {
     /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
+    // Verbatim port of the original HeaterHeatex.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {-1, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-1, 0, -1, Direction.NORTH.get3DDataValue()}
+        }, facing);
     }
 }

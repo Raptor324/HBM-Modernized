@@ -94,7 +94,7 @@ public class MachineCondenserPoweredBlock extends DummyableMachineBlock implemen
     }
 
 
-    // ==================== E9 (Fork, nur mit Space-Addon): Schaden + Reparatur ====================
+    // -------------------- E9 (Fork, nur mit Space-Addon): Schaden + Reparatur --------------------
 
     /** Space {@code onScrew}: Schweissbrenner repariert ueber {@code IRepairable.tryRepairMultiblock}. */
     @Override

@@ -12,10 +12,13 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Экран бомбы FLEIJA (схема размещения компонентов).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUINukeFleija extends GuiInfoScreen<NukeFleijaMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -41,8 +44,9 @@ public class GUINukeFleija extends GuiInfoScreen<NukeFleijaMenu> {
     protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, imageWidth, imageHeight);
 
-        // Original: Teile-Overlays je Slot, kein Info-Panel, keine Bereitschaftsanzeige
-        if (be != null) { // тайл может отсутствовать в реплее Flashback
+        // тайл может отсутствовать в реплее Flashback
+        if (be != null) {
+            // Original: Teile-Overlays je Slot
             if (has(0, ModItems.FLEIJA_IGNITER.get())) guiGraphics.blit(TEXTURE, leftPos + 7, topPos + 88, 176, 0, 30, 20);
             if (has(1, ModItems.FLEIJA_IGNITER.get())) guiGraphics.blit(TEXTURE, leftPos + 139, topPos + 88, 206, 0, 30, 20);
             if (has(2, ModItems.FLEIJA_PROPELLANT.get())) guiGraphics.blit(TEXTURE, leftPos + 57, topPos + 77, 176, 62, 18, 14);
@@ -54,7 +58,13 @@ public class GUINukeFleija extends GuiInfoScreen<NukeFleijaMenu> {
             if (has(8, ModItems.FLEIJA_CORE.get())) guiGraphics.blit(TEXTURE, leftPos + 103, topPos + 92, 194, 35, 18, 12);
             if (has(9, ModItems.FLEIJA_CORE.get())) guiGraphics.blit(TEXTURE, leftPos + 85, topPos + 104, 176, 47, 18, 15);
             if (has(10, ModItems.FLEIJA_CORE.get())) guiGraphics.blit(TEXTURE, leftPos + 103, topPos + 104, 194, 47, 18, 15);
+            // Bereitschaftsanzeige (Machines-Seite)
+            if (be.isReady()) {
+                guiGraphics.blit(TEXTURE, this.leftPos + imageWidth - 42, this.topPos + 6, 176, 48, 16, 16);
+            }
         }
+
+        this.drawInfoPanel(guiGraphics, -16, 16, PanelType.LARGE_BLUE_INFO);
     }
 
     private boolean has(int slot, net.minecraft.world.item.Item item) {

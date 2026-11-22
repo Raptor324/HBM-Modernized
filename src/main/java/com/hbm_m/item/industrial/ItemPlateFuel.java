@@ -5,6 +5,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Direkter Java-Port von {@code ItemPlateFuel} (1.7.10 Original, {@code
@@ -32,11 +33,11 @@ public class ItemPlateFuel extends Item {
     }
 
     public static long getLifeTime(ItemStack stack) {
-        return PlatformHooks.getLong(stack, "lifetime");
+        return StackNbt.getLong(stack, "lifetime");
     }
 
     public static void setLifeTime(ItemStack stack, long value) {
-        PlatformHooks.putLong(stack, "lifetime", value);
+        StackNbt.putLong(stack, "lifetime", value);
     }
 
     /** 1:1 {@code ItemPlateFuel.addInformation}. */

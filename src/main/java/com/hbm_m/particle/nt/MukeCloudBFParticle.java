@@ -4,7 +4,7 @@ import com.hbm_m.lib.RefStrings;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.resources.ResourceLocation;
 
-public class MukeCloudBFParticle extends MukeCloudParticle {
+public class MukeCloudBFParticle extends MukeCloudParticle implements ReplaceOnRespawn {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/particle/explosion_bf.png");

@@ -264,7 +264,7 @@ public class ItemBlowtorch extends Item implements IFillableItem, ITooltipProvid
     }
     //?} elif neoforge {
     /*// NeoForge: Anmeldung als Capabilities.FluidHandler.ITEM in ModCapabilities.register
-    public static class FillOnlyCapability implements net.neoforged.neoforge.fluids.capability.IFluidHandlerItem {
+    public static class FillOnlyCapability implements net.minecraftforge.fluids.capability.IFluidHandlerItem {
         private final ItemStack stack;
         private final IFillableItem item;
 
@@ -275,19 +275,19 @@ public class ItemBlowtorch extends Item implements IFillableItem, ITooltipProvid
 
         @Override public ItemStack getContainer() { return stack; }
         @Override public int getTanks() { return 1; }
-        @Override public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) { return net.neoforged.neoforge.fluids.FluidStack.EMPTY; }
+        @Override public net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) { return net.minecraftforge.fluids.FluidStack.EMPTY; }
         @Override public int getTankCapacity(int tank) { return 50; }
-        @Override public boolean isFluidValid(int tank, net.neoforged.neoforge.fluids.FluidStack fs) { return item.acceptsFluid(fs.getFluid(), stack); }
+        @Override public boolean isFluidValid(int tank, net.minecraftforge.fluids.FluidStack fs) { return item.acceptsFluid(fs.getFluid(), stack); }
 
         @Override
-        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction action) {
+        public int fill(net.minecraftforge.fluids.FluidStack resource, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction action) {
             if (resource.isEmpty() || !item.acceptsFluid(resource.getFluid(), stack)) return 0;
             ItemStack target = action.simulate() ? stack.copy() : stack;
             return resource.getAmount() - item.tryFill(resource.getFluid(), resource.getAmount(), target);
         }
 
-        @Override public net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction action) { return net.neoforged.neoforge.fluids.FluidStack.EMPTY; }
-        @Override public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction action) { return net.neoforged.neoforge.fluids.FluidStack.EMPTY; }
+        @Override public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction action) { return net.minecraftforge.fluids.FluidStack.EMPTY; }
+        @Override public net.minecraftforge.fluids.FluidStack drain(int maxDrain, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction action) { return net.minecraftforge.fluids.FluidStack.EMPTY; }
     }
     *///?}
 }

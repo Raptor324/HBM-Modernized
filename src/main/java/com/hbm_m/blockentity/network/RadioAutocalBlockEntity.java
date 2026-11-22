@@ -105,6 +105,15 @@ public class RadioAutocalBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockE
         this.pushMsg(reason);
     }
 
+    // ── Redstone-Ausgangspins (aus dem Machines-Port) ────────────────────────
+    /** Abgefragt von {@link com.hbm_m.block.network.RadioAutocalBlock#getSignal}; der MSES1-Parser treibt die Pins derzeit nicht (Ausgabe laeuft ueber RTTY). */
+    private final int[] redstoneOut = new int[6];
+
+    /** Machines-Port: Redstone-Pins 0..5 (Direction.ordinal()). */
+    public int getRedstoneOutput(int side) {
+        return side >= 0 && side < 6 ? redstoneOut[side] : 0;
+    }
+
     @Override
     public void receiveControl(CompoundTag data) {
         if (this.ctx == null) this.ctx = new ParseContext(level);
@@ -133,6 +142,7 @@ public class RadioAutocalBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockE
 
     @Override
     protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(nbt, registries);
         nbt.putBoolean("isOn", isOn);
         nbt.putBoolean("ignoreError", ignoreError);
         nbt.putBoolean("autoReboot", autoReboot);
@@ -152,6 +162,7 @@ public class RadioAutocalBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockE
 
     @Override
     protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(nbt, registries);
         this.isOn = nbt.getBoolean("isOn");
         this.ignoreError = nbt.getBoolean("ignoreError");
         this.autoReboot = nbt.getBoolean("autoReboot");

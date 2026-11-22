@@ -12,6 +12,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import com.hbm_m.platform.StackNbt;
 
 public class SyncPointPacket implements C2SPacket {
 
@@ -57,7 +58,10 @@ public class SyncPointPacket implements C2SPacket {
     public static void handle(SyncPointPacket msg, PacketContext context) {
         context.queue(() -> {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
-            if (msg.pointIndex < 0) return;
+            // The index comes from the client and only the lower bound was checked, while the loop
+            // below allocates one CompoundTag per missing entry - an arbitrary index meant an
+            // arbitrary allocation. Every other detonator path is bounded by MAX_POINTS.
+            if (msg.pointIndex < 0 || msg.pointIndex >= MultiDetonatorItem.MAX_POINTS) return;
 
             ItemStack mainItem = player.getMainHandItem();
             ItemStack offItem  = player.getOffhandItem();
@@ -68,7 +72,7 @@ public class SyncPointPacket implements C2SPacket {
 
             if (detonatorStack.isEmpty()) return;
 
-            PlatformHooks.editItemTag(detonatorStack, nbt -> {
+            StackNbt.edit(detonatorStack, nbt -> {
                 ListTag pointsList;
                 if (!nbt.contains("Points", Tag.TAG_LIST)) {
                     pointsList = new ListTag();
@@ -103,6 +107,11 @@ public class SyncPointPacket implements C2SPacket {
     }
 
     // ── Send helper ───────────────────────────────────────────────────────────
+
+    /** Синхронизация только имени точки (координаты/цель не трогаем). */
+    public static void sendToServer(int pointIndex, String pointName) {
+        sendToServer(pointIndex, pointName, 0, 0, 0, false);
+    }
 
     public static void sendToServer(int pointIndex, String pointName, int x, int y, int z, boolean hasTarget) {
         ModPacketHandler.sendToServer(ModPacketHandler.SYNC_POINT,

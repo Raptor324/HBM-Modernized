@@ -101,6 +101,7 @@ public final class FluidContainerDefs {
         canister("naphtha_ds", 0x5F6D44);
         canister("lightoil_ds", 0xB46B52);
         gastank("flue", 0xFF4545, 0xFFE97F);
+        canister("titanium_tetrachloride", 0xE1E549);
     }
 
     private static String name(Fluid fluid) {

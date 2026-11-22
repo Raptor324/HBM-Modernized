@@ -21,6 +21,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * 1:1 {@code TileEntityMachineSatLink}: die Schuessel ist verbunden, wenn sie unter freiem Himmel steht und auf

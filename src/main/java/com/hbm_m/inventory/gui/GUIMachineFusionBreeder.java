@@ -11,17 +11,15 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /** 1:1-Port von {@code GUIFusionBreeder} (1.7.10). */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineFusionBreeder extends GuiInfoScreen<MachineFusionBreederMenu> {
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
-            RefStrings.MODID, "textures/gui/reactors/gui_fusion_breeder.png");
-    *///?} else {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/reactors/gui_fusion_breeder.png");
-    //?}
 
     public GUIMachineFusionBreeder(MachineFusionBreederMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

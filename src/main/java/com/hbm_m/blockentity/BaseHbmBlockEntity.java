@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Верхняя прослойка над {@link BlockEntity} с минимальным набором stonecutter-ветвлений
@@ -43,23 +44,164 @@ import com.hbm_m.platform.PlatformHooks;
  * используйте {@link #applyClientUpdate(CompoundTag)} (метод для переопределения, вызывается
  * прослойкой при получении пакета) — он должен делегировать в {@link #readNbtData}.
  */
-public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider, com.hbm_m.platform.HbmCapabilityProvider {
+public abstract class BaseHbmBlockEntity extends BlockEntity
+        implements com.hbm_m.api.render.RenderBoundsProvider, com.hbm_m.api.render.RenderDirtyTracker, com.hbm_m.platform.HbmCapabilityProvider {
 
     public BaseHbmBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
 
-    /**
-     * Render bounding box по умолчанию — 1 блок (чуть расширенный).
-     * На 1.21.1 NeoForge BER-пасс зовёт его через {@link com.hbm_m.api.render.RenderBoundsProvider}
-     * (ванильного BlockEntity#getRenderBoundingBox там нет); на 1.20.1 Forge это @Override.
-     * Мультиблоки переопределяют на AABB всей структуры.
-     */
-    //? if forge {
+    // ═════════════════════════════════════════════════════════════════════════════════════
+    //  Render dirty tracking (GPU-driven сбор машин: см. com.hbm_m.api.render.RenderDirtyTracker)
+    //  Чистая машина пропускает ежекадровую сборку (матрицы/свет/сравнение записей) и
+    //  подтверждает присутствие roster-assert'ом. Свет/fade не имеют событийной модели —
+    //  обновляются TTL-пересбором (штамп gameTick, фаза размазана по позиции).
+    // ═════════════════════════════════════════════════════════════════════════════════════
+
+    /** Safety TTL horizon in ticks — matches LightSampleCache.LIGHT_TTL_TICKS (light is event-driven, fade is GPU-side). */
+    private static final long NUCLEUS_RENDER_REFRESH_TICKS = 1200;
+
+    private boolean nucleusRenderDirty = true;
+    private long nucleusLastRenderTick = Long.MIN_VALUE;
+    private long nucleusLastRenderWorldGen = -1L;
+
     @Override
-    //?}
-    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
-        return new net.minecraft.world.phys.AABB(worldPosition).inflate(0.5D);
+    public boolean isRenderDirty() {
+        return nucleusRenderDirty;
+    }
+
+    @Override
+    public void markRenderDirty() {
+        nucleusRenderDirty = true;
+        if (this.level != null && this.level.isClientSide()) {
+            com.hbm_m.client.render.retained.RetainedInstanceGraph.get()
+                    .onMachineDirtyAsync(this, com.hbm_m.client.render.retained.DirtyMask.ALL);
+        }
+    }
+
+    @Override
+    public boolean isRenderStale(long gameTick, long worldGen) {
+        if (nucleusRenderDirty || nucleusLastRenderWorldGen != worldGen) {
+            return true;
+        }
+        long since = gameTick - nucleusLastRenderTick;
+        if (since < 0) {
+            return true; // смена измерения/откат времени
+        }
+        // Spread safety refreshes across 64 ticks by position.
+        long phase = (worldPosition.asLong() >>> 4) & 63L;
+        return since >= NUCLEUS_RENDER_REFRESH_TICKS + phase;
+    }
+
+    @Override
+    public void onRenderCollected(long gameTick, long worldGen) {
+        nucleusRenderDirty = false;
+        nucleusLastRenderTick = gameTick;
+        nucleusLastRenderWorldGen = worldGen;
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        // Загрузка чанка / пересоздание BE при смене blockstate — запись надо собрать заново.
+        nucleusRenderDirty = true;
+    }
+
+    @Override
+    public void setBlockState(BlockState state) {
+        super.setBlockState(state);
+        // LevelChunk переиспользует BE-инстанс при смене состояния того же блока.
+        nucleusRenderDirty = true;
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════════════
+    //  Anti-sync-spam гейт: 128-битная подпись отрисовываемого состояния (P6).
+    //  Контракт и ограничения — в javadoc syncIfStateChanged.
+    // ═════════════════════════════════════════════════════════════════════════════════════
+
+    private long syncSnapLo, syncSnapHi;
+    private boolean syncSnapValid;
+
+    /**
+     * CONTRACT (P6): lo/hi must cover EVERY field that writeNbtData ships and the client renders.
+     * If the rendered state exceeds 128 bits, or contains stack state the extended stackFingerprint
+     * does not cover (non-CUSTOM_DATA components on 1.21.1), do NOT use this gate — use
+     * BaseMachineBlockEntity.syncIf(boolean) with explicit per-field comparisons instead.
+     * Fires once on the first tick after load (syncSnapValid=false) — one extra full-BE packet per
+     * machine per chunk load, accepted.
+     */
+    protected final boolean syncIfStateChanged(long lo, long hi) {
+        if (syncSnapValid && lo == syncSnapLo && hi == syncSnapHi) return false;
+        syncSnapValid = true;
+        syncSnapLo = lo;
+        syncSnapHi = hi;
+        setChanged();
+        if (level != null && !level.isClientSide && !isRemoved())
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        return true;
+    }
+
+    /**
+     * Как {@link #syncIfStateChanged}, но при неизменной подписи принудительно шлёт пакет
+     * раз в {@code intervalTicks} (фаза размазана по позиции) — для состояний, меняющихся
+     * без изменения подписи (прогрев, кулдауны, heartbeats).
+     */
+    protected final boolean syncIfChangedOrEvery(long lo, long hi, int intervalTicks) {
+        if (syncIfStateChanged(lo, hi)) return true;
+        if (probeDue(intervalTicks)) {
+            syncSnapLo = lo;
+            syncSnapHi = hi;
+            syncSnapValid = true;
+            setChanged();
+            if (level != null && !level.isClientSide && !isRemoved())
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * true раз в {@code intervalTicks} тиков, фаза размазана по позиции блока.
+     * Шкала интервалов: 5 — fluid subscribe/provide loops и continuous force/damage boxes;
+     * 10 — effect/entity queries (decon, radiobox, charger, turret...);
+     * 20 — heat pulls, connector scans, radar neighbors, display heartbeats;
+     * 40 — чистые re-validation sweeps.
+     */
+    protected final boolean probeDue(int intervalTicks) {
+        if (level == null || level.isClientSide || intervalTicks <= 0) return false;
+        return (level.getGameTime() + (worldPosition.hashCode() & 15)) % intervalTicks == 0;
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════════════
+    //  Централизованный дроп инвентаря при разрушении блока. Платформенно-независимо:
+    //  один источник правды — {@link #getItemHandler(net.minecraft.core.Direction)},
+    //  который переопределяют машины с инвентарём.
+    //  ВАЖНО: НЕ переопределять setRemoved() для дропа, так как на 1.21.1 / NeoForge
+    //  при выгрузке чанков и сохранении мира ваниль вызывает setRemoved(), что приводило
+    //  к дюпу предметов на пол при перезаходе в мир.
+    // ═════════════════════════════════════════════════════════════════════════════════════
+
+    /** Переопределить и вернуть {@code false}, если машина дропает инвентарь сама или хранит в NBT предмета. */
+    protected boolean dropInventoryOnRemove() { return true; }
+
+    /**
+     * Выбрасывает содержимое инвентаря в мир при фактическом разрушении блока / мультиблока.
+     * Очищает слоты после выброса для предотвращения повторного дропа.
+     */
+    public void dropInventory() {
+        if (level == null || level.isClientSide || !dropInventoryOnRemove()) return;
+        if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) return;
+        Object handler = getItemHandler(null);
+        if (handler instanceof com.hbm_m.platform.ModItemStackHandler h) {
+            for (int i = 0; i < h.getSlots(); i++) {
+                net.minecraft.world.item.ItemStack stack = h.getStackInSlot(i);
+                if (stack != null && !stack.isEmpty()) {
+                    net.minecraft.world.Containers.dropItemStack(level,
+                            worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), stack);
+                    h.setStackInSlot(i, net.minecraft.world.item.ItemStack.EMPTY);
+                }
+            }
+        }
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════
@@ -179,12 +321,38 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
         if (t != this.tilted) {
             this.tilted = t;
             if (level != null && level.isClientSide) {
-                //? if forge || neoforge {
                 this.requestModelDataUpdate();
-                //?}
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
             }
         }
+    }
+    /**
+     * Render bounding box по умолчанию — 1 блок (чуть расширенный).
+     * На 1.21.1 NeoForge BER-пасс зовёт его через {@link com.hbm_m.api.render.RenderBoundsProvider}
+     * (ванильного BlockEntity#getRenderBoundingBox там нет); на 1.20.1 Forge это @Override.
+     * Мультиблоки переопределяют на AABB всей структуры.
+     */
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition).inflate(0.5D);
+    }
+
+    /**
+     * Отправляет обновление состояния блока клиентам.
+     */
+    protected void sendUpdateToClient() {
+        if (level != null && !level.isClientSide && !isRemoved()) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    /**
+     * Отправляет обновление клиенту с указанием дистанции/радиуса.
+     */
+    protected void sendUpdateToClient(int range) {
+        sendUpdateToClient();
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════
@@ -228,6 +396,11 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
      */
     protected void applyClientUpdate(@NotNull CompoundTag tag) {
         readNbtData(tag, null);
+    }
+
+    /** Как выше, но с реестрами (neoforge 1.21.1 передаёт реальный Provider из пакета). */
+    protected void applyClientUpdate(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        readNbtData(tag, registries);
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════
@@ -277,15 +450,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
         writeNbtData(tag, null);
         return tag;
     }
-    //?} elif neoforge {
-    /*@Override
-    public @NotNull CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
-        tag.putBoolean("tilted", tilted);
-        writeNbtData(tag, registries);
-        return tag;
-    }
-    *///?} else {
+    //?} else {
     /*@Override
     public @NotNull CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
@@ -304,19 +469,42 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     //? if forge {
     @Override
     public void handleUpdateTag(@NotNull CompoundTag tag) {
+        nucleusRenderDirty = true;
         readTiltClient(tag);
         applyClientUpdate(tag);
     }
 
     @Override
     public void onDataPacket(@NotNull Connection net, @NotNull ClientboundBlockEntityDataPacket pkt) {
-        CompoundTag tag = PlatformHooks.getItemTag(pkt);
-        if (tag != null) { readTiltClient(tag); applyClientUpdate(tag); }
+        nucleusRenderDirty = true;
+        CompoundTag tag = pkt.getTag();
+        if (tag != null) {
+            readTiltClient(tag);
+            applyClientUpdate(tag);
+        }
     }
-    //?}
+    //?} else {
+    /*// NeoForge 1.21.1: дефолт IBlockEntityExtension.onDataPacket ПРОПУСКАЕТ ПУСТОЙ тег
+    // (if (!tag.isEmpty())), из-за чего сброс опциональных данных (например, camo=null
+    // у paintable-кабеля) не доезжал до клиента — тег после сброса пустой.
+    // Переопределяем с безусловным применением.
+    @Override
+    public void handleUpdateTag(@NotNull CompoundTag tag, HolderLookup.Provider registries) {
+        nucleusRenderDirty = true;
+        readTiltClient(tag);
+        applyClientUpdate(tag, registries);
+    }
 
-    //? if neoforge {
-    /*/^* Forge ruft invalidateCaps() aus setRemoved(); auf NeoForge die gespiegelten Forge-Zweige (invalidateHbmCaps). ^/
+    @Override
+    public void onDataPacket(@NotNull Connection net, @NotNull ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider registries) {
+        nucleusRenderDirty = true;
+        CompoundTag tag = pkt.getTag();
+        CompoundTag safeTag = tag != null ? tag : new CompoundTag();
+        readTiltClient(safeTag);
+        applyClientUpdate(safeTag, registries);
+    }
+
+    // Forge ruft invalidateCaps() aus setRemoved(); auf NeoForge die gespiegelten Forge-Zweige (invalidateHbmCaps).
     @Override
     public void setRemoved() {
         super.setRemoved();
@@ -339,6 +527,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
      * Возвращает IFluidHandler (NeoForge / Forge) для указанной стороны
      */
     public @Nullable Object getFluidHandler(@Nullable net.minecraft.core.Direction side) {
+        if (!isFluidSideAllowed(side)) return null;
         if (this instanceof com.hbm_m.api.fluids.IFluidUserMK2 mk2) {
             //? if forge {
             return null; // На Forge разруливается через getCapability
@@ -350,9 +539,27 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     }
 
     /**
+     * Пускает ли машина жидкость через эту грань. {@code side == null} — несторонний запрос.
+     * На Forge то же самое делал сторонний фильтр в {@code getCapability}; на NeoForge капабилити
+     * вешается через ModCapabilities и сторону не проверяет, поэтому фильтр живёт здесь.
+     */
+    protected boolean isFluidSideAllowed(@Nullable net.minecraft.core.Direction side) {
+        return true;
+    }
+
+    /**
      * Возвращает IEnergyStorage для указанной стороны
      */
     public @Nullable Object getEnergyStorage(@Nullable net.minecraft.core.Direction side) {
         return null;
+    }
+
+    /**
+     * Участвует ли BE в энергетической сети вообще (провода, зарядка, выдача).
+     * Машины без энергии (пресс) переопределяют в {@code false}: на Forge их getCapability
+     * возвращает empty, на NeoForge ModCapabilities не регистрирует на них energy-капы.
+     */
+    public boolean joinsEnergyNetwork() {
+        return true;
     }
 }

@@ -9,6 +9,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 {@code BlockSmolder} ({@code ore_nether_smoldering}): wer darueber laeuft, brennt 3 s; ist oben Luft,
@@ -33,6 +34,6 @@ public class BlockSmolder extends Block {
 
     @Override
     public void stepOn(Level world, BlockPos pos, BlockState state, Entity entity) {
-        PlatformHooks.setSecondsOnFire(entity, 3);
+        MobHooks.setSecondsOnFire(entity, 3);
     }
 }

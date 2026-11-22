@@ -14,6 +14,7 @@ import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -21,22 +22,19 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * 1:1 {@code DecoBlock} als {@code steel_wall}: Wandplatte 2px. {@code FACING} ist die Gegenrichtung der Meta
- * (Meta = Blickrichtung beim Setzen, die Platte liegt an der Seite zum Spieler). Schraubenzieher dreht wie
- * {@code onScrew}: normal S->W->N->O, geduckt umgekehrt.
+ * (Meta 2 = Suedwand -> Platte an Nordseite des Blocks mit Blick nach Sueden).
  */
 public class SteelWallBlock extends Block implements IToolable {
 
-    public static final DirectionProperty FACING = DirectionProperty.create("facing", Direction.Plane.HORIZONTAL);
+    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
-    private static final double T = 2.0 / 16.0;
+    protected static final VoxelShape SHAPE_NORTH = Shapes.box(0.0, 0.0, 0.0, 1.0, 1.0, 2.0 / 16.0);
+    protected static final VoxelShape SHAPE_SOUTH = Shapes.box(0.0, 0.0, 14.0 / 16.0, 1.0, 1.0, 1.0);
+    protected static final VoxelShape SHAPE_WEST  = Shapes.box(0.0, 0.0, 0.0, 2.0 / 16.0, 1.0, 1.0);
+    protected static final VoxelShape SHAPE_EAST  = Shapes.box(14.0 / 16.0, 0.0, 0.0, 1.0, 1.0, 1.0);
 
-    private static final VoxelShape SHAPE_NORTH = Shapes.box(0, 0, 0, 1, 1, T);
-    private static final VoxelShape SHAPE_SOUTH = Shapes.box(0, 0, 1 - T, 1, 1, 1);
-    private static final VoxelShape SHAPE_WEST = Shapes.box(0, 0, 0, T, 1, 1);
-    private static final VoxelShape SHAPE_EAST = Shapes.box(1 - T, 0, 0, 1, 1, 1);
-
-    public SteelWallBlock(Properties props) {
-        super(props);
+    public SteelWallBlock(Properties properties) {
+        super(properties);
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
@@ -46,12 +44,21 @@ public class SteelWallBlock extends Block implements IToolable {
     }
 
     @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    public BlockState getStateForPlacement(BlockPlaceContext ctx) {
+        Direction clicked = ctx.getClickedFace();
+        if (clicked.getAxis().isHorizontal()) {
+            return defaultBlockState().setValue(FACING, clicked);
+        }
+        return defaultBlockState().setValue(FACING, ctx.getHorizontalDirection().getOpposite());
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        return shapeFor(state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return shapeFor(state.getValue(FACING));
     }
 

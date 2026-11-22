@@ -21,8 +21,8 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * 1:1 {@code RenderDecoBlock} fuer die Radiobox mit {@code ModelRadio} (32x32): Kasten, Frontplatte und der Hebel,
- * der aus (20 Grad) oder an (160 Grad) steht.
+ * 1:1 {@code RenderDecoBlock} for the radiobox with {@code ModelRadio} (32x32): case, front plate and switch lever,
+ * positioned at off (20 degrees) or on (160 degrees).
  */
 public class RadioboxRenderer implements com.hbm_m.client.render.HbmBerBounds<RadioboxBlockEntity> {
 

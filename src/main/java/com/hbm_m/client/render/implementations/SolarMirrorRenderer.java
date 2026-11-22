@@ -13,10 +13,10 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * 1:1 {@code RenderMirror} (im Original ein ISBRH): Sockel ("Base") fest, Spiegelflaeche ("Mirror") zum Ziel gedreht,
- * sobald das Ziel ueber dem Spiegel liegt. Original dreht jeden Eckpunkt um (0, 1, 0): erst
- * {@code rotateAroundX(pitch)}, dann {@code rotateAroundY(yaw)}; 1.7.10-{@code rotateAroundX} dreht gegen die
- * Rechte-Hand-Regel, daher hier {@code XP(-pitch)}.
+ * 1:1 {@code RenderMirror} (ISBRH in original): fixed base ("Base"), mirror surface ("Mirror") rotated toward target
+ * once target is above mirror. Original rotates every vertex around (0, 1, 0): first
+ * {@code rotateAroundX(pitch)}, then {@code rotateAroundY(yaw)}; 1.7.10 {@code rotateAroundX} rotates against
+ * right-hand rule, so {@code XP(-pitch)} precedes {@code YP(-yaw)} here.
  */
 public class SolarMirrorRenderer implements com.hbm_m.client.render.HbmBerBounds<SolarMirrorBlockEntity> {
 

@@ -28,11 +28,7 @@ public class ModRecipes {
     public static final dev.architectury.registry.registries.RegistrySupplier<RecipeSerializer<?>> MASS_STORAGE_UPGRADE =
             SERIALIZERS.register("mass_storage_upgrade",
                     () -> new net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<>(
-                            //? if < 1.21.1 {
                             MassStorageUpgradeRecipe::new
-                            //?} else {
-                            /*MassStorageUpgradeRecipe::new
-                            *///?}
                     ));
 
     public static final RegistrySupplier<RecipeSerializer<AssemblerRecipe>> ASSEMBLER_SERIALIZER =
@@ -66,6 +62,12 @@ public class ModRecipes {
 
     public static final RegistrySupplier<RecipeType<PressRecipe>> PRESS_TYPE =
             RECIPE_TYPES.register("press", () -> PressRecipe.Type.INSTANCE);
+
+    public static final RegistrySupplier<RecipeSerializer<ArcFurnaceRecipe>> ARC_FURNACE_SERIALIZER =
+            SERIALIZERS.register("arc_furnace", () -> ArcFurnaceRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<ArcFurnaceRecipe>> ARC_FURNACE_TYPE =
+            RECIPE_TYPES.register("arc_furnace", () -> ArcFurnaceRecipe.Type.INSTANCE);
 
     public static final RegistrySupplier<RecipeSerializer<AmmoPressRecipe>> AMMO_PRESS_SERIALIZER =
             SERIALIZERS.register("ammo_press", () -> AmmoPressRecipe.Serializer.INSTANCE);
@@ -148,9 +150,34 @@ public class ModRecipes {
     public static final RegistrySupplier<RecipeType<CyclotronRecipe>> CYCLOTRON_TYPE =
             RECIPE_TYPES.register("cyclotron", () -> CyclotronRecipe.Type.INSTANCE);
 
-    // Mixer: Rezepte wie im Original statisch in MixerRecipes (kein Datapack-Rezepttyp).
+    // Mixer — промышленный миксер. ID = "mixer" (см. MixerRecipe.Type.ID).
+    public static final RegistrySupplier<RecipeSerializer<MixerRecipe>> MIXER_SERIALIZER =
+            SERIALIZERS.register("mixer", () -> MixerRecipe.Serializer.INSTANCE);
 
+    public static final RegistrySupplier<RecipeType<MixerRecipe>> MIXER_TYPE =
+            RECIPE_TYPES.register("mixer", () -> MixerRecipe.Type.INSTANCE);
 
+    // CrucibleSmelting — тигель-плавка предмета в расплавленный материал. ID = "crucible_smelting".
+    public static final RegistrySupplier<RecipeSerializer<CrucibleSmeltingRecipe>> CRUCIBLE_SMELTING_SERIALIZER =
+            SERIALIZERS.register("crucible_smelting", () -> CrucibleSmeltingRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<CrucibleSmeltingRecipe>> CRUCIBLE_SMELTING_TYPE =
+            RECIPE_TYPES.register("crucible_smelting", () -> CrucibleSmeltingRecipe.Type.INSTANCE);
+
+    // MoltenAlloy — тигель-сплавление расплавленных материалов (MaterialStack → MaterialStack[]).
+    // ID = "molten_alloy" (см. MoltenAlloyRecipe.Type.ID). Data-driven, material-based, не item/fluid.
+    public static final RegistrySupplier<RecipeSerializer<MoltenAlloyRecipe>> MOLTEN_ALLOY_SERIALIZER =
+            SERIALIZERS.register("molten_alloy", () -> MoltenAlloyRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<MoltenAlloyRecipe>> MOLTEN_ALLOY_TYPE =
+            RECIPE_TYPES.register("molten_alloy", () -> MoltenAlloyRecipe.Type.INSTANCE);
+
+    // MoldCasting — отливка в форме: пара (mold, material) → ItemStack. ID = "mold_casting".
+    public static final RegistrySupplier<RecipeSerializer<MoldCastingRecipe>> MOLD_CASTING_SERIALIZER =
+            SERIALIZERS.register("mold_casting", () -> MoldCastingRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<MoldCastingRecipe>> MOLD_CASTING_TYPE =
+            RECIPE_TYPES.register("mold_casting", () -> MoldCastingRecipe.Type.INSTANCE);
 
     // ArcWelder — дуговая сварка. ID = "arc_welder" (см. ArcWelderRecipe.Type.ID).
     // Замена статике ArcWelderRecipes.recipes — теперь data-driven (JSON).
@@ -213,18 +240,9 @@ public class ModRecipes {
     public static final RegistrySupplier<RecipeType<CokerRecipe>> COKER_TYPE =
             RECIPE_TYPES.register("coker", () -> CokerRecipe.Type.INSTANCE);
 
-    // W-R9B5-1/2: Mischer- und Elektrolyse(Fluid)-Rezepte aus dem Datapack (HBM selbst: Code-Tabellen, keine JSONs)
-    public static final RegistrySupplier<RecipeSerializer<MixerDataRecipe>> MIXER_SERIALIZER =
-            SERIALIZERS.register(MixerDataRecipe.Type.ID, () -> MixerDataRecipe.Serializer.INSTANCE);
-
-    public static final RegistrySupplier<RecipeType<MixerDataRecipe>> MIXER_TYPE =
-            RECIPE_TYPES.register(MixerDataRecipe.Type.ID, () -> MixerDataRecipe.Type.INSTANCE);
-
-    public static final RegistrySupplier<RecipeSerializer<ElectrolysisFluidDataRecipe>> ELECTROLYSIS_FLUID_SERIALIZER =
-            SERIALIZERS.register(ElectrolysisFluidDataRecipe.Type.ID, () -> ElectrolysisFluidDataRecipe.Serializer.INSTANCE);
-
-    public static final RegistrySupplier<RecipeType<ElectrolysisFluidDataRecipe>> ELECTROLYSIS_FLUID_TYPE =
-            RECIPE_TYPES.register(ElectrolysisFluidDataRecipe.Type.ID, () -> ElectrolysisFluidDataRecipe.Type.INSTANCE);
+    // W-R9B5-1/2: Mischer- und Elektrolyse(Fluid)-Rezepte aus dem Datapack — ersetzt durch die
+    // data-driven Klassen MixerRecipe / ElectrolyserFluidRecipe (oben registriert); die statischen
+    // Tabellen mischen die JSONs zur Laufzeit ein.
 
     // Compressor — компрессор. ID = "compressor" (см. CompressorRecipe.Type.ID).
     // Замена статике CompressorRecipes — теперь data-driven (JSON).
@@ -313,6 +331,30 @@ public class ModRecipes {
 
     public static final RegistrySupplier<RecipeType<VacuumDistillRecipe>> VACUUM_DISTILL_TYPE =
             RECIPE_TYPES.register("vacuum_distill", () -> VacuumDistillRecipe.Type.INSTANCE);
+
+    // RotaryFurnace — вращающаяся печь. ID = "rotary_furnace" (см. RotaryFurnaceRecipe.Type.ID).
+    // Замена статике RotaryFurnaceRecipes — теперь data-driven (JSON).
+    public static final RegistrySupplier<RecipeSerializer<RotaryFurnaceRecipe>> ROTARY_FURNACE_SERIALIZER =
+            SERIALIZERS.register("rotary_furnace", () -> RotaryFurnaceRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<RotaryFurnaceRecipe>> ROTARY_FURNACE_TYPE =
+            RECIPE_TYPES.register("rotary_furnace", () -> RotaryFurnaceRecipe.Type.INSTANCE);
+
+    // ElectrolyserFluid — электролизёр (жидкостный рецепт). ID = "electrolyser_fluid" (см. ElectrolyserFluidRecipe.Type.ID).
+    // Замена статике ElectrolyserRecipes (fluid) — теперь data-driven (JSON).
+    public static final RegistrySupplier<RecipeSerializer<ElectrolyserFluidRecipe>> ELECTROLYSER_FLUID_SERIALIZER =
+            SERIALIZERS.register("electrolyser_fluid", () -> ElectrolyserFluidRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<ElectrolyserFluidRecipe>> ELECTROLYSER_FLUID_TYPE =
+            RECIPE_TYPES.register("electrolyser_fluid", () -> ElectrolyserFluidRecipe.Type.INSTANCE);
+
+    // ElectrolyserMetal — электролизёр (металлический рецепт). ID = "electrolyser_metal" (см. ElectrolyserMetalRecipe.Type.ID).
+    // Замена статике ElectrolyserRecipes (metal) — теперь data-driven (JSON).
+    public static final RegistrySupplier<RecipeSerializer<ElectrolyserMetalRecipe>> ELECTROLYSER_METAL_SERIALIZER =
+            SERIALIZERS.register("electrolyser_metal", () -> ElectrolyserMetalRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<ElectrolyserMetalRecipe>> ELECTROLYSER_METAL_TYPE =
+            RECIPE_TYPES.register("electrolyser_metal", () -> ElectrolyserMetalRecipe.Type.INSTANCE);
 
 
     public static void init() {

@@ -1,6 +1,5 @@
 package com.hbm_m.blockentity.machines.pile;
 
-import com.hbm_m.platform.StackNbt;
 
 import com.hbm_m.item.machine.ItemPileRodMK2;
 
@@ -104,10 +103,10 @@ public class PileChannel {
 
         BlockPos at = entry.relative(dir, depth);
 
-        CompoundTag tag = StackNbt.tag(stack);
+        CompoundTag tag = com.hbm_m.platform.StackNbt.copy(stack);
         if (tag != null && tag.contains(ItemPileRodMK2.KEY_NBT_DEPLETION)) {
             tag.remove(ItemPileRodMK2.KEY_NBT_DEPLETION);
-            if (tag.isEmpty()) StackNbt.set(stack, null);
+            com.hbm_m.platform.StackNbt.set(stack, tag.isEmpty() ? null : tag);
         }
 
         level.addFreshEntity(new ItemEntity(level,
@@ -117,7 +116,7 @@ public class PileChannel {
     // ── Speichern ───────────────────────────────────────────────────────────
 
     /** Original: {@code writeChannelToNBT}, ein Kanal je Namenspraefix. */
-    public void save(CompoundTag nbt, String name) {
+    public void save(CompoundTag nbt, String name, net.minecraft.core.HolderLookup.Provider registries) {
         nbt.putInt(name + "_x", entry.getX());
         nbt.putInt(name + "_y", entry.getY());
         nbt.putInt(name + "_z", entry.getZ());
@@ -129,7 +128,7 @@ public class PileChannel {
                 if (rods[i] != null && !rods[i].isEmpty()) {
                     CompoundTag entryTag = new CompoundTag();
                     entryTag.putByte("slot", (byte) i);
-                    com.hbm_m.platform.StackNbt.save(rods[i], entryTag);
+                    com.hbm_m.platform.StackNbt.save(rods[i], entryTag, registries);
                     list.add(entryTag);
                 }
             }
@@ -148,7 +147,7 @@ public class PileChannel {
     }
 
     /** Original: {@code readChannelFromNBT}. Laenge und Art kommen aus der Geometrie des Kerns. */
-    public static PileChannel load(CompoundTag nbt, String name, PileCoreBlockEntity core) {
+    public static PileChannel load(CompoundTag nbt, String name, PileCoreBlockEntity core, net.minecraft.core.HolderLookup.Provider registries) {
         BlockPos pos = new BlockPos(nbt.getInt(name + "_x"), nbt.getInt(name + "_y"), nbt.getInt(name + "_z"));
         Direction dir = Direction.values()[nbt.getByte(name + "_d") & 7];
 
@@ -161,7 +160,7 @@ public class PileChannel {
                 CompoundTag entryTag = list.getCompound(i);
                 int slot = entryTag.getByte("slot") & 0xFF;
                 if (slot < chan.rods.length) {
-                    chan.rods[slot] = StackNbt.parse(entryTag);
+                    chan.rods[slot] = com.hbm_m.platform.StackNbt.parse(entryTag, registries);
                 }
             }
             chan.heat = nbt.getDouble(name + "heat");

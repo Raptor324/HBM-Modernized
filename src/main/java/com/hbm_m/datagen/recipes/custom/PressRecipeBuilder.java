@@ -21,7 +21,6 @@ import net.minecraft.world.level.ItemLike;
 public class PressRecipeBuilder extends BaseRecipeBuilder<PressRecipeBuilder> {
 
     private final ItemStack output;
-    // JsonElement: Zutat kann auch eine Liste sein (z.B. C9-Stempel Eisen/Desh)
     private com.google.gson.JsonElement stampJson;
     private com.google.gson.JsonElement materialJson;
 

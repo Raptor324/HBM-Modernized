@@ -47,9 +47,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import net.minecraft.world.level.block.state.BlockState;
-
-
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
 
  * Модель предмета: обычный вид шаблона; при зажатом Shift — иконка выхода рецепта (если есть NBT).
@@ -72,6 +71,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
  */
 
+@OnlyIn(Dist.CLIENT)
 public class TemplateBakedModel implements BakedModel {
 
 

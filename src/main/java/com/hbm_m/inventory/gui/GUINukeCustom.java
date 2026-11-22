@@ -13,11 +13,14 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1 {@code GUINukeCustom}: Schaltplan-Hintergrund, die gerade aktive Stufe leuchtet (Salz zusaetzlich bei
  * Atom/Wasserstoff), Tooltips mit "Stufe roh/angepasst", Bedingungen und Zitaten.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUINukeCustom extends GuiInfoScreen<NukeCustomMenu> {
 
     private static final ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/gun_bomb_schematic.png");

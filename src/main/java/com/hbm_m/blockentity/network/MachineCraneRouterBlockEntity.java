@@ -143,7 +143,7 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity
         sendUpdateToClient();
     }
 
-    // ── Kopierwerkzeug ──────────────────────────────────────────────────────
+    // в”Ђв”Ђ Kopierwerkzeug в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
     @Override
     public CompoundTag getSettings(Level world, BlockPos pos) {
@@ -208,7 +208,7 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity
         return options;
     }
 
-    // ── NBT ─────────────────────────────────────────────────────────────────
+    // в”Ђв”Ђ NBT в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
@@ -232,25 +232,18 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity
     /** Original: kein Automatisierungszugriff ({@code TileEntityMachineBase}). */
     @Override protected boolean isItemValidForSlot(int slot, ItemStack stack) { return false; }
 
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        return null;
+    }
+
     //? if forge {
     @Override
     public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER) return net.minecraftforge.common.util.LazyOptional.empty();
         return super.getCapability(cap, side);
     }
-
-    @Override
-    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable Direction side) { return null; }
-    //?} elif neoforge {
-    /*@Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) return com.hbm_m.platform.LazyCap.empty();
-        return super.getHbmCapability(cap, side);
-    }
-
-    @Override
-    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable Direction side) { return null; }
-    *///?}
+    //?}
 
     @Override protected Component getDefaultName() { return Component.translatable("container.craneRouter"); }
     @Override public Component getDisplayName() { return getDefaultName(); }

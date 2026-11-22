@@ -40,6 +40,9 @@ public class MachineConveyorPressBlockEntity extends BaseMachineBlockEntity {
     public static final int SLOT_STAMP = 0;
     private static final int SLOT_COUNT = 1;
 
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<PressRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     /** Original: {@code maxPower = 50000}, {@code usage = 100} HE je Hubtick, {@code speed = 0.125} je Tick. */
     private static final long MAX_POWER = 50_000L;
     private static final long POWER_PER_OPERATION = 100L;
@@ -303,5 +306,11 @@ public class MachineConveyorPressBlockEntity extends BaseMachineBlockEntity {
     @Override
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1, worldPosition.getX() + 2, worldPosition.getY() + 3, worldPosition.getZ() + 2);
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
     }
 }

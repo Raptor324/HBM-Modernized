@@ -3,6 +3,7 @@ package com.hbm_m.compat.jei;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.handler.rbmk.RBMKOutgasserRecipes;
 import com.hbm_m.handler.rbmk.RBMKOutgasserRecipes.OutgasserRecipe;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -18,10 +19,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * JEI listing for the RBMK irradiation channel, ported from CE's {@code RBMKOutgasserRecipeHandler}.
+ * JEI port of {@code OutgasserHandler}: the RBMK irradiation channel's recipe table.
  *
  * <p>Without it the outgasser's whole recipe table is invisible: nothing else in the game hints
  * that lithium becomes tritium or that gold becomes gold-198 inside a reactor channel.</p>
+ *
+ * <p>Like the original, the fluid half of a result is its own output field (NEI showed
+ * {@code ItemFluidIcon.make(fluidStack)}), and the machines are both the outgasser and the
+ * fusion breeder - {@code TileEntityFusionBreeder} runs the very same table.</p>
  */
 public class RBMKOutgasserJeiCategory extends JeiGenericRecipeCategory<RBMKOutgasserJeiCategory.Activation> {
 
@@ -36,7 +41,10 @@ public class RBMKOutgasserJeiCategory extends JeiGenericRecipeCategory<RBMKOutga
             RecipeType.create(RefStrings.MODID, "rbmk_outgasser", Activation.class);
 
     public RBMKOutgasserJeiCategory(IGuiHelper guiHelper) {
-        super(guiHelper, new ItemStack[]{ new ItemStack(ModBlocks.RBMK_OUTGASSER.get()) });
+        // OutgasserHandler: machines = { rbmk_outgasser, fusion_breeder } - the breeder's
+        // irradiation channels process the same table, so it cycles in the machine slot too.
+        super(guiHelper, new ItemStack[]{ new ItemStack(ModBlocks.RBMK_OUTGASSER.get()),
+                new ItemStack(ModItems.FUSION_BREEDER_ITEM.get()) });
     }
 
     public static List<Activation> all() {
@@ -57,7 +65,9 @@ public class RBMKOutgasserJeiCategory extends JeiGenericRecipeCategory<RBMKOutga
     }
 
     @Override protected int getInputCount(Activation recipe)  { return 1; }
-    @Override protected int getOutputCount(Activation recipe) { return recipe.hasSolid() ? 1 : 0; }
+    @Override protected int getOutputCount(Activation recipe) {
+        return (recipe.hasSolid() ? 1 : 0) + (recipe.hasFluid() ? 1 : 0);
+    }
     @Override protected boolean hasBlueprintTemplate(Activation recipe) { return false; }
 
     @Override
@@ -69,10 +79,22 @@ public class RBMKOutgasserJeiCategory extends JeiGenericRecipeCategory<RBMKOutga
 
     @Override
     protected void addOutputSlots(IRecipeLayoutBuilder builder, Activation recipe, int outputXOffset) {
-        if (!recipe.hasSolid()) return;
-        int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(1);
-        addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[0][0] + outputXOffset, positions[0][1])
-                .addItemStack(recipe.solidOutput());
+        int count = getOutputCount(recipe);
+        if (count == 0) return;
+        int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(count);
+        int index = 0;
+        if (recipe.hasSolid()) {
+            addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[index][0] + outputXOffset, positions[index][1])
+                    .addItemStack(recipe.solidOutput());
+            index++;
+        }
+        // Original OutgasserRecipes.getRecipes() rendered the fluid half as ItemFluidIcon.make(fluidStack):
+        // a second result slot at (120, 24) when a solid is present, or the only slot at (102, 24) otherwise.
+        if (recipe.hasFluid()) {
+            addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[index][0] + outputXOffset, positions[index][1])
+                    .setCustomRenderer(JeiFluidTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    .addFluidStack(recipe.fluidType(), Math.max(recipe.fluidAmount(), 1));
+        }
     }
 
     @Override

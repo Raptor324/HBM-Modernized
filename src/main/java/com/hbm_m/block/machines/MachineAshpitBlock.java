@@ -76,6 +76,12 @@ public class MachineAshpitBlock extends BaseEntityBlock implements IMultiblockCo
     }
 
     @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            {1, 1, 0.5, -0.3, 0.4, -0.4, 1}
+        };
+    }
+
     public MultiblockStructureHelper getStructureHelper() {
         return this.structureHelper;
     }

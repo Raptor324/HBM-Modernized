@@ -84,7 +84,6 @@ public abstract class PneumaticMachineBlockEntity extends BaseMachineBlockEntity
         super.setRemoved();
     }
 
-    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
@@ -93,5 +92,4 @@ public abstract class PneumaticMachineBlockEntity extends BaseMachineBlockEntity
         }
         if (cache != null) cache.dissolveCache();
     }
-    //?}
 }

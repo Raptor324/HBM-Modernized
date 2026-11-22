@@ -1,10 +1,6 @@
 package com.hbm_m.client.render.shader;
 
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -13,59 +9,24 @@ import com.hbm_m.client.render.shader.ModShaders;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.client.renderer.ShaderInstance;
-import dev.architectury.platform.Platform;
-//? if forge {
+import org.lwjgl.opengl.GL20;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
-
-
 /**
  * Reflective bridge to Iris/Oculus internals that exposes the
  * {@link ShaderInstance} (an {@code ExtendedShader} when Iris is active) to be
  * used for our own raw GL draws while a shader pack is in use.
  * <p>
- * Iris does not provide a public API for this; we rely on:
- * <pre>{@code
- *   Iris.getPipelineManager().getPipelineNullable()
- *      instanceof ShaderRenderingPipeline srp
- *      ? srp.getShaderMap().getShader(ShaderKey.BLOCK_ENTITY)
- *      : null;
- * }</pre>
+ * Delegates core Iris reflection lookups to {@link IrisReflectionBridge}.
  * If Iris is not loaded, lookup fails, or any exception occurs, this class returns
  * the vanilla simple block_lit shader so the renderer still produces output.
  */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class IrisExtendedShaderAccess {
 
     private IrisExtendedShaderAccess() {}
 
-    private static volatile boolean reflectionInitialized = false;
-    private static volatile boolean reflectionAvailable = false;
-
-    /** {@code Iris.getPipelineManager()} returning a {@code PipelineManager}. */
-    private static Method getPipelineManager;
-    /** {@code PipelineManager.getPipelineNullable()} returning a {@code WorldRenderingPipeline}. */
-    private static Method getPipelineNullable;
-    /** {@code ShaderRenderingPipeline.getShaderMap()} returning a {@code ShaderMap}. */
-    private static Method getShaderMap;
-    /** {@code ShaderMap.getShader(ShaderKey)} returning a {@code ShaderInstance}. */
-    private static Method shaderMapGetShader;
-
-    /** {@code Class<ShaderRenderingPipeline>} used for {@code instanceof} checks. */
-    private static Class<?> shaderRenderingPipelineClass;
-    /** {@code Class<ShaderKey>} (an enum). */
-    private static Class<?> shaderKeyClass;
-
-    /** Cached resolved {@code ShaderKey} enum constants, by candidate name. */
-    private static final Map<String, Object> shaderKeyCache = new HashMap<>();
+    private static final Object KEY_LOCK = new Object();
 
     /**
      * Prebuilt arrays of resolved {@code ShaderKey} candidates, ordered by
@@ -87,8 +48,8 @@ public final class IrisExtendedShaderAccess {
 
     /**
      * Per-render-pass cache of the resolved {@link ShaderInstance}. The lookup
-     * walks several reflective hops (Iris → PipelineManager → ShaderRenderingPipeline
-     * → ShaderMap → ShaderKey enum lookup) and was the single largest CPU cost in
+     * walks several reflective hops (Iris -> PipelineManager -> ShaderRenderingPipeline
+     * -> ShaderMap -> ShaderKey enum lookup) and was the single largest CPU cost in
      * the per-part Iris path (~8.78% of frame time per profiler trace) because each
      * draw of each part of each visible machine repeated the entire chain.
      * <p>
@@ -155,18 +116,9 @@ public final class IrisExtendedShaderAccess {
     public static void tickPass() {
         currentPassId.incrementAndGet();
 
-        // Cheap pipeline-identity check. Skips allocation when reflection is
-        // unavailable (Iris not loaded) - no-op in that case. The reflective
-        // hops are the same ones lookupExtendedShader() uses; they run once
-        // per frame here, vs. once per BE draw there, so the cost is trivial.
-        if (!reflectionInitialized) {
-            initReflection();
-        }
-        if (!reflectionAvailable) return;
+        if (!IrisReflectionBridge.isReflectionAvailable()) return;
         try {
-            Object pipelineManager = getPipelineManager.invoke(null);
-            if (pipelineManager == null) return;
-            Object pipeline = getPipelineNullable.invoke(pipelineManager);
+            Object pipeline = IrisReflectionBridge.getLivePipeline();
             // Identity comparison: a different object means the pipeline was
             // rebuilt. Null→non-null and non-null→null both trigger a bump
             // because both indicate a state transition that invalidates
@@ -179,9 +131,10 @@ public final class IrisExtendedShaderAccess {
                 MainRegistry.LOGGER.debug("IrisExtendedShaderAccess: pipeline identity changed, generation bumped to {}",
                         gen);
             }
-        } catch (Throwable ignored) {
-            // Silent: reflection failure here just means we miss a rebuild
-            // event; ShaderReloadListener is still a safety net for F3+T.
+        } catch (LinkageError ignored) {
+            logOnceSilentFallback("tickPass pipeline probe", null);
+        } catch (RuntimeException t) {
+            logOnceSilentFallback("tickPass pipeline probe", t);
         }
     }
 
@@ -199,26 +152,17 @@ public final class IrisExtendedShaderAccess {
         cachedShadowShader = null;
         cachedMainPassId = -1L;
         cachedShadowPassId = -1L;
+        cachedTexColorMain = null;
+        cachedTexColorShadow = null;
+        cachedTexColorMainPassId = -1L;
+        cachedTexColorShadowPassId = -1L;
+        programFingerprints.clear();
+        deadShaderWarned = false;
+        synchronized (SILENT_FALLBACK_LOGGED) {
+            SILENT_FALLBACK_LOGGED.clear();
+        }
+        com.hbm_m.client.render.IrisBakeBridge.invalidateCaches();
     }
-
-    /** {@code CapturedRenderingState.INSTANCE} singleton. */
-    private static Object capturedRenderingStateInstance;
-    /** {@code CapturedRenderingState.setCurrentBlockEntity(int)}. */
-    private static Method setCurrentBlockEntityMethod;
-    /** {@code CapturedRenderingState.getCurrentRenderedBlockEntity()}. */
-    private static Method getCurrentBlockEntityMethod;
-
-    /**
-     * MethodHandles for the per-draw {@code blockEntityId} reset path. These are
-     * called from every {@code IrisRenderBatch.begin}, every {@code flushBatchIris}
-     * and every {@code drawSingleWithIrisExtended} fall-through, so JIT-friendly
-     * MethodHandle invocation amortises significantly better than {@link Method#invoke}
-     * (which wraps args in {@code Object[]} and unboxes returns even on
-     * {@code int}-returning calls). Held alongside the {@link Method} fields rather
-     * than replacing them so the existing fall-back paths still compile.
-     */
-    private static MethodHandle setCurrentBlockEntityMH;
-    private static MethodHandle getCurrentBlockEntityMH;
 
     /**
      * Returns an {@link ShaderInstance} suitable for rendering block entity geometry under the
@@ -248,7 +192,7 @@ public final class IrisExtendedShaderAccess {
         Object shaderInstance = lookupExtendedShader(shadowPass);
         ShaderInstance result;
         if (shaderInstance instanceof ShaderInstance casted) {
-            result = casted;
+            result = programLive(casted) ? casted : deadShaderFallback(casted);
         } else {
             result = ModShaders.getBlockLitSimpleShader();
         }
@@ -264,69 +208,124 @@ public final class IrisExtendedShaderAccess {
     }
 
     /**
-     * Pack shaders (notably BSL) read the {@code blockEntityId} uniform and switch
-     * branches based on {@code blockEntityId / 100}: {@code 155} triggers
-     * {@code EMISSIVE_RECOLOR} which paints the surface with the warm
-     * {@code blocklightCol} (the mysterious "solid red" texture players see),
-     * {@code 252} triggers the {@code DrawEndPortal} path, and so on.
-     * <p>
-     * Iris updates this uniform from {@code CapturedRenderingState.currentRenderedBlockEntity}
-     * before each block entity. Our raw GL batch never tells Iris which BE we are
-     * about to draw, so the uniform sticks at whatever the previously rendered BE
-     * left behind - and which BE that is depends on the camera frustum, hence the
-     * "sometimes red, sometimes fine" symptom that scales worse with batching
-     * (a poisoned value affects every instance in the batch). Calling this with
-     * {@code 0} before our flush forces a neutral block id that does not match
-     * any of BSL's special-case branches, and restoring the previous value in
-     * {@code finally} keeps Iris's own subsequent draws unaffected.
+     * Cheap liveness probe for a resolved Iris shader. Programs are destroyed by
+     * pipeline rebuilds and nvidia then recycles the names, but a destroyed
+     * shader object still answers {@code getId()} with the dead name - applying
+     * it binds whatever live program now owns that id and every uniform push becomes
+     * GL_INVALID_OPERATION.
      *
-     * @return the previous value, or {@code Integer.MIN_VALUE} if reflection was
-     *         unavailable. Pass that result back to {@link #restoreCurrentRenderedBlockEntity(int)}.
+     * <p>Two-stage detection. {@code glIsProgram} catches the not-yet-recycled
+     * window (the common one). A recycled id is caught by a program fingerprint
+     * (active uniform/attribute counts - immutable properties of the linked
+     * program object) remembered per shader instance at first sight: a live
+     * program whose fingerprint differs from the one recorded for THIS shader
+     * object is a different program wearing the recycled name. Without this,
+     * the recycled case passed the probe, the numeric match in
+     * {@code ShaderBindResync} then skipped every re-bind, and each flush
+     * pushed the pack's uniforms into the foreign program - a permanent
+     * GL_INVALID_OPERATION storm (tens of thousands per second) with zero
+     * visual artifacts, whenever instances were dirty (i.e. camera movement).</p>
+     */
+    private static boolean programLive(ShaderInstance shader) {
+        try {
+            int id = shader.getId();
+            if (!GL20.glIsProgram(id)) {
+                return false;
+            }
+            int fingerprint = GL20.glGetProgrami(id, GL20.GL_ACTIVE_UNIFORMS)
+                    | (GL20.glGetProgrami(id, GL20.GL_ACTIVE_ATTRIBUTES) << 16);
+            Integer known = programFingerprints.get(shader);
+            if (known == null) {
+                if (programFingerprints.size() > 64) {
+                    programFingerprints.clear();
+                }
+                programFingerprints.put(shader, fingerprint);
+                return true;
+            }
+            return known == fingerprint;
+        } catch (Exception t) {
+            return true; // no GL context / exotic build - keep old behavior
+        }
+    }
+
+    /**
+     * First-seen {@code (ACTIVE_UNIFORMS | ACTIVE_ATTRIBUTES << 16)} fingerprint
+     * per resolved shader instance. ShaderInstance has identity semantics
+     * (no equals/hashCode override), so the map cannot collision-match distinct
+     * objects. Entries are bounded: a shader pack contributes a handful of
+     * instances per pipeline generation, and the map is dropped wholesale if a
+     * pathological resolution churn ever exceeds 64.
+     */
+    private static final Map<ShaderInstance, Integer> programFingerprints = new HashMap<>();
+
+    private static volatile boolean deadShaderWarned = false;
+
+    /** Serves the vanilla fallback for this pass when the Iris map returned a
+     * shader whose program is dead; one WARN so the pack/pipeline state that
+     * keeps producing dead shaders is visible in the log. */
+    private static ShaderInstance deadShaderFallback(ShaderInstance resolved) {
+        if (!deadShaderWarned) {
+            deadShaderWarned = true;
+            MainRegistry.LOGGER.warn(
+                    "[HBM-M] IrisExtendedShaderAccess: resolved Iris shader (id={}) has no live GL program "
+                            + "(destroyed by a pipeline rebuild?) - rendering with the fallback block "
+                            + "shader until the shader map serves a live program again",
+                    resolved.getId());
+        }
+        IrisRenderBatch.invalidateCaches();
+        return ModShaders.getBlockLitSimpleShader();
+    }
+
+    /**
+     * Sets the {@code blockEntityId} uniform (Iris
+     * {@code CapturedRenderingState.currentRenderedBlockEntity}) around a raw
+     * flush and returns the previous value. The write is UNCONDITIONAL and there
+     * is deliberately NO shaderpack detection of any kind here.
+     * <p>
+     * Why every call site writes the neutral id {@code 0} around our flushes
+     * (capture/restore contract):
+     * <ol>
+     *   <li><b>Stale-uniform hazard.</b> Our raw GL batches never tell Iris which
+     *       block entity is being drawn, so {@code blockEntityId} keeps whatever
+     *       value the last natively-rendered BE left behind — a value that changes
+     *       per frame and depends on the camera frustum. Pack shaders (the whole
+     *       BSL family) branch on {@code blockEntityId / 100}: {@code 155} triggers
+     *       {@code EMISSIVE_RECOLOR} (the "solid red machine" symptom),
+     *       {@code 252} the end-portal path, and so on — so a stale id randomly
+     *       special-cases whole batches, and worse the more we batch.</li>
+     *   <li><b>A per-instance id is architecturally unattainable.</b> Packs read
+     *       {@code blockEntityId} as ONE uniform per draw call, so an instanced /
+     *       MDI flush that covers many machine instances (and many part meshes
+     *       belonging to different BEs) cannot carry a meaningful id at all — any
+     *       single value would mis-key every instance but one. Writing the neutral
+     *       id {@code 0} around our flushes is the only deterministic,
+     *       pack-agnostic choice — and the only one robust for BSL forks whose
+     *       pack names do not contain "bsl" (e.g. AstraLex), which is exactly why
+     *       name-based pack detection is not an acceptable substitute.</li>
+     *   <li><b>Machine PBR must ride on vertex attributes.</b> Metallic /
+     *       roughness / emission / parallax inputs are supplied per vertex as
+     *       {@code at_midBlock}, {@code at_tangent} and {@code mc_midTexCoord}
+     *       (computed by the Tier-1 GPU bake, see {@code NucleusGpuBaker}), not
+     *       keyed off the block entity id.</li>
+     * </ol>
+     * Callers save the return value and pass it to
+     * {@link #restoreCurrentRenderedBlockEntity(int)} in a {@code finally} block,
+     * so Iris's own subsequent draws still see the original captured value.
+     *
+     * @return the previous value, or {@code Integer.MIN_VALUE} if reflection is
+     *         unavailable (nothing was written; the matching restore is a no-op).
      */
     public static int setCurrentRenderedBlockEntity(int value) {
-        if (!reflectionInitialized) {
-            initReflection();
-        }
-        if (!reflectionAvailable || capturedRenderingStateInstance == null) {
+        if (!IrisReflectionBridge.isReflectionAvailable()) {
             return Integer.MIN_VALUE;
         }
-        try {
-            // Fast path: MethodHandle.invokeExact through the asType()-adapted
-            // (Object, int)void / (Object)int signature. JIT folds this to a
-            // direct call in steady state.
-            if (setCurrentBlockEntityMH != null) {
-                int previous = (getCurrentBlockEntityMH != null)
-                        ? (int) getCurrentBlockEntityMH.invokeExact(capturedRenderingStateInstance)
-                        : 0;
-                setCurrentBlockEntityMH.invokeExact(capturedRenderingStateInstance, value);
-                return previous;
-            }
-            // Slow fallback: Method.invoke (only when MH binding failed at init).
-            if (setCurrentBlockEntityMethod == null) return Integer.MIN_VALUE;
-            int previous = (getCurrentBlockEntityMethod != null)
-                    ? (int) getCurrentBlockEntityMethod.invoke(capturedRenderingStateInstance)
-                    : 0;
-            setCurrentBlockEntityMethod.invoke(capturedRenderingStateInstance, value);
-            return previous;
-        } catch (Throwable t) {
-            return Integer.MIN_VALUE;
-        }
+        return IrisReflectionBridge.setCurrentBlockEntity(value);
     }
 
     /** Counterpart to {@link #setCurrentRenderedBlockEntity(int)}. No-op when {@code previous == Integer.MIN_VALUE}. */
     public static void restoreCurrentRenderedBlockEntity(int previous) {
         if (previous == Integer.MIN_VALUE) return;
-        if (!reflectionAvailable || capturedRenderingStateInstance == null) return;
-        try {
-            if (setCurrentBlockEntityMH != null) {
-                setCurrentBlockEntityMH.invokeExact(capturedRenderingStateInstance, previous);
-                return;
-            }
-            if (setCurrentBlockEntityMethod != null) {
-                setCurrentBlockEntityMethod.invoke(capturedRenderingStateInstance, previous);
-            }
-        } catch (Throwable ignored) {
-        }
+        IrisReflectionBridge.restoreCurrentBlockEntity(previous);
     }
 
     /**
@@ -334,30 +333,27 @@ public final class IrisExtendedShaderAccess {
      * Call sites can use this to decide whether attempting Iris-specific behaviour is worthwhile.
      */
     public static boolean isReflectionAvailable() {
-        if (!reflectionInitialized) {
-            initReflection();
-        }
-        return reflectionAvailable;
+        return IrisReflectionBridge.isReflectionAvailable();
     }
 
-    // ── POSITION_TEX_COLOR контент (частицы NT, вспышки) ────────────────────
-    // Под паком кастомные модовые ShaderInstance маскируются
-    // (MixinShaderInstance -> DepthColorStorage.disableDepthColor), поэтому
-    // такой контент нужно рисовать через ИЗВЕСТНЫЙ Iris ключ: TEXTURED_COLOR
-    // (ProgramId.Textured, формат DefaultVertexFormat.POSITION_TEX_COLOR).
-    // В shadow-проходе — SHADOW_TEX_COLOR.
+    // -- POSITION_TEX_COLOR content (NT particles, flashes) --------------------
+    // Under a pack, custom mod ShaderInstances are masked
+    // (MixinShaderInstance -> DepthColorStorage.disableDepthColor), so such
+    // content must be drawn through a KNOWN Iris key: TEXTURED_COLOR
+    // (ProgramId.Textured, DefaultVertexFormat.POSITION_TEX_COLOR format).
+    // In the shadow pass - SHADOW_TEX_COLOR.
 
     private static volatile Object[] texColorMainKeysResolved;
     private static volatile Object[] texColorShadowKeysResolved;
     private static volatile boolean texColorKeysBuilt = false;
     private static volatile ShaderInstance cachedTexColorMain;
     private static volatile ShaderInstance cachedTexColorShadow;
-    private static long cachedTexColorMainPassId = -1L;
-    private static long cachedTexColorShadowPassId = -1L;
+    private static volatile long cachedTexColorMainPassId = -1L;
+    private static volatile long cachedTexColorShadowPassId = -1L;
 
     private static void ensureTexColorKeysBuilt() {
         if (texColorKeysBuilt) return;
-        synchronized (shaderKeyCache) {
+        synchronized (KEY_LOCK) {
             if (!texColorKeysBuilt) {
                 texColorMainKeysResolved = resolveShaderKeyCandidatesArray(new String[]{"TEXTURED_COLOR"});
                 texColorShadowKeysResolved = resolveShaderKeyCandidatesArray(new String[]{"SHADOW_TEX_COLOR", "TEXTURED_COLOR"});
@@ -367,13 +363,10 @@ public final class IrisExtendedShaderAccess {
     }
 
     /**
-     * ExtendedShader для формата POSITION_TEX_COLOR под активным паком.
-     * Fallback — ванильный position_tex_color (без пака он и так корректен).
+     * ExtendedShader for the POSITION_TEX_COLOR format under the active pack.
+     * Fallback - vanilla position_tex_color (correct anyway without a pack).
      */
     public static ShaderInstance getTexColorShader(boolean shadowPass) {
-        if (!reflectionInitialized) {
-            initReflection();
-        }
         long pass = currentPassId.get();
         if (shadowPass) {
             ShaderInstance cached = cachedTexColorShadow;
@@ -383,63 +376,92 @@ public final class IrisExtendedShaderAccess {
             if (cached != null && cachedTexColorMainPassId == pass) return cached;
         }
 
-        if (!reflectionAvailable) {
-            return net.minecraft.client.renderer.GameRenderer.getPositionTexColorShader();
+        if (!IrisReflectionBridge.isReflectionAvailable()) {
+            return cacheTexColorFallback(shadowPass, pass);
         }
         try {
-            Object pipelineManager = getPipelineManager.invoke(null);
-            Object pipeline = pipelineManager != null ? getPipelineNullable.invoke(pipelineManager) : null;
-            if (pipeline == null || !shaderRenderingPipelineClass.isInstance(pipeline)) {
-                return net.minecraft.client.renderer.GameRenderer.getPositionTexColorShader();
+            Object pipeline = IrisReflectionBridge.getLivePipeline();
+            Class<?> srpClass = IrisReflectionBridge.getShaderRenderingPipelineClass();
+            if (pipeline == null || srpClass == null || !srpClass.isInstance(pipeline)) {
+                return cacheTexColorFallback(shadowPass, pass);
             }
-            Object shaderMap = getShaderMap.invoke(pipeline);
+            Object shaderMap = IrisReflectionBridge.getShaderMap(pipeline);
             if (shaderMap == null) {
-                return net.minecraft.client.renderer.GameRenderer.getPositionTexColorShader();
+                return cacheTexColorFallback(shadowPass, pass);
             }
             ensureTexColorKeysBuilt();
             Object[] candidates = shadowPass ? texColorShadowKeysResolved : texColorMainKeysResolved;
             for (Object key : candidates) {
-                Object instance = shaderMapGetShader.invoke(shaderMap, key);
-                if (instance instanceof ShaderInstance casted) {
-                    if (shadowPass) { cachedTexColorShadow = casted; cachedTexColorShadowPassId = pass; }
-                    else { cachedTexColorMain = casted; cachedTexColorMainPassId = pass; }
-                    return casted;
+                ShaderInstance instance = IrisReflectionBridge.getShaderFromMap(shaderMap, key);
+                if (instance != null && programLive(instance)) {
+                    if (shadowPass) { cachedTexColorShadow = instance; cachedTexColorShadowPassId = pass; }
+                    else { cachedTexColorMain = instance; cachedTexColorMainPassId = pass; }
+                    return instance;
                 }
             }
-        } catch (Throwable ignored) {}
-        return net.minecraft.client.renderer.GameRenderer.getPositionTexColorShader();
+        } catch (LinkageError t) {
+            logOnceSilentFallback("getTexColorShader pipeline walk", null);
+        } catch (RuntimeException t) {
+            logOnceSilentFallback("getTexColorShader pipeline walk", t);
+        }
+        return cacheTexColorFallback(shadowPass, pass);
+    }
+
+    /**
+     * Serves (and per-pass caches) the vanilla position_tex_color shader on
+     * every fallback branch of {@link #getTexColorShader}. The fallback must be
+     * cached exactly like a resolved pack shader: each of these branches runs
+     * the reflective pipeline walk (Iris -> PipelineManager ->
+     * ShaderRenderingPipeline -> ShaderMap) before deciding, and it fires per
+     * RenderType setupRenderState of every NT particle/flash draw - a pack in a
+     * transient state (pipeline not yet a ShaderRenderingPipeline, shader map
+     * not built) would otherwise repeat that walk on every draw for as long as
+     * the branch is taken. GameRenderer.getPositionTexColorShader() is a stable
+     * singleton for the whole pass, so pass-scoped caching is safe; before
+     * shader resources load it returns null, which never satisfies the
+     * {@code cached != null} check above, so such a pass simply re-resolves -
+     * identical to the pre-cache behavior.
+     */
+    private static ShaderInstance cacheTexColorFallback(boolean shadowPass, long pass) {
+        ShaderInstance fallback = net.minecraft.client.renderer.GameRenderer.getPositionTexColorShader();
+        if (shadowPass) {
+            cachedTexColorShadow = fallback;
+            cachedTexColorShadowPassId = pass;
+        } else {
+            cachedTexColorMain = fallback;
+            cachedTexColorMainPassId = pass;
+        }
+        return fallback;
     }
 
     private static Object lookupExtendedShader(boolean shadowPass) {
-        if (!reflectionInitialized) {
-            initReflection();
-        }
-        if (!reflectionAvailable) return null;
+        if (!IrisReflectionBridge.isReflectionAvailable()) return null;
 
         try {
-            Object pipelineManager = getPipelineManager.invoke(null);
-            if (pipelineManager == null) return null;
-
-            Object pipeline = getPipelineNullable.invoke(pipelineManager);
+            Object pipeline = IrisReflectionBridge.getLivePipeline();
             if (pipeline == null) return null;
 
-            if (!shaderRenderingPipelineClass.isInstance(pipeline)) return null;
+            Class<?> srpClass = IrisReflectionBridge.getShaderRenderingPipelineClass();
+            if (srpClass == null || !srpClass.isInstance(pipeline)) return null;
 
-            Object shaderMap = getShaderMap.invoke(pipeline);
+            Object shaderMap = IrisReflectionBridge.getShaderMap(pipeline);
             if (shaderMap == null) return null;
 
             ensureShaderKeyCandidatesBuilt();
             Object[] candidates = shadowPass ? shadowShaderKeysResolved : mainShaderKeysResolved;
             // Walk the candidate list and accept the first key whose shader instance
-            // ShaderMap actually exposes (a key may be present in the enum but
-            // map to null if the pack didn't compile that variant - we must not
-            // stop at the first name match, otherwise we get a null shader and
-            // fall through to the vanilla `block_lit_simple` whose vertex format
-            // does not line up with our IrisVertexFormats.ENTITY companion VBO).
+            // ShaderMap actually exposes AND whose GL program is still live (a key
+            // may be present in the enum but map to null if the pack didn't compile
+            // that variant - we must not stop at the first name match, otherwise we
+            // get a null shader and fall through to the vanilla `block_lit_simple`
+            // whose vertex format does not line up with our
+            // IrisVertexFormats.ENTITY companion VBO). A dead program on the first
+            // key must likewise advance to the next candidate instead of triggering
+            // the fallback immediately - same discipline as getTexColorShader.
             for (int i = 0; i < candidates.length; i++) {
                 Object key = candidates[i];
-                Object instance = shaderMapGetShader.invoke(shaderMap, key);
-                if (instance != null) {
+                ShaderInstance instance = IrisReflectionBridge.getShaderFromMap(shaderMap, key);
+                if (instance != null && programLive(instance)) {
                     if (shadowPass && lastResolvedShadowKey != key) {
                         lastResolvedShadowKey = key;
                         MainRegistry.LOGGER.info("IrisExtendedShaderAccess: shadow shader resolved to {}", key);
@@ -451,7 +473,11 @@ public final class IrisExtendedShaderAccess {
                 }
             }
             return null;
-        } catch (Throwable t) {
+        } catch (LinkageError t) {
+            logOnceSilentFallback("lookupExtendedShader pipeline walk", null);
+            return null;
+        } catch (RuntimeException t) {
+            logOnceSilentFallback("lookupExtendedShader pipeline walk", t);
             return null;
         }
     }
@@ -469,7 +495,7 @@ public final class IrisExtendedShaderAccess {
      * the cascaded shadow map (which BSL then samples from in the main pass -
      * that's the "missing pieces / broken textures, depends on camera angle"
      * symptom, since the shadow frustum follows the camera).
-     * SHADOW_ENTITIES_CUTOUT is ENTITY-format → safe.
+     * SHADOW_ENTITIES_CUTOUT is ENTITY-format -> safe.
      * <p>
      * Main pass: BLOCK_ENTITY is ENTITY-format, BLOCK is TERRAIN-format -
      * again prefer the ENTITY-formatted variant.
@@ -489,7 +515,7 @@ public final class IrisExtendedShaderAccess {
      */
     private static void ensureShaderKeyCandidatesBuilt() {
         if (shaderKeyCandidatesBuilt) return;
-        synchronized (shaderKeyCache) {
+        synchronized (KEY_LOCK) {
             if (shaderKeyCandidatesBuilt) return;
             mainShaderKeysResolved = resolveShaderKeyCandidatesArray(MAIN_SHADER_KEY_NAMES);
             shadowShaderKeysResolved = resolveShaderKeyCandidatesArray(SHADOW_SHADER_KEY_NAMES);
@@ -501,7 +527,7 @@ public final class IrisExtendedShaderAccess {
         Object[] tmp = new Object[names.length];
         int n = 0;
         for (String name : names) {
-            Object k = resolveSingleKey(name);
+            Object k = IrisReflectionBridge.resolveShaderKey(name);
             if (k != null) tmp[n++] = k;
         }
         if (n == names.length) return tmp;
@@ -510,136 +536,15 @@ public final class IrisExtendedShaderAccess {
         return trimmed;
     }
 
-    private static Object resolveSingleKey(String name) {
-        Object cached = shaderKeyCache.get(name);
-        if (cached != null) return cached;
-        try {
-            @SuppressWarnings({"unchecked", "rawtypes"})
-            Object value = Enum.valueOf((Class<Enum>) shaderKeyClass.asSubclass(Enum.class), name);
-            shaderKeyCache.put(name, value);
-            return value;
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
-    }
+    /** One-time DEBUG markers for silent compat fallbacks (catch-narrowing audit). */
+    private static final java.util.HashSet<String> SILENT_FALLBACK_LOGGED = new java.util.HashSet<>();
 
-    private static synchronized void initReflection() {
-        if (reflectionInitialized) return;
-        reflectionInitialized = true;
-
-        if (!Platform.isModLoaded("oculus") && !Platform.isModLoaded("iris")) {
-            return;
-        }
-        // Iris/Oculus has shuffled package layout across versions. Try a few well-known names.
-        String[] irisClassCandidates = {
-                "net.irisshaders.iris.Iris",
-                "net.coderbot.iris.Iris"
-        };
-        String[] pipelineManagerCandidates = {
-                "net.irisshaders.iris.pipeline.PipelineManager",
-                "net.coderbot.iris.pipeline.PipelineManager"
-        };
-        // ShaderRenderingPipeline lives at .pipeline.* in current Oculus/Iris on 1.20.1,
-        // and historically at .pipeline.programs.* in some earlier mid-cycle builds.
-        String[] shaderRenderingPipelineCandidates = {
-                "net.irisshaders.iris.pipeline.ShaderRenderingPipeline",
-                "net.irisshaders.iris.pipeline.programs.ShaderRenderingPipeline",
-                "net.coderbot.iris.pipeline.ShaderRenderingPipeline",
-                "net.coderbot.iris.pipeline.newshader.NewWorldRenderingPipeline"
-        };
-        String[] shaderMapCandidates = {
-                "net.irisshaders.iris.pipeline.programs.ShaderMap",
-                "net.coderbot.iris.pipeline.newshader.ShaderMap"
-        };
-        String[] shaderKeyCandidates = {
-                "net.irisshaders.iris.pipeline.programs.ShaderKey",
-                "net.coderbot.iris.pipeline.newshader.ShaderKey"
-        };
-        String[] capturedRenderingStateCandidates = {
-                "net.irisshaders.iris.uniforms.CapturedRenderingState",
-                "net.coderbot.iris.uniforms.CapturedRenderingState"
-        };
-        try {
-            Class<?> irisClass = firstClass(irisClassCandidates);
-            getPipelineManager = irisClass.getMethod("getPipelineManager");
-
-            Class<?> pipelineManagerClass = firstClass(pipelineManagerCandidates);
-            getPipelineNullable = pipelineManagerClass.getMethod("getPipelineNullable");
-
-            shaderRenderingPipelineClass = firstClass(shaderRenderingPipelineCandidates);
-            getShaderMap = shaderRenderingPipelineClass.getMethod("getShaderMap");
-
-            Class<?> shaderMapClass = firstClass(shaderMapCandidates);
-            shaderKeyClass = firstClass(shaderKeyCandidates);
-            shaderMapGetShader = shaderMapClass.getMethod("getShader", shaderKeyClass);
-
-            // Optional: CapturedRenderingState lookup. Failure here does not disable
-            // the rest of the reflection - it just means we cannot reset blockEntityId
-            // around our flushes (the user will see BSL's "red" symptom under bad luck).
-            try {
-                Class<?> capturedClass = firstClass(capturedRenderingStateCandidates);
-                capturedRenderingStateInstance = capturedClass.getField("INSTANCE").get(null);
-                setCurrentBlockEntityMethod = capturedClass.getMethod("setCurrentBlockEntity", int.class);
-                try {
-                    getCurrentBlockEntityMethod = capturedClass.getMethod("getCurrentRenderedBlockEntity");
-                } catch (NoSuchMethodException ignored) {
-                    getCurrentBlockEntityMethod = null;
-                }
-
-                // Hot-path acceleration: convert the per-draw reflective hops
-                // into MethodHandles. They invoke through the same JIT-friendly
-                // path as direct calls once the call site stabilises, avoiding
-                // Method.invoke's Object[] boxing and reflection access checks.
-                //
-                // We asType() to (Object, int)void / (Object)int so the call
-                // sites can use invokeExact without knowing the concrete owner
-                // class - invokeExact is significantly faster than invoke()
-                // because it skips runtime signature adaptation.
-                try {
-                    MethodHandles.Lookup lookup = MethodHandles.lookup();
-                    setCurrentBlockEntityMethod.setAccessible(true);
-                    setCurrentBlockEntityMH = lookup.unreflect(setCurrentBlockEntityMethod)
-                            .asType(MethodType.methodType(void.class, Object.class, int.class));
-                    if (getCurrentBlockEntityMethod != null) {
-                        getCurrentBlockEntityMethod.setAccessible(true);
-                        getCurrentBlockEntityMH = lookup.unreflect(getCurrentBlockEntityMethod)
-                                .asType(MethodType.methodType(int.class, Object.class));
-                    } else {
-                        getCurrentBlockEntityMH = null;
-                    }
-                } catch (Throwable mhFail) {
-                    MainRegistry.LOGGER.warn("IrisExtendedShaderAccess: MethodHandle binding failed ({}), falling back to Method.invoke",
-                            mhFail.toString());
-                    setCurrentBlockEntityMH = null;
-                    getCurrentBlockEntityMH = null;
-                }
-            } catch (Throwable t) {
-                MainRegistry.LOGGER.warn("IrisExtendedShaderAccess: CapturedRenderingState lookup failed ({}), blockEntityId reset disabled", t.toString());
-                capturedRenderingStateInstance = null;
-                setCurrentBlockEntityMethod = null;
-                getCurrentBlockEntityMethod = null;
-                setCurrentBlockEntityMH = null;
-                getCurrentBlockEntityMH = null;
-            }
-
-            reflectionAvailable = true;
-            MainRegistry.LOGGER.info("IrisExtendedShaderAccess: reflection cached successfully (pipeline class: {}, blockEntityId reset: {})",
-                    shaderRenderingPipelineClass.getName(),
-                    setCurrentBlockEntityMethod != null);
-        } catch (Throwable t) {
-            MainRegistry.LOGGER.warn("IrisExtendedShaderAccess: reflection unavailable ({}), falling back to vanilla", t.toString());
-        }
-    }
-
-    private static Class<?> firstClass(String[] candidates) throws ClassNotFoundException {
-        ClassNotFoundException last = null;
-        for (String name : candidates) {
-            try {
-                return Class.forName(name);
-            } catch (ClassNotFoundException e) {
-                last = e;
+    private static void logOnceSilentFallback(String site, Throwable t) {
+        synchronized (SILENT_FALLBACK_LOGGED) {
+            if (SILENT_FALLBACK_LOGGED.add(site)) {
+                MainRegistry.LOGGER.debug("[HBM-M] IrisExtendedShaderAccess: '{}' fell back once ({})",
+                        site, t == null ? "expected - Iris absent/reloading" : t.toString());
             }
         }
-        throw last != null ? last : new ClassNotFoundException(String.join(", ", candidates));
     }
 }

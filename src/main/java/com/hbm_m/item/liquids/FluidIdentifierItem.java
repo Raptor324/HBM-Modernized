@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
+import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.interfaces.IItemControlReceiver;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
@@ -34,6 +35,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Universal fluid identifier. Has two slots (primary/secondary) for fluid types.
@@ -57,12 +59,27 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
-        if (player == null || !player.isShiftKeyDown()) {
+        if (player == null) {
             return InteractionResult.PASS;
         }
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
         ItemStack stack = context.getItemInHand();
+
+        if (level.getBlockState(pos).getBlock() instanceof FluidDuctBlock) {
+            if (!player.isShiftKeyDown()) {
+                return InteractionResult.PASS;
+            }
+            Fluid fluid = getType(level, pos, stack);
+            if (fluid == null) {
+                return InteractionResult.PASS;
+            }
+            if (level.isClientSide) {
+                return InteractionResult.SUCCESS;
+            }
+            FluidDuctBlock.paintConnectedDuctNetwork(level, pos, fluid);
+            return InteractionResult.sidedSuccess(level.isClientSide());
+        }
 
         MachineFluidTankBlockEntity tankBE = findTankEntity(level, pos);
         if (tankBE != null) {
@@ -72,7 +89,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
             if (level.isClientSide) {
                 return InteractionResult.SUCCESS;
             }
-            tankBE.setFilterFromIdentifier(stack);
+            tankBE.setTankTypeFromIdentifier(stack);
             Fluid type = getType(level, pos, stack);
             player.displayClientMessage(Component.literal("Changed type to ").withStyle(ChatFormatting.YELLOW)
                     .append(getFluidDisplayName(type)).append(Component.literal("!")), false);
@@ -82,13 +99,11 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
         return InteractionResult.PASS;
     }
 
-    //? if forge || neoforge {
     /** Original {@code doesSneakBypassUse}: auch geschlichen bekommt der Block den Rechtsklick. */
     @Override
     public boolean doesSneakBypassUse(ItemStack stack, net.minecraft.world.level.LevelReader level, BlockPos pos, Player player) {
         return true;
     }
-    //?}
 
     @Nullable
     private static MachineFluidTankBlockEntity findTankEntity(Level level, BlockPos pos) {
@@ -136,22 +151,18 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
         }
     }
 
-    //? if forge || neoforge {
     /** Original getContainerItem = Kopie: bleibt beim Handwerk im Raster (Rezepte fuer Kanister-Etiketten u. a.). */
     @Override
     public boolean hasCraftingRemainingItem(ItemStack stack) {
         return true;
     }
 
-    @Override
     public ItemStack getCraftingRemainingItem(ItemStack stack) {
         return stack.copy();
     }
-    //?}
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        // Original ItemFluidIDMulti: alle vier Zeilen ohne Farbcode (grau)
         tooltip.add(Component.translatable(getDescriptionId() + ".info").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal("   ").append(getFluidDisplayName(getType(stack, true)).copy().withStyle(ChatFormatting.GRAY)));
         
@@ -216,7 +227,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     }
 
     public static String getTypeName(ItemStack stack, boolean primary) {
-        CompoundTag tag = PlatformHooks.getItemTag(stack);
+        CompoundTag tag = StackNbt.read(stack);
         if (tag == null) return "none";
         String key = primary ? NBT_FLUID1 : NBT_FLUID2;
         return tag.getString(key);
@@ -227,7 +238,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     }
 
     public static void setType(ItemStack stack, String fluidName, boolean primary) {
-        PlatformHooks.putString(stack, primary ? NBT_FLUID1 : NBT_FLUID2, fluidName != null ? fluidName : "none");
+        StackNbt.putString(stack, primary ? NBT_FLUID1 : NBT_FLUID2, fluidName != null ? fluidName : "none");
     }
 
     /** Returns tint color for primary fluid (for ItemColor). */

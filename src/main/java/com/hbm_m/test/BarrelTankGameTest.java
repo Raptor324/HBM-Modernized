@@ -26,13 +26,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
+import com.hbm_m.platform.BlockEntityItemData;
 
 /**
  * Faesser und Fluidtanks (Nutzer-Meldung 2026-10-13 "Barrels/Tanks funktionieren nicht mehr"):
@@ -151,17 +147,10 @@ public final class BarrelTankGameTest {
         be.getFluidTank().conform(water());
         Level level = helper.getLevel();
         BlockPos pos = be.getBlockPos();
-        //? if forge {
         var h = com.hbm_m.api.fluids.FluidBlockAccess.getFluidHandler(level, pos, Direction.UP);
         check(h != null, "keine Fluid-Capability");
         var stack = new net.minecraftforge.fluids.FluidStack(water(), 1000);
         var exec = net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
-        //?} elif neoforge {
-        /*var h = com.hbm_m.api.fluids.FluidBlockAccess.getFluidHandler(level, pos, Direction.UP);
-        check(h != null, "keine Fluid-Capability");
-        var stack = new net.neoforged.neoforge.fluids.FluidStack(water(), 1000);
-        var exec = net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
-        *///?}
         // Modus 0: nur annehmen
         check(h.fill(stack.copy(), exec) == 1000, "Modus 0 (annehmen) verweigert fill");
         check(h.drain(500, exec).isEmpty(), "Modus 0 gibt ab");

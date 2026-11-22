@@ -18,7 +18,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 
 /**
- * 1:1-Port von {@code AmmoPressRecipes.registerDefaults()} (alle 89 Rezepte, gleiche Slots, Mengen und Ausbeuten).
+ * 1:1-Port von {@code AmmoPressRecipes.registerDefaults()} (alle 91 Rezepte, gleiche Slots, Mengen und Ausbeuten).
  * Slots 0-8 zeilenweise wie im Original. OreDict-Abbildung: ANY_PLASTIC = Polymer/Bakelit, ANY_SMOKELESS = Ballistit/
  * Cordit, ANY_HIGHEXPLOSIVE = TNT-/TATB-Kugel, P_RED.dust() = fire_powder, P_WHITE.ingot() = Phosphor-Barren,
  * PB.bolt() = bolt_lead; Fluessigkeiten ({@code Fluids.X.getDict(n)}) = {@link FluidContainerIngredient};
@@ -379,6 +379,11 @@ public class AmmoPressRecipeGenerator {
                 wp,		he,		null,
                 null,	cBig,	null,
                 null,	rocket,	null);
+        // Original AmmoPressRecipes l.361: Mikrorakete (nur die Schuettpulver-Variante)
+        add(EnumAmmo.ROCKET_MICRO, 9,
+                null,	dyn,				null,
+                null,	cBig,				null,
+                null,	smokeless.copy(2),	null);
 
         S sPlate = s(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE));
         S napalm = s(ModItems.CANISTER_NAPALM.get());

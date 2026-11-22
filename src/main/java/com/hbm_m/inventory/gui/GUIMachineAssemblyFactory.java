@@ -77,7 +77,7 @@ public class GUIMachineAssemblyFactory extends AbstractContainerScreen<MachineAs
                     List<Component> tooltip = new ArrayList<>();
                     tooltip.add(recipe.getResultItemSafe().getHoverName());
                     com.hbm_m.util.TemplateTooltipUtil.buildRecipeTooltip(recipe, tooltip);
-                    guiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), mouseX, mouseY);
+                    com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(guiGraphics, this.font, tooltip, mouseX, mouseY);
                 } else {
                     guiGraphics.renderTooltip(this.font, Component.translatable("gui.recipe.setRecipe").withStyle(ChatFormatting.YELLOW), mouseX, mouseY);
                 }

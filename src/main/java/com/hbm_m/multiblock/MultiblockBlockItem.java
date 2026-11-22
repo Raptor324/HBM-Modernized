@@ -4,8 +4,11 @@ import com.hbm_m.interfaces.IMultiblockController;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -15,17 +18,31 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 /**
  * Item для блока-контроллера мультиблока.
  * При клике автоматически подменяет координаты установки на ядро.
+ *
+ * <p>Тултип: если блок реализует {@link com.hbm_m.block.IPersistentInfoProvider} и предмет
+ * несёт {@code persistent}-тег — делегирует ему (порт {@code ItemBlockBase.addInformation}
+ * из 1.7.10).</p>
  */
-public class MultiblockBlockItem extends BlockItem {
+public class MultiblockBlockItem extends BlockItem implements com.hbm_m.item.ITooltipProvider {
 
     public MultiblockBlockItem(Block pBlock, Properties pProperties) {
         super(pBlock, pProperties);
         if (!(pBlock instanceof IMultiblockController)) {
             throw new IllegalArgumentException("MultiblockBlockItem can only be used with blocks that implement IMultiblockController!");
         }
+    }
+
+    @Override
+    public void appendHbmTooltip(net.minecraft.world.item.ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        if (!(getBlock() instanceof com.hbm_m.block.IPersistentInfoProvider provider)) return;
+        CompoundTag tag = com.hbm_m.platform.StackNbt.copy(stack);
+        if (tag == null || !tag.contains(com.hbm_m.blockentity.IPersistentNBT.NBT_PERSISTENT_KEY)) return;
+        provider.addInformation(stack, tag.getCompound(com.hbm_m.blockentity.IPersistentNBT.NBT_PERSISTENT_KEY), level, tooltip, flag);
     }
 
     @Override
@@ -114,17 +131,30 @@ public class MultiblockBlockItem extends BlockItem {
             return null;
         }
 
-        return new BlockPlaceContext(
-                context.getPlayer(),
-                context.getHand(),
-                context.getItemInHand(),
-                new BlockHitResult(
-                        Vec3.atCenterOf(corePos),
-                        context.getClickedFace(),
-                        corePos,
-                        context.isInside()
-                )
-        );
+        // ВАЖНО: нельзя использовать обычный BlockPlaceContext — ванильный
+        // getClickedPos() при занятой (не replaceable) клетке ядра пересчитывает
+        // позицию как corePos.relative(грань исходного клика). Если игрок смотрел
+        // на блок сверху вниз, грань = UP, и вся структура «взмывает» на блок
+        // выше вместо честного отказа (как BlockDummyable 1.7.10: checkRequirement
+        // отклоняет установку). Пинним позицию ядра явно.
+        return new CorePlaceContext(context, corePos);
+    }
+
+    /** Контекст установки, чей {@code getClickedPos()} всегда возвращает позицию ядра. */
+    private static final class CorePlaceContext extends BlockPlaceContext {
+
+        private final BlockPos corePos;
+
+        CorePlaceContext(BlockPlaceContext parent, BlockPos corePos) {
+            super(parent.getLevel(), parent.getPlayer(), parent.getHand(), parent.getItemInHand(),
+                    new BlockHitResult(Vec3.atCenterOf(corePos), parent.getClickedFace(), corePos, parent.isInside()));
+            this.corePos = corePos.immutable();
+        }
+
+        @Override
+        public BlockPos getClickedPos() {
+            return this.corePos;
+        }
     }
 
     //? if forge {
@@ -134,6 +164,7 @@ public class MultiblockBlockItem extends BlockItem {
      * Modelle wird der Renderer nie gefragt.
      */
     @Override
+@SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override

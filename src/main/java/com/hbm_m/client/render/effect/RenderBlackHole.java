@@ -30,7 +30,7 @@ import org.joml.Matrix4f;
 
 
 /**
- * Порт {@code com.hbm.render.entity.effect.RenderBlackHole} (1.7.10).
+ * Port of {@code com.hbm.render.entity.effect.RenderBlackHole} (1.7.10).
  */
 
 public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T> {

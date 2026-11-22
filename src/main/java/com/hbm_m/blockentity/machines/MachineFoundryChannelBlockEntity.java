@@ -1,5 +1,6 @@
 package com.hbm_m.blockentity.machines;
 
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +30,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Abnehmer (keine Rinne) ab, sonst gleicht sie sich mit Nachbarrinnen aus (1:4 Tausch, sonst Halbierung). Die Rinnen
  * bilden ein Netz; gegossen werden darf nur, wenn kein Knoten ein anderes Material fuehrt.
  */
-public class MachineFoundryChannelBlockEntity extends MachineFoundryBaseBlockEntity {
+public class MachineFoundryChannelBlockEntity extends MachineFoundryBaseBlockEntity implements com.hbm_m.interfaces.ICopiable {
 
     public int nextUpdate;
     public int lastFlow = 0;
@@ -155,18 +156,6 @@ public class MachineFoundryChannelBlockEntity extends MachineFoundryBaseBlockEnt
     }
 
     @Override
-    protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(nbt, registries);
-        this.lastFlow = nbt.getByte("flow");
-    }
-
-    @Override
-    protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(nbt, registries);
-        nbt.putByte("flow", (byte) this.lastFlow);
-    }
-
-    @Override
     public void setRemoved() {
         super.setRemoved();
         if (level instanceof ServerLevel world && this.node != null) {
@@ -211,4 +200,26 @@ public class MachineFoundryChannelBlockEntity extends MachineFoundryBaseBlockEnt
         if (this.node != null) this.node.type = stack.material;
         return super.pour(world, pos, dX, dY, dZ, side, stack);
     }
+
+    @Override
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.putInt("lastFlow", lastFlow);
+    }
+
+    @Override
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        lastFlow = tag.getInt("lastFlow");
+    }
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        if (type != null) nbt.putIntArray("matFilter", new int[]{ type.id });
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) { }
 }

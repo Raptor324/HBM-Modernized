@@ -27,6 +27,8 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import com.hbm_m.platform.BlockHooks;
+import com.hbm_m.platform.BlockEntityItemData;
 
 /**
  * 1:1 {@code BlockVolcano} ({@code volcano_core}, {@code volcano_rad_core}): Vulkankern mit fuenf Arten (Meta als
@@ -64,7 +66,7 @@ public class VolcanoBlock extends BaseEntityBlock {
         ItemStack s = new ItemStack(item);
         CompoundTag bst = new CompoundTag();
         bst.putString("mode", Integer.toString(mode));
-        com.hbm_m.platform.BlockStateItemData.put(s, bst);
+        com.hbm_m.platform.BlockEntityItemData.putState(s, bst);
         return s;
     }
 
@@ -115,7 +117,7 @@ public class VolcanoBlock extends BaseEntityBlock {
         return level.isClientSide ? null : createTickerHelper(type, ModBlockEntities.VOLCANO_CORE.get(), VolcanoCoreBlockEntity::serverTick);
     }
     //? if >= 1.21.1 {
-    /*public static final com.mojang.serialization.MapCodec<VolcanoBlock> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(VolcanoBlock.class);
+    /*public static final com.mojang.serialization.MapCodec<VolcanoBlock> CODEC = com.hbm_m.platform.BlockHooks.unsupportedCodec(VolcanoBlock.class);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

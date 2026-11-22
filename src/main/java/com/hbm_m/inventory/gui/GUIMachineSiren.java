@@ -11,8 +11,9 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-/** Port of {@code GUIMachineSiren} (1.7.10 Original). */
 public class GUIMachineSiren extends AbstractContainerScreen<MachineSirenMenu> {
 
     private static final ResourceLocation TEXTURE =

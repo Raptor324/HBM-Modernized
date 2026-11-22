@@ -35,7 +35,7 @@ public final class MissileRenderRegistry {
         register(ModItems.MISSILE_DECOY, MissileTextures.MISSILE_V2_DECOY, RenderMissileType.TYPE_TIER1);
         BY_ITEM.put(ModItems.MISSILE_STEALTH.get(), MissileRenderData.stealth(itemId(ModItems.MISSILE_STEALTH)));
 
-        register(ModItems.MISSILE_ABM, MissileTextures.MISSILE_ABM, RenderMissileType.TYPE_ABM);
+        register(ModItems.MISSILE_ANTI_BALLISTIC, MissileTextures.MISSILE_ABM, RenderMissileType.TYPE_ABM);
 
         registerLarge(ModItems.MISSILE_STRONG, MissileTextures.MISSILE_STRONG, RenderMissileType.TYPE_TIER2);
         registerLarge(ModItems.MISSILE_INCENDIARY_STRONG, MissileTextures.MISSILE_STRONG_INC, RenderMissileType.TYPE_TIER2);

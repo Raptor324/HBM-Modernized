@@ -63,29 +63,43 @@ public final class DhOcclusionGpu {
     /**
      * Репликация зоны недостоверной глубины DH — dither-fade «Fade Nearby DH LODs».
      *
-     * КАК РАБОТАЕТ FADE У DH: в фрагментном шейдере террейна
-     * (terrain/blaze/frag.fsh) фрагменты в кольце [uClipDistance, 1.5·uClipDistance]
-     * отбрасываются стохастически (bayerMatrix4x4 по gl_FragCoord + smoothstep).
-     * Отброшенный фрагмент не пишет НИ цвета, НИ глубины → внутри кольца
-     * DEPTH32F содержит шум: половина пикселей пустая, половина — с глубиной
-     * полурастворённых склонов. Копировать эту глубину в главный z-buffer
-     * нельзя: гриб получает ту же байерову рябь и ложные срезы, ползущие
-     * вместе с камерой.
+     * КАК РАБОТАЕТ FADE У DH: в фрагментном шейдере террейна фрагменты в
+     * кольце [uClipDistance, 1.5·uClipDistance] отбрасываются стохастически
+     * (bayerMatrix4x4 по gl_FragCoord + smoothstep). Отброшенный фрагмент не
+     * пишет НИ цвета, НИ глубины → внутри кольца DEPTH32F содержит шум:
+     * половина пикселей пустая, половина — с глубиной полурастворённых
+     * склонов. Копировать эту глубину в главный z-buffer нельзя: гриб
+     * получает ту же байерову рябь и ложные срезы, ползущие вместе с камерой.
      *
-     * Формула uClipDistance из RenderUtil.getNearClipPlaneInBlocks():
-     *   ratio = overdrawPrevention (конфиг; <0 = авто по ванильному RD,
-     *           под паком Iris авто = 0.2)
-     *   dist  = max(1, vanillaRD*16 * ratio)
-     *   R     = dist / sqrt(1 + tan(35°)²·(aspect² + 1))   // FOV захардкожен у DH = 70°
-     *   uClipDistance = R + 16
-     * Маска = верх dither-зоны = 1.5·(R + 16).
-     *
-     * reduceOverdrawWithFastMovement сознательно НЕ реплицируем: без него
-     * маска при быстром движении чуть БОЛЬШЕ реального кольца — консервативно.
+     * ИСТОЧНИК uClipDistance (байткод 3.3.1, GlDhTerrainShaderProgram):
+     * uClipDistance = RenderUtil.getNearClipPlaneInBlocks() + 16 (без
+     * lodOnlyMode). Рефлексия даёт точное значение — включая height-based
+     * override и reduceOverdrawWithFastMovement, которые ручная репликация
+     * не покрывала (при высоком игроке R растёт до десятков блоков, и маска
+     * по таблице оставалась маленькой → копировался шум dither-зоны).
+     * Маска = верх dither-зоны = 1.5·uClipDistance; под Iris-оверрайдом
+     * ({@link DhRenderBridge#isIrisLodOverrideActive()}) uClip БЕЗ +16 (аудит
+     * DH-7: +16 только у нативного GlDhTerrainShaderProgram) - иначе маска
+     * 24 блока перекрывает валидную лод-глубину.
      *
      * @return дистанция в блоках; 0 = маска не определена (не применять).
      */
     public static float ditherFadeMaskDistance() {
+        // Точный путь: значение из самой DH.
+        try {
+            if (nearClipBlocksMethod == null) {
+                nearClipBlocksMethod = Class.forName(
+                        "com.seibel.distanthorizons.core.util.RenderUtil").getMethod("getNearClipPlaneInBlocks");
+            }
+            float r = (Float) nearClipBlocksMethod.invoke(null);
+            if (r > 0.0F && Float.isFinite(r)) {
+                float clip = DhRenderBridge.isIrisLodOverrideActive() ? r : r + 16.0F;
+                float mask = 1.5F * clip;
+                return mask > Float.MAX_VALUE ? Float.MAX_VALUE : mask;
+            }
+        } catch (Throwable ignored) {}
+        // Фолбэк (DH отсутствует / рефлексия не удалась): ручная репликация
+        // R-формулы по ванильному RD (auto-таблица overdrawPrevention).
         try {
             var mc = net.minecraft.client.Minecraft.getInstance();
             int rd = mc.options.getEffectiveRenderDistance();
@@ -115,10 +129,14 @@ public final class DhOcclusionGpu {
             float aspect = (float) win.getWidth() / (float) win.getHeight();
             double tanHalfFov = Math.tan(Math.toRadians(35.0));
             double r = distBlocks / Math.sqrt(1.0 + tanHalfFov * tanHalfFov * (aspect * aspect + 1.0));
-            return 1.5 * (r + 16.0) > Float.MAX_VALUE ? Float.MAX_VALUE : (float) (1.5 * (r + 16.0));
+            double clip = r + (DhRenderBridge.isIrisLodOverrideActive() ? 0.0 : 16.0);
+            return 1.5 * clip > Float.MAX_VALUE ? Float.MAX_VALUE : (float) (1.5 * clip);
         } catch (Throwable ignored) {}
         return 0.0F;
     }
+
+    private static java.lang.reflect.Method nearClipBlocksMethod;
+
 
     /**
      * Конфиг «Overdraw Prevention» (<0 = авто).

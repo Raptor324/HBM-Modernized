@@ -2,7 +2,6 @@ package com.hbm_m.powerarmor;
 
 import com.hbm_m.platform.PlatformHooks;
 
-import com.hbm_m.platform.AttributeOps;
 
 import java.util.function.Supplier;
 
@@ -23,6 +22,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.AttributeHooks;
 
 /** 1:1 {@code com.hbm.items.armor.ArmorDiesel}: Dieselanzug ({@code dieselsuit_*}. */
 public class ArmorDiesel extends ModArmorFSBFueled {
@@ -53,7 +53,7 @@ public class ArmorDiesel extends ModArmorFSBFueled {
     *///?}
         if (slot != this.getEquipmentSlot()) return base;
         return ArmorAttributes.with(base, java.util.Map.entry(Attributes.KNOCKBACK_RESISTANCE,
-                PlatformHooks.attributeModifier(ArmorAttributes.fixed(this.getType()), "Armor modifier", 0.25D, AttributeOps.MULTIPLY_BASE)));
+                AttributeHooks.modifier(ArmorAttributes.fixed(this.getType()), "Armor modifier", 0.25D, AttributeHooks.MULTIPLY_BASE)));
     }
 
     @Override

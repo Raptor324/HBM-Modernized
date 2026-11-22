@@ -108,6 +108,7 @@ public class RedCablePaintableBlock extends BaseEntityBlock implements com.hbm_m
         return InteractionResult.PASS;
     }
 
+
     /**
      * audit10: 1:1 {@code BlockCablePaintable.onScrew} - der Schraubenzieher entfernt den Anstrich, der Entschaerfer
      * schaltet Metadate 0/1 ({@link #OVERLAY}) um - auch am ungestrichenen Kabel, dort ohne sichtbare Wirkung.
@@ -138,6 +139,7 @@ public class RedCablePaintableBlock extends BaseEntityBlock implements com.hbm_m
     private void addTooltip(List<Component> tooltip) {
         // 1:1 BlockCablePaintable.addInformation: addStandardInfo (Umschalttaste zeigt .desc)
         com.hbm_m.util.StandardInfo.add(tooltip, getDescriptionId() + ".desc");
+        tooltip.add(Component.translatable("tooltip.hbm_m.paintable").withStyle(ChatFormatting.GRAY));
     }
 
     //? if < 1.21.1 {

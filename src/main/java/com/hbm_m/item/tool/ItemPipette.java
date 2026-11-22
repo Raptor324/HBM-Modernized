@@ -256,7 +256,7 @@ public class ItemPipette extends Item implements IFillableItem, ITooltipProvider
     //?} elif neoforge {
     /*// NeoForge: Anmeldung als Capabilities.FluidHandler.ITEM in ModCapabilities.register
     /^* Anbindung an Tanks/Lader des Ports (IFluidHandlerItem ueber tryFill/tryEmpty). ^/
-    public static class PipetteCapability implements net.neoforged.neoforge.fluids.capability.IFluidHandlerItem {
+    public static class PipetteCapability implements net.minecraftforge.fluids.capability.IFluidHandlerItem {
 
         private final ItemStack stack;
 
@@ -270,20 +270,20 @@ public class ItemPipette extends Item implements IFillableItem, ITooltipProvider
         @Override public int getTanks() { return 1; }
 
         @Override
-        public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+        public net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
             int fill = item().getFill(stack);
-            return fill <= 0 ? net.neoforged.neoforge.fluids.FluidStack.EMPTY : new net.neoforged.neoforge.fluids.FluidStack(item().getType(stack), fill);
+            return fill <= 0 ? net.minecraftforge.fluids.FluidStack.EMPTY : new net.minecraftforge.fluids.FluidStack(item().getType(stack), fill);
         }
 
         @Override public int getTankCapacity(int tank) { return item().getCapacity(stack); }
 
         @Override
-        public boolean isFluidValid(int tank, net.neoforged.neoforge.fluids.FluidStack fs) {
+        public boolean isFluidValid(int tank, net.minecraftforge.fluids.FluidStack fs) {
             return item().acceptsFluid(fs.getFluid(), stack);
         }
 
         @Override
-        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction action) {
+        public int fill(net.minecraftforge.fluids.FluidStack resource, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction action) {
             if (resource.isEmpty() || !item().acceptsFluid(resource.getFluid(), stack)) return 0;
             if (action.simulate()) {
                 return Math.min(resource.getAmount(), item().getCapacity(stack) - item().getFill(stack));
@@ -292,19 +292,19 @@ public class ItemPipette extends Item implements IFillableItem, ITooltipProvider
         }
 
         @Override
-        public net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction action) {
-            if (resource.isEmpty() || resource.getFluid() != item().getType(stack)) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction action) {
+            if (resource.isEmpty() || resource.getFluid() != item().getType(stack)) return net.minecraftforge.fluids.FluidStack.EMPTY;
             return drain(resource.getAmount(), action);
         }
 
         @Override
-        public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction action) {
+        public net.minecraftforge.fluids.FluidStack drain(int maxDrain, net.minecraftforge.fluids.capability.IFluidHandler.FluidAction action) {
             Fluid type = item().getType(stack);
             int fill = item().getFill(stack);
-            if (fill <= 0 || type == Fluids.EMPTY) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            if (fill <= 0 || type == Fluids.EMPTY) return net.minecraftforge.fluids.FluidStack.EMPTY;
             int amount = Math.min(maxDrain, fill);
             if (action.execute()) item().tryEmpty(type, amount, stack);
-            return new net.neoforged.neoforge.fluids.FluidStack(type, amount);
+            return new net.minecraftforge.fluids.FluidStack(type, amount);
         }
     }
     *///?}

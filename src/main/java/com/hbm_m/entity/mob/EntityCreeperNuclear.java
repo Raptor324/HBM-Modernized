@@ -4,9 +4,8 @@ import com.hbm_m.damagesource.ModDamageTypes;
 import com.hbm_m.mixin.CreeperAccessor;
 import com.hbm_m.entity.logic.EntityNukeExplosionMK5;
 import com.hbm_m.explosion.ExplosionNukeGeneric;
-import com.hbm_m.explosion.MissileWarheadEffects;
+import com.hbm_m.explosion.ExplosionNukeSmall;
 import com.hbm_m.particle.helper.IParticleCreator;
-import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.util.ContaminationUtil;
 import com.hbm_m.util.ContaminationUtil.ContaminationType;
@@ -108,7 +107,12 @@ public class EntityCreeperNuclear extends Creeper {
     /*@Override
     protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel serverLevel, DamageSource source, boolean recentlyHit) {
         this.spawnAtLocation(new ItemStack(Blocks.TNT));
-        // coin_creeper, NUKE_STANDARD ammo, bossCreeper — после порта соответствующих систем
+        this.spawnAtLocation(new ItemStack(com.hbm_m.item.ModItems.COIN_CREEPER.get()));
+        // Everyone within 50 blocks is credited, as in the original - the kill may well have been
+        // a group effort, or nobody's in particular.
+        com.hbm_m.advancement.ModAdvancements.grantNearby(this, 50D,
+                com.hbm_m.advancement.ModAdvancements.BOSS_CREEPER);
+        // TODO: NUKE_STANDARD ammo drop still needs the ammo system.
     }
     *///?}
 
@@ -135,9 +139,9 @@ public class EntityCreeperNuclear extends Creeper {
                 ExplosionNukeGeneric.dealDamage(this.level(), x, y + 0.5, z, 100.0D);
             }
         } else if (griefing) {
-            com.hbm_m.explosion.ExplosionNukeSmall.explode(this.level(), x, y + 0.5, z, com.hbm_m.explosion.ExplosionNukeSmall.PARAMS_MEDIUM);
+            ExplosionNukeSmall.explode(this.level(), x, y, z, ExplosionNukeSmall.PARAMS_MEDIUM);
         } else {
-            com.hbm_m.explosion.ExplosionNukeSmall.explode(this.level(), x, y + 0.5, z, com.hbm_m.explosion.ExplosionNukeSmall.PARAMS_SAFE);
+            ExplosionNukeSmall.explode(this.level(), x, y, z, ExplosionNukeSmall.PARAMS_SAFE);
         }
 
         this.discard();

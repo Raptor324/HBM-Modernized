@@ -11,6 +11,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * BlockItem для {@link BlockAbsorber} — локализованное имя по уровню (meta в 1.7.10).
@@ -25,7 +26,7 @@ public class BlockAbsorberItem extends BlockItem {
         ItemStack stack = new ItemStack(block);
         CompoundTag blockStateTag = new CompoundTag();
         blockStateTag.putString("tier", tier.getSerializedName());
-        PlatformHooks.put(stack, "BlockStateTag", blockStateTag);
+        StackNbt.put(stack, "BlockStateTag", blockStateTag);
         return stack;
     }
 
@@ -35,7 +36,7 @@ public class BlockAbsorberItem extends BlockItem {
         //? if < 1.21.1 {
         CompoundTag blockStateTag = stack.getTagElement("BlockStateTag");
         //?} else {
-        /*CompoundTag custom = PlatformHooks.getItemTag(stack);
+        /*CompoundTag custom = StackNbt.read(stack);
         CompoundTag blockStateTag = custom != null && custom.contains("BlockStateTag")
                 ? custom.getCompound("BlockStateTag") : null;
         *///?}

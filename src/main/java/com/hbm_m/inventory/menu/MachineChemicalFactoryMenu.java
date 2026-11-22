@@ -2,10 +2,10 @@ package com.hbm_m.inventory.menu;
 
 import org.jetbrains.annotations.NotNull;
 
+import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MachineChemicalFactoryBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.industrial.ItemBlueprints;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 
@@ -14,19 +14,31 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
- * 1:1 {@code ContainerMachineChemicalFactory}: Menue-Slotindex == Tile-Slotindex (32), dann Spielerinventar bei (26,134).
+ * Menu для Chemical Factory — порт 1.7.10 {@code ContainerMachineChemicalFactory}.
+ *
+ * <p>Раскладка слотов 1:1 с оригиналом (GUI 248×216):
+ * <ul>
+ *   <li>0 — батарея (224, 88);</li>
+ *   <li>1..3 — апгрейды вертикально от (206, 125) с шагом 18;</li>
+ *   <li>4 линии с шагом 7 слотов и 22 пикселей: шаблон (93, 20+lane*22),
+ *       3 входа от (10, 20+lane*22) с шагом 16, 3 выхода от (139, 20+lane*22) с шагом 16;</li>
+ *   <li>инвентарь игрока от (26, 134), хотбар на 58 ниже.</li>
+ * </ul>
  */
+@SuppressWarnings("UnstableApiUsage")
 public class MachineChemicalFactoryMenu extends AbstractContainerMenu {
 
     private static final int LANE_COUNT = MachineChemicalFactoryBlockEntity.LANE_COUNT;
     private static final int TE_SLOT_COUNT = MachineChemicalFactoryBlockEntity.SLOT_COUNT;
+    private static final int VANILLA_SLOT_COUNT = 36;
+    private static final int VANILLA_FIRST_SLOT_INDEX = TE_SLOT_COUNT;
 
     private final MachineChemicalFactoryBlockEntity blockEntity;
     private final ContainerData data;
@@ -40,39 +52,87 @@ public class MachineChemicalFactoryMenu extends AbstractContainerMenu {
         this.blockEntity = (MachineChemicalFactoryBlockEntity) entity;
         this.data = data;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        var handler = blockEntity.getInventory();
+        var container = new ModItemStackHandlerContainer(handler, blockEntity::setChanged);
 
-        // Battery
-        addSlot(new Slot(container, 0, 224, 88));
-        // Upgrades
-        for (int row = 0; row < 3; row++) addSlot(new Slot(container, 1 + row, 206, 125 + row * 18));
+        // Battery — как в оригинале (224, 88)
+        addSlot(new Slot(container, 0, 224, 88) {
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return ItemEnergyAccess.isEnergyItem(stack);
+            }
+        });
+        // Upgrades — вертикальная колонка от (206, 125)
+        addSlot(new UpgradeSlot(container, 1, 206, 125));
+        addSlot(new UpgradeSlot(container, 2, 206, 143));
+        addSlot(new UpgradeSlot(container, 3, 206, 161));
 
-        for (int i = 0; i < LANE_COUNT; i++) {
-            // Template
-            addSlot(new Slot(container, 4 + i * 7, 93, 20 + i * 22));
-            // Solid Input
-            for (int col = 0; col < 3; col++) addSlot(new Slot(container, 5 + i * 7 + col, 10 + col * 16, 20 + i * 22));
-            // Solid Output
-            for (int col = 0; col < 3; col++) addSlot(new Slot(container, 8 + i * 7 + col, 139 + col * 16, 20 + i * 22) {
+        for (int lane = 0; lane < LANE_COUNT; lane++) {
+            int base = 4 + lane * 7;
+            int rowY = 20 + lane * 22;
+            // Template (папка чертежей)
+            addSlot(new Slot(container, base, 93, rowY) {
+                @Override
+                public boolean mayPlace(@NotNull ItemStack stack) {
+                    return stack.getItem() instanceof ItemBlueprints;
+                }
+
+                @Override
+                public int getMaxStackSize() {
+                    return 1;
+                }
+            });
+            // Solid input
+            addSlot(new Slot(container, base + 1, 10, rowY));
+            addSlot(new Slot(container, base + 2, 26, rowY));
+            addSlot(new Slot(container, base + 3, 42, rowY));
+            // Solid output (только забирать)
+            addSlot(new Slot(container, base + 4, 139, rowY) {
+                @Override public boolean mayPlace(@NotNull ItemStack stack) { return false; }
+            });
+            addSlot(new Slot(container, base + 5, 155, rowY) {
+                @Override public boolean mayPlace(@NotNull ItemStack stack) { return false; }
+            });
+            addSlot(new Slot(container, base + 6, 171, rowY) {
                 @Override public boolean mayPlace(@NotNull ItemStack stack) { return false; }
             });
         }
 
+        // Player inventory — как в оригинале playerInv(invPlayer, 26, 134)
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 addSlot(new Slot(inv, col + row * 9 + 9, 26 + col * 18, 134 + row * 18));
             }
         }
         for (int col = 0; col < 9; col++) {
-            addSlot(new Slot(inv, col, 26 + col * 18, 192));
+            addSlot(new Slot(inv, col, 26 + col * 18, 134 + 58));
         }
 
         addDataSlots(data);
     }
 
+    private static final class UpgradeSlot extends Slot {
+        UpgradeSlot(ModItemStackHandlerContainer container, int index, int x, int y) {
+            super(container, index, x, y);
+        }
+
+        @Override
+        public boolean mayPlace(@NotNull ItemStack stack) {
+            return stack.getItem() instanceof ItemMachineUpgrade;
+        }
+
+        @Override
+        public int getMaxStackSize() {
+            return 1;
+        }
+    }
+
     public MachineChemicalFactoryBlockEntity getBlockEntity() {
         return blockEntity;
     }
+
+    // === ContainerData layout (1:1 mit MachineChemicalFactoryBlockEntity.data):
+    // 0..3 progress, 4..7 max progress, 8/9 energy, 10/11 max energy, 12 didProcess-Bitmaske ===
 
     public int getLaneProgress(int lane) { return data.get(lane); }
     public int getLaneMaxProgress(int lane) { return data.get(LANE_COUNT + lane); }
@@ -91,45 +151,48 @@ public class MachineChemicalFactoryMenu extends AbstractContainerMenu {
 
     @Override
     public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
-        ItemStack slotOriginal = ItemStack.EMPTY;
+        ItemStack result = ItemStack.EMPTY;
         Slot slot = slots.get(index);
-        if (slot == null || !slot.hasItem()) return slotOriginal;
+        if (slot == null || !slot.hasItem()) return result;
 
-        ItemStack slotStack = slot.getItem();
-        slotOriginal = slotStack.copy();
+        ItemStack stack = slot.getItem();
+        result = stack.copy();
 
         if (index <= TE_SLOT_COUNT - 1) {
-            if (!moveItemStackTo(slotStack, TE_SLOT_COUNT, slots.size(), true)) return ItemStack.EMPTY;
+            if (!moveItemStackTo(stack, TE_SLOT_COUNT, slots.size(), true)) return ItemStack.EMPTY;
         } else {
-            if (com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(slotOriginal).isPresent()
-                    || com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(slotOriginal).isPresent()
-                    || slotOriginal.getItem() instanceof ItemCreativeBattery) {
-                if (!moveItemStackTo(slotStack, 0, 1, false)) return ItemStack.EMPTY;
-            } else if (slotOriginal.getItem() instanceof ItemBlueprints) {
-                // Original: nur die Mappe des ersten Moduls (die drei weiteren Zweige sind dort unerreichbar)
-                if (!moveItemStackTo(slotStack, 4, 5, false)) return ItemStack.EMPTY;
-            } else if (slotOriginal.getItem() instanceof ItemMachineUpgrade) {
-                if (!moveItemStackTo(slotStack, 1, 4, false)) return ItemStack.EMPTY;
+            if (ItemEnergyAccess.isEnergyItem(stack)) {
+                if (!moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
+            } else if (stack.getItem() instanceof ItemBlueprints) {
+                // Папка чертежей — в слот шаблона первой свободной линии (как в оригинале)
+                boolean placed = false;
+                for (int lane = 0; lane < LANE_COUNT && !placed; lane++) {
+                    int tpl = 4 + lane * 7;
+                    placed = moveItemStackTo(stack, tpl, tpl + 1, false);
+                }
+                if (!placed) return ItemStack.EMPTY;
+            } else if (stack.getItem() instanceof ItemMachineUpgrade) {
+                if (!moveItemStackTo(stack, 1, 4, false)) return ItemStack.EMPTY;
             } else {
-                if (!moveItemStackTo(slotStack, 5, 8, false)
-                        && !moveItemStackTo(slotStack, 12, 15, false)
-                        && !moveItemStackTo(slotStack, 19, 22, false)
-                        && !moveItemStackTo(slotStack, 26, 29, false)) return ItemStack.EMPTY;
+                boolean placed = moveItemStackTo(stack, 5, 8, false)
+                        || moveItemStackTo(stack, 12, 15, false)
+                        || moveItemStackTo(stack, 19, 22, false)
+                        || moveItemStackTo(stack, 26, 29, false);
+                if (!placed) return ItemStack.EMPTY;
             }
         }
 
-        if (slotStack.isEmpty()) {
+        if (stack.isEmpty()) {
             slot.set(ItemStack.EMPTY);
         } else {
             slot.setChanged();
         }
-        slot.onTake(player, slotStack);
-        return slotOriginal;
+        slot.onTake(player, stack);
+        return result;
     }
 
     @Override
     public boolean stillValid(@NotNull Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.CHEMICAL_FACTORY.get());
     }
 }

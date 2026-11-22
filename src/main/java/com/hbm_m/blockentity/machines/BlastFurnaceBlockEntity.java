@@ -4,9 +4,9 @@ import com.hbm_m.platform.PlatformHooks;
 
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.Optional;
 
 import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,7 +22,6 @@ import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 import net.minecraft.core.BlockPos;
@@ -45,22 +44,14 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
 //?}
+import net.minecraftforge.items.IItemHandler;
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.base.CombinedStorage;
-import net.fabricmc.fabric.api.transfer.v1.storage.base.FilteringStorage;
-
-import java.util.ArrayList;
-import java.util.List;
-*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuProvider, com.hbm_m.api.fluids.IFluidStandardSenderMK2 {
@@ -103,13 +94,10 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     private final Map<Direction, LazyOptional<IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
     //?} elif neoforge {
-    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
-    private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> lazyItemHandler = com.hbm_m.platform.LazyCap.empty();
+    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
+    private com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> lazyItemHandler = com.hbm_m.platform.LazyCap.empty();
     *///?}
 
-    //? if fabric {
-    /*private final Map<Direction, Storage<ItemVariant>> sidedStorages = new EnumMap<>(Direction.class);
-    *///?}
 
     private final ContainerData data;
     private int progress;
@@ -219,46 +207,6 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     }
     *///?}
 
-    //? if fabric {
-    /*@Override
-    public void setLevel(Level level) {
-        super.setLevel(level);
-        buildSidedStorages();
-    }
-
-    @Nullable
-    public Storage<ItemVariant> getItemStorage(@Nullable Direction side) {
-        if (side == null) return itemHandler.getStorage();
-        return sidedStorages.getOrDefault(side, null);
-    }
-
-    private void buildSidedStorages() {
-        sidedStorages.clear();
-        for (Direction dir : Direction.values()) {
-            sidedStorages.put(dir, buildStorageForSide(dir));
-        }
-    }
-
-    @SuppressWarnings("UnstableApiUsage")
-    private Storage<ItemVariant> buildStorageForSide(Direction direction) {
-        List<Storage<ItemVariant>> parts = new ArrayList<>();
-        for (int s = 0; s < itemHandler.getSlots(); s++) {
-            final int slot = s;
-            parts.add(new FilteringStorage<>(itemHandler.getSlotStorage(slot)) {
-                @Override
-                protected boolean canInsert(ItemVariant resource) {
-                    return canInsertFromDirection(slot, direction)
-                            && itemHandler.isItemValid(slot, resource.toStack());
-                }
-                @Override
-                protected boolean canExtract(ItemVariant resource) {
-                    return canExtractFromDirection(slot);
-                }
-            });
-        }
-        return new CombinedStorage<>(parts);
-    }
-    *///?}
 
     public void drops() {
         SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
@@ -283,7 +231,7 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     // (устраняет вложенный stonecutter-баг в load())
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
+        tag.put("inventory", itemHandler.serialize( registries));
         tag.putInt("blast_furnace.progress", progress);
         tag.putInt("blast_furnace.fuel", fuel);
         tag.putInt("blast_furnace.side_upper", sideUpper);
@@ -296,7 +244,7 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
+        itemHandler.deserialize(tag.getCompound("inventory"), registries);
         progress = tag.getInt("blast_furnace.progress");
         fuel = tag.getInt("blast_furnace.fuel");
         sideUpper = tag.getInt("blast_furnace.side_upper");
@@ -333,7 +281,6 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         if (canProcess) {
             fuel -= 1;
             progress += extension ? 3 : 1;
-
             if (progress >= PROCESS_TIME) {
                 progress -= PROCESS_TIME;
                 craftItem();
@@ -397,11 +344,13 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     }
 
     private boolean hasRecipe() {
-        Optional<BlastFurnaceRecipe> recipe = getCurrentRecipe();
-        if (recipe.isEmpty() || level == null) {
+        BlastFurnaceRecipe recipe = getCurrentRecipe();
+        if (recipe == null || level == null) {
             return false;
         }
-        ItemStack result = recipe.get().getResultItem(level.registryAccess());
+        // canAcceptResult depends on output-slot state outside the scan signature —
+        // re-evaluated per tick against the cached recipe (CachedRecipeResolver CONTRACT 1).
+        ItemStack result = recipe.getResultItem(level.registryAccess());
         return !result.isEmpty() && canAcceptResult(result);
     }
 
@@ -414,33 +363,41 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
 
     private static boolean canItemStacksStack(ItemStack a, ItemStack b) {
         if (a.isEmpty() || !a.is(b.getItem())) return false;
-        return PlatformHooks.isSameItemSameTags(a, b);
+        return StackNbt.sameItemSameTags(a, b);
     }
 
-    private Optional<BlastFurnaceRecipe> getCurrentRecipe() {
+    /** Кэшированный скан рецептов: подпись — оба входных слота, сканер — только матч по списку. */
+    private final CachedRecipeResolver<BlastFurnaceRecipe> recipeResolver = new CachedRecipeResolver<>();
+
+    @Nullable
+    private BlastFurnaceRecipe getCurrentRecipe() {
         if (level == null) {
-            return Optional.empty();
+            return null;
         }
-        SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
-        for (int i = 0; i < itemHandler.getSlots(); i++) {
-            inventory.setItem(i, itemHandler.getStackInSlot(i));
-        }
-        RecipeInputWrapper wrapper = new RecipeInputWrapper(inventory);
-        for (BlastFurnaceRecipe recipe : RecipeHooks.getAllRecipes(level, BlastFurnaceRecipe.Type.INSTANCE)) {
-            // Original: Legierungsofen nutzt BlastFurnaceRecipes, nicht die NT-Liste des Hochofens
-            if (!recipe.isNT() && recipe.matchesRecipe(wrapper, level)) {
-                return Optional.of(recipe);
+        long signature = CachedRecipeResolver.sign(1,
+                StackNbt.fingerprint(itemHandler.getStackInSlot(INPUT_SLOT_TOP)),
+                StackNbt.fingerprint(itemHandler.getStackInSlot(INPUT_SLOT_BOTTOM)));
+        return recipeResolver.resolve(level, BlastFurnaceRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
+            for (int i = 0; i < itemHandler.getSlots(); i++) {
+                inventory.setItem(i, itemHandler.getStackInSlot(i));
             }
-        }
-        return Optional.empty();
+            RecipeInputWrapper wrapper = new RecipeInputWrapper(inventory);
+            for (BlastFurnaceRecipe recipe : all) {
+                if (!recipe.isNT() && recipe.matchesRecipe(wrapper, lvl)) {
+                    return recipe;
+                }
+            }
+            return null;
+        });
     }
 
     private void craftItem() {
-        Optional<BlastFurnaceRecipe> recipe = getCurrentRecipe();
-        if (recipe.isEmpty() || level == null) {
+        BlastFurnaceRecipe recipe = getCurrentRecipe();
+        if (recipe == null || level == null) {
             return;
         }
-        ItemStack result = recipe.get().getResultItem(level.registryAccess()).copy();
+        ItemStack result = recipe.getResultItem(level.registryAccess()).copy();
 
         itemHandler.extractItem(INPUT_SLOT_TOP, 1, false);
         itemHandler.extractItem(INPUT_SLOT_BOTTOM, 1, false);
@@ -472,6 +429,8 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         if (item == Items.LAVA_BUCKET) return 12800;
         if (item == Items.BLAZE_ROD) return 1000;
         if (item == Items.BLAZE_POWDER) return 300;
+        if (item == Items.DRIED_KELP) return 15;
+        if (item == Items.DRIED_KELP_BLOCK) return 150;
         if (item == ModItems.LIGNITE.get()) return 150;
         String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item).toString();
         if (id.equals("hbm_m:lignite_powder")) return 150;
@@ -575,24 +534,23 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         }
     }
     //?} elif neoforge {
-    /*private class DirectionalItemHandler implements net.neoforged.neoforge.items.IItemHandler {
-        private final Direction direction;
+    /*private final class DirectionalItemHandler implements net.minecraftforge.items.IItemHandler {
+        private final net.minecraft.core.Direction direction;
 
-        private DirectionalItemHandler(Direction direction) { this.direction = direction; }
+        private DirectionalItemHandler(net.minecraft.core.Direction direction) { this.direction = direction; }
 
         @Override public int getSlots() { return itemHandler.getSlots(); }
 
-        @Override
-        public @NotNull ItemStack getStackInSlot(int slot) { return itemHandler.getStackInSlot(slot); }
+        @Override public ItemStack getStackInSlot(int slot) { return itemHandler.getStackInSlot(slot); }
 
         @Override
-        public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
             if (!canInsertFromDirection(slot, direction) || !itemHandler.isItemValid(slot, stack)) return stack;
             return itemHandler.insertItem(slot, stack, simulate);
         }
 
         @Override
-        public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+        public ItemStack extractItem(int slot, int amount, boolean simulate) {
             if (!canExtractFromDirection(slot)) return ItemStack.EMPTY;
             return itemHandler.extractItem(slot, amount, simulate);
         }
@@ -600,10 +558,13 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         @Override public int getSlotLimit(int slot) { return itemHandler.getSlotLimit(slot); }
 
         @Override
-        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+        public boolean isItemValid(int slot, ItemStack stack) {
             return itemHandler.isItemValid(slot, stack) && canInsertFromDirection(slot, direction);
         }
     }
+
+    private final java.util.EnumMap<net.minecraft.core.Direction, DirectionalItemHandler> neoSidedHandlers =
+            new java.util.EnumMap<>(net.minecraft.core.Direction.class);
     *///?}
 
     @Override
@@ -611,7 +572,10 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         //? if forge {
         if (side == null) return this.itemHandler;
         return this.sidedItemHandlers.getOrDefault(side, this.lazyItemHandler).resolve().orElse(null);
-        //?} else {
+        //?} elif neoforge {
+        /*if (side == null) return this.itemHandler;
+        return neoSidedHandlers.computeIfAbsent(side, DirectionalItemHandler::new);
+        *///?} else {
         /*return this.itemHandler;
         *///?}
     }

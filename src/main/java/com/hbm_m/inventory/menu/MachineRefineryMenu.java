@@ -3,7 +3,6 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.blockentity.machines.MachineRefineryBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -14,6 +13,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.NotNull;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineRefineryMenu extends AbstractContainerMenu {
 
@@ -33,7 +33,7 @@ public class MachineRefineryMenu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
         // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         var machineContainer = new ModItemStackHandlerContainer(
-                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity.getInventory() : new ModItemStackHandler.Dummy(MACHINE_SLOT_COUNT),
                 blockEntity != null ? blockEntity::setChanged : null);
 
         // Original ContainerMachineRefinery: Positionen 1:1
@@ -85,7 +85,7 @@ public class MachineRefineryMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineRefineryBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":refinery_menu");
+        throw new MenuBlockEntityMissingException("No MachineRefineryBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":refinery_menu");
     }
 
     public MachineRefineryBlockEntity getBlockEntity() {
@@ -93,9 +93,8 @@ public class MachineRefineryMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public boolean stillValid(Player player) {
-        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+    public boolean stillValid(@NotNull Player player) {
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

@@ -15,15 +15,9 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
-
+import com.hbm_m.platform.LoaderHooks;
 /**
  * Рендерит 3D модель двери с выбранным скином в GUI.
  *
@@ -32,11 +26,7 @@ import net.fabricmc.api.Environment;
  * разрешаем BakedModel из реестра напрямую и рендерим через
  * ItemRenderer.render() с подменённой моделью.
  */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class DoorModelFakeItemRenderer {
 
     private static final float ICON_SCALE = 0.9f;
@@ -64,7 +54,7 @@ public final class DoorModelFakeItemRenderer {
         if (registry.isRegistered(doorId)) {
             ResourceLocation modelPath = registry.getModelPath(doorId, selection);
             if (modelPath != null) {
-                BakedModel candidate = PlatformHooks.getModel(mc.getModelManager(), modelPath);
+                BakedModel candidate = LoaderHooks.getModel(mc.getModelManager(), modelPath);
                 if (candidate != null && candidate != mc.getModelManager().getMissingModel()) {
                     modelToRender = candidate;
                 }

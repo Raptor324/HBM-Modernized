@@ -42,6 +42,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * Chicago Pile MK1 des Originals ({@code com.hbm.blocks.machine.pile}, LEGACY): gebohrte Graphitbloecke mit Staeben.

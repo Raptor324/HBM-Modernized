@@ -17,13 +17,7 @@ import org.joml.Matrix4f;
  * ({@code SmallBlockPronter.drawSmolBlockAt}, 5/16 Block gross, Deckkraft 0.75) um das Kernbauteil. Saeulenbloecke
  * (Reaktionskammer, Superkuehler) zeigen oben/unten ihre Stirntextur wie {@code BlockPillar}.
  */
-//? if forge {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class StructWatzCoreRenderer implements com.hbm_m.client.render.HbmBerBounds<WatzBlocks.StructCoreBlockEntity> {
 
     private static final float MIN = 11F / 32F;

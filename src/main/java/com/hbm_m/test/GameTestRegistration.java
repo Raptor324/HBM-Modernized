@@ -20,15 +20,14 @@ import com.hbm_m.lib.RefStrings;
  * Forge — {@code @Mod.EventBusSubscriber}; NeoForge — {@code @EventBusSubscriber}.
  */
 
-//? if forge {
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+//? if forge {
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.event.RegisterGameTestsEvent;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 //?} elif neoforge {
-/*import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
+/*import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 
 @EventBusSubscriber(modid = RefStrings.MODID)
@@ -51,6 +50,14 @@ public final class GameTestRegistration {
         event.register(LegacyWoodBarrierGameTest.class);
         event.register(SteelTrapdoorGameTest.class);
         event.register(EnergyNetworkGameTest.class);
+        event.register(GasGameTest.class);
+        event.register(CableGameTest.class);
+        event.register(ArmorTableGameTest.class);
+        event.register(ContraptionMoveGameTest.class);
+        event.register(MultiblockTeardownGameTest.class);
+        event.register(TurbofanGameTest.class);
+        event.register(TurbofanIntegrationGameTest.class);
+        // event.register(NukeProfileGameTest.class); // disabled: takes too long
         event.register(LegacyBlockTableGameTest.class);
         event.register(GrenadeThrowGameTest.class);
         event.register(SpaceEnvironmentGameTest.class);
@@ -72,6 +79,14 @@ public final class GameTestRegistration {
         event.register(LegacyWoodBarrierGameTest.class);
         event.register(SteelTrapdoorGameTest.class);
         event.register(EnergyNetworkGameTest.class);
+        event.register(GasGameTest.class);
+        event.register(CableGameTest.class);
+        event.register(ArmorTableGameTest.class);
+        event.register(ContraptionMoveGameTest.class);
+        event.register(MultiblockTeardownGameTest.class);
+        event.register(TurbofanGameTest.class);
+        event.register(TurbofanIntegrationGameTest.class);
+        // event.register(NukeProfileGameTest.class); // disabled: takes too long
         event.register(LegacyBlockTableGameTest.class);
         event.register(GrenadeThrowGameTest.class);
         event.register(SpaceEnvironmentGameTest.class);
@@ -79,8 +94,5 @@ public final class GameTestRegistration {
         event.register(CreativeTabsGameTest.class); // Creative-Tabs bauen (NeoForge-Absturz 2026-10-13)
         event.register(BedrockFragmentRecipeGameTest.class);
     }
-    *///?}
+     *///?}
 }
-
-
-

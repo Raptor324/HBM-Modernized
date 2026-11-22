@@ -11,6 +11,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -40,6 +41,20 @@ public class MachineFelBlock extends DummyableMachineBlock {
                 .extra(-4, 1, 0)
                 .placementOffset(2)
                 .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
+
+    @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            { 1.9, 1.1, 2.5, 2.5, 0.4, -0.4 }
+        };
+    }
+
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            { 0, 1, -4, Direction.NORTH.get3DDataValue() }
+        }, facing);
     }
 
     @Override

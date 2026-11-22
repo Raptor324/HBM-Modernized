@@ -24,9 +24,9 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
 /**
- * Port der Marker aus {@code RenderOverhead} (1.7.10): Drahtgitterkaesten ohne Tiefentest, die der
- * Server ueber den Partikeltyp "marker" setzt (Satelliten-/Radar-/Drohnen-Ziele usw.), mit
- * Beschriftung und - sobald man genau hinschaut - der Entfernung in Metern.
+ * Port of markers from {@code RenderOverhead} (1.7.10): wireframe boxes rendered without depth testing,
+ * placed by the server via particle type "marker" (satellite, radar, and drone targets, etc.),
+ * with text labels and distance in meters when looked at directly.
  */
 public final class RenderOverhead {
 
@@ -67,13 +67,8 @@ public final class RenderOverhead {
                     { x1, y0, z0, x1, y0, z1 }, { x1, y1, z1, x1, y1, z0 }, { x1, y1, z1, x1, y0, z1 }, { x0, y1, z0, x0, y1, z1 },
                     { x0, y1, z1, x0, y0, z1 }, { x0, y1, z1, x1, y1, z1 }, { x0, y0, z1, x1, y0, z1 }, { x0, y0, z0, x0, y0, z1 } };
             for (float[] s : l) {
-                //? if < 1.21.1 {
-                buf.vertex(m, s[0], s[1], s[2]).color(r, g, b, 255).endVertex();
-                buf.vertex(m, s[3], s[4], s[5]).color(r, g, b, 255).endVertex();
-                //?} else {
-                /*buf.addVertex(m, s[0], s[1], s[2]).setColor(r, g, b, 255);
-                buf.addVertex(m, s[3], s[4], s[5]).setColor(r, g, b, 255);
-                *///?}
+                com.hbm_m.platform.RenderHooks.vertexColor(buf, m, s[0], s[1], s[2], r, g, b, 255);
+                com.hbm_m.platform.RenderHooks.vertexColor(buf, m, s[3], s[4], s[5], r, g, b, 255);
             }
             tagList.add(entry);
 
@@ -113,7 +108,7 @@ public final class RenderOverhead {
         RenderSystem.disableBlend();
     }
 
-    /** 1:1-Port von {@code RenderOverhead.drawTag(offset, distsq, ...)}. */
+    /** 1:1 port of {@code RenderOverhead.drawTag(offset, distsq, ...)}. */
     public static void drawTag(PoseStack pose, Camera camera, MultiBufferSource src, float offset, double distsq, String name,
                                double x, double y, double z, int dist, boolean depthTest, int color, int shadowColor) {
         if (distsq > (double) (dist * dist)) return;

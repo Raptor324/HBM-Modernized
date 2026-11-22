@@ -97,14 +97,11 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
 
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                trySubscribe(waterTank.getTankType(), level, pos.relative(dir), dir);
-                trySubscribe(lubricantTank.getTankType(), level, pos.relative(dir), dir);
-                trySubscribe(fuelTank.getTankType(), level, pos.relative(dir), dir);
+                trySubscribe(waterTank, level, pos.relative(dir), dir);
+                trySubscribe(lubricantTank, level, pos.relative(dir), dir);
+                trySubscribe(fuelTank, level, pos.relative(dir), dir);
             }
         }
-
-        boolean dirty = false;
-
         if (burnTime <= 0) {
             tryConsumeSolidFuel();
         }
@@ -120,7 +117,7 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
             long output = (long) (BASE_RATE * genMult);
             if (getEnergyStored() < getMaxEnergyStored()) {
                 setEnergyStored(Math.min(getMaxEnergyStored(), getEnergyStored() + output));
-                dirty = true;
+
             }
 
             if (burningSolid) {
@@ -130,10 +127,14 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
             }
         }
 
-        if (dirty) {
-            setChanged();
-            sendUpdateToClient();
-        }
+        // P6: пакет клиенту только при изменении состояния (энергия, горение, топливо)
+        syncIfStateChanged(getEnergyStored(),
+                (burnTime * 31L + maxBurnTime) * 31L + fp(fuelTank));
+    }
+
+    /** Подпись бака: тип жидкости + уровень заполнения. */
+    private static long fp(FluidTank tank) {
+        return tank.getTankType().hashCode() * 31L + tank.getFill();
     }
 
     private void tryConsumeSolidFuel() {
@@ -176,6 +177,9 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        // BaseMachineBlockEntity stores the inventory and the energy here; without the super call
+        // both were dropped on every save, so the machine came back empty and discharged.
+        super.writeNbtData(tag, registries);
         tag.putInt("burn_time", burnTime);
         tag.putInt("max_burn_time", maxBurnTime);
         waterTank.writeToNBT(tag, "tank_water");
@@ -185,6 +189,7 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         burnTime = tag.getInt("burn_time");
         maxBurnTime = tag.contains("max_burn_time") ? Math.max(1, tag.getInt("max_burn_time")) : 1;
         waterTank.readFromNBT(tag, "tank_water");

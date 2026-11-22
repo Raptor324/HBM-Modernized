@@ -30,8 +30,10 @@ public class LargeNukeMenu extends AbstractContainerMenu {
 
         for (int slot = 0; slot < type.slots(); slot++) {
             final int index = slot;
-            // Original: einfache Slots, jeder Gegenstand passt (Stapelgrenze ueber getMaxStackSize)
-            addSlot(new Slot(be, index, type.slotX(index), type.slotY(index)));
+            addSlot(new Slot(be, index, type.slotX(index), type.slotY(index)) {
+                @Override
+                public boolean mayPlace(ItemStack stack) { return be.canPlaceItem(index, stack); }
+            });
         }
 
         int invX = type.inventoryX();
@@ -51,32 +53,10 @@ public class LargeNukeMenu extends AbstractContainerMenu {
         return be.stillValid(player);
     }
 
-    /** Original {@code transferStackInSlot}: nur aus der Bombe ins Spielerinventar, nicht umgekehrt. */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack var3 = ItemStack.EMPTY;
-        Slot var4 = this.slots.get(index);
-
-        if (var4 != null && var4.hasItem()) {
-            ItemStack var5 = var4.getItem();
-            var3 = var5.copy();
-
-            if (index <= type.slots() - 1) {
-                if (!this.moveItemStackTo(var5, type.slots(), this.slots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-                return ItemStack.EMPTY;
-            }
-
-            if (var5.isEmpty()) {
-                var4.set(ItemStack.EMPTY);
-            } else {
-                var4.setChanged();
-            }
-        }
-
-        return var3;
+        // Machines-Konvention (wie NukeFatManMenu): kein Shift-Transfer aus der Bombe
+        return ItemStack.EMPTY;
     }
 }
 

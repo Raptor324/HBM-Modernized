@@ -7,13 +7,16 @@ import com.hbm_m.api.tile.IControlReceiver;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.missile.MissileTier4;
+import com.hbm_m.explosion.MissileWarheadEffects;
 import com.hbm_m.inventory.menu.LaunchPadRustedMenu;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
@@ -23,6 +26,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+
+import javax.annotation.Nullable;
 
 /**
  * 1:1 {@code TileEntityLaunchPadRusted}: kein Strom, kein Treibstoff. Die Rakete ist fest eingebaut
@@ -31,6 +37,8 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class LaunchPadRustedBlockEntity extends LaunchPadBaseBlockEntity implements IControlReceiver {
 
+    public static final int SLOT_LAUNCH_CODE = 1;
+    public static final int SLOT_LAUNCH_KEY = 2;
     private static final int RUSTED_SLOT_DESIGNATOR = 3;
 
     /** Original: {@code missileLoaded} - die verrostete Doomsday-Rakete steht auf der Rampe. */
@@ -166,11 +174,6 @@ public class LaunchPadRustedBlockEntity extends LaunchPadBaseBlockEntity impleme
         return this.missileLoaded;
     }
 
-    @Override
-    public boolean canLaunch() {
-        return this.missileLoaded;
-    }
-
     /** Original ist kein IRadarCommandReceiver: Radar-/Koordinatenbefehle starten hier nichts. */
     @Override
     public boolean launchToCoordinate(int targetX, int targetZ) {
@@ -180,6 +183,89 @@ public class LaunchPadRustedBlockEntity extends LaunchPadBaseBlockEntity impleme
     @Override
     public boolean launchToEntity(Entity entity) {
         return false;
+    }
+
+    /**
+     * 1.7.10 {@code launch()}: только Damaged Doomsday — предмет {@code notLaunchable()},
+     * который обычные пады отвергают; ржавый пад принимает его напрямую.
+     */
+    @Override
+    public boolean isMissileValid(@Nullable ItemStack stack) {
+        return stack != null && stack.is(ModItems.MISSILE_DOOMSDAY_RUSTED.get());
+    }
+
+    /** 1.7.10: ржавый пад не тратит энергию и флюиды. */
+    @Override
+    public boolean hasFuel() {
+        return true;
+    }
+
+    /** 1.7.10 {@code launch()}: помимо ракеты нужны {@code launch_code} + {@code launch_key}. */
+    @Override
+    public boolean canLaunch() {
+        return super.canLaunch()
+                && inventory.getStackInSlot(SLOT_LAUNCH_CODE).is(ModItems.LAUNCH_CODE.get())
+                && inventory.getStackInSlot(SLOT_LAUNCH_KEY).is(ModItems.LAUNCH_KEY.get());
+    }
+
+    /**
+     * 1.7.10 спавнит {@code EntityMissileDoomsdayRusted} напрямую, мимо общего
+     * реестра ракет пада (предмет {@code notLaunchable()}, в {@code MISSILES} не входит).
+     */
+    @Override
+    protected Entity instantiateMissile(int targetX, int targetZ) {
+        if (level == null) {
+            return null;
+        }
+        MissileTier4.MissileDoomsdayRusted missile = ModEntities.MISSILE_DOOMSDAY_RUSTED.get().create(level);
+        if (missile == null) {
+            return null;
+        }
+        Vec3 launch = launchPosInWorld();
+        missile.initLaunch(launch.x, launch.y, launch.z, targetX, targetZ);
+        BlockState padState = level.getBlockState(worldPosition);
+        if (padState.hasProperty(HorizontalDirectionalBlock.FACING)) {
+            missile.setLaunchFacing(padState.getValue(HorizontalDirectionalBlock.FACING));
+        }
+        return missile;
+    }
+
+    /**
+     * 1.7.10 {@code launch()}: звук, {@code missileLoaded = false} и расход
+     * <b>одного {@code launch_code}</b>; {@code launch_key} остаётся, энергия
+     * и флюиды не тратятся.
+     */
+    @Override
+    protected void finalizeLaunch(Entity missile) {
+        if (level == null || level.isClientSide) {
+            return;
+        }
+
+        level.addFreshEntity(missile);
+        Vec3 launch = launchPosInWorld();
+        if (level instanceof ServerLevel server) {
+            MissileWarheadEffects.spawnLaunchSmoke(server, launch.x, launch.y, launch.z);
+        }
+        level.playSound(null,
+                launch.x,
+                launch.y - getLaunchOffset(),
+                launch.z,
+                ModSounds.MISSILE_TAKEOFF.get(),
+                SoundSource.PLAYERS,
+                15.0F, 1.0F);
+
+        inventory.getStackInSlot(SLOT_LAUNCH_CODE).shrink(1);
+        inventory.getStackInSlot(getMissileSlot()).shrink(1);
+        this.delay = 100;
+        setChanged();
+    }
+
+    /** Точка старта (пад + offset), как в базе — через Sable-совместимость. */
+    private Vec3 launchPosInWorld() {
+        return com.hbm_m.compat.sable.SableCompat.toWorld(level,
+                worldPosition.getX() + 0.5D,
+                worldPosition.getY() + getLaunchOffset(),
+                worldPosition.getZ() + 0.5D);
     }
 
     @Override

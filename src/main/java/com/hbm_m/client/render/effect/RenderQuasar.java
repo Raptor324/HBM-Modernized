@@ -6,7 +6,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Порт {@code com.hbm.render.entity.effect.RenderQuasar}.
+ * Port of {@code com.hbm.render.entity.effect.RenderQuasar}.
  */
 public class RenderQuasar extends RenderBlackHole<BlackHoleEntity> {
 

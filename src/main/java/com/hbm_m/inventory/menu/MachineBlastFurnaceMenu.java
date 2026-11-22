@@ -15,6 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.inventory.ClickType;
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineBlastFurnaceMenu extends AbstractContainerMenu {
     public final MachineBlastFurnaceBlockEntity blockEntity;
@@ -35,7 +36,7 @@ public class MachineBlastFurnaceMenu extends AbstractContainerMenu {
     public MachineBlastFurnaceMenu(int containerId, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.MACHINE_BLAST_FURNACE_MENU.get(), containerId);
         if (!(entity instanceof MachineBlastFurnaceBlockEntity be)) {
-            throw new IllegalStateException("Expected MachineBlastFurnaceBlockEntity at position, got: " + entity);
+            throw new MenuBlockEntityMissingException("Expected MachineBlastFurnaceBlockEntity at position, got: " + entity);
         }
         blockEntity = be;
         checkContainerDataCount(data, 6);
@@ -150,8 +151,7 @@ public class MachineBlastFurnaceMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
-        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.MACHINE_BLAST_FURNACE.get());
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

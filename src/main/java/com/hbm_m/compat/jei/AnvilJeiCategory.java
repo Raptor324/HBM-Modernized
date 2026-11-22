@@ -25,11 +25,13 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  * JEI-Port von {@code AnvilRecipeHandler} (Konstruktion): {@code gui_nei_anvil.png}, Anordnung nach Anzahl der
  * Zutaten/Ausgaben, Ambosse genau der unteren Stufe als Katalysator, Chance als roter Tooltip.
  */
+@OnlyIn(Dist.CLIENT)
 public class AnvilJeiCategory implements IRecipeCategory<AnvilRecipe> {
 
     public static final RecipeType<AnvilRecipe> RECIPE_TYPE =

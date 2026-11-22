@@ -36,7 +36,7 @@ public class MicrowaveSpeedC2SPacket implements C2SPacket {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
 
             ServerLevel level = player.serverLevel();
-            BlockEntity be = level.getBlockEntity(msg.pos);
+            BlockEntity be = ModPacketHandler.blockEntityAt(player, msg.pos);
 
             if (be instanceof MachineMicrowaveBlockEntity microwave) {
                 microwave.adjustSpeed(msg.delta);

@@ -13,7 +13,6 @@ import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge || neoforge {
 /**
  * JEI-Kategorie des katalytischen Reformers (siehe {@link CatalyticReformerRecipe}).
  *
@@ -51,7 +50,3 @@ public class CatalyticReformerJeiCategory extends JeiFluidRecipeCategory<Catalyt
                 FluidStack.create(recipe.getOutputC(), recipe.getOutputCMb()));
     }
 }
-//?} else {
-/*public final class CatalyticReformerJeiCategory {
-    private CatalyticReformerJeiCategory() {}
-}*///?}

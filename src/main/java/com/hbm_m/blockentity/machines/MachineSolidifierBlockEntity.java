@@ -70,6 +70,7 @@ public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity impleme
     }
 
     private void serverTick(Level level, BlockPos pos) {
+        ensureNetworkInitialized();
         chargeFromBatterySlot(SLOT_BATTERY);
 
         ItemStack[] slots = inventorySlotArray();
@@ -99,7 +100,16 @@ public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity impleme
         }
 
         setChanged();
-        sendUpdateToClient();
+        long lo = com.hbm_m.recipe.index.CachedRecipeResolver.sign(5,
+                getEnergyStored(), progress, usage, processTime,
+                tank.getTankType() == null ? 0L : tank.getTankType().hashCode(), tank.getFluidAmountMb());
+        long hi = com.hbm_m.recipe.index.CachedRecipeResolver.sign(6,
+                com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_OUTPUT)),
+                com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_BATTERY)),
+                com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_UPGRADE_1)),
+                com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_UPGRADE_2)),
+                com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_FLUID_ID)));
+        syncIfStateChanged(lo, hi);
     }
 
     private boolean canProcess() {
@@ -111,7 +121,7 @@ public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity impleme
 
         ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
         if (!current.isEmpty()) {
-            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, recipe.getOutput())) return false;
+            if (!com.hbm_m.platform.StackNbt.sameItemSameTags(current, recipe.getOutput())) return false;
             if (current.getCount() + recipe.getOutput().getCount() > current.getMaxStackSize()) return false;
         }
 
@@ -141,14 +151,23 @@ public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity impleme
     /**
      * Data-driven поиск SolidificationRecipe по жидкости бака
      * (заменяет статический SolidificationRecipes.get).
+     * Кэшируется через {@link CachedRecipeResolver}: подпись — тип жидкости бака,
+     * сканер — только матч по списку рецептов (CONTRACT 1).
      */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<SolidificationRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
+
     @Nullable
     private SolidificationRecipe findSolidificationRecipe(Fluid fluid) {
         if (level == null) return null;
-        for (SolidificationRecipe recipe : RecipeHooks.getAllRecipes(level, SolidificationRecipe.Type.INSTANCE)) {
-            if (recipe.matchesFluid(fluid)) return recipe;
-        }
-        return null;
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(4,
+                fluid == null ? 0L : fluid.hashCode());
+        return recipeResolver.resolve(level, SolidificationRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            for (SolidificationRecipe recipe : RecipeHooks.getAllRecipes(level, SolidificationRecipe.Type.INSTANCE)) {
+                if (recipe.matchesFluid(fluid)) return recipe;
+            }
+            return null;
+        });
     }
 
     private static final Map<UpgradeType, Integer> VALID_UPGRADES = Map.of(UpgradeType.SPEED, 3, UpgradeType.POWER, 3);

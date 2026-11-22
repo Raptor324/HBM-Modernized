@@ -18,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * 1:1 {@code ModuleMachinePrecAss} + {@code ModuleMachineBase}: 9 positionsgebundene Eingaenge (Slots 4-12), 9 Ausgaenge

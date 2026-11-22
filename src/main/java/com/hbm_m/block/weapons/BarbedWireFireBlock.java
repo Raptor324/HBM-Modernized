@@ -21,6 +21,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.hbm_m.platform.MobHooks;
 
 public class BarbedWireFireBlock extends Block {
 
@@ -49,7 +50,7 @@ public class BarbedWireFireBlock extends Block {
                     living.hurt(level.damageSources().cactus(), 2.0F);
 
                     // Поджигаем на 4 секунды (80 тиков)
-                    com.hbm_m.platform.PlatformHooks.setSecondsOnFire(living, 4);
+                    com.hbm_m.platform.MobHooks.setSecondsOnFire(living, 4);
                 }
             }
         }

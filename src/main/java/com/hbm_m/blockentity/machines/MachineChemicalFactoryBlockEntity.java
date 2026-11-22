@@ -2,6 +2,7 @@ package com.hbm_m.blockentity.machines;
 
 import java.util.List;
 
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,6 +11,7 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.interfaces.IFluidPartDelegateProvider;
 import com.hbm_m.interfaces.IUpgradeInfoProvider;
+
 import com.hbm_m.inventory.UpgradeManager;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -23,12 +25,14 @@ import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.sound.ClientSoundBootstrap;
 import com.hbm_m.util.BobMathUtil;
 
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -86,6 +90,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
 
     private final MachineModuleChemplant[] chemplantModule = new MachineModuleChemplant[LANE_COUNT];
     public final boolean[] didProcess = new boolean[LANE_COUNT];
+
     private final UpgradeManager upgradeManager = new UpgradeManager();
 
     private static final java.util.Map<UpgradeType, Integer> VALID_UPGRADES = java.util.Map.of(
@@ -99,6 +104,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
     public int anim;
     public int prevAnim;
     public boolean frame = false;
+
 
     protected final ContainerData data = new ContainerData() {
         @Override
@@ -115,6 +121,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
                 case 2 -> (int) (getMaxEnergyStored() & 0xFFFFFFFFL);
                 case 3 -> (int) ((getMaxEnergyStored() >> 32) & 0xFFFFFFFFL);
                 case 4 -> (didProcess[0] ? 1 : 0) | (didProcess[1] ? 2 : 0) | (didProcess[2] ? 4 : 0) | (didProcess[3] ? 8 : 0);
+
                 default -> 0;
             };
         }
@@ -153,6 +160,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
                     new FluidTank[] { inputTanks[i * 3], inputTanks[1 + i * 3], inputTanks[2 + i * 3] },
                     new FluidTank[] { outputTanks[i * 3], outputTanks[1 + i * 3], outputTanks[2 + i * 3] },
                     null);
+
         }
     }
 
@@ -166,6 +174,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
             if (level.getGameTime() % 20 == 0) {
                 be.frame = !level.getBlockState(pos.above(3)).isAir();
             }
+
             be.clientTick();
             return;
         }
@@ -179,6 +188,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
         }
         long maxPower = BobMathUtil.max(be.getEnergyStored(), nextMaxPower, BASE_MAX_POWER);
         if (maxPower != be.getMaxEnergyStored()) be.setEnergyCapacity(maxPower);
+
 
         be.chargeFromBattery();
         be.upgradeManager.checkSlots(be.inventory, SLOT_UPGRADE_START, SLOT_UPGRADE_END, VALID_UPGRADES);
@@ -221,6 +231,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
                 int toMove = BobMathUtil.min(in.getCapacityMb() - in.getFluidAmountMb(), out.getFluidAmountMb(), 50);
                 if (toMove > 0) {
                     in.fillMb(in.getTankType(), toMove);
+
                     out.drainMb(toMove);
                 }
             }
@@ -232,6 +243,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
         }
 
         if (markDirty) {
+
             be.setChanged();
             be.sendUpdateToClient();
         }
@@ -239,6 +251,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
 
     public boolean canCool() {
         return water.getFluidAmountMb() >= 100 && lps.getFluidAmountMb() <= lps.getCapacityMb() - 100;
+
     }
 
     private void chargeFromBattery() {
@@ -251,14 +264,16 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
     }
 
     //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
     //?}
     private void clientTick() {
         // Original: CHEMPLANT_LOOP, solange ein Modul arbeitet
+        prevAnim = anim;
+        if (isAnyProcessing()) anim++;
         ClientSoundBootstrap.updateSound(this, isAnyProcessing(), this::newSoundInstance);
     }
 
     private Object newSoundInstance() {
+
         try {
             return Class.forName(CHEMICAL_PLANT_SOUND_INSTANCE).getConstructor(BlockPos.class).newInstance(this.getBlockPos());
         } catch (ReflectiveOperationException e) {
@@ -304,6 +319,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
                 c.relative(dir, -1).relative(rot, 2),
                 c.relative(dir, 1).relative(rot, -2),
                 c.relative(dir, -1).relative(rot, -2),
+
         };
     }
 
@@ -390,7 +406,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
     }
     //?} elif neoforge {
     /*@Override
-    public net.neoforged.neoforge.items.IItemHandler getConditionalItemHandler(BlockPos part, @Nullable Direction side) {
+    public net.minecraftforge.items.IItemHandler getConditionalItemHandler(BlockPos part, @Nullable Direction side) {
         BlockPos[] io = ioParts();
         for (int i = 0; i < io.length; i++) {
             if (io[i].equals(part)) {
@@ -409,14 +425,14 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
-            net.neoforged.neoforge.items.IItemHandler h = new SlotView(ACCESSIBLE);
+            net.minecraftforge.items.IItemHandler h = new SlotView(ACCESSIBLE);
             return com.hbm_m.platform.LazyCap.of(() -> h).cast();
         }
         return super.getHbmCapability(cap, side);
     }
 
     /^* Sicht auf ausgewaehlte Slots mit den Original-Regeln fuer Einfuegen/Entnehmen. ^/
-    private class SlotView implements net.neoforged.neoforge.items.IItemHandler {
+    private class SlotView implements net.minecraftforge.items.IItemHandler {
         private final int[] map;
         SlotView(int[] map) { this.map = map; }
         @Override public int getSlots() { return map.length; }
@@ -489,6 +505,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
         return didProcess[0] || didProcess[1] || didProcess[2] || didProcess[3];
     }
 
+
     public float getAnim(float partialTicks) {
         return prevAnim + (anim - prevAnim) * partialTicks;
     }
@@ -560,6 +577,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 
+
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
@@ -571,6 +589,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
             tag.putBoolean("didProcess" + i, didProcess[i]);
             CompoundTag laneTag = new CompoundTag();
             chemplantModule[i].writeNBT(laneTag);
+
             tag.put("lane" + i, laneTag);
         }
     }
@@ -620,5 +639,12 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
             if ((PREFIX_VALUE + "active" + i).equals(name))     return "" + (this.didProcess[i] ? 1 : 0);
         }
         return null;
+
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return new SlotView(ACCESSIBLE);
     }
 }

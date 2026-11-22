@@ -93,6 +93,7 @@ public class PedestalBlock extends BaseEntityBlock {
         return pedestalEntries.get(dim);
     }
 
+
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
@@ -122,7 +123,7 @@ public class PedestalBlock extends BaseEntityBlock {
             return InteractionResult.sidedSuccess(level.isClientSide);
         } else if (!current.isEmpty() && held.isEmpty()) {
             if (!level.isClientSide) {
-                player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, current.copy());
+                player.getInventory().placeItemBackInInventory(current.copy());
                 pedestal.setItem(ItemStack.EMPTY);
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
@@ -232,6 +233,7 @@ public class PedestalBlock extends BaseEntityBlock {
         if (!world.isLoaded(p)) return null;
         return world.getBlockEntity(p) instanceof PedestalBlockEntity pedestal ? pedestal : null;
     }
+
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {

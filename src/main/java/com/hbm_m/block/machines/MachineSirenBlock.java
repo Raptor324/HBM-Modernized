@@ -28,14 +28,6 @@ public class MachineSirenBlock extends BaseEntityBlock {
     public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
 
 
-    /** audit10: 1:1 {@code MachineSiren.breakBlock} - Inhalt faellt beim Entfernen heraus. */
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
-        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.machines.MachineSirenBlockEntity be) {
-            com.hbm_m.block.BlockDropUtil.dropSlots(level, pos, be.getInventory(), 0, Integer.MAX_VALUE);
-        }
-        super.onRemove(state, level, pos, newState, moving);
-    }
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineSirenBlockEntity(pos, state);
@@ -82,4 +74,12 @@ public class MachineSirenBlock extends BaseEntityBlock {
         return CODEC;
     }
     *///?}
+    @Override
+    public void onRemove(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level,
+                            net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock())) {
+            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
 }

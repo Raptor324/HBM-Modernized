@@ -66,7 +66,28 @@ public final class JeiNeiLayout {
         };
     }
 
+    /**
+     * 1:1 {@code NEIUniversalHandler.getOutputCoords}: Faelle 1-8 wie beim Generic-Handler, ab 9 aber
+     * anders als dort das Raster {@code i % 4 * 18, i / 4 * 18} (der Generic-Handler faellt auf
+     * Null-Positionen zurueck).
+     */
     public static int[][] getUniversalOutputCoords(int count) {
-        return getGenericOutputSlotPositions(count);
+        return switch (count) {
+            case 1 -> new int[][]{{102, 24}};
+            case 2 -> new int[][]{{102, 24}, {120, 24}};
+            case 3 -> new int[][]{{102, 24}, {120, 24}, {138, 24}};
+            case 4 -> new int[][]{{102, 15}, {120, 15}, {102, 33}, {120, 33}};
+            case 5 -> new int[][]{{102, 15}, {120, 15}, {102, 33}, {120, 33}, {138, 24}};
+            case 6 -> new int[][]{{102, 6}, {120, 6}, {102, 24}, {120, 24}, {102, 42}, {120, 42}};
+            case 7 -> new int[][]{{102, 6}, {120, 6}, {102, 24}, {120, 24}, {102, 42}, {120, 42}, {138, 24}};
+            case 8 -> new int[][]{{102, 6}, {120, 6}, {102, 24}, {120, 24}, {102, 42}, {120, 42}, {138, 24}, {138, 42}};
+            default -> {
+                int[][] slots = new int[count][2];
+                for (int i = 0; i < count; i++) {
+                    slots[i] = new int[]{i % 4 * 18, i / 4 * 18};
+                }
+                yield slots;
+            }
+        };
     }
 }

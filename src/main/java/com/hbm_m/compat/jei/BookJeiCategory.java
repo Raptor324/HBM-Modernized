@@ -1,5 +1,4 @@
 package com.hbm_m.compat.jei;
-//? if forge || neoforge {
 
 import java.util.Arrays;
 
@@ -60,7 +59,3 @@ public class BookJeiCategory implements IRecipeCategory<MagicRecipe> {
         builder.addSlot(RecipeIngredientRole.OUTPUT, 119, 24).addItemStack(recipe.getResult());
     }
 }
-//?} else {
-/*public final class BookJeiCategory {
-    private BookJeiCategory() {}
-}*///?}

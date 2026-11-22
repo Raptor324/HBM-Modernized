@@ -84,7 +84,7 @@ public class MachineStrandCasterMenu extends AbstractContainerMenu {
         BlockEntity be = inventory.player.level().getBlockEntity(pos);
         if (be instanceof MachineStrandCasterBlockEntity caster) return caster;
         if (inventory.player.level().isClientSide) return null;
-        throw new IllegalStateException("No MachineStrandCasterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":strand_caster_menu");
+        throw new MenuBlockEntityMissingException("No MachineStrandCasterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":strand_caster_menu");
     }
 
     public MachineStrandCasterBlockEntity getBlockEntity() {

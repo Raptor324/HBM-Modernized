@@ -13,9 +13,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+import com.hbm_m.platform.ModItemStackHandler;
 
 public class MachineAutocrafterMenu extends AbstractContainerMenu {
 
@@ -23,7 +21,7 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
 
     private static final int SLOT_OUTPUT = MachineAutocrafterBlockEntity.SLOT_OUTPUT;
     private static final int SLOT_BATTERY = MachineAutocrafterBlockEntity.SLOT_BATTERY;
-    private static final int MACHINE_SLOT_COUNT = 11;
+    private static final int MACHINE_SLOT_COUNT = 21; // 9 template + preview + 9 working grid + output + battery
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -155,14 +153,7 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
     }
 
     private static boolean isEnergyItem(ItemStack stack) {
-        if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
-        //? if forge {
-        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-        //?} elif neoforge {
-        /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
-        *///?} else {
-        /*return false;
-        *///?}
+        return ItemEnergyAccess.isEnergySource(stack);
     }
 
     private static MachineAutocrafterBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
@@ -171,7 +162,7 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineAutocrafterBlockEntity autocrafter) {
             return autocrafter;
         }
-        throw new IllegalStateException("No MachineAutocrafterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":autocrafter_menu");
+        throw new MenuBlockEntityMissingException("No MachineAutocrafterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":autocrafter_menu");
     }
 
     public MachineAutocrafterBlockEntity getBlockEntity() {
@@ -180,11 +171,7 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override
@@ -206,7 +193,11 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
                     if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (!this.moveItemStackTo(slotStack, 0, 9, false)) {
+                } else if (!this.moveItemStackTo(slotStack,
+                        MachineAutocrafterBlockEntity.RECIPE_START,
+                        MachineAutocrafterBlockEntity.RECIPE_START + MachineAutocrafterBlockEntity.GRID_SIZE, false)) {
+                    // Nur ins Arbeitsgitter (10-18) - die Vorlage (0-8) ist ein Geisterbild und
+                    // nimmt nichts per Shift-Klick an (siehe isItemValidForSlot im BlockEntity).
                     return ItemStack.EMPTY;
                 }
             }

@@ -1,0 +1,8 @@
+{
+  "comparator_output": 1,
+  "description": {
+    "translate": "item.hbm_m.music_disc_bunker.desc"
+  },
+  "length_in_seconds": 120,
+  "sound_event": "hbm_m:music_disc.bunker"
+}

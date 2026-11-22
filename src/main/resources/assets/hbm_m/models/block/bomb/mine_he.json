@@ -5,7 +5,7 @@
   },
   "children": {
     "mine_he_model": {
-      "loader": "forge:obj",
+      "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/bomb/mine_he.obj",
       "flip_v": true,
       "textures": {

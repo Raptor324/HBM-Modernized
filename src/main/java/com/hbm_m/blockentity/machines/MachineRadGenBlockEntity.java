@@ -6,8 +6,10 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineRadGenMenu;
 import com.hbm_m.interfaces.IEnergyModeHolder;
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.RadGenRecipe;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -19,6 +21,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * RadGen - Port von {@code TileEntityMachineRadGen} (1.7.10 Original). 12 parallele
@@ -117,26 +120,44 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
             }
         }
 
-        sendUpdateToClient();
+        // P6: клиентский пакет только при изменении энергии, флагов очередей или сегмента прогресса.
+        long queueFlags = 0L;
+        long progressBuckets = 0L;
+        for (int i = 0; i < QUEUE_COUNT; i++) {
+            if (processing[i] != null) queueFlags |= (1L << i);
+            progressBuckets = progressBuckets * 31L
+                    + (maxProgress[i] <= 0 ? 0L : (long) progress[i] * 15L / maxProgress[i]);
+        }
+        syncIfStateChanged(getEnergyStored() * 31L + (isOn ? 1L : 0L), queueFlags * 961L + progressBuckets);
     }
 
-    /** Data-driven поиск RadGenRecipe по входному стаку (заменяет статический RadGenRecipes.get). */
+    /**
+     * Data-driven поиск RadGenRecipe по входному стаку (заменяет статический RadGenRecipes.get).
+     * Кэшированный скан: подпись — фингерпринт стака-АРГУМЕНТА (value-keyed, P4): одинаковые
+     * стаки разных слотов очереди легитимно шарят ответ, коллизий по позициям нет.
+     */
     @org.jetbrains.annotations.Nullable
     private RadGenRecipe findRecipe(ItemStack stack) {
         Level level = getLevel();
         if (level == null) return null;
-        for (RadGenRecipe recipe : RecipeHooks.getAllRecipes(level, RadGenRecipe.Type.INSTANCE)) {
-            if (recipe.matches(stack)) return recipe;
-        }
-        return null;
+        long signature = CachedRecipeResolver.sign(3, StackNbt.fingerprint(stack));
+        return recipeResolver.resolve(level, RadGenRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            for (RadGenRecipe recipe : all) {
+                if (recipe.matches(stack)) return recipe;
+            }
+            return null;
+        });
     }
+
+    /** Кэшированный скан рецептов: подпись — входной стак, сканер — только матч по списку. */
+    private final CachedRecipeResolver<RadGenRecipe> recipeResolver = new CachedRecipeResolver<>();
 
     private boolean canAcceptOutput(int queue, RadGenRecipe recipe) {
         ItemStack result = recipe.getOutput();
         if (result.isEmpty()) return true;
         ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT_START + queue);
         if (current.isEmpty()) return true;
-        return com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)
+        return com.hbm_m.platform.StackNbt.sameItemSameTags(current, result)
                 && current.getCount() + result.getCount() <= current.getMaxStackSize();
     }
 
@@ -172,7 +193,7 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
             if (processing[i] != null) {
                 CompoundTag entry = new CompoundTag();
                 entry.putByte("slot", (byte) i);
-                entry.put("stack", com.hbm_m.platform.PlatformHooks.safeItemSave(processing[i], registries));
+                entry.put("stack", com.hbm_m.platform.StackNbt.saveNew(processing[i], registries));
                 list.add(entry);
             }
         }
@@ -198,7 +219,7 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
             CompoundTag entry = list.getCompound(i);
             int slot = entry.getByte("slot");
             if (slot >= 0 && slot < QUEUE_COUNT) {
-                processing[slot] = com.hbm_m.platform.PlatformHooks.itemStackOf(entry.getCompound("stack"), registries);
+                processing[slot] = com.hbm_m.platform.StackNbt.parse(entry.getCompound("stack"), registries);
             }
         }
     }

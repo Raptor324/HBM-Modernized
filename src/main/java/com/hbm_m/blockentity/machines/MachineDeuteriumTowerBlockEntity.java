@@ -71,7 +71,6 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity imp
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineDeuteriumTowerBlockEntity be) {
         if (level.isClientSide()) return;
-
         FluidTank water = be.tanks[TANK_WATER];
         FluidTank heavyWater = be.tanks[TANK_HEAVY_WATER];
 
@@ -97,20 +96,32 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity imp
         // Original getConPos/subscribeToAllAround/sendFluidToAll: alle acht Nachbarfelder rund um den 2x2-Sockel
         if (level instanceof net.minecraft.server.level.ServerLevel server) {
             java.util.Set<BlockPos> base = be.basePositions(state);
+            boolean probeDue = be.probeDue(20);
             for (BlockPos b : base) {
                 for (net.minecraft.core.Direction d : net.minecraft.core.Direction.Plane.HORIZONTAL) {
                     BlockPos at = b.relative(d);
                     if (base.contains(at)) continue;
-                    be.trySubscribe(water.getTankType(), server, at, d);
+                    if (probeDue) be.trySubscribe(water.getTankType(), server, at, d);
                     if (heavyWater.getFill() > 0) be.tryProvide(heavyWater, server, at, d);
                 }
             }
         }
 
+        be.syncIfStateChanged(be.getEnergyStored(), be.tankSyncSignature());
         if (dirty) {
             be.setChanged();
             be.sendUpdateToClient();
         }
+    }
+
+    /** Anti-Spam-Signatur: Typ + Fuellstand beider Tanks (Muster wie CatalyticReformer/VacuumDistill). */
+    private long tankSyncSignature() {
+        long h = tankFingerprint(tanks[TANK_WATER]);
+        return h * 31L + tankFingerprint(tanks[TANK_HEAVY_WATER]);
+    }
+
+    private static long tankFingerprint(FluidTank tank) {
+        return (tank.getTankType() == null ? 0L : tank.getTankType().hashCode() * 31L) + tank.getFill();
     }
 
     /** Weltpositionen der untersten Strukturebene (Sockel) samt Controller. */
@@ -140,7 +151,6 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity imp
     public FluidTank getTank(int index) {
         return tanks[index];
     }
-
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
@@ -159,4 +169,8 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity imp
     @Nullable @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return null; }
     @Override protected Component getDefaultName() { return Component.translatable("container.hbm_m.deuterium_tower"); }
     @Override protected boolean isItemValidForSlot(int slot, ItemStack stack) { return false; }
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
+    }
 }

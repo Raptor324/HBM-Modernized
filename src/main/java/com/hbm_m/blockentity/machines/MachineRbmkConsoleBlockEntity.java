@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.rbmk.*;
 import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity.ColumnType;
+import com.hbm_m.util.Compat;
 import com.hbm_m.inventory.menu.MachineRbmkConsoleMenu;
 import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.core.BlockPos;
@@ -172,7 +173,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
                 int      ri    = x - GRID_HALF, rj = z - GRID_HALF;
                 BlockPos cPos  = reactorOrigin.offset(rotatedX(ri, rj), 0, rotatedZ(ri, rj));
 
-                if (level.getBlockEntity(cPos) instanceof RBMKColumnBlockEntity col) {
+                if (Compat.getTileStandard(level, cPos) instanceof RBMKColumnBlockEntity col) {
                     CompoundTag d = col.getNBTForConsole();
                     d.putDouble("heat",      col.heat);
                     d.putDouble("maxHeat",   col.maxHeat());
@@ -184,6 +185,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
                     // console tooltip can append its "Moderated" line. It was never written, so
                     // that line could never appear no matter how the tooltip was built.
                     if (col.isModerated()) d.putBoolean("moderated", true);
+
 
                     if (col instanceof RBMKRodBlockEntity rod)
                         totalFlux += (int) rod.lastFluxQuantity;
@@ -287,7 +289,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
             case 0 -> { // set control rod level
                 for (int idx : selected) {
                     BlockPos cPos = idxToPos(idx);
-                    if (cPos != null && level.getBlockEntity(cPos) instanceof RBMKControlBlockEntity rod)
+                    if (cPos != null && Compat.getTileStandard(level, cPos) instanceof RBMKControlBlockEntity rod)
                         rod.setTarget(dVal);
                 }
             }
@@ -299,7 +301,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
                 // rods to actually move through their range) could never fire.
                 for (int i = 0; i < AREA; i++) {
                     BlockPos cPos = idxToPos(i);
-                    if (cPos != null && level.getBlockEntity(cPos) instanceof RBMKControlBlockEntity rod) {
+                    if (cPos != null && Compat.getTileStandard(level, cPos) instanceof RBMKControlBlockEntity rod) {
                         rod.setTarget(0);
                         rod.setChanged();
                     }
@@ -308,7 +310,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
             case 2 -> { // assign color group
                 for (int idx : selected) {
                     BlockPos cPos = idxToPos(idx);
-                    if (cPos != null && level.getBlockEntity(cPos) instanceof RBMKControlBlockEntity rod) {
+                    if (cPos != null && Compat.getTileStandard(level, cPos) instanceof RBMKControlBlockEntity rod) {
                         rod.color = (short) iVal;
                         rod.setChanged();
                     }
@@ -335,7 +337,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
             case 6 -> { // cycle the steam compressor on every selected boiler channel
                 for (int idx : selected) {
                     BlockPos cPos = idxToPos(idx);
-                    if (cPos != null && level.getBlockEntity(cPos)
+                    if (cPos != null && Compat.getTileStandard(level, cPos)
                             instanceof com.hbm_m.blockentity.machines.rbmk.RBMKBoilerBlockEntity boiler) {
                         boiler.cycleCompressor();
                     }
@@ -447,5 +449,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
     @Override
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(worldPosition.getX() - 2, worldPosition.getY(), worldPosition.getZ() - 2, worldPosition.getX() + 3, worldPosition.getY() + 4, worldPosition.getZ() + 3);
+
     }
+
 }

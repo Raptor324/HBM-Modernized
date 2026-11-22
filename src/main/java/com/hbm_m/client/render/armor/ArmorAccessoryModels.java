@@ -10,7 +10,7 @@ import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.resources.ResourceLocation;
 
-/** Die Quader-Modelle {@code ModelGoggles} und {@code ModelJetPack} (1.7.10) als Layer-Definitionen. */
+/** Cuboid models {@code ModelGoggles} and {@code ModelJetPack} (1.7.10) as layer definitions. */
 public final class ArmorAccessoryModels {
 
     private ArmorAccessoryModels() {}
@@ -22,7 +22,7 @@ public final class ArmorAccessoryModels {
         parent.addOrReplaceChild(name, CubeListBuilder.create().texOffs(u, v).mirror().addBox(0F, 0F, 0F, w, h, d), PartPose.offset(px, py, pz));
     }
 
-    /** ModelGoggles: Kinder relativ zum Kopf-Gelenkpunkt. */
+    /** ModelGoggles: children relative to head pivot. */
     public static LayerDefinition createGoggles() {
         MeshDefinition mesh = new MeshDefinition();
         PartDefinition google = mesh.getRoot().addOrReplaceChild("google", CubeListBuilder.create(), PartPose.ZERO);
@@ -34,7 +34,7 @@ public final class ArmorAccessoryModels {
         return LayerDefinition.create(mesh, 64, 32);
     }
 
-    /** ModelJetPack: Wurzel bei (0,0,-2), die Kinder per convertToChild relativ dazu; beim Rendern liegt die Wurzel im Rumpf-Gelenkpunkt. */
+    /** ModelJetPack: root at (0,0,-2), children relative via convertToChild; at render time root lies at body pivot. */
     public static LayerDefinition createJetpack() {
         MeshDefinition mesh = new MeshDefinition();
         PartDefinition jet = mesh.getRoot().addOrReplaceChild("jetpack", CubeListBuilder.create(), PartPose.ZERO);

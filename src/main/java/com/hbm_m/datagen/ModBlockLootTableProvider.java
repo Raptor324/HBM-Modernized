@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.machines.pile.BlockGraphiteDrilledBase;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
@@ -14,6 +15,7 @@ import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.advancements.critereon.EnchantmentPredicate;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.advancements.critereon.StatePropertiesPredicate;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
@@ -29,6 +31,8 @@ import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount;
 import net.minecraft.world.level.storage.loot.functions.CopyNbtFunction;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
+import net.minecraft.world.level.storage.loot.predicates.ExplosionCondition;
+import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
 import net.minecraft.world.level.storage.loot.predicates.MatchTool;
 import net.minecraft.world.level.storage.loot.providers.nbt.ContextNbtProvider;
@@ -236,6 +240,18 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropDoubleSlab(ModBlocks.DECO_RBMK_PANEL_SLAB4.get(), ModBlocks.DECO_RBMK_PANEL_SLAB2.get());
         dropDoubleSlab(ModBlocks.DECO_RBMK_SMOOTH_PANEL_SLAB4.get(), ModBlocks.DECO_RBMK_SMOOTH_PANEL_SLAB2.get());
 
+        // 1.1.1) Конденсаторы сохраняют заряд при дропе (оригинал: IPersistentNBT getDrops /
+        // restoreData). Ключи "energy"/"capacity" пишет BaseMachineBlockEntity.writeNbtData.
+        dropCapacitorWithNbt(ModBlocks.CAPACITOR_COPPER.get());
+        dropCapacitorWithNbt(ModBlocks.CAPACITOR_GOLD.get());
+        dropCapacitorWithNbt(ModBlocks.CAPACITOR_NIOBIUM.get());
+        dropCapacitorWithNbt(ModBlocks.CAPACITOR_SCHRABIDATE.get());
+        dropCapacitorWithNbt(ModBlocks.CAPACITOR_TANTALIUM.get());
+
+        // 1.2) Breaking a stacked RBMK panel slab returns both singles it was made of.
+        dropDoubleSlab(ModBlocks.DECO_RBMK_PANEL_SLAB4.get(), ModBlocks.DECO_RBMK_PANEL_SLAB2.get());
+        dropDoubleSlab(ModBlocks.DECO_RBMK_SMOOTH_PANEL_SLAB4.get(), ModBlocks.DECO_RBMK_SMOOTH_PANEL_SLAB2.get());
+
         // 2)  ПЕРЕОПРЕДЕЛЯЕМ для ящиков - ПУСТЫЕ таблицы!
         dropEmptyTable(ModBlocks.CRATE_IRON.get());
         dropEmptyTable(ModBlocks.CRATE_STEEL.get());
@@ -273,6 +289,21 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModBlocks.URANIUM_ORE_DEEPSLATE.get(),
                 ModBlocks.URANIUM_ORE_DEEPSLATE.get(),
                 ModItems.URANIUM_RAW.get()
+        );
+        dropOreType1(
+                ModBlocks.SCHRABIDIUM_ORE.get(),
+                ModBlocks.SCHRABIDIUM_ORE.get(),
+                ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.CRYSTAL)
+        );
+        dropOreType1(
+                ModBlocks.SCHRABIDIUM_ORE_NETHER.get(),
+                ModBlocks.SCHRABIDIUM_ORE_NETHER.get(),
+                ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.CRYSTAL)
+        );
+        dropOreType1(
+                ModBlocks.SCHRABIDIUM_ORE_GNEISS.get(),
+                ModBlocks.SCHRABIDIUM_ORE_GNEISS.get(),
+                ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.CRYSTAL)
         );
         // Original BlockOre: ore_cobalt -> fragment_cobalt, 4 + rand(6)
         dropOreType2(
@@ -345,39 +376,26 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         );
 
 
-        // vJ2: Original BlockDepthOre ore_depth_cinnebar: quantityDropped 2 + rand(3) = 2..4,
-        // Glueck wie quantityDroppedWithBonus = n * (max(rand(fortune + 2) - 1, 0) + 1) = addOreBonusCount
+        // Глубинные руды (1.7.10 BlockDepthOre: cinnebar 2-3, borax ×1, nugget_zirconium 2-3)
         dropOreType2(
                 ModBlocks.DEPTH_CINNABAR.get(),
                 ModBlocks.DEPTH_CINNABAR.get(),
-                ModItems.CINNEBAR.get(),
-                2.0f, 4.0f
+                ModItems.CINNABAR.get(),
+                2.0f, 3.0f
         );
 
         dropOreType2(
                 ModBlocks.DEPTH_BORAX.get(),
                 ModBlocks.DEPTH_BORAX.get(),
                 ModItems.BORAX.get(),
-                3.0f, 5.0f
+                1.0f, 1.0f
         );
 
         dropOreType2(
-                ModBlocks.DEPTH_TITANIUM.get(),
-                ModBlocks.DEPTH_TITANIUM.get(),
-                ModItems.TITANIUM_RAW.get(),
-                3.0f, 5.0f
-        );
-        dropOreType2(
-                ModBlocks.DEPTH_TUNGSTEN.get(),
-                ModBlocks.DEPTH_TUNGSTEN.get(),
-                ModItems.TUNGSTEN_RAW.get(),
-                3.0f, 5.0f
-        );
-        dropOreType2(
                 ModBlocks.DEPTH_ZIRCONIUM.get(),
                 ModBlocks.DEPTH_ZIRCONIUM.get(),
-                ModItems.ZIRCONIUM_SHARP.get(),
-                3.0f, 5.0f
+                ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.NUGGET),
+                2.0f, 3.0f
         );
         // vJ2: Original BlockDepthOre ore_depth_nether_neodymium -> fragment_neodymium, quantityDropped 2 + rand(2)
         dropOreType2(
@@ -410,13 +428,13 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModBlocks.RAREGROUND_ORE.get(),
                 ModBlocks.RAREGROUND_ORE.get(),
                 ModItems.RAREGROUND_ORE_CHUNK.get(),
-                1.0f, 3.0f
+                1.0f, 1.0f
         );
         dropOreType2(
                 ModBlocks.RAREGROUND_ORE_DEEPSLATE.get(),
                 ModBlocks.RAREGROUND_ORE_DEEPSLATE.get(),
                 ModItems.RAREGROUND_ORE_CHUNK.get(),
-                1.0f, 3.0f
+                1.0f, 1.0f
         );
         dropOreType2(
                 ModBlocks.STRAWBERRY_BUSH.get(),
@@ -428,25 +446,52 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropOreType1(
                 ModBlocks.CINNABAR_ORE.get(),
                 ModBlocks.CINNABAR_ORE.get(),
-                ModItems.CINNEBAR.get()
+                ModItems.CINNABAR.get()
         );
         dropOreType2(
                 ModBlocks.CINNABAR_ORE_DEEPSLATE.get(),
                 ModBlocks.CINNABAR_ORE_DEEPSLATE.get(),
-                ModItems.CINNEBAR.get(),
-                1.0f, 3.0f
+                ModItems.CINNABAR.get(),
+                1.0f, 1.0f
         );
+        // Ванильная iron_ore уже дропает raw_iron своим лутом — переопределение не нужно.
+        dropOreType2(
+                ModBlocks.ASBESTOS_ORE.get(),
+                ModBlocks.ASBESTOS_ORE.get(),
+                ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT),
+                1.0f, 1.0f
+        );
+        // Deepslate-варианты (в оригинале их нет; ведут себя как каменные твины):
+        dropOreType2(
+                ModBlocks.SULFUR_ORE_DEEPSLATE.get(),
+                ModBlocks.SULFUR_ORE_DEEPSLATE.get(),
+                ModItems.SULFUR.get(),
+                2.0f, 4.0f
+        );
+        dropOreType2(
+                ModBlocks.FLUORITE_ORE_DEEPSLATE.get(),
+                ModBlocks.FLUORITE_ORE_DEEPSLATE.get(),
+                ModItems.FLUORITE.get(),
+                2.0f, 4.0f
+        );
+        dropOreType2(
+                ModBlocks.LIGNITE_ORE_DEEPSLATE.get(),
+                ModBlocks.LIGNITE_ORE_DEEPSLATE.get(),
+                ModItems.LIGNITE.get(),
+                1.0f, 1.0f
+        );
+        dropOreType2(
+                ModBlocks.ASBESTOS_ORE_DEEPSLATE.get(),
+                ModBlocks.ASBESTOS_ORE_DEEPSLATE.get(),
+                ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT),
+                1.0f, 1.0f
+        );
+        // Original BlockDepthOre ore_depth_iron -> raw_iron
         dropOreType2(
                 ModBlocks.DEPTH_IRON.get(),
                 ModBlocks.DEPTH_IRON.get(),
                 Items.RAW_IRON,
                 1.0f, 3.0f
-        );
-        // Original BlockOre.quantityDropped: 1
-        dropOreType1(
-                ModBlocks.ASBESTOS_ORE.get(),
-                ModBlocks.ASBESTOS_ORE.get(),
-                ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT)
         );
         dropOreType2(
                 ModBlocks.RESOURCE_ASBESTOS.get(),
@@ -472,16 +517,10 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModItems.LIMESTONE.get(),
                 1.0f, 3.0f
         );
-        dropOreType2(
-                ModBlocks.SEQUESTRUM_ORE.get(),
-                ModBlocks.SEQUESTRUM_ORE.get(),
-                ModItems.SEQUESTRUM.get(),
-                1.0f, 3.0f
-        );
 
         // Пропущенные руды (сверялись с 1.7.10 BlockOre/BlockDepthOre/BlockDragonProof):
-        // гнейсовые железо/медь/золото/уран/литий/газ и незерские уголь/уран/плутоний/
-        // вольфрам/тлеющая руда, а также tikite и australium в оригинале дропают сами
+        // гнейсовые железо/медь/золото/уран/литий/газ и незерские уран/плутоний/
+        // вольфрам, а также tikite и australium в оригинале дропают сами
         // себя — оставляем dropSelf (базовый проход).
 
         // ore_nether_sulfur → sulfur ×2-4
@@ -490,6 +529,37 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModBlocks.NETHER_SULFUR_ORE.get(),
                 ModItems.SULFUR.get(),
                 2.0f, 4.0f
+        );
+        // ore_nether_coal → coal_infernal ×1 (1.7.10 BlockNetherCoal)
+        dropOreType2(
+                ModBlocks.NETHER_COAL_ORE.get(),
+                ModBlocks.NETHER_COAL_ORE.get(),
+                ModItems.COAL_INFERNAL.get(),
+                1.0f, 1.0f
+        );
+        // ore_nether_smoldering → powder_fire ×1 (1.7.10 BlockSmolder)
+        dropOreType2(
+                ModBlocks.NETHER_SMOLDERING_ORE.get(),
+                ModBlocks.NETHER_SMOLDERING_ORE.get(),
+                ModItems.FIRE_POWDER.get(),
+                1.0f, 1.0f
+        );
+        // Селлафилд: алмаз/изумруд/рад-самоцвет (1:1 с BlockSellafieldOre 1.7.10,
+        // fortune через ore_drops; классовый getDrops-байпас удалён).
+        dropOreType1(
+                ModBlocks.ORE_SELLAFIELD_DIAMOND.get(),
+                ModBlocks.ORE_SELLAFIELD_DIAMOND.get(),
+                net.minecraft.world.item.Items.DIAMOND
+        );
+        dropOreType1(
+                ModBlocks.ORE_SELLAFIELD_EMERALD.get(),
+                ModBlocks.ORE_SELLAFIELD_EMERALD.get(),
+                net.minecraft.world.item.Items.EMERALD
+        );
+        dropOreType1(
+                ModBlocks.ORE_SELLAFIELD_RADGEM.get(),
+                ModBlocks.ORE_SELLAFIELD_RADGEM.get(),
+                ModItems.GEM_RAD.get()
         );
         // ore_alexandrite → gem_alexandrite ×1
         dropOreType1(
@@ -515,10 +585,10 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModItems.FRAGMENT_COBALT.get(),
                 5.0f, 12.0f
         );
-        // ore_nether_fire: Original rand.nextInt(10) == 0 ? ingot_phosphorus (Port phosphorus_ingot) : powder_fire (fire_powder)
+        // ore_nether_fire: Original rand.nextInt(10) == 0 ? ingot_phosphorus : powder_fire
         this.add(ModBlocks.NETHER_FIRE_ORE.get(), b -> createSilkTouchDispatchTable(b,
                 AlternativesEntry.alternatives(
-                        this.applyExplosionDecay(b, LootItem.lootTableItem(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("hbm_m:phosphorus_ingot")))
+                        this.applyExplosionDecay(b, LootItem.lootTableItem(ModItems.INGOT_PHOSPHORUS.get())
                                 .apply(ApplyBonusCount.addOreBonusCount(Enchantments.BLOCK_FORTUNE)))
                                 .when(LootItemRandomChanceCondition.randomChance(0.1f)),
                         this.applyExplosionDecay(b, LootItem.lootTableItem(ModItems.FIRE_POWDER.get())
@@ -535,6 +605,36 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModBlocks.GNEISS_ASBESTOS_ORE.get(),
                 ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT)
         );
+        // Руды базальта (ориг. BlockOreBasalt.EnumBasaltOreType): фиксированный дроп ×1
+        // (SULFUR→sulfur, FLUORITE→fluorite, ASBESTOS→ingot_asbestos, GEM→gem_volcanic,
+        // MOLYSITE→powder_molysite; порт: molysite)
+        dropOreType1(
+                ModBlocks.ORE_BASALT_SULFUR.get(),
+                ModBlocks.ORE_BASALT_SULFUR.get(),
+                ModItems.SULFUR.get()
+        );
+        dropOreType1(
+                ModBlocks.ORE_BASALT_FLUORITE.get(),
+                ModBlocks.ORE_BASALT_FLUORITE.get(),
+                ModItems.FLUORITE.get()
+        );
+        dropOreType1(
+                ModBlocks.ORE_BASALT_ASBESTOS.get(),
+                ModBlocks.ORE_BASALT_ASBESTOS.get(),
+                ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT)
+        );
+        dropOreType1(
+                ModBlocks.ORE_BASALT_GEM.get(),
+                ModBlocks.ORE_BASALT_GEM.get(),
+                ModItems.GEM_VOLCANIC.get()
+        );
+        dropOreType1(
+                ModBlocks.ORE_BASALT_MOLYSITE.get(),
+                ModBlocks.ORE_BASALT_MOLYSITE.get(),
+                ModItems.MOLYSITE.get()
+        );
+        // ore_meteor_* дропают сами себя (автоцикл dropSelf) — переплавка даёт слитки/кусы
+        // (ориг. SmeltingRecipes.java:48-52). ore_volcano неразрушим — dropSelf тоже подходит.
         // ore_niter → niter ×2-4 (порт: crystal_niter)
         dropOreType2(
                 ModBlocks.NITER_ORE.get(),
@@ -548,6 +648,51 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL),
                 2.0f, 4.0f
         );
+
+        // CP-1 pile channel blocks (NEXT data/hbm/loot_table/blocks/block_graphite_*.json):
+        // 8x Graphitbarren + Schale nur wenn shrouded + eingesetzter Stab (detector/rod).
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_DRILLED.get(), null);
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_ROD.get(), ModItems.PILE_ROD_BORON.get());
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get(), ModItems.PILE_ROD_DETECTOR.get());
+        // Fuel: null inserted-rod pool reproduces NEXT's fuel loot exactly (2 pools only).
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_FUEL.get(), null);
+        // Lithium: 3rd pool drops the inserted lithium rod (NEXT block_graphite_lithium.json).
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get(), ModItems.PILE_ROD_LITHIUM.get());
+        // Source/Plutonium: NEXT loot both 3 pools (8x graphite ingot; shell_aluminum when
+        // shrouded; the inserted rod) - dropPileChannel reproduces exactly.
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_SOURCE.get(), ModItems.PILE_ROD_SOURCE.get());
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get(), ModItems.PILE_ROD_PLUTONIUM.get());
+    }
+
+    /**
+     * CP-1 pile channel loot, 1:1 mit NEXT block_graphite_*.json:
+     * Pool 1: 8x Graphitbarren (survives_explosion), Pool 2: 1x Aluminiumschale wenn
+     * shrouded=true, Pool 3 (nur rod/detector): der eingesetzte Stab.
+     */
+    private void dropPileChannel(Block block, Item inserted) {
+        LootTable.Builder table = LootTable.lootTable()
+                .withPool(LootPool.lootPool()
+                        .setRolls(ConstantValue.exactly(1.0f))
+                        .setBonusRolls(ConstantValue.exactly(0.0f))
+                        .when(ExplosionCondition.survivesExplosion())
+                        .add(LootItem.lootTableItem(ModMaterialItems.item(ModMaterials.GRAPHITE, MaterialShape.INGOT))
+                                .apply(SetItemCountFunction.setCount(ConstantValue.exactly(8.0f)))))
+                .withPool(LootPool.lootPool()
+                        .setRolls(ConstantValue.exactly(1.0f))
+                        .setBonusRolls(ConstantValue.exactly(0.0f))
+                        .when(ExplosionCondition.survivesExplosion())
+                        .when(LootItemBlockStatePropertyCondition.hasBlockStateProperties(block)
+                                .setProperties(StatePropertiesPredicate.Builder.properties()
+                                        .hasProperty(BlockGraphiteDrilledBase.SHROUDED, true)))
+                        .add(LootItem.lootTableItem(ModItems.SHELL_ALUMINUM.get())));
+        if (inserted != null) {
+            table.withPool(LootPool.lootPool()
+                    .setRolls(ConstantValue.exactly(1.0f))
+                    .setBonusRolls(ConstantValue.exactly(0.0f))
+                    .when(ExplosionCondition.survivesExplosion())
+                    .add(LootItem.lootTableItem(inserted)));
+        }
+        this.add(block, table);
     }
 
     private void dropEmptyTable(Block block) {
@@ -598,6 +743,31 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                                                                 .copy("modeOnSignal", "BlockEntityTag.modeOnSignal", CopyNbtFunction.MergeStrategy.REPLACE)
                                                                 .copy("priority", "BlockEntityTag.priority", CopyNbtFunction.MergeStrategy.REPLACE)
                                                                 .copy("Inventory", "BlockEntityTag.Inventory", CopyNbtFunction.MergeStrategy.REPLACE)
+                                                )
+                                ))
+                );
+        this.add(block, tableBuilder);
+    }
+
+    /**
+     * Конденсаторы (оригинал: IPersistentNBT): заряд и ёмкость переносятся в
+     * {@code BlockEntityTag} дропнутого предмета; восстановление — в
+     * {@code MachineCapacitorBlock#setPlacedBy}. Копируем РОВНО те ключи, которые пишет
+     * {@code BaseMachineBlockEntity.writeNbtData} ("energy"/"capacity", строчные).
+     */
+    private void dropCapacitorWithNbt(Block block) {
+        LootTable.Builder tableBuilder = LootTable.lootTable()
+                .withPool(
+                        LootPool.lootPool()
+                                .setRolls(ConstantValue.exactly(1.0f))
+                                .setBonusRolls(ConstantValue.exactly(0.0f))
+                                .add(this.applyExplosionDecay(
+                                        block,
+                                        LootItem.lootTableItem(block.asItem())
+                                                .apply(
+                                                        CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY)
+                                                                .copy("energy", "BlockEntityTag.energy", CopyNbtFunction.MergeStrategy.REPLACE)
+                                                                .copy("capacity", "BlockEntityTag.capacity", CopyNbtFunction.MergeStrategy.REPLACE)
                                                 )
                                 ))
                 );

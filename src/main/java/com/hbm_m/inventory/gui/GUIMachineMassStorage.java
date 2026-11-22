@@ -15,11 +15,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1-Port von {@code GUIMassStorage} (1.7.10 Original): Fuellstandsbalken (97, 17-105) mit
  * Anzahl/Prozent, Knopf "ausgeben" (62, 72) und Ausgabe-Schalter (80, 72).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineMassStorage extends GuiInfoScreen<MachineMassStorageMenu> {
 
     private static final ResourceLocation TEXTURE =

@@ -82,7 +82,6 @@ public final class SupersededRecipes {
             "hbm_m:crafting/machine/fluid_duct_silver",
             "hbm_m:crafting/machine/foundry_mold",
             "hbm_m:crafting/machine/foundry_tank",
-            "hbm_m:crafting/machine/machine_converter_he_rf",
             "hbm_m:crafting/machine/machine_keyforge",
             "hbm_m:crafting/machine/machine_satlinker",
             "hbm_m:crafting/machine/machine_siren",

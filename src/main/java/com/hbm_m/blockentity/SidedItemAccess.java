@@ -98,21 +98,21 @@ public final class SidedItemAccess {
         }
     }
     //?} elif neoforge {
-    /*private final Supplier<net.neoforged.neoforge.items.IItemHandlerModifiable> inventory;
+    /*private final Supplier<net.minecraftforge.items.IItemHandlerModifiable> inventory;
     private final Rules rules;
-    private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> cache = new EnumMap<>(Direction.class);
+    private final Map<Direction, com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler>> cache = new EnumMap<>(Direction.class);
 
-    public SidedItemAccess(Supplier<net.neoforged.neoforge.items.IItemHandlerModifiable> inventory, Rules rules) {
+    public SidedItemAccess(Supplier<net.minecraftforge.items.IItemHandlerModifiable> inventory, Rules rules) {
         this.inventory = inventory;
         this.rules = rules;
     }
 
-    public com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> get(Direction side) {
+    public com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> get(Direction side) {
         return cache.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new Handler(d)));
     }
 
     /^* Feste Slotliste ohne Seitenabhaengigkeit, z.B. fuer eine {@code IConditionalInvAccess}-Anschlusszelle. ^/
-    public static net.neoforged.neoforge.items.IItemHandler fixed(Supplier<net.neoforged.neoforge.items.IItemHandlerModifiable> inventory, int[] slots,
+    public static net.minecraftforge.items.IItemHandler fixed(Supplier<net.minecraftforge.items.IItemHandlerModifiable> inventory, int[] slots,
                                                               java.util.function.BiPredicate<Integer, ItemStack> canInsert,
                                                               java.util.function.BiPredicate<Integer, ItemStack> canExtract) {
         SidedItemAccess access = new SidedItemAccess(inventory, new Rules() {
@@ -129,7 +129,7 @@ public final class SidedItemAccess {
     }
 
     /^* Bildet die freigegebenen Slots dieser Seite auf 0..n-1 ab. ^/
-    private final class Handler implements net.neoforged.neoforge.items.IItemHandler {
+    private final class Handler implements net.minecraftforge.items.IItemHandler {
         private final Direction side;
 
         Handler(Direction side) { this.side = side; }
@@ -178,10 +178,8 @@ public final class SidedItemAccess {
     public static long charge(ItemStack stack) {
         var hbm = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack);
         if (hbm.isPresent()) return hbm.get().getEnergyStored();
-        //? if forge || neoforge {
         var fe = com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack);
         if (fe.isPresent()) return fe.get().getEnergyStored();
-        //?}
         return -1;
     }
 
@@ -189,10 +187,8 @@ public final class SidedItemAccess {
     public static long maxCharge(ItemStack stack) {
         var hbm = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack);
         if (hbm.isPresent()) return hbm.get().getMaxEnergyStored();
-        //? if forge || neoforge {
         var fe = com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack);
         if (fe.isPresent()) return fe.get().getMaxEnergyStored();
-        //?}
         return -1;
     }
 

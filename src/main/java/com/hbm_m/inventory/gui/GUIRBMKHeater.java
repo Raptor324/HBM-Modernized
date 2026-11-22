@@ -11,6 +11,8 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1-Port von {@code GUIRBMKHeater} (1.7.10-Original, {@code ContainerRBMKHeater}):
@@ -23,8 +25,12 @@ import net.minecraft.world.entity.player.Inventory;
  * direkt genutzt werden. Die zwei kleinen 10x10-Icons (Pfeile/Ventile) bei (72,72) und (130,72)
  * kommen weiterhin statisch aus dem GUI-Sheet.
  *
- * <p>Der Fluid-Identifier-Platz des Originals (41,45) sitzt im {@link RBMKHeaterMenu}.</p>
+ * <p>Das Original besitzt einen einzelnen Item-Slot (Fluid-Identifier zum Setzen des
+ * Kuehlmitteltyps); die modernisierte {@link RBMKHeaterBlockEntity} hat kein Item-Inventar
+ * (nur Fluid-Tanks), daher entfaellt dieser Slot analog zu {@code GUIRBMKBoiler} - siehe
+ * {@link RBMKHeaterMenu}.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKHeater extends GuiInfoScreen<RBMKHeaterMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -57,9 +63,9 @@ public class GUIRBMKHeater extends GuiInfoScreen<RBMKHeaterMenu> {
         if (be == null) return;
 
         // Original: rod.feed.renderTank(guiLeft+68, guiTop+82, zLevel, 14, 58);
-        be.inputTank.renderTank(g, x + 68, y + 24, 14, 58);
+        be.inputTank.renderTank(g, x + 68, y + 82, 14, 58);
         // Original: rod.steam.renderTank(guiLeft+126, guiTop+82, zLevel, 14, 58);
-        be.outputTank.renderTank(g, x + 126, y + 24, 14, 58);
+        be.outputTank.renderTank(g, x + 126, y + 82, 14, 58);
 
         // Original: drawTexturedModalRect(guiLeft+72, guiTop+72, 176, 0, 10, 10);
         g.blit(TEXTURE, x + 72, y + 72, 176, 0, 10, 10);

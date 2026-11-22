@@ -36,7 +36,12 @@ public final class GunHud {
         int w = g.guiWidth(), h = g.guiHeight();
         RenderSystem.enableBlend();
         RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.ONE_MINUS_DST_COLOR, GlStateManager.DestFactor.ONE_MINUS_SRC_COLOR, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-        g.blit(MISC, w / 2 - (size / 2), h / 2 - (size / 2), cross.x, cross.y, size, size);
+        if (size == 32) {
+            // L_* crosshairs (32x32) have a 1-pixel cell boundary in overlay_misc.png; step in by 1px
+            g.blit(MISC, w / 2 - ((size - 2) / 2), h / 2 - ((size - 2) / 2), cross.x + 1, cross.y + 1, size - 2, size - 2);
+        } else {
+            g.blit(MISC, w / 2 - (size / 2), h / 2 - (size / 2), cross.x, cross.y, size, size);
+        }
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
     }
@@ -62,17 +67,10 @@ public final class GunHud {
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
         var m = g.pose().last().pose();
         BufferBuilder buf = com.hbm_m.platform.RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        //? if < 1.21.1 {
-        buf.vertex(m, 0, (float) h, 0).uv((float) wMin, (float) hMax).endVertex();
-        buf.vertex(m, (float) w, (float) h, 0).uv((float) wMax, (float) hMax).endVertex();
-        buf.vertex(m, (float) w, 0, 0).uv((float) wMax, (float) hMin).endVertex();
-        buf.vertex(m, 0, 0, 0).uv((float) wMin, (float) hMin).endVertex();
-        //?} else {
-        /*buf.addVertex(m, 0, (float) h, 0).setUv((float) wMin, (float) hMax);
-        buf.addVertex(m, (float) w, (float) h, 0).setUv((float) wMax, (float) hMax);
-        buf.addVertex(m, (float) w, 0, 0).setUv((float) wMax, (float) hMin);
-        buf.addVertex(m, 0, 0, 0).setUv((float) wMin, (float) hMin);
-        *///?}
+        com.hbm_m.platform.RenderHooks.vertexTex(buf, m, 0, (float) h, 0, (float) wMin, (float) hMax);
+        com.hbm_m.platform.RenderHooks.vertexTex(buf, m, (float) w, (float) h, 0, (float) wMax, (float) hMax);
+        com.hbm_m.platform.RenderHooks.vertexTex(buf, m, (float) w, 0, 0, (float) wMax, (float) hMin);
+        com.hbm_m.platform.RenderHooks.vertexTex(buf, m, 0, 0, 0, (float) wMin, (float) hMin);
         com.hbm_m.platform.RenderHooks.drawWithShader(buf);
         RenderSystem.disableBlend();
     }

@@ -22,7 +22,6 @@ import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.recipe.AssemblerRecipe;
-import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
 import com.hbm_m.sound.ClientSoundBootstrap;
 
@@ -43,28 +42,15 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import com.hbm_m.platform.StackNbt;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+//?}
 import net.minecraftforge.items.IItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
-import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.base.CombinedStorage;
-import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-import team.reborn.energy.api.EnergyStorage;
-*///?}
 
 /**
  * РЎР±РѕСЂРѕС‡РЅР°СЏ РјР°С€РёРЅР° (Assembler) - РјСѓР»СЊС‚РёР±Р»РѕС‡РЅР°СЏ СЃС‚СЂСѓРєС‚СѓСЂР° РґР»СЏ Р°РІС‚РѕРјР°С‚РёР·РёСЂРѕРІР°РЅРЅРѕРіРѕ РєСЂР°С„С‚Р°.
@@ -93,14 +79,10 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
     private LazyOptional<IItemHandler> lazyOutputProxy = LazyOptional.empty();
     //?} elif neoforge {
-    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> lazyInputProxy = com.hbm_m.platform.LazyCap.empty();
-    private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> lazyOutputProxy = com.hbm_m.platform.LazyCap.empty();
+    /*private com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> lazyInputProxy = com.hbm_m.platform.LazyCap.empty();
+    private com.hbm_m.platform.LazyCap<net.minecraftforge.items.IItemHandler> lazyOutputProxy = com.hbm_m.platform.LazyCap.empty();
     *///?}
 
-    //? if fabric {
-    /*@Nullable private Storage<ItemVariant> inputProxy;
-    @Nullable private Storage<ItemVariant> outputProxy;
-    *///?}
 
     // РћС‚СЃР»РµР¶РёРІР°РЅРёРµ РёСЃС‚РѕС‡РЅРёРєРѕРІ РїСЂРµРґРјРµС‚РѕРІ
     private final Set<BlockPos> lastPullSources = new HashSet<>();
@@ -269,125 +251,34 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
         };
     }
-    //?} elif neoforge {
-    /*public com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> getItemHandlerForPart(PartRole role) {
+    //?}
+
+    // NeoForge counterpart of the Forge proxies above. Without it UniversalMachinePartBlockEntity
+    // handed out the assembler's raw inventory, so a pipe on an ITEM_INPUT port could pull the
+    // template, the battery and the finished product, and one on ITEM_OUTPUT could push into the
+    // input slots.
+    //? if neoforge {
+    /*public net.minecraftforge.items.IItemHandler getItemHandlerForPart(PartRole role) {
         if (role == PartRole.ITEM_INPUT) {
-            if (!lazyInputProxy.isPresent()) {
-                lazyInputProxy = com.hbm_m.platform.LazyCap.of(this::createInputProxy);
-            }
-            return lazyInputProxy;
+            return new net.neoforged.neoforge.items.wrapper.RangedWrapper(inventory, INPUT_SLOT_START, INPUT_SLOT_END + 1) {
+                @Override
+                public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                    return ItemStack.EMPTY;
+                }
+            };
         }
         if (role == PartRole.ITEM_OUTPUT) {
-            if (!lazyOutputProxy.isPresent()) {
-                lazyOutputProxy = com.hbm_m.platform.LazyCap.of(this::createOutputProxy);
-            }
-            return lazyOutputProxy;
+            return new net.neoforged.neoforge.items.wrapper.RangedWrapper(inventory, OUTPUT_SLOT, OUTPUT_SLOT + 1) {
+                @Override
+                public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                    return stack;
+                }
+            };
         }
-        return com.hbm_m.platform.LazyCap.empty();
-    }
-
-    @NotNull
-    private net.neoforged.neoforge.items.IItemHandler createInputProxy() {
-        return new net.neoforged.neoforge.items.IItemHandler() {
-            @Override
-            public int getSlots() {
-                return INPUT_SLOT_END - INPUT_SLOT_START + 1;
-            }
-
-            @NotNull
-            @Override
-            public ItemStack getStackInSlot(int slot) {
-                return inventory.getStackInSlot(slot + INPUT_SLOT_START);
-            }
-
-            @NotNull
-            @Override
-            public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-                return inventory.insertItem(slot + INPUT_SLOT_START, stack, simulate);
-            }
-
-            @NotNull
-            @Override
-            public ItemStack extractItem(int slot, int amount, boolean simulate) {
-                return ItemStack.EMPTY;
-            }
-
-            @Override
-            public int getSlotLimit(int slot) {
-                return inventory.getSlotLimit(slot + INPUT_SLOT_START);
-            }
-
-            @Override
-            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-                return inventory.isItemValid(slot + INPUT_SLOT_START, stack);
-            }
-        };
-    }
-
-    @NotNull
-    private net.neoforged.neoforge.items.IItemHandler createOutputProxy() {
-        return new net.neoforged.neoforge.items.IItemHandler() {
-            @Override
-            public int getSlots() {
-                return 1;
-            }
-
-            @NotNull
-            @Override
-            public ItemStack getStackInSlot(int slot) {
-                return slot == 0 ? inventory.getStackInSlot(OUTPUT_SLOT) : ItemStack.EMPTY;
-            }
-
-            @NotNull
-            @Override
-            public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-                return stack;
-            }
-
-            @NotNull
-            @Override
-            public ItemStack extractItem(int slot, int amount, boolean simulate) {
-                return slot == 0 ? inventory.extractItem(OUTPUT_SLOT, amount, simulate) : ItemStack.EMPTY;
-            }
-
-            @Override
-            public int getSlotLimit(int slot) {
-                return slot == 0 ? inventory.getSlotLimit(OUTPUT_SLOT) : 0;
-            }
-
-            @Override
-            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-                return false;
-            }
-        };
+        return null;
     }
     *///?}
 
-    //? if fabric {
-    /*public Storage<ItemVariant> getItemStorageForPart(PartRole role) {
-        if (role == PartRole.ITEM_INPUT) {
-            if (inputProxy == null) inputProxy = createInputProxyStorage();
-            return inputProxy;
-        }
-        if (role == PartRole.ITEM_OUTPUT) {
-            if (outputProxy == null) outputProxy = createOutputProxyStorage();
-            return outputProxy;
-        }
-        return Storage.empty();
-    }
-
-    private Storage<ItemVariant> createInputProxyStorage() {
-        java.util.List<SingleSlotStorage<ItemVariant>> slots = new java.util.ArrayList<>();
-        for (int i = INPUT_SLOT_START; i <= INPUT_SLOT_END; i++) {
-            slots.add(inventory.getSlotStorage(i));
-        }
-        return new CombinedStorage<>(slots);
-    }
-
-    private Storage<ItemVariant> createOutputProxyStorage() {
-        return inventory.getSlotStorage(OUTPUT_SLOT);
-    }
-    *///?}
 
     // ==================== TICK LOGIC ====================
 
@@ -432,7 +323,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
         boolean hasRecipe = recipeOpt.isPresent();
         boolean hasResources = hasRecipe && hasResources(recipeOpt.get());
-        boolean canInsert = hasRecipe && canInsertResult(recipeOpt.get().getResultItemSafe());
+        boolean canInsert = hasRecipe && canInsertResult(recipeOpt.get());
 
         if (hasRecipe && hasResources && canInsert) {
             AssemblerRecipe recipe = recipeOpt.get();
@@ -485,97 +376,16 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        //? if forge {
-        // РћР±С‹С‡РЅР°СЏ Р±Р°С‚Р°СЂРµСЏ С‡РµСЂРµР· HBM capability
-        energySourceStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(itemEnergy -> {
-            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-            if (energyNeeded <= 0) return;
-
-            long maxCanReceive = this.getReceiveSpeed();
-            long energyToTransfer = Math.min(energyNeeded, maxCanReceive);
-
-            if (energyToTransfer > 0) {
-                long extracted = itemEnergy.extractEnergy(energyToTransfer, false);
-                if (extracted > 0) {
-                    this.setEnergyStored(this.getEnergyStored() + extracted);
-                    setChanged();
-                }
-            }
-        });
-
-        // Fallback РЅР° Forge Energy РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё
-        if (!energySourceStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
-            energySourceStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
-                long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-                if (energyNeeded <= 0) return;
-
-                int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
-                int extracted = itemEnergy.extractEnergy(maxTransfer, false);
-
-                if (extracted > 0) {
-                    this.setEnergyStored(this.getEnergyStored() + extracted);
-                    setChanged();
-                }
-            });
-        }
-        //?} elif neoforge {
-        /*// РћР±С‹С‡РЅР°СЏ Р±Р°С‚Р°СЂРµСЏ С‡РµСЂРµР· HBM capability
-        com.hbm_m.platform.HbmCaps.item(energySourceStack, com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER).ifPresent(itemEnergy -> {
-            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-            if (energyNeeded <= 0) return;
-
-            long maxCanReceive = this.getReceiveSpeed();
-            long energyToTransfer = Math.min(energyNeeded, maxCanReceive);
-
-            if (energyToTransfer > 0) {
-                long extracted = itemEnergy.extractEnergy(energyToTransfer, false);
-                if (extracted > 0) {
-                    this.setEnergyStored(this.getEnergyStored() + extracted);
-                    setChanged();
-                }
-            }
-        });
-
-        // Fallback РЅР° Forge Energy РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё
-        if (!com.hbm_m.platform.HbmCaps.item(energySourceStack, com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER).isPresent()) {
-            com.hbm_m.platform.HbmCaps.item(energySourceStack, com.hbm_m.platform.HbmCap.ENERGY).ifPresent(itemEnergy -> {
-                long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-                if (energyNeeded <= 0) return;
-
-                int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
-                int extracted = itemEnergy.extractEnergy(maxTransfer, false);
-
-                if (extracted > 0) {
-                    this.setEnergyStored(this.getEnergyStored() + extracted);
-                    setChanged();
-                }
-            });
-        }
-        *///?}
-
-        //? if fabric {
-        /*var itemEnergy = EnergyStorage.ITEM.find(energySourceStack, null);
-        if (itemEnergy == null) return;
-
-        long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-        if (energyNeeded <= 0) return;
-
-        long maxTransfer = Math.min(energyNeeded, this.getReceiveSpeed());
-        if (maxTransfer <= 0) return;
-
-        try (Transaction tx = Transaction.openOuter()) {
-            long extracted = itemEnergy.extract(maxTransfer, tx);
-            if (extracted > 0) {
-                setEnergyStored(getEnergyStored() + extracted);
-                tx.commit();
-            }
-        }
-        *///?}
+        chargeFromBatterySlot(ENERGY_SLOT);
     }
 
 
 
     // ==================== CRAFTING ====================
+
+    /** Кэшированный скан рецептов: подпись — фингерпринты шаблона и его выходного стака (P4, value-keyed). */
+    private final com.hbm_m.recipe.index.CachedRecipeResolver<AssemblerRecipe> recipeResolver =
+            new com.hbm_m.recipe.index.CachedRecipeResolver<>();
 
     private Optional<AssemblerRecipe> getRecipeFromTemplate() {
         ItemStack templateStack = inventory.getStackInSlot(TEMPLATE_SLOT);
@@ -584,15 +394,20 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
 
         ItemStack outputStack = ItemAssemblyTemplate.getRecipeOutput(templateStack);
-        if (outputStack.isEmpty()) {
+        if (outputStack.isEmpty() || level == null) {
             return Optional.empty();
         }
 
-        return RecipeHooks.getAllRecipes(level, AssemblerRecipe.Type.INSTANCE).stream()
-                .filter(r -> PlatformHooks.isSameItemSameTags(r.getResultItemSafe(), outputStack))
-                // Alte Montagemaschine hat keine Tanks: Rezepte mit Fluessigkeiten nur in der neuen
-                .filter(r -> r.getFluidInputs().isEmpty() && r.getFluidOutputs().isEmpty())
-                .findFirst();
+        long signature = com.hbm_m.recipe.index.CachedRecipeResolver.sign(8,
+                StackNbt.fingerprint(templateStack),
+                StackNbt.fingerprint(outputStack));
+        AssemblerRecipe found = recipeResolver.resolve(level, AssemblerRecipe.Type.INSTANCE, signature, (lvl, all) ->
+                all.stream()
+                        .filter(r -> StackNbt.sameItemSameTags(r.getResultItemSafe(), outputStack))
+                        .filter(r -> r.getFluidInputs().isEmpty() && r.getFluidOutputs().isEmpty())
+                        .findFirst()
+                        .orElse(null));
+        return Optional.ofNullable(found);
     }
 
     @Override
@@ -619,13 +434,29 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     private boolean canInsertResult(ItemStack result) {
         ItemStack outputSlotStack = inventory.getStackInSlot(OUTPUT_SLOT);
         return outputSlotStack.isEmpty() ||
-                (PlatformHooks.isSameItemSameTags(outputSlotStack, result) &&
+                (StackNbt.sameItemSameTags(outputSlotStack, result) &&
                         outputSlotStack.getCount() + result.getCount() <= outputSlotStack.getMaxStackSize());
+    }
+
+    /**
+     * Zufallsausgabe (Original ChanceOutputMulti, ass.nitra): was herausrollt, steht vor dem Craft
+     * noch nicht fest — es darf nur gestartet werden, wenn ALLE Varianten in den Ausgangsslot passen
+     * (konservativ; im Original blockiert der volle Ausgangsslot ebenso).
+     */
+    private boolean canInsertResult(AssemblerRecipe recipe) {
+        if (!recipe.getChanceOutputs().isEmpty()) {
+            ItemStack outputSlotStack = inventory.getStackInSlot(OUTPUT_SLOT);
+            if (outputSlotStack.isEmpty()) return true;
+            for (ItemStack possible : recipe.getPossibleOutputs()) {
+                if (!canInsertResult(possible)) return false;
+            }
+            return true;
+        }
+        return canInsertResult(recipe.getResultItemSafe());
     }
 
     private void craftItem(AssemblerRecipe recipe) {
         NonNullList<Ingredient> ingredients = recipe.getIngredients();
-        ItemStack result = recipe.getResultItemSafe().copy();
 
         for (Ingredient ingredient : ingredients) {
             for (int i = INPUT_SLOT_START; i <= INPUT_SLOT_END; i++) {
@@ -637,15 +468,27 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
         }
 
+        // Zufallsausgabe: aus jeder Gruppe eine Variante nach Gewicht ziehen
+        // (Original ChanceOutputMulti.collapse).
+        if (!recipe.getChanceOutputs().isEmpty()) {
+            for (ItemStack rolled : recipe.rollChanceOutputs(this.level.random)) {
+                insertResult(rolled);
+            }
+        } else {
+            insertResult(recipe.getResultItemSafe().copy());
+        }
+
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    private void insertResult(ItemStack result) {
         ItemStack outputSlot = inventory.getStackInSlot(OUTPUT_SLOT);
         if (outputSlot.isEmpty()) {
             inventory.setStackInSlot(OUTPUT_SLOT, result);
         } else {
             outputSlot.grow(result.getCount());
         }
-
-        setChanged();
-        sendUpdateToClient();
     }
 
     // ==================== AUTOMATION ====================
@@ -710,8 +553,10 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                 int missing = need - present;
                 if (missing <= 0) continue;
 
-                //? if forge {
-                IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, dirToNeighbor).orElse(null);
+                // Shared by Forge and NeoForge: var infers each platform's own IItemHandler, and the
+                // method names match. The block used to be forge-only, so on NeoForge the assembler
+                // never pulled anything from an adjacent inventory.
+                var cap = com.hbm_m.api.item.ItemHandlerAccess.getItemHandler(level, neighborPosGlobal, dirToNeighbor);
                 if (cap == null) continue;
 
                 for (int slot = 0; slot < cap.getSlots() && missing > 0; slot++) {
@@ -736,72 +581,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                         }
                     }
                 }
-                //?} elif neoforge {
-                /*net.neoforged.neoforge.items.IItemHandler cap = com.hbm_m.platform.HbmCaps.get(neighbor, com.hbm_m.platform.HbmCap.ITEM_HANDLER, dirToNeighbor).orElse(null);
-                if (cap == null) continue;
 
-                for (int slot = 0; slot < cap.getSlots() && missing > 0; slot++) {
-                    ItemStack possible = cap.getStackInSlot(slot);
-                    if (possible.isEmpty() || !ingredient.test(possible)) continue;
-
-                    ItemStack simulated = cap.extractItem(slot, missing, true);
-                    if (simulated.isEmpty()) continue;
-
-                    ItemStack toInsert = simulated.copy();
-                    for (int dest = INPUT_SLOT_START; dest <= INPUT_SLOT_END && !toInsert.isEmpty(); dest++) {
-                        ItemStack remain = inventory.insertItem(dest, toInsert.copy(), true);
-                        int inserted = toInsert.getCount() - remain.getCount();
-
-                        if (inserted > 0) {
-                            ItemStack actuallyExtracted = cap.extractItem(slot, inserted, false);
-                            inventory.insertItem(dest, actuallyExtracted.copy(), false);
-                            lastPullSources.add(neighborPosGlobal);
-                            setChanged();
-                            missing -= inserted;
-                            toInsert = remain;
-                        }
-                    }
-                }
-                *///?}
-
-                //? if fabric {
-                /*Storage<ItemVariant> cap = ItemStorage.SIDED.find(level, neighborPosGlobal, dirToNeighbor);
-                if (cap == null) continue;
-
-                // Р’С‹С‚Р°СЃРєРёРІР°РµРј РїРѕ РѕРґРЅРѕРјСѓ РґРѕ missing (Transfer API РѕРїРµСЂРёСЂСѓРµС‚ ItemVariant/count)
-                // Рё РїС‹С‚Р°РµРјСЃСЏ РІСЃС‚Р°РІРёС‚СЊ РІ РЅР°С€Рё РІС…РѕРґРЅС‹Рµ СЃР»РѕС‚С‹.
-                for (int attempt = 0; attempt < missing; attempt++) {
-                    boolean movedOne = false;
-                    try (Transaction tx = Transaction.openOuter()) {
-                        for (var view : cap) {
-                            ItemVariant v = view.getResource();
-                            if (v.isBlank()) continue;
-                            ItemStack one = v.toStack(1);
-                            if (!ingredient.test(one)) continue;
-
-                            long extracted = view.extract(v, 1, tx);
-                            if (extracted != 1) continue;
-
-                            // Р’СЃС‚Р°РІР»СЏРµРј 1 РїСЂРµРґРјРµС‚ РІРѕ РІС…РѕРґРЅС‹Рµ СЃР»РѕС‚С‹ (С‡РµСЂРµР· ModItemStackHandler insertItem)
-                            ItemStack toInsert = one;
-                            for (int dest = INPUT_SLOT_START; dest <= INPUT_SLOT_END && !toInsert.isEmpty(); dest++) {
-                                toInsert = inventory.insertItem(dest, toInsert, false);
-                            }
-                            if (toInsert.isEmpty()) {
-                                tx.commit();
-                                movedOne = true;
-                                break;
-                            } else {
-                                // РѕС‚РєР°С‚РёРј (РЅРµ РєРѕРјРјРёС‚РёРј)
-                                break;
-                            }
-                        }
-                    }
-                    if (!movedOne) break;
-                    lastPullSources.add(neighborPosGlobal);
-                    setChanged();
-                }
-                *///?}
             }
         }
     }
@@ -840,11 +620,10 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
             Direction side1 = outDir.getOpposite();
             Direction side2 = facingDir;
-            //? if forge {
-            IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side1)
-                    .orElse(neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side2)
-                            .orElse(null));
-
+            // Shared by Forge and NeoForge, see pullIngredientsForOneCraft: this was forge-only, so
+            // on NeoForge the output slot filled up and the machine stalled until emptied by hand.
+            var cap = com.hbm_m.api.item.ItemHandlerAccess.getItemHandler(level, neighborPos, side1);
+            if (cap == null) cap = com.hbm_m.api.item.ItemHandlerAccess.getItemHandler(level, neighborPos, side2);
             if (cap == null) continue;
 
             ItemStack toInsert = out.copy();
@@ -858,45 +637,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
 
             out = inventory.getStackInSlot(OUTPUT_SLOT);
-            //?} elif neoforge {
-            /*net.neoforged.neoforge.items.IItemHandler cap = com.hbm_m.platform.HbmCaps.get(neighbor, com.hbm_m.platform.HbmCap.ITEM_HANDLER, side1)
-                    .orElse(com.hbm_m.platform.HbmCaps.get(neighbor, com.hbm_m.platform.HbmCap.ITEM_HANDLER, side2)
-                            .orElse(null));
 
-            if (cap == null) continue;
 
-            ItemStack toInsert = out.copy();
-            for (int slot = 0; slot < cap.getSlots() && !toInsert.isEmpty(); slot++) {
-                ItemStack remaining = cap.insertItem(slot, toInsert.copy(), false);
-
-                if (remaining.getCount() < toInsert.getCount()) {
-                    inventory.getStackInSlot(OUTPUT_SLOT).shrink(toInsert.getCount() - remaining.getCount());
-                    toInsert = remaining;
-                }
-            }
-
-            out = inventory.getStackInSlot(OUTPUT_SLOT);
-            *///?}
-
-            //? if fabric {
-            /*Storage<ItemVariant> cap = ItemStorage.SIDED.find(level, neighborPos, side1);
-            if (cap == null) cap = ItemStorage.SIDED.find(level, neighborPos, side2);
-            if (cap == null) continue;
-
-            ItemStack stack = inventory.getStackInSlot(OUTPUT_SLOT);
-            if (stack.isEmpty()) continue;
-
-            ItemVariant variant = ItemVariant.of(stack);
-            long amount = stack.getCount();
-            try (Transaction tx = Transaction.openOuter()) {
-                long inserted = cap.insert(variant, amount, tx);
-                if (inserted > 0) {
-                    stack.shrink((int) inserted);
-                    tx.commit();
-                }
-            }
-            out = inventory.getStackInSlot(OUTPUT_SLOT);
-            *///?}
         }
     }
 
@@ -936,27 +678,17 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         lazyInputProxy.invalidate();
         lazyOutputProxy.invalidate();
     }
-    //?} elif neoforge {
-    /*@Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
-            return itemHandler.cast();
-        }
-        return super.getHbmCapability(cap, side);
-    }
+    //?}
 
     @Override
-    public void invalidateHbmCaps() {
-        super.invalidateHbmCaps();
-        lazyInputProxy.invalidate();
-        lazyOutputProxy.invalidate();
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
+        return this.inventory;
     }
-    *///?}
 
     // ==================== CLIENT ====================
 
 
-    //? if forge || neoforge {
+
     private ItemStack clientRecipeIconTemplate = ItemStack.EMPTY;
 
     private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
@@ -981,7 +713,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     public void setCrafting(boolean crafting) {
         this.isCrafting = crafting;
     }
-    //?}
 
     public boolean isCrafting() {
         return isCrafting;

@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
  * Режимы: 0 = BOTH, 1 = INPUT, 2 = OUTPUT, 3 = DISABLED
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer, com.hbm_m.api.block.IPersistentNBT,
+public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer, com.hbm_m.interfaces.ICopiable, com.hbm_m.api.block.IPersistentNBT,
         com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     private static final int SLOT_CHARGE = 0;
@@ -109,26 +109,13 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         if (slot != SLOT_CHARGE && slot != SLOT_DISCHARGE) return false;
         if (stack.isEmpty()) return false;
         if (stack.getItem() instanceof ItemCreativeBattery) return true;
-        //? if forge {
-        return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).isPresent()
-                || stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
-                || stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
-        //?}
-        //? if fabric {
-        /*return team.reborn.energy.api.EnergyStorage.ITEM.find(stack, null) != null;
-        *///?}
-        //? if neoforge {
-        /*// NeoForge: FE через Capabilities.EnergyStorage.ITEM + HBM через ItemEnergyAccess.
-        return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null
-                || com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
-                || com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(stack).isPresent();
-        *///?}
+        return com.hbm_m.api.energy.ItemEnergyAccess.isEnergyItem(stack);
     }
 
     @Override
     public int getCurrentMode() {
         if (level == null) return modeOnNoSignal;
-        return level.hasNeighborSignal(this.worldPosition) ? modeOnSignal : modeOnNoSignal;
+        return com.hbm_m.util.SafeRedstone.hasNeighborSignal(level, this.worldPosition) ? modeOnSignal : modeOnNoSignal;
     }
 
     // Паритет с оригиналом (TileEntityMachineBattery.getProviderSpeed/getReceiverSpeed):
@@ -235,6 +222,28 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         }
         this.lastEnergySample = tag.getLong("lastEnergySample");
         this.averagedEnergyDelta = tag.getLong("averagedEnergyDelta");
+    }
+
+    /* ── Устройство настройки: режимы ячеек + приоритет (аналог redLow/redHigh/priority) ── */
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putInt("modeOnNoSignal", modeOnNoSignal);
+        nbt.putInt("modeOnSignal", modeOnSignal);
+        nbt.putInt("priority", priority.ordinal());
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, Player player, BlockPos pos) {
+        if (nbt.contains("modeOnNoSignal")) this.data.set(0, nbt.getInt("modeOnNoSignal"));
+        if (nbt.contains("modeOnSignal"))   this.data.set(1, nbt.getInt("modeOnSignal"));
+        if (nbt.contains("priority"))       this.data.set(2, nbt.getInt("priority"));
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
     }
 
     /** Original {@code writeNBT}: nur Ladung, Redstone-Modi und Prioritaet wandern in den Drop, nicht das Inventar. */
@@ -392,3 +401,4 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
     }
 }
+

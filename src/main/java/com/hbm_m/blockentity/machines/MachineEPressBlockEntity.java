@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineEPressMenu;
@@ -28,6 +30,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * E-Press (Electric Press) - Port von {@code TileEntityMachineEPress} (1.7.10 Original). Fast
@@ -62,6 +65,10 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
             UpgradeType.SPEED, 3);
 
     private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
+
+    /** Кэш скана рецептов: подпись = фингерпринты всех слотов (CONTRACT 1 — выходной хедрум
+     *  остаётся per-tick проверкой в {@link #canProcess()}, в сканер не входит). */
+    private final CachedRecipeResolver<PressRecipe> recipeResolver = new CachedRecipeResolver<>();
 
     private static final long MAX_POWER = 50_000L;
     private static final long POWER_PER_TICK = 100L;
@@ -221,19 +228,32 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Optional<PressRecipe> getCurrentRecipe() {
-        SimpleContainer container = new SimpleContainer(inventory.getSlots());
-        for (int i = 0; i < inventory.getSlots(); i++) {
-            container.setItem(i, inventory.getStackInSlot(i));
-        }
+        long signature = CachedRecipeResolver.sign(0L,
+                StackNbt.fingerprint(inventory.getStackInSlot(SLOT_BATTERY)),
+                StackNbt.fingerprint(inventory.getStackInSlot(SLOT_STAMP)),
+                StackNbt.fingerprint(inventory.getStackInSlot(SLOT_MATERIAL)),
+                StackNbt.fingerprint(inventory.getStackInSlot(SLOT_OUTPUT)),
+                StackNbt.fingerprint(inventory.getStackInSlot(SLOT_UPGRADE)));
 
         // 1.21.1: Recipe.matches требует RecipeInput, а рецепты завёрнуты в RecipeHolder —
-        // используем RecipeHooks.getAllRecipes + matchesRecipe(RecipeInputWrapper).
-        for (PressRecipe recipe : com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, (RecipeType<PressRecipe>) (RecipeType<?>) PressRecipe.Type.INSTANCE)) {
-            if (recipe.matchesRecipe(new com.hbm_m.platform.recipe.RecipeInputWrapper(container), level)) {
-                return Optional.of(recipe);
-            }
-        }
-        return Optional.empty();
+        // используем RecipeHooks.getAllRecipes + matchesRecipe(RecipeInputWrapper),
+        // кэшированный на тик+подпись через CachedRecipeResolver (SimpleContainer строится
+        // только при открытом гейте — внутри лямбды сканера).
+        PressRecipe cached = recipeResolver.resolve(level,
+                (RecipeType<PressRecipe>) (RecipeType<?>) PressRecipe.Type.INSTANCE, signature,
+                (lvl, all) -> {
+                    SimpleContainer container = new SimpleContainer(inventory.getSlots());
+                    for (int i = 0; i < inventory.getSlots(); i++) {
+                        container.setItem(i, inventory.getStackInSlot(i));
+                    }
+                    for (PressRecipe recipe : (java.util.List<PressRecipe>) all) {
+                        if (recipe.matchesRecipe(new com.hbm_m.platform.recipe.RecipeInputWrapper(container), lvl)) {
+                            return recipe;
+                        }
+                    }
+                    return null;
+                });
+        return Optional.ofNullable(cached);
     }
 
     public void drops() {
@@ -367,4 +387,10 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
         sidedItems.invalidate();
     }
     *///?}
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side);
+    }
 }

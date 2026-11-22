@@ -67,7 +67,7 @@ public final class ModArmorMaterialsAccess {
         Holder<SoundEvent> equip = switch (m.name()) {
             case "STARMETAL" -> SoundEvents.ARMOR_EQUIP_GOLD;
             case "SECURITY"  -> SoundEvents.ARMOR_EQUIP_CHAIN;
-            case "HAZMAT"    -> SoundEvents.ARMOR_EQUIP_LEATHER;
+            case "HAZMAT", "HAZMAT_RED", "HAZMAT_GREY" -> SoundEvents.ARMOR_EQUIP_LEATHER;
             case "PAA"       -> SoundEvents.ARMOR_EQUIP_GOLD;
             default          -> SoundEvents.ARMOR_EQUIP_IRON;
         };
@@ -94,18 +94,32 @@ public final class ModArmorMaterialsAccess {
 
     /^* Возвращает Holder<ArmorMaterial> для NeoForge — он передаётся в ArmorItem. ^/
     public static Holder<ArmorMaterial> holder(ModArmorMaterials m) {
-        return Holder.direct(HOLDERS.get(m).get());
+        return (Holder<ArmorMaterial>) (Object) HOLDERS.get(m);
     }
 
     /^* Регистрирует ARMOR_MATERIALS через Architectury (NeoForge). ^/
     public static void init() {
         ARMOR_MATERIALS.register();
     }
+    /^*
+     * On 1.21.1 ArmorItem no longer takes durability from the material - vanilla items pass it in
+     * the item properties instead. Every HBM armour piece was registered with a bare
+     * Item.Properties(), so all of it was unbreakable. ModArmorMaterials.getDurabilityForType now
+     * only exists in the 1.20.1 branch, hence durabilityFor().
+     ^/
+    public static net.minecraft.world.item.Item.Properties armorProps(ModArmorMaterials m, ArmorItem.Type type) {
+        return new net.minecraft.world.item.Item.Properties().durability(m.durabilityFor(type));
+    }
     *///?}
 
     //? if forge {
     public static ModArmorMaterials holder(ModArmorMaterials m) {
         return m;
+    }
+
+    // On 1.20.1 the material supplies durability through getDurabilityForType.
+    public static net.minecraft.world.item.Item.Properties armorProps(ModArmorMaterials m, ArmorItem.Type type) {
+        return new net.minecraft.world.item.Item.Properties();
     }
     //?}
 }

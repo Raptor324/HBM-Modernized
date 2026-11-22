@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.index.ModRecipeIndex;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * Р‘Р°Р·РѕРІС‹Р№ РјРѕРґСѓР»СЊ РјР°С€РёРЅС‹, РёРЅРєР°РїСЃСѓР»РёСЂСѓСЋС‰РёР№ Р»РѕРіРёРєСѓ РєСЂР°С„С‚Р°.
@@ -53,12 +54,30 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     private ResourceLocation cachedRecipeId = null;
     @Nullable
     private T cachedRecipeById = null;
+    private long recipeByIdEpoch = -1L;
+
+    // Memo for isItemValidForSlot, keyed on (input signature, slot, candidate item, epoch).
+    private long memoSignature = Long.MIN_VALUE;
+    private int memoSlot = -1;
+    private long memoItemFingerprint = Long.MIN_VALUE;
+    private long memoEpoch = -1L;
+    private boolean memoResult = false;
 
     // === SIGNALS ===
     public boolean didProcess = false;
     public boolean needsSync = false;
     /** Original {@code restrictedMode}: per Funk (RoR) gesetztes Rezept - Maschine laeuft mit Viertelgeschwindigkeit. */
     public boolean restrictedMode = false;
+
+    // === INPUT SIGNATURE CACHE (recipe-resolution gating) ===
+    // Recomputed cheaply every tick from input slot fingerprints; external insertions via
+    // any path (incl. in-place shrink that fires no handler event) are caught by the next
+    // tick's comparison. Only the expensive scan/validate is cached — canProcess stays
+    // per-tick (fluid tanks / output headroom live outside the item signature).
+    protected long inputSignature;
+    protected boolean signatureScanned = false;
+    /** Recipe-index epoch last seen by the input gate — a bump forces a re-search even with unchanged slots. */
+    protected long gateEpochSeen = -1L;
 
     // РР—РњР•РќР•РќРР•: РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ С‚РµРїРµСЂСЊ РїСЂРёРЅРёРјР°РµС‚ ILongEnergyStorage
     public MachineModuleBase(int moduleIndex, IEnergyReceiver energyStorage, ModItemStackHandler itemHandler, Level level) {
@@ -137,6 +156,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
 
     /**
      * Fast recipe lookup by id using {@link ModRecipeIndex}.
+     * Epoch-checked: a same-id recipe redefinition after /reload cannot serve a stale object.
      */
     @Nullable
     protected final T getRecipeByIdCached(RecipeType<T> type, @Nullable ResourceLocation id) {
@@ -144,6 +164,12 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             cachedRecipeId = null;
             cachedRecipeById = null;
             return null;
+        }
+        long epoch = ModRecipeIndex.epoch();
+        if (recipeByIdEpoch != epoch) {
+            cachedRecipeId = null;
+            cachedRecipeById = null;
+            recipeByIdEpoch = epoch;
         }
         if (id.equals(cachedRecipeId) && cachedRecipeById != null) {
             return cachedRecipeById;
@@ -199,8 +225,21 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
         for (int inputSlot : inputSlots) {
             if (inputSlot == slot) {
+                // Memoize the expensive findRecipeForItem scan per (signature, slot, item, epoch).
+                long sig = inputSignature;
+                long fp = StackNbt.fingerprint(stack);
+                long epoch = ModRecipeIndex.epoch();
+                if (signatureScanned && sig == memoSignature && slot == memoSlot
+                        && fp == memoItemFingerprint && epoch == memoEpoch) {
+                    return memoResult;
+                }
                 T recipe = findRecipeForItem(stack);
-                return recipe != null;
+                memoSignature = sig;
+                memoSlot = slot;
+                memoItemFingerprint = fp;
+                memoEpoch = epoch;
+                memoResult = recipe != null;
+                return memoResult;
             }
         }
         return false;
@@ -235,6 +274,10 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
         this.currentRecipe = null;
         this.didProcess = false;
         this.needsSync = true;
+        // An external reset must invalidate the input-signature gate: nulling currentRecipe
+        // without touching the slots would otherwise leave the machine stalled (recipe block
+        // skipped while inputs are unchanged) until the player re-inserts a resource.
+        this.signatureScanned = false;
     }
 
     // === GETTERS ===
@@ -320,23 +363,65 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     /**
      * РћР±РЅРѕРІР»РµРЅРёРµ СЃ РїРѕРґРґРµСЂР¶РєРѕР№ blueprint
      */
+    /** Recomputed every tick — this IS the invalidation mechanism (no event wiring needed). */
+    private long computeInputSignature(@Nullable ItemStack blueprint) {
+        long sig = 17L;
+        if (inputSlots != null) {
+            for (int slot : inputSlots) {
+                sig = sig * 31L + StackNbt.fingerprint(itemHandler.getStackInSlot(slot));
+            }
+        }
+        if (blueprint != null) {
+            sig = sig * 31L + StackNbt.fingerprint(blueprint);
+        }
+        return sig;
+    }
+
     public void update(double speedMultiplier, double powerMultiplier, boolean extraCondition, @Nullable ItemStack blueprint) {
         this.didProcess = false;
         this.needsSync = false;
 
-        // РџРѕРёСЃРє РёР»Рё РІР°Р»РёРґР°С†РёСЏ СЂРµС†РµРїС‚Р°
-        if (currentRecipe == null || !matchesCurrentRecipe(currentRecipe)) {
+        // Recompute the signature EVERY tick (a few fingerprint mixes over <= 12 slots) and
+        // gate ONLY the recipe-resolution block below on it. canProcess stays per-tick:
+        // chemplant's canProcessInternal depends on fluid tanks and output headroom outside
+        // the item signature, and a cached true could route outputs over live slots.
+        long computed = computeInputSignature(blueprint);
+        long gateEpoch = ModRecipeIndex.epoch();
+        // Epoch bump (datapack /reload, tag update) invalidates the cached recipe decision even
+        // when the input slots did not move: otherwise a kept currentRecipe crafts a removed
+        // recipe and a cached null never picks up a newly added one.
+        boolean inputsChanged = !signatureScanned || computed != inputSignature || gateEpoch != gateEpochSeen;
+        if (inputsChanged) {
+            inputSignature = computed;
+            signatureScanned = true;
+            gateEpochSeen = gateEpoch;
+        }
+
+        // РџРѕРёСЃРє РёР»Рё РІР°Р»РёРґР°С†РёСЏ СЂРµС†РµРїС‚Р° (skipped entirely while inputs are unchanged:
+        // validated currentRecipe keeps matching, null keeps the negative result cached;
+        // blueprint rejection below is deterministic given recipe+blueprint, both in the signature)
+        if (inputsChanged && (currentRecipe == null || !matchesCurrentRecipe(currentRecipe))) {
             T prev = currentRecipe;
             currentRecipe = pickRecipeForTick();
             if (currentRecipe != null) {
+                int savedMax = maxProgress;
                 maxProgress = getRecipeDuration(currentRecipe);
-                progress = 0.0;
+                // Only a genuine switch clears progress. currentRecipe is transient while progress
+                // is persisted, so resolving the recipe for the first time after a chunk load used
+                // to wipe the saved progress - the original keeps it, storing the recipe name too.
+                // The duration has to match what the progress was saved against, though: otherwise
+                // swapping the inputs while unloaded would hand a short recipe the progress of a
+                // long one, and the overdrive loop below would finish several crafts on one tick.
+                if (prev != null || maxProgress != savedMax) {
+                    progress = 0.0;
+                }
                 needsSync = true;
                 onRecipeChanged(prev, currentRecipe);
             }
         }
 
-        if (currentRecipe != null && !isRecipeAllowedByBlueprint(currentRecipe, blueprint)) {
+        // Deterministic given recipe+blueprint, both inside the signature — skip while unchanged.
+        if (inputsChanged && currentRecipe != null && !isRecipeAllowedByBlueprint(currentRecipe, blueprint)) {
             this.didProcess = false;
             this.progress = 0.0;
             this.currentRecipe = null;
@@ -430,7 +515,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             if (incoming == null || incoming.isEmpty()) return true;
             if (slotStack == null || slotStack.isEmpty()) return true;
             //? if < 1.21.1 {
-            if (!PlatformHooks.isSameItemSameTags(slotStack, incoming)) return false;
+            if (!StackNbt.sameItemSameTags(slotStack, incoming)) return false;
             //?} else {
             /*if (!ItemStack.isSameItemSameComponents(slotStack, incoming)) return false;
             *///?}

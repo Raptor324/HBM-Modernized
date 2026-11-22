@@ -160,10 +160,7 @@ public class ItemRenderEOTT extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -12.5D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0,-1, 0.5);
+		setupModTable(stack, -12.5D, 0, -1, 0.5);
 	}
 
 	@Override

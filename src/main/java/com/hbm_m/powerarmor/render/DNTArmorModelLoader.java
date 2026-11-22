@@ -9,11 +9,13 @@ import com.hbm_m.client.loader.AbstractObjPartModelLoader;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
-
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 /**
  * Model loader for DNT power armor OBJ parts.
  * Part names must match the "o &lt;name&gt;" groups in dnt.obj.
  */
+@OnlyIn(Dist.CLIENT)
 public class DNTArmorModelLoader extends AbstractObjPartModelLoader<DNTArmorBakedModel> {
 
     private static final Set<String> PART_NAMES = Set.of(

@@ -40,7 +40,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Original {@code onBlockActivated}/{@code onScrew}).
  */
 public class MachineConveyorPressBlock extends com.hbm_m.block.machines.DummyableMachineBlock
-        implements com.hbm_m.block.network.IConveyorBelt {
+        implements com.hbm_m.block.network.IConveyorBelt, com.hbm_m.interfaces.ILookOverlay {
 
     /**
      * 1:1-Port von {@code MachineConveyorPress} (1.7.10): drei Felder hoch
@@ -62,8 +62,15 @@ public class MachineConveyorPressBlock extends com.hbm_m.block.machines.Dummyabl
     /** 1:1: ein Gegenstand bleibt nur oben auf der Presse liegen, nicht daneben. */
     @Override
     public boolean canItemStay(Level level, BlockPos pos, net.minecraft.world.phys.Vec3 itemPos) {
-        return level.getBlockState(pos.below()).getBlock() == this
-                || level.getBlockEntity(pos.below()) instanceof MachineConveyorPressBlockEntity;
+        if (level.getBlockState(pos.below()).getBlock() == this
+                || level.getBlockEntity(pos.below()) instanceof MachineConveyorPressBlockEntity) {
+            return true;
+        }
+        if (level.getBlockState(pos).getBlock() == this
+                || level.getBlockEntity(pos) instanceof MachineConveyorPressBlockEntity) {
+            return itemPos.y >= pos.getY() + 1.0 && itemPos.y <= pos.getY() + 1.5;
+        }
+        return false;
     }
 
     @Override
@@ -86,30 +93,34 @@ public class MachineConveyorPressBlock extends com.hbm_m.block.machines.Dummyabl
     public net.minecraft.world.phys.Vec3 getClosestSnappingPosition(Level level, BlockPos pos,
             net.minecraft.world.phys.Vec3 itemPos) {
 
-        Direction dir = travelDirection(level, pos);
+        BlockPos beltPos = pos;
+        if (level.getBlockState(pos).getBlock() == this) {
+            beltPos = pos.above();
+        }
+        Direction dir = travelDirection(level, beltPos);
 
-        double clampedX = Math.max(pos.getX(), Math.min(pos.getX() + 1, itemPos.x));
-        double clampedZ = Math.max(pos.getZ(), Math.min(pos.getZ() + 1, itemPos.z));
+        double clampedX = Math.max(beltPos.getX(), Math.min(beltPos.getX() + 1, itemPos.x));
+        double clampedZ = Math.max(beltPos.getZ(), Math.min(beltPos.getZ() + 1, itemPos.z));
 
-        double posX = pos.getX() + 0.5;
-        double posZ = pos.getZ() + 0.5;
+        double posX = beltPos.getX() + 0.5;
+        double posZ = beltPos.getZ() + 0.5;
 
         if (dir.getStepX() != 0) posX = clampedX;
         if (dir.getStepZ() != 0) posZ = clampedZ;
 
-        return new net.minecraft.world.phys.Vec3(posX, pos.getY() + 0.25D, posZ);
+        return new net.minecraft.world.phys.Vec3(posX, beltPos.getY() + 0.25D, posZ);
     }
 
     /** Die Laufrichtung steht am Kern - die Dummyzellen daruber tragen keine eigene. */
     private Direction travelDirection(Level level, BlockPos pos) {
         net.minecraft.world.level.block.state.BlockState own = level.getBlockState(pos);
-        if (own.hasProperty(FACING)) return own.getValue(FACING);
+        if (own.hasProperty(FACING)) return own.getValue(FACING).getClockWise();
 
         for (int down = 1; down <= 2; down++) {
             net.minecraft.world.level.block.state.BlockState below = level.getBlockState(pos.below(down));
-            if (below.getBlock() == this && below.hasProperty(FACING)) return below.getValue(FACING);
+            if (below.getBlock() == this && below.hasProperty(FACING)) return below.getValue(FACING).getClockWise();
         }
-        return Direction.NORTH;
+        return Direction.NORTH.getClockWise();
     }
     public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 16, 16);
 
@@ -158,6 +169,45 @@ public class MachineConveyorPressBlock extends com.hbm_m.block.machines.Dummyabl
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineConveyorPressBlockEntity(pos, state);
+    }
+
+    /** Fadenkreuz-HUD: Port von {@code MachineConveyorPress.printHook} (HE-Puffer + Stempel). */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineConveyorPressBlockEntity press)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                shortNumber(press.getEnergyStored()) + "HE / " + shortNumber(press.getMaxEnergyStored()) + "HE"));
+
+        ItemStack stamp = press.getStampStack();
+        if (stamp.isEmpty()) {
+            text.add(net.minecraft.network.chat.Component.literal("Installed stamp: NONE")
+                    .withStyle(net.minecraft.ChatFormatting.RED));
+        } else {
+            text.add(net.minecraft.network.chat.Component.literal("Installed stamp: ")
+                    .append(stamp.getHoverName()));
+        }
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
+
+    /** Port von {@code BobMathUtil.getShortNumber} (wie im Original: k/M/G/T/P/E mit zwei Stellen). */
+    private static String shortNumber(long value) {
+        double res;
+        String suffix = "";
+        long abs = Math.abs(value);
+        if (abs >= 1_000_000_000_000_000_000L) { res = value / 1.0E18; suffix = "E"; }
+        else if (abs >= 1_000_000_000_000_000L) { res = value / 1.0E15; suffix = "P"; }
+        else if (abs >= 1_000_000_000_000L) { res = value / 1.0E12; suffix = "T"; }
+        else if (abs >= 1_000_000_000L) { res = value / 1.0E9; suffix = "G"; }
+        else if (abs >= 1_000_000L) { res = value / 1.0E6; suffix = "M"; }
+        else if (abs >= 1_000L) { res = value / 1.0E3; suffix = "k"; }
+        else { return Long.toString(value); }
+        res = res <= -100.0 ? Math.round(res * 10.0) / 10.0 : Math.round(res * 100.0) / 100.0;
+        return res + suffix;
     }
 
     @Override

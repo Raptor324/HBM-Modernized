@@ -22,6 +22,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code EntityArtilleryShell}: Granate der Arty (Typ = Meta von {@code ammo_arty}, siehe {@link ItemAmmoArty}).
@@ -172,7 +173,7 @@ public class EntityArtilleryShell extends EntityThrowableInterp implements IRada
         nbt.putDouble("targetZ", this.targetZ);
 
         if (!this.cargo.isEmpty())
-            nbt.put("cargo", PlatformHooks.saveItemStack(this.cargo, new CompoundTag(), PlatformHooks.bestEffortProvider()));
+            nbt.put("cargo", StackNbt.save(this.cargo, new CompoundTag(), PlatformHooks.bestEffortProvider()));
     }
 
     @Override
@@ -186,7 +187,7 @@ public class EntityArtilleryShell extends EntityThrowableInterp implements IRada
         this.targetY = nbt.getDouble("targetY");
         this.targetZ = nbt.getDouble("targetZ");
 
-        this.setCargo(nbt.contains("cargo") ? PlatformHooks.itemStackOf(nbt.getCompound("cargo"), PlatformHooks.bestEffortProvider()) : ItemStack.EMPTY);
+        this.setCargo(nbt.contains("cargo") ? StackNbt.parse(nbt.getCompound("cargo"), PlatformHooks.bestEffortProvider()) : ItemStack.EMPTY);
     }
 
     @Override

@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'greasegun.blend'
 # www.blender.org
+mtllib hbm_m:models/gun.mtl
+usemtl gun
 o Bullet
 v 0.000000 -0.293931 1.531675
 v -0.078125 -0.313602 1.538834

@@ -14,6 +14,7 @@ public class ModSounds {
             DeferredRegister.create(RefStrings.MODID, Registries.SOUND_EVENT);
     
     // Регистрируем звуки счетчика Гейгера
+    public static final RegistrySupplier<SoundEvent> ELECTRIC_HUM = registerSoundEvents("block.electric_hum");
     public static final RegistrySupplier<SoundEvent> GEIGER_1 = registerSoundEvents("item.geiger1");
     public static final RegistrySupplier<SoundEvent> GEIGER_2 = registerSoundEvents("item.geiger2");
     public static final RegistrySupplier<SoundEvent> GEIGER_3 = registerSoundEvents("item.geiger3");
@@ -28,6 +29,9 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> SOYUZ_READY = registerSoundEvents("soyuz.ready");
     public static final RegistrySupplier<SoundEvent> SOYUZ_TAKEOFF = registerSoundEvents("soyuz.takeoff");
     public static final RegistrySupplier<SoundEvent> SOYUZ_CHIME = registerSoundEvents("soyuz.chime");
+
+    /** Оригинал hbm:weapon.flamethrowerShoot — факел газовой факела (1:1, файл переименован в lowercase). */
+    public static final RegistrySupplier<SoundEvent> WEAPON_FLAMETHROWER_SHOOT = registerSoundEvents("weapon.flamethrower_shoot");
 
     public static final RegistrySupplier<SoundEvent> BOMBDET3 = registerSoundEvents("bombdet3");
     public static final RegistrySupplier<SoundEvent> BOMBDET2 = registerSoundEvents("bombdet2");
@@ -111,6 +115,10 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> LARGE_TURBINE = registerSoundEvents("block.large_turbine");
     public static final RegistrySupplier<SoundEvent> CHUNGUS_TURBINE = registerSoundEvents("block.chungus_turbine");
 
+    // Оригинал: hbm:block.turbofanOperate (цикл) и block.damage (набор dam1-4, перегрузка форсажа).
+    public static final RegistrySupplier<SoundEvent> TURBOFAN_OPERATE = registerSoundEvents("block.turbofan_operate");
+    public static final RegistrySupplier<SoundEvent> MACHINE_DAMAGE = registerSoundEvents("block.machine_damage");
+
     // Fusionsreaktor (Original: hbm:block.boilerGroan / block.fel / block.fusionReactorSpin)
     public static final RegistrySupplier<SoundEvent> BOILER_GROAN = registerSoundEvents("block.boiler_groan");
     public static final RegistrySupplier<SoundEvent> FEL_LOOP = registerSoundEvents("block.fel");
@@ -148,17 +156,26 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> SLIDING_DOOR_OPENING = registerSoundEvents("block.sliding_door_opening");
     public static final RegistrySupplier<SoundEvent> SLIDING_DOOR_SHUT = registerSoundEvents("block.sliding_door_shut");
     public static final RegistrySupplier<SoundEvent> TRANSITION_SEAL_OPEN = registerSoundEvents("block.transition_seal_open");
-    public static final RegistrySupplier<SoundEvent> TRANSITION_SEAL_CLOSE = registerSoundEvents("block.transition_seal_close");
     public static final RegistrySupplier<SoundEvent> WGH_START = registerSoundEvents("block.wgh_start");
     public static final RegistrySupplier<SoundEvent> WGH_STOP = registerSoundEvents("block.wgh_stop");
+    // NEXT ModSounds.java:458-459 — машинные «клунки» реактора, общие с радио-боксами/вентилями
+    public static final RegistrySupplier<SoundEvent> REACTOR_START = registerSoundEvents("reactor_start");
+    public static final RegistrySupplier<SoundEvent> REACTOR_STOP = registerSoundEvents("reactor_stop");
     public static final RegistrySupplier<SoundEvent> VAULT_SCRAPE = registerSoundEvents("block.vault_scrape");
     public static final RegistrySupplier<SoundEvent> VAULT_THUD = registerSoundEvents("block.vault_thud");
+
+    // Замки-ключкарты (порт TileEntityLockableBase; оригинал block.lockOpen/block.lockHang/item.pinUnlock/item.pinBreak)
+    public static final RegistrySupplier<SoundEvent> LOCK_OPEN = registerSoundEvents("block.lock_open");
+    public static final RegistrySupplier<SoundEvent> LOCK_HANG = registerSoundEvents("block.lock_hang");
+    public static final RegistrySupplier<SoundEvent> PIN_UNLOCK = registerSoundEvents("item.pin_unlock");
+    public static final RegistrySupplier<SoundEvent> PIN_BREAK = registerSoundEvents("item.pin_break");
 
     public static final RegistrySupplier<SoundEvent> PIPE_PLACED = registerSoundEvents("block.pipe_placed");
 
     public static final RegistrySupplier<SoundEvent> SWITCH_ON = registerSoundEvents("block.switch.on");
 
-    // Broadcaster ambient loop - Minecraft picks one of the 3 variants at random each play.
+    // Broadcaster ambient loop - the track (one of 3) is picked deterministically per
+    // block position (original: new Random(xCoord+yCoord+zCoord)), see BroadcastSoundInstance.
     public static final RegistrySupplier<SoundEvent> BROADCAST1 = registerSoundEvents("block.broadcast1");
     public static final RegistrySupplier<SoundEvent> BROADCAST2 = registerSoundEvents("block.broadcast2");
     public static final RegistrySupplier<SoundEvent> BROADCAST3 = registerSoundEvents("block.broadcast3");
@@ -196,11 +213,7 @@ public class ModSounds {
     // Вспомогательный метод для регистрации
     private static RegistrySupplier<SoundEvent> registerSoundEvents(String name) {
         // Создаем ResourceLocation, избегая устаревших методов
-        //? if fabric && < 1.21.1 {
-        /*ResourceLocation id = new ResourceLocation(RefStrings.MODID, name);
-        *///?} else {
                 ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, name);
-        //?}
 
         return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(id));
     }

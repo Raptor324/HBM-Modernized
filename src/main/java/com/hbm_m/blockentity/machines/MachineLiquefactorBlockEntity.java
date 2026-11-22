@@ -15,8 +15,10 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineLiquefactorMenu;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.LiquefactorRecipe;
+import com.hbm_m.recipe.index.CachedRecipeResolver;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -31,6 +33,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import com.hbm_m.platform.StackNbt;
 
 /**
  * 1:1 {@code TileEntityMachineLiquefactor}: Eingang, Batterie, zwei Upgrades (Tempo/Strom je 3), 24.000-mB-Ausgangstank.
@@ -54,6 +57,7 @@ public class MachineLiquefactorBlockEntity extends BaseMachineBlockEntity implem
 
     private final FluidTank tank = new FluidTank(ModFluids.NONE.getSource(), 24_000);
     private final UpgradeManager upgradeManager = new UpgradeManager();
+    private final CachedRecipeResolver<LiquefactorRecipe> recipeResolver = new CachedRecipeResolver<>();
 
     public int usage = usageBase;
     public int progress;
@@ -92,7 +96,7 @@ public class MachineLiquefactorBlockEntity extends BaseMachineBlockEntity implem
         for (int i = 0; i < cons.length; i++) tryProvide(tank, world, cons[i], CON_DIRS[i]);
 
         setChanged();
-        sendUpdateToClient();
+        syncIfStateChanged(getEnergyStored(), ((long) progress << 32) ^ (tank.getFill() + (tank.getTankType() == null ? 0 : tank.getTankType().hashCode())));
     }
 
     private boolean canProcess() {
@@ -126,11 +130,14 @@ public class MachineLiquefactorBlockEntity extends BaseMachineBlockEntity implem
 
     @Nullable
     private LiquefactorRecipe findLiquefactorRecipe(ItemStack input) {
-        if (level == null) return null;
-        for (LiquefactorRecipe recipe : RecipeHooks.getAllRecipes(level, LiquefactorRecipe.Type.INSTANCE)) {
-            if (recipe.matchesInput(input)) return recipe;
-        }
-        return null;
+        if (level == null || input.isEmpty()) return null;
+        long signature = CachedRecipeResolver.sign(0L, StackNbt.fingerprint(input));
+        return recipeResolver.resolve(level, LiquefactorRecipe.Type.INSTANCE, signature, (lvl, all) -> {
+            for (LiquefactorRecipe recipe : all) {
+                if (recipe.matchesInput(input)) return recipe;
+            }
+            return null;
+        });
     }
 
     // ==================== GUI ====================
@@ -257,8 +264,7 @@ public class MachineLiquefactorBlockEntity extends BaseMachineBlockEntity implem
         sidedItems.invalidate();
     }
     //?} elif neoforge {
-    /*/^* Original {@code ISidedInventory}: Slot {0}; Rezepteingang hinein, nichts heraus. ^/
-    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+    /*private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
             new com.hbm_m.blockentity.SidedItemAccess.Rules() {
                 @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0 }; }
                 @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0 && isItemValidForSlot(slot, stack); }
@@ -277,4 +283,17 @@ public class MachineLiquefactorBlockEntity extends BaseMachineBlockEntity implem
         sidedItems.invalidate();
     }
     *///?}
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        //? if forge {
+        if (side == null) return this.inventory;
+        return sidedItems.get(side).resolve().orElse(null);
+        //?} elif neoforge {
+        /*if (side == null) return this.inventory;
+        return sidedItems.get(side).resolve().orElse(null);
+        *///?} else {
+        /*return this.inventory;
+        *///?}
+    }
 }

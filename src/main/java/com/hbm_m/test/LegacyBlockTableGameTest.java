@@ -12,13 +12,8 @@ import com.hbm_m.world.gen.legacy.VB;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
-//? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
 
 /**
  * Phase D (Datenladefehler): alle 1.7.10-Meta-Tabellen der Altbau-Weltgen ({@link MB}, {@link VB}) muessen sich

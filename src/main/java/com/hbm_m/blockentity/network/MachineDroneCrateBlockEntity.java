@@ -82,10 +82,14 @@ public class MachineDroneCrateBlockEntity extends BaseMachineBlockEntity
         applyFluidIdentifier();
 
         // 1:1: die Rohranbindung laeuft nur im Fluessigkeitsbetrieb.
-        if (!itemType && level.getGameTime() % 20 == 0) {
+        // trySubscribe — раз в 20 тиков (регистрация, идемпотентно). tryProvide — каждый тик:
+        // его вторая ветка — прямой пуш в соседний приёмник, гейт делит пропускную способность
+        // выдачи. Fill-проверка пропускает зонд, пока бак пуст.
+        if (!itemType) {
+            boolean subscribeDue = level.getGameTime() % 20 == 0;
             for (Direction dir : Direction.values()) {
                 if (sendingMode) {
-                    trySubscribe(fluidTank.getTankType(), level, pos.relative(dir), dir);
+                    if (subscribeDue) trySubscribe(fluidTank.getTankType(), level, pos.relative(dir), dir);
                 } else if (fluidTank.getFill() > 0) {
                     tryProvide(fluidTank, level, pos.relative(dir), dir);
                 }
@@ -161,7 +165,7 @@ public class MachineDroneCrateBlockEntity extends BaseMachineBlockEntity
             if (current.isEmpty()) {
                 inventory.setStackInSlot(i, stack);
                 return ItemStack.EMPTY;
-            } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, stack)) {
+            } else if (com.hbm_m.platform.StackNbt.sameItemSameTags(current, stack)) {
                 int space = current.getMaxStackSize() - current.getCount();
                 if (space > 0) {
                     int toMove = Math.min(space, stack.getCount());
@@ -249,7 +253,6 @@ public class MachineDroneCrateBlockEntity extends BaseMachineBlockEntity
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineDroneCrateMenu.create(id, inventory, this);
     }
-
     //? if forge {
     /** Original {@code ISidedInventory}: Slots {0-17}; alles hinein und heraus. */
     private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
@@ -270,25 +273,5 @@ public class MachineDroneCrateBlockEntity extends BaseMachineBlockEntity
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?} elif neoforge {
-    /*/^* Original {@code ISidedInventory}: Slots {0-17}; alles hinein und heraus. ^/
-    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
-            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
-                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 17); }
-                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
-                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
-            });
-
-    @Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
-        return super.getHbmCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateHbmCaps() {
-        super.invalidateHbmCaps();
-        sidedItems.invalidate();
-    }
-    *///?}
+    //?}
 }

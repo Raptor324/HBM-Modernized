@@ -34,10 +34,17 @@ public interface IFluidStandardSenderMK2 extends IFluidProviderMK2 {
     }
 
     default void tryProvide(Fluid fluid, int pressure, Level level, BlockPos pipePos, Direction dirFromMeToPipe) {
+        // Координатный вариант делегирует BE-варианту; здесь один getBlockEntity на вызов.
+        tryProvide(fluid, pressure, level.getBlockEntity(pipePos), level, pipePos, dirFromMeToPipe);
+    }
+
+    /**
+     * BE-вариант: вызывающий уже достал BlockEntity соседа — внутренний
+     * {@code getBlockEntity} пропускается.
+     */
+    default void tryProvide(Fluid fluid, int pressure, @org.jetbrains.annotations.Nullable BlockEntity neighborBe, Level level, BlockPos pipePos, Direction dirFromMeToPipe) {
         if (!(level instanceof ServerLevel serverLevel)) return;
         if (fluid == Fluids.EMPTY) return;
-
-        BlockEntity neighborBe = level.getBlockEntity(pipePos);
 
         // 1) Регистрация в сети трубы
         if (neighborBe instanceof IFluidConnectorMK2 con) {

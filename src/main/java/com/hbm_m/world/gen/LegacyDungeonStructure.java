@@ -39,6 +39,7 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
+import com.hbm_m.platform.BlockHooks;
 
 /**
  * Port: Die grossen Bauwerke aus {@code HbmWorldGen.generateSurface} (Wuesten-Kraftwerk {@code DesertAtom001},
@@ -280,7 +281,7 @@ public class LegacyDungeonStructure extends Structure {
                             //? if < 1.21.1 {
                             real.load(virtual.saveWithoutMetadata());
                             //?} else {
-                            /*com.hbm_m.platform.PlatformHooks.loadBlockEntityTag(real, virtual.saveWithoutMetadata(level.registryAccess()), level.registryAccess());
+                            /*com.hbm_m.platform.BlockHooks.loadCustomOnly(real, virtual.saveWithoutMetadata(level.registryAccess()), level.registryAccess());
                             *///?}
                             real.setChanged();
                         } catch (Exception ex) {

@@ -1,0 +1,130 @@
+{
+  "loader": "hbm_m:hazmat_armor_parts",
+  "model": "hbm_m:models/armor/hazmat.obj",
+  "flip_v": true,
+  "textures": {
+    "default": "hbm_m:block/armor/hazmat_red",
+    "particle": "hbm_m:block/armor/hazmat_red"
+  },
+  "display": {
+    "gui": {
+      "rotation": [
+        0,
+        180,
+        180
+      ],
+      "translation": [
+        -0.0,
+        19.535,
+        0.0
+      ],
+      "scale": [
+        0.0678,
+        0.0678,
+        0.0678
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        180,
+        180
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.0388,
+        0.0388,
+        0.0388
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        180,
+        180
+      ],
+      "translation": [
+        -0.0,
+        11.163,
+        0.0
+      ],
+      "scale": [
+        0.0388,
+        0.0388,
+        0.0388
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        45,
+        180
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ],
+      "scale": [
+        0.0194,
+        0.0194,
+        0.0194
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        75,
+        45,
+        180
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ],
+      "scale": [
+        0.0194,
+        0.0194,
+        0.0194
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        180
+      ],
+      "translation": [
+        2,
+        1,
+        0
+      ],
+      "scale": [
+        0.0291,
+        0.0291,
+        0.0291
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        135,
+        180
+      ],
+      "translation": [
+        2,
+        1,
+        0
+      ],
+      "scale": [
+        0.0291,
+        0.0291,
+        0.0291
+      ]
+    }
+  }
+}

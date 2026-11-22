@@ -2,7 +2,6 @@ package com.hbm_m.powerarmor;
 
 import com.hbm_m.platform.PlatformHooks;
 
-import com.hbm_m.platform.AttributeOps;
 
 import java.util.UUID;
 
@@ -17,6 +16,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ArmorItem;
+import com.hbm_m.platform.AttributeHooks;
 
 /** Hilfen fuer die Original-Attributmodifikatoren der Ruestungen ({@code getItemAttributeModifiers}). */
 public final class ArmorAttributes {
@@ -55,7 +55,7 @@ public final class ArmorAttributes {
         AttributeInstance speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
         if (speed == null) return;
         com.hbm_m.platform.AttributeHooks.removeModifier(speed, uuid);
-        if (apply) speed.addTransientModifier(PlatformHooks.attributeModifier(uuid, name, amount, AttributeOps.ADDITION));
+        if (apply) speed.addTransientModifier(AttributeHooks.modifier(uuid, name, amount, AttributeHooks.ADDITION));
     }
 
     public static boolean isSlot(ArmorItem item, EquipmentSlot slot) {

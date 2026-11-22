@@ -157,14 +157,12 @@ public class PipeAnchorBlockEntity extends BaseHbmBlockEntity implements IFluidP
         super.setRemoved();
     }
 
-    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         unloaded = true;
         if (node != null) node.expired = true;
         super.onChunkUnloaded();
     }
-    //?}
 
     @Override
     public AABB getRenderBoundingBox() {

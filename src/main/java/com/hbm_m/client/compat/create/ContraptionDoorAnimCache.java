@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.compat.create;
 
 import net.minecraft.core.BlockPos;
@@ -8,14 +7,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
 /**
  * Renderer-owned chase-кэш плавной анимации двери на контрапшене.
  *
@@ -85,4 +78,3 @@ public final class ContraptionDoorAnimCache {
         }
     }
 }
-//?}

@@ -38,8 +38,7 @@ public class ItemSwordAbilityPower extends ItemSwordAbility implements IBatteryI
             if (StackNbt.has(stack)) {
                 StackNbt.tag(stack).putLong("charge", StackNbt.read(stack).getLong("charge") + i);
             } else {
-                StackNbt.set(stack, new CompoundTag());
-                StackNbt.tag(stack).putLong("charge", i);
+                StackNbt.orCreate(stack).putLong("charge", i);
             }
         }
     }
@@ -47,8 +46,7 @@ public class ItemSwordAbilityPower extends ItemSwordAbility implements IBatteryI
     @Override
     public void setCharge(ItemStack stack, long i) {
         if (stack.getItem() instanceof ItemSwordAbilityPower) {
-            if (!StackNbt.has(stack)) StackNbt.set(stack, new CompoundTag());
-            StackNbt.tag(stack).putLong("charge", i);
+            StackNbt.orCreate(stack).putLong("charge", i);
         }
     }
 
@@ -58,8 +56,7 @@ public class ItemSwordAbilityPower extends ItemSwordAbility implements IBatteryI
             if (StackNbt.has(stack)) {
                 StackNbt.tag(stack).putLong("charge", StackNbt.read(stack).getLong("charge") - i);
             } else {
-                StackNbt.set(stack, new CompoundTag());
-                StackNbt.tag(stack).putLong("charge", this.maxPower - i);
+                StackNbt.orCreate(stack).putLong("charge", this.maxPower - i);
             }
 
             if (StackNbt.read(stack).getLong("charge") < 0)
@@ -73,9 +70,9 @@ public class ItemSwordAbilityPower extends ItemSwordAbility implements IBatteryI
             if (StackNbt.has(stack)) {
                 return StackNbt.read(stack).getLong("charge");
             } else {
-                StackNbt.set(stack, new CompoundTag());
-                StackNbt.tag(stack).putLong("charge", ((ItemSwordAbilityPower) stack.getItem()).maxPower);
-                return StackNbt.read(stack).getLong("charge");
+                CompoundTag t = StackNbt.orCreate(stack);
+                t.putLong("charge", ((ItemSwordAbilityPower) stack.getItem()).maxPower);
+                return t.getLong("charge");
             }
         }
 
@@ -117,14 +114,12 @@ public class ItemSwordAbilityPower extends ItemSwordAbility implements IBatteryI
     @Override public long getChargeRate(ItemStack stack) { return chargeRate; }
     @Override public long getDischargeRate(ItemStack stack) { return 0; }
 
-    //? if !fabric {
     @Override
     public void setDamage(ItemStack stack, int damage) {
         // 1.20: ItemStack.setTag ruft setDamageValue(0) auf - das darf nichts tun (sonst Endlosschleife).
         if (damage <= 0) return;
         this.dischargeBattery(stack, damage * consumption);
     }
-    //?}
 
     // neo-pendant: ModCapabilities.registerBatteryItemCaps (RegisterCapabilitiesEvent, Item-Capabilities)
     //? if forge {

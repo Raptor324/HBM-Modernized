@@ -189,7 +189,6 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
 
         if (inA.hasCraftingRemainingItem()) getInventory().setStackInSlot(SLOT_CONTAINER_A, inA.getCraftingRemainingItem().copy());
         if (inB.hasCraftingRemainingItem()) getInventory().setStackInSlot(SLOT_CONTAINER_B, inB.getCraftingRemainingItem().copy());
-
         setEnergyStored(getEnergyStored() - USAGE);
 
         Direction axis = PAOrientation.beamAxis(getBlockState());
@@ -227,7 +226,6 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
 
     /** Original {@code usage} - fuer die Bereitschaftsanzeige im GUI. */
     public static long getUsage() { return USAGE; }
-
     // ── PAParticleHost ──────────────────────────────────────────────────────
 
     @Override
@@ -330,7 +328,7 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
     //?} elif neoforge {
     /*/^* Original: gelbe Zellen fuehren Slot 2, rote Slot 1, alle anderen nur die Behaelterslots 3/4. ^/
     @Override
-    public net.neoforged.neoforge.items.IItemHandler getConditionalItemHandler(net.minecraft.core.BlockPos part, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+    public net.minecraftforge.items.IItemHandler getConditionalItemHandler(net.minecraft.core.BlockPos part, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         net.minecraft.world.level.block.state.BlockState state = getBlockState();
         net.minecraft.core.Direction dir = state.hasProperty(com.hbm_m.block.machines.albion.PAMultiblockBlock.FACING)
                 ? state.getValue(com.hbm_m.block.machines.albion.PAMultiblockBlock.FACING) : net.minecraft.core.Direction.NORTH;
@@ -349,16 +347,28 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
     @Override
     public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
-            net.neoforged.neoforge.items.IItemHandler h = itemAccess(SLOTS_DEFAULT);
+            net.minecraftforge.items.IItemHandler h = itemAccess(SLOTS_DEFAULT);
             return com.hbm_m.platform.LazyCap.of(() -> h).cast();
         }
         return super.getHbmCapability(cap, side);
     }
 
-    private net.neoforged.neoforge.items.IItemHandler itemAccess(int[] slots) {
+    private net.minecraftforge.items.IItemHandler itemAccess(int[] slots) {
         return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot == SLOT_INPUT_A || slot == SLOT_INPUT_B, (slot, stack) -> slot == SLOT_CONTAINER_A || slot == SLOT_CONTAINER_B);
     }
     *///?}
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
+        if (side == null) return this.inventory;
+        //? if forge {
+        return getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, side).resolve().orElse(null);
+        //?} elif neoforge {
+        /*return getHbmCapability(com.hbm_m.platform.HbmCap.ITEM_HANDLER, side).orElse(null);
+        *///?} else {
+        /*return this.inventory;
+        *///?}
+    }
 
     // ── Redstone-over-Radio (1:1 TileEntityPASource) ──
 

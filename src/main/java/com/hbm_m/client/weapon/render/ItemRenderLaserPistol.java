@@ -7,9 +7,7 @@ import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
 import com.hbm_m.item.weapon.sedna.WeaponItems;
 import com.hbm_m.render.anim.HbmAnimations;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /** 1:1 {@code ItemRenderLaserPistol}. */
@@ -95,59 +93,30 @@ public class ItemRenderLaserPistol extends ItemRenderWeaponBase {
 
 	@Override
 	public void setupThirdPerson(ItemStack stack) {
-		super.setupThirdPerson(stack);
-		double scale = 1.25D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.translate(0, -0.5, 1);
+		setupThirdPerson(stack, 1.25D, 0, -0.5, 1);
 	}
 
 	@Override
 	public void setupInv(ItemStack stack) {
-		super.setupInv(stack);
-		double scale = 1.75D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(25, 1, 0, 0);
-		GunGL.rotate(45, 0, 1, 0);
-		GunGL.translate(0, -0.5, 0);
+		setupInv(stack, 1.75D, 0, -0.5, 0);
 	}
 
 	@Override
 	public void setupModTable(ItemStack stack) {
-		double scale = -10D;
-		GunGL.scale(scale, scale, scale);
-		GunGL.rotate(90, 0, 1, 0);
-		GunGL.translate(0, -0.5, 0);
+		setupModTable(stack, -10D, 0, -0.5, 0);
 	}
 
 	@Override
 	public void renderOther(ItemStack stack, ItemRenderType type, Object... data) {
 		GunGL.enableLighting();
-
 		GunGL.bindTexture(texture);
 		GunGL.renderPart(WeaponResources.laser_pistol, "Gun");
 		GunGL.renderPart(WeaponResources.laser_pistol, "Latch");
 		if(hasCapacitors(stack)) GunGL.renderPart(WeaponResources.laser_pistol, "Capacitors");
 		if(hasTape(stack)) GunGL.renderPart(WeaponResources.laser_pistol, "Tape");
-
-		if(type == ItemRenderType.EQUIPPED) {
-			LivingEntity ent = (LivingEntity) data[1];
-			long shot;
-			if(ent == Minecraft.getInstance().player) {
-				ItemGunBaseNT gun = (ItemGunBaseNT) stack.getItem();
-				shot = gun.lastShot[0];
-			} else {
-				shot = ItemRenderWeaponBase.flashMap.getOrDefault(ent, (long) -1);
-				if(shot < 0) return;
-			}
-
-			GunGL.pushMatrix();
-			GunGL.translate(0, 2, 4.75);
-			GunGL.rotate(90, 0, 1, 0);
-			renderLaserFlash(shot, 150, 1.5D, hasEmerald(stack) ? 0x008000 : 0xff0000);
-			GunGL.translate(0, 0, -0.25);
-			renderLaserFlash(shot, 150, 0.75D, hasEmerald(stack) ? 0x80ff00 : 0xff8000);
-			GunGL.popMatrix();
-		}
+		renderEquippedLaserFlash(type, stack, data, 0, 2, 4.75, 150,
+				1.5D, hasEmerald(stack) ? 0x008000 : 0xff0000,
+				-0.25D, 0.75D, hasEmerald(stack) ? 0x80ff00 : 0xff8000);
 	}
 
 	public boolean hasCapacitors(ItemStack stack) {

@@ -1,9 +1,5 @@
 package com.hbm_m.client.render.shader;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Method;
 
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.main.MainRegistry;
@@ -11,118 +7,89 @@ import com.hbm_m.main.MainRegistry;
 import dev.architectury.platform.Platform;
 import net.minecraft.client.Minecraft;
 
-//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} else if neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?} else if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
-
 /**
- * Кросс-лоадерный детектор состояния шейдеров Iris/Oculus.
+ * Cross-loader detector of the Iris/Oculus shader state.
  *
- * <p>Определяет активность Iris-пайплайна через рефлекшн, чтобы VBO-рендер
- * корректно маршрутизировал draw-вызовы через Iris ExtendedShader вместо
- * raw-GL против ванильного шейдера, который Iris подменил (иначе «GL No active program»).</p>
+ * <p>Detects whether an Iris pipeline is active via reflection, so the VBO
+ * renderer can correctly route draw calls through an Iris ExtendedShader
+ * instead of raw-GL against the vanilla shader Iris has replaced (otherwise
+ * "GL No active program").</p>
  *
- * <p><b>Loader-agnostic:</b> проверка загруженности мода делается через
- * {@link dev.architectury.platform.Platform} (работает на Forge/NeoForge/Fabric),
- * поэтому тело класса 100% общее — гейтится только клиентская аннотация
- * ({@code @OnlyIn} на forge/neoforge, {@code @Environment} на fabric).</p>
+ * <p><b>Loader-agnostic:</b> mod presence is checked via
+ * {@link dev.architectury.platform.Platform} (works on Forge/NeoForge/Fabric),
+ * so the class body is 100% common - only the client annotation is gated
+ * ({@code @OnlyIn} on forge/neoforge, {@code @Environment} on fabric).</p>
  */
-//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
-//?} else if fabric {
-/*@Environment(EnvType.CLIENT)
-*///?}
 public class ShaderCompatibilityDetector {
 
     private ShaderCompatibilityDetector() {}
 
     private static boolean initialized = false;
-    private static Method irisIsShaderPackInUse = null;
-    private static Method irisIsRenderingShadowPass = null;
-    private static Object irisApiInstance = null;
 
-    /**
-     * Hot-path MethodHandles для двух запросов к Iris API, вызываемых каждый кадр
-     * (часто per-BE per-pass). {@link Method#invoke} упаковывает аргументы в
-     * {@code Object[]} и каждый раз проходит access-checks рефлекшна;
-     * {@link MethodHandle#invokeExact} дружелюбен к JIT и избегает обоих. Биндится
-     * через {@code asType()} к {@code (Object)boolean}, чтобы call-сайты могли
-     * invokeExact без знания конкретного класса IrisApi.
-     */
-    private static MethodHandle irisIsShaderPackInUseMH = null;
-    private static MethodHandle irisIsRenderingShadowPassMH = null;
-
-    // Кэш для оптимизации и для обращений с background-потоков (Sodium chunk builder)
+    // Cache for performance and for access from background threads (Sodium chunk builder)
     private static boolean lastState = false;
     /**
-     * Thread-safe кэш: обновляется только с render-потока, читается с любых потоков.
-     * Sodium строит чанки на фоновых потоках — они не могут вызывать Iris API напрямую.
+     * Thread-safe cache: updated only from the render thread, read from any thread.
+     * Sodium builds chunks on background threads - they cannot call the Iris API directly.
      */
     private static volatile boolean cachedShaderActive = false;
-    /** Отложенная инвалидация — обрабатывается в ClientTickEvent.END */
+    private static volatile boolean cachedShadowPass = false;
+    /** Deferred invalidation - processed in ClientTickEvent.END */
     private static volatile boolean pendingChunkInvalidation = false;
+    /**
+     * Deferred FULL render-cache invalidation on a pack enable/disable flip,
+     * processed together with {@link #pendingChunkInvalidation} in
+     * {@link #processPendingChunkInvalidation()} (ClientTickEvent.END).
+     * Without it the Tier-1 bake path's GPU state (bake pools at 1.5x headroom,
+     * per-cache SSBOs, shared stores) plus the Iris companion meshes and their
+     * lightmap rings stayed allocated after the pack was switched off - the
+     * VRAM bar stayed pinned right under its peak until F3+T.
+     * Both transition directions use the same teardown; every
+     * subsystem it releases rebuilds lazily on the next use, so nothing that a
+     * re-enabled pack still needs is lost.
+     */
+    private static volatile boolean pendingRenderCacheInvalidation = false;
 
     private static void init() {
         if (initialized) return;
-
-        if (Platform.isModLoaded("oculus") || Platform.isModLoaded("iris")) {
-            try {
-                Class<?> irisApiClass = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
-                Method getInstanceMethod = irisApiClass.getMethod("getInstance");
-                irisApiInstance = getInstanceMethod.invoke(null);
-                irisIsShaderPackInUse = irisApiClass.getMethod("isShaderPackInUse");
-                irisIsRenderingShadowPass = irisApiClass.getMethod("isRenderingShadowPass");
-
-                // MethodHandle bind. Both methods return primitive `boolean`,
-                // so adapt to (Object)boolean so the call sites can invokeExact
-                // without an extra unboxing hop.
-                try {
-                    MethodHandles.Lookup lookup = MethodHandles.lookup();
-                    irisIsShaderPackInUse.setAccessible(true);
-                    irisIsRenderingShadowPass.setAccessible(true);
-                    irisIsShaderPackInUseMH = lookup.unreflect(irisIsShaderPackInUse)
-                            .asType(MethodType.methodType(boolean.class, Object.class));
-                    irisIsRenderingShadowPassMH = lookup.unreflect(irisIsRenderingShadowPass)
-                            .asType(MethodType.methodType(boolean.class, Object.class));
-                } catch (Throwable mhFail) {
-                    MainRegistry.LOGGER.warn("ShaderCompatibilityDetector: MethodHandle binding failed ({}), using Method.invoke", mhFail.toString());
-                    irisIsShaderPackInUseMH = null;
-                    irisIsRenderingShadowPassMH = null;
-                }
-
-                MainRegistry.LOGGER.info("ShaderCompatibilityDetector: API found and cached (MH={}).",
-                        irisIsShaderPackInUseMH != null);
-            } catch (Exception e) {
-                MainRegistry.LOGGER.error("ShaderCompatibilityDetector: Failed to cache API", e);
-            }
+        // The IrisApi v0 reflection (dual-package lookup + MethodHandle bind)
+        // lives in IrisReflectionBridge - the single reflection point.
+        IrisReflectionBridge.ensureIrisApi();
+        if (IrisReflectionBridge.irisApiInstance() != null) {
+            MainRegistry.LOGGER.info("ShaderCompatibilityDetector: API found and cached (MH={}).",
+                    IrisReflectionBridge.irisPackInUseHandle() != null);
         }
         initialized = true;
     }
 
     /**
-     * Один опрос Iris API за кадр (из {@link com.hbm_m.client.render.ClientRenderFlags#onFrameStart}).
-     * Раньше {@link #isExternalShaderActive()} дергал MethodHandle на каждый вызов
-     * (per-part per-BE per-pass) — на фермах машин это давало проценты кадра.
+     * Polls the Iris API once per frame (from
+     * {@link com.hbm_m.client.render.ClientRenderFlags#onFrameStart}).
+     * Previously {@link #isExternalShaderActive()} hit the MethodHandle on every
+     * call (per-part per-BE per-pass) - on machine farms that cost percent-level
+     * frame time.
      */
     public static void updateState() {
+        // Block id disguises: poll for a not-yet-disguised loaded pack. FIRST thing
+        // in the method - the IrisApi early-return below must not gate it.
+        ShaderBlockIdDisguises.applyIfPackChanged();
         if (!initialized) init();
-        if (irisApiInstance == null || (irisIsShaderPackInUseMH == null && irisIsShaderPackInUse == null)) {
+        if (IrisReflectionBridge.irisApiInstance() == null
+                || (IrisReflectionBridge.irisPackInUseHandle() == null && IrisReflectionBridge.irisPackInUseMethod() == null)) {
             cachedShaderActive = false;
             return;
         }
         try {
             boolean isActive;
-            if (irisIsShaderPackInUseMH != null) {
-                isActive = (boolean) irisIsShaderPackInUseMH.invokeExact((Object) irisApiInstance);
+            if (IrisReflectionBridge.irisPackInUseHandle() != null) {
+                isActive = (boolean) IrisReflectionBridge.irisPackInUseHandle()
+                        .invokeExact((Object) IrisReflectionBridge.irisApiInstance());
             } else {
-                Boolean inUse = (Boolean) irisIsShaderPackInUse.invoke(irisApiInstance);
+                Boolean inUse = (Boolean) IrisReflectionBridge.irisPackInUseMethod()
+                        .invoke(IrisReflectionBridge.irisApiInstance());
                 isActive = inUse != null && inUse;
             }
 
@@ -132,8 +99,14 @@ public class ShaderCompatibilityDetector {
                 MainRegistry.LOGGER.info("Shader state changed: {}", isActive ? "Active" : "Inactive");
                 lastState = isActive;
                 OcclusionCullingHelper.clearCache();
-                // Откладываем инвалидацию — вызов из render loop ломает итерацию Sodium (wrapped is null)
+                // Defer invalidation - calling from the render loop breaks the Sodium iteration (wrapped is null)
                 pendingChunkInvalidation = true;
+                // Full GPU teardown on EITHER direction (vanilla->pack frees the
+                // vanilla-path renderer VBOs that the bake path replaced; pack->vanilla
+                // frees the bake pools, per-cache SSBOs, companion meshes and lightmap
+                // rings - all lazily rebuilt). RenderCacheManager.invalidateAll itself
+                // defers to the render thread via recordRenderCall.
+                pendingRenderCacheInvalidation = true;
             }
         } catch (Throwable e) {
             cachedShaderActive = false;
@@ -141,16 +114,24 @@ public class ShaderCompatibilityDetector {
     }
 
     public static boolean isExternalShaderActive() {
-        // O(1): состояние опрашивается один раз за кадр в updateState().
-        // Фоновые потоки (Sodium chunk builder) тоже читают этот кеш.
+        // O(1): state is polled once per frame in updateState().
+        // Background threads (Sodium chunk builder) also read this cache.
         return cachedShaderActive;
     }
 
     /**
-     * Вызывать из ClientTickEvent.END — инвалидирует чанки при смене шейдера.
-     * НЕ вызывать из render loop — ломает итерацию Sodium (ReferenceOpenHashSet.wrapped is null).
+     * Call from ClientTickEvent.END - invalidates chunks on shader change.
+     * Do NOT call from the render loop - it breaks the Sodium iteration
+     * (ReferenceOpenHashSet.wrapped is null).
      */
     public static void processPendingChunkInvalidation() {
+        if (pendingRenderCacheInvalidation) {
+            pendingRenderCacheInvalidation = false;
+            MainRegistry.LOGGER.info(
+                    "ShaderCompatibilityDetector: shader pack toggled - full render cache invalidation");
+            com.hbm_m.client.render.cache.RenderCacheManager.invalidateAll(
+                    com.hbm_m.client.render.cache.RenderCacheManager.Reason.RESOURCE_RELOAD);
+        }
         if (!pendingChunkInvalidation) return;
         pendingChunkInvalidation = false;
         Minecraft mc = Minecraft.getInstance();
@@ -164,40 +145,23 @@ public class ShaderCompatibilityDetector {
     }
 
     /**
-     * Проверяет, рендерится ли сейчас shadow pass Iris (для realtime shadows).
+     * Checks whether Iris's shadow pass is currently rendering (for realtime shadows).
+     *
+     * <p>Cached in a primitive boolean field updated per frame/render phase (head/return of renderShadows),
+     * completely eliminating 100k-300k MethodHandle invocations per second.</p>
      */
     public static boolean isRenderingShadowPass() {
-        if (!initialized) init();
-        if (irisApiInstance == null) return false;
-        try {
-            boolean result;
-            if (irisIsRenderingShadowPassMH != null) {
-                result = (boolean) irisIsRenderingShadowPassMH.invokeExact((Object) irisApiInstance);
-            } else if (irisIsRenderingShadowPass != null) {
-                Boolean boxed = (Boolean) irisIsRenderingShadowPass.invoke(irisApiInstance);
-                result = boxed != null && boxed;
-            } else {
-                return false;
-            }
-            // Диагностика 1.21.1 (тени не отбрасываются): подтверждаем, что
-            // shadow pass вообще детектится через IrisApi на этом лоадере.
-            if (result && !loggedShadowPassDetected) {
-                loggedShadowPassDetected = true;
-                MainRegistry.LOGGER.info(
-                        "ShaderCompatibilityDetector: Iris shadow pass detected (isRenderingShadowPass=true) — API works on this loader");
-            }
-            return result;
-        } catch (Throwable e) {
-            return false;
-        }
+        return cachedShaderActive && cachedShadowPass;
     }
 
-    private static boolean loggedShadowPassDetected = false;
+    public static void setRenderingShadowPass(boolean active) {
+        cachedShadowPass = active;
+    }
 
     /**
      * {@link net.minecraft.client.renderer.blockentity.BlockEntityRenderer#shouldRenderOffScreen}.
      * When {@code true}, Sodium/vanilla still invoke BER even if the BE AABB is outside
-     * the main camera frustum — required so shader-pack shadow maps include off-screen
+     * the main camera frustum - required so shader-pack shadow maps include off-screen
      * casters whose shadows remain visible on screen.
      */
     public static boolean shouldRenderBlockEntityOffScreen() {
@@ -214,8 +178,8 @@ public class ShaderCompatibilityDetector {
     }
 
     /**
-     * Статическая геометрия машин/дверей всегда предоставляется BER/VBO системой.
-     * Baked world quads для этих моделей не используются.
+     * Static geometry of machines/doors is always provided by the BER/VBO system.
+     * Baked world quads are not used for these models.
      */
     public static boolean useVboGeometry() {
         return true;

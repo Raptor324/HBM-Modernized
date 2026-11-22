@@ -8,9 +8,11 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.api.fluids.ConnectionPriority;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.machines.BarrelTankBlock;
 import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
 import com.hbm_m.blockentity.BaseHbmBlockEntity;
+import com.hbm_m.blockentity.IPersistentNBT;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -20,6 +22,7 @@ import com.hbm_m.inventory.fluid.trait.FT_Flammable;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Amat;
 import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous;
+import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous_ART;
 import com.hbm_m.inventory.menu.MachineFluidTankMenu;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
@@ -55,19 +58,22 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.platform.MobHooks;
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+//?}
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
-//?}
 
 @SuppressWarnings("UnstableApiUsage")
-public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements com.hbm_m.api.block.IPersistentNBT, MenuProvider, IMultiblockSidedIO, IFluidStandardTransceiverMK2, com.hbm_m.api.tile.IRepairable,
-        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive,
-        com.hbm_m.api.tile.IOverpressurable
-{
+public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity
+        implements MenuProvider, IMultiblockSidedIO, IFluidStandardTransceiverMK2, IPersistentNBT,
+                com.hbm_m.api.redstoneoverradio.IRORValueProvider,
+                com.hbm_m.api.redstoneoverradio.IRORInteractive,
+                com.hbm_m.api.tile.IOverpressurable,
+                com.hbm_m.api.tile.IRepairable {
 
     public static final int SLOT_ID_IN = 0;
     public static final int SLOT_ID_OUT = 1;
@@ -79,12 +85,22 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
     public static final int MODES = 4;
     private static final int TANK_CAPACITY = 256000;
 
+    /** Port of {@code BlockEntityBarrel.ROR} (NEXT): value/function registry for ROR torches. */
+    private static final String[] ROR = new String[] {
+            com.hbm_m.api.redstoneoverradio.IRORInfo.PREFIX_VALUE + "type",
+            com.hbm_m.api.redstoneoverradio.IRORInfo.PREFIX_VALUE + "fill",
+            com.hbm_m.api.redstoneoverradio.IRORInfo.PREFIX_VALUE + "fillpercent",
+            com.hbm_m.api.redstoneoverradio.IRORInfo.PREFIX_FUNCTION + "setmode"
+                    + com.hbm_m.api.redstoneoverradio.IRORInteractive.NAME_SEPARATOR + "mode (0-3)",
+            com.hbm_m.api.redstoneoverradio.IRORInfo.PREFIX_FUNCTION + "setmode"
+                    + com.hbm_m.api.redstoneoverradio.IRORInteractive.NAME_SEPARATOR + "mode"
+                    + com.hbm_m.api.redstoneoverradio.IRORInteractive.PARAM_SEPARATOR + "fallback (0-3)",
+    };
+
     /**
      * Режим ввода/вывода.
-     * Важно: значение 0 запрещает drain через capability (см. {@link NetworkFluidHandlerWrapper}),
-     * что ломает переток "бак → сеть" при дефолтном состоянии.
+     * Паритет 1.7.10: дефолт 0 ("приём только"), как в оригинальном TileEntityBarrel/TileEntityMachineFluidTank.
      */
-    /** Original-Nummerierung: 0 nur annehmen, 1 Puffer, 2 nur abgeben, 3 aus; Startwert 0. */
     private short mode = 0;
     public boolean hasExploded = false;
     /** Guards against one blast calling into every block of the tank in turn. */
@@ -92,9 +108,9 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
     public boolean onFire = false;
     private byte lastRedstone = 0;
     private int age = 0;
-
-    @Nullable
-    private Fluid filterFluid = null;
+    /** Last (type, fill) pushed to clients — NEXT syncs mode+tank every tick (networkPackNT(50)); MK2 movement bypasses the inventory-processing sync, so we re-send on change here. */
+    private Fluid lastSyncedType;
+    private int lastSyncedFill;
 
     private final FluidTank fluidTank;
     private final ModItemStackHandler itemHandler;
@@ -102,11 +118,9 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
 
     //? if forge {
     private final LazyOptional<IItemHandler> lazyItemHandler;
+    private final LazyOptional<IItemHandler> lazyAutomationItemHandler;
     private final LazyOptional<IFluidHandler> lazyFluidHandler;
-    //?} elif neoforge {
-    /*private final com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> lazyItemHandler;
-    private final com.hbm_m.platform.LazyCap<net.neoforged.neoforge.fluids.capability.IFluidHandler> lazyFluidHandler;
-    *///?}
+    //?}
 
     /** Разрешённые стороны прямого подключения к контроллеру. Если {@link #fluidSidesFromMultiblockStructure} — пусто допустимо (= ни одной стороны); иначе пусто = все стороны. */
     private java.util.Set<Direction> allowedFluidSides = java.util.EnumSet.noneOf(Direction.class);
@@ -131,9 +145,12 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
             protected void onContentsChanged(int slot) {
                 setChanged();
             }
+            // Паритет NEXT BlockEntityBarrel.canPlaceItem: в слот 0 — только идентификатор
+            // жидкости; в 2 — контейнер с содержимым, которое бак примет; в 4 — контейнер
+            // с местом под жидкость бака; выходы 1/3/5 закрыты всегда.
             @Override
             public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-                return slot != SLOT_ID_OUT && slot != SLOT_LOAD_OUT && slot != SLOT_UNLOAD_OUT;
+                return canPlaceItem(slot, stack);
             }
         };
 
@@ -147,9 +164,6 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
                     case 3: return hasExploded ? 1 : 0;
                     case 4: return onFire ? 1 : 0;
                     case 5: return fluidTank.getPressure();
-                    case 6:
-                        if (filterFluid == null || filterFluid == Fluids.EMPTY) return -1;
-                        return BuiltInRegistries.FLUID.getId(filterFluid);
                     default: return 0;
                 }
             }
@@ -162,16 +176,14 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
                 }
             }
             @Override
-            public int getCount() { return 7; }
+            public int getCount() { return 6; }
         };
 
         //? if forge {
         this.lazyItemHandler = LazyOptional.of(() -> itemHandler);
+        this.lazyAutomationItemHandler = LazyOptional.of(this::getAutomationItemHandler);
         this.lazyFluidHandler = LazyOptional.of(() -> new NetworkFluidHandlerWrapper(this));
-        //?} elif neoforge {
-        /*this.lazyItemHandler = com.hbm_m.platform.LazyCap.of(() -> itemHandler);
-        this.lazyFluidHandler = com.hbm_m.platform.LazyCap.of(() -> new NetworkFluidHandlerWrapper(this));
-        *///?}
+        //?}
     }
 
     @Override
@@ -185,8 +197,9 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
 
     // =====================================================================================
     // IFluidStandardTransceiverMK2 — нативное участие в MK2-сети.
-    // Mode wie Original TileEntityMachineFluidTank: 0 = nur annehmen, 1 = Puffer, 2 = nur abgeben, 3 = aus.
-    // gui.hbm_m.fluid_tank.mode.* folgt derselben Nummerierung.
+    // Mode (1:1 с 1.7.10 TileEntityMachineFluidTank): 0=fill only (приём из сети),
+    // 1=fill+drain буфер, 2=drain only (отдача в сеть), 3=lock.
+    // Совпадает с gui.hbm_m.fluid_tank.mode.*: 0 Input only, 2 Output only.
     // Приоритет: режим 1 (буфер) → LOW, чтобы обычные приёмники забирали жидкость первыми
     // (как 1.7.10 TileEntityMachineFluidTank#getFluidPriority).
     // =====================================================================================
@@ -197,39 +210,53 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
     @Override
     public FluidTank[] getAllTanks() { return new FluidTank[]{ fluidTank }; }
 
-    /** Original getSendingTanks: Modus 1/2 geben ab. */
+    /** В сеть сливаем, если режим разрешает drain (1/2) и взорванный — нет. */
     @Override
     public FluidTank[] getSendingTanks() {
         if (hasExploded || mode == 0 || mode == 3) return EMPTY_TANKS;
         return new FluidTank[]{ fluidTank };
     }
 
-    /** Original getReceivingTanks: Modus 0/1 nehmen an. */
+    /** Из сети принимаем, если режим разрешает fill (0/1) и взорванный — нет. */
     @Override
     public FluidTank[] getReceivingTanks() {
-        // Original TileEntityBarrel.getDemand: gekippt nimmt nichts an
-        if (hasExploded || tilted || mode == 2 || mode == 3) return EMPTY_TANKS;
+        if (hasExploded || mode == 2 || mode == 3) return EMPTY_TANKS;
         return new FluidTank[]{ fluidTank };
     }
 
     @Override
     public long getProviderSpeed(Fluid fluid, int pressure) {
         if (hasExploded || mode == 0 || mode == 3) return 0L;
-        // Скорость зависит от заполненности: пустой бак почти не отдаёт → меньше "пинг-понга".
-        // Дополнительно ограничиваем "не более половины текущего fill за тик", чтобы два одинаковых буфера
-        // не могли полностью поменяться местами за один тик (классический full↔empty пингпонг).
-        long dyn = fluidTank.getDynamicNetworkSpeedMb(BASE_NETWORK_SPEED_MB_PER_TICK, true);
-        long halfFill = Math.max(1L, (long) fluidTank.getFill() / 2L);
-        return Math.min(dyn, halfFill);
+        if (isBarrelFamily()) {
+            // Паритет NEXT BlockEntityBarrel.getProviderSpeed (Long.MAX_VALUE — вся бочка
+            // уходит за один проход сети): полупроизводных ограничений нет.
+            return fluidTank.getDynamicNetworkSpeedMb(BASE_NETWORK_SPEED_MB_PER_TICK, true);
+        }
+        // Паритет NEXT BlockEntityMachineFluidTank.getProviderSpeed: max(500, fill/100) mB/t.
+        return Math.max(500L, fluidTank.getFill() / 100L);
     }
 
     @Override
     public long getReceiverSpeed(Fluid fluid, int pressure) {
         if (hasExploded || mode == 2 || mode == 3) return 0L;
-        // Скорость зависит от свободного места: полный бак почти не принимает.
-        long dyn = fluidTank.getDynamicNetworkSpeedMb(BASE_NETWORK_SPEED_MB_PER_TICK, false);
-        long halfSpace = Math.max(1L, (long) Math.max(0, fluidTank.getMaxFill() - fluidTank.getFill()) / 2L);
-        return Math.min(dyn, halfSpace);
+        if (isBarrelFamily()) {
+            // Паритет NEXT BlockEntityBarrel.getReceiverSpeed: весь объём за такт.
+            return fluidTank.getDynamicNetworkSpeedMb(BASE_NETWORK_SPEED_MB_PER_TICK, false);
+        }
+        // Паритет NEXT BlockEntityMachineFluidTank.getReceiverSpeed: max(500, (max-fill)/100) mB/t.
+        return Math.max(500L, (fluidTank.getMaxFill() - fluidTank.getFill()) / 100L);
+    }
+
+    /**
+     * Разделение ролей этого базового класса. В NEXT это два класса: BlockEntityMachineFluidTank
+     * (универсальный бак 5x3x3: визуальный amat-взрыв без разрушений, ремонтопригодный wreck,
+     * ограниченная скорость сети) и BlockEntityBarrel (собственно бочки, а также bigass tank и
+     * Orbus — в NEXT оба наследуют BlockEntityBarrel: разрушение с терра-взрывом, вся ёмкость за
+     * проход сети). В Modernized обе роли играет этот класс; семейство бочек определяется
+     * блоком {@link BarrelTankBlock} (все они на нём сидят).
+     */
+    private boolean isBarrelFamily() {
+        return getBlockState().getBlock() instanceof BarrelTankBlock;
     }
 
     @Override
@@ -248,11 +275,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
     public boolean canConnect(Fluid fluid, Direction fromDir) {
         if (fromDir == null || hasExploded) return false;
         // Если стороны заданы (через мультиблок-структуру или вручную) — фильтруем.
-        if (fluidSidesFromMultiblockStructure) {
-            if (!allowedFluidSides.contains(fromDir)) return false;
-        } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(fromDir)) {
-            return false;
-        }
+        if (!isFluidSideAllowed(fromDir)) return false;
         // Принимаем подключение либо по совпадению типа, либо если бак ещё пуст и тип не зафиксирован.
         Fluid current = fluidTank.getTankType();
         if (current == null || current == Fluids.EMPTY || current == ModFluids.NONE.getSource()) {
@@ -294,35 +317,38 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
     public static void tick(Level level, BlockPos pos, BlockState state, MachineFluidTankBlockEntity entity) {
         if (level.isClientSide) return;
 
-        entity.tickLegacyCoreMigration(level, pos, state);
-
         entity.updateTilt();
 
         // 1.7.10-стиль: подписываемся на трубы у разрешённых сторон.
         // FluidDuctBlockEntity#tick сам по себе нас не подключит, потому что мы IFluidConnectorMK2
         // (это сделано умышленно — нативный MK2-путь даёт давление/приоритет/per-(fluid,pressure)).
         Fluid mk2Type = entity.fluidTank.getTankType();
-        // Original TileEntityBarrel: "if(!this.tilted) for(DirPos pos : getConPos())"
-        if (!entity.tilted && mk2Type != null && mk2Type != Fluids.EMPTY && mk2Type != ModFluids.NONE.getSource()) {
+        // Neighbor-scan (6 направлений: getBlockEntity + trySubscribe/tryProvide).
+        // trySubscribe — раз в 5 тиков (probeDue, фаза размазана по позиции; покрывает все
+        // наследники barrel/steel/tcalloy/BAT9000/Orbus/BAT) — регистрация идемпотентна.
+        // tryProvide — каждый тик: его вторая ветка — прямой пуш в соседний приёмник, гейт
+        // делил бы пропускную способность выдачи. Fill-проверка не даёт сканировать соседей,
+        // пока бак пуст или режим — только приём.
+        boolean mk2Ready = mk2Type != null && mk2Type != Fluids.EMPTY && mk2Type != ModFluids.NONE.getSource();
+        boolean subscribeDue = mk2Ready && entity.probeDue(5);
+        boolean provideNow = mk2Ready && !entity.hasExploded && entity.mode != 0 && entity.mode != 3
+                && entity.fluidTank.getFill() > 0;
+        if (subscribeDue || provideNow) {
             for (Direction dir : Direction.values()) {
-                if (entity.fluidSidesFromMultiblockStructure) {
-                    if (!entity.allowedFluidSides.contains(dir)) continue;
-                } else if (!entity.allowedFluidSides.isEmpty() && !entity.allowedFluidSides.contains(dir)) {
-                    continue;
-                }
+                if (!entity.isFluidSideAllowed(dir)) continue;
                 BlockPos pipePos = pos.relative(dir);
                 BlockEntity pipeBe = level.getBlockEntity(pipePos);
                 // Подписываемся только в HBM-трубы/коннекторы; на чужие машины (или Forge IFluidHandler-машины)
                 // продолжит работать классический путь через Forge capability.
                 if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
 
-                // Original: Modus 0 (nur annehmen) und 1 (Puffer) nehmen an
-                if (!entity.hasExploded && entity.mode != 2 && entity.mode != 3) {
-                    entity.trySubscribe(mk2Type, level, pipePos, dir);
+                // mode != 2/3 → принимаем
+                if (subscribeDue && !entity.hasExploded && entity.mode != 2 && entity.mode != 3) {
+                    entity.trySubscribe(mk2Type, pipeBe, level, pipePos, dir);
                 }
-                // Original: Modus 1 (Puffer) und 2 (nur abgeben) geben ab, wenn etwas drin ist
-                if (!entity.hasExploded && entity.mode != 0 && entity.mode != 3 && entity.fluidTank.getFill() > 0) {
-                    entity.tryProvide(entity.fluidTank, level, pipePos, dir);
+                // mode != 0/3 и есть содержимое → отдаём
+                if (provideNow) {
+                    entity.tryProvide(entity.fluidTank.getTankType(), entity.fluidTank.getPressure(), pipeBe, level, pipePos, dir);
                 }
             }
         }
@@ -332,20 +358,50 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
             if (entity.age >= 20) {
                 entity.age = 0;
                 entity.setChanged();
+                // Паритет NEXT networkPackNT(50): движение жидкости через MK2-сеть не проходит
+                // через inventory-processing, поэтому клиент (NFPA-ромбы/ниппели рендера, GUI)
+                // не видел изменений. Шлём апдейт при изменении типа/уровня, не чаще раза в секунду.
+                Fluid syncType = entity.fluidTank.getTankType();
+                int syncFill = entity.fluidTank.getFill();
+                if (entity.lastSyncedType != syncType || entity.lastSyncedFill != syncFill) {
+                    entity.lastSyncedType = syncType;
+                    entity.lastSyncedFill = syncFill;
+                    level.sendBlockUpdated(pos, state, state, Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
+                }
+            }
+
+            // Original TileEntityBarrel: "For when Tom's firestorm hits a barrel full of water"
+            // (FFA merge loss restore): полная водяная бочка под открытым небом во время
+            // файрсторма взрывается.
+            if (entity.fluidTank.getTankType() == ModFluids.WATER.getSource() && level instanceof ServerLevel sl
+                    && com.hbm_m.saveddata.TomSaveData.forWorld(sl).fire > 1e-5) {
+                int light = level.getBrightness(net.minecraft.world.level.LightLayer.SKY, pos);
+                if (light > 7) {
+                    level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5F, true, Level.ExplosionInteraction.BLOCK);
+                }
             }
 
             if (entity.fluidTank.getFill() > 0) {
                 Fluid type = entity.fluidTank.getTankType();
                 FluidType ftype = FluidType.forFluid(type);
                 if (ftype.isAntimatter() && !entity.canStoreAntimatter()) {
-                    if (entity.handleIncompatibleFluid(ftype)) return;
-                    entity.fluidTank.fill(0);
-                    if (entity.isBarrel() && com.hbm_m.api.space.SpaceApi.forkActive()) {
-                        // E3 (Fork, nur mit Addon): Antimaterie im falschen Fass = Antimaterie-Explosion (TileEntityBarrel)
-                        new com.hbm_m.explosion.vanillant.ExplosionVNT(level, pos.getX(), pos.getY(), pos.getZ(), 5F).makeAmat().explode();
+                    if (entity.isBarrelFamily()) {
+                        // Паритет NEXT BlockEntityBarrel.checkFluidInteraction: ветка FT_Amat стоит
+                        // ПЕРЕД ветками по материалам бочки (в т.ч. пластик) и НЕ заходит в
+                        // переопределяемый обработчик — любая не-antimatter бочка уничтожается
+                        // без дропа, затем взрыв power 5 с огнём; BE после этого удалён — выходим.
+                        entity.fluidTank.fill(0);
+                        level.destroyBlock(pos, false);
+                        level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5F, true, Level.ExplosionInteraction.BLOCK);
                     } else {
-                        level.explode(null, pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5, 5F, Level.ExplosionInteraction.BLOCK);
+                        // Паритет NEXT BlockEntityMachineFluidTank.tickServer: ТОЛЬКО визуальный
+                        // amat-взрыв (без разрушения блоков), бак переходит в ремонтопригодный
+                        // wreck и опустошается — блок выживает.
+                        entity.spawnAntimatterBlast();
+                        entity.explode();
+                        entity.fluidTank.setFill(0);
                     }
+                    return;
                 } else if (ftype.isCorrosive()) {
                     FT_Corrosive corrosive = ftype.getTrait(FT_Corrosive.class);
                     boolean highly = corrosive != null && corrosive.isHighlyCorrosive();
@@ -361,16 +417,6 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
             if (entity.hasExploded) {
                 entity.updateLeak(entity.calculateLeakAmount());
                 return;
-            }
-
-            // Original TileEntityBarrel: "For when Tom's firestorm hits a barrel full of water"
-            if (state.getBlock() instanceof com.hbm_m.block.machines.BarrelTankBlock && level instanceof net.minecraft.server.level.ServerLevel sl
-                    && entity.fluidTank.getTankType() == ModFluids.WATER.getSource()
-                    && com.hbm_m.saveddata.TomSaveData.forWorld(sl).fire > 1e-5) {
-                int light = level.getBrightness(net.minecraft.world.level.LightLayer.SKY, pos);
-                if (light > 7) {
-                    level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5F, true, Level.ExplosionInteraction.BLOCK);
-                }
             }
 
             // --- ОБРАБОТКА ИНВЕНТАРЯ ---
@@ -421,41 +467,6 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
             refreshAdjacentFluidDuctConnections();
         }
-    }
-
-    /** Einmal je Laden geprueft: steht der Kern noch an der alten Randposition? */
-    private boolean legacyLayoutChecked = false;
-
-    /**
-     * Migration alter Welten (siehe {@code MachineFluidTankBlock#getLegacyControllerOffset}): solange der Kern
-     * noch vorn in der Mitte sitzt, wird alle 20 Ticks die Auto-Reparatur versucht, die ihn samt NBT in die
-     * Mitte verschiebt (braucht einen Spieler in 64 Bloecken und geladene Nachbarchunks).
-     */
-    private void tickLegacyCoreMigration(Level level, BlockPos pos, BlockState state) {
-        if (legacyLayoutChecked || level.getGameTime() % 20L != 0L) return;
-        if (!isLegacyCoreLayout()) {
-            legacyLayoutChecked = true;
-            return;
-        }
-        MachineFluidTankBlock block = (MachineFluidTankBlock) state.getBlock();
-        block.getStructureHelper().attemptAutoRepair(level, pos, state, block);
-    }
-
-    /**
-     * Alte Kernlage: die Zelle vor dem Kern ({@code FACING}) gehoert nicht zur eigenen Struktur, die dahinter
-     * schon. Bei der 1:1-Lage liegen beide Zellen in der Struktur. Gilt nur fuer den Tank selbst.
-     */
-    public boolean isLegacyCoreLayout() {
-        Level level = this.level;
-        if (level == null) return false;
-        BlockState st = getBlockState();
-        if (!(st.getBlock() instanceof MachineFluidTankBlock block) || block.getLegacyControllerOffset() == null) return false;
-        Direction facing = st.getValue(MachineFluidTankBlock.FACING);
-        return !isOwnPart(level, worldPosition.relative(facing)) && isOwnPart(level, worldPosition.relative(facing.getOpposite()));
-    }
-
-    private boolean isOwnPart(Level level, BlockPos p) {
-        return level.getBlockEntity(p) instanceof com.hbm_m.interfaces.IMultiblockPart part && worldPosition.equals(part.getControllerPos());
     }
 
     /**
@@ -522,28 +533,36 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
 
     public ResourceLocation getTankTextureLocation() {
         Fluid fluid = fluidTank.getTankType();
-        if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
-            fluid = getFilterFluid();
-        }
-    
-        if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(MainRegistry.MOD_ID, "block/tank/tank_none");
-            *///?} else {
-                        return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_none");
-            //?}
 
+        if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
+            return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_none");
         }
-    
+
         ResourceLocation typeId = BuiltInRegistries.FLUID.getKey(fluid);
         String fluidName = typeId != null ? typeId.getPath() : "none";
-        
-        //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
-        *///?} else {
-                return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
-        //?}
 
+        return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
+    }
+
+    /** true fuer die Faesser (barrel_*), false fuer die grossen Tanks. */
+    public boolean isBarrel() {
+        return this instanceof BarrelIronBlockEntity || this instanceof BarrelSteelBlockEntity || this instanceof BarrelPlasticBlockEntity
+                || this instanceof BarrelCorrodedBlockEntity || this instanceof BarrelTcalloyBlockEntity || this instanceof BarrelAntimatterBlockEntity;
+    }
+
+    /**
+     * E3 (Fork, nur mit Addon): Faesser sind {@code IOverpressurable} (Space {@code TileEntityBarrel}). Ohne Addon
+     * (Master) nehmen weder Faesser noch grosse Tanks teil - RBMK-Ueberdruck entfernt und sprengt sie wie bisher.
+     */
+    @Override
+    public boolean handlesOverpressure() {
+        return isBarrel() && com.hbm_m.api.space.SpaceApi.forkActive();
+    }
+
+    /** Space {@code TileEntityBarrel.explode}: {@code hasExploded} wird dort nie gesetzt -> nur {@code setChanged}. */
+    @Override
+    public void explode(net.minecraft.world.level.Level world, net.minecraft.core.BlockPos pos) {
+        this.setChanged();
     }
 
     public void explode() {
@@ -565,26 +584,22 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
         level.setBlock(worldPosition, state.setValue(com.hbm_m.block.machines.MachineFluidTankBlock.EXPLODED, this.hasExploded), 3);
     }
 
+    // ═══════════════════════════ IRepairable (порт 1.7.10) ═══════════════════════════
+    // Оригинал: TileEntityMachineFluidTank реализует IRepairable; ремонт запускает
+    // блок по клику газовой горелкой (onScrew/TORCH), материалы списываются с игрока.
 
-    /** true fuer die Faesser ({@code barrel_*}), false fuer die grossen Tanks. */
-    public boolean isBarrel() {
-        return this instanceof BarrelIronBlockEntity || this instanceof BarrelSteelBlockEntity || this instanceof BarrelPlasticBlockEntity
-                || this instanceof BarrelCorrodedBlockEntity || this instanceof BarrelTcalloyBlockEntity || this instanceof BarrelAntimatterBlockEntity;
+    /** 1.7.10 {@code IRepairable.isDamaged()}. */
+    @Override
+    public boolean isDamaged() {
+        return this.hasExploded;
     }
 
-    /**
-     * E3 (Fork, nur mit Addon): Faesser sind {@code IOverpressurable} (Space {@code TileEntityBarrel}). Ohne Addon
-     * (Master) nehmen weder Faesser noch grosse Tanks teil - RBMK-Ueberdruck entfernt und sprengt sie wie bisher.
-     */
+    /** 1.7.10 {@code IRepairable.getRepairMaterials()}: 6 стальных пластин. */
     @Override
-    public boolean handlesOverpressure() {
-        return isBarrel() && com.hbm_m.api.space.SpaceApi.forkActive();
-    }
-
-    /** Space {@code TileEntityBarrel.explode}: {@code hasExploded} wird dort nie gesetzt -> nur {@code markChanged}. */
-    @Override
-    public void explode(Level world, BlockPos pos) {
-        this.setChanged();
+    public java.util.List<com.hbm_m.api.tile.IRepairable.RepairStack> getRepairMaterials() {
+        return java.util.List.of(new com.hbm_m.api.tile.IRepairable.RepairStack(
+                net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.material.ModMaterialItems.item(
+                        com.hbm_m.item.material.ModMaterials.STEEL, com.hbm_m.item.material.MaterialShape.PLATE)), 6));
     }
 
     /** Original {@code repair}: nur die Beschaedigung, ein Brand brennt weiter. */
@@ -595,28 +610,16 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
         syncExplodedState();
     }
 
+    /** 1:1 {@code tryExtinguish}: Wasser auf brennende Fluessigkeit laesst den Tank explodieren (FFA merge loss restore). */
     @Override
-    public boolean isDamaged() {
-        return this.hasExploded;
-    }
-
-    private final java.util.List<RepairStack> repairList = new java.util.ArrayList<>();
-
-    @Override
-    public java.util.List<RepairStack> getRepairMaterials() {
-        if (!repairList.isEmpty()) return repairList;
-        repairList.add(new RepairStack(net.minecraft.world.item.crafting.Ingredient.of(com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.STEEL, com.hbm_m.item.material.MaterialShape.PLATE)), 6));
-        return repairList;
-    }
-
-    /** 1:1 {@code tryExtinguish}: Wasser auf brennende Fluessigkeit laesst den Tank explodieren. */
-    @Override
-    public void tryExtinguish(Level world, BlockPos pos, EnumExtinguishType type) {
+    public void tryExtinguish(net.minecraft.world.level.Level world, net.minecraft.core.BlockPos pos,
+                              com.hbm_m.api.tile.IRepairable.EnumExtinguishType type) {
         if (!this.hasExploded || !this.onFire) return;
 
-        if (type == EnumExtinguishType.WATER) {
-            if (FluidType.forFluid(fluidTank.getTankType()).hasTrait(com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Liquid.class)) { // extinguishing oil with water is a terrible idea!
-                world.explode(null, worldPosition.getX() + 0.5, worldPosition.getY() + 1.5, worldPosition.getZ() + 0.5, 5F, true, Level.ExplosionInteraction.BLOCK);
+        if (type == com.hbm_m.api.tile.IRepairable.EnumExtinguishType.WATER) {
+            // extinguishing oil with water is a terrible idea!
+            if (FluidType.forFluid(fluidTank.getTankType()).hasTrait(com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Liquid.class)) {
+                world.explode(null, worldPosition.getX() + 0.5, worldPosition.getY() + 1.5, worldPosition.getZ() + 0.5, 5F, true, net.minecraft.world.level.Level.ExplosionInteraction.BLOCK);
             } else {
                 this.onFire = false;
                 this.setChanged();
@@ -624,10 +627,38 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
             }
         }
 
-        if (type == EnumExtinguishType.FOAM || type == EnumExtinguishType.CO2) {
+        if (type == com.hbm_m.api.tile.IRepairable.EnumExtinguishType.FOAM || type == com.hbm_m.api.tile.IRepairable.EnumExtinguishType.CO2) {
             this.onFire = false;
             this.setChanged();
         }
+    }
+
+    // ═══════════════════════════ IPersistentNBT (порт 1.7.10) ═══════════════════════════
+    // Дроп несёт жидкость (тип + количество), режим и состояние взрыва под ключом
+    // "persistent"; пустой целый бак дропается чистым предметом без NBT — как в оригинале.
+
+    @Override
+    public void writeNBT(CompoundTag nbt) {
+        if (fluidTank.getFill() == 0 && !this.hasExploded) return;
+        CompoundTag data = new CompoundTag();
+        this.fluidTank.writeToNBT(data, "tank");
+        data.putShort("mode", mode);
+        data.putBoolean("hasExploded", hasExploded);
+        data.putBoolean("onFire", onFire);
+        // Вместо _max из подтега tank оригинала: наш FluidTank не пишет ёмкость,
+        // а тултип предмета восстанавливает "x/y mB" без блок-сущности.
+        data.putInt("tank_max", fluidTank.getMaxFill());
+        nbt.put(IPersistentNBT.NBT_PERSISTENT_KEY, data);
+    }
+
+    @Override
+    public void readNBT(CompoundTag nbt) {
+        CompoundTag data = nbt.getCompound(IPersistentNBT.NBT_PERSISTENT_KEY);
+        this.fluidTank.readFromNBT(data, "tank");
+        this.mode = data.contains("mode") ? data.getShort("mode") : 0;
+        this.hasExploded = data.getBoolean("hasExploded");
+        this.onFire = data.getBoolean("onFire");
+        setChanged();
     }
 
     // ═══════════════════════════ Material fluid-storage capability (barrel tiers) ════════════════
@@ -660,11 +691,14 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
         int current = fluidTank.getFill();
         
         if (ftype.isAntimatter()) {
-            return current; 
-        } else if (ftype.hasTrait(FT_Gaseous.class)) {
-            return Math.min(current, max / 100); 
+            return current;
+        } else if (ftype.hasTrait(FT_Gaseous.class) || ftype.hasTrait(FT_Gaseous_ART.class)) {
+            // Паритет NEXT BlockEntityMachineFluidTank.gaseous(): газообразность = FT_Gaseous
+            // ИЛИ FT_Gaseous_ART (водород/кислород несут только ART) — иначе утечка в 100 раз
+            // медленнее оригинала. Прецедент в репо: MachineFlareStackBlockEntity.
+            return Math.min(current, max / 100);
         } else {
-            return Math.min(current, max / 10000); 
+            return Math.min(current, max / 10000);
         }
     }
 
@@ -674,23 +708,51 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
         fluidTank.fill(Math.max(0, fluidTank.getFill() - amount));
         Fluid type = fluidTank.getTankType();
         FluidType ftype = FluidType.forFluid(type);
-
         if (ftype.isAntimatter()) {
-            level.explode(null, worldPosition.getX() + 0.5, worldPosition.getY() + 1.5, worldPosition.getZ() + 0.5, 5F, ExplosionInteraction.BLOCK);
+            if (isBarrelFamily()) {
+                // Паритет NEXT BlockEntityBarrel: amat уничтожает бочку (F5 — ветка коррозии
+                // для barrel_corroded до amat-ветки в Modernized не доходит: hasExploded=true).
+                level.destroyBlock(worldPosition, false);
+                level.explode(null, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5, 5F, true, ExplosionInteraction.BLOCK);
+            } else {
+                // Паритет NEXT BlockEntityMachineFluidTank.updateLeak: antimatterBlast() —
+                // только визуал, блок-руина ремонтируется дальше.
+                spawnAntimatterBlast();
+            }
         } else if (ftype.hasTrait(FT_Flammable.class) && onFire) {
-            AABB fireBox = new AABB(worldPosition).inflate(2.5, 5.0, 2.5);
-            List<LivingEntity> affected = level.getEntitiesOfClass(LivingEntity.class, fireBox);
-            for (LivingEntity e : affected) {
-                PlatformHooks.setSecondsOnFire(e, 5);
+            // Entity-query (поджог сущностей в радиусе утечки) раз в 10 тиков; частицы — каждый тик.
+            if (probeDue(10)) {
+                AABB fireBox = new AABB(worldPosition).inflate(2.5, 5.0, 2.5);
+                List<LivingEntity> affected = level.getEntitiesOfClass(LivingEntity.class, fireBox);
+                for (LivingEntity e : affected) {
+                    MobHooks.setSecondsOnFire(e, 5);
+                }
             }
             if (level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.FLAME, worldPosition.getX() + level.random.nextDouble(), worldPosition.getY() + 0.5 + level.random.nextDouble(), worldPosition.getZ() + level.random.nextDouble(), 3, 0.1, 0.1, 0.1, 0.05);
             }
-        } else if (ftype.hasTrait(FT_Gaseous.class)) {
+        } else if (ftype.hasTrait(FT_Gaseous.class) || ftype.hasTrait(FT_Gaseous_ART.class)) {
+            // Та же газообразность, что в calculateLeakAmount (FT_Gaseous + FT_Gaseous_ART).
             if (level.getGameTime() % 5 == 0 && level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, worldPosition.getX() + 0.5, worldPosition.getY() + 1, worldPosition.getZ() + 0.5, 5, 0.2, 0.5, 0.2, 0.05);
             }
         }
+    }
+
+    /**
+     * Паритет NEXT BlockEntityMachineFluidTank.antimatterBlast: ExplosionVNT с
+     * setBlockAllocator(null).setBlockProcessor(null) поверх makeAmat — БЕЗ разрушения
+     * блоков, только обработка сущностей (rangeMod 2, как в оригинале; самого
+     * CustomDamageHandlerAmat в Modernized нет — см. отчёт, микроколебание по типу урона).
+     */
+    private void spawnAntimatterBlast() {
+        if (level == null || level.isClientSide) return;
+        new com.hbm_m.explosion.vanillant.ExplosionVNT(level,
+                worldPosition.getX() + 0.5, worldPosition.getY() + 1.5, worldPosition.getZ() + 0.5, 5F)
+                .setBlockAllocator(null)
+                .setBlockProcessor(null)
+                .setEntityProcessor(new com.hbm_m.explosion.vanillant.standard.EntityProcessorStandard().withRangeMod(2F))
+                .explode();
     }
 
     /** Hook fuer {@code checkTilt} vor dem eigentlichen Tick (Original: BigAssTank vor super.updateEntity). */
@@ -707,16 +769,128 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
         setChanged();
     }
 
-    public short getMode() { return mode; }
+    // ═══════════════ Redstone over Radio (порт BlockEntityBarrel: values + setmode) ═══════════════
 
-    /** NBT-Migration: frueher fuehrte der Port 0 = nur abgeben und 2 = nur annehmen. */
-    private static short migrateMode(short old) {
-        if (old == 0) return 2;
-        if (old == 2) return 0;
-        return old;
+    @Override
+    public String[] getFunctionInfo() {
+        return ROR;
     }
+
+    @Override
+    public String provideRORValue(String name) {
+        String p = com.hbm_m.api.redstoneoverradio.IRORInfo.PREFIX_VALUE;
+        if ((p + "type").equals(name)) {
+            // NEXT: NTMFluids.legacyName(tank.getTankType()) — внутреннее имя жидкости HBM,
+            // пустой бак -> "NONE" (NTMFluids.java:405-407).
+            Fluid tankFluid = fluidTank.getTankType();
+            if (tankFluid == null || tankFluid == Fluids.EMPTY || tankFluid == ModFluids.NONE.getSource()) {
+                return "NONE";
+            }
+            String hbmName = com.hbm_m.api.fluids.HbmFluidRegistry.getFluidName(tankFluid);
+            return hbmName != null ? hbmName : BuiltInRegistries.FLUID.getKey(tankFluid).getPath();
+        }
+        if ((p + "fill").equals(name)) return "" + fluidTank.getFill();
+        if ((p + "fillpercent").equals(name)) return "" + (fluidTank.getFill() * 100 / fluidTank.getMaxFill());
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        if ((com.hbm_m.api.redstoneoverradio.IRORInfo.PREFIX_FUNCTION + "setmode").equals(name) && params.length > 0) {
+            int next = RorModes.select(mode, params);
+            if (next != mode) {
+                mode = (short) next;
+                setChanged();
+            }
+        }
+        return null;
+    }
+
+    public short getMode() { return mode; }
     public FluidTank getFluidTank() { return fluidTank; }
     public com.hbm_m.platform.ModItemStackHandler getItemHandler() { return itemHandler; }
+
+    // ═══════════════ Gate слотов 0/2/4 (паритет NEXT BlockEntityBarrel.canPlaceItem) ═══════════════
+    // Общий для GUI (mayPlace меню — в NEXT слоты plain и гейтятся container.canPlaceItem)
+    // и автоматизации (isItemValid handler'а выше).
+
+    /**
+     * NEXT canPlaceItem: слот 0 — только идентификатор; слот 2 — контейнер, содержащий
+     * жидкость, которую бак примет (NEXT FluidTankNTM.containerContent, при неустановленном
+     * типе бака — всегда отказ); слот 4 — контейнер с местом под жидкость бака
+     * (NEXT containerRoom). Остальные слоты закрыты.
+     */
+    public boolean canPlaceItem(int slot, @NotNull ItemStack stack) {
+        // Взрывной бак/руина (взорванный tank, проржавевшая бочка) предметы НЕ принимает:
+        // у corroded dropInventoryOnRemove()=false — вложенное до поломки молча удалилось бы
+        // (путь потери предметов, которого в NEXT нет — там barrel_corroded без BE).
+        // Извлечение не ограничено.
+        if (hasExploded) return false;
+        return switch (slot) {
+            case SLOT_ID_IN -> stack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier;
+            case SLOT_LOAD_IN -> containerHasContent(stack);
+            case SLOT_UNLOAD_IN -> containerHasRoom(stack);
+            default -> false;
+        };
+    }
+
+    private boolean containerHasContent(@NotNull ItemStack stack) {
+        Fluid type = fluidTank.getTankType();
+        if (!FluidTank.isFluidTypeExplicitlySet(type)) return false;
+        FluidHooks.FluidExtraction sim = FluidHooks.extractFluidFromItem(stack, Integer.MAX_VALUE, true);
+        return sim.amount() > 0 && com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(type, sim.fluid());
+    }
+
+    private boolean containerHasRoom(@NotNull ItemStack stack) {
+        Fluid type = fluidTank.getTankType();
+        if (!FluidTank.isFluidTypeExplicitlySet(type)) return false;
+        // fillItem льёт forVanillaContainerFill(stored) — проверяем место под тот же флюид.
+        Fluid forContainer = com.hbm_m.api.fluids.VanillaFluidEquivalence.forVanillaContainerFill(type);
+        return FluidHooks.insertFluidIntoItem(stack, forContainer, fluidTank.getMaxFill(), true).amountInserted() > 0;
+    }
+
+    // ═══════════════ Автоматизация (паритет NEXT getSlotsForFace/canTakeItemThroughFace) ═══════════════
+    // Автоматика видит только слоты {2,3,4,5}: вставка в 2/4 (грузовые), извлечение только из 3/5.
+    // Слоты 0/1 (идентификатор) автоматике недоступны. side == null → полный handler:
+    // через него идёт дроп инвентаря при разрушении (BaseHbmBlockEntity.dropInventory).
+
+    /** Automation-exposed slot indices, in exposure order (NEXT ACCESSIBLE_SLOTS). */
+    private static final int[] AUTOMATION_SLOTS = { SLOT_LOAD_IN, SLOT_LOAD_OUT, SLOT_UNLOAD_IN, SLOT_UNLOAD_OUT };
+
+    private ModItemStackHandler automationHandler;
+
+    private ModItemStackHandler getAutomationItemHandler() {
+        if (automationHandler == null) {
+            automationHandler = new ModItemStackHandler(AUTOMATION_SLOTS.length) {
+                @Override public int getSlots() { return AUTOMATION_SLOTS.length; }
+                @Override public ItemStack getStackInSlot(int slot) { return itemHandler.getStackInSlot(realSlot(slot)); }
+                @Override public void setStackInSlot(int slot, @NotNull ItemStack stack) { itemHandler.setStackInSlot(realSlot(slot), stack); }
+                @Override public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                    int real = realSlot(slot);
+                    if (real == SLOT_LOAD_OUT || real == SLOT_UNLOAD_OUT) return stack;
+                    return itemHandler.insertItem(real, stack, simulate);
+                }
+                @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
+                    int real = realSlot(slot);
+                    if (real == SLOT_LOAD_IN || real == SLOT_UNLOAD_IN) return ItemStack.EMPTY;
+                    return itemHandler.extractItem(real, amount, simulate);
+                }
+                @Override public int getSlotLimit(int slot) { return itemHandler.getSlotLimit(realSlot(slot)); }
+                @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return itemHandler.isItemValid(realSlot(slot), stack); }
+                private int realSlot(int exposed) { return AUTOMATION_SLOTS[Math.max(0, Math.min(AUTOMATION_SLOTS.length - 1, exposed))]; }
+            };
+        }
+        return automationHandler;
+    }
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        // Иначе на NeoForge ItemHandler.BLOCK-провайдер возвращает null: не дропается инвентарь
+        // при ломании, не работают воронки/предметные трубы.
+        // Sided-запрос (воронки/трубы) получает фильтрованный handler, null (дроп) — полный.
+        return side == null ? itemHandler : getAutomationItemHandler();
+    }
+
     
     private ItemStack[] getSlotsArray() {
         ItemStack[] arr = new ItemStack[6];
@@ -735,19 +909,12 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
     @Override
     protected void readNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("Inventory"), registries);
+        itemHandler.deserialize(tag.getCompound("Inventory"), registries);
         fluidTank.readFromNBT(tag, "tank");
-        // Original-Nummerierung (0 annehmen, 2 abgeben); alte Port-Welten ohne "modeOrig" hatten 0/2 vertauscht.
+        // Старые миры могли не иметь этого поля — по умолчанию нужен режим, который умеет и fill и drain.
         mode = tag.contains("mode") ? tag.getShort("mode") : 0;
-        if (tag.contains("mode") && !tag.getBoolean("modeOrig")) mode = migrateMode(mode);
         hasExploded = tag.getBoolean("exploded");
         onFire = tag.getBoolean("onFire");
-
-        if (tag.contains("filterFluid")) {
-            filterFluid = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(tag.getString("filterFluid")));
-        } else {
-            filterFluid = null;
-        }
 
         if (tag.contains("AllowedFluidSides")) {
             int mask = tag.getInt("AllowedFluidSides");
@@ -770,19 +937,11 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
     @Override
     protected void writeNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.put("Inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
+        tag.put("Inventory", itemHandler.serialize( registries));
         fluidTank.writeToNBT(tag, "tank");
         tag.putShort("mode", mode);
-        tag.putBoolean("modeOrig", true);
         tag.putBoolean("exploded", hasExploded);
         tag.putBoolean("onFire", onFire);
-
-        if (filterFluid != null && filterFluid != Fluids.EMPTY) {
-            ResourceLocation key = BuiltInRegistries.FLUID.getKey(filterFluid);
-            if (key != null) {
-                tag.putString("filterFluid", key.toString());
-            }
-        }
 
         if (fluidSidesFromMultiblockStructure) {
             tag.putBoolean("FluidSidesFromMbStructure", true);
@@ -801,46 +960,39 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
     //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast(); // Original ISidedInventory
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
-            return lazyItemHandler.cast();
+            return (side == null ? lazyItemHandler : lazyAutomationItemHandler).cast();
         }
             if (cap == ForgeCapabilities.FLUID_HANDLER) {
-                if (side != null) {
-                    if (fluidSidesFromMultiblockStructure) {
-                        if (!allowedFluidSides.contains(side)) {
-                            return LazyOptional.empty();
-                        }
-                    } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
-                        return LazyOptional.empty();
-                    }
+                if (!isFluidSideAllowed(side)) {
+                    return LazyOptional.empty();
                 }
                 return lazyFluidHandler.cast();
             }
         return super.getCapability(cap, side);
     }
-    //?} elif neoforge {
-    /*@Override
-    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast(); // Original ISidedInventory
-        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
-            return lazyItemHandler.cast();
+    //?}
+
+    /**
+     * Разрешена ли сторона для жидкостных подключений (порты 'F' мультиблока).
+     * Единая проверка для Forge {@code getCapability} и NeoForge {@code getFluidHandler} —
+     * на neo раньше фильтр не применялся вовсе.
+     */
+    public boolean isFluidSideAllowed(@Nullable Direction side) {
+        if (side == null) return true;
+        if (fluidSidesFromMultiblockStructure) {
+            return allowedFluidSides.contains(side);
         }
-            if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
-                if (side != null) {
-                    if (fluidSidesFromMultiblockStructure) {
-                        if (!allowedFluidSides.contains(side)) {
-                            return com.hbm_m.platform.LazyCap.empty();
-                        }
-                    } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
-                        return com.hbm_m.platform.LazyCap.empty();
-                    }
-                }
-                return lazyFluidHandler.cast();
-            }
-        return super.getHbmCapability(cap, side);
+        return allowedFluidSides.isEmpty() || allowedFluidSides.contains(side);
     }
-    *///?}
+
+    /** NeoForge-путь капабилити: до базовой обёртки MK2 — фильтр сторон, как на Forge. */
+    @Override
+    public @Nullable Object getFluidHandler(@Nullable Direction side) {
+        if (!isFluidSideAllowed(side)) return null;
+        return super.getFluidHandler(side);
+    }
+
 
     @Override
     public void setAllowedFluidSidesFromMultiblockStructure(java.util.Set<Direction> sides) {
@@ -860,9 +1012,6 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
-        //? if neoforge {
-        /*invalidateCapabilities(); // NeoForge-Capability-Cache: Seiten/Rolle geaendert
-        *///?}
     }
 
     /**
@@ -886,8 +1035,9 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
     @Override
     public void setRemoved() {
         super.setRemoved();
-        //? if forge || neoforge {
+        //? if forge {
         lazyItemHandler.invalidate();
+        lazyAutomationItemHandler.invalidate();
         lazyFluidHandler.invalidate();
         //?}
     }
@@ -904,45 +1054,45 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
     }
 
 
-    // Shift+ПКМ идентификатором по цистерне: задаёт тип бака (включая NONE), сливает содержимое, обновляет фильтр для GUI.
+    // Shift+ПКМ идентификатором по цистерне - 1:1 с оригиналом (MachineFluidTank.onBlockActivated):
+    // tank.setTankType(type), ранний выход при том же типе, слив при смене.
 
-    public void setFilterFromIdentifier(ItemStack stack) {
+    /**
+     * Паритет NEXT BlockFluidBarrel.Functional.useItemOn (:122-123): пустой/нерезолвимый
+     * идентификатор -> setTankTypeByIdentifier(null) — тип бака СБРАСЫВАЕТСЯ (бак опустошается),
+     * а не игнорируется. assignTypeAndZeroFluid(NONE) даёт несетовый тип (isFluidTypeExplicitlySet
+     * = false) — эквивалент null у NEXT.
+     */
+    public void setTankTypeFromIdentifier(ItemStack stack) {
         if (stack.isEmpty()) {
             return;
         }
         Fluid resolved;
         if (stack.getItem() instanceof FluidIdentifierItem) {
+            // resolvePrimaryForTank возвращает NONE для незаданного первичного — сброс типа.
             resolved = FluidIdentifierItem.resolvePrimaryForTank(stack);
             if (resolved == null) {
-                return;
+                resolved = ModFluids.NONE.getSource();
             }
         } else if (stack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier idItem) {
             Fluid t = idItem.getType(level, worldPosition, stack);
-            if (t == null || t == Fluids.EMPTY) {
-                return;
-            }
-            resolved = t;
+            // NEXT: target == Fluids.EMPTY ? null : target — пустой идентификатор сбрасывает тип.
+            resolved = (t == null || t == Fluids.EMPTY) ? ModFluids.NONE.getSource() : t;
         } else {
             return;
         }
 
-        // Если тип уже совпадает — ничего не делаем (не сливаем бак).
+        // Если тип уже совпадает — ничего не делаем (не сливаем бак), как setTankType в 1.7.10.
         if (com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(resolved, fluidTank.getTankType())) {
             return;
         }
 
         fluidTank.assignTypeAndZeroFluid(resolved);
-        filterFluid = resolved == ModFluids.NONE.getSource() ? null : resolved;
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
             refreshAdjacentFluidDuctConnections();
         }
-    }
-
-    @Nullable
-    public Fluid getFilterFluid() {
-        return filterFluid;
     }
 
     @Nullable
@@ -977,7 +1127,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
 
         @Override
         public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return 0; // Original-Modus: 0 annehmen, 1 Puffer
+            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return 0;
             return internal.fill(resource, action);
         }
 
@@ -995,149 +1145,5 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements c
             return internal.drain(maxDrain, action);
         }
     }
-    //?} elif neoforge {
-    /*private class NetworkFluidHandlerWrapper implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
-        private final MachineFluidTankBlockEntity entity;
-        private net.neoforged.neoforge.fluids.capability.IFluidHandler internal;
-
-        public NetworkFluidHandlerWrapper(MachineFluidTankBlockEntity entity) {
-            this.entity = entity;
-            this.internal = (net.neoforged.neoforge.fluids.capability.IFluidHandler) FluidHooks.getRawFluidHandler(entity.fluidTank.getCapability());
-        }
-
-        @Override
-        public int getTanks() { return internal.getTanks(); }
-
-        @Override
-        public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) { return internal.getFluidInTank(tank); }
-
-        @Override
-        public int getTankCapacity(int tank) { return internal.getTankCapacity(tank); }
-
-        @Override
-        public boolean isFluidValid(int tank, @NotNull net.neoforged.neoforge.fluids.FluidStack stack) {
-            return internal.isFluidValid(tank, stack);
-        }
-
-        @Override
-        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return 0; // Original-Modus: 0 annehmen, 1 Puffer
-            return internal.fill(resource, action);
-        }
-
-        @NotNull
-        @Override
-        public net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
-            return internal.drain(resource, action);
-        }
-
-        @NotNull
-        @Override
-        public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
-            return internal.drain(maxDrain, action);
-        }
-    }
-    *///?}
-
-    /** Original {@code TileEntityMachineFluidTank.writeNBT}: Tank, Modus, Explosions-/Brandzustand. */
-    @Override
-    public void writeNBT(CompoundTag nbt) {
-        if (fluidTank.getFill() == 0 && !this.hasExploded) return;
-        fluidTank.writeToNBT(nbt, "tank");
-        nbt.putShort("mode", mode);
-        nbt.putBoolean("modeOrig", true);
-        nbt.putBoolean("exploded", hasExploded);
-        nbt.putBoolean("onFire", onFire);
-    }
-
-    //? if forge {
-    /** Original {@code ISidedInventory}: Slots {2, 3, 4, 5}; volle Behaelter in 2, leere in 4, die Gegenstuecke 3 und 5 heraus. */
-    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> getItemHandler(),
-            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
-                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 2, 3, 4, 5 }; }
-                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { net.minecraft.world.level.material.Fluid type = fluidTank.getTankType();
-                    if (slot == 4) {
-                        net.minecraft.world.item.ItemStack full = com.hbm_m.inventory.FluidContainerRegistry.getFullContainer(stack, type);
-                        return full != null && !full.isEmpty() && com.hbm_m.inventory.FluidContainerRegistry.getFluidContent(full, type) <= fluidTank.getMaxFill();
-                    }
-                    int content = com.hbm_m.inventory.FluidContainerRegistry.getFluidContent(stack, type);
-                    return slot == 2 && content > 0 && content <= fluidTank.getMaxFill(); }
-                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 3 || slot == 5; }
-            });
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        sidedItems.invalidate();
-    }
-    //?} elif neoforge {
-    /*/^* Original {@code ISidedInventory}: Slots {2, 3, 4, 5}; volle Behaelter in 2, leere in 4, die Gegenstuecke 3 und 5 heraus. ^/
-    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> getItemHandler(),
-            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
-                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 2, 3, 4, 5 }; }
-                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { net.minecraft.world.level.material.Fluid type = fluidTank.getTankType();
-                    if (slot == 4) {
-                        net.minecraft.world.item.ItemStack full = com.hbm_m.inventory.FluidContainerRegistry.getFullContainer(stack, type);
-                        return full != null && !full.isEmpty() && com.hbm_m.inventory.FluidContainerRegistry.getFluidContent(full, type) <= fluidTank.getMaxFill();
-                    }
-                    int content = com.hbm_m.inventory.FluidContainerRegistry.getFluidContent(stack, type);
-                    return slot == 2 && content > 0 && content <= fluidTank.getMaxFill(); }
-                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 3 || slot == 5; }
-            });
-
-    @Override
-    public void invalidateHbmCaps() {
-        super.invalidateHbmCaps();
-        sidedItems.invalidate();
-    }
-    *///?}
-
-    // ── Redstone-over-Radio (1:1 TileEntityMachineFluidTank / TileEntityBarrel - die Faesser erben von hier) ──
-
-    @Override
-    public String[] getFunctionInfo() {
-        return new String[] {
-                PREFIX_VALUE + "type",
-                PREFIX_VALUE + "fill",
-                PREFIX_VALUE + "fillpercent",
-                PREFIX_FUNCTION + "setmode" + NAME_SEPARATOR + "mode (0-3)",
-                PREFIX_FUNCTION + "setmode" + NAME_SEPARATOR + "mode" + PARAM_SEPARATOR + "fallback (0-3)",
-        };
-    }
-
-    @Override
-    public String provideRORValue(String name) {
-        // Original FluidType.getName(): der interne Name in Grossbuchstaben
-        if ((PREFIX_VALUE + "type").equals(name))        return com.hbm_m.inventory.fluid.FluidType.forFluid(fluidTank.getTankType()).getName().toUpperCase(java.util.Locale.US);
-        if ((PREFIX_VALUE + "fill").equals(name))        return "" + fluidTank.getFill();
-        if ((PREFIX_VALUE + "fillpercent").equals(name)) return "" + (fluidTank.getFill() * 100 / fluidTank.getMaxFill());
-        return null;
-    }
-
-    @Override
-    public String runRORFunction(String name, String[] params) {
-        if ((PREFIX_FUNCTION + "setmode").equals(name) && params.length > 0) {
-            int mode = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, 3);
-            if (mode != this.mode) {
-                this.mode = (short) mode;
-                this.markChangedROR();
-                return null;
-            } else if (params.length > 1) {
-                int altmode = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[1], 0, 3);
-                this.mode = (short) altmode;
-                this.markChangedROR();
-                return null;
-            }
-            return null;
-        }
-        return null;
-    }
-
-    /** Original {@code markChanged()}. */
-    private void markChangedROR() {
-        setChanged();
-        if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-    }
+    //?}
 }

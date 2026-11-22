@@ -7,6 +7,7 @@ import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.function.Consumer;
 
@@ -39,7 +40,7 @@ public final class CyclotronRecipeGenerator {
         tag(writer, "li_beryllium",   "part_lithium", "beryllium",  50, "boron_powder");
         tag(writer, "li_boron",       "part_lithium", "boron",      50, "coal_powder");
         tag(writer, "li_quartz",      "part_lithium", "quartz",     50, "fire_powder");
-        tag(writer, "li_phosphorus",  "part_lithium", "phosphorus", 50, "sulfur");
+        ore(writer, "li_phosphorus",  "part_lithium", "oredict/dust/red_phosphorus", 50, "sulfur");
         tag(writer, "li_iron",        "part_lithium", "iron",       50, "cobalt_powder");
         item(writer, "li_strontium", "part_lithium",  "strontium_powder",            50, "zirconium_powder");
         tag(writer, "li_gold",        "part_lithium", "gold",       50, "nugget_mercury");
@@ -64,7 +65,7 @@ public final class CyclotronRecipeGenerator {
         // PART_CARBON — amatProduced = 10
         // ═══════════════════════════════════════════════════════════════════
         tag(writer, "ca_boron",    "part_carbon", "boron",     10, "aluminum_powder");
-        tag(writer, "ca_sulfur",   "part_carbon", "sulfur",    10, "titanium_powder");
+        ore(writer, "ca_sulfur",   "part_carbon", "oredict/dust/sulfur",    10, "titanium_powder");
         tag(writer, "ca_titanium", "part_carbon", "titanium",  10, "cobalt_powder");
         item(writer, "ca_caesium", "part_carbon",  "caesium_powder",     10, "lanthanium_powder");
         item(writer, "ca_neodymium", "part_carbon", "neodymium_powder",  10, "gold_powder");
@@ -89,7 +90,7 @@ public final class CyclotronRecipeGenerator {
         // ═══════════════════════════════════════════════════════════════════
         // PART_PLUTONIUM — amatProduced = 100 (tennessine/australium chain)
         // ═══════════════════════════════════════════════════════════════════
-        tag(writer, "pl_phosphorus", "part_plutonium", "phosphorus", 100, "tennessine_powder");
+        ore(writer, "pl_phosphorus", "part_plutonium", "oredict/dust/red_phosphorus", 100, "tennessine_powder");
         tag(writer, "pl_plutonium",  "part_plutonium", "plutonium",  100, "tennessine_powder");
         item(writer, "pl_tennessine","part_plutonium", "tennessine_powder",   100, "australium_powder");
         item(writer, "pl_pellet",   "part_plutonium", "pellet_charged",     1000, "nugget_schrabidium");
@@ -107,6 +108,23 @@ public final class CyclotronRecipeGenerator {
         if (target == null || outItem == null) return;  // нет предмета → нет рецепта (как в оригинале)
         CyclotronRecipeBuilder.cyclotronRecipe(
                         target, "forge:powders/" + inputElement, new ItemStack(outItem), amat)
+                .save(writer, "cyclotron/" + name);
+    }
+
+    /**
+     * Пара {@code addLegacyTag} для входов, чей oredict-ключ не имеет аналога
+     * {@code forge:powders/<element>} ({@code dustSulfur}, {@code dustPhosphorus}): вход —
+     * канонический oredict-тег порта {@code hbm_m:oredict/<path>} через
+     * {@link OreDictIngredients#ore} (dustSulfur → hbm_m:sulfur, dustPhosphorus →
+     * hbm_m:fire_powder), как это делают остальные генераторы (ChemicalPlantRecipeGenerator).
+     */
+    private static void ore(Consumer<FinishedRecipe> writer, String name, String targetId,
+                            String oredictPath, int amat, String outputId) {
+        Item target = modItem(targetId);
+        Item outItem = modItem(outputId);
+        if (target == null || outItem == null) return;  // нет предмета → нет рецепта (как в оригинале)
+        CyclotronRecipeBuilder.cyclotronRecipe(
+                        Ingredient.of(target), OreDictIngredients.ore(oredictPath), new ItemStack(outItem), amat)
                 .save(writer, "cyclotron/" + name);
     }
 

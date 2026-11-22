@@ -1,5 +1,5 @@
 {
-  "loader": "forge:obj",
+  "loader": "hbm_m:machine_parts_loader",
   "model": "hbm_m:models/block/machines/industrial_turbine.obj",
   "flip_v": true,
   "render_type": "minecraft:cutout",
