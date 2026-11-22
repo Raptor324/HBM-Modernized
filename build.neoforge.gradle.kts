@@ -702,7 +702,9 @@ dependencies {
 	// Distant Horizons: compileOnly для официального API (см. DhRenderBridge).
 	// Класс моста грузится только при установленном DH.
 	"compileOnly"("maven.modrinth:distanthorizons:3.3.3-1.21.1") // 3.3.3-1.21.1
-	// "runtimeOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.21.1")
+	if (!project.hasProperty("noClientMods")) {
+		"runtimeOnly"("maven.modrinth:distanthorizons:3.3.3-1.21.1")
+	}
 
 	"compileOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")
 	"runtimeOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")

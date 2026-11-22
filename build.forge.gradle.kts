@@ -723,7 +723,9 @@ dependencies {
 	// и пр.) в com.hbm_m.client.compat.dh.DhRenderBridge. Класс моста грузится только при
 	// установленном DH, поэтому отсутствие зависимости в рантайме безопасно.
 	"modCompileOnly"("maven.modrinth:distanthorizons:3.3.3-1.20.1") // 3.3.3-1.20.1
-	// "modRuntimeOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.20.1")
+	if (!project.hasProperty("noClientMods")) {
+		"modRuntimeOnly"("maven.modrinth:distanthorizons:3.3.3-1.20.1")
+	}
 
 	// "modRuntimeOnly"("curse.maven:xaeros-world-map-317780:7598469")
     // "modRuntimeOnly"("curse.maven:xaeros-minimap-263420:7598586")
