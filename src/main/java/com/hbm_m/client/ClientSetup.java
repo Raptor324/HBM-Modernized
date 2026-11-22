@@ -871,7 +871,6 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.MOBILE_LAUNCH_PAD_BE.get(), com.hbm_m.client.render.implementations.MobileLaunchPadMissileRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TOPOL_LAUNCH_PAD_BE.get(), com.hbm_m.client.render.implementations.TopolLauncherRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.PANTSIR_S1_BE.get(), com.hbm_m.client.render.implementations.PantsirRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.COOLING_TOWER_BE.get(), com.hbm_m.client.render.implementations.CoolingTowerRenderer::large);
         BlockEntityRenderers.register(ModBlockEntities.TOWER_SMALL_BE.get(), com.hbm_m.client.render.implementations.CoolingTowerRenderer::small);
@@ -1651,6 +1650,7 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.UFO.get(), com.hbm_m.client.render.mob.UFORenderer::new);
         event.registerEntityRenderer(ModEntities.BOMBER.get(), com.hbm_m.client.render.plane.BomberRenderer::new);
         event.registerEntityRenderer(ModEntities.KA52.get(), com.hbm_m.client.render.entity.Ka52Renderer::new);
+        event.registerEntityRenderer(ModEntities.PANTSIR.get(), com.hbm_m.client.render.entity.PantsirRenderer::new);
         // 1:1 RenderBombletTheta (Zeta: halbe Groesse, eigene Textur)
         event.registerEntityRenderer(ModEntities.BOMBLET_ZETA.get(), com.hbm_m.client.render.projectile.BombletThetaRenderer::new);
         event.registerEntityRenderer(ModEntities.MASKMAN.get(), com.hbm_m.client.render.mob.MaskManRenderer::new);

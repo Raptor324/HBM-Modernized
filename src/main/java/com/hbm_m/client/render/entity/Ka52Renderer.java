@@ -55,6 +55,8 @@ public class Ka52Renderer extends EntityRenderer<EntityKa52> {
     private static final ObjAtlasMesh GUN_BARREL = mesh("gun_barrel");
 
     private static final float GEAR_FOLD = 85.0F;
+    private static final double ROTOR_HUB_Y = 2.9D;
+    private static final float ROTOR_LEAN = 0.35F;
     private static final double GUN_RECOIL = 0.18D;
 
     private static ObjAtlasMesh mesh(String group) {
@@ -88,6 +90,12 @@ public class Ka52Renderer extends EntityRenderer<EntityKa52> {
             draw(BODY, pose, light, pos, buffer);
         }
 
+        // Die Rotorscheibe neigt sich beim Steuern staerker als der Rumpf, wie beim echten Vorbild.
+        pose.pushPose();
+        pose.translate(0.0D, ROTOR_HUB_Y, 0.0D);
+        pose.mulPose(Axis.XP.rotationDegrees(pitch * ROTOR_LEAN));
+        pose.mulPose(Axis.ZP.rotationDegrees(entity.getRoll() * ROTOR_LEAN));
+        pose.translate(0.0D, -ROTOR_HUB_Y, 0.0D);
         float rotor = entity.getRotorAngle(partialTick);
         pose.pushPose();
         pose.mulPose(Axis.YP.rotationDegrees(rotor));
@@ -96,6 +104,7 @@ public class Ka52Renderer extends EntityRenderer<EntityKa52> {
         pose.pushPose();
         pose.mulPose(Axis.YP.rotationDegrees(-rotor));
         draw(ROTOR_UPPER, pose, light, pos, buffer);
+        pose.popPose();
         pose.popPose();
 
         float fold = entity.getGearRetraction() * GEAR_FOLD;

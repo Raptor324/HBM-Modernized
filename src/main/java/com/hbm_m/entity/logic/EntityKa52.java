@@ -15,6 +15,8 @@ import com.hbm_m.item.weapon.sedna.factory.XFactoryRocket;
 import com.hbm_m.item.weapon.sedna.factory.XFactoryTurret;
 import com.hbm_m.sound.HbmSoundsNT;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -35,6 +37,7 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
@@ -49,9 +52,12 @@ import net.minecraft.world.phys.Vec3;
  * landet am Startpunkt und faehrt die Rotoren herunter.
  *
  * <p><b>Selbst fliegen:</b> Rechtsklick auf den geparkten Hubschrauber setzt den Spieler ins Cockpit. Die
- * Nase folgt der Blickrichtung, W/S/A/D schieben ihn, Springen steigt, Sprinten sinkt. Linke Maustaste
- * feuert die Kanone, rechte die Raketen. Die Tasten kommen ueber {@link EnumKeybind} beim Server an, der
- * den Flug allein rechnet. Steigt der Pilot in der Luft aus, landet der Hubschrauber von selbst.
+ * Nase folgt der Blickrichtung. W/S kippen ihn nach vorn und hinten, A/D legen ihn zur Seite, und aus
+ * dieser Neigung entsteht wie beim echten Hubschrauber der Vortrieb: er beschleunigt, bleibt in Schwung
+ * und muss zum Bremsen zurueckgezogen werden. Springen steigt, Sprinten sinkt, starke Neigung kostet
+ * Auftrieb, ueber dem Boden traegt ihn das Bodeneffekt-Polster. Linke Maustaste feuert die Kanone, rechte
+ * die Raketen. Die Tasten kommen ueber {@link EnumKeybind} beim Server an, der den Flug allein rechnet.
+ * Steigt der Pilot in der Luft aus, landet der Hubschrauber von selbst.
  *
  * <p><b>Absturz:</b> Bei 0 Lebenspunkten verliert er den Auftrieb, dreht sich um die Hochachse,
  * kippt ab und brennt. Die Rotoren laufen langsam aus, beim Aufschlag explodiert er.
@@ -105,12 +111,29 @@ public class EntityKa52 extends EntityPlaneBase {
     private static final float GUN_PITCH_DOWN = 40.0F;
     private static final float GUN_SLEW = 6.0F;
     private static final double AIM_RANGE = 256.0D;
-    private static final double PILOT_SPEED = 1.2D;
-    private static final double PILOT_REVERSE = 0.45D;
-    private static final double PILOT_STRAFE = 0.45D;
-    private static final double PILOT_LIFT = 0.45D;
-    private static final float PILOT_TURN_RATE = 5.0F;
+    private static final float MAX_TILT_FORWARD = 28.0F;
+    private static final float MAX_TILT_BACK = 16.0F;
+    private static final float MAX_BANK = 30.0F;
+    private static final float TILT_RATE = 3.0F;
+    private static final float BANK_RATE = 4.0F;
+    /** Beschleunigung bei voller Neigung, zusammen mit dem Widerstand rund 150 km/h Hoechstfahrt. */
+    private static final double TILT_THRUST = 0.13D;
+    private static final double DRAG_LINEAR = 0.01D;
+    /** Zusaetzliches Abbremsen, sobald der Pilot den Knueppel loslaesst: er haelt dann von selbst den Schwebeflug. */
+    private static final double HOVER_BRAKE = 0.05D;
+    private static final double DRAG_QUADRATIC = 0.006D;
+    private static final double CLIMB_RATE = 0.55D;
+    private static final double SINK_RATE = 0.7D;
+    private static final double VERTICAL_RESPONSE = 0.16D;
+    private static final double TILT_LIFT_LOSS = 0.35D;
+    private static final double TRANSLATIONAL_LIFT = 0.08D;
+    private static final double GROUND_EFFECT = 0.06D;
+    private static final double GROUND_EFFECT_HEIGHT = 5.0D;
+    private static final float YAW_RESPONSE = 0.28F;
+    private static final float YAW_DAMPING = 0.68F;
+    private static final float MAX_YAW_RATE = 6.0F;
     private static final double CRASH_IMPACT = 0.5D;
+    private static final double WASH_HEIGHT = 16.0D;
     private static final int PILOT_ROCKET_INTERVAL = 10;
     private static final float PILOT_ROCKET_DAMAGE = 25.0F;
     private static final double SEAT_X = 0.3D;
@@ -129,6 +152,7 @@ public class EntityKa52 extends EntityPlaneBase {
     private double patrolAngle;
     private boolean returnRequested;
     private float crashSpin;
+    private float yawRate;
     private int gunCooldown;
     private int rocketCooldown;
     private boolean rocketSide;
@@ -218,6 +242,55 @@ public class EntityKa52 extends EntityPlaneBase {
             this.turnProgress--;
             setPos(x, y, z);
         }
+        rotorWash();
+        damageSmoke();
+        com.hbm_m.client.Ka52Client.onEntityTick(this);
+    }
+
+    /** Abwind: je naeher am Boden, desto mehr Staub, Blaetter oder Gischt werden nach aussen gedrueckt. */
+    private void rotorWash() {
+        float rotor = getRotorSpeed();
+        int groundY = level().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, Mth.floor(getX()), Mth.floor(getZ()));
+        double height = getY() - groundY;
+        if (rotor < 0.4F || height > WASH_HEIGHT) {
+            return;
+        }
+        double strength = (1.0D - height / WASH_HEIGHT) * rotor;
+        int count = (int) (16.0D * strength);
+        BlockPos below = BlockPos.containing(getX(), groundY - 1, getZ());
+        BlockState surface = level().getBlockState(below);
+        boolean water = !surface.getFluidState().isEmpty();
+        for (int i = 0; i < count; i++) {
+            double angle = this.random.nextDouble() * Math.PI * 2.0D;
+            double radius = 2.0D + this.random.nextDouble() * 6.0D;
+            double cos = Math.cos(angle);
+            double sin = Math.sin(angle);
+            double px = getX() + cos * radius;
+            double pz = getZ() + sin * radius;
+            double push = (0.5D + this.random.nextDouble() * 0.6D) * strength;
+            if (water) {
+                level().addParticle(ParticleTypes.SPLASH, px, groundY + 0.2D, pz, cos * push, 0.25D, sin * push);
+            } else if (i % 2 == 0 && !surface.isAir()) {
+                level().addParticle(new BlockParticleOption(ParticleTypes.BLOCK, surface), px, groundY + 0.1D, pz,
+                        cos * push, 0.15D, sin * push);
+            } else {
+                level().addParticle(ParticleTypes.CLOUD, px, groundY + 0.3D, pz, cos * push, 0.02D, sin * push);
+            }
+        }
+    }
+
+    private void damageSmoke() {
+        float fraction = getSyncedHealth() / getMaxHealth();
+        if (fraction > 0.5F || getState() == CRASHING) {
+            return;
+        }
+        double yaw = Math.toRadians(getYRot());
+        double x = getX() + Math.sin(yaw) * 1.2D;
+        double z = getZ() - Math.cos(yaw) * 1.2D;
+        level().addParticle(ParticleTypes.LARGE_SMOKE, x, getY() + 2.6D, z, 0.0D, 0.08D, 0.0D);
+        if (fraction < 0.25F) {
+            level().addParticle(ParticleTypes.FLAME, x, getY() + 2.5D, z, 0.0D, 0.04D, 0.0D);
+        }
     }
 
     private void serverTick(ServerLevel server) {
@@ -254,9 +327,6 @@ public class EntityKa52 extends EntityPlaneBase {
         }
 
         updateGear(server);
-        if (getRotorSpeed() > 0.3F && this.tickCount % SOUND_INTERVAL == 0 && getState() != CRASHING) {
-            playSound(server, "hbm:entity.chopperFlyingLoop", 5.0F, 0.6F + getRotorSpeed() * 0.4F);
-        }
         if (getState() != PARKED) {
             loadNeighboringChunks(Mth.floor(getX() / 16.0D), Mth.floor(getZ() / 16.0D));
         }
@@ -344,22 +414,25 @@ public class EntityKa52 extends EntityPlaneBase {
         double lift = axis(keys, EnumKeybind.HELI_UP, EnumKeybind.HELI_DOWN);
 
         float before = getYRot();
-        Vec3 wanted;
-        if (!powered) {
-            wanted = new Vec3(0.0D, grounded ? 0.0D : -0.3D, 0.0D);
-        } else if (grounded && lift <= 0.0D) {
-            wanted = Vec3.ZERO;
+        boolean settled = !powered || (grounded && lift <= 0.0D);
+        float wantedPitch = 0.0F;
+        float wantedBank = 0.0F;
+        if (settled) {
+            this.yawRate = 0.0F;
         } else {
-            setYRot(Mth.approachDegrees(before, pilot.getYRot(), PILOT_TURN_RATE));
-            double heading = Math.toRadians(getYRot());
-            double thrust = forward * (forward > 0.0D ? PILOT_SPEED : PILOT_REVERSE);
-            wanted = new Vec3(-Math.sin(heading) * thrust + Math.cos(heading) * strafe * PILOT_STRAFE,
-                    lift * PILOT_LIFT,
-                    Math.cos(heading) * thrust + Math.sin(heading) * strafe * PILOT_STRAFE);
+            wantedPitch = (float) (forward * (forward > 0.0D ? MAX_TILT_FORWARD : MAX_TILT_BACK));
+            wantedBank = (float) (-strafe * MAX_BANK);
+            float error = Mth.degreesDifference(before, pilot.getYRot());
+            this.yawRate = Mth.clamp((this.yawRate + Mth.clamp(error * YAW_RESPONSE, -1.2F, 1.2F)) * YAW_DAMPING,
+                    -MAX_YAW_RATE, MAX_YAW_RATE);
+            setYRot(before + this.yawRate);
         }
         float turn = Mth.degreesDifference(before, getYRot());
+        setXRot(Mth.approach(getXRot(), wantedPitch, TILT_RATE));
+        float bank = Mth.approach(getRoll(), Mth.clamp(wantedBank + turn * 3.0F, -35.0F, 35.0F), BANK_RATE);
+        this.entityData.set(ROLL, bank);
 
-        Vec3 velocity = getDeltaMovement().lerp(wanted, RESPONSE);
+        Vec3 velocity = settled && grounded ? Vec3.ZERO : flightStep(server, lift, powered, bank, forward == 0.0D && strafe == 0.0D);
         Vec3 from = position();
         this.noPhysics = false;
         move(MoverType.SELF, velocity);
@@ -370,13 +443,6 @@ public class EntityKa52 extends EntityPlaneBase {
             hurt(server.damageSources().flyIntoWall(), (float) (impact * 40.0D));
         }
         setDeltaMovement(moved);
-
-        double yaw = Math.toRadians(getYRot());
-        double ahead = moved.x * -Math.sin(yaw) + moved.z * Math.cos(yaw);
-        double sideways = moved.x * Math.cos(yaw) + moved.z * Math.sin(yaw);
-        setXRot(Mth.approach(getXRot(), (float) (ahead * 14.0D), 1.0F));
-        this.entityData.set(ROLL, Mth.approach(getRoll(),
-                Mth.clamp(turn * 5.0F - (float) sideways * 27.0F, -25.0F, 25.0F), 1.5F));
 
         Vec3 eye = pilot.getEyePosition();
         Vec3 far = eye.add(pilot.getLookAngle().scale(AIM_RANGE));
@@ -389,6 +455,37 @@ public class EntityKa52 extends EntityPlaneBase {
         if (keys.getKeyPressed(EnumKeybind.GUN_SECONDARY)) {
             fireRocket(server, pilot, aim);
         }
+    }
+
+    /** Ein Tick Flugmechanik: Neigung erzeugt Vortrieb, Widerstand begrenzt ihn, der Pilot stellt die Steigrate. */
+    private Vec3 flightStep(ServerLevel server, double lift, boolean powered, float bank, boolean hovering) {
+        Vec3 velocity = getDeltaMovement();
+        double heading = Math.toRadians(getYRot());
+        double pitchRad = Math.toRadians(getXRot());
+        double bankRad = Math.toRadians(bank);
+        double ahead = Math.sin(pitchRad) * TILT_THRUST;
+        double aside = -Math.sin(bankRad) * TILT_THRUST;
+        double vx = velocity.x + (-Math.sin(heading) * ahead + Math.cos(heading) * aside) * (powered ? 1.0D : 0.0D);
+        double vz = velocity.z + (Math.cos(heading) * ahead + Math.sin(heading) * aside) * (powered ? 1.0D : 0.0D);
+        double speed = Math.sqrt(vx * vx + vz * vz);
+        double drag = 1.0D - DRAG_LINEAR - DRAG_QUADRATIC * speed - (hovering && powered ? HOVER_BRAKE : 0.0D);
+        vx *= drag;
+        vz *= drag;
+
+        double height = heightAboveGround(server);
+        double target;
+        if (powered) {
+            target = lift > 0.0D ? lift * CLIMB_RATE : lift * SINK_RATE;
+            target -= TILT_LIFT_LOSS * (1.0D - Math.cos(pitchRad) * Math.cos(bankRad));
+            target += TRANSLATIONAL_LIFT * Math.min(1.0D, speed / 2.0D);
+            if (lift == 0.0D && height < GROUND_EFFECT_HEIGHT) {
+                target += GROUND_EFFECT * (1.0D - height / GROUND_EFFECT_HEIGHT);
+            }
+        } else {
+            target = -0.35D;
+        }
+        double vy = velocity.y + (target - velocity.y) * VERTICAL_RESPONSE;
+        return new Vec3(vx, vy, vz);
     }
 
     private static double axis(HbmPlayerProps keys, EnumKeybind positive, EnumKeybind negative) {

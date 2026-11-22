@@ -106,7 +106,8 @@ public final class HbmKeybinds {
     /** Flugtasten des Ka-52: die normalen Bewegungstasten, gemeldet nur solange der Spieler im Hubschrauber sitzt. */
     private static boolean pilotKey(KeyMapping key) {
         Player player = Minecraft.getInstance().player;
-        return player != null && player.getVehicle() instanceof com.hbm_m.entity.logic.EntityKa52 && key.isDown();
+        return player != null && (player.getVehicle() instanceof com.hbm_m.entity.logic.EntityKa52
+                || player.getVehicle() instanceof com.hbm_m.entity.logic.EntityPantsir) && key.isDown();
     }
 
     /**

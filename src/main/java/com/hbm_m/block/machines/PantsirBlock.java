@@ -8,17 +8,11 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.PantsirBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
-import com.hbm_m.item.ModItems;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.Containers;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -32,16 +26,13 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * Pantsir-S1 als Multiblock. Das Fahrzeug zeichnet ein TESR, die Struktur ist nur die Standflaeche.
- * Beim Platzieren schaut die Kabine zum Spieler. Rechtsklick schaltet die Anlage um, mit einer 57E6 oder
- * einem Gurt ammo_dgk in der Hand wird stattdessen nachgeladen. Schleichen und Rechtsklick schaltet die
- * Freund-Feind-Erkennung um. Geladene Munition faellt beim Abbau heraus.
+ * Der fruehere feste Pantsir-S1, nur noch in alten Welten vorhanden. Sein Block-Entity wandelt ihn beim
+ * ersten Tick in das Fahrzeug {@link com.hbm_m.entity.logic.EntityPantsir} um.
  */
 public class PantsirBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -71,21 +62,6 @@ public class PantsirBlock extends BaseEntityBlock implements IMultiblockControll
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            if (level instanceof net.minecraft.server.level.ServerLevel server
-                    && level.getBlockEntity(pos) instanceof PantsirBlockEntity holder) {
-                holder.releaseChunk(server);
-            }
-            if (level.getBlockEntity(pos) instanceof PantsirBlockEntity pantsir && pantsir.getAmmo() > 0) {
-                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(),
-                        new ItemStack(ModItems.MISSILE_57E6.get(), pantsir.getAmmo()));
-            }
-            if (level.getBlockEntity(pos) instanceof PantsirBlockEntity pantsir) {
-                int belts = pantsir.getShells() / PantsirBlockEntity.SHELLS_PER_BELT;
-                if (belts > 0) {
-                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(),
-                            new ItemStack(ModItems.AMMO_DGK.get(), belts));
-                }
-            }
             getStructureHelper().destroyStructure(level, pos, state.getValue(FACING));
         }
         super.onRemove(state, level, pos, newState, isMoving);
@@ -100,41 +76,6 @@ public class PantsirBlock extends BaseEntityBlock implements IMultiblockControll
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.PANTSIR_S1_BE.get(), PantsirBlockEntity::tick);
-    }
-
-    //? if < 1.21.1 {
-    @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return toggle(level, pos, player);
-    }
-    //?} else {
-    /*@Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        return toggle(level, pos, player);
-    }
-    *///?}
-
-    private InteractionResult toggle(Level level, BlockPos pos, Player player) {
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof PantsirBlockEntity pantsir) {
-            ItemStack held = player.getMainHandItem();
-            if (player.isShiftKeyDown()) {
-                pantsir.toggleIff(player);
-            } else if (held.is(ModItems.MISSILE_57E6.get())) {
-                if (pantsir.loadMissile() && !player.getAbilities().instabuild) {
-                    held.shrink(1);
-                }
-                pantsir.reportLoaded(player);
-            } else if (held.is(ModItems.AMMO_DGK.get()) && level instanceof net.minecraft.server.level.ServerLevel server) {
-                if (pantsir.loadBelt(server) && !player.getAbilities().instabuild) {
-                    held.shrink(1);
-                }
-                pantsir.reportLoaded(player);
-            } else {
-                pantsir.toggle();
-                pantsir.reportStatus(player);
-            }
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     @Override

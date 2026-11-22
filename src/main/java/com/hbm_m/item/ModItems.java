@@ -1658,7 +1658,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> TOPOL_LAUNCH_PAD = ITEMS.register("topol_launch_pad",
         () -> new MultiblockBlockItem(ModBlocks.TOPOL_LAUNCH_PAD.get(), new Item.Properties()));
     public static final RegistrySupplier<Item> PANTSIR_S1 = ITEMS.register("pantsir_s1",
-        () -> new MultiblockBlockItem(ModBlocks.PANTSIR_S1.get(), new Item.Properties()));
+        () -> new com.hbm_m.item.tool.ItemPantsir(ModBlocks.PANTSIR_S1.get(), new Item.Properties()));
 
 	public static final RegistrySupplier<Item> NUKE_FAT_MAN = ITEMS.register("nuke_fat_man",
         () -> new MultiblockBlockItem(ModBlocks.NUKE_FAT_MAN.get(), new Item.Properties()));
