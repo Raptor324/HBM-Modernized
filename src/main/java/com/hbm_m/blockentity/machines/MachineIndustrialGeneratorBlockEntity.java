@@ -43,7 +43,7 @@ import net.minecraft.world.level.material.Fluid;
  * nachziehen will, findet die Zahlen dort - ein Verhalten des Originals bildet man damit aber
  * nicht nach, weil es keines gibt.
  */
-public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2 {
+public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2, com.hbm_m.interfaces.IEnergyModeHolder {
 
     public static final int SLOT_BATTERY = 0;
     private static final int FUEL_SLOT_START = 1;
@@ -127,9 +127,9 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
             }
         }
 
-        // P6: пакет клиенту только при изменении состояния (энергия, горение, топливо)
+        // P6: пакет клиенту только при изменении состояния (энергия, горение, топливо, вода, смазка)
         syncIfStateChanged(getEnergyStored(),
-                (burnTime * 31L + maxBurnTime) * 31L + fp(fuelTank));
+                ((burnTime * 31L + maxBurnTime) * 31L + fp(fuelTank)) * 31L + fp(waterTank) * 31L + fp(lubricantTank));
     }
 
     /** Подпись бака: тип жидкости + уровень заполнения. */
@@ -210,8 +210,13 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
     }
 
     @Override
+    public int getCurrentMode() {
+        return 2; // OUTPUT only, so the energy network treats this as a generator.
+    }
+
+    @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack);
+        if (slot == SLOT_BATTERY) return isEnergyReceiverItem(stack);
         if (slot >= FUEL_SLOT_START && slot < FUEL_SLOT_START + FUEL_SLOT_COUNT) {
             return AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0) > 0;
         }

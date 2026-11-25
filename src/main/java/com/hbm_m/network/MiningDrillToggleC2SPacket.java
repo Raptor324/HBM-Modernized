@@ -22,7 +22,7 @@ public class MiningDrillToggleC2SPacket implements C2SPacket {
     }
 
     public static MiningDrillToggleC2SPacket decode(FriendlyByteBuf buf) {
-        return new MiningDrillToggleC2SPacket(buf.readBlockPos(), buf.readUtf());
+        return new MiningDrillToggleC2SPacket(buf.readBlockPos(), buf.readUtf(32));
     }
 
     @Override
@@ -37,8 +37,8 @@ public class MiningDrillToggleC2SPacket implements C2SPacket {
 
             ServerLevel level = player.serverLevel();
             BlockEntity be = ModPacketHandler.blockEntityAt(player, msg.pos);
-
-            if (be instanceof MachineMiningDrillBlockEntity drill) {
+            if (be instanceof MachineMiningDrillBlockEntity drill
+                    && com.hbm_m.inventory.menu.MenuReach.canReach(player, msg.pos, player.level().getBlockState(msg.pos))) {
                 { net.minecraft.nbt.CompoundTag t = new net.minecraft.nbt.CompoundTag(); t.putBoolean(msg.toggle, true); drill.receiveControl(t); }
             }
         });

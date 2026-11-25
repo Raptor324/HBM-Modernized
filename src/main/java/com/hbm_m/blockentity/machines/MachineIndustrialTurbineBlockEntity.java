@@ -203,11 +203,13 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         // Dampfstufe (coolsTo), nicht pauschal Altdampf - erst so laesst sich eine Turbinenkaskade
         // bauen (Ultraheissdampf -> Superheissdampf -> Heissdampf -> Dampf -> Altdampf).
         FT_Coolable trait = FluidType.getTrait(steamTank.getStoredFluid(), FT_Coolable.class);
+        boolean valid = false;
 
         if (trait != null && trait.amountReq > 0 && trait.amountProduced > 0) {
             double eff = trait.getEfficiency(CoolingType.TURBINE) * EFFICIENCY;
 
             if (eff > 0) {
+                valid = true;
                 spentSteamTank.setTankType(trait.coolsTo);
 
                 int available = steamTank.getFill();
@@ -228,6 +230,10 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
             }
         }
 
+        if (!valid) {
+            spentSteamTank.setTankType(ModFluids.NONE.getSource());
+        }
+
         // Original onServerTick
         boolean wasSpinning = spin > 0;
         spin = (double) flywheelEnergy / FLYWHEEL_MAX_ENERGY;
@@ -240,9 +246,11 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         this.energy = powerBuffer;
 
         isActive = spin > 0;
-        // P6: пакет клиенту только при изменении отрисовываемого состояния
+        // P6: пакет клиенту только при изменении отрисовываемого состояния (включая баки для ILookOverlay)
+        long tankHash = (((long) steamTank.getFill() * 31L + steamTank.getMaxFill()) * 31L + steamTank.getTankType().hashCode())
+                ^ (((long) spentSteamTank.getFill() * 31L + spentSteamTank.getMaxFill()) * 31L + spentSteamTank.getTankType().hashCode());
         syncIfStateChanged(powerBuffer,
-                Double.doubleToLongBits(spin) ^ (isActive ? 0x1L : 0L) ^ (operational ? 0x2L : 0L));
+                Double.doubleToLongBits(spin) ^ (isActive ? 0x1L : 0L) ^ (operational ? 0x2L : 0L) ^ tankHash);
     }
 
     /**
@@ -634,8 +642,8 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
 
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(
-            worldPosition.getX() - 2, worldPosition.getY() - 1, worldPosition.getZ() - 4,
-            worldPosition.getX() + 3, worldPosition.getY() + 4, worldPosition.getZ() + 8
+            worldPosition.getX() - 3, worldPosition.getY(), worldPosition.getZ() - 3,
+            worldPosition.getX() + 4, worldPosition.getY() + 3, worldPosition.getZ() + 4
         );
     }
 

@@ -10,6 +10,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -88,4 +89,15 @@ public class MachineCombustionEngineBlock extends DummyableMachineBlock {
     /*public static final com.mojang.serialization.MapCodec<MachineCombustionEngineBlock> CODEC = simpleCodec(MachineCombustionEngineBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
+
+    // Verbatim port of the original MachineCombustionEngine.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {-1, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-1, 0, -1, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

@@ -22,6 +22,7 @@ import com.hbm_m.inventory.fluid.trait.FT_Heatable;
 import com.hbm_m.inventory.fluid.trait.FT_Heatable.HeatingType;
 import com.hbm_m.inventory.fluid.trait.FT_PWRModerator;
 import com.hbm_m.inventory.fluid.trait.FT_Pheromone;
+import com.hbm_m.inventory.fluid.trait.FT_Sanity;
 import com.hbm_m.inventory.fluid.trait.FT_Poison;
 import com.hbm_m.inventory.fluid.trait.FT_Polluting;
 import com.hbm_m.inventory.fluid.trait.FT_Toxin;
@@ -218,6 +219,8 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.HOTCRACKOIL, 350, LQ, VIS, P_OIL);
         t(ModFluids.HOTCRACKOIL_DS, 350, LQ, VIS, P_OIL);
         t(ModFluids.SALIENT, null, DEL, LQ, VIS);
+        // Joke: REN-TV concentrate - flamethrower(-turret) fuel via FT_Liquid + FT_Combustible, stinks on hover
+        t(ModFluids.UNSTABLE_SANITY, null, new FT_Sanity(), LQ, new FT_Combustible(FuelGrade.LOW, 60_000));
         t(ModFluids.XPJUICE, null, LQ, VIS);
         t(ModFluids.ENDERJUICE, null, LQ);
         t(ModFluids.SULFURIC_ACID, null, new FT_Corrosive(50), LQ);

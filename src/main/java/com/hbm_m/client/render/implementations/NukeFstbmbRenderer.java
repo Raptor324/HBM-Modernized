@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
  * Dynamic part of {@code RenderNukeFstbmb}: body and Balefire are drawn by the block model
- * ({@code block/bomb/nuke_fstbmb_placed}); only the Balefire glint
+ * ({@code block/bomb/nuke_fstbmb}); only the Balefire glint
  * ({@code renderClassicGlint(..., "Balefire", 0.0F, 0.8F, 0.15F, 5, 2F)}) and red timer display are added here,
  * both only when the bomb is primed. Drawn within block model frame (rotated by FACING).
  */
@@ -41,14 +41,15 @@ public class NukeFstbmbRenderer implements com.hbm_m.client.render.HbmBerBounds<
         ps.pushPose();
         ps.translate(0.5D, 0D, 0.5D);
 
-        // Same alignment as block model (horizontalBlock: north 0, east y90, south y180, west y270)
+        // Same alignment as the block model total (blockstate y N270/E0/S90/W180 under vanilla's
+        // R_y(-y) bake) = legacy RenderNukeFstbmb world yaw {N:90, E:0, S:270, W:180}
         Direction facing = bf.getBlockState().hasProperty(BlockStateProperties.HORIZONTAL_FACING)
                 ? bf.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING) : Direction.NORTH;
         switch (facing) {
-            case EAST -> ps.mulPose(Axis.YP.rotationDegrees(-90));
-            case SOUTH -> ps.mulPose(Axis.YP.rotationDegrees(-180));
-            case WEST -> ps.mulPose(Axis.YP.rotationDegrees(-270));
-            default -> { }
+            case NORTH -> ps.mulPose(Axis.YP.rotationDegrees(90));
+            case SOUTH -> ps.mulPose(Axis.YP.rotationDegrees(270));
+            case WEST -> ps.mulPose(Axis.YP.rotationDegrees(180));
+            default -> { } // EAST: legacy yaw 0
         }
 
         // Balefire depth pass to ensure GL_EQUAL glint matches depth

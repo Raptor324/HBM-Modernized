@@ -38,6 +38,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 /** 1:1 {@code XFactoryAccelerator}: Tau-Kanone, Gausskanone (Coilgun) und N I 4 N I. */
 public class XFactoryAccelerator {
@@ -185,6 +186,19 @@ public class XFactoryAccelerator {
 
             ItemGunBaseNT.setWear(stack, index, Math.min(ItemGunBaseNT.getWear(stack, index) + config.wear * unitsUsed, ctx.config.getDurability(stack)));
 
+            // Half-Life tau jumping knockback:
+            // Charged secondary release imparts backward velocity to the player proportional to unitsUsed.
+            // When pointing downward, -look.y is positive, propelling the player upward/backward (tau jump).
+            Player player = ctx.getPlayer();
+            Vec3 look = player.getLookAngle();
+            double recoil = unitsUsed * 0.15D;
+            player.setDeltaMovement(player.getDeltaMovement().add(-look.x * recoil, -look.y * recoil, -look.z * recoil));
+            player.hurtMarked = true;
+            player.hasImpulse = true;
+            if (-look.y * recoil > 0.1D) {
+                player.fallDistance = 0;
+            }
+
         } else {
             ItemGunBaseNT.playAnimation(ctx.getPlayer(), stack, GunAnimation.CYCLE_DRY, ctx.configIndex);
         }
@@ -210,9 +224,11 @@ public class XFactoryAccelerator {
         }
     };
 
+    /** Primary fire recoil (empty 1:1 with 1.7.10; charged tau jumping knockback is in {@link #LAMBDA_TAU_SECONDARY_RELEASE}). */
     public static BiConsumer<ItemStack, LambdaContext> LAMBDA_RECOIL_TAU = (stack, ctx) -> { };
 
     public static BiConsumer<ItemStack, LambdaContext> LAMBDA_RECOIL_COILGUN = (stack, ctx) -> {
+        if (ctx.getPlayer() == null) return;
         ItemGunBaseNT.setupRecoil(10, (float) (ctx.getPlayer().getRandom().nextGaussian() * 1.5));
     };
 

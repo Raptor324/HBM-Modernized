@@ -1,0 +1,33 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "tex": "hbm_m:block/radiobox",
+    "particle": "hbm_m:block/radiobox"
+  },
+  "elements": [
+    {
+      "from": [4, 1, 6],
+      "to": [12, 15, 10],
+      "faces": {
+        "north": { "uv": [4, 2, 11, 15], "texture": "#tex" },
+        "south": { "uv": [4, 2, 11, 15], "texture": "#tex" },
+        "east":  { "uv": [4, 2, 5, 15], "texture": "#tex" },
+        "west":  { "uv": [4, 2, 5, 15], "texture": "#tex" },
+        "up":    { "uv": [4, 2, 11, 3], "texture": "#tex" },
+        "down":  { "uv": [4, 2, 11, 3], "texture": "#tex" }
+      }
+    },
+    {
+      "from": [12, 7, 7],
+      "to": [14, 14, 9],
+      "faces": {
+        "north": { "uv": [11, 7, 13, 14], "texture": "#tex" },
+        "south": { "uv": [11, 7, 13, 14], "texture": "#tex" },
+        "east":  { "uv": [11, 7, 13, 14], "texture": "#tex" },
+        "west":  { "uv": [11, 7, 13, 14], "texture": "#tex" },
+        "up":    { "uv": [11, 7, 13, 9], "texture": "#tex" },
+        "down":  { "uv": [11, 12, 13, 14], "texture": "#tex" }
+      }
+    }
+  ]
+}

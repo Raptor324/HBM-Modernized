@@ -5,9 +5,12 @@ import com.hbm_m.blockentity.bomb.BombMultiBlockEntity;
 import com.hbm_m.explosion.MultiBombExplosion;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * Многоцелевая бомба: 4 заряда ТНТ по углам + 2 слота модификаторов
@@ -15,8 +18,21 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class BombMultiBlock extends NukeBaseBlock implements IBomb {
 
+    /** Оригинал {@code setBlockBoundsBasedOnState}: габарит 1 x 0.5 x 1 блока. */
+    private static final VoxelShape SHAPE = net.minecraft.world.level.block.Block.box(0.0D, 0.0D, 0.0D, 16.0D, 8.0D, 16.0D);
+
     public BombMultiBlock(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return SHAPE;
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return SHAPE;
     }
 
     @Override

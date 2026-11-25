@@ -19,12 +19,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1 {@code GUIScreenRadioAUTOCAL}: drei Schalter (Ein/Aus, Fehler ignorieren, Neustart), Programm aus
  * {@code hbmComputerUpload/script.txt} hochladen, Datei oeffnen, Herunterladen (wie im Original nicht unterstuetzt),
  * Dokumentation oeffnen; darunter der Verlauf in Gruen.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIRadioAutocal extends Screen {
 
     protected static final ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_rtty_autocal.png");
@@ -113,12 +116,20 @@ public class GUIRadioAutocal extends Screen {
         if (checkClick(x, y, 144, 36, 18, 18)) {
             try {
                 File uploadFolder = uploadFolder();
-                File doc = new File(uploadFolder, "documentation_v1.1.md");
+                String lang = com.hbm_m.client.util.ClientLang.code();
+                String fileName = "en_us".equals(lang) ? "documentation_v1.1.md" : "documentation_v1.1_" + lang + ".md";
+                File doc = new File(uploadFolder, fileName);
                 if (!uploadFolder.exists()) uploadFolder.mkdir();
                 if (!doc.exists()) {
+                    String key = "gui.hbm_m.radio_autocal.docs";
+                    String docsText = net.minecraft.locale.Language.getInstance().getOrDefault(key);
+                    if (key.equals(docsText)) {
+                        docsText = String.join("\n", DOCS);
+                    }
                     doc.createNewFile();
-                    try (PrintWriter printer = new PrintWriter(doc, StandardCharsets.US_ASCII.name())) {
-                        for (String line : DOCS) printer.println(line);
+                    try (PrintWriter printer = new PrintWriter(doc, StandardCharsets.UTF_8)) {
+                        printer.print(docsText);
+                        printer.println();
                     } catch (Throwable e) { }
                 }
                 Util.getPlatform().openFile(doc);

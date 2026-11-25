@@ -299,4 +299,16 @@ public class MachineConveyorPressBlock extends com.hbm_m.block.machines.Dummyabl
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
+
+    // Verbatim port of the original MachineConveyorPress.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {0, 0, 0, Direction.EAST.get3DDataValue()},
+            {0, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {0, 0, 0, Direction.NORTH.get3DDataValue()},
+            {0, 0, 0, Direction.DOWN.get3DDataValue()}
+        }, facing);
+    }
 }

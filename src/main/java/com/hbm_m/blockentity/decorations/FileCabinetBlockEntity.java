@@ -127,7 +127,7 @@ public class FileCabinetBlockEntity extends BaseHbmBlockEntity implements MenuPr
         CompoundTag tag = new CompoundTag();
         tag.putInt("timer", timer);
         tag.putInt("playersUsing", playersUsing);
-        lockState.write(tag);
+        lockState.writePublic(tag);
         ClientboundBlockEntityDataPacket packet = com.hbm_m.platform.BlockHooks.dataPacket(this, tag);
         for (var player : server.getChunkSource().chunkMap.getPlayers(new ChunkPos(worldPosition), false)) {
             if (player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) <= (double) range * range)
@@ -136,7 +136,7 @@ public class FileCabinetBlockEntity extends BaseHbmBlockEntity implements MenuPr
     }
 
     @Override
-    protected void applyClientUpdate(@NotNull CompoundTag tag) {
+    protected void applyClientUpdate(@NotNull CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
         if (tag.contains("timer")) {
             timer = tag.getInt("timer");
             playersUsing = tag.getInt("playersUsing");
@@ -144,6 +144,11 @@ public class FileCabinetBlockEntity extends BaseHbmBlockEntity implements MenuPr
         } else {
             readNbtData(tag, null);
         }
+    }
+
+    @Override
+    protected void writeClientSyncTag(@NotNull CompoundTag nbt, @Nullable HolderLookup.Provider registries) {
+        lockState.writePublic(nbt);
     }
 
     @Override

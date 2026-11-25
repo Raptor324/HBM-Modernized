@@ -154,7 +154,8 @@ public final class ModMaterialItems {
         scrap(ModMaterials.MUD, "Mud Scraps", "Грязевой шлак"), // 44
         scrap(ModMaterials.GUNMETAL, "Gunmetal Scraps", "Шлак пушечной бронзы"), // 49
         scrap(ModMaterials.WEAPONSTEEL, "Weapon Steel Scraps", "Шлак оружейной стали"), // 50
-        scrap(ModMaterials.SATURNITE, "Saturnite Scraps", "Сатурнитовый шлак") // 34
+        scrap(ModMaterials.SATURNITE, "Saturnite Scraps", "Сатурнитовый шлак"), // 34
+        scrap(ModMaterials.DEMOMAT, "Custom Metal Demo Scraps", "Шлак кастомного металла демо")
     );
 
     /** mat -> предмет scraps_<id>. */
@@ -296,7 +297,7 @@ public final class ModMaterialItems {
             case NEPTUNIUM: if (shape == MaterialShape.INGOT)
                 return lore("neptunium_ingot", "That one's my favourite!");
                 break;
-            case TANTALIUM: if (shape == MaterialShape.INGOT || shape == MaterialShape.POWDER)
+            case TANTALIUM: if (shape == MaterialShape.INGOT || shape == MaterialShape.POWDER || shape == MaterialShape.NUGGET)
                 return lore("tantalum", "'Tantalum'");
                 break;
             case LANTHANIUM: if (shape == MaterialShape.INGOT)
@@ -305,7 +306,7 @@ public final class ModMaterialItems {
             case COMBINE_STEEL: if (shape == MaterialShape.INGOT)
                 return lore("combine_steel_ingot", "*insert Civil Protection reference here*");
                 break;
-            case GH336: if (shape == MaterialShape.BILLET || shape == MaterialShape.NUGGET)
+            case GH336: if (shape == MaterialShape.BILLET || shape == MaterialShape.NUGGET || shape == MaterialShape.INGOT)
                 return lore("gh336", "Seaborgium's colleague.");
                 break;
             case FIBERGLASS: if (shape == MaterialShape.INGOT)

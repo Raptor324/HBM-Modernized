@@ -136,6 +136,7 @@ public class EntityC130 extends EntityPlaneBase {
                 weapons.add(new Entry(() -> gun("gun_carbine"), 1, 1, 50));
                 weapons.add(new Entry(() -> gun("gun_heavy_revolver"), 1, 1, 50));
                 weapons.add(new Entry(() -> gun("gun_panzerschreck"), 1, 1, 20));
+                weapons.add(new Entry(() -> gun("gun_fliegerfaust"), 1, 1, 20));
                 weapons.add(new Entry(() -> gun("gun_double_barrel"), 1, 1, 10));
                 weapons.add(new Entry(() -> gun("gun_n_i_4_n_i"), 1, 1, 1));
             }

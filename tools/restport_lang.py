@@ -7,7 +7,7 @@ Bereits vorhandene portKeys werden ersetzt. Fehlt der Originalschluessel in ru_R
 import os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-ORIG = os.path.join(os.path.dirname(ROOT), 'Hbm-s-Nuclear-Tech-GIT-master', 'Hbm-s-Nuclear-Tech-GIT-master', 'src', 'main', 'resources', 'assets', 'hbm', 'lang')
+ORIG = 'C:/Projects/Hbm-s-Nuclear-Tech-GIT/src/main/resources/assets/hbm/lang'
 JAVA = os.path.join(ROOT, 'src', 'main', 'java', 'com', 'hbm_m', 'datagen', 'RestportLang.java')
 BS = chr(92)
 PAT = re.compile(r'e\("((?:[^"\\]|\\.)*)", "((?:[^"\\]|\\.)*)", "((?:[^"\\]|\\.)*)"\);')

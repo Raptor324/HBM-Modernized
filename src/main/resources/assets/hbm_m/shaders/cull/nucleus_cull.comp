@@ -323,7 +323,7 @@ void main() {
                 uint slot = atomicAdd(commands[cmdIdx].instanceCount, 1u);
                 uint outIdx = commands[cmdIdx].baseInstance + slot;
                 copyInstance(inIdx, outIdx);
-            } else if (uDebugCullMode != 0u) {
+            } else if (uDebugCullMode != 0u && isValid) {
                 uint culledCmd = cmdIdx + uNumCommands;
                 uint slot = atomicAdd(commands[culledCmd].instanceCount, 1u);
                 uint outIdx = commands[culledCmd].baseInstance + slot;

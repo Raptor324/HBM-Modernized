@@ -14,6 +14,7 @@ import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -207,5 +208,16 @@ public class MachineStirlingBlock extends DummyableMachineBlock implements com.h
     /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
+
+    // Verbatim port of the original MachineStirling.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 0, Direction.EAST.get3DDataValue()},
+            {-1, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {0, 0, -1, Direction.NORTH.get3DDataValue()}
+        }, facing);
     }
 }

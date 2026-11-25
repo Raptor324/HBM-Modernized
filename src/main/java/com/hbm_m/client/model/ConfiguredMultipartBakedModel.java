@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.platform.RenderHooks;
 
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -111,7 +110,7 @@ public class ConfiguredMultipartBakedModel extends AbstractMultipartBakedModel i
         }
         List<String> result = new ArrayList<>(itemPartList.size());
         for (String name : itemPartList) {
-            if (parts.containsKey(name) && !isFramePart(name)) {
+            if (parts.containsKey(name)) {
                 result.add(name);
             }
         }
@@ -183,9 +182,7 @@ public class ConfiguredMultipartBakedModel extends AbstractMultipartBakedModel i
         if (chunkRenderTypes != null && !chunkRenderTypes.isEmpty()) {
             return ChunkRenderTypeSet.of(chunkRenderTypes.toArray(RenderType[]::new));
         }
-        // Дефолт IForgeBakedModel: неквалифицированный `super.` не достаёт до default-методов
-        // интерфейса (javac: cannot find symbol).
-        return ItemBlockRenderTypes.getRenderLayers(state);
+        return super.getRenderTypes(state, rand, data);
     }
 
     @Override

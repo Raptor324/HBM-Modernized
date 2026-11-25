@@ -17,6 +17,12 @@ public final class ObjBerHelper {
 
     private ObjBerHelper() {}
 
+    /** Standard setupBlockTransform followed by (-0.5, 0, -0.5) to cancel JSON root translation [0.5, 0, 0.5]. */
+    public static void setupBakedBlockTransform(BlockEntity be, com.hbm_m.client.render.LegacyAnimator animator) {
+        animator.setupBlockTransform(facing(be));
+        animator.translate(-0.5, 0.0, -0.5);
+    }
+
     /** Orientation from HORIZONTAL_FACING / FACING, otherwise North. */
     public static Direction facing(BlockEntity be) {
         BlockState state = be.getBlockState();

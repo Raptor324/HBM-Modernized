@@ -125,6 +125,8 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         this.add(ModBlocks.MACHINE_RTG_FURNACE.get(), noDrop());
         // BlockGlyphid: getItemDropped null
         this.add(ModBlocks.GLYPHID_BASE.get(), noDrop());
+        this.add(ModBlocks.GLYPHID_BASE_INFESTED.get(), noDrop());
+        this.add(ModBlocks.GLYPHID_BASE_RADIOACTIVE.get(), noDrop());
         // audit10: DetMiner#getItemDropped -> null
         this.add(ModBlocks.DET_MINER.get(), noDrop());
         // audit10: PneumoStorageClutter#getItemDropped -> null (Drop nur ueber removedByPlayer)
@@ -133,6 +135,16 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         this.add(ModBlocks.CARGO_ELEVATOR.get(), noDrop());
         // BlockGlyphidSpawner: egg_glyphid, quantityDropped 1 + rand(3) + fortune
         this.add(ModBlocks.GLYPHID_SPAWNER.get(), net.minecraft.world.level.storage.loot.LootTable.lootTable().withPool(
+                net.minecraft.world.level.storage.loot.LootPool.lootPool().setRolls(net.minecraft.world.level.storage.loot.providers.number.ConstantValue.exactly(1))
+                        .add(net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem(ModItems.EGG_GLYPHID.get())
+                                .apply(net.minecraft.world.level.storage.loot.functions.SetItemCountFunction.setCount(net.minecraft.world.level.storage.loot.providers.number.UniformGenerator.between(1, 3)))
+                                .apply(net.minecraft.world.level.storage.loot.functions.ApplyBonusCount.addUniformBonusCount(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE)))));
+        this.add(ModBlocks.GLYPHID_SPAWNER_INFESTED.get(), net.minecraft.world.level.storage.loot.LootTable.lootTable().withPool(
+                net.minecraft.world.level.storage.loot.LootPool.lootPool().setRolls(net.minecraft.world.level.storage.loot.providers.number.ConstantValue.exactly(1))
+                        .add(net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem(ModItems.EGG_GLYPHID.get())
+                                .apply(net.minecraft.world.level.storage.loot.functions.SetItemCountFunction.setCount(net.minecraft.world.level.storage.loot.providers.number.UniformGenerator.between(1, 3)))
+                                .apply(net.minecraft.world.level.storage.loot.functions.ApplyBonusCount.addUniformBonusCount(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE)))));
+        this.add(ModBlocks.GLYPHID_SPAWNER_RADIOACTIVE.get(), net.minecraft.world.level.storage.loot.LootTable.lootTable().withPool(
                 net.minecraft.world.level.storage.loot.LootPool.lootPool().setRolls(net.minecraft.world.level.storage.loot.providers.number.ConstantValue.exactly(1))
                         .add(net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem(ModItems.EGG_GLYPHID.get())
                                 .apply(net.minecraft.world.level.storage.loot.functions.SetItemCountFunction.setCount(net.minecraft.world.level.storage.loot.providers.number.UniformGenerator.between(1, 3)))
@@ -185,6 +197,8 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         this.add(ModBlocks.STONES_SLAB_BRICKS.get(), b -> createSlabItemTable(b));
         this.add(ModBlocks.BRICK_ASBESTOS_SLAB.get(), b -> createSlabItemTable(b));
         this.add(ModBlocks.PINK_SLAB.get(), b -> createSlabItemTable(b));
+        this.add(ModBlocks.DUCRETE_SLAB.get(), b -> createSlabItemTable(b));
+        this.add(ModBlocks.DUCRETE_TILE_SLAB.get(), b -> createSlabItemTable(b));
         this.add(ModBlocks.FOAM_LAYER.get(), noDrop());
         this.add(ModBlocks.SAND_BORON_LAYER.get(), noDrop());
         this.add(ModBlocks.LEAVES_LAYER.get(), noDrop());
@@ -261,6 +275,9 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropEmptyTable(ModBlocks.CRATE_TEMPLATE.get());
         // Фантомные части мультиблока не должны дропаться отдельно.
         dropEmptyTable(ModBlocks.UNIVERSAL_MACHINE_PART.get());
+        // LaunchPadRusted.getItemDropped (1.7.10) возвращает null — ржавая пусковая
+        // установка не дропается (добывается только из силоса/worldgen).
+        dropEmptyTable(ModBlocks.LAUNCH_PAD_RUSTED.get());
 
         // 2) ОСОБЫЕ СЛУЧАИ: руды переопределяют свою таблицу
 
@@ -662,6 +679,32 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         // shrouded; the inserted rod) - dropPileChannel reproduces exactly.
         dropPileChannel(ModBlocks.BLOCK_GRAPHITE_SOURCE.get(), ModItems.PILE_ROD_SOURCE.get());
         dropPileChannel(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get(), ModItems.PILE_ROD_PLUTONIUM.get());
+
+        // zirnox#7) Original ZirnoxDestroyed.getDrops: mining the wreck is a deliberate salvage
+        // mechanic — six fixed stacks (concrete_smooth x6, steel pipe x4, steel_grate x2,
+        // debris_metal x6, debris_graphite x2, fallout x4). One pool per stack mirrors the
+        // getDrops list; no survives_explosion condition, the original drops these unconditionally
+        // (Block.canDropFromExplosion defaults true in 1.7.10). Overrides the dropEmptyTable
+        // fallback the base loop installed for this registerBlockWithoutItem block.
+        this.add(ModBlocks.ZIRNOX_DESTROYED.get(), LootTable.lootTable()
+                .withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+                        .add(LootItem.lootTableItem(ModBlocks.CONCRETE_SMOOTH.get())
+                                .apply(SetItemCountFunction.setCount(ConstantValue.exactly(6.0F)))))
+                .withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+                        .add(LootItem.lootTableItem(ModItems.PIPE_STEEL.get())
+                                .apply(SetItemCountFunction.setCount(ConstantValue.exactly(4.0F)))))
+                .withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+                        .add(LootItem.lootTableItem(ModBlocks.STEEL_GRATE.get())
+                                .apply(SetItemCountFunction.setCount(ConstantValue.exactly(2.0F)))))
+                .withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+                        .add(LootItem.lootTableItem(ModItems.DEBRIS_METAL.get())
+                                .apply(SetItemCountFunction.setCount(ConstantValue.exactly(6.0F)))))
+                .withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+                        .add(LootItem.lootTableItem(ModItems.DEBRIS_GRAPHITE.get())
+                                .apply(SetItemCountFunction.setCount(ConstantValue.exactly(2.0F)))))
+                .withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0F))
+                        .add(LootItem.lootTableItem(ModItems.FALLOUT.get())
+                                .apply(SetItemCountFunction.setCount(ConstantValue.exactly(4.0F))))));
     }
 
     /**

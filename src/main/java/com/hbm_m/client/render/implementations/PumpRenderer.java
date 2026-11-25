@@ -23,8 +23,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public class PumpRenderer<T extends BlockEntity> implements com.hbm_m.client.render.HbmBerBounds<T> {
 
     public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/pump.obj"));
-    public static final ResourceLocation STEAM_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/pump_steam.png");
-    public static final ResourceLocation ELECTRIC_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/pump_electric.png");
+    public static final ResourceLocation STEAM_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/pump_steam.png");
+    public static final ResourceLocation ELECTRIC_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/pump_electric.png");
 
     public PumpRenderer(BlockEntityRendererProvider.Context ctx) { }
 

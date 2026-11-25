@@ -57,6 +57,8 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> EXPLOSION_SMALL_FAR1 = registerSoundEvents("explosionsmallfar1");
     public static final RegistrySupplier<SoundEvent> EXPLOSION_SMALL_FAR2 = registerSoundEvents("explosionsmallfar2");
     public static final RegistrySupplier<SoundEvent> MUKE_EXPLOSION = registerSoundEvents("mukeexplosion");
+    /** Joke: bass-boosted X-Files theme of the freaky alien custom nuke (no 1.7.10 analog). */
+    public static final RegistrySupplier<SoundEvent> BOMB_FREAKY_ALIEN = registerSoundEvents("bomb.freaky_alien");
     public static final RegistrySupplier<SoundEvent> NUCLEAR_EXPLOSION = registerSoundEvents("nuclear_explosion");
     public static final RegistrySupplier<SoundEvent> MISSILE_TAKEOFF = registerSoundEvents("missile_takeoff");
     // Звук пролета ракеты — управляется клиентским движком MissileSoundEngine

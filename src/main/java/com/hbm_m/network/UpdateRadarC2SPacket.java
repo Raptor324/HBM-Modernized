@@ -121,6 +121,13 @@ public class UpdateRadarC2SPacket implements C2SPacket {
             if (!(blockEntity instanceof MachineRadarBlockEntity radar)) {
                 return;
             }
+            boolean inMain = player.containerMenu instanceof MachineRadarMenu m
+                    && m.getBlockEntity() == radar && m.stillValid(player);
+            boolean inSlots = player.containerMenu instanceof MachineRadarSlotsMenu s
+                    && s.getBlockEntity() == radar && s.stillValid(player);
+            if (!inMain && !inSlots) {
+                return;
+            }
 
             if (packet.hasLaunch) {
                 radar.handleLaunchCommand(player, packet.linkSlot, packet.launchAction,

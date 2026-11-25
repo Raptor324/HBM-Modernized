@@ -18,8 +18,8 @@ import net.minecraft.util.Mth;
 /** 1:1 {@code RenderFallingNuke}: Little-Boy-Huelle mit Baukastentextur, nach Meta gedreht, neigt sich im Fall. */
 public class FallingNukeRenderer extends EntityRenderer<EntityFallingNuke> {
 
-    private static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/projectiles/lilboy1.obj"));
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/custom_nuke.png");
+    private static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/bomb/nuke_boy.obj"));
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/bomb/nuke_custom.png");
 
     public FallingNukeRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);

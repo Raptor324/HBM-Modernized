@@ -1192,7 +1192,7 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
             if (mCrafting != null) {
                 return be -> {
                     try {
-                        return (boolean) mCrafting.invoke(be) ? (System.currentTimeMillis() / 50L) : 0L;
+                        return (boolean) mCrafting.invoke(be) ? Long.MIN_VALUE : 0L;
                     } catch (Throwable t) { return 0L; }
                 };
             }

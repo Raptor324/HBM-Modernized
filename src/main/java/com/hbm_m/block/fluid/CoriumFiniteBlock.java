@@ -30,6 +30,7 @@ public class CoriumFiniteBlock extends FiniteFluidBlock {
 
     @Override
     public boolean canDisplace(Level level, BlockPos pos) {
+        if (level.isOutsideBuildHeight(pos)) return false;
         BlockState b = level.getBlockState(pos);
         if (b.getBlock() == this) return false;
         float res = (float) (Math.sqrt(b.getBlock().getExplosionResistance()) * 3);

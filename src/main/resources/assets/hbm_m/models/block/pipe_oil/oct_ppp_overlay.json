@@ -9,7 +9,7 @@
   "textures": {
     "particle": "hbm_m:block/oil_pipe",
     "base": "hbm_m:block/oil_pipe",
-    "overlay": "hbm_m:block/oil_pipe_overlay"
+    "overlay": "hbm_m:block/oil_pipe"
   },
   "transform": {
     "translation": [
@@ -35,4 +35,3 @@
     "ppp": true
   }
 }
-

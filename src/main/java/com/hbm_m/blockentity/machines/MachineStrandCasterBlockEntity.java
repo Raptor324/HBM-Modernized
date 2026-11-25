@@ -114,7 +114,7 @@ public class MachineStrandCasterBlockEntity extends MachineFoundryCastingBaseBlo
                 lastProgressTick = world.getDayTime();
             }
 
-            sendUpdateToClient();
+            if (probeDue(10)) sendUpdateToClient();
         }
     }
 

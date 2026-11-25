@@ -5,6 +5,7 @@ import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import com.hbm_m.client.render.weapon.bridge.ExternalGunRenderBridge;
 //? if forge {
 import com.hbm_m.lib.RefStrings;
 
@@ -23,6 +24,9 @@ public final class GunClientEventsForge {
     @SubscribeEvent
     public static void onRenderHand(RenderHandEvent event) {
         if (!GunClientHooks.holdingGun()) return;
+        // Externe Renderer-Bridge (TACZ) uebernimmt die Erstperson-Darstellung (Waffe UND Haende):
+        // HBM zeichnet nicht und bricht das Ereignis nicht ab, damit der externe Handler es nehmen kann.
+        if (ExternalGunRenderBridge.get().isHandled(GunClientHooks.clientPlayer().getMainHandItem())) return;
         if (event.getHand() == net.minecraft.world.InteractionHand.MAIN_HAND) {
             if (GunClientHooks.renderHand(event.getPartialTick())) event.setCanceled(true);
         } else {
@@ -33,9 +37,13 @@ public final class GunClientEventsForge {
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onOverlayPre(RenderGuiOverlayEvent.Pre event) {
         if (!GunClientHooks.holdingGun()) return;
+        boolean external = ExternalGunRenderBridge.get().isHandled(GunClientHooks.clientPlayer().getMainHandItem());
         if (event.getOverlay() == VanillaGuiOverlay.CROSSHAIR.type()) {
-            if (GunClientHooks.renderCrosshair(event.getGuiGraphics())) event.setCanceled(true);
+            // Externe Bridge besitzt die Fadenkreuz-Unterdrueckung (ADS) und das Zielfernrohr:
+            // weder HBM-Fadenkreuz noch Vanilla-Fadenkreuz anfassen.
+            if (!external && GunClientHooks.renderCrosshair(event.getGuiGraphics())) event.setCanceled(true);
         } else if (event.getOverlay() == VanillaGuiOverlay.HOTBAR.type()) {
+            // HUD-Komponenten (Munition/Haltbarkeit) bleiben; das Scope-Overlay skippt renderHotbarExtras selbst.
             GunClientHooks.renderHotbarExtras(event.getGuiGraphics());
         }
     }
@@ -71,6 +79,8 @@ public final class GunClientEventsForge {
     @SubscribeEvent
     public static void onFov(ComputeFovModifierEvent event) {
         if (!GunClientHooks.holdingGun()) return;
+        // Externe Bridge besitzt das ADS-FOV (CameraSetupEvent) - HBM-Zoom auslassen.
+        if (ExternalGunRenderBridge.get().isHandled(GunClientHooks.clientPlayer().getMainHandItem())) return;
         event.setNewFovModifier(GunClientHooks.modifyFov(event.getNewFovModifier()));
     }
 }
@@ -91,6 +101,9 @@ public final class GunClientEventsForge {
     @SubscribeEvent
     public static void onRenderHand(RenderHandEvent event) {
         if (!GunClientHooks.holdingGun()) return;
+        // Externe Renderer-Bridge (TACZ) uebernimmt die Erstperson-Darstellung (Waffe UND Haende):
+        // HBM zeichnet nicht und bricht das Ereignis nicht ab, damit der externe Handler es nehmen kann.
+        if (ExternalGunRenderBridge.get().isHandled(GunClientHooks.clientPlayer().getMainHandItem())) return;
         if (event.getHand() == net.minecraft.world.InteractionHand.MAIN_HAND) {
             if (GunClientHooks.renderHand(event.getPartialTick())) event.setCanceled(true);
         } else {
@@ -101,9 +114,13 @@ public final class GunClientEventsForge {
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onOverlayPre(RenderGuiLayerEvent.Pre event) {
         if (!GunClientHooks.holdingGun()) return;
+        boolean external = ExternalGunRenderBridge.get().isHandled(GunClientHooks.clientPlayer().getMainHandItem());
         if (VanillaGuiLayers.CROSSHAIR.equals(event.getName())) {
-            if (GunClientHooks.renderCrosshair(event.getGuiGraphics())) event.setCanceled(true);
+            // Externe Bridge besitzt die Fadenkreuz-Unterdrueckung (ADS) und das Zielfernrohr:
+            // weder HBM-Fadenkreuz noch Vanilla-Fadenkreuz anfassen.
+            if (!external && GunClientHooks.renderCrosshair(event.getGuiGraphics())) event.setCanceled(true);
         } else if (VanillaGuiLayers.HOTBAR.equals(event.getName())) {
+            // HUD-Komponenten (Munition/Haltbarkeit) bleiben; das Scope-Overlay skippt renderHotbarExtras selbst.
             GunClientHooks.renderHotbarExtras(event.getGuiGraphics());
         }
     }
@@ -140,6 +157,8 @@ public final class GunClientEventsForge {
     @SubscribeEvent
     public static void onFov(ComputeFovModifierEvent event) {
         if (!GunClientHooks.holdingGun()) return;
+        // Externe Bridge besitzt das ADS-FOV (CameraSetupEvent) - HBM-Zoom auslassen.
+        if (ExternalGunRenderBridge.get().isHandled(GunClientHooks.clientPlayer().getMainHandItem())) return;
         event.setNewFovModifier(GunClientHooks.modifyFov(event.getNewFovModifier()));
     }
 }

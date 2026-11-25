@@ -54,7 +54,7 @@ public final class EntityEffectHandlerExtra {
     private EntityEffectHandlerExtra() {}
 
     static void clientTick(Player player) {
-        if (player != net.minecraft.client.Minecraft.getInstance().player) return;
+        if (player != com.hbm_m.client.ClientAccess.player()) return;
         var biomeKey = player.level().getBiome(player.blockPosition()).unwrapKey().orElse(null);
         if (biomeKey == ModBiomes.CRATER_KEY || biomeKey == ModBiomes.INNER_CRATER_KEY) {
             RandomSource rand = player.getRandom();

@@ -118,7 +118,7 @@ public class ItemWiring extends Item {
         if (!level.isClientSide || !hasStart(stack) || !(entity instanceof Player player)) return;
         BlockPos start = getStart(stack);
         double dist = Math.sqrt(player.distanceToSqr(start.getX() + 0.5, start.getY() + 0.5, start.getZ() + 0.5));
-        player.displayClientMessage(
-                Component.literal(stack.getHoverName().getString() + ": " + (int) dist + "m"), true);
+        com.hbm_m.client.ClientAccess.showInfoToast(
+                Component.literal(stack.getHoverName().getString() + ": " + (int) dist + "m"), 20, 3);
     }
 }

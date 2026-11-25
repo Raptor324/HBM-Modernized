@@ -183,6 +183,13 @@ public class MultiblockStructureHelper {
     private int placementOffset;
 
     private final Set<BlockPos> partOffsets;
+    /**
+     * Позиции, для которых {@link #resolvePartRole} уже делегировала в {@code controller.getPartRole()}.
+     * Контроллеры с делегирующим {@code getPartRole} ({@code NukeBaseBlock}, {@code DummyableMachineBlock}, ...)
+     * при запросе позиции вне структуры возвращаются в {@code resolvePartRole} с теми же аргументами —
+     * без этой защиты это бесконечная взаимная рекурсия (StackOverflowError).
+     */
+    private final Set<BlockPos> resolvingRoles = new HashSet<>();
     // private final int maxY;
 
     // 1. Конструктор для старого способа (минимальный)
@@ -1286,6 +1293,15 @@ public class MultiblockStructureHelper {
         return this.controllerOffset;
     }
 
+    /**
+     * True when the helper actually describes parts. False for single-block controllers that carry
+     * the interface but no structure ({@code NukeBaseBlock}'s empty default, e.g. bomb_multi) —
+     * such blocks must get a plain {@code BlockItem}, not a {@code MultiblockBlockItem}.
+     */
+    public boolean hasStructure() {
+        return !this.structureMap.isEmpty();
+    }
+
     public int getPlacementOffset() {
         return this.placementOffset;
     }
@@ -1367,7 +1383,15 @@ public class MultiblockStructureHelper {
     public PartRole resolvePartRole(BlockPos gridPos, IMultiblockController controller) {
         Character symbol = positionSymbolMap.get(gridPos);
         if (symbol != null && symbolRoleMap.containsKey(symbol)) return symbolRoleMap.get(symbol);
-        return controller.getPartRole(gridPos);
+        // Защита от цикла: контроллер с делегирующим getPartRole вернётся сюда с теми же
+        // аргументами (позиция вне структуры). Для кастомных реализаций getPartRole
+        // (например, MachineCentrifugeBlock) первый заход работает как раньше.
+        if (!resolvingRoles.add(gridPos)) return PartRole.DEFAULT;
+        try {
+            return controller.getPartRole(gridPos);
+        } finally {
+            resolvingRoles.remove(gridPos);
+        }
     }
 
     private final Set<Block> replaceableBlocks = Set.of(
@@ -1447,7 +1471,8 @@ public class MultiblockStructureHelper {
      * Для клиентского предпросмотра рамки при установке (вызывается каждый кадр).
      */
     public boolean checkPlacementFromFacadeQuiet(Level level, BlockPos facadePos, Direction facing, Block controllerBlock) {
-        BlockPos controllerPos = MultiblockPlacement.getCorePos(facadePos, facing, this, controllerBlock);
+        int heightOffset = controllerBlock instanceof com.hbm_m.interfaces.IMultiblockController ctrl ? ctrl.getHeightOffset() : 0;
+        BlockPos controllerPos = MultiblockPlacement.getCorePos(facadePos, facing, this, controllerBlock).above(heightOffset);
         for (BlockPos relativePos : structureMap.keySet()) {
             BlockPos worldPos = getRotatedPos(controllerPos, relativePos, facing);
             if (worldPos.equals(controllerPos)) {
@@ -2063,127 +2088,6 @@ public class MultiblockStructureHelper {
             result[i][3] = rotatedFace.get3DDataValue();
         }
         return result;
-    }
-
-    public List<int[]> getAutoPorts(IMultiblockController controller, Direction facing) {
-        List<int[]> result = new ArrayList<>();
-        Set<Long> seen = new HashSet<>();
-
-        // 1. Controller's own ports
-        boolean controllerHasEnergy = (controllerEnergyLocalDirections != null && !controllerEnergyLocalDirections.isEmpty())
-                || controller.hasControllerEnergy()
-                || controller.getPartRole(BlockPos.ZERO).canReceiveEnergy();
-
-        if (controllerHasEnergy) {
-            if (controllerEnergyLocalDirections != null && !controllerEnergyLocalDirections.isEmpty()) {
-                for (Direction localDir : controllerEnergyLocalDirections) {
-                    if (localDir == Direction.DOWN) continue;
-                    BlockPos neighbor = controllerOffset.relative(localDir);
-                    if (!structureMap.containsKey(neighbor)) {
-                        Direction worldDir = rotateLocalDirectionToWorld(localDir, facing);
-                        if (worldDir != Direction.DOWN) {
-                            addPortIfNew(result, seen, 0, 0, 0, worldDir);
-                        }
-                    }
-                }
-            } else {
-                for (Direction d : Direction.values()) {
-                    if (d == Direction.DOWN || d == Direction.UP) continue;
-                    BlockPos neighbor = controllerOffset.relative(d);
-                    if (!structureMap.containsKey(neighbor)) {
-                        Direction worldDir = rotateLocalDirectionToWorld(d, facing);
-                        if (worldDir != Direction.DOWN) {
-                            addPortIfNew(result, seen, 0, 0, 0, worldDir);
-                        }
-                    }
-                }
-            }
-        }
-
-        boolean controllerHasFluid = (controllerFluidSidesFromStructure && controllerFluidLocalDirections != null && !controllerFluidLocalDirections.isEmpty())
-                || controller.hasControllerFluid();
-
-        if (controllerHasFluid) {
-            if (controllerFluidLocalDirections != null && !controllerFluidLocalDirections.isEmpty()) {
-                for (Direction localDir : controllerFluidLocalDirections) {
-                    if (localDir == Direction.DOWN) continue;
-                    BlockPos neighbor = controllerOffset.relative(localDir);
-                    if (!structureMap.containsKey(neighbor)) {
-                        Direction worldDir = rotateLocalDirectionToWorld(localDir, facing);
-                        if (worldDir != Direction.DOWN) {
-                            addPortIfNew(result, seen, 0, 0, 0, worldDir);
-                        }
-                    }
-                }
-            } else {
-                for (Direction d : Direction.values()) {
-                    if (d == Direction.DOWN || d == Direction.UP) continue;
-                    BlockPos neighbor = controllerOffset.relative(d);
-                    if (!structureMap.containsKey(neighbor)) {
-                        Direction worldDir = rotateLocalDirectionToWorld(d, facing);
-                        if (worldDir != Direction.DOWN) {
-                            addPortIfNew(result, seen, 0, 0, 0, worldDir);
-                        }
-                    }
-                }
-            }
-        }
-
-        // 2. Part connector ports
-        for (BlockPos gridPos : structureMap.keySet()) {
-            PartRole role = resolvePartRole(gridPos, controller);
-            if (role != PartRole.UNIVERSAL_CONNECTOR && role != PartRole.ENERGY_CONNECTOR
-                    && role != PartRole.FLUID_CONNECTOR && role != PartRole.ITEM_INPUT
-                    && role != PartRole.ITEM_OUTPUT) {
-                continue;
-            }
-
-            BlockPos localOffset = gridPos.subtract(controllerOffset);
-            BlockPos worldOffset = rotate(localOffset, facing);
-
-            Set<Direction> energyDirs = energyLocalDirections.get(gridPos);
-            Set<Direction> fluidDirs = fluidLocalDirections.get(gridPos);
-
-            boolean hasExplicitDirs = (energyDirs != null && !energyDirs.isEmpty())
-                    || (fluidDirs != null && !fluidDirs.isEmpty());
-
-            if (hasExplicitDirs) {
-                Set<Direction> allDirs = new HashSet<>();
-                if (energyDirs != null) allDirs.addAll(energyDirs);
-                if (fluidDirs != null) allDirs.addAll(fluidDirs);
-                for (Direction localDir : allDirs) {
-                    if (localDir == Direction.DOWN) continue;
-                    BlockPos neighbor = gridPos.relative(localDir);
-                    if (structureMap.containsKey(neighbor) || neighbor.equals(controllerOffset)) continue;
-                    Direction worldDir = rotateLocalDirectionToWorld(localDir, facing);
-                    if (worldDir != Direction.DOWN) {
-                        addPortIfNew(result, seen, worldOffset.getX(), worldOffset.getY(), worldOffset.getZ(), worldDir);
-                    }
-                }
-            } else {
-                for (Direction d : Direction.values()) {
-                    if (d == Direction.DOWN || d == Direction.UP) continue;
-                    BlockPos neighbor = gridPos.relative(d);
-                    if (!structureMap.containsKey(neighbor) && !neighbor.equals(controllerOffset)) {
-                        Direction worldDir = rotateLocalDirectionToWorld(d, facing);
-                        if (worldDir != Direction.DOWN) {
-                            addPortIfNew(result, seen, worldOffset.getX(), worldOffset.getY(), worldOffset.getZ(), worldDir);
-                        }
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
-    private static void addPortIfNew(List<int[]> result, Set<Long> seen, int x, int y, int z, Direction dir) {
-        long key = (((long) (x + 1024) & 0x7FF) << 26)
-                 | (((long) (y + 256) & 0x3FF) << 16)
-                 | (((long) (z + 1024) & 0x7FF) << 5)
-                 | (dir.get3DDataValue() & 0x1F);
-        if (seen.add(key)) {
-            result.add(new int[] { x, y, z, dir.get3DDataValue() });
-        }
     }
 
     public List<BlockPos> getAllPartPositions(BlockPos controllerPos, Direction facing) {

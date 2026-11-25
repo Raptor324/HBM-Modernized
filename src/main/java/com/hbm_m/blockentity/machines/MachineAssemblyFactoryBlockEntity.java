@@ -58,7 +58,7 @@ import net.minecraft.world.phys.AABB;
 public class MachineAssemblyFactoryBlockEntity extends BaseMachineBlockEntity
         implements IFluidStandardTransceiverMK2, IUpgradeInfoProvider, IFluidPartDelegateProvider,
         com.hbm_m.api.redstoneoverradio.IRORValueProvider
-        , com.hbm_m.interfaces.IConditionalInvAccess
+        , com.hbm_m.interfaces.IConditionalInvAccess, com.hbm_m.interfaces.IFrameSupportable
 {
 
     private static final String SOUND_INSTANCE = "com.hbm_m.sound.AssemblyFactorySoundInstance";
@@ -104,7 +104,6 @@ public class MachineAssemblyFactoryBlockEntity extends BaseMachineBlockEntity
 
     private final DelegateAssemblyFactory delegate = new DelegateAssemblyFactory();
 
-    public boolean frame = false;
     public final TragicYuri[] animations = new TragicYuri[2];
 
     protected final ContainerData data = new ContainerData() {
@@ -163,6 +162,28 @@ public class MachineAssemblyFactoryBlockEntity extends BaseMachineBlockEntity
         }
     }
 
+    // ==================== Multiblock frame (BlockState property) ====================
+
+    @Override
+    public void checkForFrame() {
+        if (level != null && !level.isClientSide) {
+            com.hbm_m.multiblock.MultiblockStructureHelper.updateFrameForController(level, worldPosition);
+        }
+    }
+
+    @Override
+    public boolean setFrameVisible(boolean visible) {
+        if (level != null && !level.isClientSide) {
+            return com.hbm_m.multiblock.MultiblockFrameHelper.applyFrameToBlockState(level, worldPosition, visible);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isFrameVisible() {
+        return com.hbm_m.multiblock.MultiblockFrameHelper.isFrameVisible(getBlockState());
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAssemblyFactoryBlockEntity be) {
         for (MachineModuleAdvancedAssembler m : be.assemblerModule) m.setLevel(level);
 
@@ -171,10 +192,6 @@ public class MachineAssemblyFactoryBlockEntity extends BaseMachineBlockEntity
 
             boolean any = be.isAnyProcessing();
             for (TragicYuri animation : be.animations) animation.update(any);
-
-            if (level.getGameTime() % 20 == 0) {
-                be.frame = !level.getBlockState(pos.above(3)).isAir();
-            }
             return;
         }
 
@@ -286,7 +303,7 @@ public class MachineAssemblyFactoryBlockEntity extends BaseMachineBlockEntity
     }
 
     /** Original {@code coolantLine}: die vier Proxies, hinter denen nur der Kuehlkreis liegt. */
-    private BlockPos[] coolantLine() {
+    public BlockPos[] coolantLine() {
         Direction dir = getDir();
         Direction rot = dir.getClockWise();
         BlockPos c = worldPosition;
@@ -299,7 +316,7 @@ public class MachineAssemblyFactoryBlockEntity extends BaseMachineBlockEntity
     }
 
     /** Original {@code getIOPos}, zurueckgerechnet auf die Proxyzelle davor (Index = Modul). */
-    private BlockPos[] ioParts() {
+    public BlockPos[] ioParts() {
         Direction dir = getDir();
         Direction rot = dir.getClockWise();
         BlockPos c = worldPosition;

@@ -27,8 +27,12 @@ import com.hbm_m.platform.LoaderHooks;
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 public class SoyuzEntityRenderer extends EntityRenderer<SoyuzEntity> {
 
-    private static final ResourceLocation ROCKET_MODEL_ID =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket");
+    /** Per-skin rocket models (legacy {@code SoyuzPronter.SoyuzSkin}: SOYUZ/LUNA/AUTHENTIC). */
+    private static final ResourceLocation[] ROCKET_MODEL_IDS = {
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket"),
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/soyuz_rocket_luna"),
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/soyuz_rocket_authentic")
+    };
     private static final ResourceLocation DUMMY_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/soyuz/launcher_table.png");
 
@@ -39,10 +43,10 @@ public class SoyuzEntityRenderer extends EntityRenderer<SoyuzEntity> {
     @Override
     public void render(SoyuzEntity entity, float entityYaw, float partialTick, PoseStack poseStack,
                         MultiBufferSource bufferSource, int packedLight) {
-        BakedModel part = getRocketPart();
+        BakedModel part = getRocketPart(entity.getSkin());
         if (part == null) return;
 
-        SingleMeshVboRenderer renderer = MeshRenderCache.getOrCreateRenderer("soyuz_entity", "Rocket", part);
+        SingleMeshVboRenderer renderer = MeshRenderCache.getOrCreateRenderer("soyuz_entity/" + entity.getSkin(), "Rocket", part);
         if (renderer == null) return;
 
         poseStack.pushPose();
@@ -58,9 +62,10 @@ public class SoyuzEntityRenderer extends EntityRenderer<SoyuzEntity> {
     }
 
     @Nullable
-    private static BakedModel getRocketPart() {
+    private static BakedModel getRocketPart(int skin) {
+        int index = (skin >= 0 && skin < ROCKET_MODEL_IDS.length) ? skin : 0;
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = LoaderHooks.getModel(modelManager, ROCKET_MODEL_ID);
+        BakedModel model = LoaderHooks.getModel(modelManager, ROCKET_MODEL_IDS[index]);
         if (model == null || model == modelManager.getMissingModel()) return null;
         if (!(model instanceof SoyuzRocketBakedModel rocketModel)) return null;
         return rocketModel.getPart(SoyuzRocketBakedModel.ROCKET);

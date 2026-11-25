@@ -2,6 +2,7 @@
   "loader": "hbm_m:machine_parts_loader",
   "model": "hbm_m:models/block/barrel.obj",
   "flip_v": true,
+  "smooth_shade": true,
   "textures": {
     "particle": "hbm_m:block/barrel_taint",
     "default": "hbm_m:block/barrel_taint"
@@ -16,9 +17,9 @@
   },
   "display": {
     "gui": {
-      "rotation": [ 30, 45, 0 ],
-      "translation": [ 0, 0, 0.5 ],
-      "scale": [ 0.65, 0.65, 0.65 ]
+      "rotation": [ 30, -45, 0 ],
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.625, 0.625, 0.625 ]
     },
     "ground": {
       "rotation": [ 0, 0, 0 ],
@@ -26,23 +27,23 @@
       "scale": [ 0.25, 0.25, 0.25 ]
     },
     "fixed": {
-      "rotation": [ 0, 0, 0 ],
-      "translation": [ 0, 0, 0 ],
-      "scale": [ 0.5, 0.5, 0.5 ]
+      "rotation": [ 0, 90, 0 ],
+      "translation": [ 0, -0.56, 0.5 ],
+      "scale": [ 0.625, 0.625, 0.625 ]
     },
     "thirdperson_righthand": {
-      "rotation": [ 75, 180, 0 ],
-      "translation": [ 0, 2.5, 0 ],
+      "rotation": [ 70, -45, 0 ],
+      "translation": [ 0, 2, 0 ],
       "scale": [ 0.375, 0.375, 0.375 ]
     },
     "firstperson_righthand": {
-      "rotation": [ 0, 180, 0 ],
-      "translation": [ 2, -1, 0 ],
+      "rotation": [ 0, 45, 0 ],
+      "translation": [ 0, 0, 0 ],
       "scale": [ 0.4, 0.4, 0.4 ]
     },
     "head": {
-      "rotation": [ 0, 180, 0 ],
-      "translation": [ 0, 13, 7 ],
+      "rotation": [ 0, 90, 0 ],
+      "translation": [ 0, 0, 0 ],
       "scale": [ 1, 1, 1 ]
     }
   }

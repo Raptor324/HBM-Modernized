@@ -33,8 +33,8 @@ public class BuildMissilePacket implements C2SPacket {
 
             ServerLevel level = player.serverLevel();
             BlockEntity be = ModPacketHandler.blockEntityAt(player, msg.pos);
-
-            if (be instanceof MissileAssemblyBlockEntity assembly) {
+            if (be instanceof MissileAssemblyBlockEntity assembly
+                    && com.hbm_m.inventory.menu.MenuReach.canReach(player, msg.pos, player.level().getBlockState(msg.pos))) {
                 assembly.construct();
             }
         });

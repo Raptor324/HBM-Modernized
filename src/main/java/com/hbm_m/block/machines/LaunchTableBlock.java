@@ -49,7 +49,7 @@ public class LaunchTableBlock extends DummyableMachineBlock implements IBomb {
             if (f == 0) continue; // Querachse = Platten (und der Kern)
             b.extra(f, 0, s);
         }
-        return b.placementOffset(0).build(() -> ModBlocks.STRUCT_LAUNCHER.get().defaultBlockState());
+        return b.placementOffset(0).build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     /** Original onBlockPlacedBy: Blick nach Sueden (d=0) setzt den Turm nach Osten usw. */
@@ -103,8 +103,8 @@ public class LaunchTableBlock extends DummyableMachineBlock implements IBomb {
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     //?} else {
     /*@Override
-    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return com.hbm_m.platform.BlockHooks.useItemResult(hbmUse(state, level, pos, player, hand, hit));
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return hbmUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     private InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     *///?}

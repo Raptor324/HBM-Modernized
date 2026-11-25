@@ -10,6 +10,7 @@ import com.hbm_m.handler.rbmk.RBMKNeutronHandler.RBMKType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.RBMKOutgasserMenu;
+import com.hbm_m.platform.ModItemStackHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -125,6 +126,9 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
 
         OutgasserRecipe recipe = RBMKOutgasserRecipes.getRecipe(inputSlot);
         if (recipe == null) return false;
+        // 1:1 TileEntityRBMKOutgasser.canProcess: fusion-only inputs are rejected here and belong
+        // to the fusion breeder instead. No default recipe is fusion-only.
+        if (recipe.fusionOnly()) return false;
 
         if (recipe.hasFluid()) {
             if (gasTank.getTankType() != recipe.fluidType() && gasTank.getFill() > 0) return false;
@@ -181,13 +185,21 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
         out.add(com.mojang.datafixers.util.Pair.of(pos.above(h + 1), Direction.UP));
 
         BlockPos loader = null;
+        boolean classicLoader = false;
         if (level.getBlockState(pos.below()).is(com.hbm_m.block.ModBlocks.RBMK_LOADER.get())) {
             loader = pos.below();
         } else if (level.getBlockState(pos.below(2)).is(com.hbm_m.block.ModBlocks.RBMK_LOADER.get())) {
             loader = pos.below(2);
+            classicLoader = true;
         }
 
         if (loader != null) {
+            // 1:1 getPortsClassicLoader: with the loader two blocks down, the base keeps its own
+            // NEG_Y port, so a pipe sitting directly under the base can pull gas. The close loader
+            // (one block down) replaces it, and without a loader the base port stands alone.
+            if (classicLoader) {
+                out.add(com.mojang.datafixers.util.Pair.of(pos.below(), Direction.DOWN));
+            }
             for (Direction dir : Direction.values()) {
                 if (dir == Direction.UP) continue;
                 out.add(com.mojang.datafixers.util.Pair.of(loader.relative(dir), dir));
@@ -219,6 +231,11 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
             return gasTank.getForgeFluidCapability().cast();
         }
+        // Forge exposes items only through the BE's own getCapability (ModCapabilities' generic
+        // ItemHandler registration exists on NeoForge alone); same split as RBMKAutoloaderBlockEntity.
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER) {
+            return net.minecraftforge.common.util.LazyOptional.of(() -> automationHandler).cast();
+        }
         return super.getCapability(cap, side);
     }
     //?}
@@ -249,10 +266,22 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
         CompoundTag d = new CompoundTag();
         d.putInt("gas",           gasTank.getFill());
         d.putInt("maxGas",        gasTank.getMaxFill());
+        // 1:1 TileEntityRBMKOutgasser.getNBTForConsole sends the tank type alongside gas/maxGas
+        // (write-only console metadata there - the console never reads it for the outgasser). This
+        // port carries the ready-made translation key, same convention as the heater's "type".
+        d.putString("type",        fluidKey(gasTank.getConfiguredFluid()));
         d.putDouble("progress",    progress);
         d.putDouble("maxProgress", duration);
         d.putDouble("usedFlux",    lastUsedFlux);
         return d;
+    }
+
+    /** Lang key for a fluid, matching this mod's {@code fluid.<namespace>.<path>} convention. */
+    private static String fluidKey(net.minecraft.world.level.material.Fluid fluid) {
+        if (fluid == null) return "";
+        net.minecraft.resources.ResourceLocation id =
+                net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluid);
+        return id == null ? "" : "fluid." + id.getNamespace() + "." + id.getPath();
     }
 
     // ─── NBT ─────────────────────────────────────────────────────────────────
@@ -280,4 +309,84 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
         progress = tag.getDouble("progress");
         lastUsedFlux = tag.getDouble("lastUsedFlux");
     }
+
+    // ─── Automation (hoppers/pipes) ──────────────────────────────────────────
+
+    /**
+     * 1:1 {@code TileEntityRBMKOutgasser} automation surface. {@code getAccessibleSlotsFromSide}
+     * exposes slots {0,1} to pipes/hoppers from every side; {@code isItemValidForSlot} restricts
+     * insertion to slot 0 and recipe-valid inputs; {@code canExtractItem} allows extraction from
+     * slot 1 only. Live view of {@link #inputSlot}/{@link #outputSlot} - the tick, the menu and
+     * the NBT keep working on the same storage.
+     */
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        return automationHandler;
+    }
+
+    private final ModItemStackHandler automationHandler = new ModItemStackHandler(2) {
+
+        @Override
+        public int getSlots() { return 2; }
+
+        @Override
+        public ItemStack getStackInSlot(int slot) { return slot == SLOT_INPUT ? inputSlot : outputSlot; }
+
+        @Override
+        public void setStackInSlot(int slot, ItemStack stack) {
+            if (slot == SLOT_INPUT) inputSlot = stack; else outputSlot = stack;
+            onContentsChanged(slot);
+        }
+
+        @Override
+        public boolean isItemValid(int slot, ItemStack stack) { return isItemValidForSlot(slot, stack); }
+
+        @Override
+        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+            // isItemValidForSlot: only slot 0 takes items, and only recipe-valid inputs
+            if (stack.isEmpty() || slot != SLOT_INPUT || !isItemValidForSlot(slot, stack)) return stack;
+
+            ItemStack existing = inputSlot;
+            int limit = Math.min(stack.getMaxStackSize(), getSlotLimit(slot));
+            if (!existing.isEmpty()) {
+                if (!ItemStack.isSameItem(existing, stack) || existing.getCount() >= limit) return stack;
+                int accepted = Math.min(stack.getCount(), limit - existing.getCount());
+                if (!simulate) {
+                    existing.grow(accepted);
+                    onContentsChanged(slot);
+                }
+                return accepted >= stack.getCount() ? ItemStack.EMPTY
+                                                    : stack.copyWithCount(stack.getCount() - accepted);
+            }
+            int accepted = Math.min(stack.getCount(), limit);
+            if (accepted <= 0) return stack;
+            if (!simulate) {
+                inputSlot = stack.copyWithCount(accepted);
+                onContentsChanged(slot);
+            }
+            return accepted >= stack.getCount() ? ItemStack.EMPTY
+                                                : stack.copyWithCount(stack.getCount() - accepted);
+        }
+
+        @Override
+        public ItemStack extractItem(int slot, int amount, boolean simulate) {
+            // canExtractItem: only the output slot drains
+            if (amount <= 0 || slot != SLOT_OUTPUT) return ItemStack.EMPTY;
+            ItemStack existing = outputSlot;
+            if (existing.isEmpty()) return ItemStack.EMPTY;
+            int toExtract = Math.min(amount, existing.getCount());
+            ItemStack extracted = existing.copyWithCount(toExtract);
+            if (!simulate) {
+                if (toExtract >= existing.getCount()) outputSlot = ItemStack.EMPTY;
+                else existing.shrink(toExtract);
+                onContentsChanged(slot);
+            }
+            return extracted;
+        }
+
+        @Override
+        protected void onContentsChanged(int slot) {
+            setChanged();
+        }
+    };
 }

@@ -49,9 +49,16 @@ import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
  *       chunk renderer can cull them against opaque neighbours; when false all quads render unculled.</li>
  *   <li>{@code "ao"} — optional explicit ambient-occlusion override; defaults to the model's
  *       {@code ambientocclusion} value ({@code context.useAmbientOcclusion()}).</li>
- *   <li>{@code "emissive_ambient"} — Forge ObjModel setting (default {@code true}); when on, each
- *       sub-mesh's MTL Ka drives a baked fake lightmap (full-bright effect) and quad shading is
- *       disabled; MTL Kd tints every vertex colour.</li>
+     *   <li>{@code "emissive_ambient"} — Forge ObjModel setting (default {@code true}); when on, each
+     *       sub-mesh's MTL Ka drives a baked fake lightmap (full-bright effect) and quad shading is
+     *       disabled; MTL Kd tints every vertex colour.</li>
+     *   <li>{@code "smooth_shade"} — HBM extension (default {@code false}); bakes a smooth per-vertex
+     *       diffuse (vanilla block face weights 1.0/0.8/0.6/0.5 evaluated on the TRUE vertex normal,
+     *       not the nearest cardinal face direction) into the vertex colour, so curved OBJ geometry
+     *       (bombs, tanks, pipes) shades like the 1.7.10 fixed-function {@code GL_SMOOTH} pipeline
+     *       instead of the 6-step per-quad posterization of {@code shade_quads}. Implies
+     *       {@code shade_quads: false} (the shade flag would double-darken); intended to be used with
+     *       {@code "ao": false}.</li>
  *   <li>{@code "render_type"} — handled by Forge ({@code context.getRenderTypeHint()}); resolved here into
  *       chunk/item render types on the baked model so composite children and standalone models both layer correctly.</li>
  *   <li>{@code "visibility"} — handled by Forge; sub-meshes whose root object/group is hidden are skipped.</li>
@@ -85,6 +92,7 @@ public class NMeshObjModelLoader implements IGeometryLoader<NMeshObjModelLoader.
         boolean shadeQuads = GsonHelper.getAsBoolean(jsonObject, "shade_quads", true);
         boolean automaticCulling = GsonHelper.getAsBoolean(jsonObject, "automatic_culling", true);
         boolean emissiveAmbient = GsonHelper.getAsBoolean(jsonObject, "emissive_ambient", true);
+        boolean smoothShade = GsonHelper.getAsBoolean(jsonObject, "smooth_shade", false);
         Boolean aoOverride = jsonObject.has("ao") ? GsonHelper.getAsBoolean(jsonObject, "ao") : null;
         int tintIndex = GsonHelper.getAsInt(jsonObject, "tint_index", -1);
         ResourceLocation textureOverride = null;
@@ -94,7 +102,7 @@ public class NMeshObjModelLoader implements IGeometryLoader<NMeshObjModelLoader.
                 throw new JsonParseException("hbm_m:nmesh_obj loader: invalid 'texture' resource location.");
             }
         }
-        return new Geometry(model, flipV, shadeQuads, automaticCulling, emissiveAmbient, aoOverride, tintIndex, textureOverride);
+        return new Geometry(model, flipV, shadeQuads, automaticCulling, emissiveAmbient, smoothShade, aoOverride, tintIndex, textureOverride);
     }
 
     public static final class Geometry implements IUnbakedGeometry<Geometry> {
@@ -103,6 +111,8 @@ public class NMeshObjModelLoader implements IGeometryLoader<NMeshObjModelLoader.
         private final boolean shadeQuads;
         private final boolean automaticCulling;
         private final boolean emissiveAmbient;
+        /** Per-vertex smooth shading baked into the vertex colour (see loader javadoc). */
+        private final boolean smoothShade;
         @Nullable
         private final Boolean aoOverride;
         private final int tintIndex;
@@ -110,12 +120,13 @@ public class NMeshObjModelLoader implements IGeometryLoader<NMeshObjModelLoader.
         private final ResourceLocation textureOverride;
 
         public Geometry(ResourceLocation modelLocation, boolean flipV, boolean shadeQuads, boolean automaticCulling,
-                        boolean emissiveAmbient, @Nullable Boolean aoOverride, int tintIndex, @Nullable ResourceLocation textureOverride) {
+                        boolean emissiveAmbient, boolean smoothShade, @Nullable Boolean aoOverride, int tintIndex, @Nullable ResourceLocation textureOverride) {
             this.modelLocation = modelLocation;
             this.flipV = flipV;
             this.shadeQuads = shadeQuads;
             this.automaticCulling = automaticCulling;
             this.emissiveAmbient = emissiveAmbient;
+            this.smoothShade = smoothShade;
             this.aoOverride = aoOverride;
             this.tintIndex = tintIndex;
             this.textureOverride = textureOverride;
@@ -175,7 +186,7 @@ public class NMeshObjModelLoader implements IGeometryLoader<NMeshObjModelLoader.
             // then the JSON root transform; NMeshPartBakedModel re-bases center->corner at bake.
             Transformation rootTransform = modelState.getRotation().compose(context.getRootTransform());
             return new NMeshPartBakedModel(bound, flipV, rootTransform, context.getTransforms(),
-                    shadeQuads, ao, automaticCulling, tintIndex, blockRt, itemRt, emissiveAmbient);
+                    shadeQuads, ao, automaticCulling, tintIndex, blockRt, itemRt, emissiveAmbient, smoothShade);
         }
 
         /**

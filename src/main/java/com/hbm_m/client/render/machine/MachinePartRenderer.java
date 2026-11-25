@@ -119,6 +119,11 @@ final class MachinePartRenderer {
                 data = geo.toVboData(partName);
                 this.single = MeshRenderCache.getOrCreateRenderer(key, partModel);
             }
+            if (data == null && this.nmeshModel != null) {
+                // Multi-material NMesh (e.g. differing submesh Kd/Ka) cannot use a single-tint VBO;
+                // materialize BakedQuads so hasGeometry() stays true and renderQuadsFallback draws it.
+                this.quads = geo.solidQuads();
+            }
         }
 
         if (data != null) {
@@ -296,8 +301,9 @@ final class MachinePartRenderer {
         // deferred paths (instancing/single-VBO) flush only in the main pass, so machines would
         // vanish from the sketch - draw immediately into the shared buffer source instead.
         if (ClientRenderFlags.forceVanillaImmediate()
-                || com.hbm_m.compat.simulated.DiagramRenderCompat.isRenderingDiagram()) {
-            noteShadowFallback("forceVanillaImmediate/diagram");
+                || com.hbm_m.compat.simulated.DiagramRenderCompat.isRenderingDiagram()
+                || com.hbm_m.compat.ContraptionRenderCompat.isContraptionRender(blockEntity)) {
+            noteShadowFallback("forceVanillaImmediate/diagram/contraption");
             renderQuadsFallback(poseStack, packedLight, blockEntity, bufferSource, uvRect, tint);
             return;
         }

@@ -199,4 +199,19 @@ public class MachineCrystallizerBlock extends BaseEntityBlock implements IMultib
         return CODEC;
     }
     *///?}
+
+    // Verbatim port of the original MachineCrystallizer.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 1, Direction.EAST.get3DDataValue()},
+            {1, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {1, 0, -1, Direction.EAST.get3DDataValue()},
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-1, 0, 1, Direction.WEST.get3DDataValue()},
+            {-1, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {-1, 0, -1, Direction.WEST.get3DDataValue()},
+            {-1, 0, -1, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

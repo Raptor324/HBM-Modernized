@@ -184,9 +184,9 @@ public abstract class BlockChargeBase extends BaseEntityBlock implements IBomb, 
     //?} else {
     /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
     *///?}
-        list.add(Component.literal("Right-click to change timer.").withStyle(ChatFormatting.YELLOW));
-        list.add(Component.literal("Sneak-click to arm.").withStyle(ChatFormatting.YELLOW));
-        list.add(Component.literal("Can only be disarmed and removed with defuser.").withStyle(ChatFormatting.RED));
+        list.add(Component.translatable("tooltip.hbm_m.charge.timer").withStyle(ChatFormatting.YELLOW));
+        list.add(Component.translatable("tooltip.hbm_m.charge.arm").withStyle(ChatFormatting.YELLOW));
+        list.add(Component.translatable("tooltip.hbm_m.charge.defuser").withStyle(ChatFormatting.RED));
     }
 
     //? if < 1.21.1 {

@@ -44,7 +44,7 @@ public class SetKlystronOutputC2SPacket implements C2SPacket {
                     msg.blockPos.getY() + 2.5,
                     msg.blockPos.getZ() + 0.5) > 20 * 20) return;
 
-            BlockEntity be = player.level().getBlockEntity(msg.blockPos);
+            BlockEntity be = ModPacketHandler.blockEntityAt(player, msg.blockPos);
             if (be instanceof FusionKlystronBlockEntity klystron) {
                 klystron.setOutputTarget(msg.amount);
             }

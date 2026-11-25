@@ -1,14 +1,11 @@
 {
-  "loader": "forge:composite",
+  "loader": "hbm_m:machine_parts_loader",
+  "model": "hbm_m:models/block/machines/launch_pad_large.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
   "textures": {
-    "particle": "hbm_m:block/launchpad/pad"
-  },
-  "children": {
-    "pad_model": {
-      "loader": "hbm_m:nmesh_obj",
-      "model": "hbm_m:models/block/machines/launch_pad_large.obj",
-      "flip_v": true
-    }
+    "particle": "hbm_m:block/launchpad/pad",
+    "default": "hbm_m:block/launchpad/pad"
   },
   "transform": {"origin": "corner", "translation": [0.5, 0, 0.5], "rotation": [0, 90, 0], "scale": 1.0},
   "display": {

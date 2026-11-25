@@ -28,8 +28,8 @@ public class CrashedBombRenderer implements com.hbm_m.client.render.HbmBerBounds
             new SimpleObjModel(rl("models/bombs/dud_balefire.obj")), new SimpleObjModel(rl("models/bombs/dud_conventional.obj")),
             new SimpleObjModel(rl("models/bombs/dud_nuke.obj")), new SimpleObjModel(rl("models/bombs/dud_salted.obj")) };
     public static final ResourceLocation[] TEX = {
-            rl("textures/models/bombs/dud_balefire.png"), rl("textures/models/bombs/dud_conventional.png"),
-            rl("textures/models/bombs/dud_nuke.png"), rl("textures/models/bombs/dud_salted.png") };
+            rl("textures/block/bomb/dud_balefire_model.png"), rl("textures/block/dud_conventional.png"),
+            rl("textures/block/dud_nuke.png"), rl("textures/block/dud_salted.png") };
 
     private final Random rand = new Random();
 

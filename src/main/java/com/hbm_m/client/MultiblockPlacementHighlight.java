@@ -4,9 +4,6 @@ import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.RenderType;
@@ -177,23 +174,13 @@ public final class MultiblockPlacementHighlight {
             }
         }
 
-        // rainbow yellow! Ports rendering
-        List<int[]> portsList = new ArrayList<>();
-        int[][] explicitPorts = controller.getAllPorts(facing);
-        if (explicitPorts != null && explicitPorts.length > 0) {
-            for (int[] p : explicitPorts) {
-                if (p != null && p.length >= 4) {
-                    portsList.add(p);
-                }
-            }
-        } else {
-            portsList.addAll(helper.getAutoPorts(controller, facing));
-        }
+        // rainbow yellow! Ports rendering (1:1 with the original: only explicit getAllPorts rows)
+        int[][] ports = controller.getAllPorts(facing);
 
-        if (!portsList.isEmpty()) {
+        if (ports != null && ports.length > 0) {
             Matrix4f matrix = poseStack.last().pose();
             float s = 0.3F;
-            for (int[] port : portsList) {
+            for (int[] port : ports) {
                 double jX = baseX + port[0];
                 double jY = baseY + port[1];
                 double jZ = baseZ + port[2];

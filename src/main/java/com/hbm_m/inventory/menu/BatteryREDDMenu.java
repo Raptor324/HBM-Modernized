@@ -18,14 +18,16 @@ public class BatteryREDDMenu extends AbstractContainerMenu {
     public final BatteryREDDBlockEntity battery;
 
     public BatteryREDDMenu(int id, Inventory inv, FriendlyByteBuf buf) {
-        this(id, inv, (BatteryREDDBlockEntity) inv.player.level().getBlockEntity(buf.readBlockPos()));
+        this(id, inv, inv.player.level().getBlockEntity(buf.readBlockPos()) instanceof BatteryREDDBlockEntity redd ? redd : null);
     }
 
     public BatteryREDDMenu(int id, Inventory inv, BatteryREDDBlockEntity be) {
         super(ModMenuTypes.BATTERY_REDD_MENU.get(), id);
         this.battery = be;
 
-        var container = new com.hbm_m.inventory.ModItemStackHandlerContainer(be.getInventory(), be::setChanged);
+        var container = be != null
+                ? new com.hbm_m.inventory.ModItemStackHandlerContainer(be.getInventory(), be::setChanged)
+                : new com.hbm_m.inventory.ModItemStackHandlerContainer(new com.hbm_m.platform.ModItemStackHandler.Dummy(2), () -> {});
         this.addSlot(new Slot(container, 0, 26, 53));
         this.addSlot(new Slot(container, 1, 80, 53));
 

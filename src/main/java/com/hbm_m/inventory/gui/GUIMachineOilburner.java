@@ -17,19 +17,19 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Port of {@code GUIOilburner} (1.7.10 Original). Also used for the {@code oilburner_hp} variant
  * (uses {@code gui_oilburner_hp.png}, chosen by looking at which block the block entity belongs to).
  * Ein Klick auf den Schalter (80,54) schickt wie im Original ein {@code NBTControlPacket "toggle"}.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineOilburner extends GuiInfoScreen<MachineOilburnerMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_oilburner.png");
-    private static final ResourceLocation TEXTURE_HP =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_oilburner_hp.png");
-
     private final MachineOilburnerBlockEntity oilburner;
     private final ResourceLocation texture;
 
@@ -37,7 +37,7 @@ public class GUIMachineOilburner extends GuiInfoScreen<MachineOilburnerMenu> {
         super(menu, playerInventory, title);
         this.oilburner = menu.getBlockEntity();
         // тайл может отсутствовать в реплее Flashback
-        this.texture = this.oilburner != null && this.oilburner.getBlockState().is(com.hbm_m.block.ModBlocks.OILBURNER_HP.get()) ? TEXTURE_HP : TEXTURE;
+        this.texture = TEXTURE;
         this.imageWidth = 176;
         this.imageHeight = 203;
     }

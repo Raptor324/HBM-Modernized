@@ -65,7 +65,7 @@ public class MachineCapacitorBusBlock extends Block {
     *///?}
         super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
 
-        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+        if (com.hbm_m.util.StandardInfo.isShiftDown()) {
             for (String line : Component.translatable("tooltip.hbm_m.capacitor_bus.desc").getString().split("\n")) {
                 pTooltip.add(Component.literal(line).withStyle(net.minecraft.ChatFormatting.YELLOW));
             }

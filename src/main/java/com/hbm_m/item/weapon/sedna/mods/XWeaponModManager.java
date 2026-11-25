@@ -156,10 +156,12 @@ public class XWeaponModManager {
             }
         }
 
-        if (toInstall.isEmpty()) return;
+        if (toInstall.isEmpty()) {
+            restoreMagState(stack, cfg);
+            return;
+        }
         toInstall.sort(modSorter);
 
-        CompoundTag tag = StackNbt.orCreate(stack);
         int[] modIds = new int[toInstall.size()];
         for (int i = 0; i < modIds.length; i++) {
             IWeaponMod mod = toInstall.get(i);

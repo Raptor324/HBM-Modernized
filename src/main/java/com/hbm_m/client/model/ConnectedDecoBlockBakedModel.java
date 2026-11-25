@@ -1,6 +1,7 @@
 package com.hbm_m.client.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -44,8 +45,8 @@ public class ConnectedDecoBlockBakedModel extends BakedModelWrapper<BakedModel> 
 
     private final ResourceLocation fullTex;
     private final ResourceLocation ctTex;
-    private TextureAtlasSprite fullSprite;
-    private TextureAtlasSprite ctSprite;
+    private volatile TextureAtlasSprite fullSprite;
+    private volatile TextureAtlasSprite ctSprite;
     private final TextureAtlasSprite fallbackSprite;
 
     /**
@@ -57,7 +58,7 @@ public class ConnectedDecoBlockBakedModel extends BakedModelWrapper<BakedModel> 
     /** Welche Nachbarn als "dasselbe" gelten - vorbelegt mit der Regel der Deko-Bloecke. */
     private final java.util.function.BiPredicate<Block, Block> connects;
 
-    private final Map<ResourceLocation, TextureAtlasSprite> spriteCache = new java.util.HashMap<>();
+    private final Map<ResourceLocation, TextureAtlasSprite> spriteCache = new java.util.concurrent.ConcurrentHashMap<>();
 
     public ConnectedDecoBlockBakedModel(BakedModel original, ResourceLocation fullTex, ResourceLocation ctTex) {
         this(original, fullTex, ctTex, null, ConnectedDecoBlockBakedModel::decoCtConnects);
@@ -109,11 +110,9 @@ public class ConnectedDecoBlockBakedModel extends BakedModelWrapper<BakedModel> 
         }
 
         if (side == null) {
-            List<BakedQuad> all = new ArrayList<>(24);
-            for (Direction d : Direction.values()) {
-                all.addAll(buildFaceQuads(d, indices));
-            }
-            return all;
+            // Full-cube block: all 6 faces are returned by their Direction side;
+            // returning them again for side == null would double-render every face and defeat culling.
+            return Collections.emptyList();
         }
 
         return buildFaceQuads(side, indices);

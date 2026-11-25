@@ -18,8 +18,17 @@ public class NukeFstbmbBlock extends NukeBaseBlock implements IBomb {
 
     public static final int DEFAULT_TIMER = 18000;
 
+    private static final com.hbm_m.multiblock.MultiblockStructureHelper STRUCTURE_HELPER = createBombStructure(new String[] {
+            "XXCXXXX"
+    });
+
     public NukeFstbmbBlock(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public com.hbm_m.multiblock.MultiblockStructureHelper getStructureHelper() {
+        return STRUCTURE_HELPER;
     }
 
     @Override
@@ -49,12 +58,14 @@ public class NukeFstbmbBlock extends NukeBaseBlock implements IBomb {
         }
     }
 
+    // Оригинал NukeBalefire.explode: только isLoaded(); удаление блока как func_147480_a(x,y,z,false)
+    // (destroyBlock без дропа, с частицами разрушения), затем EntityBalefire радиуса 250.
     @Override
     public BombReturnCode explode(Level level, BlockPos pos) {
         if (level.isClientSide) return BombReturnCode.UNDEFINED;
-        if (level.getBlockEntity(pos) instanceof NukeFstbmbBlockEntity nuke && (nuke.isLoaded() || nuke.isReady())) {
+        if (level.getBlockEntity(pos) instanceof NukeFstbmbBlockEntity nuke && nuke.isLoaded()) {
             nuke.clearContent();
-            level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+            level.destroyBlock(pos, false);
             explode(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
             return BombReturnCode.DETONATED;
         }

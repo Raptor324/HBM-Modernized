@@ -7,6 +7,7 @@ import com.hbm_m.blockentity.machines.MachineCombustionEngineBlockEntity;
 import com.hbm_m.blockentity.machines.MachineDieselGeneratorBlockEntity;
 import com.hbm_m.blockentity.machines.MachineSteamEngineBlockEntity;
 import com.hbm_m.blockentity.machines.MachineStirlingBlockEntity;
+import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.machine.MachineRenderers;
 import com.hbm_m.inventory.fluid.FluidContainerDefs;
 import com.mojang.math.Axis;
@@ -83,6 +84,7 @@ public final class MachineEngineRenderer {
     private static void registerCombustion() {
         MachineRenderers.machine("combustion_engine", ModBlockEntities.COMBUSTION_ENGINE_BE.get(),
                 MachineCombustionEngineBlockEntity.class)
+            .blockTransform(MachineEngineRenderer::applyCombustionEngineTransform)
             .tintOverride("Canister", be -> {
                 if (be.tank == null) return null;
                 var canister = FluidContainerDefs.getCanister(be.tank.getTankType());
@@ -97,7 +99,7 @@ public final class MachineEngineRenderer {
             })
             .part("Engine")
             .part("Canister")
-            .rotatingPart("Hatch", new Vector3f(0.0F, -1.0F, 0.0F), new Vector3f(1.0F, 0.0F, -2.6875F),
+            .rotatingPart("Hatch", new Vector3f(0.0F, -1.0F, 0.0F), new Vector3f(1.5F, 0.0F, -2.1875F),
                     (be, pt) -> Mth.lerp(pt, be.prevDoorAngle, be.doorAngle))
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
@@ -105,13 +107,26 @@ public final class MachineEngineRenderer {
             .register();
     }
 
+    private static void applyCombustionEngineTransform(MachineCombustionEngineBlockEntity engine, LegacyAnimator animator) {
+        animator.translate(0.5, 0.0, 0.5);
+        switch (ObjBerHelper.facing(engine)) {
+            case SOUTH -> animator.rotate(270, 0, 1, 0);
+            case EAST  -> {}
+            case NORTH -> animator.rotate(90, 0, 1, 0);
+            case WEST  -> animator.rotate(180, 0, 1, 0);
+            default    -> {}
+        }
+        animator.translate(-1.0, 0.0, 2.5);
+    }
+
     private static void registerSteamEngine() {
         MachineRenderers.machine("steam_engine", ModBlockEntities.STEAM_ENGINE_BE.get(),
                 MachineSteamEngineBlockEntity.class)
+            .blockTransform(MachineEngineRenderer::applySteamEngineTransform)
             .part("Base")
-            .rotatingPart("Flywheel", new Vector3f(0.0F, 0.0F, -1.0F), new Vector3f(2.0F, 1.375F, 0.0F),
+            .rotatingPart("Flywheel", new Vector3f(0.0F, 0.0F, -1.0F), new Vector3f(2.5F, 1.375F, 0.5F),
                     (be, pt) -> Mth.lerp(pt, be.lastRotor, be.rotor))
-            .rotatingPart("Shaft", new Vector3f(1.0F, 0.0F, 0.0F), new Vector3f(0.0F, 1.375F, -0.5F),
+            .rotatingPart("Shaft", new Vector3f(1.0F, 0.0F, 0.0F), new Vector3f(0.5F, 1.375F, 0.0F),
                     (be, pt) -> Mth.lerp(pt, be.lastRotor, be.rotor) * 2.0)
             .part("Transmission", (be, pt, gt, ps) -> {
                 double rot = Mth.lerp(pt, be.lastRotor, be.rotor);
@@ -119,9 +134,9 @@ public final class MachineEngineRenderer {
                 double cos = Math.cos(rot * Math.PI / 180.0) * 0.25;
                 double ang = Math.acos(cos / 1.875);
                 ps.translate(sin, cos, 0.0);
-                ps.translate(2.25, 1.375, 0.0);
+                ps.translate(2.75, 1.375, 0.5);
                 ps.mulPose(Axis.ZN.rotationDegrees((float) (ang * 180.0 / Math.PI - 90.0)));
-                ps.translate(-2.25, -1.375, 0.0);
+                ps.translate(-2.75, -1.375, -0.5);
                 return true;
             })
             .part("Piston", (be, pt, gt, ps) -> {
@@ -132,10 +147,21 @@ public final class MachineEngineRenderer {
                 ps.translate(1.875 - cath + sin, 0.0, 0.0);
                 return true;
             })
-            .facing(ObjBerHelper::facing)
             .viewDistance(256)
             .itemParts("Base", "Flywheel", "Shaft", "Transmission", "Piston")
             .register();
+    }
+
+    private static void applySteamEngineTransform(MachineSteamEngineBlockEntity engine, LegacyAnimator animator) {
+        animator.translate(0.5, 0.0, 0.5);
+        switch (ObjBerHelper.facing(engine)) {
+            case SOUTH -> animator.rotate(90, 0, 1, 0);
+            case EAST  -> animator.rotate(180, 0, 1, 0);
+            case NORTH -> animator.rotate(270, 0, 1, 0);
+            default    -> {}
+        }
+        animator.translate(2.0, 0.0, 0.0);
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private MachineEngineRenderer() {}

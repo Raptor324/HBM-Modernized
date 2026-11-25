@@ -123,6 +123,7 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
 
         Fluid in = tanks[0].getTankType();
         boolean valid = false;
+        operational = false;
         FT_Coolable trait = FluidType.getTrait(in, FT_Coolable.class);
         if (trait != null) {
             double eff = trait.getEfficiency(CoolingType.TURBINE) * efficiency; // Standard: 100 %
@@ -148,7 +149,8 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
         slots = slotsArray();
         if (tanks[1].unloadTank(SLOT_OUTPUT_IO_IN, SLOT_OUTPUT_IO_OUT, slots)) applySlots(slots);
 
-        syncIfStateChanged(this.energy, (operational ? 1L : 0L) | (((long) tanks[0].getFill()) << 1) | (((long) tanks[1].getFill()) << 32));
+        long tankTypes = tanks[0].getTankType().hashCode() * 31L + tanks[1].getTankType().hashCode();
+        syncIfStateChanged(this.energy, (operational ? 1L : 0L) | (((long) tanks[0].getFill()) << 1) | (((long) tanks[1].getFill()) << 32) ^ tankTypes);
     }
 
     private void clientTick() {
@@ -251,7 +253,7 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
 
     /** Original {@code deserialize}: {@code shouldTurn} ist das vom Server gemeldete {@code operational}. */
     @Override
-    protected void applyClientUpdate(CompoundTag tag) {
+    protected void applyClientUpdate(CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
         readNbtData(tag, null);
         shouldTurn = operational;
     }

@@ -22,7 +22,7 @@ public class MissileShuttleEntity extends MissileBaseEntity {
 
     @Override
     public IRadarDetectable.RadarTargetType getTargetType() {
-        return IRadarDetectable.RadarTargetType.MISSILE_TIER3;
+        return IRadarDetectable.RadarTargetType.SHUTTLE;
     }
 
     @Override

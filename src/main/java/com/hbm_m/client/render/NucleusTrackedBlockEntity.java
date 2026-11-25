@@ -23,11 +23,4 @@ public interface NucleusTrackedBlockEntity {
 
     default void hbm_m$setBoundsEntry(Object entry) {
     }
-
-    default boolean hbm_m$isDemolished() {
-        return false;
-    }
-
-    default void hbm_m$setDemolished(boolean demolished) {
-    }
 }

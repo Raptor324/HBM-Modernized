@@ -39,9 +39,13 @@ public class NukeFleijaBlock extends NukeBaseBlock implements IBomb {
         } catch (Exception e) {
             radius = 50;
         }
-        com.hbm_m.platform.LevelHooks.playSound(level, x, y, z, SoundEvents.GENERIC_EXPLODE,
-                SoundSource.BLOCKS, 6.0F, (1.0F + (level.random.nextFloat() - level.random.nextFloat()) * 0.2F) * 0.7F);
-        FleijaExplosionAPI.start(level, x, y, z, radius);
+        // Original NukeFleija.igniteTestBomb: the "random.explode" sound plays only when the
+        // explosion entity is not suppressed (field-disturber check), volume 1.0f, pitch 0.9..1.0.
+        var ex = FleijaExplosionAPI.start(level, x, y, z, radius);
+        if (ex != null && !ex.isRemoved()) {
+            com.hbm_m.platform.LevelHooks.playSound(level, x, y, z, SoundEvents.GENERIC_EXPLODE,
+                    SoundSource.BLOCKS, 1.0F, level.random.nextFloat() * 0.1F + 0.9F);
+        }
     }
 
     @Override

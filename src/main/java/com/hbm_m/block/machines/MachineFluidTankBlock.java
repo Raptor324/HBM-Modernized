@@ -435,4 +435,15 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         return CODEC;
     }
     *///?}
+
+    // Verbatim port of the original MachineFluidTank.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {1, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {-1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-1, 0, 1, Direction.SOUTH.get3DDataValue()}
+        }, facing);
+    }
 }

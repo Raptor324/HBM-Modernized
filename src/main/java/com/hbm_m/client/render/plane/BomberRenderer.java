@@ -28,8 +28,8 @@ import java.util.Map;
  */
 public class BomberRenderer extends EntityRenderer<EntityBomber> {
 
-    private static final String DORNIER = "models/planes/dornier.obj";
-    private static final String B29     = "models/planes/b29.obj";
+    private static final String DORNIER = "models/block/dornier.obj";
+    private static final String B29     = "models/block/b29.obj";
 
     public BomberRenderer(EntityRendererProvider.Context context) {
         super(context);

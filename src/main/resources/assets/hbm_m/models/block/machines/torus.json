@@ -1,18 +1,11 @@
 {
+	"loader": "hbm_m:machine_parts_loader",
+	"model": "hbm_m:models/block/machines/torus.obj",
+	"flip_v": true,
+	"render_type": "minecraft:cutout",
 	"textures": {
-		"particle": "hbm_m:block/machine/torus"
-	},
-	"loader": "forge:composite",
-	"children": {
-		"torus_model": {
-			"loader": "hbm_m:nmesh_obj",
-			"model": "hbm_m:models/block/machines/torus_static.obj",
-			"flip_v": true,
-			"render_type": "minecraft:cutout",
-			"textures": {
-				"default": "hbm_m:block/machine/torus"
-			}
-		}
+		"particle": "hbm_m:block/machine/torus",
+		"default": "hbm_m:block/machine/torus"
 	},
 	"transform": {
 		"translation": [

@@ -32,12 +32,16 @@ import net.minecraft.resources.ResourceLocation;
 public class SoyuzCapsuleEntityRenderer extends EntityRenderer<SoyuzCapsuleEntity> {
 
     /** FFA-Port: Lander-Mesh + Texturen, gemeinsam vom Cargo-Entity-Renderer und dem gelandeten BER ({@link SoyuzCapsuleRenderer}) genutzt. */
-    public static final SimpleObjModel SOYUZ_LANDER = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/soyuz_lander.obj"));
-    public static final ResourceLocation LANDER_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/soyuz_capsule/soyuz_lander.png");
+    public static final SimpleObjModel SOYUZ_LANDER = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/soyuz_capsule_item.obj"));
+    public static final ResourceLocation LANDER_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/soyuz_lander_item.png");
     public static final ResourceLocation LANDER_RUST_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/soyuz_capsule/soyuz_lander_rust.png");
 
-    private static final ResourceLocation ROCKET_MODEL_ID =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket");
+    /** Per-skin rocket models (legacy {@code SoyuzPronter.SoyuzSkin}: SOYUZ/LUNA/AUTHENTIC). */
+    private static final ResourceLocation[] ROCKET_MODEL_IDS = {
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket"),
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/soyuz_rocket_luna"),
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/soyuz_rocket_authentic")
+    };
     private static final ResourceLocation DUMMY_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/soyuz/launcher_table.png");
     private static final float SCALE = 0.15F;
@@ -49,10 +53,10 @@ public class SoyuzCapsuleEntityRenderer extends EntityRenderer<SoyuzCapsuleEntit
     @Override
     public void render(SoyuzCapsuleEntity entity, float entityYaw, float partialTick, PoseStack poseStack,
                         MultiBufferSource bufferSource, int packedLight) {
-        BakedModel part = getRocketPart();
+        BakedModel part = getRocketPart(entity.soyuz);
         if (part == null) return;
 
-        SingleMeshVboRenderer renderer = MeshRenderCache.getOrCreateRenderer("soyuz_capsule_entity", "Rocket", part);
+        SingleMeshVboRenderer renderer = MeshRenderCache.getOrCreateRenderer("soyuz_capsule_entity/" + entity.soyuz, "Rocket", part);
         if (renderer == null) return;
 
         poseStack.pushPose();
@@ -69,9 +73,10 @@ public class SoyuzCapsuleEntityRenderer extends EntityRenderer<SoyuzCapsuleEntit
     }
 
     @Nullable
-    private static BakedModel getRocketPart() {
+    private static BakedModel getRocketPart(int skin) {
+        int index = (skin >= 0 && skin < ROCKET_MODEL_IDS.length) ? skin : 0;
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = LoaderHooks.getModel(modelManager, ROCKET_MODEL_ID);
+        BakedModel model = LoaderHooks.getModel(modelManager, ROCKET_MODEL_IDS[index]);
         if (model == null || model == modelManager.getMissingModel()) return null;
         if (!(model instanceof SoyuzRocketBakedModel rocketModel)) return null;
         return rocketModel.getPart(SoyuzRocketBakedModel.ROCKET);

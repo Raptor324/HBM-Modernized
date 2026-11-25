@@ -48,7 +48,9 @@ public final class CustomNukeExplosion {
         AMAT("Antimatter"),
         DIRTY("Salted"),
         SCHRAB("Schrabidium"),
-        EUPH("Anti Mass");
+        EUPH("Anti Mass"),
+        /** Joke stage of the freaky alien block (no 1.7.10 analog). */
+        FREAKY("Freaky");
 
         final String name;
 
@@ -146,6 +148,9 @@ public final class CustomNukeExplosion {
         put(Items.REDSTONE, new CustomNukeEntry(EnumBombType.TNT, 1.05F, EnumEntryType.MULT));
         put(Items.REDSTONE_BLOCK, new CustomNukeEntry(EnumBombType.TNT, 1.5F, EnumEntryType.MULT));
 
+        // Joke: Freaky Alien Block - собственная стадия, детонация заменяется целиком
+        put(ModBlocks.FREAKY_ALIEN_BLOCK.get().asItem(), new CustomNukeEntry(EnumBombType.FREAKY, 500F));
+
         put(mat(ModMaterials.URANIUM, MaterialShape.INGOT), new CustomNukeEntry(EnumBombType.NUKE, 1.05F, EnumEntryType.MULT));
         put(mat(ModMaterials.PLUTONIUM, MaterialShape.INGOT), new CustomNukeEntry(EnumBombType.NUKE, 1.15F, EnumEntryType.MULT));
         put(mat(ModMaterials.URANIUM238, MaterialShape.INGOT), new CustomNukeEntry(EnumBombType.NUKE, 1.1F, EnumEntryType.MULT));
@@ -166,6 +171,12 @@ public final class CustomNukeExplosion {
     /** Die sieben Stufenwerte nach {@code TileEntityNukeCustom.updateEntity}. */
     public static final class Values {
         public float tnt, nuke, hydro, amat, dirty, schrab, euph;
+        /** Joke-Stufe des Freaky-Alien-Blocks; > 0 ersetzt die ganze Detonation. */
+        public float freaky;
+
+        public boolean isAlien() {
+            return freaky > 0;
+        }
 
         public float getNukeAdj() {
             if (nuke == 0) return 0;
@@ -197,6 +208,7 @@ public final class CustomNukeExplosion {
         float dirty = 0F, dirtyMod = 1F;
         float schrab = 0F, schrabMod = 1F;
         float euph = 0F;
+        float freaky = 0F;
 
         for (ItemStack stack : slots) {
 
@@ -218,6 +230,7 @@ public final class CustomNukeExplosion {
                     case DIRTY -> dirty += ent.value() * stack.getCount();
                     case SCHRAB -> schrab += ent.value() * stack.getCount();
                     case EUPH -> euph += ent.value() * stack.getCount();
+                    case FREAKY -> freaky += ent.value() * stack.getCount();
                 }
 
             } else if (ent.entry() == EnumEntryType.MULT) {
@@ -255,10 +268,16 @@ public final class CustomNukeExplosion {
         v.dirty = dirty;
         v.schrab = schrab;
         v.euph = euph;
+        v.freaky = freaky;
         return v;
     }
 
     public static void explodeCustom(Level worldObj, double xCoord, double yCoord, double zCoord, Values v) {
+        // Joke-Vorrang: der Alien-Block ersetzt die komplette Explosionsleiter
+        if (v.isAlien()) {
+            FreakyAlienExplosion.explode(worldObj, xCoord, yCoord, zCoord, v.freaky);
+            return;
+        }
         explodeCustom(worldObj, xCoord, yCoord, zCoord, v.tnt, v.nuke, v.hydro, v.amat, v.dirty, v.schrab, v.euph);
     }
 

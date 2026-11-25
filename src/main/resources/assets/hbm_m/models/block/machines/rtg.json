@@ -1,18 +1,11 @@
 {
+	"loader": "hbm_m:machine_parts_loader",
+	"model": "hbm_m:models/block/machines/rtg.obj",
+	"flip_v": true,
+	"render_type": "minecraft:cutout",
 	"textures": {
-		"particle": "hbm_m:block/machine/rtg"
-	},
-	"loader": "forge:composite",
-	"children": {
-		"rtg_model": {
-			"loader": "hbm_m:nmesh_obj",
-			"model": "hbm_m:models/block/machines/rtg_static.obj",
-			"flip_v": true,
-			"render_type": "minecraft:cutout",
-			"textures": {
-				"default": "hbm_m:block/machine/rtg"
-			}
-		}
+		"particle": "hbm_m:block/machine/rtg",
+		"default": "hbm_m:block/machine/rtg"
 	},
 	"transform": {
 		"translation": [

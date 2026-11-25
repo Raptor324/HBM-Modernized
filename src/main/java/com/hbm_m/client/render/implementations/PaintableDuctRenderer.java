@@ -28,8 +28,8 @@ public class PaintableDuctRenderer implements com.hbm_m.client.render.HbmBerBoun
 
     private static final ResourceLocation BASE = ResourceLocation.fromNamespaceAndPath("hbm_m", "block/fluid_duct_paintable");
     private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath("hbm_m", "block/fluid_duct_paintable_overlay");
-    private static final ResourceLocation EXHAUST = ResourceLocation.fromNamespaceAndPath("hbm_m", "block/fluid_duct_paintable_block_exhaust");
-    private static final ResourceLocation COLOR = ResourceLocation.fromNamespaceAndPath("hbm_m", "block/fluid_duct_paintable_color");
+    private static final ResourceLocation EXHAUST = ResourceLocation.fromNamespaceAndPath("hbm_m", "block/ported/fluid_duct_paintable_block_exhaust");
+    private static final ResourceLocation COLOR = ResourceLocation.fromNamespaceAndPath("hbm_m", "block/crane_router_overlay");
 
     public PaintableDuctRenderer(BlockEntityRendererProvider.Context ctx) {}
 

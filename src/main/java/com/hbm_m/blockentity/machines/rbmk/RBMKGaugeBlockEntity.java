@@ -57,8 +57,14 @@ public class RBMKGaugeBlockEntity extends RBMKPanelDeviceBlockEntity {
             if (channel[i] == null || channel[i].isEmpty()) continue;
 
             RTTYNetwork.RttyChannel ch = RTTYNetwork.listen(level, channel[i]);
+            // 1:1 with GaugeUnit.update: a signal is only valid on its broadcast tick + 1 - a
+            // stale entry is treated exactly like a missing one, so a polling gauge drops to 0
+            // the tick after its channel goes quiet and a latching one freezes.
+            if (ch != null && ch.timeStamp < level.getGameTime() - 1) ch = null;
+            // Fresh signals ALWAYS overwrite the needle; the parse fallback is 0, so an
+            // unparseable payload forces the gauge to zero (sigVal starts at 0 in the original).
             if (ch != null && ch.signal != null) {
-                value[i] = parseNum(String.valueOf(ch.signal), value[i]);
+                value[i] = parseNum(String.valueOf(ch.signal), 0);
             } else if (polling[i]) {
                 value[i] = 0;
             }
@@ -72,9 +78,18 @@ public class RBMKGaugeBlockEntity extends RBMKPanelDeviceBlockEntity {
     public void receiveControl(CompoundTag data) {
         receiveSharedControl(data);
         for (int i = 0; i < UNITS; i++) {
-            if (data.contains("channel" + i)) channel[i] = data.getString("channel" + i);
-            if (data.contains("min" + i))     min[i]     = data.getDouble("min" + i);
-            if (data.contains("max" + i))     max[i]     = data.getDouble("max" + i);
+            if (data.contains("channel" + i)) {
+                String ch = data.getString("channel" + i);
+                channel[i] = ch.length() > 64 ? ch.substring(0, 64) : ch;
+            }
+            if (data.contains("min" + i)) {
+                double v = data.getDouble("min" + i);
+                if (Double.isFinite(v)) min[i] = v;
+            }
+            if (data.contains("max" + i)) {
+                double v = data.getDouble("max" + i);
+                if (Double.isFinite(v)) max[i] = v;
+            }
             if (data.contains("polling" + i)) polling[i] = data.getBoolean("polling" + i);
         }
         setChanged();

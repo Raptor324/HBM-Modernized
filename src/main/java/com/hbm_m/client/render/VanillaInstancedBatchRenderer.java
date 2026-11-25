@@ -365,6 +365,7 @@ final class VanillaInstancedBatchRenderer {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("VanillaInstancedBatchRenderer.renderSingleVanilla failed", e);
         } finally {
+            com.hbm_m.client.render.shader.ShaderBindResync.resetBlendModeToOpaque();
             parent.instanceBuffer.clear();
         }
     }
@@ -460,6 +461,7 @@ final class VanillaInstancedBatchRenderer {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced flush (vanilla)", e);
         } finally {
+            com.hbm_m.client.render.shader.ShaderBindResync.resetBlendModeToOpaque();
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             RenderSystem.setShaderTexture(0, net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS);
         }
@@ -572,6 +574,7 @@ final class VanillaInstancedBatchRenderer {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced fading flush (vanilla)", e);
         } finally {
+            com.hbm_m.client.render.shader.ShaderBindResync.resetBlendModeToOpaque();
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             RenderSystem.setShaderTexture(0, net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS);
         }

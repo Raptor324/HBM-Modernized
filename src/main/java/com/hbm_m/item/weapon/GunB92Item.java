@@ -1,9 +1,8 @@
 package com.hbm_m.item.weapon;
 
 import com.hbm_m.platform.PlatformHooks;
-
-
 import com.hbm_m.platform.StackNbt;
+import com.hbm_m.util.WorldUtil;
 
 import java.util.List;
 
@@ -19,9 +18,9 @@ import com.hbm_m.main.Polaroid;
 import com.hbm_m.sound.HbmSoundsNT;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -73,7 +72,15 @@ public class GunB92Item extends Item {
                 if (divergence > 1F) divergence = 1F;
                 if (i > 0) {
                     Vec3 m = beam.getDeltaMovement();
-                    beam.setDeltaMovement(m.x + rand.nextGaussian() * divergence, m.y + rand.nextGaussian() * divergence, m.z + rand.nextGaussian() * divergence);
+                    double dx = m.x + rand.nextGaussian() * divergence;
+                    double dy = m.y + rand.nextGaussian() * divergence;
+                    double dz = m.z + rand.nextGaussian() * divergence;
+                    beam.setDeltaMovement(dx, dy, dz);
+                    float horiz = Mth.sqrt((float) (dx * dx + dz * dz));
+                    beam.setYRot((float) (Math.atan2(dx, dz) * 180.0D / Math.PI));
+                    beam.setXRot((float) (Math.atan2(dy, horiz) * 180.0D / Math.PI));
+                    beam.yRotO = beam.getYRot();
+                    beam.xRotO = beam.getXRot();
                 }
                 // damageItem(1): Gegenstand ohne Haltbarkeit - im Original wirkungslos
                 level.addFreshEntity(beam);
@@ -103,7 +110,7 @@ public class GunB92Item extends Item {
                     if (!ex.isRemoved()) {
                         // Original: world.playSoundEffect("random.explode") -> Vanilla-Kategorie hostile
                         level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 100.0F, level.random.nextFloat() * 0.1F + 0.9F);
-                        level.addFreshEntity(ex);
+                        WorldUtil.loadAndSpawnEntityInWorld(ex);
                         EntityCloudFleijaRainbow cloud = new EntityCloudFleijaRainbow(ModEntities.CLOUD_FLEIJA_RAINBOW.get(), level, 50);
                         cloud.setPos(entity.getX(), entity.getY(), entity.getZ());
                         level.addFreshEntity(cloud);
@@ -231,21 +238,19 @@ public class GunB92Item extends Item {
     // ---- NBT wie im Original: "animation" / "energy" ----
 
     public static int getAnim(ItemStack stack) {
-        CompoundTag t = StackNbt.read(stack);
-        return t == null ? 0 : t.getInt("animation");
+        return StackNbt.getInt(stack, "animation");
     }
 
     private static void setAnim(ItemStack stack, int i) {
-        StackNbt.orCreate(stack).putInt("animation", i);
+        StackNbt.putInt(stack, "animation", i);
     }
 
     public static int getPower(ItemStack stack) {
-        CompoundTag t = StackNbt.read(stack);
-        return t == null ? 0 : t.getInt("energy");
+        return StackNbt.getInt(stack, "energy");
     }
 
     public static void setPower(ItemStack stack, int i) {
-        StackNbt.orCreate(stack).putInt("energy", i);
+        StackNbt.putInt(stack, "energy", i);
     }
 
     public static float getRotationFromAnim(ItemStack stack) {

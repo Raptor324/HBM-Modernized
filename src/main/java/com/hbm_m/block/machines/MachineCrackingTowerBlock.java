@@ -15,6 +15,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -140,4 +141,18 @@ public class MachineCrackingTowerBlock extends DummyableMachineBlock implements 
     /*public static final com.mojang.serialization.MapCodec<MachineCrackingTowerBlock> CODEC = simpleCodec(MachineCrackingTowerBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
+    // Verbatim port of the original MachineCatalyticCracker.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 3, Direction.SOUTH.get3DDataValue()},
+            {-2, 0, 3, Direction.SOUTH.get3DDataValue()},
+            {1, 0, -3, Direction.NORTH.get3DDataValue()},
+            {-2, 0, -3, Direction.NORTH.get3DDataValue()},
+            {2, 0, 2, Direction.EAST.get3DDataValue()},
+            {-3, 0, 2, Direction.WEST.get3DDataValue()},
+            {2, 0, -2, Direction.EAST.get3DDataValue()},
+            {-3, 0, -2, Direction.WEST.get3DDataValue()}
+        }, facing);
+    }
 }

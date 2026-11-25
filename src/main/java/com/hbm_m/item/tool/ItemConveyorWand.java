@@ -15,7 +15,7 @@ import com.hbm_m.interfaces.ILookOverlay;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.resources.language.I18n;
+import net.minecraft.locale.Language;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -84,8 +84,8 @@ public class ItemConveyorWand extends Item implements ILookOverlay {
     //?} else {
     /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
     *///?}
-        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
-            for (String s : I18n.get("item.hbm_m.conveyor_wand.desc").split("\\$")) {
+        if (com.hbm_m.util.StandardInfo.isShiftDown()) {
+            for (String s : Language.getInstance().getOrDefault("item.hbm_m.conveyor_wand.desc").split("\\$")) {
                 list.add(Component.literal(s).withStyle(ChatFormatting.YELLOW));
             }
             if (hasSnakesAndLadders(getType(stack))) {

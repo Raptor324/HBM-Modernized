@@ -41,6 +41,9 @@ public class SoyuzLauncherControlPacket implements C2SPacket {
         ctx.queue(() -> {
             if (!(ctx.getPlayer() instanceof ServerPlayer player)) return;
             if (ModPacketHandler.blockEntityAt(player, pkt.pos) instanceof SoyuzLauncherBlockEntity launcher) {
+                if (!(player.containerMenu instanceof com.hbm_m.inventory.menu.SoyuzLauncherMenu menu)
+                        || menu.getBlockEntity() != launcher
+                        || !menu.stillValid(player)) return;
                 if (pkt.action == ACTION_SET_MODE) {
                     launcher.setMode(pkt.value);
                 } else if (pkt.action == ACTION_START) {

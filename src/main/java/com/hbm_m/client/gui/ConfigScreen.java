@@ -103,6 +103,9 @@ public class ConfigScreen extends Screen {
     private ConfigSide currentSide = ConfigSide.CLIENT;
     private String currentCategory = "";
     private ConfigList list;
+    private EditBox searchBox;
+    /** Текущий поисковый запрос; сохраняется между перестроениями виджетов. */
+    private String searchQuery = "";
     /** key → строковое значение; накапливается виджетами, применяется по «Сохранить». */
     private final Map<String, String> pendingEdits = new LinkedHashMap<>();
     /** parentObject → развёрнут ли соответствующий аккордеон (по умолчанию все свёрнуты). */
@@ -160,6 +163,19 @@ public class ConfigScreen extends Screen {
         serverSideBtn.active = showServer;
         addRenderableWidget(clientSideBtn);
         addRenderableWidget(serverSideBtn);
+
+        // ── Текстовый поиск параметров (по всем категориям стороны) ───
+        searchBox = new EditBox(this.font, SIDEBAR_X, 96, SIDEBAR_W, 18,
+                Component.translatable("config.hbm_m.search"));
+        searchBox.setMaxLength(64);
+        searchBox.setHint(Component.translatable("config.hbm_m.search.hint")
+                .withStyle(ChatFormatting.DARK_GRAY));
+        searchBox.setValue(searchQuery);
+        searchBox.setResponder(s -> {
+            searchQuery = s;
+            if (list != null) list.rebuild();
+        });
+        addRenderableWidget(searchBox);
 
         // ── Категории текущей стороны ─────────────────────────────────
         currentCats.clear();
@@ -710,6 +726,21 @@ public class ConfigScreen extends Screen {
         return Component.literal(humanize(f.getKey()));
     }
 
+    /** Совпадение запроса (lower-case) с подписью, ключом, категорией или описанием поля. */
+    private static boolean matchesSearch(ConfigField f, String q) {
+        java.util.Locale loc = java.util.Locale.ROOT;
+        if (fieldLabel(f).getString().toLowerCase(loc).contains(q)) return true;
+        if (f.getKey().toLowerCase(loc).contains(q)) return true;
+        if (humanize(f.getKey()).toLowerCase(loc).contains(q)) return true;
+        List<Component> tip = langLines(ConfigSchema.tooltipKey(f));
+        if (tip != null) {
+            for (Component c : tip) {
+                if (c.getString().toLowerCase(loc).contains(q)) return true;
+            }
+        }
+        return false;
+    }
+
     /** Restport: "bedrockIronSpawn" -> "Bedrock Iron Spawn" fuer Felder ohne Uebersetzung. */
     private static String humanize(String key) {
         String k = key.substring(key.lastIndexOf('.') + 1);
@@ -1013,6 +1044,28 @@ public class ConfigScreen extends Screen {
          */
         public void rebuild() {
             clearEntries();
+            String q = searchQuery == null ? "" : searchQuery.trim().toLowerCase(java.util.Locale.ROOT);
+            if (!q.isEmpty()) {
+                // Режим поиска: по всему конфигу (серверная часть — только при наличии прав).
+                for (ConfigSide side : ConfigSide.values()) {
+                    if (side == ConfigSide.SERVER && !showServer) continue;
+                    String sideName = Component.translatable(side == ConfigSide.CLIENT
+                            ? "config.hbm_m.tab.client" : "config.hbm_m.tab.server").getString();
+                    for (String cat : ConfigSchema.categories(side)) {
+                        boolean headerAdded = false;
+                        for (ConfigField f : ConfigSchema.byCategory(side, cat)) {
+                            if (!matchesSearch(f, q)) continue;
+                            if (!headerAdded) {
+                                addEntry(new SeparatorRow(categoryLabel(cat).getString() + " (" + sideName + ")"));
+                                headerAdded = true;
+                            }
+                            addEntry(new FieldRow(f));
+                        }
+                    }
+                }
+                setScrollAmount(0);
+                return;
+            }
             if (currentCategory == null || currentCategory.isEmpty()) return;
             String sentinel = "\u0000";
             String prevGroup = sentinel;
@@ -1035,6 +1088,40 @@ public class ConfigScreen extends Screen {
         }
 
         abstract class Row extends ContainerObjectSelectionList.Entry<Row> {
+        }
+
+        /** Разделитель категории в режиме поиска: ───── Название (Сторона) ───── */
+        class SeparatorRow extends Row {
+            private final String title;
+
+            SeparatorRow(String title) {
+                this.title = title;
+            }
+
+            @Override
+            public void render(GuiGraphics g, int index, int top, int left, int width, int height,
+                               int mouseX, int mouseY, boolean hovered, float partial) {
+                int textW = font.width(title);
+                int cy = top + 9;
+                int cx = left + width / 2;
+                int lineL = left + 4;
+                int lineR = left + width - 4;
+                int gap = 6;
+                int line = 0x88FFD56A;
+                if (cx - textW / 2 - gap > lineL) g.fill(lineL, cy, cx - textW / 2 - gap, cy + 1, line);
+                if (cx + textW / 2 + gap < lineR) g.fill(cx + textW / 2 + gap, cy, lineR, cy + 1, line);
+                g.drawString(font, title, cx - textW / 2, top + 5, 0xFFD56A, false);
+            }
+
+            @Override
+            public List<? extends GuiEventListener> children() {
+                return List.of();
+            }
+
+            @Override
+            public List<? extends NarratableEntry> narratables() {
+                return List.of();
+            }
         }
 
         /** Заголовок-аккордеон группы вложенного объекта. */

@@ -84,7 +84,8 @@ public class RadioTorchCounterMenu extends AbstractContainerMenu {
             return;
         }
 
-        slot.set(this.getCarried().copy());
+        ItemStack carried = this.getCarried();
+        slot.set(carried.isEmpty() ? ItemStack.EMPTY : carried.copyWithCount(1));
         blockEntity.getMatcher().initPattern(index, slot.getItem());
         if (!player.level().isClientSide) syncToClient();
     }

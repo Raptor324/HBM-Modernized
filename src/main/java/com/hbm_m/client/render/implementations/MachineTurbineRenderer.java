@@ -29,8 +29,9 @@ public final class MachineTurbineRenderer {
     }
 
     private static void registerTurbineGas() {
-        MachineRenderers.machine("turbine_gas", ModBlockEntities.TURBINEGAS_BE.get(),
+        MachineRenderers.machine("turbinegas", ModBlockEntities.TURBINEGAS_BE.get(),
                 MachineTurbineGasBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("turbineShit_withCOVER")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
@@ -41,22 +42,45 @@ public final class MachineTurbineRenderer {
     private static void registerIndustrialTurbine() {
         MachineRenderers.machine("industrial_turbine", ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(),
                 MachineIndustrialTurbineBlockEntity.class)
+            .blockTransform(MachineTurbineRenderer::applyIndustrialTurbineTransform)
             .part("Turbine")
-            .part("Gauge")
-            .rotatingPart("Flywheel", new Vector3f(0.0F, 0.0F, -1.0F), new Vector3f(0.0F, 1.5F, 0.0F),
+            .part("Gauge", (be, pt, gt, ps) -> {
+                float angle = (float) (135.0 - (ChungusRenderer.steamId(be.getSteamTank().getTankType()) - 2) * 90.0);
+                ps.translate(0.5F, 1.5F, 0.5F);
+                ps.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(angle));
+                ps.translate(-0.5F, -1.5F, -0.5F);
+                return true;
+            })
+            .rotatingPart("Flywheel", new Vector3f(0.0F, 0.0F, -1.0F), new Vector3f(0.5F, 1.5F, 0.5F),
                     (be, pt) -> Mth.lerp(pt, be.lastRotor, be.rotor))
+            .animationEpoch(be -> ((long) Float.floatToRawIntBits(be.lastRotor) * 31L
+                    + Float.floatToRawIntBits(be.rotor)) * 31L
+                    + ChungusRenderer.steamId(be.getSteamTank().getTankType()))
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
-            .itemParts("Turbine", "Flywheel")
+            .itemParts("Turbine", "Flywheel", "Gauge")
             .register();
     }
 
+    private static void applyIndustrialTurbineTransform(MachineIndustrialTurbineBlockEntity turbine, LegacyAnimator animator) {
+        animator.translate(0.5, 0.0, 0.5);
+        Direction facing = ObjBerHelper.facing(turbine);
+        switch (facing) {
+            case NORTH -> animator.rotate(180, 0, 1, 0);
+            case WEST  -> animator.rotate(270, 0, 1, 0);
+            case SOUTH -> animator.rotate(0, 0, 1, 0);
+            case EAST  -> animator.rotate(90, 0, 1, 0);
+            default    -> {}
+        }
+        animator.translate(-0.5, 0.0, -0.5);
+    }
+
     private static void registerLargeTurbine() {
-        MachineRenderers.machine("large_turbine", ModBlockEntities.LARGE_TURBINE_BE.get(),
+        MachineRenderers.machine("machine_large_turbine", ModBlockEntities.LARGE_TURBINE_BE.get(),
                 MachineLargeTurbineBlockEntity.class)
             .blockTransform(MachineTurbineRenderer::applyLargeTurbineTransform)
             .part("Body")
-            .rotatingPart("Blades", new Vector3f(0.0F, 0.0F, 1.0F), new Vector3f(0.0F, 1.0F, 0.0F),
+            .rotatingPart("Blades", new Vector3f(0.0F, 0.0F, 1.0F), new Vector3f(0.5F, 1.0F, 0.5F),
                     (be, pt) -> Mth.lerp(pt, be.lastRotor, be.rotor))
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
@@ -74,7 +98,7 @@ public final class MachineTurbineRenderer {
             case EAST  -> animator.rotate(90, 0, 1, 0);
             default    -> {}
         }
-        animator.translate(0.0, 0.0, -1.0);
+        animator.translate(-0.5, 0.0, -1.5);
     }
 
     private MachineTurbineRenderer() {}

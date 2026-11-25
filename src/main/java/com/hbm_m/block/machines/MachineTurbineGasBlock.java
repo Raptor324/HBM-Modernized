@@ -136,4 +136,17 @@ public class MachineTurbineGasBlock extends DummyableMachineBlock implements com
     /*public static final com.mojang.serialization.MapCodec<MachineTurbineGasBlock> CODEC = simpleCodec(MachineTurbineGasBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
+
+    // Verbatim port of the original MachineTurbineGas.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {1, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {-4, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-4, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {4, 1, 0, Direction.EAST.get3DDataValue()},
+            {-5, 1, 0, Direction.WEST.get3DDataValue()}
+        }, facing);
+    }
 }

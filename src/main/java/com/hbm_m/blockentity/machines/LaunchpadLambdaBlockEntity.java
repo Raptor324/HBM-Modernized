@@ -3,6 +3,8 @@ package com.hbm_m.blockentity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.redstoneoverradio.IRORInteractive;
+import com.hbm_m.api.redstoneoverradio.IRORValueProvider;
 import com.hbm_m.api.tile.IControlReceiver;
 import com.hbm_m.block.machines.DummyableMachineBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
@@ -35,9 +37,11 @@ import net.minecraft.world.phys.AABB;
  * Benzin rein/raus, Peroxid rein/raus, Batterie), zwei Tanks zu je 64.000 mB (verbleites Benzin, Peroxid), 10.000 HE
  * pro Tick fuer die Mechanik. Die Rakete wird ueber eine Abfolge aus Silotueren, Aufrichter, Rotor, Klammern und
  * Kolben aufgestellt; der Start kostet je 24.000 mB und bringt den Satelliten per {@link LambdaRocketEntity} in den
- * Orbit. Fuenf Anschluesse an der Vorderkante.
+ * Orbit. Fuenf Anschluesse an der Vorderkante. Redstone-over-Radio: Werte {@code countdown},
+ * {@code power}, {@code fuel}, {@code oxidizer}, {@code isauto}, {@code canlaunch}; Funktionen
+ * {@code launch} und {@code setauto} (Original TileEntityLaunchpadLambda.java:361-403).
  */
-public class LaunchpadLambdaBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2, IControlReceiver {
+public class LaunchpadLambdaBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2, IControlReceiver, IRORValueProvider, IRORInteractive {
 
     public static final int SLOT_ROCKET = 0;
     public static final int SLOT_SATELLITE = 1;
@@ -394,9 +398,9 @@ public class LaunchpadLambdaBlockEntity extends BaseMachineBlockEntity implement
 
     /** Original {@code deserialize}: neue Positionen werden ueber drei Ticks angefahren statt gesprungen. */
     @Override
-    protected void applyClientUpdate(@NotNull CompoundTag tag) {
+    protected void applyClientUpdate(@NotNull CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
         float[] current = positions.clone();
-        super.applyClientUpdate(tag);
+        super.applyClientUpdate(tag, registries);
         for (int i = 0; i < positions.length; i++) {
             float newSync = positions[i];
             positions[i] = current[i];
@@ -475,4 +479,45 @@ public class LaunchpadLambdaBlockEntity extends BaseMachineBlockEntity implement
         sidedItems.invalidate();
     }
     *///?}
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "countdown",
+                PREFIX_VALUE + "power",
+                PREFIX_VALUE + "fuel",
+                PREFIX_VALUE + "oxidizer",
+                PREFIX_VALUE + "isauto",
+                PREFIX_VALUE + "canlaunch",
+                PREFIX_FUNCTION + "launch",
+                PREFIX_FUNCTION + "setauto" + NAME_SEPARATOR + "on/off"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "countdown").equals(name)) return "" + this.countdown;
+        if ((PREFIX_VALUE + "power").equals(name)) return "" + this.energy;
+        if ((PREFIX_VALUE + "fuel").equals(name)) return "" + this.tanks[0].getFill();
+        if ((PREFIX_VALUE + "oxidizer").equals(name)) return "" + this.tanks[1].getFill();
+        if ((PREFIX_VALUE + "isauto").equals(name)) return this.autolaunch ? "1" : "0";
+        if ((PREFIX_VALUE + "canlaunch").equals(name)) return this.canLaunch() ? "1" : "0";
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        if ((PREFIX_FUNCTION + "setauto").equals(name) && params.length == 1) {
+            // Port hat kein IRORInteractive.parseBool -> wie MachineTurbineGasBlockEntity per parseInt == 1
+            this.autolaunch = "1".equals(params[0]) || Boolean.parseBoolean(params[0]);
+            this.setChanged();
+            return null;
+        }
+        else if ((PREFIX_FUNCTION + "launch").equals(name)) {
+            if (canLaunch()) this.countdown = COUNTDOWN_DURATION;
+            return null;
+        }
+
+        return null;
+    }
 }

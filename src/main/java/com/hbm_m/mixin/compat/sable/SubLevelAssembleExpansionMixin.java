@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -36,7 +37,8 @@ import java.util.Set;
  * <p>Таргет строкой: без Sable класс не загружается и mixin не применяется
  * (1.20.1 не затронут).
  */
-@Mixin(targets = "dev.ryanhcode.sable.api.SubLevelAssemblyHelper")
+@Pseudo
+@Mixin(targets = "dev.ryanhcode.sable.api.SubLevelAssemblyHelper", remap = false)
 public abstract class SubLevelAssembleExpansionMixin {
 
     /**

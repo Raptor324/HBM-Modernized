@@ -53,7 +53,7 @@ legacyForge {
 		}
 		register("server") {
 			server()
-			gameDirectory = file("run/")
+			gameDirectory = file("runServer/")
 			ideName = "Forge Server (${stonecutter.active?.version})"
 			programArgument("--nogui")
 			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8",
@@ -75,7 +75,7 @@ legacyForge {
 				// Точечный прогон одного класса: все тесты зарегистрированы в неймспейс hbm_m,
 				// а тяжёлый интеграционный турбины - в tf_integration (см. TurbofanIntegrationGameTest).
 				// Оверрайд неймспейса: -PgameTestNamespace=hbm_m (NukeProfileGameTest и др.)
-				"-Dforge.enabledGameTestNamespaces=${project.findProperty("gameTestNamespace") ?: "tf_integration"}")
+				"-Dforge.enabledGameTestNamespaces=${project.findProperty("gameTestNamespace") ?: "hbm_m"}")
 		}
 
 		register("data") {
@@ -166,6 +166,8 @@ dependencies {
 	// и пр.) в com.hbm_m.client.compat.dh.DhRenderBridge. Класс моста грузится только при
 	// установленном DH, поэтому отсутствие зависимости в рантайме безопасно.
 	"modCompileOnly"("maven.modrinth:distanthorizons:3.3.3-1.20.1") // 3.3.3-1.20.1
+
+//	"modRuntimeOnly"("maven.modrinth:cwoL6CqY:3PEwIAxS") // item transforms helper
 
 	// Jade (WAILA fork): плагин com.hbm_m.compat.jade. compileOnly берёт ТОТ ЖЕ файл, что и
 	// рантайм, чтобы API плагина гарантированно совпадал с тем, под чем запускаемся. Классы

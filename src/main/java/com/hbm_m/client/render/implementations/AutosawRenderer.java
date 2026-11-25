@@ -18,7 +18,7 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class AutosawRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineAutosawBlockEntity> {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/autosaw.obj"));
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/autosaw.obj"));
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/autosaw.png");
 
     public AutosawRenderer(BlockEntityRendererProvider.Context ctx) { }

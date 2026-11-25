@@ -353,7 +353,10 @@
   "block.transition_seal_open": {
     "subtitle": "sounds.hbm_m.subtitle.transition_seal_open",
     "sounds": [
-      "hbm_m:block/door/transition_seal_open"
+      {
+        "name": "hbm_m:block/door/transition_seal_open",
+        "stream": true
+      }
     ]
   },
   "block.vault_scrape": {
@@ -1003,12 +1006,6 @@
       }
     ]
   },
-  "block.transition_seal_close": {
-    "subtitle": "sounds.hbm_m.subtitle.transition_seal_close",
-    "sounds": [
-      "hbm_m:block/door/transition_seal_close"
-    ]
-  },
   "misc.nullchopper": {
     "category": "player",
     "sounds": [
@@ -1530,6 +1527,15 @@
     "sounds": [
       {
         "name": "hbm_m:music/recordvortalcombat",
+        "stream": true
+      }
+    ]
+  },
+  "music.transmission": {
+    "category": "record",
+    "sounds": [
+      {
+        "name": "hbm_m:music/record_glass",
         "stream": true
       }
     ]
@@ -3084,6 +3090,12 @@
     "category": "blocks",
     "sounds": [
       "hbm_m:block/missile_assembly2"
+    ]
+  },
+  "bomb.freaky_alien": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:bomb/freaky_theme"
     ]
   }
 }

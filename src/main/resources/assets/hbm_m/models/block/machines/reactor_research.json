@@ -1,6 +1,65 @@
 {
-	"parent": "block/cube_all",
-	"textures": {
-		"all": "hbm_m:block/machine_reactor_small"
-	}
+  "loader": "hbm_m:machine_parts_loader",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "parts": {
+    "Base": {
+      "model": "hbm_m:models/block/machines/reactor_small_base.obj",
+      "texture": "hbm_m:block/machine/reactor_small_base"
+    },
+    "Rods": {
+      "model": "hbm_m:models/block/machines/reactor_small_rods.obj",
+      "texture": "hbm_m:block/machine/reactor_small_rods"
+    }
+  },
+  "textures": {
+    "particle": "hbm_m:block/machine/reactor_small_base"
+  },
+  "transform": {
+    "translation": [0.5, 0, 0.5],
+    "rotation": [0, 0, 0],
+    "scale": 1.0
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0.0, 2.132, -1.373],
+      "scale": [0.0987, 0.0987, 0.0987]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0.0, 2.132, -1.373],
+      "scale": [0.0987, 0.0987, 0.0987]
+    },
+    "firstperson_righthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0.0, -1.516, 0.0],
+      "scale": [0.1053, 0.1053, 0.1053]
+    },
+    "firstperson_lefthand": {
+      "rotation": [0, 225, 0],
+      "translation": [0.0, -1.516, 0.0],
+      "scale": [0.1053, 0.1053, 0.1053]
+    },
+    "gui": {
+      "rotation": [30, 225, 0],
+      "translation": [0.0, -2.051, -1.184],
+      "scale": [0.1645, 0.1645, 0.1645]
+    },
+    "ground": {
+      "rotation": [0, 0, 0],
+      "translation": [0.0, 2.053, 0.0],
+      "scale": [0.0658, 0.0658, 0.0658]
+    },
+    "fixed": {
+      "rotation": [0, 180, 0],
+      "translation": [0.0, -1.895, 0.0],
+      "scale": [0.1316, 0.1316, 0.1316]
+    },
+    "head": {
+      "rotation": [0, 0, 0],
+      "translation": [0, 0, 0],
+      "scale": [1, 1, 1]
+    }
+  }
 }

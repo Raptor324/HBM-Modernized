@@ -328,6 +328,9 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
     public void setPlug(int index) {
         this.plugs |= (byte) (1 << index);
         this.setChanged();
+        if (this.level != null && !this.level.isClientSide) {
+            this.sendUpdateToClient();
+        }
     }
 
     public boolean getPlug(int index) {

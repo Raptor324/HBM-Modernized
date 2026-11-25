@@ -85,16 +85,15 @@ public class RedConnectorBlock extends BaseEntityBlock {
         return state.setValue(FACING, mirror.mirror(state.getValue(FACING)));
     }
 
-    /** Куб 6/16..10/16, вытянутый к опоре (setBlockBounds из оригинала). */
+    /** Куб 5/16..11/16, вытянутый к опоре (setBlockBounds из оригинала ConnectorRedWire). */
     private static VoxelShape shape(Direction facing) {
-        double min = 5.0 / 16.0, max = 11.0 / 16.0;
         return switch (facing) {
-            case DOWN -> Block.box(min, 0, min, max, min, max);
-            case UP -> Block.box(min, max, min, max, 16, max);
-            case NORTH -> Block.box(min, min, 0, max, max, min);
-            case SOUTH -> Block.box(min, min, max, max, max, 16);
-            case WEST -> Block.box(0, min, min, min, max, max);
-            case EAST -> Block.box(max, min, min, 16, max, max);
+            case DOWN -> Block.box(5, 0, 5, 11, 11, 11);
+            case UP -> Block.box(5, 5, 5, 11, 16, 11);
+            case NORTH -> Block.box(5, 5, 0, 11, 11, 11);
+            case SOUTH -> Block.box(5, 5, 5, 11, 11, 16);
+            case WEST -> Block.box(0, 5, 5, 11, 11, 11);
+            case EAST -> Block.box(5, 5, 5, 16, 11, 11);
         };
     }
 

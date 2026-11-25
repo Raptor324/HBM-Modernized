@@ -56,7 +56,8 @@ public class RBMKDials {
     // --- Static accessors (world-independent, matching original API) ---
 
     public static double getPassiveCooling(Level world)          { return Math.max(dial(d -> d.passiveCooling, PASSIVE_COOLING), 0.0); }
-    public static double getPassiveCoolingInner(Level world)     { return clamp(dial(d -> d.passiveCoolingInner, PASSIVE_COOLING_INNER), 0.0, 1.0); }
+    /** CE reads this via GameRuleHelper.getDoubleMinimum(..., 0.0) - floored at 0 only, values above 1 are legal. */
+    public static double getPassiveCoolingInner(Level world)     { return Math.max(dial(d -> d.passiveCoolingInner, PASSIVE_COOLING_INNER), 0.0); }
     public static double getColumnHeatFlow(Level world)          { return clamp(dial(d -> d.columnHeatFlow, COLUMN_HEAT_FLOW), 0.0, 1.0); }
     public static double getFuelDiffusionMod(Level world)        { return Math.max(dial(d -> d.fuelDiffusionMod, FUEL_DIFFUSION_MOD), 0.0); }
     public static double getFuelHeatProvision(Level world)       { return clamp(dial(d -> d.heatProvision, HEAT_PROVISION), 0.0, 1.0); }

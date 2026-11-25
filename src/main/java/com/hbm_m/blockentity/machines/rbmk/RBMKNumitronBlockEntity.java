@@ -46,8 +46,14 @@ public class RBMKNumitronBlockEntity extends RBMKPanelDeviceBlockEntity {
             if (channel[i] == null || channel[i].isEmpty()) continue;
 
             RTTYNetwork.RttyChannel ch = RTTYNetwork.listen(level, channel[i]);
+            // 1:1 with DisplayUnit.update: stale entries (older than broadcast tick + 1) count as
+            // "no signal", so a polling numitron blanks to 0 when its channel dies while a
+            // latching one freezes.
+            if (ch != null && ch.timeStamp < level.getGameTime() - 1) ch = null;
+            // Fresh signals ALWAYS overwrite the value; the parse fallback is 0, so an
+            // unparseable fresh payload reads 0 (sigVal starts at 0 in the original).
             if (ch != null && ch.signal != null) {
-                value[i] = parseNum(String.valueOf(ch.signal), value[i]);
+                value[i] = parseNum(String.valueOf(ch.signal), 0);
             } else if (polling[i]) {
                 value[i] = 0;
             }

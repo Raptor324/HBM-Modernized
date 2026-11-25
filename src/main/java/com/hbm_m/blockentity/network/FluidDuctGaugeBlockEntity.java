@@ -45,7 +45,9 @@ public class FluidDuctGaugeBlockEntity extends PaintableDuctBlockEntity implemen
             }
 
             // networkPackNT(25)
-            level.sendBlockUpdated(pos, state, state, 2);
+            if (te.probeDue(20)) {
+                level.sendBlockUpdated(pos, state, state, 2);
+            }
         }
     }
 

@@ -38,6 +38,11 @@ public class ZirnoxControlPacket implements C2SPacket {
 
             var blockEntity = ModPacketHandler.blockEntityAt(player, packet.pos);
             if (blockEntity instanceof MachineZirnoxBlockEntity zirnox) {
+                // Original IControlReceiver.hasPermission (TileEntityReactorZirnox): the player must
+                // be within 20 blocks of the core, so a modified client cannot toggle/vent remotely.
+                if (player.distanceToSqr(packet.pos.getX(), packet.pos.getY(), packet.pos.getZ()) >= 400.0D) {
+                    return;
+                }
                 zirnox.handleButtonPress(packet.action);
             }
         });

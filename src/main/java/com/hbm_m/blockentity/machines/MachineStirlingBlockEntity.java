@@ -301,8 +301,8 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    protected void applyClientUpdate(CompoundTag tag) {
-        super.applyClientUpdate(tag);
+    protected void applyClientUpdate(CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
+        super.applyClientUpdate(tag, registries);
         this.heat = tag.getInt("heat");
     }
 

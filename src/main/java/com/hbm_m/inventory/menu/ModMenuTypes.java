@@ -276,6 +276,10 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<SoyuzLauncherMenu>> SOYUZ_LAUNCHER_MENU =
             MENUS.register("soyuz_launcher_menu", () -> MenuRegistry.ofExtended(SoyuzLauncherMenu::new));
 
+    /** Original ContainerLaunchpadSoyuz. */
+    public static final RegistrySupplier<MenuType<LaunchpadSoyuzMenu>> LAUNCHPAD_SOYUZ_MENU =
+            MENUS.register("launchpad_soyuz_menu", () -> MenuRegistry.ofExtended(LaunchpadSoyuzMenu::new));
+
     public static final RegistrySupplier<MenuType<MachineSatLinkerMenu>> MACHINE_SATLINKER_MENU =
             MENUS.register("machine_satlinker_menu", () -> MenuRegistry.ofExtended(MachineSatLinkerMenu::new));
 
@@ -434,9 +438,6 @@ public class ModMenuTypes {
 
     public static final RegistrySupplier<MenuType<MachineSilexMenu>> SILEX_MENU =
             MENUS.register("silex_menu", () -> MenuRegistry.ofExtended(MachineSilexMenu::new));
-
-    public static final RegistrySupplier<MenuType<MachineTurbineMenu>> TURBINE_MENU =
-            MENUS.register("turbine_menu", () -> MenuRegistry.ofExtended(MachineTurbineMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineSteamTurbineMenu>> STEAM_TURBINE_MENU =
             MENUS.register("steam_turbine_menu", () -> MenuRegistry.ofExtended(MachineSteamTurbineMenu::new));

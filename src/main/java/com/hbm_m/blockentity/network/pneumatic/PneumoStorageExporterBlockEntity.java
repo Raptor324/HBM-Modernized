@@ -125,7 +125,7 @@ public class PneumoStorageExporterBlockEntity extends PneumaticMachineBlockEntit
         }
 
         be.lastRedstone = redstone;
-        be.sendUpdateToClient();
+        if (be.probeDue(20)) be.sendUpdateToClient();
     }
 
     /** 1:1-Port von {@code doRequest}. */

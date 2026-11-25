@@ -23,7 +23,7 @@ public class MachineControlC2SPacket implements C2SPacket {
 
     public MachineControlC2SPacket(BlockPos pos, CompoundTag data) {
         this.pos = pos;
-        this.data = data;
+        this.data = data != null ? data : new CompoundTag();
     }
 
     public static MachineControlC2SPacket decode(FriendlyByteBuf buf) {
@@ -39,8 +39,7 @@ public class MachineControlC2SPacket implements C2SPacket {
     public static void handle(MachineControlC2SPacket pkt, PacketContext ctx) {
         ctx.queue(() -> {
             if (!(ctx.getPlayer() instanceof ServerPlayer player)) return;
-            ServerLevel level = player.serverLevel();
-            BlockEntity be = level.getBlockEntity(pkt.pos);
+            BlockEntity be = ModPacketHandler.blockEntityAt(player, pkt.pos);
             if (!(be instanceof IControlReceiver receiver)) return;
 
             Player accessor = player;

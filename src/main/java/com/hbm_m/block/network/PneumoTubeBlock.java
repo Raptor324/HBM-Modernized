@@ -193,7 +193,9 @@ public class PneumoTubeBlock extends BaseEntityBlock {
 
         if (sneaking) tube.setEjectionDir(rot); else tube.setInsertionDir(rot);
 
-        level.setBlock(pos, getConnectionState(level, pos), 3);
+        BlockState nextState = getConnectionState(level, pos);
+        level.setBlock(pos, nextState, 3);
+        level.sendBlockUpdated(pos, nextState, nextState, 3);
         return InteractionResult.CONSUME;
     }
 

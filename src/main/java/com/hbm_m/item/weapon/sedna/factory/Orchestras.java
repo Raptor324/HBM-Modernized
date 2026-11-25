@@ -1177,6 +1177,25 @@ public class Orchestras {
 		}
 	};
 
+	public static BiConsumer<ItemStack, LambdaContext> ORCHESTRA_FLIEGERFAUST = (stack, ctx) -> {
+		LivingEntity entity = ctx.entity;
+		if(entity.level().isClientSide) return;
+		GunAnimation type = ItemGunBaseNT.getLastAnim(stack, ctx.configIndex);
+		int timer = ItemGunBaseNT.getAnimTimer(stack, ctx.configIndex);
+		if(type == GunAnimation.CYCLE) {
+			if(timer == 0) sendMuzzleFlash(entity);
+		}
+		if(type == GunAnimation.RELOAD) {
+			if(timer == 20) Lego.playSound(entity, GUN_BOLT_OPEN, 1F, 0.85F);
+			if(timer == 62) Lego.playSound(entity, GUN_CANISTER_INSERT, 1F, 1F);
+			if(timer == 64) Lego.playSound(entity, GUN_BOLT_CLOSE, 1F, 0.85F);
+		}
+		if(type == GunAnimation.JAMMED) {
+			if(timer == 25) Lego.playSound(entity, GUN_BOLT_OPEN, 1F, 0.85F);
+			if(timer == 32) Lego.playSound(entity, GUN_BOLT_CLOSE, 1F, 0.85F);
+		}
+	};
+
 	public static BiConsumer<ItemStack, LambdaContext> ORCHESTRA_MINIGUN = (stack, ctx) -> {
 		LivingEntity entity = ctx.entity;
 		if(entity.level().isClientSide) return;
@@ -1519,6 +1538,8 @@ public class Orchestras {
 						mop.entityHit.hurt(ctx.getPlayer().damageSources().playerAttack(ctx.getPlayer()), damage);
 						Vec3 m = mop.entityHit.getDeltaMovement();
 						mop.entityHit.setDeltaMovement(m.x * 2, m.y, m.z * 2);
+						mop.entityHit.hasImpulse = true;
+						mop.entityHit.hurtMarked = true;
 						Lego.playSound(mop.entityHit, GUN_SMACK, 1F, 0.9F + entity.getRandom().nextFloat() * 0.2F);
 					}
 					if(mop.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {

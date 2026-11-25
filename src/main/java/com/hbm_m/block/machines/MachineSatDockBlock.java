@@ -14,6 +14,7 @@ import com.hbm_m.multiblock.PartRole;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -64,7 +65,7 @@ public class MachineSatDockBlock extends DummyableMachineBlock {
         }
 
         Map<Character, PartRole> roles = new LinkedHashMap<>();
-        roles.put('O', PartRole.DEFAULT);
+        roles.put('O', PartRole.UNIVERSAL_CONNECTOR);
         roles.put('C', PartRole.CONTROLLER);
 
         return new MultiblockStructureHelper(structure, part, roles, symbols, shapes, shapes, BlockPos.ZERO).withPlacementOffset(0);
@@ -87,8 +88,8 @@ public class MachineSatDockBlock extends DummyableMachineBlock {
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     //?} else {
     /*@Override
-    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return com.hbm_m.platform.BlockHooks.useItemResult(hbmUse(state, world, pos, player, hand, hit));
+    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+        return hbmUse(state, world, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     *///?}
@@ -112,4 +113,23 @@ public class MachineSatDockBlock extends DummyableMachineBlock {
         return CODEC;
     }
     *///?}
+
+    // Verbatim port of the original MachineSatDock.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {-1, 0, -1, Direction.WEST.get3DDataValue()},
+            {-1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-1, 0, 0, Direction.WEST.get3DDataValue()},
+            {-1, 0, 1, Direction.WEST.get3DDataValue()},
+            {-1, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {0, 0, -1, Direction.NORTH.get3DDataValue()},
+            {0, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {1, 0, -1, Direction.EAST.get3DDataValue()},
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {1, 0, 0, Direction.EAST.get3DDataValue()},
+            {1, 0, 1, Direction.EAST.get3DDataValue()},
+            {1, 0, 1, Direction.SOUTH.get3DDataValue()}
+        }, facing);
+    }
 }

@@ -61,7 +61,7 @@ public class BatterySocketMenu extends AbstractContainerMenu implements ILongEne
 
     public BatterySocketMenu(int containerId, Inventory inv, FriendlyByteBuf buf) {
         this(containerId, inv,
-                (BatterySocketBlockEntity) inv.player.level().getBlockEntity(buf.readBlockPos()),
+                inv.player.level().getBlockEntity(buf.readBlockPos()) instanceof BatterySocketBlockEntity bs ? bs : null,
                 new SimpleContainerData(3));
     }
 

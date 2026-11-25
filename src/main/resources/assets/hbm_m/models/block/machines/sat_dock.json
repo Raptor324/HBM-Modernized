@@ -1,16 +1,16 @@
 {
   "textures": {
-    "particle": "hbm_m:block/machine/sat_dock"
+    "particle": "hbm_m:block/machine/cargo_pad"
   },
   "loader": "forge:composite",
   "children": {
     "sat_dock_model": {
       "loader": "hbm_m:nmesh_obj",
-      "model": "hbm_m:models/block/machines/sat_dock.obj",
+      "model": "hbm_m:models/block/machines/cargo_pad.obj",
       "flip_v": true,
       "render_type": "minecraft:cutout",
       "textures": {
-        "default": "hbm_m:block/machine/sat_dock"
+        "default": "hbm_m:block/machine/cargo_pad"
       }
     }
   },

@@ -82,8 +82,13 @@ public abstract class DummyableMachineBlock extends BaseEntityBlock implements I
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            placeMultiblockStructure(level, pos, state);
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core != null) onStructurePlaced(level, core);
         }
+    }
+
+    /** Hook nach dem Aufbau der Struktur (nur Server); {@code core} ist die Kernposition. */
+    protected void onStructurePlaced(Level level, BlockPos core) {
     }
 
     @Override

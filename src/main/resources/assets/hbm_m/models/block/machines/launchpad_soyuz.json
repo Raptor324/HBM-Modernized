@@ -1,0 +1,79 @@
+{
+  "loader": "hbm_m:machine_parts_loader",
+  "model": "hbm_m:models/machines/launchpad_soyuz.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "hbm_m:block/block_steel",
+    "default": "hbm_m:block/machine/launchpad_soyuz"
+  },
+  "parts": {
+    "Launchpad": {},
+    "Strut1": {},
+    "Strut2": {},
+    "Strut3": {},
+    "Strut4": {},
+    "Strut5": {},
+    "Carriage": {},
+    "Wheel_1_1": {},
+    "Wheel_1_2": {},
+    "Wheel_1_3": {},
+    "Wheel_1_4": {},
+    "Wheel_2_1": {},
+    "Wheel_2_2": {},
+    "Wheel_2_3": {},
+    "Wheel_2_4": {},
+    "Wheel_3_1": {},
+    "Wheel_3_2": {},
+    "Wheel_3_3": {},
+    "Wheel_3_4": {},
+    "Wheel_4_1": {},
+    "Wheel_4_2": {},
+    "Wheel_4_3": {},
+    "Wheel_4_4": {},
+    "Rotor": {},
+    "Mount": {}
+  },
+  "display": {
+    "gui": {
+      "rotation": [30, 225, 0],
+      "translation": [0, -4.5, 0],
+      "scale": [0.033, 0.033, 0.033]
+    },
+    "ground": {
+      "rotation": [0, 0, 0],
+      "translation": [0, 3, 0],
+      "scale": [0.025, 0.025, 0.025]
+    },
+    "fixed": {
+      "rotation": [0, 180, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.03, 0.03, 0.03]
+    },
+    "thirdperson_righthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0, 2.5, 0],
+      "scale": [0.025, 0.025, 0.025]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0, 2.5, 0],
+      "scale": [0.025, 0.025, 0.025]
+    },
+    "firstperson_righthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0, 1, 0],
+      "scale": [0.025, 0.025, 0.025]
+    },
+    "firstperson_lefthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0, 1, 0],
+      "scale": [0.025, 0.025, 0.025]
+    },
+    "head": {
+      "rotation": [0, 0, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.025, 0.025, 0.025]
+    }
+  }
+}

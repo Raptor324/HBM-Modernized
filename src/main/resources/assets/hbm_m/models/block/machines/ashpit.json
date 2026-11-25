@@ -1,6 +1,6 @@
 {
   "loader": "hbm_m:machine_parts_loader",
-  "model": "hbm_m:models/block/heating_oven.obj",
+  "model": "hbm_m:models/block/machines/heating_oven.obj",
   "flip_v": true,
   "render_type": "minecraft:cutout",
   "textures": {

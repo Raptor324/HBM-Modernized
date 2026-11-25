@@ -234,7 +234,7 @@ public class EntityBulletBeamBase extends Entity
                 for (Entity entity : targets) {
                     if (entity == this.getThrower()) continue;
                     if (!entity.isAlive()) continue;
-                    double dist = entity.distanceTo(hitCoin);
+                    double dist = coinHit.distanceTo(entity.position());
                     if (dist > range) continue;
 
                     if (entity instanceof EntityCoin) {

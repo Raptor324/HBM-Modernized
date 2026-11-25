@@ -16,4 +16,29 @@ public class BigSword extends SwordItem {
         /*super(material, new Properties().attributes(SwordItem.createAttributes(material, 4, -2.4F)));
         *///?}
     }
+
+    /** BEWLR fuer die 1.7-IItemRenderer (ItemRenderBigSword); greift nur bei builtin/entity-Itemmodellen. */
+    //? if forge {
+    @Override
+    @SuppressWarnings("removal")
+    public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.weapon.GunItemRenderer.INSTANCE;
+            }
+        });
+    }
+    //?} elif neoforge {
+    /*@Override
+    @SuppressWarnings("removal")
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.weapon.GunItemRenderer.INSTANCE;
+            }
+        });
+    }
+    *///?}
 }

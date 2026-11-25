@@ -97,6 +97,8 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
     public boolean isOn            = false;
     public boolean redstonePowered = false;
     private int output = 0;
+    /** Original: "This is just for RoR to choose which slot to pull info from". */
+    private int rorSlot = 0;
 
     private Set<Direction> allowedFluidSides = EnumSet.noneOf(Direction.class);
     private boolean fluidSidesFromMultiblockStructure = false;
@@ -149,10 +151,6 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
                 heat -= (int) ((float) heat * (float) pressure / 1000000F);
             } else {
                 heat -= 10;
-            }
-
-            if (level != null && level.getGameTime() % 100 == 0) {
-                com.hbm_m.satellite.RayScanEvents.reportEvent(level, worldPosition, com.hbm_m.satellite.RayScanEvents.INFO_NUCLEAR, 200);
             }
 
             if (level != null && level.getGameTime() % 100 == 0) {
@@ -272,6 +270,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         tag.putBoolean("isOn", isOn);
         tag.putBoolean("redstonePowered", redstonePowered);
         tag.putInt("output", output);
+        tag.putInt("rorSlot", rorSlot);
         // The multiblock's controller side configuration is applied only when the structure is
         // placed or rebuilt, never on chunk load: without persisting it, a restart re-opened the
         // face the structure had deliberately closed.
@@ -295,6 +294,8 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         isOn           = tag.getBoolean("isOn");
         redstonePowered= tag.getBoolean("redstonePowered");
         output         = tag.getInt("output");
+        rorSlot        = tag.getInt("rorSlot");
+        if (rorSlot < 0 || rorSlot >= ROD_SLOT_COUNT) rorSlot = 0;
         if (tag.contains("AllowedFluidSides")) {
             int fluidSideMask = tag.getInt("AllowedFluidSides");
             allowedFluidSides.clear();
@@ -374,8 +375,9 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
             level.setBlock(worldPosition, destroyed, 3);
             level.playSound(null, worldPosition.getX(), worldPosition.getY() + 2, worldPosition.getZ(),
                 com.hbm_m.sound.HbmSoundsNT.get("hbm:block.rbmk_explosion"), net.minecraft.sounds.SoundSource.BLOCKS, 10.0F, 1.0F);
+            // Original: worldObj.createExplosion(null, x, y + 3, z, 12.0F, true) — isFlaming=true.
             level.explode(null, worldPosition.getX(), worldPosition.getY() + 3, worldPosition.getZ(),
-                12.0F, Level.ExplosionInteraction.BLOCK);
+                12.0F, true, Level.ExplosionInteraction.BLOCK);
             zirnoxDebris();
             ExplosionNukeGeneric.waste(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), 35);
             // Everyone within 100 blocks gets credited, exactly as the original does - there is
@@ -468,17 +470,17 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
     private RodSpec getRodSpec(ItemStack stack) {
         if (stack.isEmpty()) return null;
-        if (stack.is(ModItems.ROD_ZIRNOX_NATURAL_URANIUM_FUEL.get()))   return new RodSpec(250_000, 30,  false, new ItemStack(ModItems.ROD_ZIRNOX_NATURAL_URANIUM_FUEL_DEPLETED.get()));
-        if (stack.is(ModItems.ROD_ZIRNOX_URANIUM_FUEL.get()))           return new RodSpec(200_000, 50,  false, new ItemStack(ModItems.ROD_ZIRNOX_URANIUM_FUEL_DEPLETED.get()));
-        if (stack.is(ModItems.ROD_ZIRNOX_TH232.get()))                  return new RodSpec(20_000,  0,   true,  new ItemStack(ModItems.ROD_ZIRNOX_THORIUM_FUEL.get()));
-        if (stack.is(ModItems.ROD_ZIRNOX_THORIUM_FUEL.get()))           return new RodSpec(200_000, 40,  false, new ItemStack(ModItems.ROD_ZIRNOX_THORIUM_FUEL_DEPLETED.get()));
-        if (stack.is(ModItems.ROD_ZIRNOX_MOX_FUEL.get()))               return new RodSpec(165_000, 75,  false, new ItemStack(ModItems.ROD_ZIRNOX_MOX_FUEL_DEPLETED.get()));
-        if (stack.is(ModItems.ROD_ZIRNOX_PLUTONIUM_FUEL.get()))         return new RodSpec(175_000, 65,  false, new ItemStack(ModItems.ROD_ZIRNOX_PLUTONIUM_FUEL_DEPLETED.get()));
-        if (stack.is(ModItems.ROD_ZIRNOX_U233_FUEL.get()))              return new RodSpec(150_000, 100, false, new ItemStack(ModItems.ROD_ZIRNOX_U233_FUEL_DEPLETED.get()));
-        if (stack.is(ModItems.ROD_ZIRNOX_U235_FUEL.get()))              return new RodSpec(165_000, 85,  false, new ItemStack(ModItems.ROD_ZIRNOX_U235_FUEL_DEPLETED.get()));
-        if (stack.is(ModItems.ROD_ZIRNOX_LES_FUEL.get()))               return new RodSpec(150_000, 150, false, new ItemStack(ModItems.ROD_ZIRNOX_LES_FUEL_DEPLETED.get()));
-        if (stack.is(ModItems.ROD_ZIRNOX_LITHIUM.get()))                return new RodSpec(20_000,  0,   true,  new ItemStack(ModItems.ROD_ZIRNOX_TRITIUM.get()));
-        if (stack.is(ModItems.ROD_ZIRNOX_ZFB_MOX.get()))               return new RodSpec(50_000,  35,  false, new ItemStack(ModItems.ROD_ZIRNOX_ZFB_MOX_DEPLETED.get()));
+        if (stack.is(ModItems.ROD_ZIRNOX_NATURAL_URANIUM_FUEL.get()))   return new RodSpec("NATURAL_URANIUM_FUEL", 250_000, 30,  false, new ItemStack(ModItems.ROD_ZIRNOX_NATURAL_URANIUM_FUEL_DEPLETED.get()));
+        if (stack.is(ModItems.ROD_ZIRNOX_URANIUM_FUEL.get()))           return new RodSpec("URANIUM_FUEL", 200_000, 50,  false, new ItemStack(ModItems.ROD_ZIRNOX_URANIUM_FUEL_DEPLETED.get()));
+        if (stack.is(ModItems.ROD_ZIRNOX_TH232.get()))                  return new RodSpec("TH232", 20_000,  0,   true,  new ItemStack(ModItems.ROD_ZIRNOX_THORIUM_FUEL.get()));
+        if (stack.is(ModItems.ROD_ZIRNOX_THORIUM_FUEL.get()))           return new RodSpec("THORIUM_FUEL", 200_000, 40,  false, new ItemStack(ModItems.ROD_ZIRNOX_THORIUM_FUEL_DEPLETED.get()));
+        if (stack.is(ModItems.ROD_ZIRNOX_MOX_FUEL.get()))               return new RodSpec("MOX_FUEL", 165_000, 75,  false, new ItemStack(ModItems.ROD_ZIRNOX_MOX_FUEL_DEPLETED.get()));
+        if (stack.is(ModItems.ROD_ZIRNOX_PLUTONIUM_FUEL.get()))         return new RodSpec("PLUTONIUM_FUEL", 175_000, 65,  false, new ItemStack(ModItems.ROD_ZIRNOX_PLUTONIUM_FUEL_DEPLETED.get()));
+        if (stack.is(ModItems.ROD_ZIRNOX_U233_FUEL.get()))              return new RodSpec("U233_FUEL", 150_000, 100, false, new ItemStack(ModItems.ROD_ZIRNOX_U233_FUEL_DEPLETED.get()));
+        if (stack.is(ModItems.ROD_ZIRNOX_U235_FUEL.get()))              return new RodSpec("U235_FUEL", 165_000, 85,  false, new ItemStack(ModItems.ROD_ZIRNOX_U235_FUEL_DEPLETED.get()));
+        if (stack.is(ModItems.ROD_ZIRNOX_LES_FUEL.get()))               return new RodSpec("LES_FUEL", 150_000, 150, false, new ItemStack(ModItems.ROD_ZIRNOX_LES_FUEL_DEPLETED.get()));
+        if (stack.is(ModItems.ROD_ZIRNOX_LITHIUM.get()))                return new RodSpec("LITHIUM", 20_000,  0,   true,  new ItemStack(ModItems.ROD_ZIRNOX_TRITIUM.get()));
+        if (stack.is(ModItems.ROD_ZIRNOX_ZFB_MOX.get()))               return new RodSpec("ZFB_MOX", 50_000,  35,  false, new ItemStack(ModItems.ROD_ZIRNOX_ZFB_MOX_DEPLETED.get()));
         return null;
     }
 
@@ -534,7 +536,8 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         return target.setValue(property, source.getValue(property));
     }
 
-    private record RodSpec(int maxLife, int heat, boolean breeding, ItemStack depletedOrProduct) {}
+    /** {@code typeName} = original {@code EnumZirnoxType} constant name (ROR VAL:slottype). */
+    private record RodSpec(String typeName, int maxLife, int heat, boolean breeding, ItemStack depletedOrProduct) {}
 
     @Override
     protected Component getDefaultName() { return Component.translatable("container.zirnox"); }
@@ -642,7 +645,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
         @Override
         public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty()) return 0;
+            if (be.tilted || resource.isEmpty()) return 0;
             if (VanillaFluidEquivalence.sameSubstance(resource.getFluid(), Fluids.WATER)) {
                 int space = be.waterTank.getMaxFill() - be.waterTank.getFill();
                 int toFill = Math.min(space, resource.getAmount());
@@ -662,7 +665,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
         @Override
         public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || be.steamTank.getFill() <= 0) {
+            if (be.tilted || resource.isEmpty() || be.steamTank.getFill() <= 0) {
                 return net.minecraftforge.fluids.FluidStack.EMPTY;
             }
             if (!VanillaFluidEquivalence.sameSubstance(resource.getFluid(), be.steamTank.getTankType())) {
@@ -677,7 +680,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
         @Override
         public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-            if (maxDrain <= 0 || be.steamTank.getFill() <= 0) {
+            if (be.tilted || maxDrain <= 0 || be.steamTank.getFill() <= 0) {
                 return net.minecraftforge.fluids.FluidStack.EMPTY;
             }
             int toDrain = Math.min(maxDrain, be.steamTank.getFill());
@@ -745,7 +748,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
         @Override
         public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty()) return 0;
+            if (be.tilted || resource.isEmpty()) return 0;
             if (VanillaFluidEquivalence.sameSubstance(resource.getFluid(), Fluids.WATER)) {
                 int space = be.waterTank.getMaxFill() - be.waterTank.getFill();
                 int toFill = Math.min(space, resource.getAmount());
@@ -765,7 +768,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
         @Override
         public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || be.steamTank.getFill() <= 0) {
+            if (be.tilted || resource.isEmpty() || be.steamTank.getFill() <= 0) {
                 return net.minecraftforge.fluids.FluidStack.EMPTY;
             }
             if (!VanillaFluidEquivalence.sameSubstance(resource.getFluid(), be.steamTank.getTankType())) {
@@ -780,7 +783,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
         @Override
         public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-            if (maxDrain <= 0 || be.steamTank.getFill() <= 0) {
+            if (be.tilted || maxDrain <= 0 || be.steamTank.getFill() <= 0) {
                 return net.minecraftforge.fluids.FluidStack.EMPTY;
             }
             int toDrain = Math.min(maxDrain, be.steamTank.getFill());
@@ -833,6 +836,10 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
                 PREFIX_VALUE + "steam",
                 PREFIX_VALUE + "co2",
                 PREFIX_VALUE + "state",
+                PREFIX_VALUE + "slottype",
+                PREFIX_VALUE + "slotdep",
+                PREFIX_VALUE + "slotmaxdep",
+                PREFIX_FUNCTION + "setslot" + NAME_SEPARATOR + "id (0 to 23)",
                 PREFIX_FUNCTION + "setstate" + NAME_SEPARATOR + "active (0 or 1)",
                 PREFIX_FUNCTION + "ventco2"
         };
@@ -846,11 +853,36 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         if ((PREFIX_VALUE + "steam").equals(name))    return "" + steamTank.getFill();
         if ((PREFIX_VALUE + "co2").equals(name))      return "" + co2Tank.getFill();
         if ((PREFIX_VALUE + "state").equals(name))    return "" + (isOn ? 1 : 0);
+
+        // Original gates all three readers on hasFuelRod (non-breeding rod in the selected slot).
+        int slot = this.rorSlot;
+        if (slot < 0 || slot >= ROD_SLOT_COUNT) slot = 0;
+        if ((PREFIX_VALUE + "slottype").equals(name)) {
+            RodSpec spec = getRodSpec(inventory.getStackInSlot(slot));
+            if (spec != null && !spec.breeding()) return spec.typeName();
+            return "";
+        }
+        if ((PREFIX_VALUE + "slotmaxdep").equals(name)) {
+            RodSpec spec = getRodSpec(inventory.getStackInSlot(slot));
+            if (spec != null && !spec.breeding()) return "" + spec.maxLife();
+        }
+        if ((PREFIX_VALUE + "slotdep").equals(name)) {
+            RodSpec spec = getRodSpec(inventory.getStackInSlot(slot));
+            if (spec != null && !spec.breeding()) return "" + ZirnoxRodItem.getLifeTime(inventory.getStackInSlot(slot));
+        }
         return null;
     }
 
     @Override
     public String runRORFunction(String name, String[] params) {
+        if ((PREFIX_FUNCTION + "setslot").equals(name) && params.length > 0) {
+            if (redstonePowered) return null;
+            try {
+                int val = Integer.parseInt(params[0]);
+                if (val >= 0 && val < ROD_SLOT_COUNT) this.rorSlot = val;
+            } catch (NumberFormatException e) {}
+            return null;
+        }
         if ((PREFIX_FUNCTION + "setstate").equals(name) && params.length > 0) {
             if (redstonePowered) return null;
             try {

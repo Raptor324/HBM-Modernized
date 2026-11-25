@@ -1,0 +1,29 @@
+{
+  "textures": {
+    "particle": "hbm_m:block/machine/forcefield_base"
+  },
+  "loader": "forge:composite",
+  "children": {
+    "base": {
+      "loader": "hbm_m:nmesh_obj",
+      "model": "hbm_m:models/forcefield/forcefield_base.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:block/machine/forcefield_base"
+      }
+    },
+    "top": {
+      "loader": "hbm_m:nmesh_obj",
+      "model": "hbm_m:models/forcefield/forcefield_top.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:block/machine/forcefield_top"
+      },
+      "transform": {
+        "translation": [ 0, 1.0, 0 ]
+      }
+    }
+  }
+}

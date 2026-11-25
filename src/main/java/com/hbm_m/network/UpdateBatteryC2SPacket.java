@@ -40,12 +40,13 @@ public class UpdateBatteryC2SPacket implements C2SPacket {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
 
             BlockEntity be = ModPacketHandler.blockEntityAt(player, msg.pos);
+            if (be == null || !com.hbm_m.inventory.menu.MenuReach.canReach(player, msg.pos, player.level().getBlockState(msg.pos))) return;
             if (be instanceof MachineBatteryBlockEntity battery) {
                 battery.handleButtonPress(msg.buttonId);
             } else if (be instanceof BatterySocketBlockEntity socket) {
                 socket.handleButtonPress(msg.buttonId);
             } else if (be instanceof com.hbm_m.blockentity.machines.BatteryREDDBlockEntity redd) {
-                if (player.distanceToSqr(msg.pos.getX() + 0.5, msg.pos.getY() + 0.5, msg.pos.getZ() + 0.5) <= 128) redd.handleButtonPress(msg.buttonId);
+                redd.handleButtonPress(msg.buttonId);
             }
         });
     }

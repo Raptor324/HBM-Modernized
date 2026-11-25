@@ -284,7 +284,7 @@ public final class MissilePartItems {
         RENDER.put("mp_warhead_15_nuclear", new RenderInfo(PartType.WARHEAD, 3.5, 2, "models/missile_parts/mp_w_15_nuclear.obj", "textures/models/missile_parts/warheads/mp_w_15_nuclear.png"));
         RENDER.put("mp_warhead_15_nuclear_shark", new RenderInfo(PartType.WARHEAD, 3.5, 2, "models/missile_parts/mp_w_15_nuclear.obj", "textures/models/missile_parts/warheads/mp_w_15_nuclear_shark.png"));
         RENDER.put("mp_warhead_15_nuclear_mimi", new RenderInfo(PartType.WARHEAD, 3.5, 2, "models/missile_parts/mp_w_15_nuclear.obj", "textures/models/missile_parts/warheads/mp_w_15_nuclear_mimi.png"));
-        RENDER.put("mp_warhead_15_boxcar", new RenderInfo(PartType.WARHEAD, 2.25, 7.5, "models/missile_parts/mp_w_15_boxcar.obj", "textures/models/boxcar.png"));
+        RENDER.put("mp_warhead_15_boxcar", new RenderInfo(PartType.WARHEAD, 2.25, 7.5, "models/missile_parts/mp_w_15_boxcar.obj", "textures/block/deco/boxcar_model.png"));
         RENDER.put("mp_warhead_15_n2", new RenderInfo(PartType.WARHEAD, 3, 2, "models/missile_parts/mp_w_15_n2.obj", "textures/models/missile_parts/warheads/mp_w_15_n2.png"));
         RENDER.put("mp_warhead_15_balefire", new RenderInfo(PartType.WARHEAD, 2.75, 2, "models/missile_parts/mp_w_15_balefire.obj", "textures/models/missile_parts/warheads/mp_w_15_balefire.png"));
         RENDER.put("mp_warhead_15_turbine", new RenderInfo(PartType.WARHEAD, 2.25, 2, "models/missile_parts/mp_w_15_turbine.obj", "textures/models/missile_parts/warheads/mp_w_15_turbine.png"));

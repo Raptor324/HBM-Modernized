@@ -96,7 +96,7 @@ public class EmitterBlockEntity extends BaseHbmBlockEntity {
     }
 
     @Override
-    protected void applyClientUpdate(@NotNull CompoundTag tag) {
+    protected void applyClientUpdate(@NotNull CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
         if (tag.contains("beam")) this.beam = tag.getInt("beam");
         readNbtData(tag, null);
     }

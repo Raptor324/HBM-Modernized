@@ -90,10 +90,10 @@ public abstract class AbstractGpuMesh {
             GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, vs, 0);
 
             GL20.glEnableVertexAttribArray(1);
-            GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, vs, 12);
+            GL20.glVertexAttribPointer(1, 3, GL11.GL_BYTE, true, vs, 12);
 
             GL20.glEnableVertexAttribArray(2);
-            GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, vs, 24);
+            GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, vs, 16);
 
             if (data.indices != null && data.indices.remaining() > 0) {
                 eboId = GL15.glGenBuffers();

@@ -78,6 +78,16 @@ public class ScrewdriverItem extends com.hbm_m.item.tool.ItemTooling implements 
             return super.useOn(context);
         }
 
+        if (player.isShiftKeyDown()) {
+            com.hbm_m.block.entity.doors.DoorDecl decl = doorEntity.getDoorDecl();
+            if (decl != null && decl.hasSkins()) {
+                if (!level.isClientSide) {
+                    doorEntity.cycleSkinIndex();
+                }
+                return InteractionResult.sidedSuccess(level.isClientSide);
+            }
+        }
+
         if (level.isClientSide) {
             EnvExecutor.runInEnv(Env.CLIENT, () -> () ->
                     com.hbm_m.client.overlay.DoorSelectionClientHooks.openSelectionMenu(doorEntity));

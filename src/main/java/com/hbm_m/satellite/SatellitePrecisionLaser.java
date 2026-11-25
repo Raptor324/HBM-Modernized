@@ -84,6 +84,8 @@ public class SatellitePrecisionLaser extends Satellite {
     }
 
     public void deathBlast(ServerLevel world, int x, int z) {
+        if (lastShot + CHARGE_TIME >= world.getGameTime()) return;
+        if (!world.getWorldBorder().isWithinBounds(x, z)) return;
         int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
         deathBlast(world, x + 0.5, y, z + 0.5);
     }

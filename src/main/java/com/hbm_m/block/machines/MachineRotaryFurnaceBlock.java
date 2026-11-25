@@ -141,4 +141,20 @@ public class MachineRotaryFurnaceBlock extends DummyableMachineBlock implements 
     /*public static final com.mojang.serialization.MapCodec<MachineRotaryFurnaceBlock> CODEC = simpleCodec(MachineRotaryFurnaceBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
+
+    // Verbatim port of the original MachineRotaryFurnace.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {-2, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {0, 0, -1, Direction.NORTH.get3DDataValue()},
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {2, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-1, 4, 0, Direction.UP.get3DDataValue()},
+            {-2, 0, -1, Direction.WEST.get3DDataValue()},
+            {-2, 0, 1, Direction.WEST.get3DDataValue()},
+            {-1, 0, 1, Direction.SOUTH.get3DDataValue()}
+        }, facing);
+    }
 }

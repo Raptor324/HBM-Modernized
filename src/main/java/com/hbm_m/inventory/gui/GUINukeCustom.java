@@ -89,12 +89,21 @@ public class GUINukeCustom extends GuiInfoScreen<NukeCustomMenu> {
                 t("Caps at 100"),
                 i("\"Not to be confused with tablesalt.\""));
 
-        drawCustomInfoStat(g, mouseX, mouseY, 106, 89, 18, 18, mouseX, mouseY,
-                y("Schrabidium (Level " + testNuke.schrab + "/" + testNuke.getSchrabAdj() + ")"),
-                t("Requires nuclear level 50"),
-                t("Caps at " + CustomNukeExplosion.maxSchrab),
-                i("\"For the hundredth time,"),
-                i("you can't bypass these caps!\""));
+        // Joke: with freaky alien blocks loaded, the schrabidium slot tooltip becomes the Freaky one
+        if (this.testNuke.freaky > 0) {
+            drawCustomInfoStat(g, mouseX, mouseY, 106, 89, 18, 18, mouseX, mouseY,
+                    y("Freaky (Level " + (int) this.testNuke.freaky + ")"),
+                    t("Replaces the entire detonation"),
+                    t("Requires no prerequisites. Do not."),
+                    i("\"The truth is out there.\""));
+        } else {
+            drawCustomInfoStat(g, mouseX, mouseY, 106, 89, 18, 18, mouseX, mouseY,
+                    y("Schrabidium (Level " + this.testNuke.schrab + "/" + this.testNuke.getSchrabAdj() + ")"),
+                    t("Requires nuclear level 50"),
+                    t("Caps at " + CustomNukeExplosion.maxSchrab),
+                    i("\"For the hundredth time,"),
+                    i("you can't bypass these caps!\""));
+        }
 
         drawCustomInfoStat(g, mouseX, mouseY, 142, 89, 18, 18, mouseX, mouseY,
                 y("Ice cream (Level unknown)"),
@@ -107,17 +116,22 @@ public class GUINukeCustom extends GuiInfoScreen<NukeCustomMenu> {
 
         if (testNuke == null) return;
 
+        // Joke: with freaky alien blocks loaded, the schrabidium slot shows the alien face instead;
+        // without them schrabidium behaves 1:1 like vanilla. Every stage fills independently.
+        if (this.testNuke.freaky > 0)
+            g.blit(texture, leftPos + 106, topPos + 89, 18, 18, 177, 127, 32, 32, 256, 256);
+
         if (this.testNuke.euph > 0)
             g.blit(texture, leftPos + 142, topPos + 89, 176, 108, 18, 18);
-        else if (this.testNuke.schrab > 0)
+        if (this.testNuke.schrab > 0 && this.testNuke.freaky == 0)
             g.blit(texture, leftPos + 106, topPos + 89, 176, 90, 18, 18);
-        else if (this.testNuke.amat > 0)
+        if (this.testNuke.amat > 0)
             g.blit(texture, leftPos + 70, topPos + 89, 176, 54, 18, 18);
-        else if (this.testNuke.hydro > 0)
+        if (this.testNuke.hydro > 0)
             g.blit(texture, leftPos + 52, topPos + 89, 176, 36, 18, 18);
-        else if (this.testNuke.nuke > 0)
+        if (this.testNuke.nuke > 0)
             g.blit(texture, leftPos + 34, topPos + 89, 176, 18, 18, 18);
-        else if (this.testNuke.tnt > 0)
+        if (this.testNuke.tnt > 0)
             g.blit(texture, leftPos + 16, topPos + 89, 176, 0, 18, 18);
 
         if (this.testNuke.dirty > 0 &&

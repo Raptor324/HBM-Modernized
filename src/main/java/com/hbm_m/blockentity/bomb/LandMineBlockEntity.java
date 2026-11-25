@@ -5,7 +5,7 @@ import java.util.List;
 import com.hbm_m.block.bomb.LandmineBlock;
 import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.sound.ModSounds;
+import com.hbm_m.sound.HbmSoundsNT;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -67,9 +67,7 @@ public class LandMineBlockEntity extends BaseHbmBlockEntity {
                     be.setChanged();
                     return;
                 }
-            } else if (entity instanceof LivingEntity living) {
-                if (living instanceof Player player && player.isCreative()) continue;
-
+            } else if (entity instanceof LivingEntity) {
                 if (be.isPrimed) {
                     landmine.explode(level, pos);
                 }
@@ -78,16 +76,16 @@ public class LandMineBlockEntity extends BaseHbmBlockEntity {
         }
 
         if (!be.isPrimed && !be.waitingForPlayer) {
-            ModSounds.GRENADE_TRIGGER.ifPresent(sound -> level.playSound(
+            level.playSound(
                     null,
                     pos.getX() + 0.5,
                     pos.getY() + 0.5,
                     pos.getZ() + 0.5,
-                    sound,
+                    HbmSoundsNT.get("hbm:weapon.fstbmbStart"),
                     SoundSource.BLOCKS,
                     3.0F,
                     1.0F
-            ));
+            );
             be.isPrimed = true;
             be.setChanged();
         }

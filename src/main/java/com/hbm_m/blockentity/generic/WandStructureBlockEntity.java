@@ -103,9 +103,7 @@ public class WandStructureBlockEntity extends BaseHbmBlockEntity implements ICon
             return;
         }
 
-        Component fileText = Component.literal(file.getName()).withStyle(s -> s
-                .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, file.getParentFile().getAbsolutePath()))
-                .withUnderlined(true));
+        Component fileText = Component.literal(file.getName()).withStyle(s -> s.withUnderlined(true));
 
         player.sendSystemMessage(Component.literal("Saved structure as ").append(fileText));
     }
@@ -195,7 +193,7 @@ public class WandStructureBlockEntity extends BaseHbmBlockEntity implements ICon
 
     @Override
     public boolean hasPermission(Player player) {
-        return player.distanceToSqr(worldPosition.getCenter()) <= 64.0;
+        return player.canUseGameMasterBlocks() && player.distanceToSqr(worldPosition.getCenter()) <= 64.0;
     }
 
     @Override

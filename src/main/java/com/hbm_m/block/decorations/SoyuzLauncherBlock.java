@@ -58,27 +58,17 @@ public class SoyuzLauncherBlock extends BaseEntityBlock implements IMultiblockCo
                 .setValue(FACING, Direction.NORTH)
                 .setValue(PART_ROLE, PartRole.CONTROLLER));
 
-        Supplier<BlockState> phantomSupplier = () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState();
-        Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
+        com.hbm_m.multiblock.DummyableStructureBuilder b = com.hbm_m.multiblock.DummyableStructureBuilder.create()
+                .box(0, 1, 6, 6, 6, 6)
+                .box(-2, 4, -3, 6, -3, 6)
+                .box(-2, 4, 6, -3, -3, 6)
+                .box(-2, 4, 6, -3, 6, -3)
+                .box(-2, 4, -3, 6, 6, -3)
+                .box(0, 4, 1, 1, -6, 8)
+                .box(0, 4, 2, 2, 9, -5)
+                .placementOffset(0);
 
-        for (int y = 0; y < 2; y++) {
-            for (int x = -1; x <= 1; x++) {
-                for (int z = -1; z <= 1; z++) {
-                    if (x == 0 && y == 0 && z == 0) continue;
-                    structureMap.put(new BlockPos(x, y, z), phantomSupplier);
-                }
-            }
-        }
-
-        this.structureHelper = new MultiblockStructureHelper(
-                structureMap,
-                phantomSupplier,
-                null,
-                null,
-                null,
-                null,
-                BlockPos.ZERO
-        );
+        this.structureHelper = b.build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
@@ -93,18 +83,26 @@ public class SoyuzLauncherBlock extends BaseEntityBlock implements IMultiblockCo
 
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
-        // Answered directly: the helper is built without symbol maps, so delegating to
-        // resolvePartRole would fall back to this very method and recurse to a
-        // StackOverflowError (hit whenever the item is held — port-square derivation calls
-        // getPartRole(BlockPos.ZERO) on MultiblockStructureHelper.getAutoPorts).
-        return localOffset.equals(BlockPos.ZERO) ? PartRole.CONTROLLER : PartRole.DEFAULT;
+        if (localOffset.equals(BlockPos.ZERO)) return PartRole.CONTROLLER;
+        if ((localOffset.getY() == 0 || localOffset.getY() == -1)
+                && (Math.abs(localOffset.getX()) == 6 || Math.abs(localOffset.getZ()) == 6)) {
+            return PartRole.UNIVERSAL_CONNECTOR;
+        }
+        return PartRole.DEFAULT;
     }
 
+    /** Original {@code getDirModified}: die Struktur ist immer EAST, nie Spielerrichtung (SoyuzLauncher.java:81-83). */
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return defaultBlockState()
-                .setValue(FACING, context.getHorizontalDirection().getOpposite())
+                .setValue(FACING, Direction.EAST)
                 .setValue(PART_ROLE, PartRole.CONTROLLER);
+    }
+
+    /** Original {@code getHeightOffset} = {@code height = 4}: der Kern liegt vier Bloecke ueber dem Klickpunkt. */
+    @Override
+    public int getHeightOffset() {
+        return HEIGHT;
     }
 
     @Nullable
@@ -145,8 +143,8 @@ public class SoyuzLauncherBlock extends BaseEntityBlock implements IMultiblockCo
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     //?} else {
     /*@Override
-    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return com.hbm_m.platform.BlockHooks.useItemResult(hbmUse(state, level, pos, player, hand, hit));
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return hbmUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     private InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     *///?}
@@ -158,18 +156,45 @@ public class SoyuzLauncherBlock extends BaseEntityBlock implements IMultiblockCo
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
+    private static final ThreadLocal<Boolean> SUPPRESS_CREATIVE_DROPS = ThreadLocal.withInitial(() -> false);
+
+    //? if < 1.21.1 {
+    @Override
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide() && player.getAbilities().instabuild) {
+            SUPPRESS_CREATIVE_DROPS.set(true);
+        }
+        super.playerWillDestroy(level, pos, state, player);
+    }
+    //?} else {
+    /*@Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide() && player.getAbilities().instabuild) {
+            SUPPRESS_CREATIVE_DROPS.set(true);
+        }
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+    *///?}
+
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            double x = pos.getX() + 0.5, y = pos.getY() + 0.5, z = pos.getZ() + 0.5;
-            for (int l = 0; l < 6; l++) Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.STRUCT_LAUNCHER.get(), 64));
-            for (int l = 0; l < 4; l++) Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.CONCRETE_SMOOTH.get(), 64));
-            for (int l = 0; l < 6; l++) Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.STRUCT_SCAFFOLD.get(), 64));
-            Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.STRUCT_LAUNCHER.get(), 30));
-            Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.STRUCT_SCAFFOLD.get(), 63));
-            Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.CONCRETE_SMOOTH.get(), 38));
-            Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.STRUCT_SOYUZ_CORE.get(), 1));
-            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
+        try {
+            if (!state.is(newState.getBlock()) && !level.isClientSide()) {
+                structureHelper.destroyStructure(level, pos, state.getValue(FACING));
+                if (!SUPPRESS_CREATIVE_DROPS.get()) {
+                    double x = pos.getX() + 0.5, y = pos.getY() + 0.5, z = pos.getZ() + 0.5;
+                    for (int l = 0; l < 6; l++) Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.STRUCT_LAUNCHER.get(), 64));
+                    for (int l = 0; l < 4; l++) Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.CONCRETE_SMOOTH.get(), 64));
+                    for (int l = 0; l < 6; l++) Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.STRUCT_SCAFFOLD.get(), 64));
+                    Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.STRUCT_LAUNCHER.get(), 30));
+                    Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.STRUCT_SCAFFOLD.get(), 63));
+                    Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.CONCRETE_SMOOTH.get(), 38));
+                    Containers.dropItemStack(level, x, y, z, new ItemStack(ModBlocks.STRUCT_SOYUZ_CORE.get(), 1));
+                }
+                com.hbm_m.block.MachineDrops.dropInventory(level, pos);
+            }
+        } finally {
+            SUPPRESS_CREATIVE_DROPS.remove();
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }

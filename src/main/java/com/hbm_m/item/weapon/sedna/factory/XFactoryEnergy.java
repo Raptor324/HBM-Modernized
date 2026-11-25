@@ -181,9 +181,9 @@ public class XFactoryEnergy {
         energy_las_overcharge = new BulletConfig().setItem(EnumAmmo.CAPACITOR_OVERCHARGE).setCasing(polymer(2), 4).setupDamageClass(DamageClass.LASER).setBeam().setSpread(0.0F).setLife(5).setRenderRotations(false).setDoesPenetrate(true).setOnBeamImpact(BulletConfig.LAMBDA_STANDARD_BEAM_HIT);
         energy_las_ir = new BulletConfig().setItem(EnumAmmo.CAPACITOR_IR).setCasing(polymer(2), 4).setupDamageClass(DamageClass.FIRE).setBeam().setSpread(0.0F).setLife(5).setRenderRotations(false).setOnBeamImpact(LAMBDA_IR_HIT);
 
-        energy_emerald = energy_las.clone().setArmorPiercing(0.5F).setThresholdNegation(10F);
-        energy_emerald_overcharge = energy_las_overcharge.clone().setArmorPiercing(0.5F).setThresholdNegation(15F);
-        energy_emerald_ir = energy_las_ir.clone().setArmorPiercing(0.5F).setThresholdNegation(10F);
+        energy_emerald = energy_las.clone().setArmorPiercing(0.5F).setThresholdNegation(50F);
+        energy_emerald_overcharge = energy_las_overcharge.clone().setArmorPiercing(0.5F).setThresholdNegation(75F);
+        energy_emerald_ir = energy_las_ir.clone().setArmorPiercing(0.5F).setThresholdNegation(50F);
 
         GunFactory.reg("gun_tesla_cannon", new ItemGunBaseNT(WeaponQuality.A_SIDE, new GunConfig()
                 .dura(1_000).draw(10).inspect(33).crosshair(Crosshair.CIRCLE)
@@ -219,7 +219,7 @@ public class XFactoryEnergy {
         GunFactory.reg("gun_laser_pistol_morning_glory", new ItemGunBaseNT(WeaponQuality.LEGENDARY, new GunConfig()
                 .dura(1_500).draw(10).inspect(26).crosshair(Crosshair.CIRCLE)
                 .rec(new Receiver(0)
-                        .dmg(20F).delay(7).spread(0F).spreadHipfire(0.5F).reload(45).jam(37).sound("hbm:weapon.fire.laserPistol", 1.0F, 1.1F)
+                        .dmg(30F).delay(7).spread(0F).spreadHipfire(0.5F).reload(45).jam(37).sound("hbm:weapon.fire.laserPistol", 1.0F, 1.1F)
                         .mag(new MagazineFullReload(0, 20).addConfigs(energy_emerald, energy_emerald_overcharge, energy_emerald_ir))
                         .offset(0.75, -0.0625 * 1.5, -0.1875)
                         .setupStandardFire().recoil(LAMBDA_RECOIL_ENERGY))
@@ -241,8 +241,19 @@ public class XFactoryEnergy {
 
     public static BiConsumer<ItemStack, LambdaContext> LAMBDA_RECOIL_ENERGY = (stack, ctx) -> { };
 
+    private static Player getClientPlayer() {
+        if (dev.architectury.platform.Platform.getEnvironment() != dev.architectury.utils.Env.CLIENT) return null;
+        return ClientHolder.clientPlayer();
+    }
+
+    private static final class ClientHolder {
+        static Player clientPlayer() {
+            return com.hbm_m.client.weapon.GunClientHooks.clientPlayer();
+        }
+    }
+
     @SuppressWarnings("incomplete-switch") public static BiFunction<ItemStack, GunAnimation, BusAnimation> LAMBDA_TESLA_ANIMS = (stack, type) -> {
-        Player me = com.hbm_m.client.weapon.GunClientHooks.clientPlayer();
+        Player me = getClientPlayer();
         int amount = ((ItemGunBaseNT) stack.getItem()).getConfig(stack, 0).getReceivers(stack)[0].getMagazine(stack).getAmount(stack, me != null ? me.getInventory() : null);
         switch (type) {
             case EQUIP: return new BusAnimation()

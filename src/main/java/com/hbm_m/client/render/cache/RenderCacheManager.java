@@ -106,8 +106,10 @@ public final class RenderCacheManager {
             guarded("LightSampleCache.invalidateAll", LightSampleCache::invalidateAll);
             guarded("OcclusionCullingHelper.clearCache", OcclusionCullingHelper::clearCache);
 
-            guarded("AbstractObjArmorLayer.clearAllCaches",
-                    com.hbm_m.powerarmor.layer.AbstractObjArmorLayer::clearAllCaches);
+            guarded("ArmorObjModel.clearCache",
+                    com.hbm_m.client.render.armor.ArmorObjModel::clearCache);
+            guarded("ArmorItemRenderer.clearLayoutCache",
+                    com.hbm_m.client.render.armor.ArmorItemRenderer::clearLayoutCache);
 
             // GPU-compute subsystems + keyed caches: their GL storage (HiZ pyramid
             // texture, culler/scatter SSBOs) lives until its explicit destroy and
@@ -127,6 +129,8 @@ public final class RenderCacheManager {
                     com.hbm_m.client.render.shader.RawDhDepthCopy::destroy);
             guarded("RawScreenSpaceLight.destroy",
                     com.hbm_m.client.render.shader.RawScreenSpaceLight::destroy);
+            guarded("NukeCloudMask.destroy",
+                    com.hbm_m.client.render.shader.NukeCloudMask::destroy);
             guarded("PackAdditiveQueue.destroy",
                     com.hbm_m.client.render.shader.PackAdditiveQueue::destroy);
             guarded("HiZDepthPyramid.destroy",

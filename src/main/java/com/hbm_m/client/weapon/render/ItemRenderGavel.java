@@ -25,6 +25,8 @@ public class ItemRenderGavel extends ItemRenderWeaponBase {
 
     @Override public boolean customFirstPerson() { return false; }
 
+    @Override public boolean hasInventoryModel() { return false; }
+
     @Override public void renderFirstPerson(ItemStack stack) { }
 
     @Override

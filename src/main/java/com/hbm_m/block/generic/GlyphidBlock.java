@@ -14,8 +14,12 @@ public class GlyphidBlock extends Block {
     public static final IntegerProperty TYPE = IntegerProperty.create("type", 0, 2);
 
     public GlyphidBlock(Properties properties) {
+        this(properties, 0);
+    }
+
+    public GlyphidBlock(Properties properties, int defaultType) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(TYPE, 0));
+        this.registerDefaultState(this.stateDefinition.any().setValue(TYPE, Math.max(0, Math.min(2, defaultType))));
     }
 
     @Override

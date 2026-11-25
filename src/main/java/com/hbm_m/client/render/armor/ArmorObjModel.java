@@ -9,10 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
@@ -21,17 +23,40 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Lightweight Wavefront reader following {@code HFRWavefrontObject} (1.7.10): groups ("o"/"g"),
- * triangles and quads, UV with inverted V ({@code 1 - v}), vertex normals if present.
- * {@link #renderPart} corresponds to {@code IModelCustom.renderPart}.
+ * Compiled Wavefront/NMesh geometry holder for 3D entity armors, accessories, and armor items.
+ * Loads precompiled {@code .nmesh} assets (with Wavefront {@code .obj} resourcepack fallback) and
+ * flattens triangles into contiguous quad-ready float arrays for allocation-free rendering.
  */
 public final class ArmorObjModel {
 
+    private static final int FLOATS_PER_VERTEX = 8; // x, y, z, nx, ny, nz, u, v
+    private static final int VERTICES_PER_QUAD = 4;
+    private static final int FLOATS_PER_QUAD = FLOATS_PER_VERTEX * VERTICES_PER_QUAD;
+
     private static final Map<ResourceLocation, ArmorObjModel> CACHE = new ConcurrentHashMap<>();
 
-    private record Face(float[][] pos, float[][] uv, float[][] normal) {}
+    private record PartBatch(float[] quadVerts, float kdR, float kdG, float kdB) {}
 
-    private final Map<String, List<Face>> groups = new HashMap<>();
+    private static final class PartMesh {
+        final List<PartBatch> batches = new ArrayList<>(1);
+        float minX = Float.POSITIVE_INFINITY, minY = Float.POSITIVE_INFINITY, minZ = Float.POSITIVE_INFINITY;
+        float maxX = Float.NEGATIVE_INFINITY, maxY = Float.NEGATIVE_INFINITY, maxZ = Float.NEGATIVE_INFINITY;
+
+        void expandBounds(float x, float y, float z) {
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (z < minZ) minZ = z;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+            if (z > maxZ) maxZ = z;
+        }
+
+        boolean hasBounds() {
+            return minX <= maxX && minY <= maxY && minZ <= maxZ;
+        }
+    }
+
+    private final Map<String, PartMesh> parts = new HashMap<>();
 
     private ArmorObjModel() {}
 
@@ -43,50 +68,121 @@ public final class ArmorObjModel {
         CACHE.clear();
     }
 
-    private static ArmorObjModel load(ResourceLocation location) {
-        ArmorObjModel model = new ArmorObjModel();
+    public boolean hasPart(String name) {
+        return parts.containsKey(name);
+    }
 
-        // nmesh-first: compiled .nmesh data (or NMeshLoader resource pack fallback) instead of custom Wavefront reader.
+    /**
+     * Returns the axis-aligned bounding box {@code [minX, minY, minZ, maxX, maxY, maxZ]} across the
+     * given part names (in entity pixel units), or {@code null} if none of the parts exist.
+     */
+    @Nullable
+    public float[] getBounds(Iterable<String> partNames) {
+        float minX = Float.POSITIVE_INFINITY, minY = Float.POSITIVE_INFINITY, minZ = Float.POSITIVE_INFINITY;
+        float maxX = Float.NEGATIVE_INFINITY, maxY = Float.NEGATIVE_INFINITY, maxZ = Float.NEGATIVE_INFINITY;
+        boolean any = false;
+        for (String name : partNames) {
+            PartMesh mesh = parts.get(name);
+            if (mesh == null || !mesh.hasBounds()) continue;
+            if (mesh.minX < minX) minX = mesh.minX;
+            if (mesh.minY < minY) minY = mesh.minY;
+            if (mesh.minZ < minZ) minZ = mesh.minZ;
+            if (mesh.maxX > maxX) maxX = mesh.maxX;
+            if (mesh.maxY > maxY) maxY = mesh.maxY;
+            if (mesh.maxZ > maxZ) maxZ = mesh.maxZ;
+            any = true;
+        }
+        return any ? new float[] { minX, minY, minZ, maxX, maxY, maxZ } : null;
+    }
+
+    private static ArmorObjModel load(ResourceLocation location) {
+        ArmorObjModel model = loadFromNMesh(location);
+        if (model != null) {
+            return model;
+        }
+        return loadFromLegacyObj(location);
+    }
+
+    @Nullable
+    private static ArmorObjModel loadFromNMesh(ResourceLocation location) {
         var nmesh = com.hbm_m.client.model.nmesh.NMeshLoader.load(location);
-        if (nmesh != null) {
-            try {
-                for (var sm : nmesh.subMeshes()) {
-                    String key = sm.objectName != null && !sm.objectName.isEmpty() ? sm.objectName
-                            : (sm.groupName != null && !sm.groupName.isEmpty() ? sm.groupName : "Default");
-                    float[] verts = sm.vertices;
-                    int[] idx = sm.indices;
-                    List<Face> faces = model.groups.computeIfAbsent(key, k -> new ArrayList<>());
-                    for (int i = 0; i + 2 < idx.length; i += 3) {
-                        float[][] pos = new float[3][];
-                        float[][] uv = new float[3][];
-                        float[][] nor = new float[3][];
-                        for (int c = 0; c < 3; c++) {
-                            int b = idx[i + c] * 8;
-                            pos[c] = new float[] {verts[b + 0], verts[b + 1], verts[b + 2]};
-                            // This reader already flips V on load (1 - v); nmesh provides raw V.
-                            uv[c] = new float[] {verts[b + 6], 1 - verts[b + 7]};
-                            float nx = verts[b + 3], ny = verts[b + 4], nz = verts[b + 5];
-                            nor[c] = (nx == 0 && ny == 0 && nz == 0) ? null : new float[] {nx, ny, nz};
+        if (nmesh == null) {
+            return null;
+        }
+        try {
+            ArmorObjModel model = new ArmorObjModel();
+            for (var sm : nmesh.subMeshes()) {
+                String key = (sm.objectName != null && !sm.objectName.isEmpty())
+                        ? sm.objectName
+                        : ((sm.groupName != null && !sm.groupName.isEmpty()) ? sm.groupName : "Default");
+                int iCount = sm.indexCount();
+                int triCount = iCount / 3;
+                if (triCount <= 0) continue;
+
+                PartMesh partMesh = model.parts.computeIfAbsent(key, k -> new PartMesh());
+                float[] quadVerts = new float[triCount * FLOATS_PER_QUAD];
+                int out = 0;
+
+                for (int t = 0; t + 2 < iCount; t += 3) {
+                    int v0 = sm.index(t);
+                    int v1 = sm.index(t + 1);
+                    int v2 = sm.index(t + 2);
+
+                    float[] fn = null;
+                    if (isZeroNormal(sm, v0) || isZeroNormal(sm, v1) || isZeroNormal(sm, v2)) {
+                        fn = computeFaceNormal(
+                                sm.posX(v0), sm.posY(v0), sm.posZ(v0),
+                                sm.posX(v1), sm.posY(v1), sm.posZ(v1),
+                                sm.posX(v2), sm.posY(v2), sm.posZ(v2));
+                    }
+
+                    int[] vis = { v0, v1, v2, v2 }; // duplicate 3rd vertex for QUADS vertex format
+                    for (int c = 0; c < 4; c++) {
+                        int vi = vis[c];
+                        float x = sm.posX(vi);
+                        float y = sm.posY(vi);
+                        float z = sm.posZ(vi);
+                        partMesh.expandBounds(x, y, z);
+
+                        float nx = sm.normX(vi);
+                        float ny = sm.normY(vi);
+                        float nz = sm.normZ(vi);
+                        if (nx == 0.0F && ny == 0.0F && nz == 0.0F && fn != null) {
+                            nx = fn[0];
+                            ny = fn[1];
+                            nz = fn[2];
                         }
-                        faces.add(new Face(pos, uv, nor));
+                        quadVerts[out++] = x;
+                        quadVerts[out++] = y;
+                        quadVerts[out++] = z;
+                        quadVerts[out++] = nx;
+                        quadVerts[out++] = ny;
+                        quadVerts[out++] = nz;
+                        quadVerts[out++] = sm.u(vi);
+                        quadVerts[out++] = 1.0F - sm.v(vi);
                     }
                 }
-                return model;
-            } catch (Exception e) {
-                MainRegistry.LOGGER.warn("ArmorObjModel: nmesh conversion of {} failed: {}", location, e.toString());
-                model = new ArmorObjModel(); // Fresh restart for legacy path
+                partMesh.batches.add(new PartBatch(quadVerts, sm.kdR, sm.kdG, sm.kdB));
             }
+            return model;
+        } catch (Exception e) {
+            MainRegistry.LOGGER.warn("ArmorObjModel: nmesh conversion of {} failed: {}", location, e.toString());
+            return null;
         }
+    }
 
+    private static ArmorObjModel loadFromLegacyObj(ResourceLocation location) {
+        ArmorObjModel model = new ArmorObjModel();
         List<float[]> v = new ArrayList<>();
         List<float[]> vt = new ArrayList<>();
         List<float[]> vn = new ArrayList<>();
-        List<Face> current = model.groups.computeIfAbsent("Default", k -> new ArrayList<>());
+        Map<String, List<Float>> rawQuads = new HashMap<>();
+        List<Float> current = rawQuads.computeIfAbsent("Default", k -> new ArrayList<>());
 
         try {
             var resource = Minecraft.getInstance().getResourceManager().getResource(location);
             if (resource.isEmpty()) {
-                MainRegistry.LOGGER.error("Armor OBJ not found: {}", location);
+                MainRegistry.LOGGER.error("Armor OBJ/NMesh not found: {}", location);
                 return model;
             }
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.get().open(), StandardCharsets.UTF_8))) {
@@ -96,23 +192,11 @@ public final class ArmorObjModel {
                     if (line.isEmpty() || line.startsWith("#")) continue;
                     String[] t = line.split("\\s+");
                     switch (t[0]) {
-                        case "v" -> v.add(new float[] {Float.parseFloat(t[1]), Float.parseFloat(t[2]), Float.parseFloat(t[3])});
-                        case "vt" -> vt.add(new float[] {Float.parseFloat(t[1]), 1 - Float.parseFloat(t[2])});
-                        case "vn" -> vn.add(new float[] {Float.parseFloat(t[1]), Float.parseFloat(t[2]), Float.parseFloat(t[3])});
-                        case "o", "g" -> current = model.groups.computeIfAbsent(t.length > 1 ? t[1] : "Default", k -> new ArrayList<>());
-                        case "f" -> {
-                            int n = t.length - 1;
-                            float[][] pos = new float[n][];
-                            float[][] uv = new float[n][];
-                            float[][] nor = new float[n][];
-                            for (int i = 0; i < n; i++) {
-                                String[] idx = t[i + 1].split("/");
-                                pos[i] = v.get(Integer.parseInt(idx[0]) - 1);
-                                uv[i] = idx.length > 1 && !idx[1].isEmpty() ? vt.get(Integer.parseInt(idx[1]) - 1) : new float[] {0, 0};
-                                nor[i] = idx.length > 2 && !idx[2].isEmpty() ? vn.get(Integer.parseInt(idx[2]) - 1) : null;
-                            }
-                            current.add(new Face(pos, uv, nor));
-                        }
+                        case "v" -> v.add(new float[] { Float.parseFloat(t[1]), Float.parseFloat(t[2]), Float.parseFloat(t[3]) });
+                        case "vt" -> vt.add(new float[] { Float.parseFloat(t[1]), 1.0F - Float.parseFloat(t[2]) });
+                        case "vn" -> vn.add(new float[] { Float.parseFloat(t[1]), Float.parseFloat(t[2]), Float.parseFloat(t[3]) });
+                        case "o", "g" -> current = rawQuads.computeIfAbsent(t.length > 1 ? t[1] : "Default", k -> new ArrayList<>());
+                        case "f" -> appendLegacyFace(t, v, vt, vn, current);
                         default -> { }
                     }
                 }
@@ -120,44 +204,113 @@ public final class ArmorObjModel {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Failed to read armor OBJ {}", location, e);
         }
+
+        for (var entry : rawQuads.entrySet()) {
+            List<Float> floats = entry.getValue();
+            if (floats.isEmpty()) continue;
+            float[] arr = new float[floats.size()];
+            PartMesh mesh = model.parts.computeIfAbsent(entry.getKey(), k -> new PartMesh());
+            for (int i = 0; i < arr.length; i++) {
+                arr[i] = floats.get(i);
+            }
+            for (int i = 0; i < arr.length; i += FLOATS_PER_VERTEX) {
+                mesh.expandBounds(arr[i], arr[i + 1], arr[i + 2]);
+            }
+            mesh.batches.add(new PartBatch(arr, 1.0F, 1.0F, 1.0F));
+        }
         return model;
     }
 
-    /** Original {@code renderAll}: all groups. */
-    public void renderAll(PoseStack poseStack, VertexConsumer vc, int light, float r, float g, float b, float a) {
-        for (String name : groups.keySet()) renderPart(name, poseStack, vc, light, r, g, b, a);
+    private static void appendLegacyFace(String[] tokens, List<float[]> v, List<float[]> vt, List<float[]> vn, List<Float> out) {
+        int n = tokens.length - 1;
+        if (n < 3) return;
+        float[][] pos = new float[n][];
+        float[][] uv = new float[n][];
+        float[][] nor = new float[n][];
+        for (int i = 0; i < n; i++) {
+            String[] idx = tokens[i + 1].split("/");
+            pos[i] = v.get(Integer.parseInt(idx[0]) - 1);
+            uv[i] = idx.length > 1 && !idx[1].isEmpty() ? vt.get(Integer.parseInt(idx[1]) - 1) : new float[] { 0.0F, 0.0F };
+            nor[i] = idx.length > 2 && !idx[2].isEmpty() ? vn.get(Integer.parseInt(idx[2]) - 1) : null;
+        }
+        if (n <= 4) {
+            emitLegacyQuad(pos, uv, nor, 0, 1, 2, Math.min(3, n - 1), out);
+        } else {
+            for (int i = 1; i + 1 < n; i++) {
+                emitLegacyQuad(pos, uv, nor, 0, i, i + 1, i + 1, out);
+            }
+        }
     }
 
-    /** Original {@code renderPart}: write one group with the current matrix to the buffer. */
+    private static void emitLegacyQuad(float[][] pos, float[][] uv, float[][] nor,
+                                       int i0, int i1, int i2, int i3, List<Float> out) {
+        float[] fn = computeFaceNormal(
+                pos[i0][0], pos[i0][1], pos[i0][2],
+                pos[i1][0], pos[i1][1], pos[i1][2],
+                pos[i2][0], pos[i2][1], pos[i2][2]);
+        int[] indices = { i0, i1, i2, i3 };
+        for (int k : indices) {
+            float[] p = pos[k];
+            float[] t = uv[k];
+            float[] no = nor[k] != null ? nor[k] : fn;
+            out.add(p[0]); out.add(p[1]); out.add(p[2]);
+            out.add(no[0]); out.add(no[1]); out.add(no[2]);
+            out.add(t[0]); out.add(t[1]);
+        }
+    }
+
+    public void renderAll(PoseStack poseStack, VertexConsumer vc, int light, float r, float g, float b, float a) {
+        for (String name : parts.keySet()) {
+            renderPart(name, poseStack, vc, light, r, g, b, a);
+        }
+    }
+
     public void renderPart(String name, PoseStack poseStack, VertexConsumer vc, int light, float r, float g, float b, float a) {
-        List<Face> faces = groups.get(name);
-        if (faces == null) return;
+        renderPart(name, poseStack, vc, light, r, g, b, a, false);
+    }
+
+    public void renderPart(String name, PoseStack poseStack, VertexConsumer vc, int light,
+                           float r, float g, float b, float a, boolean applyMtlKd) {
+        PartMesh mesh = parts.get(name);
+        if (mesh == null) return;
 
         PoseStack.Pose pose = poseStack.last();
         Matrix4f mat = pose.pose();
         Matrix3f nmat = pose.normal();
 
-        for (Face face : faces) {
-            float[] fn = face.normal[0] == null ? faceNormal(face.pos) : null;
-            int n = face.pos.length;
-            // Render types draw quads: triangles duplicate the final vertex.
-            for (int i = 0; i < 4; i++) {
-                int k = Math.min(i, n - 1);
-                float[] p = face.pos[k];
-                float[] uv = face.uv[k];
-                float[] no = face.normal[k] != null ? face.normal[k] : fn;
-                com.hbm_m.platform.RenderHooks.vertexFull(vc, mat, p[0], p[1], p[2], r, g, b, a,
-                        uv[0], uv[1], OverlayTexture.NO_OVERLAY, light, nmat, no[0], no[1], no[2]);
+        for (int bi = 0; bi < mesh.batches.size(); bi++) {
+            PartBatch batch = mesh.batches.get(bi);
+            float cr = applyMtlKd ? r * batch.kdR : r;
+            float cg = applyMtlKd ? g * batch.kdG : g;
+            float cb = applyMtlKd ? b * batch.kdB : b;
+            float[] q = batch.quadVerts;
+            for (int i = 0; i < q.length; i += FLOATS_PER_VERTEX) {
+                RenderHooks.vertexFull(vc, mat,
+                        q[i], q[i + 1], q[i + 2],
+                        cr, cg, cb, a,
+                        q[i + 6], q[i + 7],
+                        OverlayTexture.NO_OVERLAY, light,
+                        nmat, q[i + 3], q[i + 4], q[i + 5]);
             }
         }
     }
 
-    private static float[] faceNormal(float[][] p) {
-        float ax = p[1][0] - p[0][0], ay = p[1][1] - p[0][1], az = p[1][2] - p[0][2];
-        float bx = p[2][0] - p[0][0], by = p[2][1] - p[0][1], bz = p[2][2] - p[0][2];
-        float nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
+    private static boolean isZeroNormal(com.hbm_m.client.model.nmesh.NMeshData.SubMesh sm, int v) {
+        return (sm.packedNormals[v] & 0x00FFFFFF) == 0;
+    }
+
+    private static float[] computeFaceNormal(float x0, float y0, float z0,
+                                           float x1, float y1, float z1,
+                                           float x2, float y2, float z2) {
+        float ax = x1 - x0, ay = y1 - y0, az = z1 - z0;
+        float bx = x2 - x0, by = y2 - y0, bz = z2 - z0;
+        float nx = ay * bz - az * by;
+        float ny = az * bx - ax * bz;
+        float nz = ax * by - ay * bx;
         float len = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
-        if (len < 1.0E-6F) return new float[] {0, 1, 0};
-        return new float[] {nx / len, ny / len, nz / len};
+        if (len < 1.0E-6F) {
+            return new float[] { 0.0F, 1.0F, 0.0F };
+        }
+        return new float[] { nx / len, ny / len, nz / len };
     }
 }

@@ -1,4 +1,5 @@
 {
+  "render_type": "minecraft:cutout",
   "parent": "block/block",
   "textures": {
     "particle": "hbm_m:block/conveyor_double",

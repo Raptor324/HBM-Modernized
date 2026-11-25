@@ -15,7 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 /** 1:1 {@code RenderCondenser}: Gehaeuse und zwei gegenlaeufige Luefter. */
 public class CondenserPoweredRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineCondenserPoweredBlockEntity> {
 
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/condenser.png");
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/condenser_powered.png");
 
     public static final com.hbm_m.client.render.SimpleObjModel DAMAGED = new com.hbm_m.client.render.SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/condenser_damaged.obj"));
     public static final ResourceLocation DAMAGED_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/condenser_damaged.png");

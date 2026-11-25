@@ -89,9 +89,8 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
                             targetPos.getX(), targetPos.getY(), targetPos.getZ(), player.getName().getString());
                 }
 
-                player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
-                        Component.translatable(ret.getUnlocalizedMessage())
-                                .withStyle(ret.wasSuccessful() ? ChatFormatting.YELLOW : ChatFormatting.RED)));
+                toast(player, Component.translatable(ret.getUnlocalizedMessage())
+                                .withStyle(ret.wasSuccessful() ? ChatFormatting.YELLOW : ChatFormatting.RED), ret.wasSuccessful() ? ChatFormatting.YELLOW : ChatFormatting.RED);
 
                 return InteractionResultHolder.success(stack);
             } else {
@@ -101,9 +100,8 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
                             soundEvent, player.getSoundSource(), 1.0F, 1.0F);
                 }
 
-                player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
-                        Component.translatable(BombReturnCode.ERROR_NO_BOMB.getUnlocalizedMessage())
-                                .withStyle(ChatFormatting.RED)));
+                toast(player, Component.translatable(BombReturnCode.ERROR_NO_BOMB.getUnlocalizedMessage())
+                                .withStyle(ChatFormatting.RED), ChatFormatting.RED);
 
                 return InteractionResultHolder.fail(stack);
             }
@@ -114,9 +112,8 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
                         soundEvent, player.getSoundSource(), 1.0F, 1.0F);
             }
 
-            player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
-                    Component.translatable(BombReturnCode.ERROR_NO_BOMB.getUnlocalizedMessage())
-                            .withStyle(ChatFormatting.RED)));
+            toast(player, Component.translatable(BombReturnCode.ERROR_NO_BOMB.getUnlocalizedMessage())
+                            .withStyle(ChatFormatting.RED), ChatFormatting.RED);
 
             return InteractionResultHolder.fail(stack);
         }
@@ -153,5 +150,13 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.hbm_m.range_detonator.hint")
                 .withStyle(ChatFormatting.GRAY));
+    }
+
+    /** Original ItemLaserDetonator: PlayerInformPacket(..., ID_DETONATOR), 1000 ms. */
+    private static void toast(Player player, Component msg, ChatFormatting color) {
+        if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
+            com.hbm_m.network.InfoToastPacket.sendTo(sp, msg, 20, com.hbm_m.network.InfoToastPacket.ID_DETONATOR,
+                    com.hbm_m.network.InfoToastPacket.rgbFromFormatting(color));
+        }
     }
 }

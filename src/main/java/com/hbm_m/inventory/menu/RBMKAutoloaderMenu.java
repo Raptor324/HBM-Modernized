@@ -15,18 +15,13 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 /**
  * Port of {@code ContainerRBMKAutoloader}.
  *
- * <p>The original had a separate 3x3 "fuel in" grid (slots 0-8) and a take-only
- * 3x3 "spent rods out" grid (slots 9-17), plus +/- buttons that adjusted a
- * {@code cycle} enrichment-threshold field on the tile entity.
- *
- * <p>The modernized {@link RBMKAutoloaderBlockEntity} was rebuilt with a single
- * shared 3x3 buffer ({@code SLOTS = 9}) that the block entity's own tick logic
- * uses both to pull fresh rods from and to deposit spent rods into - there is no
- * separate input/output split and no {@code cycle} threshold field. This menu is
- * therefore ported 1:1 in visual layout (one 3x3 grid at the original's "input"
- * position) but wired only to the fields that actually exist; the +/- cycle
- * buttons from the original GUI have no backing field and are intentionally
- * omitted.
+ * <p>The original has a 3x3 "fuel in" grid (slots 0-8, insertion restricted by
+ * {@code isItemValidForSlot}) and a take-only 3x3 "spent rods out" grid (slots 9-17), plus the
+ * +/- buttons in {@code GUIRBMKAutoloader} that adjust the tile entity's {@code cycle}
+ * enrichment-threshold field (±5, clamped 5..95 server-side through
+ * {@code RBMKAutoloaderPacket}). This menu wires all 18 slots of the matching
+ * {@link RBMKAutoloaderBlockEntity} inventory 1:1 in the original layout (input grid at 17,18,
+ * output grid at 107,18, player inventory at 8,100).</p>
  */
 public class RBMKAutoloaderMenu extends AbstractContainerMenu {
 

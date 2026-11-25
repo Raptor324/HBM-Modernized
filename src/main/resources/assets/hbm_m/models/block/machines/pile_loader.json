@@ -1,18 +1,11 @@
 {
+	"loader": "hbm_m:machine_parts_loader",
+	"model": "hbm_m:models/block/machines/pile_loader.obj",
+	"flip_v": true,
+	"render_type": "minecraft:cutout",
 	"textures": {
-		"particle": "hbm_m:block/machine/pile_loader"
-	},
-	"loader": "forge:composite",
-	"children": {
-		"pile_loader_model": {
-			"loader": "hbm_m:nmesh_obj",
-			"model": "hbm_m:models/block/machines/pile_loader_static.obj",
-			"flip_v": true,
-			"render_type": "minecraft:cutout",
-			"textures": {
-				"default": "hbm_m:block/machine/pile_loader"
-			}
-		}
+		"particle": "hbm_m:block/machine/pile_loader",
+		"default": "hbm_m:block/machine/pile_loader"
 	},
 	"transform": {
 		"translation": [

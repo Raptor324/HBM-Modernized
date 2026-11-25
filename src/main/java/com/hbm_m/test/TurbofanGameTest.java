@@ -54,73 +54,68 @@ public class TurbofanGameTest {
 
     @GameTest(template = "empty3x3x3", batch = "turbofan", timeoutTicks = 100)
     public static void burnAeroFuel(GameTestHelper helper) {
-        helper.runAfterDelay(2, () -> {
-            MachineTurbofanBlockEntity be = makeBe(helper);
-            check(be.getTank().fillMb(ModFluids.KEROSENE.getSource(), 20) == 20, "tank must accept kerosene");
+        MachineTurbofanBlockEntity be = makeBe(helper);
+        check(be.getTank().fillMb(ModFluids.KEROSENE.getSource(), 20) == 20, "tank must accept kerosene");
 
-            FT_Combustible trait = FluidType.getTrait(ModFluids.KEROSENE.getSource(), FT_Combustible.class);
-            check(trait != null && trait.getGrade() == FT_Combustible.FuelGrade.AERO, "kerosene must be AERO grade");
-            long burnValue = trait.getCombustionEnergy() / 1_000L;
-            // Керосин = расчётное топливо (оригинал ~3 850 000 HE/ведро): проверяем масштаб.
-            check(burnValue >= 3_000L && burnValue <= 4_000L, "kerosene burn value out of range: " + burnValue);
+        FT_Combustible trait = FluidType.getTrait(ModFluids.KEROSENE.getSource(), FT_Combustible.class);
+        check(trait != null && trait.getGrade() == FT_Combustible.FuelGrade.AERO, "kerosene must be AERO grade");
+        long burnValue = trait.getCombustionEnergy() / 1_000L;
+        // Керосин = расчётное топливо (оригинал ~3 850 000 HE/ведро): проверяем масштаб.
+        check(burnValue >= 3_000L && burnValue <= 4_000L, "kerosene burn value out of range: " + burnValue);
 
-            MachineTurbofanBlockEntity.tick(helper.getLevel(), be.getBlockPos(), be.getBlockState(), be);
-            // Один тик сжигает 1 + afterburner mB: без форсажа - 1 mB -> burnValue HE.
-            check(be.getEnergyStored() == burnValue, "one tick must burn 1 mB, got " + be.getEnergyStored());
-            check(be.getTank().getFill() == 19, "fuel must be drained 1:1");
-            check(be.wasOn(), "machine must be on");
-            helper.succeed();
-        });
+        MachineTurbofanBlockEntity.tick(helper.getLevel(), be.getBlockPos(), be.getBlockState(), be);
+        // Один тик сжигает 1 + afterburner mB: без форсажа - 1 mB -> burnValue HE.
+        check(be.getEnergyStored() == burnValue, "one tick must burn 1 mB, got " + be.getEnergyStored());
+        check(be.getTank().getFill() == 19, "fuel must be drained 1:1");
+        check(be.wasOn(), "machine must be on");
+        helper.succeed();
     }
 
     @GameTest(template = "empty3x3x3", batch = "turbofan", timeoutTicks = 100)
     public static void rejectsNonAeroFuel(GameTestHelper helper) {
-        helper.runAfterDelay(2, () -> {
-            MachineTurbofanBlockEntity be = makeBe(helper);
-            be.getTank().setTankType(ModFluids.DIESEL.getSource());
-            be.getTank().fillMb(ModFluids.DIESEL.getSource(), 20);
+        MachineTurbofanBlockEntity be = makeBe(helper);
+        be.getTank().setTankType(ModFluids.DIESEL.getSource());
+        be.getTank().fillMb(ModFluids.DIESEL.getSource(), 20);
 
-            MachineTurbofanBlockEntity.tick(helper.getLevel(), be.getBlockPos(), be.getBlockState(), be);
-            check(be.getEnergyStored() == 0L, "non-AERO fuel must not burn");
-            check(be.getTank().getFill() == 20, "non-AERO fuel must not be consumed");
-            helper.succeed();
-        });
+        MachineTurbofanBlockEntity.tick(helper.getLevel(), be.getBlockPos(), be.getBlockState(), be);
+        check(be.getEnergyStored() == 0L, "non-AERO fuel must not burn");
+        check(be.getTank().getFill() == 20, "non-AERO fuel must not be consumed");
+        helper.succeed();
     }
 
     @GameTest(template = "empty3x3x3", batch = "turbofan", timeoutTicks = 100)
     public static void flamePonyMultiplier(GameTestHelper helper) {
-        helper.runAfterDelay(2, () -> {
-            MachineTurbofanBlockEntity be = makeBe(helper);
-            be.getInventory().setStackInSlot(MachineTurbofanBlockEntity.SLOT_UPGRADE,
-                    new ItemStack(ModItems.FLAME_PONY.get()));
-            be.getTank().fillMb(ModFluids.KEROSENE.getSource(), 200);
+        MachineTurbofanBlockEntity be = makeBe(helper);
+        be.getInventory().setStackInSlot(MachineTurbofanBlockEntity.SLOT_UPGRADE,
+                new ItemStack(ModItems.FLAME_PONY.get()));
+        be.getTank().fillMb(ModFluids.KEROSENE.getSource(), 200);
 
-            FT_Combustible trait = FluidType.getTrait(ModFluids.KEROSENE.getSource(), FT_Combustible.class);
-            long burnValue = trait.getCombustionEnergy() / 1_000L;
+        FT_Combustible trait = FluidType.getTrait(ModFluids.KEROSENE.getSource(), FT_Combustible.class);
+        long burnValue = trait.getCombustionEnergy() / 1_000L;
 
-            MachineTurbofanBlockEntity.tick(helper.getLevel(), be.getBlockPos(), be.getBlockState(), be);
-            // Оригинал: выход выше maxPower зажимается буфером.
-            long expected = Math.min((long) (burnValue * 101 * (1 + Math.min(100 / 3D, 4))), 1_000_000L);
-            check(be.getEnergyStored() == expected, "flame pony output mismatch: " + be.getEnergyStored() + " vs " + expected);
-            check(be.getAfterburner() == 100, "flame pony must set afterburner to 100");
-            helper.succeed();
-        });
+        MachineTurbofanBlockEntity.tick(helper.getLevel(), be.getBlockPos(), be.getBlockState(), be);
+        // Оригинал: выход выше maxPower зажимается буфером.
+        long expected = Math.min((long) (burnValue * 101 * (1 + Math.min(100 / 3D, 4))), 1_000_000L);
+        check(be.getEnergyStored() == expected, "flame pony output mismatch: " + be.getEnergyStored() + " vs " + expected);
+        check(be.getAfterburner() == 100, "flame pony must set afterburner to 100");
+        helper.succeed();
     }
 
-    @GameTest(template = "empty3x3x3", batch = "turbofan", timeoutTicks = 100)
+    @GameTest(template = "empty5x5x5", batch = "turbofan", timeoutTicks = 100)
     public static void redstoneBlocksBurn(GameTestHelper helper) {
-        helper.runAfterDelay(2, () -> {
-            MachineTurbofanBlockEntity be = makeBe(helper);
-            be.getTank().fillMb(ModFluids.KEROSENE.getSource(), 20);
+        BlockPos pos = helper.absolutePos(new BlockPos(2, 1, 3));
+        BlockState state = com.hbm_m.block.ModBlocks.TURBOFAN.get().defaultBlockState();
+        MachineTurbofanBlockEntity be = new MachineTurbofanBlockEntity(pos, state);
+        be.setLevel(helper.getLevel());
+        be.getTank().fillMb(ModFluids.KEROSENE.getSource(), 20);
 
-            // Красный камень у внешней клетки порта (передний ряд, колонка центра сетки).
-            var level = helper.getLevel();
-            level.setBlock(be.getBlockPos().relative(Direction.NORTH, 2), Blocks.REDSTONE_BLOCK.defaultBlockState(), 3);
+        // Красный камень у внешней клетки порта (внутри арены 5x5x5, чтобы не задеть CommandBlock теста).
+        var level = helper.getLevel();
+        level.setBlock(be.getBlockPos().relative(Direction.NORTH, 2), Blocks.REDSTONE_BLOCK.defaultBlockState(), 3);
 
-            MachineTurbofanBlockEntity.tick(helper.getLevel(), be.getBlockPos(), be.getBlockState(), be);
-            check(be.getEnergyStored() == 0L, "redstone at a port must stop the burn");
-            helper.succeed();
-        });
+        MachineTurbofanBlockEntity.tick(helper.getLevel(), be.getBlockPos(), be.getBlockState(), be);
+        check(be.getEnergyStored() == 0L, "redstone at a port must stop the burn");
+        helper.succeed();
     }
 
 }

@@ -196,7 +196,13 @@ public class FluidTank implements Cloneable {
             Fluid configured = getConfiguredFluid();
             if (configured != Fluids.EMPTY && configured != ModFluids.NONE.getSource()) target = configured;
         }
+        int before = getFluidAmountMb();
         setFluid(target, Mth.clamp(amount, 0, capacity));
+        // Forge-шаблонный backend.setFluid НЕ вызывает onContentsChanged (в отличие от fill/drain).
+        // Loader-путь бочек (FluidLoaderRegistry/FluidLoaderFillableItem) мутирует бак только через
+        // setFill — без этого хука BE-флаги вида tanksDirty не ставятся и клиент-синк не уходит.
+        // NBT-чтение идёт через backend.readNBT/setFluid напрямую и этот хук не задевает.
+        if (getFluidAmountMb() != before) onContentsChanged();
     }
     public void fill(int amount) { setFill(amount); }
 

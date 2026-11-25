@@ -49,12 +49,10 @@ public class NukeSoliniumMenu extends AbstractContainerMenu {
                 ? this.be
                 : new ModItemStackHandlerContainer(new ModItemStackHandler.Dummy(NukeSoliniumBlockEntity.SLOTS), () -> {});
 
+        // 1:1 legacy ContainerNukeSolinium (ориг. строки 19-27): простые Slot — любой предмет
+        // можно положить в любой слот; корректность набора проверяет только isReady().
         for (int slot = 0; slot < NukeSoliniumBlockEntity.SLOTS; slot++) {
-            final int index = slot;
-            addSlot(new Slot(container, index, SLOT_POS[index][0], SLOT_POS[index][1]) {
-                @Override
-                public boolean mayPlace(ItemStack stack) { return be != null && be.canPlaceItem(index, stack); }
-            });
+            addSlot(new Slot(container, slot, SLOT_POS[slot][0], SLOT_POS[slot][1]));
         }
 
         for (int y = 0; y < 3; y++) {
@@ -75,6 +73,29 @@ public class NukeSoliniumMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
+        // 1:1 legacy ContainerNukeSolinium.transferStackInSlot (ориг. строки 44-74):
+        // shift-click переносит только из слотов бомбы в инвентарь игрока;
+        // из инвентаря в бомбу — запрещено (ориг. return null).
+        Slot slot = this.slots.get(index);
+        if (slot != null && slot.hasItem()) {
+            ItemStack stackInSlot = slot.getItem();
+            ItemStack copy = stackInSlot.copy();
+
+            if (index < NukeSoliniumBlockEntity.SLOTS) {
+                if (!this.moveItemStackTo(stackInSlot, NukeSoliniumBlockEntity.SLOTS, this.slots.size(), true)) {
+                    return ItemStack.EMPTY;
+                }
+            } else {
+                return ItemStack.EMPTY;
+            }
+
+            if (stackInSlot.isEmpty()) {
+                slot.set(ItemStack.EMPTY);
+            } else {
+                slot.setChanged();
+            }
+            return copy;
+        }
         return ItemStack.EMPTY;
     }
 }

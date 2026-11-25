@@ -1,0 +1,106 @@
+{
+  "textures": {
+    "particle": "hbm_m:block/ported/launch_table"
+  },
+  "loader": "forge:composite",
+  "children": {
+    "base": {
+      "loader": "hbm_m:nmesh_obj",
+      "model": "hbm_m:models/launch_table/launch_table_base.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:models/missile_parts/launch_table"
+      }
+    },
+    "small_pad": {
+      "loader": "hbm_m:nmesh_obj",
+      "model": "hbm_m:models/launch_table/launch_table_small_pad.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:models/missile_parts/launch_table_small_pad"
+      }
+    },
+    "scaffold_0": {
+      "loader": "hbm_m:nmesh_obj",
+      "model": "hbm_m:models/launch_table/launch_table_small_scaffold_base.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:models/missile_parts/launch_table_small_scaffold_base"
+      },
+      "transform": { "translation": [0, 1, 2.5] }
+    },
+    "scaffold_1": {
+      "loader": "hbm_m:nmesh_obj",
+      "model": "hbm_m:models/launch_table/launch_table_small_scaffold_base.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:models/missile_parts/launch_table_small_scaffold_base"
+      },
+      "transform": { "translation": [0, 2, 2.5] }
+    },
+    "scaffold_2": {
+      "loader": "hbm_m:nmesh_obj",
+      "model": "hbm_m:models/launch_table/launch_table_small_scaffold_base.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:models/missile_parts/launch_table_small_scaffold_base"
+      },
+      "transform": { "translation": [0, 3, 2.5] }
+    },
+    "scaffold_3": {
+      "loader": "hbm_m:nmesh_obj",
+      "model": "hbm_m:models/launch_table/launch_table_small_scaffold_base.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:models/missile_parts/launch_table_small_scaffold_base"
+      },
+      "transform": { "translation": [0, 4, 2.5] }
+    },
+    "scaffold_4": {
+      "loader": "hbm_m:nmesh_obj",
+      "model": "hbm_m:models/launch_table/launch_table_small_scaffold_base.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:models/missile_parts/launch_table_small_scaffold_base"
+      },
+      "transform": { "translation": [0, 5, 2.5] }
+    },
+    "scaffold_5": {
+      "loader": "hbm_m:nmesh_obj",
+      "model": "hbm_m:models/launch_table/launch_table_small_scaffold_base.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:models/missile_parts/launch_table_small_scaffold_base"
+      },
+      "transform": { "translation": [0, 6, 2.5] }
+    },
+    "scaffold_6": {
+      "loader": "hbm_m:nmesh_obj",
+      "model": "hbm_m:models/launch_table/launch_table_small_scaffold_connector.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:models/missile_parts/launch_table_small_scaffold_connector"
+      },
+      "transform": { "translation": [0, 7, 2.5] }
+    },
+    "scaffold_7": {
+      "loader": "hbm_m:nmesh_obj",
+      "model": "hbm_m:models/launch_table/launch_table_small_scaffold_empty.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:models/missile_parts/launch_table_small_scaffold_base"
+      },
+      "transform": { "translation": [0, 8, 2.5] }
+    }
+  }
+}

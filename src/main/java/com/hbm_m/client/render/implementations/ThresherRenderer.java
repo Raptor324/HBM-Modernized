@@ -19,7 +19,7 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class ThresherRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineThresherBlockEntity> {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/thresher.obj"));
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/thresher.obj"));
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/thresher.png");
 
     public ThresherRenderer(BlockEntityRendererProvider.Context ctx) { }

@@ -4,7 +4,128 @@
   "model": "hbm_m:models/item/dud_salted_item.obj",
   "flip_v": true,
   "textures": {
-    "texture": "hbm_m:block/bomb/dud_salted_model",
-    "particle": "hbm_m:block/bomb/dud_salted_model"
+    "texture": "hbm_m:block/dud_salted",
+    "particle": "hbm_m:block/dud_salted"
+  },
+  "display": {
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        90
+      ],
+      "translation": [
+        -0.0,
+        0.138,
+        1.234
+      ],
+      "scale": [
+        0.730469,
+        0.730469,
+        0.730469
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.28125,
+        0.28125,
+        0.28125
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.3,
+        0.3,
+        0.3
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.1875,
+        0.1875,
+        0.1875
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.1875,
+        0.1875,
+        0.1875
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.1875,
+        0.1875,
+        0.1875
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.1875,
+        0.1875,
+        0.1875
+      ]
+    }
   }
 }

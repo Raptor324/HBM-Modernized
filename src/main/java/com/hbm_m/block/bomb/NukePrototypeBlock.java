@@ -7,6 +7,9 @@ import com.hbm_m.blockentity.bomb.NukePrototypeBlockEntity;
 import com.hbm_m.explosion.command.ExplosionCommandOptions;
 import com.hbm_m.explosion.command.NuclearScenarioLaunchers;
 import com.hbm_m.interfaces.IDetonatable;
+import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
@@ -36,21 +39,43 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class NukePrototypeBlock extends BaseEntityBlock implements IBomb, IDetonatable {
+public class NukePrototypeBlock extends BaseEntityBlock implements IMultiblockController, IBomb, IDetonatable {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    private final MultiblockStructureHelper structureHelper;
 
     public NukePrototypeBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.structureHelper = NukeBaseBlock.createBombStructure(new String[] { "XXXCXXX" });
+    }
+
+    @Override
+    public MultiblockStructureHelper getStructureHelper() {
+        return structureHelper;
+    }
+
+    @Override
+    public PartRole getPartRole(BlockPos localOffset) {
+        return structureHelper.resolvePartRole(localOffset, this);
     }
 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
-        if (!level.isClientSide && level.hasNeighborSignal(pos)) {
+        if (!level.isClientSide && !state.is(oldState.getBlock())) {
+            if (placeMultiblockStructure(level, pos, state) == null) {
+                return;
+            }
+        }
+        if (level.hasNeighborSignal(pos)) {
             explode(level, pos);
         }
+    }
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override
@@ -68,6 +93,7 @@ public class NukePrototypeBlock extends BaseEntityBlock implements IBomb, IDeton
                 if (be instanceof NukePrototypeBlockEntity nukeBe) {
                     Containers.dropContents(level, pos, nukeBe);
                 }
+                structureHelper.destroyStructure(level, pos, state.getValue(FACING));
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
@@ -119,13 +145,16 @@ public class NukePrototypeBlock extends BaseEntityBlock implements IBomb, IDeton
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof NukePrototypeBlockEntity nukeBe)) return InteractionResult.PASS;
 
-        // right-click with igniter item triggers detonation
+        // Original NukePrototype.onBlockActivated (NukePrototype.java:94-115): sneaking falls
+        // through to "return false" — no GUI, no detonation.
+        if (player.isCrouching()) return InteractionResult.PASS;
+
+        // right-click with igniter item triggers detonation; the original returns true even when
+        // the bomb is not ready (NukePrototype.java:97-105)
         var heldItem = player.getItemInHand(hand).getItem();
-        if (!player.isCrouching() && heldItem == com.hbm_m.item.ModItems.IGNITER.get()) {
-            BombReturnCode result = explode(level, pos);
-            return result == BombReturnCode.DETONATED
-                    ? InteractionResult.SUCCESS
-                    : InteractionResult.FAIL;
+        if (heldItem == com.hbm_m.item.ModItems.IGNITER.get()) {
+            explode(level, pos);
+            return InteractionResult.SUCCESS;
         }
 
         // otherwise open GUI
@@ -137,6 +166,9 @@ public class NukePrototypeBlock extends BaseEntityBlock implements IBomb, IDeton
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        if (structureHelper != null) {
+            return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        }
         return Shapes.block();
     }
 

@@ -1,6 +1,5 @@
 package com.hbm_m.item.tool;
 
-import com.hbm_m.client.overlay.OverlayInfoToast;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -40,7 +39,7 @@ public class RangefinderItem extends Item {
                 String msg = ((int) (dist * 10D)) / 10D + "m";
                 boolean polarized = stack.getDamageValue() == META_POLARIZED;
                 int rgb = polarized ? 0xFF55FF : 0xFFFFFF;
-                OverlayInfoToast.show(Component.literal(msg), TOAST_TICKS, OverlayInfoToast.ID_DETONATOR, rgb);
+                com.hbm_m.client.ClientAccess.showInfoToast(Component.literal(msg), TOAST_TICKS, com.hbm_m.network.InfoToastPacket.ID_DETONATOR, rgb);
             }
         }
 

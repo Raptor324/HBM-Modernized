@@ -61,8 +61,16 @@ public abstract class RadioTorchBaseBlockEntity extends com.hbm_m.blockentity.Ba
     public void receiveControl(CompoundTag data) {
         if (data.contains("polling")) polling = data.getBoolean("polling");
         if (data.contains("customMap")) customMap = data.getBoolean("customMap");
-        if (data.contains("channel")) channel = data.getString("channel");
-        for (int i = 0; i < 16; i++) if (data.contains("mapping" + i)) mapping[i] = data.getString("mapping" + i);
+        if (data.contains("channel")) {
+            String ch = data.getString("channel");
+            channel = ch.length() > 64 ? ch.substring(0, 64) : ch;
+        }
+        for (int i = 0; i < 16; i++) {
+            if (data.contains("mapping" + i)) {
+                String m = data.getString("mapping" + i);
+                mapping[i] = m.length() > 64 ? m.substring(0, 64) : m;
+            }
+        }
         setChanged();
         syncToClient();
     }

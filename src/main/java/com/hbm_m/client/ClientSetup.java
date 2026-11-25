@@ -42,6 +42,7 @@ import com.hbm_m.client.render.effect.RenderCloudFleija;
 import com.hbm_m.client.render.effect.RenderFallout;
 import com.hbm_m.client.render.effect.RubbleEntityRenderer;
 import com.hbm_m.client.render.implementations.AirBombProjectileEntityRenderer;
+import com.hbm_m.client.render.implementations.MachinePrecAssRenderer;
 import com.hbm_m.client.render.implementations.ZirnoxDebrisRenderer;
 import com.hbm_m.client.render.implementations.AirNukeBombProjectileEntityRenderer;
 import com.hbm_m.client.render.implementations.AirstrikeEntityRenderer;
@@ -153,7 +154,6 @@ import com.hbm_m.inventory.gui.GUIMachineSilex;
 import com.hbm_m.inventory.gui.GUIMachineSolderingStation;
 import com.hbm_m.inventory.gui.GUIMachineSubstation;
 import com.hbm_m.inventory.gui.GUIMachineSteamTurbine;
-import com.hbm_m.inventory.gui.GUIMachineTurbine;
 import com.hbm_m.inventory.gui.GUIMachineZirnox;
 import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
 import com.hbm_m.inventory.gui.GUIMachineChemicalFactory;
@@ -182,7 +182,6 @@ import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.powerarmor.PowerArmorSounds;
 import com.hbm_m.powerarmor.PowerArmorStepSoundHandler;
-import com.hbm_m.powerarmor.layer.AbstractObjArmorLayer;
 import com.hbm_m.powerarmor.layer.ModModelLayers;
 import com.hbm_m.powerarmor.layer.PowerArmorEmptyModel;
 import com.hbm_m.powerarmor.overlay.HbmThermalHandler;
@@ -261,6 +260,7 @@ public class ClientSetup {
      * и применяют их на соответствующем событии лоадера на обеих платформах.
      */
     public static void registerCommonClientContent() {
+        OptiFineDetector.abortIfOptiFinePresent();
         // Датаген запускается в client-dist БЕЗ окна (Env/Dist не различает!): Architectury
         // ColorHandlerRegistry сразу тянет Minecraft.getItemColors() → NPE, на dedicated
         // server клиентские классы вообще отсутствуют → NoClassDefFoundError. На реальном
@@ -302,8 +302,7 @@ public class ClientSetup {
         com.hbm_m.client.missile.track.MissileTrackClientEvents.register();
         CameraShakeHandler.initClient();
         PowerArmorHardLandingCameraShakeClient.initClient();
-        PowerArmorSounds.register();
-        PowerArmorStepSoundHandler.initClient();
+        // Power armor step/jump/fall sounds are handled via ModArmorFSB in HbmForgeEvents/HbmNeoForgeEvents
 
         // Клиентские тикеры станков фабрики Nucleus (общий механизм без рефлексии:
         // common-BE дергает IClientTicker, рендерер кастует к конкретному классу).
@@ -312,6 +311,10 @@ public class ClientSetup {
                 com.hbm_m.blockentity.ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(),
                 be -> new com.hbm_m.client.machine.AdvancedAssemblerClientTicker(
                         (com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity) be));
+        com.hbm_m.util.ClientTickerRegistry.register(
+                com.hbm_m.blockentity.ModBlockEntities.LAUNCHPAD_SOYUZ_BE.get(),
+                be -> new com.hbm_m.client.machine.LaunchpadSoyuzClientTicker(
+                        (com.hbm_m.blockentity.machines.LaunchpadSoyuzBlockEntity) be));
         // Мост клиентских звуков: одна установка вместо рефлексии на каждый вызов
         // (все машины: циклы, дверные звуки, one-shot, танк/турбовентилятор).
         com.hbm_m.sound.ClientSoundBootstrap.install(new com.hbm_m.client.sound.ClientSoundBridge());
@@ -417,14 +420,40 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onRegisterClientExtensions(net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent event) {
-        // Только powered-комплекты (наследники ModPowerArmorItem — на Forge их расширение
-        // побеждает через override initializeClient). Обычная FSB-броня (DNT, Bismuth)
-        // регистрируется сама через ModArmorFSB.initializeClient — двойная регистрация крашит.
-        var ext = com.hbm_m.powerarmor.ModPowerArmorItem.createNeoForgeClientExtensions();
-        event.registerItem(ext,
-                ModItems.T51_HELMET.get(), ModItems.T51_CHESTPLATE.get(), ModItems.T51_LEGGINGS.get(), ModItems.T51_BOOTS.get(),
-                ModItems.AJR_HELMET.get(), ModItems.AJR_CHESTPLATE.get(), ModItems.AJR_LEGGINGS.get(), ModItems.AJR_BOOTS.get(),
-                ModItems.AJRO_HELMET.get(), ModItems.AJRO_CHESTPLATE.get(), ModItems.AJRO_LEGGINGS.get(), ModItems.AJRO_BOOTS.get());
+        com.hbm_m.client.render.armor.ArmorClientExtensions.registerAllNeoForgeExtensions(event);
+
+        registerFluidClientExtensions(event);
+    }
+
+    private static void registerFluidClientExtensions(net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent event) {
+        for (net.minecraft.world.level.material.Fluid fluid : net.minecraft.core.registries.BuiltInRegistries.FLUID) {
+            net.minecraft.resources.ResourceLocation key = net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluid);
+            if (key != null && key.getNamespace().equals(MainRegistry.MOD_ID)) {
+                try {
+                    net.neoforged.neoforge.fluids.FluidType type = fluid.getFluidType();
+                    if (type != null && !event.isFluidTypeRegistered(type)) {
+                        type.initializeClient(clientExt -> event.registerFluidType(clientExt, type));
+                        if (!event.isFluidTypeRegistered(type)) {
+                            final String name = key.getPath();
+                            final String baseName = name.endsWith("_flowing") ? name.substring(0, name.length() - 8) : name;
+                            final net.minecraft.resources.ResourceLocation still = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(key.getNamespace(), "block/fluid/" + baseName + "_still");
+                            final net.minecraft.resources.ResourceLocation flowing = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(key.getNamespace(), "block/fluid/" + baseName + "_flowing");
+                            final int tint = com.hbm_m.inventory.fluid.ModFluids.getTintColor(baseName);
+                            event.registerFluidType(new net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions() {
+                                @Override
+                                public net.minecraft.resources.ResourceLocation getStillTexture() { return still; }
+                                @Override
+                                public net.minecraft.resources.ResourceLocation getFlowingTexture() { return flowing; }
+                                @Override
+                                public int getTintColor() { return tint; }
+                            }, type);
+                        }
+                    }
+                } catch (Throwable t) {
+                    MainRegistry.LOGGER.error("Failed to register client extensions for fluid " + key, t);
+                }
+            }
+        }
     }
     *///?}
 
@@ -576,7 +605,6 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.SILEX_MENU.get(), GUIMachineSilex::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_GASCENT_MENU.get(), GUIMachineGasCent::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.INDUSTRIAL_BOILER_MENU.get(), GUIMachineIndustrialBoiler::new);
-        MenuRegistry.registerScreenFactory(ModMenuTypes.TURBINE_MENU.get(), GUIMachineTurbine::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.LARGE_TURBINE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineLargeTurbine::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.TURBINEGAS_MENU.get(), com.hbm_m.inventory.gui.GUIMachineTurbineGas::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.STEAM_TURBINE_MENU.get(), GUIMachineSteamTurbine::new);
@@ -631,6 +659,7 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.CHEMICAL_PLANT_MENU.get(), GUIMachineChemicalPlant::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.CHEMICAL_FACTORY_MENU.get(), GUIMachineChemicalFactory::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.SOYUZ_LAUNCHER_MENU.get(), com.hbm_m.inventory.gui.GUISoyuzLauncher::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.LAUNCHPAD_SOYUZ_MENU.get(), com.hbm_m.inventory.gui.GUILaunchpadSoyuz::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_SATLINKER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineSatLinker::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.FRACTURING_TOWER_MENU.get(), GUIMachineFrackingTower::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.REFINERY_MENU.get(), GUIMachineRefinery::new);
@@ -821,6 +850,7 @@ public class ClientSetup {
 
         MachineAdvancedAssemblerRenderer.register();
         MachineAssemblerRenderer.register();
+        MachinePrecAssRenderer.register();
         MachineDoorRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.PEDESTAL_BE.get(), com.hbm_m.client.render.implementations.PedestalRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.DECO_LOOT_BE.get(), com.hbm_m.client.render.implementations.DecoLootRenderer::new);
@@ -833,6 +863,7 @@ public class ClientSetup {
         MachineZirnoxDestroyedRenderer.register();
         MachineHydraulicFrackiningTowerRenderer.register();
         SoyuzLauncherRenderer.register();
+        com.hbm_m.client.render.implementations.LaunchpadSoyuzRenderer.register();
         SoyuzRocketRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.SOYUZ_CAPSULE_BE.get(), com.hbm_m.client.render.implementations.SoyuzCapsuleRenderer::new);
         HeaterRenderers.register();
@@ -897,7 +928,6 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.FAN_BE.get(), com.hbm_m.client.render.implementations.FanRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.HEPHAESTUS_BE.get(), com.hbm_m.client.render.implementations.HephaestusRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.INTAKE_BE.get(), com.hbm_m.client.render.implementations.IntakeRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.PRECASS_BE.get(), com.hbm_m.client.render.implementations.MachinePrecAssRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.MACHINE_PUMP_ELECTRIC_BE.get(), com.hbm_m.client.render.implementations.PumpRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.MACHINE_PUMP_STEAM_BE.get(), com.hbm_m.client.render.implementations.PumpRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RADGEN_BE.get(), com.hbm_m.client.render.implementations.RadGenRenderer::new);
@@ -911,20 +941,8 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.PIPE_ANCHOR_PNEUMATIC.get(), ctx -> new com.hbm_m.client.render.implementations.PipeAnchorRenderer<>(ctx, com.hbm_m.client.render.implementations.PipeAnchorRenderer.TEX_PNEUMATIC));
         BlockEntityRenderers.register(ModBlockEntities.PIPE_ANCHOR_EXHAUST.get(), ctx -> new com.hbm_m.client.render.implementations.PipeAnchorRenderer<>(ctx, com.hbm_m.client.render.implementations.PipeAnchorRenderer.TEX_EXHAUST));
         BlockEntityRenderers.register(ModBlockEntities.PISTON_INSERTER_BE.get(), com.hbm_m.client.render.implementations.PistonInserterRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.PNEUMO_TUBE_BE.get(), com.hbm_m.client.render.implementations.PneumoTubeRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.PNEUMO_TUBE_PAINTABLE_BE.get(), com.hbm_m.client.render.implementations.PneumoTubePaintableRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_ABSORBER_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_BLANK_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_BOILER_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_CONTROL_AUTO_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_CONTROL_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_COOLER_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_HEATER_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_MODERATOR_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_OUTGASSER_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_PANEL_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_REFLECTOR_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_ROD_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_STORAGE_BE.get(), com.hbm_m.client.render.implementations.RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RADIOBOX_BE.get(), com.hbm_m.client.render.implementations.RadioboxRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RAIL_SWITCH.get(), com.hbm_m.client.render.implementations.RailSwitchRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.REBAR_BE.get(), com.hbm_m.client.render.implementations.RebarRenderer::new);
@@ -1066,13 +1084,12 @@ public class ClientSetup {
             if (baked != null && !(baked instanceof com.hbm_m.client.model.ReedsBakedModel)) models.put(loc, new com.hbm_m.client.model.ReedsBakedModel(baked));
         }
         // checkTilt: gekippte Maschinen (Absenkung wie in den Originalrenderern)
-        // BIGASSTANK без wrapTilted: его multipart-модель обязана остаться
-        // ConfiguredMultipartBakedModel для биндинга спеки; наклон применяет хук
-        // в MachineTankRenderer.registerBigAssTank().
+        // BIGASSTANK и ZIRNOX без wrapTilted: их multipart-модель обязана остаться
+        // ConfiguredMultipartBakedModel для биндинга спеки; наклон применяют
+        // MachineTankRenderer.registerBigAssTank() и MachineZirnoxRenderer.
         wrapTilted(models, ModBlocks.MACHINE_BLAST_FURNACE.get(), 0.25D);
         wrapTilted(models, ModBlocks.FLARE_STACK.get(), 0.25D);
         wrapTilted(models, ModBlocks.REFINERY.get(), 0.25D);
-        wrapTilted(models, ModBlocks.ZIRNOX.get(), 0.5D);
 
         //? if forge {
         @SuppressWarnings("unchecked")
@@ -1270,15 +1287,6 @@ public class ClientSetup {
         // Weapon models (Milestone M1)
         com.hbm_m.client.render.weapon.WeaponRenderRegistry.onModelRegisterAdditional(event);
 
-        // Power armor: общие multipart-модели сетов (рендер на entity через OBJ-слои)
-        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.T51_MODEL_ID);
-        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.AJR_MODEL_ID);
-        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.AJRO_MODEL_ID);
-        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.BISMUTH_MODEL_ID);
-        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.DNT_MODEL_ID);
-        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.HAZMAT_MODEL_ID);
-        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.HAZMAT_RED_MODEL_ID);
-        LoaderHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.HAZMAT_GREY_MODEL_ID);
 
         // B92 "Star Blaster": die Icon-Modell-Datei gehoert zu keinem registrierten Item, ohne diese
         // Registrierung gibt es keinen BakedModel-Schluessel (1.20.1 "#inventory", 1.21.1 "#standalone")
@@ -1415,12 +1423,6 @@ public class ClientSetup {
         
         LoaderHooks.registerGeometryLoader(event, "soyuz_rocket_loader", new com.hbm_m.client.loader.SoyuzRocketModelLoader());
 
-        // Power armor OBJ loaders
-        LoaderHooks.registerGeometryLoader(event, "t51_armor_parts", new com.hbm_m.powerarmor.render.T51ArmorModelLoader());
-        LoaderHooks.registerGeometryLoader(event, "ajr_armor_parts", new com.hbm_m.powerarmor.render.AJRArmorModelLoader());
-        LoaderHooks.registerGeometryLoader(event, "bismuth_armor_parts", new com.hbm_m.powerarmor.render.BismuthArmorModelLoader());
-        LoaderHooks.registerGeometryLoader(event, "dnt_armor_parts", new com.hbm_m.powerarmor.render.DNTArmorModelLoader());
-        LoaderHooks.registerGeometryLoader(event, "hazmat_armor_parts", new com.hbm_m.item.hazmat.render.HazmatArmorModelLoader());
 
         MainRegistry.LOGGER.info("Registered geometry loaders successfully");
     }
@@ -1458,6 +1460,17 @@ public class ClientSetup {
             if (tintIndex == 0) return opaqueTint(0xFFFFFF);
             return opaqueTint(com.hbm_m.item.liquids.FluidIdentifierItem.getTintColor(stack));
         }, ModItems.FLUID_IDENTIFIER);
+        ColorHandlerRegistry.registerItemColors((stack, tintIndex) ->
+                tintIndex == 0 ? opaqueTint(0xA60000) : opaqueTint(0xFFFFFF),
+                ModBlocks.RBMK_KEYPAD);
+        ColorHandlerRegistry.registerItemColors((stack, tintIndex) -> {
+            int[] colors = com.hbm_m.block.machines.MachineCraneRouterBlock.SIDE_COLORS;
+            return (tintIndex >= 0 && tintIndex < colors.length) ? opaqueTint(colors[tintIndex]) : opaqueTint(0xFFFFFF);
+        }, ModBlocks.CRANE_ROUTER);
+        ColorHandlerRegistry.registerBlockColors((state, level, pos, tintIndex) -> {
+            int[] colors = com.hbm_m.block.machines.MachineCraneRouterBlock.SIDE_COLORS;
+            return (tintIndex >= 0 && tintIndex < colors.length) ? opaqueTint(colors[tintIndex]) : opaqueTint(0xFFFFFF);
+        }, ModBlocks.CRANE_ROUTER);
         // Жидкостные ёмкости (ItemFluidTank: канистры, газовые баллоны, баки, бочки, упакованные контейнеры, распылители)
         ColorHandlerRegistry.registerItemColors((stack, tintIndex) -> {
             if (tintIndex < 0) return opaqueTint(0xFFFFFF);
@@ -1633,6 +1646,8 @@ public class ClientSetup {
         EntityRendererRegistry.register(ModEntities.CLOUD_TOM, com.hbm_m.client.render.effect.TomRenderers.CloudTom::new);
         EntityRendererRegistry.register(ModEntities.CYBER_CRAB, com.hbm_m.client.render.mob.CrabRenderers.Cyber::new);
         EntityRendererRegistry.register(ModEntities.CHEMICAL, com.hbm_m.client.render.projectile.ChemicalRenderer::new);
+        EntityRendererRegistry.register(ModEntities.FREAKY_ALIEN_FACE, com.hbm_m.client.render.effect.FreakyAlienFaceRenderer::new);
+        EntityRendererRegistry.register(ModEntities.FREAKY_UFO, com.hbm_m.client.render.effect.FreakyUfoRenderer::new);
         EntityRendererRegistry.register(ModEntities.DEATH_BLAST, com.hbm_m.client.render.effect.OrbitalStrikeRenderer::deathBlast);
         EntityRendererRegistry.register(ModEntities.DUCHESS_GAMBIT, com.hbm_m.client.render.implementations.FallingProjectileRenderer::new);
         EntityRendererRegistry.register(ModEntities.DUCK, com.hbm_m.client.render.mob.DuckRenderer::new);
@@ -1690,7 +1705,7 @@ public class ClientSetup {
         EntityRendererRegistry.register(ModEntities.ACID_BOMB, net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.DISPERSER_CANISTER, net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.GRENADE_BOUNCY_GENERIC, net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
-        EntityRendererRegistry.register(ModEntities.COIN, EmptyEntityRenderer::new);
+        EntityRendererRegistry.register(ModEntities.COIN, com.hbm_m.client.render.entity.RenderCoin::new);
         EntityRendererRegistry.register(ModEntities.FIRE_LINGERING, EmptyEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.WAYPOINT, EmptyEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.TRAIN_BOUNDING_DUMMY, EmptyEntityRenderer::new);
@@ -1734,9 +1749,8 @@ public class ClientSetup {
         event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.ARMOR_LEVEL.id(), "power_armor_hud", OverlayPowerArmor.POWER_ARMOR_OVERLAY);
         event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.PORTAL.id(), "radiation_pixels", OverlayRadiationVisuals.RADIATION_PIXELS_OVERLAY);
         event.registerAboveAll("info_toast", OverlayInfoToast.OVERLAY);
-        // Оверлей маски рисуется ПОД HUD (1.7.10: GuiIngameForge рисует helmet-хов после
-        // виньетки, до прицела и хотбара — хотбар остаётся поверх мутности).
-        event.registerBelow(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.CROSSHAIR.id(), "gas_mask_overlay", com.hbm_m.client.overlay.OverlayGasMask.OVERLAY);
+        // Оверлей маски рисуется ПОД HUD (сразу после ванильного HELMET, до FROSTBITE/PORTAL/HOTBAR/CROSSHAIR).
+        event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.HELMET.id(), "gas_mask_overlay", com.hbm_m.client.overlay.OverlayGasMask.OVERLAY);
         MainRegistry.LOGGER.info("GUI overlays registered.");
     }
     //?} elif neoforge {
@@ -1776,8 +1790,8 @@ public class ClientSetup {
             }
         });
         
-        // Оверлей маски рисуется ПОД HUD (1.7.10: после виньетки, до прицела и хотбара).
-        event.registerBelow(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CROSSHAIR, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "gas_mask_overlay"), (guiGraphics, deltaTracker) -> {
+        // Оверлей маски рисуется ПОД HUD (сразу после CAMERA_OVERLAYS, до CROSSHAIR и HOTBAR).
+        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CAMERA_OVERLAYS, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "gas_mask_overlay"), (guiGraphics, deltaTracker) -> {
             Minecraft mc = Minecraft.getInstance();
             if (mc != null && mc.getWindow() != null) {
                 com.hbm_m.client.overlay.OverlayGasMask.render(guiGraphics);

@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * The glued group itself is already expanded by {@link com.hbm_m.mixin.compat.create.SuperGlueSelectionHelperMixin}.
  */
 @Pseudo
-@Mixin(targets = "com.simibubi.create.content.contraptions.glue.SuperGlueSelectionHandler")
+@Mixin(targets = "com.simibubi.create.content.contraptions.glue.SuperGlueSelectionHandler", remap = false)
 public abstract class SuperGlueSelectionOutlineMixin {
 
     @Shadow

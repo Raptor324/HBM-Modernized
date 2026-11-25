@@ -241,7 +241,7 @@ public class ModArmorFSB extends ArmorItem implements com.hbm_m.item.ITooltipPro
             ItemStack plate = player.getItemBySlot(EquipmentSlot.CHEST);
             ModArmorFSB chestplate = (ModArmorFSB) plate.getItem();
 
-            if (!chestplate.effects.isEmpty()) {
+            if (!player.level().isClientSide && !chestplate.effects.isEmpty()) {
                 for (MobEffectInstance i : chestplate.effects) {
                     player.addEffect(new MobEffectInstance(i.getEffect(), i.getDuration(), i.getAmplifier(), true, true));
                 }
@@ -288,7 +288,7 @@ public class ModArmorFSB extends ArmorItem implements com.hbm_m.item.ITooltipPro
         if (ModArmorFSB.hasFSBArmor(player)) {
             ModArmorFSB chestplate = (ModArmorFSB) player.getItemBySlot(EquipmentSlot.CHEST).getItem();
 
-            if (chestplate.hardLanding && player.fallDistance > 10) {
+            if (!player.level().isClientSide && chestplate.hardLanding && player.fallDistance > 10) {
 
                 List<Entity> entities = player.level().getEntities(player, player.getBoundingBox().inflate(3, 0, 3));
 
@@ -322,6 +322,7 @@ public class ModArmorFSB extends ArmorItem implements com.hbm_m.item.ITooltipPro
 
     /** Original onArmorTick: Geigerzaehler-Klang der Brustplatte. */
     protected void geigerTick(Level world, Player entity) {
+        if (world.isClientSide) return;
         if (this.getType() != Type.CHESTPLATE) return;
         if (!hasFSBArmor(entity) || !this.hasGeigerSound) return;
         if (entity.getInventory().hasAnyOf(Set.of(ModItems.GEIGER_COUNTER.get(), ModItems.DOSIMETER.get()))) return;
@@ -400,53 +401,31 @@ public class ModArmorFSB extends ArmorItem implements com.hbm_m.item.ITooltipPro
 
     //? if forge {
     @Override
-@SuppressWarnings("removal")
+    @SuppressWarnings("removal")
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+        if (isObjArmor()) {
+            com.hbm_m.client.render.armor.ArmorClientExtensions.acceptForge3dArmor(
+                    consumer, ModArmorFSB.this::renderHelmetOverlay);
+            return;
+        }
         consumer.accept(new IClientItemExtensions() {
-            private com.hbm_m.powerarmor.layer.PowerArmorEmptyModel model;
-
             @Override
             public void renderHelmetOverlay(ItemStack stack, Player player, int width, int height, float partialTick) {
                 ModArmorFSB.this.renderHelmetOverlay(stack, player, width, height, partialTick);
-            }
-
-            @Override
-            public net.minecraft.client.model.HumanoidModel<?> getHumanoidArmorModel(LivingEntity living, ItemStack stack,
-                    EquipmentSlot slot, net.minecraft.client.model.HumanoidModel<?> original) {
-                if (!isObjArmor()) return IClientItemExtensions.super.getHumanoidArmorModel(living, stack, slot, original);
-                if (this.model == null) {
-                    this.model = new com.hbm_m.powerarmor.layer.PowerArmorEmptyModel(net.minecraft.client.Minecraft.getInstance()
-                            .getEntityModels().bakeLayer(com.hbm_m.powerarmor.layer.ModModelLayers.POWER_ARMOR));
-                }
-                return com.hbm_m.powerarmor.layer.PowerArmorEmptyModel.prepare(this.model, slot, original);
             }
         });
     }
     //?} elif neoforge {
     /*@Override
-@SuppressWarnings("removal")
+    @SuppressWarnings("removal")
     public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
-        // Powered-броня (ModPowerArmorItem) на NeoForge регистрирует свои расширения через
-        // RegisterClientExtensionsEvent (ClientSetup.onRegisterClientExtensions) — вторая
-        // регистрация на тот же предмет роняет клиент (Duplicate client extensions).
-        if (this instanceof ModPowerArmorItem) return;
+        // 3D OBJ/powered sets register their client extensions via RegisterClientExtensionsEvent in
+        // ClientSetup.onRegisterClientExtensions — double registration crashes NeoForge.
+        if (this instanceof ModPowerArmorItem || isObjArmor()) return;
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
-            private com.hbm_m.powerarmor.layer.PowerArmorEmptyModel model;
-
             @Override
             public void renderHelmetOverlay(ItemStack stack, Player player, net.minecraft.client.gui.GuiGraphics gui, net.minecraft.client.DeltaTracker delta) {
                 ModArmorFSB.this.renderHelmetOverlay(stack, player, gui.guiWidth(), gui.guiHeight(), delta.getGameTimeDeltaPartialTick(true));
-            }
-
-            @Override
-            public net.minecraft.client.model.HumanoidModel<?> getHumanoidArmorModel(LivingEntity living, ItemStack stack,
-                    EquipmentSlot slot, net.minecraft.client.model.HumanoidModel<?> original) {
-                if (!isObjArmor()) return net.neoforged.neoforge.client.extensions.common.IClientItemExtensions.super.getHumanoidArmorModel(living, stack, slot, original);
-                if (this.model == null) {
-                    this.model = new com.hbm_m.powerarmor.layer.PowerArmorEmptyModel(net.minecraft.client.Minecraft.getInstance()
-                            .getEntityModels().bakeLayer(com.hbm_m.powerarmor.layer.ModModelLayers.POWER_ARMOR));
-                }
-                return com.hbm_m.powerarmor.layer.PowerArmorEmptyModel.prepare(this.model, slot, original);
             }
         });
     }

@@ -67,6 +67,11 @@ public final class OrchestrasClient {
 
 	/** Client-Teil von {@code ORCHESTRA_FLAMER} */
 	public static void flamer(LivingEntity entity, GunAnimation type, int timer) {
+		if (com.hbm_m.api.weapon.ExternalGunCommonBridge.get().shouldSuppressNativeSound(entity.getMainHandItem())) {
+			LoopSound runningAudio = loopedSounds.get(entity);
+			if (runningAudio != null && runningAudio.isPlaying()) runningAudio.stopSound();
+			return;
+		}
 		if(type == GunAnimation.CYCLE) {
 			LoopSound runningAudio = loopedSounds.get(entity);
 
@@ -97,6 +102,10 @@ public final class OrchestrasClient {
 	/** Client-Teil von {@code ORCHESTRA_STINGER} */
 	public static void stinger(ItemStack stack, LivingEntity entity) {
 		LoopSound runningAudio = loopedSounds.get(entity);
+		if (com.hbm_m.api.weapon.ExternalGunCommonBridge.get().shouldSuppressNativeSound(stack)) {
+			if (runningAudio != null && runningAudio.isPlaying()) runningAudio.stopSound();
+			return;
+		}
 		if(com.hbm_m.item.weapon.sedna.impl.ItemGunStinger.getLockonProgress(stack) > 0 && !ItemGunBaseNT.getIsLockedOn(stack)) {
 			//start sound
 			if(runningAudio == null || !runningAudio.isPlaying()) {
@@ -117,6 +126,11 @@ public final class OrchestrasClient {
 
 	/** Client-Teil von {@code ORCHESTRA_CHEMTHROWER} */
 	public static void chemthrower(LivingEntity entity, GunAnimation type, int timer) {
+		if (com.hbm_m.api.weapon.ExternalGunCommonBridge.get().shouldSuppressNativeSound(entity.getMainHandItem())) {
+			LoopSound runningAudio = loopedSounds.get(entity);
+			if (runningAudio != null && runningAudio.isPlaying()) runningAudio.stopSound();
+			return;
+		}
 		if(type == GunAnimation.CYCLE) {
 			LoopSound runningAudio = loopedSounds.get(entity);
 
@@ -147,6 +161,11 @@ public final class OrchestrasClient {
 
 	/** Client-Teil von {@code ORCHESTRA_TAU} */
 	public static void tau(LivingEntity entity, GunAnimation type, int timer) {
+		if (com.hbm_m.api.weapon.ExternalGunCommonBridge.get().shouldSuppressNativeSound(entity.getMainHandItem())) {
+			LoopSound runningAudio = loopedSounds.get(entity);
+			if (runningAudio != null && runningAudio.isPlaying()) runningAudio.stopSound();
+			return;
+		}
 		if(type == GunAnimation.SPINUP) {
 			LoopSound runningAudio = loopedSounds.get(entity);
 
@@ -176,6 +195,11 @@ public final class OrchestrasClient {
 
 	/** Client-Teil von {@code ORCHESTRA_DRILL} */
 	public static void drill(ItemStack stack, int configIndex, LivingEntity entity, GunAnimation type) {
+		if (com.hbm_m.api.weapon.ExternalGunCommonBridge.get().shouldSuppressNativeSound(stack)) {
+			LoopSound runningAudio = loopedSounds.get(entity);
+			if (runningAudio != null && runningAudio.isPlaying()) runningAudio.stopSound();
+			return;
+		}
 		double speed = HbmAnimations.getRelevantTransformation("SPEED")[0];
 
 		LoopSound runningAudio = loopedSounds.get(entity);

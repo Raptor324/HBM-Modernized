@@ -71,9 +71,26 @@ public class VolcanoBlock extends BaseEntityBlock {
     }
 
     public static int modeOf(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return 0;
+        //? if >= 1.21.1 {
+        /*net.minecraft.world.item.component.BlockItemStateProperties bs = stack.get(net.minecraft.core.component.DataComponents.BLOCK_STATE);
+        if (bs != null) {
+            String m = bs.properties().get("mode");
+            if (m != null) {
+                try { return Integer.parseInt(m); } catch (NumberFormatException ignored) {}
+            }
+        }
+        *///?}
         CompoundTag t = StackNbt.tag(stack);
         if (t == null || !t.contains("BlockStateTag")) return 0;
         try { return Integer.parseInt(t.getCompound("BlockStateTag").getString("mode")); } catch (NumberFormatException e) { return 0; }
+    }
+
+    @Nullable
+    @Override
+    public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext context) {
+        int mode = modeOf(context.getItemInHand());
+        return defaultBlockState().setValue(MODE, mode);
     }
 
     @Override
@@ -84,11 +101,11 @@ public class VolcanoBlock extends BaseEntityBlock {
     *///?}
         int meta = modeOf(stack);
         if (meta == META_SMOLDERING) {
-            list.add(Component.literal("SHIELD VOLCANO").withStyle(ChatFormatting.GOLD));
+            list.add(Component.translatable("tooltip.hbm_m.volcano.shield").withStyle(ChatFormatting.GOLD));
             return;
         }
-        list.add(isGrowing(meta) ? Component.literal("DOES GROW").withStyle(ChatFormatting.RED) : Component.literal("DOES NOT GROW").withStyle(ChatFormatting.DARK_GRAY));
-        list.add(isExtinguishing(meta) ? Component.literal("DOES EXTINGUISH").withStyle(ChatFormatting.RED) : Component.literal("DOES NOT EXTINGUISH").withStyle(ChatFormatting.DARK_GRAY));
+        list.add(isGrowing(meta) ? Component.translatable("tooltip.hbm_m.volcano.grow").withStyle(ChatFormatting.RED) : Component.translatable("tooltip.hbm_m.volcano.no_grow").withStyle(ChatFormatting.DARK_GRAY));
+        list.add(isExtinguishing(meta) ? Component.translatable("tooltip.hbm_m.volcano.extinguish").withStyle(ChatFormatting.RED) : Component.translatable("tooltip.hbm_m.volcano.no_extinguish").withStyle(ChatFormatting.DARK_GRAY));
     }
 
     @Override

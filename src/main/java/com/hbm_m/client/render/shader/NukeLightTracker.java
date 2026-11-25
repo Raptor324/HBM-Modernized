@@ -1,31 +1,33 @@
 package com.hbm_m.client.render.shader;
 
+import com.hbm_m.client.ClientWorldFreeze;
+import com.hbm_m.client.render.IrisShadowBatchCollector;
 import com.hbm_m.particle.nt.ParticleEngineNT;
+import com.hbm_m.platform.RenderHooks;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 
 /**
  * Tracks nuclear explosion sources and calculates continuous explosion physics.
  * Decouples explosion particle tracking and physics simulation from OpenGL rendering.
  *
- * <p>Implements continuous nanosecond timer tracking ({@link System#nanoTime()}),
- * bridging discrete 20 TPS server ticks into fluid rendering without frame-time
- * stepping. Computes Sedov-Taylor shockwave expansion, dynamic fireball ascent,
- * and continuous heat curves.</p>
+ * <p>Computes continuous explosion age directly from each {@code NukeTorex}'s tick age
+ * plus the render frame's {@code partialTick} (frozen cleanly when the world is paused
+ * or tick-frozen via {@link ClientWorldFreeze#isWorldFrozen()}). Computes Sedov-Taylor
+ * shockwave expansion, dynamic fireball ascent, and continuous heat curves.</p>
  */
 public final class NukeLightTracker {
 
     private NukeLightTracker() {}
 
-    /** Maximum simultaneous explosion light sources. */
-    public static final int MAX_SOURCES = 4;
+    /** Maximum simultaneous explosion light sources (must match screen_space_light.fsh arrays). */
+    public static final int MAX_SOURCES = 8;
 
     /** Unit light radius, blocks: per-source radius = R_UNIT * scale * radiusScale. */
     public static final float R_UNIT = 768.0F;
 
     /** Heat scale normalization constant. */
     public static final float HEAT_SCALE = 50.0F;
-
-    /** Actual maximum heat of NukeTorex (used to estimate age from rawHeat). */
-    public static final float NUKE_TOREX_MAX_HEAT = 75.0F;
 
     /** Base vertical lift for the light source, blocks. */
     public static final float LIGHT_SOURCE_LIFT = 42.0F;
@@ -35,6 +37,12 @@ public final class NukeLightTracker {
 
     /** Mushroom cloud scales of sources (NukeTorex.getScale). */
     private static final float[] srcScale = new float[MAX_SOURCES];
+
+    /** Per-source tick ages (NukeTorex.age). */
+    private static final int[] srcAgeTicks = new int[MAX_SOURCES];
+
+    /** Per-source maximum tick ages (NukeTorex.getMaxAge). */
+    private static final int[] srcMaxAgeTicks = new int[MAX_SOURCES];
 
     /** Per-source light radius. */
     private static final float[] srcRadius = new float[MAX_SOURCES];
@@ -47,13 +55,8 @@ public final class NukeLightTracker {
 
     private static int sourceCount;
     private static float timeSeconds;
-    private static final long trackerStartNanos = System.nanoTime();
-
-    // Continuous nanosecond timer tracking
-    private static final float[] trackedX = new float[MAX_SOURCES];
-    private static final float[] trackedZ = new float[MAX_SOURCES];
-    private static final long[] trackedBirthNanos = new long[MAX_SOURCES];
-    private static final boolean[] trackedAlive = new boolean[MAX_SOURCES];
+    private static float lastUnfrozenPartialTick;
+    private static long lastCollectedRenderFrame = -1L;
 
     public static float radiusScale() {
         return com.hbm_m.config.ModClothConfig.get().graphicEffects.nukeLightRadiusScale;
@@ -61,81 +64,59 @@ public final class NukeLightTracker {
 
     /**
      * Collects live nuclear explosion sources from {@link ParticleEngineNT} and
-     * performs continuous nanosecond age and shockwave tracking.
+     * computes continuous tick-interpolated age and shockwave parameters.
+     * Memoized per {@link IrisShadowBatchCollector#renderFrame()} so multiple
+     * passes in the same frame do not rescan particles or recompute curves.
      *
      * @return count of active explosion sources
      */
     public static int collectAndTrackSources() {
-        sourceCount = ParticleEngineNT.INSTANCE.collectNukeSources(sources, srcScale, MAX_SOURCES);
+        long frame = IrisShadowBatchCollector.renderFrame();
+        if (frame > 0 && frame == lastCollectedRenderFrame) {
+            return sourceCount;
+        }
+        lastCollectedRenderFrame = frame;
+        sourceCount = ParticleEngineNT.INSTANCE.collectNukeSources(
+                sources, srcScale, srcAgeTicks, srcMaxAgeTicks, MAX_SOURCES);
         if (sourceCount == 0) {
-            for (int j = 0; j < MAX_SOURCES; j++) {
-                trackedAlive[j] = false;
-            }
             return 0;
         }
         updateContinuousSources();
         return sourceCount;
     }
 
+    private static float resolvePartialTick() {
+        if (ClientWorldFreeze.isWorldFrozen()) {
+            return lastUnfrozenPartialTick;
+        }
+        float pt = RenderHooks.getPartialTick();
+        if (pt < 0.0F) {
+            pt = 0.0F;
+        } else if (pt > 1.0F) {
+            pt = 1.0F;
+        }
+        lastUnfrozenPartialTick = pt;
+        return pt;
+    }
+
     /**
      * Updates continuous heat, fireball ascent, and Sedov-Taylor 3D shockwave expansion per frame.
      */
     private static void updateContinuousSources() {
-        long now = System.nanoTime();
-        timeSeconds = (float) ((now - trackerStartNanos) * 1.0e-9);
-        boolean[] matchedSlot = new boolean[MAX_SOURCES];
+        float partialTick = resolvePartialTick();
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level != null) {
+            timeSeconds = ((level.getGameTime() % 100_000L) + partialTick) / 20.0F;
+        }
 
         for (int i = 0; i < sourceCount; i++) {
-            float sx = sources[i * 4];
             float groundY = sources[i * 4 + 1];
-            float sz = sources[i * 4 + 2];
-            float rawHeat = sources[i * 4 + 3];
             float scale = Math.max(0.5F, srcScale[i]);
 
             srcRadius[i] = R_UNIT * scale * radiusScale();
 
-            // Total lifetime of NukeTorex: getMaxAge() = 45 * 20 * scale ticks.
-            float maxAgeSec = 45.0F * scale;
-
-            int slot = -1;
-            for (int j = 0; j < MAX_SOURCES; j++) {
-                if (trackedAlive[j] && !matchedSlot[j]) {
-                    float dx = trackedX[j] - sx;
-                    float dz = trackedZ[j] - sz;
-                    if (dx * dx + dz * dz < 64.0F) {
-                        slot = j;
-                        break;
-                    }
-                }
-            }
-            if (slot == -1) {
-                for (int j = 0; j < MAX_SOURCES; j++) {
-                    if (!trackedAlive[j] && !matchedSlot[j]) {
-                        slot = j;
-                        break;
-                    }
-                }
-                if (slot == -1) {
-                    slot = i;
-                }
-                trackedAlive[slot] = true;
-                trackedX[slot] = sx;
-                trackedZ[slot] = sz;
-                float normH = Math.max(0.0F, Math.min(1.0F, rawHeat / NUKE_TOREX_MAX_HEAT));
-                float estAgeSec = rawHeat >= NUKE_TOREX_MAX_HEAT - 1.0F ? 0.0F : (1.0F - normH) * maxAgeSec;
-                trackedBirthNanos[slot] = now - (long) (estAgeSec * 1.0e9F);
-            } else {
-                trackedX[slot] = sx;
-                trackedZ[slot] = sz;
-            }
-            matchedSlot[slot] = true;
-
-            float ageSec = Math.max(0.0F, (now - trackedBirthNanos[slot]) * 1.0e-9F);
-            float serverAgeSec = (1.0F - Math.max(0.0F, Math.min(1.0F, rawHeat / NUKE_TOREX_MAX_HEAT))) * maxAgeSec;
-            if (Math.abs(ageSec - serverAgeSec) > 2.5F) {
-                trackedBirthNanos[slot] = now - (long) (serverAgeSec * 1.0e9F);
-                ageSec = serverAgeSec;
-            }
+            float maxAgeSec = Math.max(1.0F, srcMaxAgeTicks[i] / 20.0F);
+            float ageSec = Math.max(0.0F, (srcAgeTicks[i] + partialTick) / 20.0F);
 
             // Dynamic fireball ascent: starts low at detonation (~12 * scale) and rises into
             // the mushroom cap (~50 * scale) over the first 10 seconds.
@@ -171,12 +152,6 @@ public final class NukeLightTracker {
             srcExtra[i * 4 + 2] = groundY;
             srcExtra[i * 4 + 3] = flashPulse;
         }
-
-        for (int j = 0; j < MAX_SOURCES; j++) {
-            if (!matchedSlot[j]) {
-                trackedAlive[j] = false;
-            }
-        }
     }
 
     public static int getSourceCount() {
@@ -205,9 +180,8 @@ public final class NukeLightTracker {
 
     public static void reset() {
         sourceCount = 0;
-        for (int j = 0; j < MAX_SOURCES; j++) {
-            trackedAlive[j] = false;
-        }
+        lastUnfrozenPartialTick = 0.0F;
+        lastCollectedRenderFrame = -1L;
     }
 
     public static String src0String() {

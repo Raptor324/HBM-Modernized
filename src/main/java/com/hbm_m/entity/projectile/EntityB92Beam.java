@@ -7,6 +7,7 @@ import javax.annotation.Nullable;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.effect.EntityCloudFleijaRainbow;
 import com.hbm_m.entity.logic.EntityNukeExplosionMK3;
+import com.hbm_m.util.WorldUtil;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -18,6 +19,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.TraceableEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -32,7 +34,7 @@ import net.minecraft.world.phys.Vec3;
  * wie im Original (kein setDead beim Entitaetstreffer). Ein Blocktreffer merkt sich den Block, im naechsten Tick
  * folgt Explosion und Ende; ebenso im Wasser.
  */
-public class EntityB92Beam extends Entity {
+public class EntityB92Beam extends Entity implements TraceableEntity {
 
     private int xTile = -1;
     private int yTile = -1;
@@ -45,6 +47,12 @@ public class EntityB92Beam extends Entity {
     public EntityB92Beam(EntityType<? extends EntityB92Beam> type, Level level) {
         super(type, level);
         this.noCulling = true;
+    }
+
+    @Override
+    @Nullable
+    public Entity getOwner() {
+        return this.shootingEntity;
     }
 
     /** Original-Konstruktor (World, EntityLivingBase, float): Abschuss aus Augenhoehe in Blickrichtung. */
@@ -96,18 +104,28 @@ public class EntityB92Beam extends Entity {
     public void tick() {
         super.tick();
 
-        if (this.tickCount > 100) this.discard();
+        if (this.tickCount > 100) {
+            this.discard();
+            return;
+        }
 
         Vec3 motion = this.getDeltaMovement();
         if (this.xRotO == 0.0F && this.yRotO == 0.0F) {
+            float f = (float) Math.sqrt(motion.x * motion.x + motion.z * motion.z);
             this.setYRot((float) (Math.atan2(motion.x, motion.z) * 180.0D / Math.PI));
+            this.setXRot((float) (Math.atan2(motion.y, f) * 180.0D / Math.PI));
             this.yRotO = this.getYRot();
+            this.xRotO = this.getXRot();
         }
 
-        BlockPos tile = new BlockPos(this.xTile, this.yTile, this.zTile);
-        if (this.hasTile && !this.level().getBlockState(tile).isAir()) {
-            this.discard();
-            explode();
+        if (this.hasTile) {
+            BlockPos tile = new BlockPos(this.xTile, this.yTile, this.zTile);
+            if (!this.level().getBlockState(tile).isAir()) {
+                this.discard();
+                explode();
+                return;
+            }
+            this.hasTile = false;
         }
 
         ++this.ticksInAir;
@@ -152,11 +170,14 @@ public class EntityB92Beam extends Entity {
         }
 
         double nx = this.getX() + motion.x, ny = this.getY() + motion.y, nz = this.getZ() + motion.z;
+        float horiz = Mth.sqrt((float) (motion.x * motion.x + motion.z * motion.z));
         this.setYRot((float) (Math.atan2(motion.x, motion.z) * 180.0D / Math.PI));
+        this.setXRot((float) (Math.atan2(motion.y, horiz) * 180.0D / Math.PI));
 
         if (this.isInWater()) {
             this.discard();
             explode();
+            return;
         }
 
         this.setPos(nx, ny, nz);
@@ -169,7 +190,7 @@ public class EntityB92Beam extends Entity {
             if (!ex.isRemoved()) {
                 this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE,
                         100.0F, this.level().random.nextFloat() * 0.1F + 0.9F);
-                this.level().addFreshEntity(ex);
+                WorldUtil.loadAndSpawnEntityInWorld(ex);
                 EntityCloudFleijaRainbow cloud = new EntityCloudFleijaRainbow(ModEntities.CLOUD_FLEIJA_RAINBOW.get(), this.level(), 10);
                 cloud.setPos(this.getX(), this.getY(), this.getZ());
                 this.level().addFreshEntity(cloud);

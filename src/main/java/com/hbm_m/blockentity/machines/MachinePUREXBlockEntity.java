@@ -44,7 +44,7 @@ import net.minecraft.world.phys.AABB;
  * erscheint, sobald ueber der Anlage ein Block sitzt.
  */
 public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2,
-        com.hbm_m.interfaces.IUpgradeInfoProvider, IRORValueProvider {
+        com.hbm_m.interfaces.IUpgradeInfoProvider, IRORValueProvider, com.hbm_m.interfaces.IFrameSupportable {
 
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_BLUEPRINT = 1;
@@ -66,7 +66,6 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
 
     public boolean didProcess = false;
 
-    public boolean frame = false;
     public int anim;
     public int prevAnim;
 
@@ -139,10 +138,28 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
     private void clientTick(Level world, BlockPos pos) {
         this.prevAnim = this.anim;
         if (this.didProcess) this.anim++;
+    }
 
-        if (world.getGameTime() % 20 == 0) {
-            frame = !world.getBlockState(pos.above(5)).isAir();
+    // ==================== Multiblock frame (BlockState property) ====================
+
+    @Override
+    public void checkForFrame() {
+        if (level != null && !level.isClientSide) {
+            com.hbm_m.multiblock.MultiblockStructureHelper.updateFrameForController(level, worldPosition);
         }
+    }
+
+    @Override
+    public boolean setFrameVisible(boolean visible) {
+        if (level != null && !level.isClientSide) {
+            return com.hbm_m.multiblock.MultiblockFrameHelper.applyFrameToBlockState(level, worldPosition, visible);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isFrameVisible() {
+        return com.hbm_m.multiblock.MultiblockFrameHelper.isFrameVisible(getBlockState());
     }
 
     // ==================== Rezeptwahl ====================

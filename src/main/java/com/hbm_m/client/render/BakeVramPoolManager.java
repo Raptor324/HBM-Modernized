@@ -554,11 +554,14 @@ public final class BakeVramPoolManager {
             eboNeeded += (long) bm.idxCount * mc.eboInstances * 4L;
 
             if (!firstShiftEncountered) {
-                if (bm.vertBase[mode] != newVertBases[i] || bm.eboWordBase[mode] != newEboBases[i]) {
+                int expectedVertBase = (mode == NucleusGpuBaker.MODE_SHADOW)
+                        ? bm.vertBase[NucleusGpuBaker.MODE_MAIN]
+                        : newVertBases[i];
+                if (bm.vertBase[mode] != expectedVertBase || bm.eboWordBase[mode] != newEboBases[i]) {
                     firstShiftEncountered = true;
                 } else {
                     if (mc.outInstances > 0 && mc.outputValid && mc.recordCount > 0) {
-                        validOutCopyBytes = (long) newVertBases[i] * stride + (long) bm.vertCount * mc.recordCount * stride;
+                        validOutCopyBytes = (long) expectedVertBase * stride + (long) bm.vertCount * mc.recordCount * stride;
                     }
                     if (!NucleusGpuBaker.cullEnabled() && mc.filled > 0) {
                         validEboCopyBytes = (long) newEboBases[i] * 4L + (long) bm.idxCount * mc.filled * 4L;
@@ -570,6 +573,8 @@ public final class BakeVramPoolManager {
                 || outNeeded > MAX_SINGLE_BUFFER_BYTES || eboNeeded > MAX_SINGLE_BUFFER_BYTES) {
             return false;
         }
+        boolean outReallocated = (mode != NucleusGpuBaker.MODE_SHADOW) && outNeeded > pool.outputAllocBytes;
+        boolean eboReallocated = eboNeeded > pool.eboAllocBytes;
         if (!ensurePoolStorage(pool, outNeeded, eboNeeded, validOutCopyBytes, validEboCopyBytes)) {
             return false;
         }
@@ -581,6 +586,10 @@ public final class BakeVramPoolManager {
                     : newVertBases[i];
             boolean shifted = bm.vertBase[mode] != targetVertBase
                     || bm.eboWordBase[mode] != newEboBases[i];
+            boolean outNotCopied = outReallocated && mc.outInstances > 0
+                    && ((long) targetVertBase * stride + (long) bm.vertCount * mc.outInstances * stride) > validOutCopyBytes;
+            boolean eboNotCopied = eboReallocated && mc.eboInstances > 0
+                    && ((long) newEboBases[i] * 4L + (long) bm.idxCount * mc.eboInstances * 4L) > validEboCopyBytes;
             bm.vertBase[mode] = targetVertBase;
             bm.eboWordBase[mode] = newEboBases[i];
             if (mode == NucleusGpuBaker.MODE_MAIN && bm.vertBase[NucleusGpuBaker.MODE_SHADOW] != targetVertBase) {
@@ -589,7 +598,7 @@ public final class BakeVramPoolManager {
                     invalidateBakedOutput(bm.shadow);
                 }
             }
-            if (shifted && mc.outInstances > 0) {
+            if ((shifted || outNotCopied || eboNotCopied) && mc.outInstances > 0) {
                 invalidateBakedOutput(mc);
             }
         }

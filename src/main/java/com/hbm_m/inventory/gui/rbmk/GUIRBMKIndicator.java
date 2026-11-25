@@ -15,6 +15,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKIndicator extends Screen {
 
     private final BlockPos pos;
@@ -106,8 +107,13 @@ public class GUIRBMKIndicator extends Screen {
             data.putString("ulabel" + i, labelBoxes[i].getValue());
             data.putBoolean("active" + i, unitActive[i]);
             data.putInt("ucolor" + i, GUIRBMKGauge.parseColor(colorBoxes[i].getValue()));
-            data.putDouble("min" + i, parse(minBoxes[i].getValue()));
-            data.putDouble("max" + i, parse(maxBoxes[i].getValue()));
+            // 1:1 with GUIScreenRBMKIndicator: the min/max keys are only sent when the field
+            // actually parses (try/catch omit) - an empty or garbage field means "unbounded
+            // band, lamp always lit" (the BE resets to +/-MAX_VALUE on the absent key), not 0.
+            Double minVal = parseOrNull(minBoxes[i].getValue());
+            if (minVal != null) data.putDouble("min" + i, minVal);
+            Double maxVal = parseOrNull(maxBoxes[i].getValue());
+            if (maxVal != null) data.putDouble("max" + i, maxVal);
             data.putBoolean("invert" + i, invertBoxes[i].selected());
             data.putBoolean("polling" + i, pollingBoxes[i].selected());
         }
@@ -115,8 +121,8 @@ public class GUIRBMKIndicator extends Screen {
         onClose();
     }
 
-    private static double parse(String s) {
-        try { return Double.parseDouble(s); } catch (NumberFormatException e) { return 0; }
+    private static Double parseOrNull(String s) {
+        try { return Double.parseDouble(s); } catch (NumberFormatException e) { return null; }
     }
 
     @Override

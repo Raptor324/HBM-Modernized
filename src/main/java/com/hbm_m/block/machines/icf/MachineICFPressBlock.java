@@ -85,7 +85,7 @@ public class MachineICFPressBlock extends BaseEntityBlock {
     //?} else {
     /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
     *///?}
-        for (String s : net.minecraft.client.resources.language.I18n.get(getDescriptionId() + ".desc").split(java.util.regex.Pattern.quote("$")))
+        for (String s : net.minecraft.locale.Language.getInstance().getOrDefault(getDescriptionId() + ".desc").split(java.util.regex.Pattern.quote("$")))
             list.add(net.minecraft.network.chat.Component.literal(s).withStyle(net.minecraft.ChatFormatting.YELLOW));
     }
 

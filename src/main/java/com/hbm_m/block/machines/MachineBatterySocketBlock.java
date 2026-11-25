@@ -49,7 +49,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 /**
  * 2×2×2 multiblock cube.
  */
-public class MachineBatterySocketBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineBatterySocketBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -246,5 +246,43 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
     /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
+
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof BatterySocketBlockEntity socket)) return;
+
+        net.minecraft.world.item.ItemStack stack = socket.getBatteryStack();
+        if (stack.isEmpty()) return;
+
+        long power = socket.getEnergyStored();
+        long max = socket.getMaxEnergyStored();
+        double percent = max > 0 ? (double) power / max : 0.0D;
+        int charge = (int) Math.floor(percent * 10_000D);
+        int color = ((int) (0xFF - 0xFF * percent)) << 16 | ((int) (0xFF * percent) << 8);
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                com.hbm_m.util.BobMathUtil.getShortNumber(power) + " / " + com.hbm_m.util.BobMathUtil.getShortNumber(max) + "HE"));
+        text.add(net.minecraft.network.chat.Component.literal((charge / 100D) + "%")
+                .withStyle(s -> s.withColor(color)));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics, stack.getHoverName(), 0xffff00, 0x404000, text);
+    }
+
+    // Verbatim port of the original MachineBatterySocket.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {0, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {0, 0, -1, Direction.NORTH.get3DDataValue()},
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {1, 0, 0, Direction.EAST.get3DDataValue()},
+            {1, 0, -1, Direction.EAST.get3DDataValue()},
+            {0, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, -1, Direction.WEST.get3DDataValue()}
+        }, facing);
     }
 }

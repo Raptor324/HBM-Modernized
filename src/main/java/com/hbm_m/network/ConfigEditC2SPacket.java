@@ -39,9 +39,12 @@ public class ConfigEditC2SPacket implements C2SPacket {
 
     public static ConfigEditC2SPacket decode(FriendlyByteBuf buf) {
         int size = buf.readVarInt();
+        if (size < 0 || size > 512) {
+            throw new io.netty.handler.codec.DecoderException("Too many config edits: " + size);
+        }
         Map<String, String> map = new LinkedHashMap<>();
         for (int i = 0; i < size; i++) {
-            map.put(buf.readUtf(), buf.readUtf());
+            map.put(buf.readUtf(128), buf.readUtf(256));
         }
         return new ConfigEditC2SPacket(map);
     }

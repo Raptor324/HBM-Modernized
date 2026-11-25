@@ -10,16 +10,20 @@ public class AJROArmor extends ModPowerArmorItem {
     /**
      * AJRO specifications.
      *
-     * From 1.7.10 `ModItems`:
-     *  - maxPower   = 2_500_000
-     *  - chargeRate = 10_000
-     *  - consumption= 2_000
-     *  - drain      = 25
+     * From 1.7.10 `ArmorAJRO` / `ModItemsArmor`:
+     *  - maxPower    = 2_500_000
+     *  - chargeRate  = 10_000
+     *  - consumption = 2_000
+     *  - drain       = 25
      *
-     * Protection/features/effects are kept identical to AJRArmor.
+     * Protection & features match 1.7.10 ArmorAJRO:
+     *  - Jump Boost I (amp 0)
+     *  - Strength I (amp 0)
+     *  - VATS: true, Geiger: true, Hard Landing: true
+     *  - Sounds: step.metal, step.iron_jump, step.iron_land
      */
     public static final PowerArmorSpecs AJRO_SPECS = new PowerArmorSpecs(
-            2_500_000L, // Capacity (higher than AJR)
+            2_500_000L, // Capacity
             10_000L,    // Max receive
             25L,        // Passive drain per tick
             2_000L      // Consumption per damage point
@@ -34,12 +38,12 @@ public class AJROArmor extends ModPowerArmorItem {
             0F, 0.15F,  // Radiation: DT=0, DR=15%
             0F, 0.15F   // Energy: DT=0, DR=15%
     )
-    .setFeatures(true, false, true, true) // Same feature set as AJR
-    .addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 50, 2)) // Strength III
-    .addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 50, 1)) // Resistance II
-    .setStepSound("hbm_m:step.metal")
-    .setJumpSound("hbm_m:step.iron_jump")
-    .setFallSound("hbm_m:step.iron_land");
+    .setFeatures(true, false, true, true) // VATS=true, Thermal=false, HardLanding=true, Geiger=true
+    .addEffect(new MobEffectInstance(MobEffects.JUMP, 20, 0)) // Jump Boost I
+    .addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 20, 0)) // Strength I
+    .setStepSound("hbm:step.metal")
+    .setJumpSound("hbm:step.iron_jump")
+    .setFallSound("hbm:step.iron_land");
 
     public AJROArmor(ModArmorMaterials material, Type type, Properties properties) {
         super(material, type, properties, AJRO_SPECS);

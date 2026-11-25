@@ -5,7 +5,12 @@
   "render_type": "minecraft:solid",
   "textures": {
     "particle": "hbm_m:block/red_pylon",
+    "default": "hbm_m:block/red_pylon",
     "surface": "hbm_m:block/red_pylon"
+  },
+  "visibility": {
+    "Pylon": true,
+    "Pylon_steel": false
   },
   "display": {
     "gui": {"rotation":[30,225,0],"translation":[0,-5.3108,0],"scale":[0.1831,0.1831,0.1831]},

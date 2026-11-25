@@ -129,7 +129,7 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity implem
 
     @Override
     public boolean hasPermission(Player player) {
-        return player.distanceToSqr(worldPosition.getX() + 0.5D, worldPosition.getY() + 0.5D, worldPosition.getZ() + 0.5D) <= 128.0D;
+        return canAccess(player) && player.distanceToSqr(worldPosition.getX() + 0.5D, worldPosition.getY() + 0.5D, worldPosition.getZ() + 0.5D) <= 128.0D;
     }
 
     public long getStockpile() { return stockpile; }
@@ -172,6 +172,14 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity implem
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return com.hbm_m.inventory.menu.MachineMassStorageMenu.create(id, inventory, this);
+    }
+
+    @Override
+    protected void writeClientSyncTag(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.putLong("stockpile", stockpile);
+        tag.putBoolean("output", output);
+        lockState.writePublic(tag);
     }
 
     @Override

@@ -33,6 +33,7 @@ public final class MachineReactorResearchRenderer {
         MachineRenderers.machine("breeder",
                 ModBlockEntities.BREEDER_BE.get(),
                 MachineBreederBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Cube_Cube.001")
             .hook(new MachineRenderHook<MachineBreederBlockEntity>() {
                 @Override
@@ -40,6 +41,8 @@ public final class MachineReactorResearchRenderer {
                                    MultiBufferSource buf, int light, int overlay, MachineRenderApi api) {
                     if (be.getProgress() <= 0) return;
 
+                    ps.pushPose();
+                    ps.translate(0.5, 0.0, 0.5);
                     long time = System.currentTimeMillis();
                     for (int i = 0; i < 3; i++) {
                         ps.pushPose();
@@ -48,6 +51,7 @@ public final class MachineReactorResearchRenderer {
                                 0, 1.5625, 0, 0.15F, 3, 4, 0x00ff00, 0xffffff);
                         ps.popPose();
                     }
+                    ps.popPose();
                 }
 
                 @Override
@@ -62,6 +66,11 @@ public final class MachineReactorResearchRenderer {
         MachineRenderers.machine("reactor_research",
                 ModBlockEntities.REACTOR_RESEARCH_BE.get(),
                 MachineReactorResearchBlockEntity.class)
+            .blockTransform((be, animator) -> {
+                animator.translate(0.5, 0.0, 0.5);
+                animator.rotate(180, 0, 1, 0);
+                animator.translate(-0.5, 0.0, -0.5);
+            })
             .part("Base")
             .translatingPart("Rods", new Vector3f(0f, 1f, 0f),
                     (be, pt) -> Mth.lerp(pt, (float) be.lastLevel, (float) be.level))
@@ -71,6 +80,8 @@ public final class MachineReactorResearchRenderer {
                                    MultiBufferSource buf, int light, int overlay, MachineRenderApi api) {
                     if (be.totalFlux <= 10 || !be.isSubmerged()) return;
 
+                    ps.pushPose();
+                    ps.translate(0.5, 0.0, 0.5);
                     VertexConsumer vc = buf.getBuffer(ClientRenderHandler.CustomRenderTypes.RBMK_CHERENKOV);
                     Matrix4f m = ps.last().pose();
 
@@ -87,6 +98,7 @@ public final class MachineReactorResearchRenderer {
                         quad(vc, m, a, -d, top + d, -d, -d, top + d, d, d, top + d, d, d, top + d, -d);
                         quad(vc, m, a, -d, bottom - d, -d, -d, bottom - d, d, d, bottom - d, d, d, bottom - d, -d);
                     }
+                    ps.popPose();
                 }
 
                 @Override

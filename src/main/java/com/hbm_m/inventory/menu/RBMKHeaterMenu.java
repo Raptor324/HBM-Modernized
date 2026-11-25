@@ -65,6 +65,26 @@ public class RBMKHeaterMenu extends AbstractContainerMenu {
         return MenuReach.stillValid(player, blockEntity);
     }
 
+    /**
+     * {@code ContainerRBMKHeater.transferStackInSlot}: shift-clicks work both ways - from the
+     * machine's fluid-identifier slot (index 0) into the player inventory, and from the player
+     * inventory into the machine slot.
+     */
     @Override
-    public ItemStack quickMoveStack(Player player, int index) { return ItemStack.EMPTY; }
+    public ItemStack quickMoveStack(Player player, int index) {
+        ItemStack result = ItemStack.EMPTY;
+        Slot slot = slots.get(index);
+        if (slot != null && slot.hasItem()) {
+            ItemStack stack = slot.getItem();
+            result = stack.copy();
+            if (index < 1) {
+                if (!moveItemStackTo(stack, 1, this.slots.size(), true)) return ItemStack.EMPTY;
+            } else {
+                if (!moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
+            }
+            if (stack.isEmpty()) slot.set(ItemStack.EMPTY);
+            else slot.setChanged();
+        }
+        return result;
+    }
 }

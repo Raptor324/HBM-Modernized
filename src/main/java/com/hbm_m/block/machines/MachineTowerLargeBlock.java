@@ -14,6 +14,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.RenderShape;
@@ -99,4 +100,25 @@ public class MachineTowerLargeBlock extends DummyableMachineBlock implements com
     /*public static final com.mojang.serialization.MapCodec<MachineTowerLargeBlock> CODEC = simpleCodec(MachineTowerLargeBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
+
+    // Verbatim port of the original MachineTowerLarge.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {4, 0, 0, Direction.EAST.get3DDataValue()},
+            {-4, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, -4, Direction.NORTH.get3DDataValue()},
+            {0, 0, 4, Direction.SOUTH.get3DDataValue()},
+            {3, 0, -4, Direction.NORTH.get3DDataValue()},
+            {-3, 0, -4, Direction.NORTH.get3DDataValue()},
+            {3, 0, 4, Direction.SOUTH.get3DDataValue()},
+            {-3, 0, 4, Direction.SOUTH.get3DDataValue()},
+            {4, 0, 3, Direction.EAST.get3DDataValue()},
+            {4, 0, -3, Direction.EAST.get3DDataValue()},
+            {-4, 0, 3, Direction.WEST.get3DDataValue()},
+            {-4, 0, -3, Direction.WEST.get3DDataValue()},
+            {0, 0, -4, Direction.NORTH.get3DDataValue()},
+            {0, 0, 4, Direction.SOUTH.get3DDataValue()},
+        }, facing);
+    }
 }

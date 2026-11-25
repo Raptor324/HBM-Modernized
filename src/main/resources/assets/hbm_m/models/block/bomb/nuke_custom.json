@@ -1,30 +1,143 @@
 {
-  "loader": "forge:composite",
+  "loader": "hbm_m:nmesh_obj",
+  "model": "hbm_m:models/block/bomb/nuke_boy.obj",
+  "flip_v": true,
+  "shade_quads": false,
+  "ao": false,
+  "emissive_ambient": false,
+  "smooth_shade": true,
+  "render_type": "minecraft:cutout",
   "textures": {
+    "default": "hbm_m:block/bomb/nuke_custom",
     "particle": "hbm_m:block/bomb/nuke_custom"
   },
-  "children": {
-    "model": {
-      "loader": "hbm_m:nmesh_obj",
-      "model": "hbm_m:models/block/bomb/nuke_custom.obj",
-      "flip_v": true,
-      "textures": {
-        "default": "hbm_m:block/bomb/nuke_custom"
-      }
-    }
-  },
   "transform": {
-    "translation": [-1, 0, -1],
-    "rotation": [0, 180, 0],
-    "scale": 1
+    "translation": [
+      -0.5,
+      0.0,
+      0.5
+    ]
   },
   "display": {
-    "thirdperson_righthand": { "rotation": [75, 180, 0], "translation": [0, 2.5, 0], "scale": [0.38, 0.38, 0.38] },
-    "thirdperson_lefthand": { "rotation": [75, 180, 0], "translation": [0, 2.5, 0], "scale": [0.38, 0.38, 0.38] },
-    "firstperson_righthand": { "rotation": [0, 180, 0], "translation": [6, -4.5, -7], "scale": [0.32, 0.32, 0.32] },
-    "firstperson_lefthand": { "rotation": [0, 180, 0], "translation": [2, -1, 0], "scale": [0.4, 0.4, 0.4] },
-    "gui": { "rotation": [30, 225, 0], "translation": [1, -3, 1.2], "scale": [0.3, 0.3, 0.3] },
-    "fixed": { "rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.5, 0.5, 0.5] },
-    "ground": { "rotation": [0, 0, 0], "translation": [0, 3, 0], "scale": [0.35, 0.35, 0.35] }
-  }
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        180,
+        0
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ],
+      "scale": [
+        0.1875,
+        0.1875,
+        0.1875
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        75,
+        180,
+        0
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ],
+      "scale": [
+        0.1875,
+        0.1875,
+        0.1875
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "translation": [
+        6,
+        -4.5,
+        -7
+      ],
+      "scale": [
+        0.1875,
+        0.1875,
+        0.1875
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "translation": [
+        2,
+        -1,
+        0
+      ],
+      "scale": [
+        0.1875,
+        0.1875,
+        0.1875
+      ]
+    },
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        0
+      ],
+      "translation": [
+        0.78125,
+        -2.34375,
+        0.9375
+      ],
+      "scale": [
+        0.234375,
+        0.234375,
+        0.234375
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.3,
+        0.3,
+        0.3
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.28125,
+        0.28125,
+        0.28125
+      ]
+    }
+  },
+  "texture": "hbm_m:block/bomb/nuke_custom"
 }

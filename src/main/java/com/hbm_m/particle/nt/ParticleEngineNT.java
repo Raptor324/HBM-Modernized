@@ -90,30 +90,55 @@ public class ParticleEngineNT {
 
     /**
      * Сбор до {@code maxK} живых NukeTorex для света взрыва (RawScreenSpaceLight):
-     * в {@code out} кладутся четвёрки (x, y, z, heat), в параллельный
-     * {@code outScale} - масштаб гриба (NukeTorex.getScale, clamp 0.5..5 из
-     * NukeTorexCreator): радиус света считается на источник как R_UNIT * масштаб
-     * (round-5, находки R-1/R-2/R-3 - раньше усилитель вообще не доходил до света).
-     * Возвращает число заполненных; порядок outScale совпадает с порядком четвёрок.
+     * в {@code out} кладутся четвёрки (x, y, z, heat), в параллельные массивы —
+     * масштаб ({@code NukeTorex.getScale}), возраст в тиках ({@code age}) и
+     * максимальный возраст ({@code getMaxAge}). При превышении {@code maxK}
+     * приоритет отдаётся самым свежим взрывам (минимальный {@code age}), чтобы
+     * активные ударные волны не вытеснялись старыми догорающими грибами
+     * (списки батчей отсортированы {@code sortFarToNear} от дальних к ближним).
      */
-    public int collectNukeSources(float[] out, float[] outScale, int maxK) {
+    public int collectNukeSources(float[] out, float[] outScale, int[] outAgeTicks, int[] outMaxAgeTicks, int maxK) {
         int n = 0;
         for (List<ParticleNT> list : this.particlesByType.values()) {
-            for (ParticleNT p : list) {
-                if (n >= maxK) {
-                    return n;
+            for (int i = 0, size = list.size(); i < size; i++) {
+                ParticleNT p = list.get(i);
+                if (!(p instanceof NukeTorex t) || p.dead) {
+                    continue;
                 }
-                if (p instanceof NukeTorex t && !p.dead) {
-                    out[n * 4] = (float) p.x;
-                    out[n * 4 + 1] = (float) p.y;
-                    out[n * 4 + 2] = (float) p.z;
-                    out[n * 4 + 3] = (float) t.heat;
-                    outScale[n] = (float) t.getScale();
-                    n++;
+                int slot;
+                if (n < maxK) {
+                    slot = n++;
+                } else {
+                    // Evict the oldest tracked source if this explosion is newer
+                    int oldestSlot = -1;
+                    int oldestAge = t.age;
+                    for (int k = 0; k < maxK; k++) {
+                        if (outAgeTicks[k] > oldestAge) {
+                            oldestAge = outAgeTicks[k];
+                            oldestSlot = k;
+                        }
+                    }
+                    if (oldestSlot < 0) {
+                        continue;
+                    }
+                    slot = oldestSlot;
                 }
+                out[slot * 4] = (float) p.x;
+                out[slot * 4 + 1] = (float) p.y;
+                out[slot * 4 + 2] = (float) p.z;
+                out[slot * 4 + 3] = (float) t.heat;
+                outScale[slot] = (float) t.getScale();
+                outAgeTicks[slot] = t.age;
+                outMaxAgeTicks[slot] = t.getMaxAge();
             }
         }
         return n;
+    }
+
+    public int collectNukeSources(float[] out, float[] outScale, int maxK) {
+        int[] ageScratch = new int[maxK];
+        int[] maxAgeScratch = new int[maxK];
+        return collectNukeSources(out, outScale, ageScratch, maxAgeScratch, maxK);
     }
 
     public void add(ParticleNT effect) {
@@ -330,15 +355,24 @@ public class ParticleEngineNT {
      * батча от камеры (дальние раньше). Типы без живых частиц — в конец.
      */
     private List<net.minecraft.client.renderer.RenderType> orderDistanceSorted(List<net.minecraft.client.renderer.RenderType> order, Camera camera) {
+        int size = order.size();
+        if (size <= 1) {
+            return order;
+        }
         double cx = camera.getPosition().x;
         double cy = camera.getPosition().y;
         double cz = camera.getPosition().z;
-        List<net.minecraft.client.renderer.RenderType> sorted = new ArrayList<>(order);
-        sorted.sort((ta, tb) -> {
-            double da = batchDistance(ta, cx, cy, cz);
-            double db = batchDistance(tb, cx, cy, cz);
-            return Double.compare(db, da);
-        });
+        double[] dists = new double[size];
+        Integer[] indices = new Integer[size];
+        for (int i = 0; i < size; i++) {
+            dists[i] = batchDistance(order.get(i), cx, cy, cz);
+            indices[i] = i;
+        }
+        java.util.Arrays.sort(indices, (a, b) -> Double.compare(dists[b], dists[a]));
+        List<net.minecraft.client.renderer.RenderType> sorted = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            sorted.add(order.get(indices[i]));
+        }
         return sorted;
     }
 
@@ -396,6 +430,29 @@ public class ParticleEngineNT {
 
     public java.util.Map<net.minecraft.client.renderer.RenderType, List<ParticleNT>> debugBatches() {
         return this.particlesByType;
+    }
+
+    public boolean renderNukeTorexForMask(VertexConsumer consumer, Camera camera, float partialTick,
+                                          double splitSq, boolean filterByDistance, boolean renderFar) {
+        double cx = camera.getPosition().x;
+        double cy = camera.getPosition().y;
+        double cz = camera.getPosition().z;
+        boolean drewAny = false;
+        for (List<ParticleNT> list : this.particlesByType.values()) {
+            if (list.isEmpty()) continue;
+            for (int i = 0, size = list.size(); i < size; i++) {
+                ParticleNT p = list.get(i);
+                if (!(p instanceof NukeTorex torex) || torex.dead) continue;
+                if (filterByDistance) {
+                    double dx = p.x - cx, dy = p.y - cy, dz = p.z - cz;
+                    boolean near = dx * dx + dy * dy + dz * dz <= splitSq;
+                    if (near == renderFar) continue;
+                }
+                torex.renderCloudletsForMask(consumer, camera, partialTick);
+                drewAny = true;
+            }
+        }
+        return drewAny;
     }
 
     public void tick() {

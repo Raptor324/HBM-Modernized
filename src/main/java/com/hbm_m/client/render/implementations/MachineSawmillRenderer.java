@@ -48,29 +48,35 @@ public final class MachineSawmillRenderer {
             .part("Base")
             .part("Main", (be, pt, gt, ps) -> {
                 double turn = Mth.lerp(pt, be.prevRotationYaw, be.rotationYaw);
+                ps.translate(0.5, 0, 0.5);
                 ps.mulPose(Axis.YN.rotationDegrees((float) turn));
+                ps.translate(-0.5, 0, -0.5);
                 return true;
             })
             .part("Engine", (be, pt, gt, ps) -> {
                 double turn = Mth.lerp(pt, be.prevRotationYaw, be.rotationYaw);
                 double engine = be.isOn && be.getLevel() != null
                         ? Math.sin(be.getLevel().getGameTime() * 2 % (Math.PI * 2) + pt) : 0;
+                ps.translate(0.5, 0, 0.5);
                 ps.mulPose(Axis.YN.rotationDegrees((float) turn));
+                ps.translate(-0.5, 0, -0.5);
                 ps.translate(0, engine * 0.01, 0);
                 return true;
             })
             .part("ArmUpper", (be, pt, gt, ps) -> {
                 double turn = Mth.lerp(pt, be.prevRotationYaw, be.rotationYaw);
                 double angle = 80 - Mth.lerp(pt, be.prevRotationPitch, be.rotationPitch);
+                ps.translate(0.5, 0, 0.5);
                 ps.mulPose(Axis.YN.rotationDegrees((float) turn));
                 ps.translate(0, 1.75, 0);
                 ps.mulPose(Axis.XP.rotationDegrees((float) angle));
-                ps.translate(0, -1.75, 0);
+                ps.translate(-0.5, -1.75, -0.5);
                 return true;
             })
             .part("ArmLower", (be, pt, gt, ps) -> {
                 double turn = Mth.lerp(pt, be.prevRotationYaw, be.rotationYaw);
                 double angle = 80 - Mth.lerp(pt, be.prevRotationPitch, be.rotationPitch);
+                ps.translate(0.5, 0, 0.5);
                 ps.mulPose(Axis.YN.rotationDegrees((float) turn));
                 ps.translate(0, 1.75, 0);
                 ps.mulPose(Axis.XP.rotationDegrees((float) angle));
@@ -78,12 +84,13 @@ public final class MachineSawmillRenderer {
 
                 ps.translate(0, 1.75, -4);
                 ps.mulPose(Axis.XP.rotationDegrees((float) (angle * -2)));
-                ps.translate(0, -1.75, 4);
+                ps.translate(-0.5, -1.75, 3.5);
                 return true;
             })
             .part("ArmTip", (be, pt, gt, ps) -> {
                 double turn = Mth.lerp(pt, be.prevRotationYaw, be.rotationYaw);
                 double angle = 80 - Mth.lerp(pt, be.prevRotationPitch, be.rotationPitch);
+                ps.translate(0.5, 0, 0.5);
                 ps.mulPose(Axis.YN.rotationDegrees((float) turn));
                 ps.translate(0, 1.75, 0);
                 ps.mulPose(Axis.XP.rotationDegrees((float) angle));
@@ -95,13 +102,14 @@ public final class MachineSawmillRenderer {
 
                 ps.translate(0, 1.75, -8);
                 ps.mulPose(Axis.XP.rotationDegrees((float) angle));
-                ps.translate(0, -1.75, 8);
+                ps.translate(-0.5, -1.75, 7.5);
                 return true;
             })
             .part("Sawblade", (be, pt, gt, ps) -> {
                 double turn = Mth.lerp(pt, be.prevRotationYaw, be.rotationYaw);
                 double angle = 80 - Mth.lerp(pt, be.prevRotationPitch, be.rotationPitch);
                 float spin = Mth.lerp(pt, be.lastSpin, be.spin);
+                ps.translate(0.5, 0, 0.5);
                 ps.mulPose(Axis.YN.rotationDegrees((float) turn));
                 ps.translate(0, 1.75, 0);
                 ps.mulPose(Axis.XP.rotationDegrees((float) angle));
@@ -117,10 +125,10 @@ public final class MachineSawmillRenderer {
 
                 ps.translate(0, 1.75, -10);
                 ps.mulPose(Axis.YN.rotationDegrees(spin));
-                ps.translate(0, -1.75, 10);
+                ps.translate(-0.5, -1.75, 9.5);
                 return true;
             })
-            .blockTransform((be, animator) -> animator.translate(0.5, 0.0, 0.5))
+            .blockTransform((be, animator) -> {})
             .itemParts("Base", "Main", "ArmUpper")
             .register();
     }
@@ -137,55 +145,55 @@ public final class MachineSawmillRenderer {
             })
             .part("ArmUpper", (be, pt, gt, ps) -> {
                 double angle = 82.5 - Mth.lerp(pt, be.prevAngle, be.angle);
-                ps.translate(0, 0.5, -1);
+                ps.translate(0, 0.5, -0.5);
                 ps.mulPose(Axis.XP.rotationDegrees((float) angle));
-                ps.translate(0, -0.5, 1);
+                ps.translate(0, -0.5, 0.5);
                 return true;
             })
             .part("ArmLower", (be, pt, gt, ps) -> {
                 double angle = 82.5 - Mth.lerp(pt, be.prevAngle, be.angle);
-                ps.translate(0, 0.5, -1);
+                ps.translate(0, 0.5, -0.5);
                 ps.mulPose(Axis.XP.rotationDegrees((float) angle));
-                ps.translate(0, -0.5, 1);
+                ps.translate(0, -0.5, 0.5);
 
-                ps.translate(0, 0.5, -5);
+                ps.translate(0, 0.5, -4.5);
                 ps.mulPose(Axis.XP.rotationDegrees((float) (angle * -2)));
-                ps.translate(0, -0.5, 5);
+                ps.translate(0, -0.5, 4.5);
                 return true;
             })
             .part("Front", (be, pt, gt, ps) -> {
                 double angle = 82.5 - Mth.lerp(pt, be.prevAngle, be.angle);
-                ps.translate(0, 0.5, -1);
+                ps.translate(0, 0.5, -0.5);
                 ps.mulPose(Axis.XP.rotationDegrees((float) angle));
-                ps.translate(0, -0.5, 1);
+                ps.translate(0, -0.5, 0.5);
 
-                ps.translate(0, 0.5, -5);
+                ps.translate(0, 0.5, -4.5);
                 ps.mulPose(Axis.XP.rotationDegrees((float) (angle * -2)));
-                ps.translate(0, -0.5, 5);
+                ps.translate(0, -0.5, 4.5);
 
-                ps.translate(0, 0.5, -9);
+                ps.translate(0, 0.5, -8.5);
                 ps.mulPose(Axis.XP.rotationDegrees((float) angle));
-                ps.translate(0, -0.5, 9);
+                ps.translate(0, -0.5, 8.5);
                 return true;
             })
             .part("Wheel", (be, pt, gt, ps) -> {
                 double angle = 82.5 - Mth.lerp(pt, be.prevAngle, be.angle);
                 float spin = Mth.lerp(pt, be.lastSpin, be.spin);
-                ps.translate(0, 0.5, -1);
+                ps.translate(0, 0.5, -0.5);
                 ps.mulPose(Axis.XP.rotationDegrees((float) angle));
-                ps.translate(0, -0.5, 1);
+                ps.translate(0, -0.5, 0.5);
 
-                ps.translate(0, 0.5, -5);
+                ps.translate(0, 0.5, -4.5);
                 ps.mulPose(Axis.XP.rotationDegrees((float) (angle * -2)));
-                ps.translate(0, -0.5, 5);
+                ps.translate(0, -0.5, 4.5);
 
-                ps.translate(0, 0.5, -9);
+                ps.translate(0, 0.5, -8.5);
                 ps.mulPose(Axis.XP.rotationDegrees((float) angle));
-                ps.translate(0, -0.5, 9);
+                ps.translate(0, -0.5, 8.5);
 
-                ps.translate(0, 0.5, -11);
+                ps.translate(0, 0.5, -10.5);
                 ps.mulPose(Axis.XP.rotationDegrees(-spin));
-                ps.translate(0, -0.5, 11);
+                ps.translate(0, -0.5, 10.5);
                 return true;
             })
             .blockTransform(MachineSawmillRenderer::applyThresherTransform)
@@ -203,6 +211,7 @@ public final class MachineSawmillRenderer {
                 default -> {}
             }
         }
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private static void applyThresherTransform(MachineThresherBlockEntity thresher, LegacyAnimator animator) {
@@ -215,6 +224,7 @@ public final class MachineSawmillRenderer {
                 default -> {}
             }
         }
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private MachineSawmillRenderer() {}

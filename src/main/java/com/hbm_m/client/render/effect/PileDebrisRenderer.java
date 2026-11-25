@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public class PileDebrisRenderer extends EntityRenderer<PileDebrisEntity> {
 
-    private static final String MODEL = "models/rbmk/models/deb_graphite.obj";
+    private static final String MODEL = "models/projectiles/deb_graphite.obj";
     private static final String TEXTURE = "block/block_graphite";
 
     public PileDebrisRenderer(EntityRendererProvider.Context ctx) {

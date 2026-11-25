@@ -26,8 +26,8 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 @OnlyIn(Dist.CLIENT)
 public class OverlayGasMask {
 
-    private static final String BASE_GASMASK = "textures/misc/overlay_gasmask.png";
-    private static final String BASE_GOGGLES = "textures/misc/overlay_goggles.png";
+    private static final String BASE_GASMASK = "textures/misc/overlay_gasmask_0.png";
+    private static final String BASE_GOGGLES = "textures/misc/overlay_goggles_0.png";
 
     //? if forge {
     public static final IGuiOverlay OVERLAY = (gui, gfx, partialTick, screenWidth, screenHeight) ->

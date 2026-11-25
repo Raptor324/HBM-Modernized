@@ -16,7 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 public class BoxcarRenderer extends EntityRenderer<EntityBoxcar> {
 
     public static final SimpleObjModel BOXCAR = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/boxcar.obj"));
-    public static final ResourceLocation BOXCAR_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/boxcar.png");
+    public static final ResourceLocation BOXCAR_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/deco/boxcar_model.png");
 
     public BoxcarRenderer(EntityRendererProvider.Context context) {
         super(context);

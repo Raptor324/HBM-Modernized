@@ -5,7 +5,7 @@
   "flip_v": true,
   "render_type": "minecraft:cutout",
   "textures": {
-    "texture": "hbm_m:block/deco/steel_roof_model",
-    "particle": "hbm_m:block/deco/steel_roof_model"
+    "texture": "hbm_m:block/steel_roof_top",
+    "particle": "hbm_m:block/steel_roof_top"
   }
 }

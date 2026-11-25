@@ -106,7 +106,7 @@ public abstract class RBMKPanelDeviceBlockEntity extends RBMKColumnBlockEntity i
     @Override public boolean isLidRemovable()   { return false; }
     @Override public RBMKType getRBMKType()     { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType(){ return ColumnType.BLANK; }
-    @Override protected boolean participatesInHeatNetwork() { return false; }
+    @Override public boolean participatesInHeatNetwork() { return false; }
 
     protected static double parseNum(String s, double fallback) {
         try { return Double.parseDouble(s); } catch (NumberFormatException e) { return fallback; }

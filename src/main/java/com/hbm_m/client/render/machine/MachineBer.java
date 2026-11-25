@@ -847,6 +847,11 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void doCollectRender(BlockEntity be, float partialTick, PoseStack poseStack,
                                  MultiBufferSource bufferSource, int packedLight, boolean applyFrustum) {
+        if (!com.hbm_m.client.render.ClientRenderFlags.guiRenderFrame()
+                && !com.hbm_m.client.render.NucleusDispatcherBypass.isLiveInClientWorld(be)) {
+            com.hbm_m.client.render.NucleusDispatcherBypass.removeMachine(be);
+            return;
+        }
         T blockEntity = (T) be;
         // Doors: per-frame detection of share-state flips (Iris on/off, config toggle,
         // shader load timing) -> shareEpoch++ and full invalidation of PART/VBO/dae
@@ -1192,6 +1197,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                 com.hbm_m.client.render.implementations.MachineDoorRenderer.syncShareState();
             }
             if ((!IrisShadowBatchCollector.prebakeCalibrated() && !IrisShadowBatchCollector.isAnchorSpaceShadowActive())
+                    || !spec.hooks().isEmpty()
                     || ClientRenderFlags.forceVanillaImmediate()
                     || !ClientRenderFlags.useInstancedBatching()) {
                 return false;

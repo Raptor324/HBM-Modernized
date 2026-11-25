@@ -34,7 +34,6 @@ public final class RawScreenSpaceLight {
 
     private static int program = -1, fbo = -1;
     private static int nearestSampler = -1;
-    private static int lastBoundColorTex = -1;
     private static int uDepthTex0Loc = -1, uDhDepthTexLoc = -1, uDhReverseZLoc = -1, uDhPresentLoc = -1;
     private static int uDhNearLoc = -1, uDhFarLoc = -1, uDhFadeDistLoc = -1, uProjLoc = -1;
     private static int uModelViewLoc = -1, uModelViewInvLoc = -1, uCamPosLoc = -1, uSourcesLoc = -1;
@@ -43,9 +42,12 @@ public final class RawScreenSpaceLight {
     private static int uHeatScaleLoc = -1, uResolutionLoc = -1, uNormalScaleLoc = -1, uDebugReplaceLoc = -1;
     private static int uSolidAddLoc = -1, uSrcShockLoc = -1, uSceneColorLoc = -1, uHasSceneLoc = -1, uCineLoc = -1;
     private static int uSrcExtraLoc = -1, uTimeLoc = -1;
+    private static int uCloudMaskTexLoc = -1, uHasCloudMaskLoc = -1;
 
     private static int sceneTex = -1, sceneTexW = -1, sceneTexH = -1, sceneTexInternalFormat = -1;
     private static boolean sceneCopySupported = true;
+    private static int sceneCopyFailures = 0;
+    private static final int MAX_COPY_FAILURES = 8;
     private static final int[] FBO_DRAW_BUFFERS = {GL30.GL_COLOR_ATTACHMENT0};
 
     private static volatile boolean latched = false;
@@ -64,6 +66,7 @@ public final class RawScreenSpaceLight {
     private static int cleanDepthTex = -1, cleanDepthW = -1, cleanDepthH = -1, cleanDepthInternalFormat = -1;
     private static boolean cleanDepthSnapshotValid = false;
     private static boolean depthCopySupported = true;
+    private static int depthCopyFailures = 0;
     private static boolean dhBlittedThisFrame = false;
     private static int uDhBlittedInDepth0Loc = -1;
 
@@ -81,6 +84,11 @@ public final class RawScreenSpaceLight {
         return !latched
                 && com.hbm_m.config.ModClothConfig.get().graphicEffects.screenSpaceLightFill
                 && !"false".equalsIgnoreCase(System.getProperty("hbm.screenSpaceLight", "true"));
+    }
+
+    /** True when the nuclear cloud coverage mask should be captured this frame. */
+    public static boolean isMaskNeeded() {
+        return isEnabled() && intensity() > 0.001F && NukeLightTracker.collectAndTrackSources() > 0;
     }
 
     public static void drawIfReady() {
@@ -123,6 +131,7 @@ public final class RawScreenSpaceLight {
             dhBlittedThisFrame = false;
             headSnapshotValid = false;
             vanillaMatricesValid = false;
+            NukeCloudMask.resetFrame();
         }
     }
 
@@ -252,9 +261,13 @@ public final class RawScreenSpaceLight {
                                 cleanDepthTex, GL11.GL_TEXTURE_2D, 0, 0, 0, 0, w, h, 1);
         if (GL11.glGetError() == GL11.GL_NO_ERROR) {
             cleanDepthSnapshotValid = true;
+            depthCopyFailures = 0;
         } else {
-            depthCopySupported = false;
-            MainRegistry.LOGGER.warn("RawScreenSpaceLight: depth glCopyImageSubData failed - using shader-side DH blit filter");
+            depthCopyFailures++;
+            if (depthCopyFailures >= MAX_COPY_FAILURES) {
+                depthCopySupported = false;
+                MainRegistry.LOGGER.warn("RawScreenSpaceLight: depth glCopyImageSubData failed {} times - using shader-side DH blit filter", depthCopyFailures);
+            }
         }
     }
 
@@ -334,12 +347,17 @@ public final class RawScreenSpaceLight {
         GlStateManager._activeTexture(GL13.GL_TEXTURE0); int prevUnit0Tex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
         GlStateManager._activeTexture(GL13.GL_TEXTURE1); int prevUnit1Tex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
         GlStateManager._activeTexture(GL13.GL_TEXTURE2); int prevUnit2Tex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+        GlStateManager._activeTexture(GL13.GL_TEXTURE3); int prevUnit3Tex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
 
         float cine = cinematics(); boolean sceneActive = false;
         if (sceneCopySupported && cine > 0.001F && !DEBUG_REPLACE && !SOLID_ADD) {
             sceneActive = copySceneTexture(in.colorTexture(), in.width(), in.height(), prevUnit0Tex);
         }
-        if (!ensureFbo(in.colorTexture())) { GlStateManager._activeTexture(prevActiveTex); return; }
+        if (!ensureFbo(in.colorTexture())) {
+            GlStateManager._activeTexture(GL13.GL_TEXTURE0); GlStateManager._bindTexture(prevUnit0Tex);
+            GlStateManager._activeTexture(prevActiveTex);
+            return;
+        }
 
         boolean depthBindingsActive = false;
         try {
@@ -356,14 +374,12 @@ public final class RawScreenSpaceLight {
 
             RenderSystem.viewport(0, 0, in.width(), in.height());
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fbo);
-            if (lastBoundColorTex != in.colorTexture()) {
-                GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, in.colorTexture(), 0);
-                GL20.glDrawBuffers(FBO_DRAW_BUFFERS);
-                lastBoundColorTex = in.colorTexture();
-            }
 
             GlStateManager._glUseProgram(program);
             GL20.glUniform1i(uDepthTex0Loc, 0); GL20.glUniform1i(uDhDepthTexLoc, 1); GL20.glUniform1i(uSceneColorLoc, 2);
+            int cloudMaskTex = NukeCloudMask.getMaskTexture();
+            GL20.glUniform1i(uCloudMaskTexLoc, 3);
+            GL20.glUniform1i(uHasCloudMaskLoc, cloudMaskTex > 0 ? 1 : 0);
             GL20.glUniformMatrix4fv(uProjLoc, false, projBuf);
             GL20.glUniformMatrix4fv(uModelViewLoc, false, modelViewBuf); GL20.glUniformMatrix4fv(uModelViewInvLoc, false, modelViewInvBuf);
             GL20.glUniform3f(uCamPosLoc, camX, camY, camZ);
@@ -419,6 +435,10 @@ public final class RawScreenSpaceLight {
                 GlStateManager._activeTexture(GL13.GL_TEXTURE2);
                 GlStateManager._bindTexture(sceneTex);
             }
+            if (cloudMaskTex > 0) {
+                GlStateManager._activeTexture(GL13.GL_TEXTURE3);
+                GlStateManager._bindTexture(cloudMaskTex);
+            }
             depthBindingsActive = true;
 
             RawFullscreenQuad.render();
@@ -432,6 +452,7 @@ public final class RawScreenSpaceLight {
             GlStateManager._activeTexture(GL13.GL_TEXTURE0); GlStateManager._bindTexture(prevUnit0Tex);
             GlStateManager._activeTexture(GL13.GL_TEXTURE1); GlStateManager._bindTexture(prevUnit1Tex);
             GlStateManager._activeTexture(GL13.GL_TEXTURE2); GlStateManager._bindTexture(prevUnit2Tex);
+            GlStateManager._activeTexture(GL13.GL_TEXTURE3); GlStateManager._bindTexture(prevUnit3Tex);
             GlStateManager._activeTexture(prevActiveTex);
 
             GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDrawFb);
@@ -442,10 +463,11 @@ public final class RawScreenSpaceLight {
             if (cullWasEnabled) RenderSystem.enableCull();
             if (depthTestWasEnabled) RenderSystem.enableDepthTest();
             RenderSystem.depthMask(prevDepthMask); RenderSystem.depthFunc(prevDepthFunc);
+            GlStateManager._blendFuncSeparate(prevBlendSrcRgb, prevBlendDstRgb, prevBlendSrcAlpha, prevBlendDstAlpha);
+            RenderSystem.blendEquation(prevBlendEquation);
+            ShaderBindResync.resetBlendModeToOpaque();
             if (blendWasEnabled) {
                 RenderSystem.enableBlend();
-                GlStateManager._blendFuncSeparate(prevBlendSrcRgb, prevBlendDstRgb, prevBlendSrcAlpha, prevBlendDstAlpha);
-                RenderSystem.blendEquation(prevBlendEquation);
             } else {
                 RenderSystem.disableBlend();
             }
@@ -497,19 +519,40 @@ public final class RawScreenSpaceLight {
                                 sceneTex, GL11.GL_TEXTURE_2D, 0, 0, 0, 0, w, h, 1);
         int err = GL11.glGetError();
         if (err != GL11.GL_NO_ERROR) {
-            sceneCopySupported = false;
-            MainRegistry.LOGGER.warn("RawScreenSpaceLight: scene glCopyImageSubData failed (err 0x{}) - disabling cinematics pass", Integer.toHexString(err));
+            sceneCopyFailures++;
+            if (sceneCopyFailures >= MAX_COPY_FAILURES) {
+                sceneCopySupported = false;
+                MainRegistry.LOGGER.warn("RawScreenSpaceLight: scene glCopyImageSubData failed {} times (last err 0x{}) - disabling cinematics pass", sceneCopyFailures, Integer.toHexString(err));
+            }
             return false;
         }
+        sceneCopyFailures = 0;
         return true;
     }
 
     private static boolean ensureFbo(int colorTexture) {
+        if (fbo != -1 && !GL30.glIsFramebuffer(fbo)) {
+            fbo = -1;
+        }
         if (fbo == -1) {
             fbo = GL30.glGenFramebuffers();
-            lastBoundColorTex = -1;
         }
-        return fbo > 0;
+        if (fbo <= 0) {
+            return false;
+        }
+        int prevDrawFb = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
+        int prevReadFb = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
+        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fbo);
+        GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, colorTexture, 0);
+        GL20.glDrawBuffers(FBO_DRAW_BUFFERS);
+        int status = GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER);
+        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, prevDrawFb);
+        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, prevReadFb);
+        if (status != GL30.GL_FRAMEBUFFER_COMPLETE) {
+            skipFrame("FBO incomplete: 0x" + Integer.toHexString(status));
+            return false;
+        }
+        return true;
     }
 
     private static int ensureNearestSampler() {
@@ -574,6 +617,8 @@ public final class RawScreenSpaceLight {
         uHasSceneLoc = GL20.glGetUniformLocation(program, "uHasScene");
         uCineLoc = GL20.glGetUniformLocation(program, "uCine");
         uDhBlittedInDepth0Loc = GL20.glGetUniformLocation(program, "uDhBlittedInDepth0");
+        uCloudMaskTexLoc = GL20.glGetUniformLocation(program, "uCloudMaskTex");
+        uHasCloudMaskLoc = GL20.glGetUniformLocation(program, "uHasCloudMask");
     }
 
     public static void destroy() {
@@ -588,7 +633,6 @@ public final class RawScreenSpaceLight {
         if (fbo != -1) {
             GL30.glDeleteFramebuffers(fbo);
             fbo = -1;
-            lastBoundColorTex = -1;
         }
         if (sceneTex != -1) {
             GL11.glDeleteTextures(sceneTex);
@@ -607,11 +651,16 @@ public final class RawScreenSpaceLight {
         cleanDepthSnapshotValid = false;
         dhBlittedThisFrame = false;
         vanillaMatricesValid = false;
+        sceneCopySupported = true;
+        sceneCopyFailures = 0;
+        depthCopySupported = true;
+        depthCopyFailures = 0;
         latched = false;
         consecutiveFailures = 0;
         loggedFirstDraw = false;
         lastDrawnRenderFrame = -1L;
         notedOnce.clear();
+        NukeLightTracker.reset();
     }
 }
 

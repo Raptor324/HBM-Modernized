@@ -100,7 +100,7 @@ public abstract class RBMKMiniPanelBlock extends BaseEntityBlock {
      */
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
+        return RenderShape.MODEL;
     }
 
     @Override public boolean useShapeForLightOcclusion(BlockState state) { return true; }

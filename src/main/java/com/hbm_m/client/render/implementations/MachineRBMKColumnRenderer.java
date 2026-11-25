@@ -13,13 +13,11 @@ import com.hbm_m.blockentity.machines.rbmk.RBMKCoolerBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKHeaterBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKModeratorBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKOutgasserBlockEntity;
-import com.hbm_m.blockentity.machines.rbmk.RBMKPanelBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKReflectorBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKRodBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKStorageBlockEntity;
 import com.hbm_m.client.render.machine.MachineRenderers;
 import com.hbm_m.client.render.machine.MachineRenderHook;
-import com.hbm_m.handler.rbmk.RBMKDials;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -71,7 +69,6 @@ public final class MachineRBMKColumnRenderer {
         column("rbmk_column_storage",     ModBlockEntities.RBMK_STORAGE_BE,     RBMKStorageBlockEntity.class);
         column("rbmk_column_control",     ModBlockEntities.RBMK_CONTROL_BE,     RBMKControlManualBlockEntity.class);
         column("rbmk_column_control_auto",ModBlockEntities.RBMK_CONTROL_AUTO_BE,RBMKControlAutoBlockEntity.class);
-        column("rbmk_column_panel",       ModBlockEntities.RBMK_PANEL_BE,       RBMKPanelBlockEntity.class);
     }
 
     /**
@@ -108,7 +105,7 @@ public final class MachineRBMKColumnRenderer {
     private static void renderColumn(RBMKColumnBlockEntity be, float pt, PoseStack ps,
                                      MultiBufferSource buf, int packedLight, int packedOverlay) {
 
-        boolean isFuel = be.getConsoleType() == ColumnType.FUEL;
+        boolean isFuel = be.getConsoleType() == ColumnType.FUEL || be.getConsoleType() == ColumnType.FUEL_SIM;
         String prefix  = be.getRenderTexturePrefix();
         TextureAtlasSprite sideSprite = RBMKColumnRenderer.sprite(RefStrings.MODID, "block/rbmk/" + prefix + "_side");
         // Every RBMK column type ships 3 top variants - plain (no lid), "_cover" (concrete lid)
@@ -130,7 +127,7 @@ public final class MachineRBMKColumnRenderer {
         String lidSuffix = be.getLidState() == 2 ? "_glass" : "_cover";
 
         VertexConsumer vc = buf.getBuffer(RenderType.solid());
-        int height = RBMKDials.COLUMN_HEIGHT + 1;
+        int height = RBMKColumnRenderer.columnHeight(be);
 
         // ── For all columns: flat textured sides ──────────────────────────────
         Matrix4f m = ps.last().pose();
@@ -212,7 +209,7 @@ public final class MachineRBMKColumnRenderer {
 
         // ── Fuel channel only: OBJ inner geometry (hollow look) ───────────────
         if (isFuel) {
-            TextureAtlasSprite innerSprite = RBMKColumnRenderer.sprite(RefStrings.MODID, "block/rbmk/rbmk_element_inner");
+            TextureAtlasSprite innerSprite = RBMKColumnRenderer.sprite(RefStrings.MODID, "block/rbmk/" + prefix + "_inner");
             TextureAtlasSprite capSprite   = topSprite;
             Map<String, List<float[]>> obj = RBMKColumnRenderer.getObj("models/rbmk/models/rbmk_element.obj");
 

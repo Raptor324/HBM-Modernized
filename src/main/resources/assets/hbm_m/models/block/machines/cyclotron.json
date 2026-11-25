@@ -1,11 +1,22 @@
 {
   "loader": "hbm_m:machine_parts_loader",
-  "model": "hbm_m:models/block/machines/cyclotron.obj",
+  "model": "hbm_m:models/machines/cyclotron.obj",
   "flip_v": true,
-  "render_type": "minecraft:solid",
+  "render_type": "minecraft:cutout",
+  "parts": {
+    "Body": { "group": "Body", "texture": "hbm_m:models/machines/cyclotron" },
+    "B1Empty": { "group": "B1", "texture": "hbm_m:models/machines/cyclotron_ashes" },
+    "B1Filled": { "group": "B1", "texture": "hbm_m:models/machines/cyclotron_ashes_filled" },
+    "B2Empty": { "group": "B2", "texture": "hbm_m:models/machines/cyclotron_book" },
+    "B2Filled": { "group": "B2", "texture": "hbm_m:models/machines/cyclotron_book_filled" },
+    "B3Empty": { "group": "B3", "texture": "hbm_m:models/machines/cyclotron_gavel" },
+    "B3Filled": { "group": "B3", "texture": "hbm_m:models/machines/cyclotron_gavel_filled" },
+    "B4Empty": { "group": "B4", "texture": "hbm_m:models/machines/cyclotron_coin" },
+    "B4Filled": { "group": "B4", "texture": "hbm_m:models/machines/cyclotron_coin_filled" }
+  },
   "textures": {
-    "particle": "hbm_m:block/machine/cyclotron",
-    "default": "hbm_m:block/machine/cyclotron"
+    "particle": "hbm_m:models/machines/cyclotron",
+    "default": "hbm_m:models/machines/cyclotron"
   },
   "transform": {
     "translation": [

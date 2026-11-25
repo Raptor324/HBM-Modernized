@@ -45,7 +45,7 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
      * 1..6 = {@link Direction} ordinals.
      */
     @SuppressWarnings("unchecked")
-    private List<BakedQuad>[] sideQuadsCache;
+    private volatile List<BakedQuad>[] sideQuadsCache;
 
     protected AbstractMultipartBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
         this.parts = parts;
@@ -426,5 +426,6 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
 
     public void clearCaches() {
         cachedParticleIcon = null;
+        sideQuadsCache = null;
     }
 }

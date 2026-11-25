@@ -272,11 +272,11 @@ public final class MdiGeometryAtlas {
             GL20.glEnableVertexAttribArray(0);
             GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, VERTEX_STRIDE_BYTES, 0);
             GL20.glEnableVertexAttribArray(1);
-            GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, VERTEX_STRIDE_BYTES, 12);
+            GL20.glVertexAttribPointer(1, 3, GL11.GL_BYTE, true, VERTEX_STRIDE_BYTES, 12);
             GL20.glEnableVertexAttribArray(2);
-            GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, VERTEX_STRIDE_BYTES, 24);
+            GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, VERTEX_STRIDE_BYTES, 16);
             GL30.glEnableVertexAttribArray(3);
-            GL30.glVertexAttribIPointer(3, 1, GL11.GL_INT, VERTEX_STRIDE_BYTES, 32);
+            GL30.glVertexAttribIPointer(3, 1, GL11.GL_INT, VERTEX_STRIDE_BYTES, 24);
 
             // Index buffer.
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indexEboId);

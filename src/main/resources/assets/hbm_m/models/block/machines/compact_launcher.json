@@ -1,0 +1,10 @@
+{
+  "loader": "hbm_m:nmesh_obj",
+  "model": "hbm_m:models/launch_table/compact_launcher.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "hbm_m:block/compact_launcher",
+    "default": "hbm_m:models/compact_launcher"
+  }
+}

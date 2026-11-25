@@ -8,7 +8,11 @@
       "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/substation.obj",
       "flip_v": true,
-      "render_type": "minecraft:solid",
+      "shade_quads": false,
+      "ao": false,
+      "emissive_ambient": false,
+      "smooth_shade": true,
+      "render_type": "minecraft:cutout",
       "textures": {
         "default": "hbm_m:block/machine/substation"
       }

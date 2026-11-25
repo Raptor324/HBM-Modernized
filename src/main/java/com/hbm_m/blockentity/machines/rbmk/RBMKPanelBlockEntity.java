@@ -30,7 +30,7 @@ public class RBMKPanelBlockEntity extends RBMKColumnBlockEntity {
 
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.BLANK; }
-    @Override protected boolean participatesInHeatNetwork() { return false; }
+    @Override public boolean participatesInHeatNetwork() { return false; }
 
     
     @Override

@@ -44,15 +44,16 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
     //
     // These offsets are taken 1:1 from the real gui_rbmk_console.png sprite
     // sheet (verified against the original 1.7.10 GUIRBMKConsole.java /
-    // TileEntityRBMKConsole.ColumnType.offset values). The original enum had
-    // extra members (FUEL_SIM, CONTROL_AUTO, BREEDER, HEATEX) that the
-    // modernized ColumnType enum collapsed away; where that happened we point
-    // at the closest matching icon (e.g. HEATER -> the original "HEATEX"
+    // TileEntityRBMKConsole.ColumnType.offset values). FUEL_SIM is back as its
+    // own ColumnType (the original FUEL_SIM(90) icon lives in the shared sprite
+    // sheet); the remaining collapsed members (CONTROL_AUTO, BREEDER, HEATEX)
+    // point at the closest matching icon (e.g. HEATER -> the original "HEATEX"
     // heat-exchanger icon at 130).
     private static int typeOffset10(ColumnType t) {
         return switch (t) {
             case BLANK     -> 0;
             case FUEL      -> 10;
+            case FUEL_SIM  -> 90; // the original ColumnType.FUEL_SIM(90) icon in the shared sprite sheet
             case CONTROL   -> 20;
             case BOILER    -> 40;
             case MODERATOR -> 50;
@@ -200,7 +201,7 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
                 int fr = 8 - (int) Math.ceil(col.data.getDouble("level") * 8);
                 g.blit(TEXTURE, cx + 4, cy + 1, 24, 183, 2, Math.max(0, fr));
             }
-            case FUEL -> {
+            case FUEL, FUEL_SIM -> {
                 if (col.data.contains("c_heat")) {
                     double cHeat   = col.data.getDouble("c_heat");
                     double cMax    = col.data.getDouble("c_maxHeat");
@@ -333,7 +334,8 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
                 .withStyle(ChatFormatting.YELLOW));
 
         switch (col.type) {
-            case FUEL -> {
+            // The original's stats switch shares the rod lines between FUEL and FUEL_SIM (:462-468).
+            case FUEL, FUEL_SIM -> {
                 stats.add(Component.translatable("rbmk.rod.depletion",
                         (((int) ((1D - col.data.getDouble("enrichment")) * 100000)) / 1000D) + "%")
                         .withStyle(ChatFormatting.GREEN));
@@ -429,10 +431,15 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
         }
 
         // Select all control rods
+        // 1:1 with the original: the console's rod filters only ever reach MANUAL rods - auto
+        // columns report ColumnType.CONTROL here (with an "auto" flag in their console data, see
+        // RBMKControlAutoBlockEntity.getNBTForConsole) but the original's CONTROL type excluded
+        // them, so they must stay unreachable from the console GUI as well.
         if (inBtn(imx, imy, 61, 70, 10, 10)) {
             java.util.Arrays.fill(selection, false);
             for (int j = 0; j < MachineRbmkConsoleBlockEntity.AREA; j++)
-                if (console.columns[j] != null && console.columns[j].type == ColumnType.CONTROL)
+                if (console.columns[j] != null && console.columns[j].type == ColumnType.CONTROL
+                        && !console.columns[j].data.getBoolean("auto"))
                     selection[j] = true;
             playClick(1.5f); return true;
         }
@@ -450,6 +457,7 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
                     java.util.Arrays.fill(selection, false);
                     for (int j = 0; j < MachineRbmkConsoleBlockEntity.AREA; j++)
                         if (console.columns[j] != null && console.columns[j].type == ColumnType.CONTROL
+                                && !console.columns[j].data.getBoolean("auto")
                                 && console.columns[j].data.getShort("color") == k)
                             selection[j] = true;
                 } else if (btn == 1) { // right: assign group

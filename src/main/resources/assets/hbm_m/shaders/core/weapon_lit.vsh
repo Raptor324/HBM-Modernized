@@ -37,7 +37,7 @@ void main() {
     vec3 viewNormal = normalize(mat3(ModelViewMat) * Normal);
     float diff0 = max(dot(normalize(uLight0), viewNormal), 0.0);
     float diff1 = max(dot(normalize(uLight1), viewNormal), 0.0);
-    float diffuse = 0.25 + diff0 * 0.6 + diff1 * 0.4;
+    float diffuse = clamp(0.4 + diff0 * 0.6 + diff1 * 0.6, 0.0, 1.0);
 
     texCoord = UV0;
     lightmapUV = uLightUV;

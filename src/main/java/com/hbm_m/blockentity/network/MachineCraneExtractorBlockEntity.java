@@ -194,7 +194,7 @@ public class MachineCraneExtractorBlockEntity extends CraneBaseBlockEntity imple
             }
         }
 
-        sendUpdateToClient();
+        if (probeDue(20)) sendUpdateToClient();
     }
 
     /** Original: {@code InventoryUtil.tryAddItemToInventory(slots, 9, 17, stack)}. */
@@ -230,7 +230,7 @@ public class MachineCraneExtractorBlockEntity extends CraneBaseBlockEntity imple
     public void nextMode(int i) {
         this.matcher.nextMode(i, inventory.getStackInSlot(i));
         setChanged();
-        sendUpdateToClient();
+        if (probeDue(20)) sendUpdateToClient();
     }
 
     @Override public int[] getFilterSlots() { return new int[] { 0, 9 }; }
@@ -245,7 +245,7 @@ public class MachineCraneExtractorBlockEntity extends CraneBaseBlockEntity imple
         if (data.contains("maxEject")) this.maxEject = !this.maxEject;
         if (data.contains("slot")) setFilterContents(data);
         setChanged();
-        sendUpdateToClient();
+        if (probeDue(20)) sendUpdateToClient();
     }
 
     @Override

@@ -21,6 +21,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.level.Level;
 import org.joml.Matrix4f;
 
 import java.util.*;
@@ -77,21 +78,20 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
                 String key = !sm.objectName.isEmpty() ? sm.objectName
                         : (!sm.groupName.isEmpty() ? sm.groupName : "default");
                 List<float[]> tris = result.computeIfAbsent(key, k -> new ArrayList<>());
-                float[] verts = sm.vertices;
-                int[] idx = sm.indices;
-                for (int i = 0; i + 2 < idx.length; i += 3) {
+                int iCount = sm.indexCount();
+                for (int i = 0; i + 2 < iCount; i += 3) {
                     float[] t = new float[24];
                     for (int c = 0; c < 3; c++) {
-                        int b = idx[i + c] * 8;
-                        t[c * 8 + 0] = verts[b + 0];
-                        t[c * 8 + 1] = verts[b + 1];
-                        t[c * 8 + 2] = verts[b + 2];
+                        int vi = sm.index(i + c);
+                        t[c * 8 + 0] = sm.posX(vi);
+                        t[c * 8 + 1] = sm.posY(vi);
+                        t[c * 8 + 2] = sm.posZ(vi);
                         // raw u,v: renderObjGroup applies (1 - v) on output.
-                        t[c * 8 + 3] = verts[b + 6];
-                        t[c * 8 + 4] = verts[b + 7];
-                        t[c * 8 + 5] = verts[b + 3];
-                        t[c * 8 + 6] = verts[b + 4];
-                        t[c * 8 + 7] = verts[b + 5];
+                        t[c * 8 + 3] = sm.u(vi);
+                        t[c * 8 + 4] = sm.v(vi);
+                        t[c * 8 + 5] = sm.normX(vi);
+                        t[c * 8 + 6] = sm.normY(vi);
+                        t[c * 8 + 7] = sm.normZ(vi);
                     }
                     tris.add(t);
                 }
@@ -102,11 +102,31 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
 
     // ─── Render ──────────────────────────────────────────────────────────────
 
+    /**
+     * Column height is dynamic: the dialColumnHeight gamerule (clamped 2..16 minus 1, refreshed
+     * per world) decides it, and the original's per-block ISBRH therefore always drew exactly the
+     * placed structure. The port's drawn column always matches the physical filler stack above
+     * the base, so the height derives from those fillers; without any placed fillers it falls
+     * back to the dial, and to the static default only when no level is around (inventory/dialgen
+     * contexts). A static height desynced the drawing from the physical column whenever the
+     * gamerule was not the default.
+     */
+    public static int columnHeight(RBMKColumnBlockEntity be) {
+        Level lvl = be.getLevel();
+        if (lvl == null) return RBMKDials.COLUMN_HEIGHT + 1;
+        net.minecraft.core.BlockPos base = be.getBlockPos();
+        int fillers = 0;
+        while (fillers < 16 && lvl.getBlockState(base.above(fillers + 1)).getBlock()
+                instanceof com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock)
+            fillers++;
+        return fillers > 0 ? fillers + 1 : RBMKDials.getColumnHeight(lvl) + 1;
+    }
+
     @Override
     public void render(T be, float pt, PoseStack ps, MultiBufferSource buf,
                        int packedLight, int packedOverlay) {
 
-        boolean isFuel = be.getConsoleType() == ColumnType.FUEL;
+        boolean isFuel = be.getConsoleType() == ColumnType.FUEL || be.getConsoleType() == ColumnType.FUEL_SIM;
         String prefix  = be.getRenderTexturePrefix();
         TextureAtlasSprite sideSprite = sprite(RefStrings.MODID, "block/rbmk/" + prefix + "_side");
         // Every RBMK column type ships 3 top variants - plain (no lid), "_cover" (concrete lid)
@@ -128,7 +148,7 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
         String lidSuffix = be.getLidState() == 2 ? "_glass" : "_cover";
 
         VertexConsumer vc = buf.getBuffer(RenderType.solid());
-        int height = RBMKDials.COLUMN_HEIGHT + 1;
+        int height = columnHeight(be);
 
         // ── For all columns: flat textured sides ──────────────────────────────
         Matrix4f m = ps.last().pose();

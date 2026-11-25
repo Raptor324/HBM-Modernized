@@ -1,4 +1,3 @@
-// file: build-logic/src/main/kotlin/DevRuntimeSupport.kt
 import org.gradle.api.Project
 import org.gradle.api.tasks.JavaExec
 import org.gradle.api.tasks.SourceSetContainer
@@ -57,7 +56,7 @@ fun Project.registerDevRuntimeSupport(mcVersion: String) {
 		}
 		javaLauncher.set(provider {
 			runCatching { jbrLauncher.get() }.getOrElse {
-				logger.warn("⚠️ [HotSwap] JBR $targetJava не найдена, откат на стандартную JDK (хотсвап тел методов будет работать, но без добавления новых полей/методов).")
+				logger.warn("[HotSwap] JBR $targetJava not found; falling back to standard JDK (method body hotswap will work, but adding new fields/methods will not).")
 				javaToolchains.launcherFor {
 					languageVersion.set(JavaLanguageVersion.of(targetJava))
 				}.get()
@@ -65,7 +64,7 @@ fun Project.registerDevRuntimeSupport(mcVersion: String) {
 		})
 
 		doFirst {
-			// 1. Mixin Agent для хотсвапа миксинов
+			// 1. Mixin Agent for mixin hotswap
 			val mixinJar = classpath.files.firstOrNull { file ->
 				file.name.endsWith(".jar") && (
 					file.name.startsWith("sponge-mixin-") ||
@@ -76,9 +75,31 @@ fun Project.registerDevRuntimeSupport(mcVersion: String) {
 				jvmArgs("-javaagent:${mixinJar.absolutePath}")
 			}
 
-			// 2. Автономный SHA-256 вотчер классов
+			// 2. Isolate runClient mod classes to verified LKG snapshot if available so concurrent
+			// compileJava runs cannot wipe .class files under a live client.
+			val lkgDir = layout.buildDirectory.dir("tmp/lkg-classes").get().asFile
+			val mainClassesDir = layout.buildDirectory.dir("classes/java/main").get().asFile
+			var hotswapRoots = sourceSets["main"].output.classesDirs.files.toList()
+			val hasLkg = lkgDir.isDirectory && lkgDir.walkTopDown().any { it.isFile && it.name.endsWith(".class") }
+			val rawModClasses = environment["MOD_CLASSES"]?.toString()
+			if (hasLkg && rawModClasses != null) {
+				val mainPathNorm = mainClassesDir.absolutePath.replace('/', '\\')
+				val replaced = rawModClasses
+					.replace(mainClassesDir.absolutePath, lkgDir.absolutePath, ignoreCase = true)
+					.replace(mainPathNorm, lkgDir.absolutePath, ignoreCase = true)
+					.replace(mainClassesDir.invariantSeparatorsPath, lkgDir.invariantSeparatorsPath, ignoreCase = true)
+				if (replaced != rawModClasses) {
+					environment("MOD_CLASSES", replaced)
+					hotswapRoots = hotswapRoots.map {
+						if (it.canonicalFile == mainClassesDir.canonicalFile) lkgDir else it
+					}
+					logger.lifecycle("[CompiledClassesGuard] Isolated runClient MOD_CLASSES to verified snapshot: ${lkgDir.absolutePath}")
+				}
+			}
+
+			// 3. Autonomous SHA-256 class watcher
 			val watcherJar = buildAutoHotswapAgentJar()
-			val classesDirs = sourceSets["main"].output.classesDirs.files
+			val classesDirs = hotswapRoots
 				.joinToString(File.pathSeparator) { it.absolutePath }
 			jvmArgs("-javaagent:${watcherJar.absolutePath}=$classesDirs")
 		}
@@ -87,7 +108,7 @@ fun Project.registerDevRuntimeSupport(mcVersion: String) {
 
 private fun Project.buildAutoHotswapAgentJar(): File {
 	val dir = layout.buildDirectory.dir("hotswap-agent").get().asFile
-	val jarFile = File(dir, "hbm-auto-hotswap-agent-v14.jar")
+	val jarFile = File(dir, "hbm-auto-hotswap-agent-v15.jar")
 	if (jarFile.exists()) return jarFile
 
 	val srcDir = File(dir, "src").apply { mkdirs() }
@@ -145,7 +166,7 @@ public class HbmAutoHotswapAgent {
         Thread watcher = new Thread(() -> loop(roots, inst), "HBM-AutoHotSwap");
         watcher.setDaemon(true);
         watcher.start();
-        System.out.println("[HBM-HotSwap v14] Autonomous SHA-256 watcher started: " + roots);
+        System.out.println("[HBM-HotSwap v15] Autonomous SHA-256 watcher started: " + roots);
     }
 
     private static byte[] sha256(byte[] data) {
@@ -156,15 +177,37 @@ public class HbmAutoHotswapAgent {
         }
     }
 
+    private static boolean isMarkerActive(File marker) {
+        if (!marker.exists()) return false;
+        try {
+            String raw = Files.readString(marker.toPath()).trim();
+            if (!raw.isEmpty()) {
+                long pid = Long.parseLong(raw);
+                boolean alive = ProcessHandle.of(pid).map(ProcessHandle::isAlive).orElse(false);
+                if (!alive) {
+                    marker.delete();
+                    return false;
+                }
+            }
+        } catch (Exception ignored) {
+            // If unreadable/corrupt and older than 5 minutes, clean up stale marker
+            if (System.currentTimeMillis() - marker.lastModified() > 300_000L) {
+                marker.delete();
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static boolean isCompiling(List<Path> roots) {
         for (Path root : roots) {
             File rf = root.toFile();
             if (!rf.isDirectory()) continue;
-            if (new File(rf, ".compiling").exists()) return true;
+            if (isMarkerActive(new File(rf, ".compiling"))) return true;
             File p1 = rf.getParentFile();
-            if (p1 != null && new File(p1, ".compiling").exists()) return true;
+            if (p1 != null && isMarkerActive(new File(p1, ".compiling"))) return true;
             File p2 = p1 != null ? p1.getParentFile() : null;
-            if (p2 != null && new File(p2, ".compiling").exists()) return true;
+            if (p2 != null && isMarkerActive(new File(p2, ".compiling"))) return true;
         }
         return false;
     }

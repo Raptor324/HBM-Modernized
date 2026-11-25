@@ -15,11 +15,11 @@ uniform mat4      uProj;
 uniform mat4      uModelView;
 uniform mat4      uModelViewInv;
 uniform vec3      uCamPos;
-uniform vec4      uSources[4];
+uniform vec4      uSources[8];
 uniform int       uSourceCount;
-uniform float     uSrcRadius[4];
-uniform vec2      uSrcShock[4];
-uniform vec4      uSrcExtra[4];
+uniform float     uSrcRadius[8];
+uniform vec2      uSrcShock[8];
+uniform vec4      uSrcExtra[8];
 uniform float     uTime;
 uniform float     uVanillaFar;
 uniform float     uIntensity;
@@ -32,6 +32,8 @@ uniform int       uSolidAdd;
 uniform int       uHasScene;
 uniform float     uCine;
 uniform int       uDhBlittedInDepth0;
+uniform sampler2D uCloudMaskTex;
+uniform int       uHasCloudMask;
 
 const int   SHADOW_STEPS     = 10;
 const float SHADOW_THICKNESS = 1.8;
@@ -406,6 +408,19 @@ void main() {
     }
 
     vec2 uv = vTexCoord;
+    float cloudAlpha = (uHasCloudMask != 0) ? clamp(textureLod(uCloudMaskTex, uv, 0.0).r, 0.0, 1.0) : 0.0;
+    float lightMask = 1.0 - cloudAlpha;
+    bool skipLight = (lightMask <= 0.005);
+
+    if (skipLight && uCine <= 0.001) {
+        if (uHasScene != 0 && uSolidAdd == 0 && uDebugReplace == 0) {
+            fragColor = vec4(texture(uSceneColor, uv).rgb, 1.0);
+        } else {
+            fragColor = vec4(0.0);
+        }
+        return;
+    }
+
     vec2 uvDistort = vec2(0.0);
 
     vec3 viewDir = getViewRayDir(uv);
@@ -414,7 +429,7 @@ void main() {
     float viewDist = sampleUnifiedDistance(uv);
     bool geometry = (viewDist < 1e8);
     vec3 P = geometry ? reconstructWorldPos(uv, viewDist) : (uCamPos + dir * 1000.0);
-    vec3 N = geometry ? deriveNormal(uv, P, viewDist) : vec3(0.0, 1.0, 0.0);
+    vec3 N = (!skipLight && geometry) ? deriveNormal(uv, P, viewDist) : vec3(0.0, 1.0, 0.0);
 
     // Euclidean surface distance along this pixel's ray. viewDist is a
     // view-axis Z-depth (like-for-like with both depth layers and godray taps),
@@ -447,40 +462,43 @@ void main() {
             accumCinematics += shockwave3DShell(dir, uv, vec3(S.x, groundY, S.z), shock.x, shock.y, surfEuclid, ageSec, scale, uvDistort);
         }
 
-        // 2. Direct Surface Lighting with soft shadows and sky-bounce
-        vec3 toLight = S - P;
-        float lightDist = length(toLight);
-        vec3 L = toLight / max(lightDist, 1e-4);
-
-        float atten = clamp(1.0 - (lightDist / R), 0.0, 1.0);
-        atten = atten * atten;
-
-        float NdotL = max(0.0, dot(N, L));
-        float shadow = geometry ? shadowSoft(P, S, lightDist) : 1.0;
-
-        // Warm sky-bounce indirect reflection (prevents pitch black shadows behind walls)
-        vec3 skyBounce = vec3(0.35, 0.16, 0.06) * max(0.0, N.y * 0.5 + 0.5) * atten * 0.45;
-
-        vec3 surfaceColor = (vec3(2.2, 1.45, 0.85) * (NdotL * shadow) + skyBounce) * atten * (heat / uHeatScale);
-        if (geometry) {
-            accumLight += surfaceColor;
-        }
-
         float camDist = length(uCamPos - S);
-        float distFade = clamp(1.0 - (camDist / (R * 1.4)), 0.0, 1.0);
-        distFade *= distFade;
 
-        // 3. Volumetric Obstacle-Wrapping Godrays + Edge Glow
-        float godrays = godraysAndWrap(uv, S, dir, viewDist);
-        accumLight += vec3(1.8, 1.1, 0.55) * godrays * (heat / uHeatScale) * distFade * 0.40;
+        if (!skipLight) {
+            // 2. Direct Surface Lighting with soft shadows and sky-bounce
+            vec3 toLight = S - P;
+            float lightDist = length(toLight);
+            vec3 L = toLight / max(lightDist, 1e-4);
 
-        // 4. Atmospheric Line-of-sight Air In-scattering
-        float inScatter = airMarch(P, S, viewDist, R);
-        accumLight += vec3(1.4, 0.75, 0.3) * inScatter * (heat / uHeatScale) * distFade * 0.25;
+            float atten = clamp(1.0 - (lightDist / R), 0.0, 1.0);
+            atten = atten * atten;
 
-        // 5. Sky & Horizon Glow (full on sky, subtle distance haze on far geometry)
-        float skyMask = geometry ? clamp(viewDist / 256.0, 0.0, 0.20) : 1.0;
-        accumLight += skyGlow(dir, S) * (heat / uHeatScale) * uHaloStrength * distFade * skyMask * 0.85;
+            float NdotL = max(0.0, dot(N, L));
+            float shadow = geometry ? shadowSoft(P, S, lightDist) : 1.0;
+
+            // Warm sky-bounce indirect reflection (prevents pitch black shadows behind walls)
+            vec3 skyBounce = vec3(0.35, 0.16, 0.06) * max(0.0, N.y * 0.5 + 0.5) * atten * 0.45;
+
+            vec3 surfaceColor = (vec3(2.2, 1.45, 0.85) * (NdotL * shadow) + skyBounce) * atten * (heat / uHeatScale);
+            if (geometry) {
+                accumLight += surfaceColor;
+            }
+
+            float distFade = clamp(1.0 - (camDist / (R * 1.4)), 0.0, 1.0);
+            distFade *= distFade;
+
+            // 3. Volumetric Obstacle-Wrapping Godrays + Edge Glow
+            float godrays = godraysAndWrap(uv, S, dir, viewDist);
+            accumLight += vec3(1.8, 1.1, 0.55) * godrays * (heat / uHeatScale) * distFade * 0.40;
+
+            // 4. Atmospheric Line-of-sight Air In-scattering
+            float inScatter = airMarch(P, S, viewDist, R);
+            accumLight += vec3(1.4, 0.75, 0.3) * inScatter * (heat / uHeatScale) * distFade * 0.25;
+
+            // 5. Sky & Horizon Glow (full on sky, subtle distance haze on far geometry)
+            float skyMask = geometry ? clamp(viewDist / 256.0, 0.0, 0.20) : 1.0;
+            accumLight += skyGlow(dir, S) * (heat / uHeatScale) * uHaloStrength * distFade * skyMask * 0.85;
+        }
 
         // 7. Double-pulse initial nuclear thermal bleaching flash
         // Cinematics-layer term: gated by uCine and scaled by uIntensity so
@@ -492,7 +510,7 @@ void main() {
         }
     }
 
-    accumLight *= uIntensity;
+    accumLight *= uIntensity * lightMask;
 
     // Heat shimmer distortion offset (only evaluated when scene sampling is active and light is non-zero)
     if (uHasScene != 0 && uSolidAdd == 0 && uDebugReplace == 0 && viewDist < 80.0

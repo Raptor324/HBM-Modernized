@@ -276,10 +276,6 @@ public class CargoElevatorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
     }
 
     /** Client update: take the authoritative position as the drift-correction target, keep the local mirror running. */
-    @Override
-    protected void applyClientUpdate(@NotNull CompoundTag tag) {
-        applyClientUpdate(tag, null);
-    }
 
     @Override
     protected void applyClientUpdate(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {

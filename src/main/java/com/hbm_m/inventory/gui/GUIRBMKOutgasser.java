@@ -15,8 +15,10 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
- * 1:1 port of {@code GUIRBMKOutgasser}: a flux progress bar at (66,58) and the gas tank gauge at
- * (143,23).
+ * 1:1 port of {@code GUIRBMKOutgasser}: the flux progress bar at (82,50) up to 13 px wide from
+ * source (176,0), and the gas gauge at (115, 66-gas) 10 px wide up to 42 px tall from source
+ * (188, 42-gas), with the tank hover region at (112,21) 16x48. The "Flux" text readout is a
+ * port extra and stays.
  *
  * <p>Both readouts used to show something else entirely - the progress bar was repurposed as a
  * xenon-poison meter and the tank gauge as a heat gauge, because the block entity had neither a
@@ -46,17 +48,21 @@ public class GUIRBMKOutgasser extends GuiInfoScreen<RBMKOutgasserMenu> {
         // тайл может отсутствовать в реплее Flashback
         if (be == null) return;
 
-        int progress = be.duration > 0 ? (int) (be.progress * 45 / be.duration) : 0;
-        progress = Math.max(0, Math.min(progress, 45));
+        // 1:1 GUIRBMKOutgasser.drawGuiContainerBackgroundLayer: progress bar at (82,50), max 13 px
+        // wide, source (176,0) - the frame art sits at x82-94/y50-55 in the pixel-identical texture.
+        int progress = be.duration > 0 ? (int) (be.progress * 13 / be.duration) : 0;
+        progress = Math.max(0, Math.min(progress, 13));
         if (progress > 0) {
-            g.blit(TEXTURE, this.leftPos + 66, this.topPos + 58, 190, 0, progress, 6);
+            g.blit(TEXTURE, this.leftPos + 82, this.topPos + 50, 176, 0, progress, 6);
         }
 
+        // Gas gauge at (115, 66-gas), 10 px wide up to 42 px tall, source (188, 42-gas) - the gauge
+        // frame spans x112-124/y21-66 and the yellow fill strip is at source x188-197/y0-42.
         int gas = be.gasTank.getMaxFill() > 0
-                ? (int) ((long) be.gasTank.getFill() * 58 / be.gasTank.getMaxFill()) : 0;
-        gas = Math.max(0, Math.min(gas, 58));
+                ? (int) ((long) be.gasTank.getFill() * 42 / be.gasTank.getMaxFill()) : 0;
+        gas = Math.max(0, Math.min(gas, 42));
         if (gas > 0) {
-            g.blit(TEXTURE, this.leftPos + 143, this.topPos + 82 - gas, 176, 58 - gas, 14, gas);
+            g.blit(TEXTURE, this.leftPos + 115, this.topPos + 66 - gas, 188, 42 - gas, 10, gas);
         }
     }
 
@@ -89,7 +95,8 @@ public class GUIRBMKOutgasser extends GuiInfoScreen<RBMKOutgasserMenu> {
         drawCustomInfoStat(g, mouseX, mouseY, 66, 58, 45, 6, mouseX, mouseY,
                 Component.literal(String.format("Flux: %.1f / %d", be.progress, be.duration)));
 
-        drawCustomInfoStat(g, mouseX, mouseY, 143, 23, 14, 58, mouseX, mouseY,
+        // 1:1 drawScreen: the tank hover region is (112,21) 16x48 (renderTankInfo).
+        drawCustomInfoStat(g, mouseX, mouseY, 112, 21, 16, 48, mouseX, mouseY,
                 Component.literal(be.gasTank.getFill() + " / " + be.gasTank.getMaxFill() + " mB"));
 
         this.renderTooltip(g, mouseX, mouseY);

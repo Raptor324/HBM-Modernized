@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 
 import com.hbm_m.item.ModItems;
 
-import net.minecraft.client.resources.language.I18n;
+import net.minecraft.locale.Language;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -48,8 +48,8 @@ public class ItemBookLore extends Item {
         if (key.isEmpty()) return;
 
         key = "book_lore." + key + ".author";
-        if (I18n.exists(key))
-            list.add(Component.translatable("book_lore.author", I18n.get(key)));
+        if (Language.getInstance().has(key))
+            list.add(Component.translatable("book_lore.author", Language.getInstance().getOrDefault(key)));
     }
 
     @Override

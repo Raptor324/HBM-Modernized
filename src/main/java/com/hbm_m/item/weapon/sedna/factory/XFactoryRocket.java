@@ -16,6 +16,7 @@ import com.hbm_m.item.weapon.sedna.BulletConfig;
 import com.hbm_m.item.weapon.sedna.Crosshair;
 import com.hbm_m.item.weapon.sedna.GunConfig;
 import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
+import com.hbm_m.item.weapon.sedna.ItemGunBaseNT.GunState;
 import com.hbm_m.item.weapon.sedna.ItemGunBaseNT.LambdaContext;
 import com.hbm_m.item.weapon.sedna.ItemGunBaseNT.WeaponQuality;
 import com.hbm_m.item.weapon.sedna.Receiver;
@@ -52,6 +53,7 @@ public class XFactoryRocket {
     public static BulletConfig[] rocket_ml;
     public static BulletConfig[] rocket_ncrpa;
     public static BulletConfig[] rocket_ncrpa_steer;
+    public static BulletConfig rocket_ff;
 
     // FLYING
     public static Consumer<Entity> LAMBDA_STANDARD_ACCELERATE = (entity) -> {
@@ -111,6 +113,11 @@ public class XFactoryRocket {
     }
 
     // IMPACT
+    public static BiConsumer<EntityBulletBaseMK4, MovingObjectPosition> LAMBDA_MICRO_EXPLODE = (bullet, mop) -> {
+        if (mop.typeOfHit == MovingObjectPosition.MovingObjectType.ENTITY && bullet.tickCount < 3 && mop.entityHit == bullet.getThrower()) return;
+        Lego.tinyExplode(bullet, mop, 1.5F);
+        bullet.setDead();
+    };
     public static BiConsumer<EntityBulletBaseMK4, MovingObjectPosition> LAMBDA_STANDARD_EXPLODE = (bullet, mop) -> {
         if (mop.typeOfHit == MovingObjectPosition.MovingObjectType.ENTITY && bullet.tickCount < 3) return;
         Lego.standardExplode(bullet, mop, 5F); bullet.setDead();
@@ -185,6 +192,8 @@ public class XFactoryRocket {
             rocket_ncrpa[i] = makeRPZB(rocket_template[i]);
         }
 
+        rocket_ff = baseRocket.clone().setItem(EnumAmmo.ROCKET_MICRO).setOnUpdate(null).setVel(7F).setOnImpact(LAMBDA_MICRO_EXPLODE);
+
         GunFactory.reg("gun_panzerschreck", new ItemGunBaseNT(WeaponQuality.A_SIDE, new GunConfig()
                 .dura(300).draw(7).inspect(40).crosshair(Crosshair.L_CIRCUMFLEX)
                 .rec(new Receiver(0)
@@ -217,6 +226,17 @@ public class XFactoryRocket {
                 .setupStandardConfiguration()
                 .anim(LAMBDA_QUADRO_ANIMS).orchestra(Orchestras.ORCHESTRA_QUADRO)
                 ).setDefaultAmmo(EnumAmmo.ROCKET_HE, 4));
+
+        GunFactory.reg("gun_fliegerfaust", new ItemGunBaseNT(WeaponQuality.SPECIAL, new GunConfig()
+                .dura(9 * 25).draw(7).inspect(40).crosshair(Crosshair.L_CIRCUMFLEX)
+                .rec(new Receiver(0)
+                        .dmg(15F).spread(0.015F).spreadHipfire(0.015F).auto(true).delay(4).reload(85).jam(60).sound("hbm:weapon.rocketFlame", 1.0F, 1.0F)
+                        .mag(new MagazineFullReload(0, 9).addConfigs(rocket_ff))
+                        .offset(1, -0.0625 * 1.5, -0.1875D).offsetScoped(1, -0.0625 * 1.5, -0.125D)
+                        .setupStandardFire().recoil(LAMBDA_RECOIL_ROCKET))
+                .setupStandardConfiguration().ps(LAMBDA_FLIEGERFAUST_SECONDARY)
+                .anim(LAMBDA_FLIEGERFAUST_ANIMS).orchestra(Orchestras.ORCHESTRA_FLIEGERFAUST)
+                ).setDefaultAmmo(EnumAmmo.ROCKET_MICRO, 9));
 
         GunFactory.reg("gun_missile_launcher", new ItemGunBaseNT(WeaponQuality.A_SIDE, new GunConfig()
                 .dura(500).draw(20).inspect(40).crosshair(Crosshair.L_CIRCUMFLEX).hideCrosshair(false)
@@ -294,6 +314,65 @@ public class XFactoryRocket {
                     .addBus("BARREL", new BusAnimationSequence().addPos(0, 0, 1.5, 150).addPos(0, 0, 1.5, 1350).addPos(0, 0, 0, 150))
                     .addBus("OPEN", new BusAnimationSequence().addPos(0, 0, 0, 250).addPos(90, 0, 0, 500, IType.SIN_FULL).addPos(90, 0, 0, 250).addPos(0, 0, 0, 500, IType.SIN_FULL))
                     .addBus("EQUIP", new BusAnimationSequence().addPos(0, 0, 0, 1500).addPos(-1, 0, 0, 150, IType.SIN_DOWN).addPos(0, 0, 0, 150, IType.SIN_UP));
+        }
+        return null;
+    };
+
+    public static BiConsumer<ItemStack, LambdaContext> LAMBDA_FLIEGERFAUST_SECONDARY = (stack, ctx) -> {
+        LivingEntity entity = ctx.entity;
+        Player player = ctx.getPlayer();
+        Receiver rec = ctx.config.getReceivers(stack)[0];
+        int index = ctx.configIndex;
+        GunState state = ItemGunBaseNT.getState(stack, index);
+
+        if (state == GunState.IDLE) {
+            boolean soundPlayed = false;
+            for (int i = 0; i < 9; i++) {
+                if (rec.getCanFire(stack).apply(stack, ctx)) {
+                    rec.getOnFire(stack).accept(stack, ctx);
+                    if (rec.getFireSound(stack) != null && !soundPlayed) {
+                        Lego.playSound(entity, rec.getFireSound(stack), rec.getFireVolume(stack), rec.getFirePitch(stack));
+                        soundPlayed = true;
+                    }
+                } else {
+                    if (rec.getDoesDryFire(stack)) {
+                        ItemGunBaseNT.playAnimation(player, stack, GunAnimation.CYCLE_DRY, index);
+                        ItemGunBaseNT.setState(stack, index, rec.getRefireAfterDry(stack) ? GunState.COOLDOWN : GunState.DRAWING);
+                        ItemGunBaseNT.setTimer(stack, index, rec.getDelayAfterDryFire(stack));
+                    }
+                }
+            }
+            if (soundPlayed) {
+                ItemGunBaseNT.setState(stack, index, GunState.COOLDOWN);
+                ItemGunBaseNT.setTimer(stack, index, rec.getDelayAfterFire(stack));
+            }
+        }
+        if (state == GunState.RELOADING) {
+            ItemGunBaseNT.setReloadCancel(stack, true);
+        }
+    };
+
+    @SuppressWarnings("incomplete-switch") public static BiFunction<ItemStack, GunAnimation, BusAnimation> LAMBDA_FLIEGERFAUST_ANIMS = (stack, type) -> {
+        boolean empty = ((ItemGunBaseNT) stack.getItem()).getConfig(stack, 0).getReceivers(stack)[0].getMagazine(stack).getAmount(stack, XFactory12ga.clientInventory()) <= 0;
+        switch (type) {
+            case EQUIP: return new BusAnimation()
+                    .addBus("EQUIP", new BusAnimationSequence().addPos(60, 0, 0, 0).addPos(0, 0, 0, 500, IType.SIN_DOWN));
+            case CYCLE: return new BusAnimation()
+                    .addBus("RECOIL", new BusAnimationSequence().addPos(0, 0, -0.125, 50, IType.SIN_DOWN).addPos(0, 0, 0, 150, IType.SIN_FULL));
+            case RELOAD: return new BusAnimation()
+                    .addBus("RELOAD", new BusAnimationSequence().addPos(75, 0, 0, 750, IType.SIN_FULL).hold(2750).addPos(0, 0, 0, 750, IType.SIN_FULL))
+                    .addBus("DRUM", new BusAnimationSequence().hold(1000).addPos(0, 0, -1, 500, IType.SIN_FULL).addPos(0, -4, -1, 500, IType.SIN_UP).hold(500).addPos(0, 0, -1, 500, IType.SIN_DOWN).addPos(0, 0, 0, 250, IType.SIN_UP))
+                    .addBus("DRUMROT", new BusAnimationSequence().hold(1500).addPos(-90, 0, 0, 500, IType.SIN_UP).hold(500).addPos(0, 0, 0, 500, IType.SIN_DOWN))
+                    .addBus("RECOIL", new BusAnimationSequence().hold(3250).addPos(0, 0, 0.25, 150, IType.SIN_DOWN).addPos(0, 0, 0, 100, IType.SIN_FULL))
+                    .addBus("UNLOADING", new BusAnimationSequence().setPos(1, 0, 0).hold(2500).setPos(0, 0, 0));
+            case JAMMED: return new BusAnimation()
+                    .addBus("RELOAD", new BusAnimationSequence().hold(500).addPos(75, 0, 0, 500, IType.SIN_FULL).hold(1500).addPos(0, 0, 0, 500, IType.SIN_FULL))
+                    .addBus("DRUM", new BusAnimationSequence().hold(1250).addPos(0, 0, -1, 250, IType.SIN_FULL).addPos(0, 0, 0, 250, IType.SIN_UP))
+                    .addBus("RECOIL", new BusAnimationSequence().hold(1750).addPos(0, 0, 0.25, 150, IType.SIN_DOWN).addPos(0, 0, 0, 100, IType.SIN_FULL))
+                    .addBus("UNLOADING", new BusAnimationSequence().setPos(1, 0, 0).hold(1750).setPos(0, 0, 0));
+            case INSPECT: return new BusAnimation()
+                    .addBus("RELOAD", new BusAnimationSequence().addPos(75, 0, 0, 750, IType.SIN_FULL).hold(500).addPos(0, 0, 0, 750, IType.SIN_FULL))
+                    .addBus("ROCKET", new BusAnimationSequence().addPos(0, empty ? -3 : 0, 0, 0));
         }
         return null;
     };

@@ -30,10 +30,12 @@ import com.hbm_m.util.EnchantmentUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -52,6 +54,7 @@ import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -95,14 +98,21 @@ public class EntityChemical extends EntityThrowableNT {
     }
 
     public EntityChemical setFluid(Fluid fluid) {
-        this.entityData.set(FLUID, net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluid).toString());
+        if (fluid == null) {
+            fluid = Fluids.EMPTY;
+        }
+        ResourceLocation key = BuiltInRegistries.FLUID.getKey(fluid);
+        this.entityData.set(FLUID, key != null ? key.toString() : "");
         return this;
     }
 
     public Fluid getFluid() {
         String id = this.entityData.get(FLUID);
-        if (id.isEmpty()) return ModFluids.NONE.getSource();
-        return net.minecraft.core.registries.BuiltInRegistries.FLUID.get(net.minecraft.resources.ResourceLocation.parse(id));
+        if (id == null || id.isEmpty()) return ModFluids.NONE.getSource();
+        ResourceLocation parsed = ResourceLocation.tryParse(id);
+        if (parsed == null) return ModFluids.NONE.getSource();
+        Fluid fluid = BuiltInRegistries.FLUID.get(parsed);
+        return fluid != null && fluid != Fluids.EMPTY ? fluid : ModFluids.NONE.getSource();
     }
 
     public FluidType getFluidType() {

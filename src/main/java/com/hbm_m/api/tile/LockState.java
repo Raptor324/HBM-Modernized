@@ -40,6 +40,11 @@ public class LockState {
         nbt.putDouble("lockMod", lockMod);
     }
 
+    /** Public client-sync representation: omits secret PIN ({@code lock}), {@code lockMod}, and {@code cheesable}. */
+    public void writePublic(CompoundTag nbt) {
+        nbt.putBoolean("isLocked", isLocked);
+    }
+
     public void read(CompoundTag nbt) {
         lock = nbt.getInt("lock");
         cheesable = nbt.getBoolean("cheesable");

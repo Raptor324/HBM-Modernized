@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Выхлопная труба: поддерживает три типа дыма одновременно.
  * Всегда открыта, тип жидкости не настраивается — только smoke/smoke_leaded/smoke_poison.
  */
-public class FluidExhaustBlock extends BaseEntityBlock {
+public class FluidExhaustBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public FluidExhaustBlock(Properties props) {
         super(props);
@@ -39,6 +39,16 @@ public class FluidExhaustBlock extends BaseEntityBlock {
             Level level, BlockState state, BlockEntityType<T> type) {
         return level.isClientSide ? null
                 : createTickerHelper(type, ModBlockEntities.FLUID_EXHAUST_BE.get(), FluidExhaustBlockEntity::tick);
+    }
+
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(com.hbm_m.inventory.fluid.FluidType.forFluid(com.hbm_m.inventory.fluid.ModFluids.SMOKE.getSource()).getLocalizedName());
+        text.add(com.hbm_m.inventory.fluid.FluidType.forFluid(com.hbm_m.inventory.fluid.ModFluids.SMOKE_LEADED.getSource()).getLocalizedName());
+        text.add(com.hbm_m.inventory.fluid.FluidType.forFluid(com.hbm_m.inventory.fluid.ModFluids.SMOKE_POISON.getSource()).getLocalizedName());
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     //? if >1.20.1 {

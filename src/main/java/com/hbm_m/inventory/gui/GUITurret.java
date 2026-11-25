@@ -334,7 +334,7 @@ public class GUITurret extends AbstractContainerScreen<TurretMenu> {
         if (turret == null) return;
 
         long max = menu.getMaxEnergyLong();
-        int i = max > 0 ? (int) (menu.getEnergyLong() * 53 / max) : 0;
+        int i = max > 0 ? (int) Math.min(52, Math.max(0, menu.getEnergyLong() * 52 / max)) : 0;
         gui.blit(texture, guiLeft + 152, guiTop + 97 - i, 194, 52 - i, 16, i);
 
         if (turret.isOn())

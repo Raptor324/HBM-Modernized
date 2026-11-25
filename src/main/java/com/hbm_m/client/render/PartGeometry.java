@@ -246,7 +246,7 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone, com.h
         float maxX = Float.NEGATIVE_INFINITY, maxY = Float.NEGATIVE_INFINITY, maxZ = Float.NEGATIVE_INFINITY;
 
         try {
-            final int intsPerVert = vertexStrideBytes >>> 2; // 9 ints (36 bytes)
+            final int intsPerVert = vertexStrideBytes >>> 2; // 7 ints (28 bytes)
             int[] uniqueVerts = new int[vertexCount * intsPerVert];
             int[] validIndices = new int[indexCapacity];
             int tableSize = Integer.highestOneBit(Math.max(16, vertexCount * 2) - 1) << 1;
@@ -302,28 +302,15 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone, com.h
                         v = (v - v0) * invDv;
                     }
 
-                    int normalPacked = raw[base + 7];
-                    float nx = ((byte) (normalPacked & 0xFF)) / 127.0f;
-                    float ny = ((byte) ((normalPacked >> 8) & 0xFF)) / 127.0f;
-                    float nz = ((byte) ((normalPacked >> 16) & 0xFF)) / 127.0f;
-
-                    float lenSq = nx * nx + ny * ny + nz * nz;
-                    if (lenSq > 1e-6f && Math.abs(lenSq - 1.0f) > 1e-3f) {
-                        float invLen = (float) (1.0 / Math.sqrt(lenSq));
-                        nx *= invLen;
-                        ny *= invLen;
-                        nz *= invLen;
-                    }
+                    int normalPacked = raw[base + 7] & 0x00FFFFFF;
 
                     int w0 = Float.floatToRawIntBits(x);
                     int w1 = Float.floatToRawIntBits(y);
                     int w2 = Float.floatToRawIntBits(z);
-                    int w3 = Float.floatToRawIntBits(nx);
-                    int w4 = Float.floatToRawIntBits(ny);
-                    int w5 = Float.floatToRawIntBits(nz);
-                    int w6 = Float.floatToRawIntBits(u);
-                    int w7 = Float.floatToRawIntBits(v);
-                    int w8 = perVertexBoneId;
+                    int w3 = normalPacked;
+                    int w4 = Float.floatToRawIntBits(u);
+                    int w5 = Float.floatToRawIntBits(v);
+                    int w6 = perVertexBoneId;
 
                     int h = w0 * 31 + w1;
                     h = h * 31 + w2;
@@ -331,8 +318,6 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone, com.h
                     h = h * 31 + w4;
                     h = h * 31 + w5;
                     h = h * 31 + w6;
-                    h = h * 31 + w7;
-                    h = h * 31 + w8;
                     h ^= (h >>> 16);
 
                     int slot = h & tableMask;
@@ -349,15 +334,13 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone, com.h
                             uniqueVerts[vo + 4] = w4;
                             uniqueVerts[vo + 5] = w5;
                             uniqueVerts[vo + 6] = w6;
-                            uniqueVerts[vo + 7] = w7;
-                            uniqueVerts[vo + 8] = w8;
                             hashTable[slot] = foundIdx;
                             break;
                         }
                         int vo = cand * intsPerVert;
                         if (uniqueVerts[vo + 0] == w0 && uniqueVerts[vo + 1] == w1 && uniqueVerts[vo + 2] == w2
                                 && uniqueVerts[vo + 3] == w3 && uniqueVerts[vo + 4] == w4 && uniqueVerts[vo + 5] == w5
-                                && uniqueVerts[vo + 6] == w6 && uniqueVerts[vo + 7] == w7 && uniqueVerts[vo + 8] == w8) {
+                                && uniqueVerts[vo + 6] == w6) {
                             foundIdx = cand;
                             break;
                         }

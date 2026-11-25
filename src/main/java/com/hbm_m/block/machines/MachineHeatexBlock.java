@@ -32,7 +32,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
  * <b>Ecken</b> sind die Anschlusszellen. Das ist der Grund, warum man die Rohre bei diesem Geraet
  * diagonal ansetzt und nicht gerade.</p>
  */
-public class MachineHeatexBlock extends DummyableMachineBlock {
+public class MachineHeatexBlock extends DummyableMachineBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public MachineHeatexBlock(Properties properties) { super(properties); }
 
@@ -140,6 +140,18 @@ public class MachineHeatexBlock extends DummyableMachineBlock {
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineHeatexBlockEntity heater)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                String.format(java.util.Locale.US, "%,d", heater.heatEnergy) + " TU"));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
+
     // Verbatim port of the original HeaterHeatex.getAllPorts.
     @Override
     public int[][] getAllPorts(Direction facing) {

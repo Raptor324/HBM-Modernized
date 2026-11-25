@@ -21,6 +21,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -177,4 +178,14 @@ public class MachineBoilerBlock extends DummyableMachineBlock implements com.hbm
     /*public static final com.mojang.serialization.MapCodec<MachineBoilerBlock> CODEC = simpleCodec(MachineBoilerBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
+
+    // Verbatim port of the original MachineHeatBoiler.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 0, Direction.EAST.get3DDataValue()},
+            {-1, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 3, 0, Direction.UP.get3DDataValue()}
+        }, facing);
+    }
 }

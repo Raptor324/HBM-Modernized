@@ -32,7 +32,7 @@ public class ParticleRiftNT extends ParticleNT {
 
     @Override
     public void render(VertexConsumer ignored, Camera camera, float pt, PoseStack pose) {
-        Map<String, List<float[]>> obj = RBMKColumnRenderer.getObj("models/sphere_uv.obj");
+        Map<String, List<float[]>> obj = RBMKColumnRenderer.getObj("models/block/machines/sphere_uv.obj");
         if (obj.isEmpty()) return;
         VertexConsumer c = ParticleEngineNT.buffer().getBuffer(getRenderType());
         Vec3 p = virtualizedOffset(Mth.lerp(pt, xo, x), Mth.lerp(pt, yo, y), Mth.lerp(pt, zo, z), camera);

@@ -80,10 +80,13 @@ public class XFactoryFolly {
             int z = (int) Math.floor(beam.getZ() + dir.zCoord * i);
 
             for (int ix = x - 1; ix <= x + 1; ix++) for (int iy = y - 1; iy <= y + 1; iy++) for (int iz = z - 1; iz <= z + 1; iz++) {
-                if (iy > 0 && iy < 256) beam.level().setBlockAndUpdate(new BlockPos(ix, iy, iz), Blocks.AIR.defaultBlockState());
+                BlockPos bpos = new BlockPos(ix, iy, iz);
+                if (!beam.level().isOutsideBuildHeight(bpos) && iy > beam.level().getMinBuildHeight()) {
+                    beam.level().setBlockAndUpdate(bpos, Blocks.AIR.defaultBlockState());
+                }
                 AABB aabb = new AABB(ix - 1, iy - 1, iz - 1, ix + 2, iy + 2, iz + 2);
                 for (Entity e : entities) if (e != beam.thrower && e.getBoundingBox().intersects(aabb)) {
-                    if (e instanceof LivingEntity living) EntityDamageUtil.attackEntityFromNT(living, BulletConfig.getDamage(beam, beam.thrower, beam.config.dmgClass), beam.damage, true, false, 0D, 100F, 0.99F);
+                    if (e instanceof LivingEntity living) EntityDamageUtil.attackEntityFromNT(living, BulletConfig.getDamage(beam, beam.thrower, beam.config.dmgClass), beam.damage, true, false, 0D, 1_000F, 1.0F);
                     else EntityDamageUtil.attackEntityFromIgnoreIFrame(e, BulletConfig.getDamage(beam, beam.thrower, beam.config.dmgClass), beam.damage);
                 }
             }

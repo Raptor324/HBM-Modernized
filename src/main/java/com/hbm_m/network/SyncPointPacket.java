@@ -92,11 +92,7 @@ public class SyncPointPacket implements C2SPacket {
                 }
 
                 CompoundTag pointTag = pointsList.getCompound(msg.pointIndex);
-                pointTag.putInt("X", msg.x);
-                pointTag.putInt("Y", msg.y);
-                pointTag.putInt("Z", msg.z);
                 pointTag.putString("Name", msg.pointName);
-                pointTag.putBoolean("HasTarget", msg.hasTarget);
 
                 pointsList.set(msg.pointIndex, pointTag);
                 nbt.put("Points", pointsList);

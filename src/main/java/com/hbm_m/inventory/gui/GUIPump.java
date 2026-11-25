@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.api.fluids.ConnectionPriority;
+import com.hbm_m.blockentity.machines.FlowControlPumpBlockEntity;
 import com.hbm_m.blockentity.machines.FluidPumpBlockEntity;
 import com.hbm_m.network.NBTControlPacket;
 
@@ -12,14 +13,19 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1-Port von {@code GUIPump} (1.7.10): Durchsatzfeld, Druckknopf (0-5 PU) und Prioritaetsknopf
  * nebeneinander auf Hoehe 100; beim Schliessen gehen alle drei Werte per NBTControlPacket an die Pumpe.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIPump extends Screen {
 
-    protected final FluidPumpBlockEntity pump;
+    protected final BlockPos pos;
+    private final int initialBufferSize;
 
     private EditBox textPlacementPriority;
     private Button buttonPressure;
@@ -29,16 +35,29 @@ public class GUIPump extends Screen {
 
     public GUIPump(FluidPumpBlockEntity pump) {
         super(Component.empty());
-        this.pump = pump;
+        this.pos = pump.getBlockPos();
+        this.initialBufferSize = pump.bufferSize;
         this.pressure = pump.getAllTanks()[0].getPressure();
         this.priority = pump.priority.ordinal();
     }
 
-    /** Client: aus {@code FluidPumpBlock#use} geoeffnet. */
+    public GUIPump(FlowControlPumpBlockEntity pump) {
+        super(Component.empty());
+        this.pos = pump.getBlockPos();
+        this.initialBufferSize = pump.bufferSize;
+        this.pressure = pump.tank.getPressure();
+        this.priority = pump.priority.ordinal();
+    }
+
+    /** Client: aus {@code FluidPumpBlock#use} / {@code FlowControlPumpBlock#use} geoeffnet. */
     public static void open(BlockPos pos) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level != null && mc.level.getBlockEntity(pos) instanceof FluidPumpBlockEntity pump) {
+        if (mc.level == null) return;
+        BlockEntity be = mc.level.getBlockEntity(pos);
+        if (be instanceof FluidPumpBlockEntity pump) {
             mc.setScreen(new GUIPump(pump));
+        } else if (be instanceof FlowControlPumpBlockEntity flowPump) {
+            mc.setScreen(new GUIPump(flowPump));
         }
     }
 
@@ -46,7 +65,7 @@ public class GUIPump extends Screen {
     protected void init() {
         textPlacementPriority = new EditBox(this.font, this.width / 2 - 150, 100, 90, 20, Component.empty());
         textPlacementPriority.setMaxLength(5);
-        textPlacementPriority.setValue("" + pump.bufferSize);
+        textPlacementPriority.setValue("" + initialBufferSize);
         addRenderableWidget(textPlacementPriority);
 
         buttonPressure = Button.builder(Component.literal(pressure + " PU"), b -> {
@@ -82,7 +101,7 @@ public class GUIPump extends Screen {
         data.putByte("pressure", (byte) pressure);
         data.putByte("priority", (byte) priority);
         try { data.putInt("capacity", Integer.parseInt(textPlacementPriority.getValue())); } catch (Exception ignored) { }
-        NBTControlPacket.sendToServer(pump.getBlockPos(), data);
+        NBTControlPacket.sendToServer(pos, data);
         super.removed();
     }
 

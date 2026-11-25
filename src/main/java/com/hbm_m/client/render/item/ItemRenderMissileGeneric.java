@@ -98,9 +98,30 @@ public class ItemRenderMissileGeneric extends BlockEntityWithoutLevelRenderer {
 
         RenderMissileType type = renderData.renderType();
         float meshScale = renderData.scale();
-        GuiLayout gui = guiLayout(type);
 
         poseStack.pushPose();
+        if (renderReferencePose(stack, displayContext, poseStack)) {
+            // Позы из reference (1.7.10): фрейм + тело (context-трансформ, GUI-спин, хвост) — ровно то,
+            // что применял legacy-BEWLR 1.7.10. Масштаб ракеты (def.scale оригинала, 1.0/1.5)
+            // уже внутри цепочки — meshScale здесь НЕ применяем, иначе он задваивается. Спец-ракеты
+            // (topol/9m723) без reference остаются на прежнем пути ниже.
+            if (displayContext == ItemDisplayContext.GUI) {
+                Lighting.setupFor3DItems();
+                RenderSystem.disableCull();
+                MissileRenderHelper.drawBakedQuads(poseStack, buffer, packedLight, stack);
+                RenderSystem.enableCull();
+                Lighting.setupForFlatItems();
+            } else {
+                RenderSystem.disableCull();
+                MissileRenderHelper.drawBakedQuads(poseStack, buffer, packedLight, stack);
+                RenderSystem.enableCull();
+            }
+            poseStack.popPose();
+            return;
+        }
+
+        GuiLayout gui = guiLayout(type);
+
         poseStack.translate(0.5F, 0.0F, 0.5F);
 
         switch (displayContext) {
@@ -178,5 +199,25 @@ public class ItemRenderMissileGeneric extends BlockEntityWithoutLevelRenderer {
     }
 
     private record GuiLayout(float scale, float offset) {
+    }
+
+    /**
+     * Applies the reference 1.7.10 pose for this missile (frame + body chain, GUI spin
+     * included) when the reference data knows the item. Returns false for the port-only missiles
+     * (topol, 9M723) and whenever the entry is missing, leaving the historical chain in charge.
+     */
+    private static boolean renderReferencePose(ItemStack stack, ItemDisplayContext displayContext,
+                                               PoseStack poseStack) {
+        com.google.gson.JsonObject entry = com.hbm_m.client.render.display.DisplayReference.entry(
+                net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath());
+        if (entry == null) {
+            return false;
+        }
+        float spinSpeed = com.hbm_m.client.render.display.DisplayReference.guiSpinSpeed(entry);
+        float spinDegrees = spinSpeed == 0F ? 0F
+                : (float) (System.currentTimeMillis() * (double) spinSpeed % 360D);
+        return com.hbm_m.client.render.display.DisplayReference.applyReferencePose(
+                new com.hbm_m.client.render.display.PoseStackReferenceAdapter(poseStack),
+                entry, displayContext, spinDegrees);
     }
 }

@@ -405,8 +405,17 @@ public class XFactory12ga {
 
     /** Original {@code MainRegistry.proxy.me().inventory} - Animationen laufen nur clientseitig. */
     public static Container clientInventory() {
-        Player me = com.hbm_m.client.weapon.GunClientHooks.clientPlayer();
-        return me != null ? me.getInventory() : null;
+        if (dev.architectury.platform.Platform.getEnvironment() != dev.architectury.utils.Env.CLIENT) {
+            return null;
+        }
+        return ClientInventoryHolder.get();
+    }
+
+    private static final class ClientInventoryHolder {
+        private static Container get() {
+            Player me = com.hbm_m.client.weapon.GunClientHooks.clientPlayer();
+            return me != null ? me.getInventory() : null;
+        }
     }
 
     public static Function<ItemStack, String> LAMBDA_NAME_MARESLEG = (stack) -> {
@@ -446,6 +455,9 @@ public class XFactory12ga {
                         rec.getOnFire(stack).accept(stack, ctx);
                         timeFired++;
                     }
+                }
+                if (timeFired > 1 && player != null) {
+                    ItemGunBaseNT.playAnimation(player, stack, GunAnimation.ALT_CYCLE, index);
                 }
                 if (rec.getFireSound(stack) != null) Lego.playSound(entity, rec.getFireSound(stack), rec.getFireVolume(stack), rec.getFirePitch(stack) * (timeFired > 1 ? 0.9F : 1F));
                 ItemGunBaseNT.setState(stack, index, GunState.COOLDOWN);

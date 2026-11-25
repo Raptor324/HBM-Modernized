@@ -3,6 +3,7 @@ package com.hbm_m.blockentity.machines.rbmk;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.network.radio.RTTYNetwork;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -50,7 +51,9 @@ public class RBMKKeyPadBlockEntity extends RBMKPanelDeviceBlockEntity {
     public RBMKKeyPadBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RBMK_KEYPAD_BE.get(), pos, state);
         Arrays.fill(channel, "");
-        Arrays.fill(command, "1");
+        // 1:1 with KeyUnit: command defaults to "" and canSend() requires BOTH a non-empty
+        // channel and a non-empty command - a keypad with only a channel set broadcasts nothing.
+        Arrays.fill(command, "");
     }
 
     @Override
@@ -69,13 +72,34 @@ public class RBMKKeyPadBlockEntity extends RBMKPanelDeviceBlockEntity {
         }
     }
 
-    /** Quadrant hit-test matching the original's 2x2 grid layout. */
-    public static int unitFromHit(BlockHitResult hit) {
-        double x = hit.getLocation().x - Math.floor(hit.getLocation().x);
-        double y = hit.getLocation().y - Math.floor(hit.getLocation().y);
-        int col = x >= 0.5 ? 1 : 0;
-        int row = y >= 0.5 ? 0 : 1;
-        return row * 2 + col;
+    /**
+     * 1:1 with {@code RBMKKeyPad.onBlockActivated}: the 2x2 column split comes from the STORED
+     * facing meta (meta 2/NORTH &amp;&amp; hitX &lt; 0.5 -&gt; 1; 3/SOUTH &amp;&amp; hitX &gt; 0.5 -&gt; 1;
+     * 4/WEST &amp;&amp; hitZ &gt; 0.5 -&gt; 1; 5/EAST &amp;&amp; hitZ &lt; 0.5 -&gt; 1), the row split is
+     * {@code hitY < 0.5 -> +2}, and edge hits (fractional X/Z exactly 0/1) plus the UP/DOWN faces
+     * are excluded. Returns -1 when the hit must not click anything.
+     */
+    public static int unitFromHit(BlockPos pos, Direction facing, BlockHitResult hit) {
+        Direction face = hit.getDirection();
+        if (face == Direction.UP || face == Direction.DOWN) return -1;
+
+        double hitX = hit.getLocation().x - pos.getX();
+        double hitY = hit.getLocation().y - pos.getY();
+        double hitZ = hit.getLocation().z - pos.getZ();
+
+        // Original guard: hitX != 0 && hitX != 1 && hitZ != 0 && hitZ != 1
+        if (hitX == 0 || hitX == 1 || hitZ == 0 || hitZ == 1) return -1;
+
+        int indexHit = 0;
+
+        if (facing == Direction.NORTH && hitX < 0.5) indexHit = 1;
+        if (facing == Direction.SOUTH && hitX > 0.5) indexHit = 1;
+        if (facing == Direction.WEST  && hitZ > 0.5) indexHit = 1;
+        if (facing == Direction.EAST  && hitZ < 0.5) indexHit = 1;
+
+        if (hitY < 0.5) indexHit += 2;
+
+        return indexHit;
     }
 
     /**
@@ -124,7 +148,7 @@ public class RBMKKeyPadBlockEntity extends RBMKPanelDeviceBlockEntity {
         syncToClient();
     }
 
-    
+
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
@@ -132,6 +156,10 @@ public class RBMKKeyPadBlockEntity extends RBMKPanelDeviceBlockEntity {
         tag.putString("channel" + i, channel[i]);
         tag.putString("command" + i, command[i]);
         tag.putBoolean("polling" + i, polling[i]);
+        // 1:1 with KeyUnit ("isPressed" + index, serialize/deserialize every tick): drives the
+        // 7-tick pressed offset + fullbright glow in the renderer (baseTick ships this tag to
+        // clients every tick).
+        tag.putBoolean("isPressed" + i, isPressed[i]);
         }
     }
 
@@ -140,8 +168,9 @@ public class RBMKKeyPadBlockEntity extends RBMKPanelDeviceBlockEntity {
         super.readNbtData(tag, registries);
         for (int i = 0; i < UNITS; i++) {
         channel[i] = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
-        command[i] = tag.contains("command" + i) ? tag.getString("command" + i) : "1";
+        command[i] = tag.contains("command" + i) ? tag.getString("command" + i) : "";
         polling[i] = tag.getBoolean("polling" + i);
+        isPressed[i] = tag.getBoolean("isPressed" + i);
         }
     }
 }

@@ -17,8 +17,17 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class NukeSoliniumBlock extends NukeBaseBlock implements IBomb {
 
+    private static final com.hbm_m.multiblock.MultiblockStructureHelper STRUCTURE_HELPER = createBombStructure(new String[] {
+            "XCX"
+    });
+
     public NukeSoliniumBlock(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public com.hbm_m.multiblock.MultiblockStructureHelper getStructureHelper() {
+        return STRUCTURE_HELPER;
     }
 
     @Override
@@ -41,13 +50,17 @@ public class NukeSoliniumBlock extends NukeBaseBlock implements IBomb {
         }
         if (!level.isClientSide) {
             EntitySoliniumExplosion explosion = EntitySoliniumExplosion.statFac(level, x, y, z, radius);
-            level.playSound(null, x, y, z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, net.minecraft.sounds.SoundSource.BLOCKS,
-                    1.0F, level.random.nextFloat() * 0.1F + 0.9F);
-            WorldUtil.loadAndSpawnEntityInWorld(explosion);
+            // 1:1 legacy NukeSolinium.igniteTestBomb (ориг. строки 118-134): звук, спавн взрыва
+            // и облака — только если возмутитель поля не отменил взрыв (!ex.isDead).
+            if (!explosion.isRemoved()) {
+                level.playSound(null, x, y, z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, net.minecraft.sounds.SoundSource.BLOCKS,
+                        1.0F, level.random.nextFloat() * 0.1F + 0.9F);
+                WorldUtil.loadAndSpawnEntityInWorld(explosion);
 
-            com.hbm_m.entity.effect.EntityCloudSolinium cloud = new com.hbm_m.entity.effect.EntityCloudSolinium(ModEntities.CLOUD_SOLINIUM.get(), level, radius);
-            cloud.setPos(Math.floor(x), Math.floor(y), Math.floor(z));
-            level.addFreshEntity(cloud);
+                com.hbm_m.entity.effect.EntityCloudSolinium cloud = new com.hbm_m.entity.effect.EntityCloudSolinium(ModEntities.CLOUD_SOLINIUM.get(), level, radius);
+                cloud.setPos(Math.floor(x), Math.floor(y), Math.floor(z));
+                level.addFreshEntity(cloud);
+            }
         }
     }
 

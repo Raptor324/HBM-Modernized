@@ -47,29 +47,23 @@ import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 @Mixin(VertexBuffer.class)
 public class VertexBufferMixin {
 
+    @org.spongepowered.asm.mixin.Unique
+    private int hbm$prevFbo = -1;
+
     @Inject(method = "_drawWithShader",
             at = @At(value = "INVOKE",
                      target = "Lnet/minecraft/client/renderer/ShaderInstance;apply()V",
                      shift = At.Shift.AFTER))
     private void hbm$unmaskNtDirectDraw(Matrix4f modelView, Matrix4f projection,
                                         ShaderInstance shader, CallbackInfo ci) {
+        this.hbm$prevFbo = -1;
         boolean window = NtDirectPass.isActive();
         boolean modDirect = ShaderCompatibilityDetector.isExternalShaderActive()
                 && ModShaders.isModDirectShader(shader);
         if (!window && !modDirect) {
             return;
         }
-        // FBO re-bind: a RenderType whose teardown re-binds the vanilla MAIN
-        // target (an OutputStateShard carrying TRANSLUCENT_TARGET - on the
-        // shard-capable setups its clearRenderState ends with
-        // mainRenderTarget.bindWrite) silently redirects every LATER batch of
-        // the same in-window flush out of the pack composite, where Iris's
-        // final blit erases it. Inside the NtDirectPass window this re-binds
-        // the captured pack FBO; outside the window (bare gun_additive /
-        // nuke_add draws - muzzle flashes, bullet tracers) it re-applies the
-        // pack's textured_color ExtendedShader when an earlier
-        // ExtendedShader.clear() had re-bound mainRenderTarget.
-        NtDirectPass.bindPackFboIfDetached();
+        this.hbm$prevFbo = NtDirectPass.bindPackFboIfDetached();
         // COLOR MASK - the raw GL call is the guarantee here, not a fallback:
         // Oculus's MixinShaderInstance.onTail sets the DepthColorStorage lock on
         // EVERY apply of an unknown mod shader, and its GlStateManager
@@ -126,6 +120,11 @@ public class VertexBufferMixin {
         // RenderSystem.disableBlend() right before a fullscreen manual-blend draw.
         if (shader != null && ModShaders.isModAdditiveShader(shader)) {
             ShaderBindResync.resetBlendModeToOpaque();
+        }
+        if (this.hbm$prevFbo > 0) {
+            com.mojang.blaze3d.platform.GlStateManager._glBindFramebuffer(
+                    org.lwjgl.opengl.GL30.GL_FRAMEBUFFER, this.hbm$prevFbo);
+            this.hbm$prevFbo = -1;
         }
     }
 }

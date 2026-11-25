@@ -164,7 +164,7 @@ public final class ArmorRecipeGenerator {
         //Jetpacks
         g.shaped(ModItems.JETPACK_FLY, 1, p("ACA", "TLT", "D D"), 'A', m(ModMaterials.ALUMINUM, MaterialShape.PLATE), 'C', basic, 'T', ModItems.TANK_STEEL, 'L', Items.LEATHER, 'D', ModItems.THRUSTER_SMALL);
         g.shaped(ModItems.JETPACK_BREAK, 1, p("ICI", "TJT", "I I"), 'C', basic, 'T', m(ModMaterials.DURA_STEEL, MaterialShape.INGOT), 'J', ModItems.JETPACK_FLY, 'I', m(ModMaterials.POLYMER, MaterialShape.PLATE));
-        g.shaped(ModItems.JETPACK_VECTOR, 1, p("TCT", "MJM", "B B"), 'C', advanced, 'T', ModItems.TANK_STEEL, 'J', ModItems.JETPACK_BREAK, 'M', ModItems.MOTOR, 'B', ModItems.BOLT_HIGHSPEED_STEEL);
+        g.shaped(ModItems.JETPACK_VECTOR, 1, p("TCT", "MJM", "B B"), 'C', advanced, 'T', ModItems.TANK_STEEL, 'J', ModItems.JETPACK_BREAK, 'M', ModItems.MOTOR, 'B', ModItems.BOLT_DURA_STEEL);
         g.shaped(ModItems.JETPACK_BOOST, 1, p("PCP", "DJD", "PAP"), 'C', advanced, 'P', m(ModMaterials.SATURNITE, MaterialShape.PLATE), 'D', desh, 'J', ModItems.JETPACK_VECTOR, 'A', m(ModMaterials.COPPER, MaterialShape.PLATE_CAST));
 
         //Hazmat

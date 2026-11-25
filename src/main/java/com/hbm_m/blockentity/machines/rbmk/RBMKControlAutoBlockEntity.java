@@ -76,19 +76,21 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity implement
         } else if (heat > hi) {
             fauxLevel = levelUpper;
         } else {
+            // 1:1 with TileEntityRBMKControlAuto.updateEntity: NO zero-range guard. With
+            // heatUpper == heatLower inside the band the original divides by zero - the target
+            // becomes +/-Infinity (Mth.clamp sends it to 1.0/0.0) or NaN when heat == heatLower
+            // (clamp passes NaN through and the rod freezes at its last level). The port's
+            // "range == 0 -> levelLower" special case was a defensive port-side invention and
+            // is deliberately removed here to match the original.
             double range = heatUpper - heatLower;
-            if (range == 0) {
-                fauxLevel = levelLower;
-            } else {
-                fauxLevel = switch (function) {
-                    case LINEAR ->
-                        (heat - heatLower) * ((levelUpper - levelLower) / range) + levelLower;
-                    case QUAD_UP ->
-                        Math.pow((heat - heatLower) / range, 2) * (levelUpper - levelLower) + levelLower;
-                    case QUAD_DOWN ->
-                        Math.pow((heat - heatUpper) / (heatLower - heatUpper), 2) * (levelLower - levelUpper) + levelUpper;
-                };
-            }
+            fauxLevel = switch (function) {
+                case LINEAR ->
+                    (heat - heatLower) * ((levelUpper - levelLower) / range) + levelLower;
+                case QUAD_UP ->
+                    Math.pow((heat - heatLower) / range, 2) * (levelUpper - levelLower) + levelLower;
+                case QUAD_DOWN ->
+                    Math.pow((heat - heatUpper) / (heatLower - heatUpper), 2) * (levelLower - levelUpper) + levelUpper;
+            };
         }
 
         // Original uses percentage (0-100) / 100 = 0-1

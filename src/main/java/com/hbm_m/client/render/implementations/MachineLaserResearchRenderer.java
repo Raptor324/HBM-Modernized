@@ -32,15 +32,16 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class MachineLaserResearchRenderer {
 
-    private static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/lpw2.obj"));
+    private static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/lpw2_item.obj"));
     private static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/lpw2.png");
-    private static final ResourceLocation ERROR_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/lpw2_term_error.png");
+    private static final ResourceLocation ERROR_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/lpw2_term_error.png");
 
     public static void register() {
         // ── LPW-2 Aerospace Propulsion Engine ────────────────────────────────
         MachineRenderers.machine("lpw2",
                 ModBlockEntities.LPW2_BE.get(),
                 MachineLpw2BlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Frame")
             .hook(new MachineRenderHook<MachineLpw2BlockEntity>() {
                 @Override
@@ -63,6 +64,9 @@ public final class MachineLaserResearchRenderer {
                     double turbine = (t % 100) / 100D;
 
                     VertexConsumer vc = buf.getBuffer(RenderType.entityCutout(TEX));
+
+                    ps.pushPose();
+                    ps.translate(0.5, 0.0, 0.5);
 
                     renderMainAssembly(ps, vc, light, sway, h, v, piston, rotor, turbine);
 
@@ -155,6 +159,7 @@ public final class MachineLaserResearchRenderer {
                             new UvShiftConsumer(buf.getBuffer(RenderType.entityCutout(ERROR_TEX)), 0F, scroll),
                             light);
                     ps.popPose();
+                    ps.popPose();
                 }
 
                 @Override
@@ -169,11 +174,14 @@ public final class MachineLaserResearchRenderer {
         MachineRenderers.machine("mining_laser",
                 ModBlockEntities.MINING_LASER_BE.get(),
                 MachineMiningLaserBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Base")
             .hook(new MachineRenderHook<MachineMiningLaserBlockEntity>() {
                 @Override
                 public void render(MachineMiningLaserBlockEntity laser, float pt, PoseStack ps,
                                    MultiBufferSource buf, int light, int overlay, MachineRenderApi api) {
+                    ps.pushPose();
+                    ps.translate(0.5, 0.0, 0.5);
                     double tx = Mth.lerp(pt, laser.lastTargetX, laser.targetX);
                     double ty = Mth.lerp(pt, laser.lastTargetY, laser.targetY);
                     double tz = Mth.lerp(pt, laser.lastTargetZ, laser.targetZ);
@@ -221,6 +229,7 @@ public final class MachineLaserResearchRenderer {
                                 0xa00000, 0xa00000, beamTime + 240, range * 2, 0.075F, 3, 0.025F, BeamPronter.forkAlpha());
                         ps.popPose();
                     }
+                    ps.popPose();
                 }
 
                 @Override

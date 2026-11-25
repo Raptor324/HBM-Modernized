@@ -78,20 +78,25 @@ public class BlastDoorBlockEntity extends DoorBlockEntity {
     /**
      * Порт NEXT BlockEntityBlastDoor.tryToggle (1:1): без отказа «запитанная закрытая
      * дверь рукой не открывается» и без сообщения door_locked — canAccess сам делает
-     * tryPick (взлом). Запертая дверь без ключа не переключается (player != null).
+     * tryPick (взлом). Запертая дверь без ключа не переключается.
      */
     public boolean tryToggle(@Nullable Player player) {
-        if (player != null && isLocked() && !canAccess(player)) return false;
+        if (isLocked() && (player == null || !canAccess(player))) return false;
         if (canOpen()) {
             open();
-            spread(true);
+            openNeigh();
             return true;
         } else if (canClose()) {
             close();
-            spread(false);
+            closeNeigh();
             return true;
         }
         return false;
+    }
+
+    /** 1:1 паритет с 1.7.10 tryToggle() */
+    public void tryToggle() {
+        tryToggle(null);
     }
 
     /** Звуковой кубик у позиции двери (NEXT cue: volume 0.5, BLOCKS). */
@@ -100,7 +105,15 @@ public class BlastDoorBlockEntity extends DoorBlockEntity {
         level.playSound(null, worldPosition, sound, SoundSource.BLOCKS, 0.5F, pitch);
     }
 
-    // ==================== BFS-каскад (NEXT spread, BlockEntityBlastDoor.java:146-165) ====================
+    // ==================== BFS-каскад (NEXT spread / openNeigh / closeNeigh) ====================
+
+    public void openNeigh() {
+        spread(true);
+    }
+
+    public void closeNeigh() {
+        spread(false);
+    }
 
     private void spread(boolean opening) {
         if (level == null) return;
@@ -115,7 +128,7 @@ public class BlastDoorBlockEntity extends DoorBlockEntity {
                 BlockPos next = at.relative(dir);
                 if (!seen.add(next)) continue;
                 if (!(level.getBlockEntity(next) instanceof BlastDoorBlockEntity door)) continue;
-                if (door.isLocked() && door.getPins() != getPins()) continue;
+                if (door.isLocked() && (!isLocked() || door.getPins() != getPins())) continue;
                 if (opening ? !door.canOpen() : !door.canClose()) continue;
                 if (opening) door.open();
                 else door.close();
@@ -124,11 +137,15 @@ public class BlastDoorBlockEntity extends DoorBlockEntity {
         }
     }
 
-    // ==================== Замок: каскад по соседям (NEXT lock, :167-178) ====================
+    // ==================== Замок: каскад по соседям (NEXT lock / lockNeigh) ====================
 
     @Override
     public void lock() {
         super.lock();
+        lockNeigh();
+    }
+
+    public void lockNeigh() {
         if (level == null) return;
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             if (!(level.getBlockEntity(worldPosition.relative(dir)) instanceof BlastDoorBlockEntity door)) continue;

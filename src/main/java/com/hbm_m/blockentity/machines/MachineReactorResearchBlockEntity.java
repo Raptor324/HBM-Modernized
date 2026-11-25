@@ -285,7 +285,10 @@ public class MachineReactorResearchBlockEntity extends BaseMachineBlockEntity im
     @Override
     public void receiveControl(CompoundTag data) {
         if (data.contains("level")) {
-            this.setTarget(data.getDouble("level"));
+            double v = data.getDouble("level");
+            if (Double.isFinite(v)) {
+                this.setTarget(net.minecraft.util.Mth.clamp(v, 0.0D, 1.0D));
+            }
         }
 
         this.setChanged();

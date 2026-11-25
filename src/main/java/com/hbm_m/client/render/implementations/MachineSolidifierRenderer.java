@@ -28,8 +28,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  */
 public final class MachineSolidifierRenderer {
 
-    private static final SimpleObjModel SOLIDIFIER_MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/solidifier.obj"));
-    private static final SimpleObjModel LIQUEFACTOR_MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/liquefactor.obj"));
+    private static final SimpleObjModel SOLIDIFIER_MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/solidifier.obj"));
+    private static final SimpleObjModel LIQUEFACTOR_MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/liquefactor.obj"));
 
     public static void register() {
         registerSolidifier();
@@ -39,6 +39,7 @@ public final class MachineSolidifierRenderer {
     private static void registerSolidifier() {
         MachineRenderers.machine("solidifier", ModBlockEntities.SOLIDIFIER_BE.get(),
                 MachineSolidifierBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Main")
             .part("Glass")
             .facing(ObjBerHelper::facing)
@@ -51,6 +52,7 @@ public final class MachineSolidifierRenderer {
     private static void registerLiquefactor() {
         MachineRenderers.machine("liquefactor", ModBlockEntities.LIQUEFACTOR_BE.get(),
                 MachineLiquefactorBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Main")
             .part("Glass")
             .viewDistance(256)
@@ -72,6 +74,8 @@ public final class MachineSolidifierRenderer {
 
         @Override
         public void render(T be, float pt, PoseStack ps, MultiBufferSource buf, int light, int overlay, MachineRenderApi api) {
+            ps.pushPose();
+            ps.translate(0.5, 0.0, 0.5);
             FluidTank tank = tankGetter.apply(be);
             if (tank != null && tank.getFill() > 0) {
                 int color = FluidType.forFluid(tank.getTankType()).getColor();
@@ -87,6 +91,7 @@ public final class MachineSolidifierRenderer {
 
             model.renderPartColor("Glass", ps, buf.getBuffer(ClientRenderHandler.CustomRenderTypes.TRANSLUCENT_COLOR_NOCULL),
                     0.75F, 1.0F, 1.0F, 0.15F);
+            ps.popPose();
         }
 
         @Override

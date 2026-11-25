@@ -360,7 +360,7 @@ public class MachineThresherBlockEntity extends com.hbm_m.blockentity.BaseHbmBlo
 
     /** Original {@code deserialize}: Winkel dreistufig nachziehen. */
     @Override
-    protected void applyClientUpdate(CompoundTag nbt) {
+    protected void applyClientUpdate(CompoundTag nbt, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
         this.isOn = nbt.getBoolean("isOn");
         this.isSuspended = nbt.getBoolean("isSuspended");
         this.syncAngle = nbt.getFloat("angle");

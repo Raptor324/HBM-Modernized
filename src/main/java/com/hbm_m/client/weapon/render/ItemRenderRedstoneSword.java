@@ -26,6 +26,8 @@ public class ItemRenderRedstoneSword extends ItemRenderWeaponBase {
 
     @Override public boolean customFirstPerson() { return false; }
 
+    @Override public boolean hasInventoryModel() { return false; }
+
     /** Original {@code RedstoneSword.isFull3D}. */
     @Override public boolean isFull3D() { return true; }
 

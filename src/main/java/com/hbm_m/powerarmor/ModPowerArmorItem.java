@@ -8,20 +8,16 @@ import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
 
+import com.hbm_m.client.render.armor.ArmorClientExtensions;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.sounds.GeigerSoundPacket;
-import com.hbm_m.powerarmor.layer.ModModelLayers;
-import com.hbm_m.powerarmor.layer.PowerArmorEmptyModel;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.sound.ModSounds;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -31,7 +27,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 import net.minecraft.world.item.ItemStack;
@@ -90,14 +85,21 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         return specs;
     }
 
-    // ПУТЬ К ТЕКСТУРЕ (Forge: расширение брони; на Fabric/NeoForge рендер через свои хуки)
+    // ПУТЬ К ТЕКСТУРЕ (для совместимости; основной 3D рендер — через UnifiedObjArmorLayer и ArmorItemRenderer)
     //? if forge {
     @Override
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
         String tex = resolveArmorTextureName(stack, slot);
-        return MainRegistry.MOD_ID + ":textures/block/armor/" + tex + ".png";
+        return MainRegistry.MOD_ID + ":textures/armor/" + tex + ".png";
     }
-    //?}
+    //?} else {
+    /*@Override
+    public ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot,
+            net.minecraft.world.item.ArmorMaterial.Layer layer, boolean innerModel) {
+        String tex = resolveArmorTextureName(stack, slot);
+        return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/armor/" + tex + ".png");
+    }
+    *///?}
 
     /**
      * Resolves the armor texture name (without extension) based on the item's registry id.
@@ -133,97 +135,11 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
 
     //? if forge {
     @Override
-@SuppressWarnings("removal")
+    @SuppressWarnings("removal")
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(new IClientItemExtensions() {
-            private PowerArmorEmptyModel model;
-
-            @Override
-            public @NotNull HumanoidModel<?> getHumanoidArmorModel(LivingEntity livingEntity, ItemStack itemStack,
-                    EquipmentSlot equipmentSlot, HumanoidModel<?> original) {
-                if (this.model == null) {
-                    ModelPart layer = Minecraft.getInstance().getEntityModels().bakeLayer(ModModelLayers.POWER_ARMOR);
-                    this.model = new PowerArmorEmptyModel(layer);
-                }
-
-                this.model.setAllVisible(false);
-                switch (equipmentSlot) {
-                    case HEAD -> this.model.head.visible = true;
-                    case CHEST -> {
-                        this.model.body.visible = true;
-                        this.model.rightArm.visible = true;
-                        this.model.leftArm.visible = true;
-                    }
-                    case LEGS, FEET -> {
-                        this.model.rightLeg.visible = true;
-                        this.model.leftLeg.visible = true;
-                    }
-                    default -> {
-                        // MAINHAND/OFFHAND are irrelevant for armor model rendering.
-                    }
-                }
-
-                this.model.crouching = original.crouching;
-                this.model.riding = original.riding;
-                this.model.young = original.young;
-                copyRotations(original, this.model);
-                return this.model;
-            }
-        });
+        ArmorClientExtensions.acceptForge3dArmor(consumer, ModPowerArmorItem.this::renderHelmetOverlay);
     }
     //?}
-
-    /**
-     * NeoForge 1.21.1: клиентские расширения — подменяем ванильную модель брони
-     * на "пустую" (PowerArmorEmptyModel), чтобы HumanoidArmorLayer не рисовал
-     * ванильную текстуру поверх OBJ-слоёв.
-     */
-    //? if neoforge {
-    /*public static net.neoforged.neoforge.client.extensions.common.IClientItemExtensions createNeoForgeClientExtensions() {
-        return new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
-            private PowerArmorEmptyModel model;
-
-            @Override
-            public HumanoidModel<?> getHumanoidArmorModel(LivingEntity livingEntity, ItemStack itemStack,
-                    EquipmentSlot equipmentSlot, HumanoidModel<?> original) {
-                if (this.model == null) {
-                    ModelPart layer = Minecraft.getInstance().getEntityModels().bakeLayer(ModModelLayers.POWER_ARMOR);
-                    this.model = new PowerArmorEmptyModel(layer);
-                }
-
-                this.model.setAllVisible(false);
-                switch (equipmentSlot) {
-                    case HEAD -> this.model.head.visible = true;
-                    case CHEST -> {
-                        this.model.body.visible = true;
-                        this.model.rightArm.visible = true;
-                        this.model.leftArm.visible = true;
-                    }
-                    case LEGS, FEET -> {
-                        this.model.rightLeg.visible = true;
-                        this.model.leftLeg.visible = true;
-                    }
-                    default -> {}
-                }
-
-                this.model.crouching = original.crouching;
-                this.model.riding = original.riding;
-                this.model.young = original.young;
-                copyRotations(original, this.model);
-                return this.model;
-            }
-        };
-    }
-    *///?}
-
-    private static void copyRotations(HumanoidModel<?> source, HumanoidModel<?> target) {
-        target.head.copyFrom(source.head);
-        target.body.copyFrom(source.body);
-        target.rightArm.copyFrom(source.rightArm);
-        target.leftArm.copyFrom(source.leftArm);
-        target.rightLeg.copyFrom(source.rightLeg);
-        target.leftLeg.copyFrom(source.leftLeg);
-    }
 
     //? if forge {
     @Override

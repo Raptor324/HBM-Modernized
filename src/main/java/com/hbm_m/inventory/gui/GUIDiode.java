@@ -1,37 +1,64 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.api.energy.CableDiodeBlockEntity;
+import com.hbm_m.blockentity.machines.NetworkSeparatorBlockEntity;
 import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.network.NBTControlPacket;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /** 1:1 {@code GUIDiode}: Durchsatzfeld und Prioritaetsknopf, beim Schliessen per {@code NBTControlPacket} gesendet. */
+@OnlyIn(Dist.CLIENT)
 public class GUIDiode extends Screen {
 
-    protected final CableDiodeBlockEntity diode;
+    protected final BlockPos pos;
+    private final long initialLimit;
     private EditBox textThroughput;
     private Button buttonPriority;
     private int priority;
 
     public GUIDiode(CableDiodeBlockEntity diode) {
         super(Component.empty());
-        this.diode = diode;
+        this.pos = diode.getBlockPos();
+        this.initialLimit = diode.limit;
         this.priority = diode.priority.ordinal();
+    }
+
+    public GUIDiode(NetworkSeparatorBlockEntity separator) {
+        super(Component.empty());
+        this.pos = separator.getBlockPos();
+        this.initialLimit = separator.configuredLimit;
+        this.priority = separator.priority.ordinal();
+    }
+
+    public static void open(BlockPos pos) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+        BlockEntity be = mc.level.getBlockEntity(pos);
+        if (be instanceof CableDiodeBlockEntity diode) {
+            mc.setScreen(new GUIDiode(diode));
+        } else if (be instanceof NetworkSeparatorBlockEntity separator) {
+            mc.setScreen(new GUIDiode(separator));
+        }
     }
 
     @Override
     protected void init() {
         textThroughput = new EditBox(font, this.width / 2 - 150, 100, 90, 20, Component.empty());
         textThroughput.setMaxLength(11);
-        textThroughput.setValue("" + diode.limit);
+        textThroughput.setValue("" + initialLimit);
         addRenderableWidget(textThroughput);
-        buttonPriority = Button.builder(Component.literal(diode.priority.name()), b -> {
+        buttonPriority = Button.builder(Component.literal(IEnergyReceiver.Priority.values()[priority].name()), b -> {
             this.priority++;
             if (priority >= IEnergyReceiver.Priority.values().length) priority = 0;
             b.setMessage(Component.literal(IEnergyReceiver.Priority.values()[priority].name()));
@@ -53,7 +80,7 @@ public class GUIDiode extends Screen {
         CompoundTag data = new CompoundTag();
         data.putByte("priority", (byte) priority);
         try { data.putLong("limit", Long.parseLong(textThroughput.getValue())); } catch (Exception ignored) {}
-        NBTControlPacket.sendToServer(diode.getBlockPos(), data);
+        NBTControlPacket.sendToServer(pos, data);
         super.removed();
     }
 

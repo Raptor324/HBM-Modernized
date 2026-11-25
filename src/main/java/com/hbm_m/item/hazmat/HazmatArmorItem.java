@@ -10,7 +10,6 @@ import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 import com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
@@ -19,10 +18,11 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Костюм химзащиты (жёлтый / красный / серый). На теле рисуется OBJ-костюм
- * ({@code HazmatArmorLayer}); ванильный слой погашен прозрачными текстурами
- * материала. Защита от радиации — градиентная, через {@link HazmatRegistry};
- * от газов — по классам опасностей через {@link ArmorRegistry}.
+ * Костюм химзащиты (жёлтый / красный / серый). На теле и в GUI/руке рисуется 3D OBJ-модель
+ * ({@code hbm_m:models/armor/hazmat.obj}) через {@code UnifiedObjArmorLayer} и {@code ArmorItemRenderer}
+ * (ванильный {@code HumanoidArmorLayer} подавлен через {@code PowerArmorEmptyModel}).
+ * Защита от радиации — градиентная, через {@link HazmatRegistry}; от газов — по классам опасностей
+ * через {@link ArmorRegistry}.
  *
  * <p>Порт {@link com.hbm.items.armor.ArmorHazmat} (1.7.10).</p>
  */
@@ -53,7 +53,7 @@ public class HazmatArmorItem extends ArmorItem implements ITooltipProvider {
         // Классы опасностей - как в оригинальном глобальном хуке: список по Shift.
         java.util.Set<HazardClass> protection = ArmorRegistry.getProtection(stack.getItem());
         if (!protection.isEmpty()) {
-            if (Screen.hasShiftDown()) {
+            if (com.hbm_m.util.StandardInfo.isShiftDown()) {
                 tooltip.add(Component.translatable("hazard.prot").withStyle(ChatFormatting.GREEN));
                 for (HazardClass clazz : protection) {
                     tooltip.add(Component.literal("  ")
@@ -76,4 +76,12 @@ public class HazmatArmorItem extends ArmorItem implements ITooltipProvider {
         tooltip.add(Component.translatable("tooltip.hbm_m.hazmat.mudco")
                 .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
     }
+
+    //? if forge {
+    @Override
+    @SuppressWarnings("removal")
+    public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
+        com.hbm_m.client.render.armor.ArmorClientExtensions.acceptForge3dArmor(consumer, null);
+    }
+    //?}
 }

@@ -43,12 +43,12 @@ public class NukeN2Menu extends AbstractContainerMenu {
                 ? this.be
                 : new ModItemStackHandlerContainer(new ModItemStackHandler.Dummy(NukeN2BlockEntity.SLOTS), () -> {});
 
+        // Оригинал (1.7.10): обычные Slot без ограничения - в слоты мины через GUI
+        // можно положить любой предмет; isReady() требует 12 зарядов N2, поэтому
+        // посторонние предметы просто не дают детонации.
         for (int slot = 0; slot < NukeN2BlockEntity.SLOTS; slot++) {
             final int index = slot;
-            addSlot(new Slot(container, index, 98 + (index % 3) * 18, 36 + (index / 3) * 18) {
-                @Override
-                public boolean mayPlace(ItemStack stack) { return be != null && be.canPlaceItem(index, stack); }
-            });
+            addSlot(new Slot(container, index, 98 + (index % 3) * 18, 36 + (index / 3) * 18));
         }
 
         for (int y = 0; y < 3; y++) {
@@ -69,7 +69,28 @@ public class NukeN2Menu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        return ItemStack.EMPTY;
+        // Оригинал (1.7.10) ContainerNukeN2.transferStackInSlot: shift-click переносит
+        // только содержимое слотов мины (индексы 0-11) в инвентарь игрока;
+        // из инвентаря игрока предметы не переносятся (return null).
+        Slot slot = this.slots.get(index);
+        if (slot == null || !slot.hasItem()) return ItemStack.EMPTY;
+        ItemStack sourceStack = slot.getItem();
+        ItemStack copy = sourceStack.copy();
+
+        if (index < NukeN2BlockEntity.SLOTS) {
+            if (!this.moveItemStackTo(sourceStack, NukeN2BlockEntity.SLOTS, this.slots.size(), true)) {
+                return ItemStack.EMPTY;
+            }
+        } else {
+            return ItemStack.EMPTY;
+        }
+
+        if (sourceStack.getCount() == 0) {
+            slot.set(ItemStack.EMPTY);
+        } else {
+            slot.setChanged();
+        }
+        return copy;
     }
 }
 

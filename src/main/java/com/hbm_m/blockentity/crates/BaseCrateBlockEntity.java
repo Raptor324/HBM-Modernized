@@ -98,6 +98,12 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
     }
 
     @Override
+    protected void writeClientSyncTag(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        if (lockState.isLocked) lockState.writePublic(tag);
+        if (hasSpiders) tag.putBoolean("spiders", true);
+    }
+
+    @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
         if (this.lootTable != null) {

@@ -25,10 +25,15 @@ public class RebarMenu extends AbstractContainerMenu {
         this(id, inv, buf.readEnum(InteractionHand.class));
     }
 
+    private final InteractionHand hand;
+    private final ItemStack heldStack;
+
     public RebarMenu(int id, Inventory inv, InteractionHand hand) {
         super(ModMenuTypes.REBAR_MENU.get(), id);
         this.selected = inv.selected;
-        this.rebar = new HeldItemInventory(inv.player, inv.player.getItemInHand(hand), 1, 1, (s, st) -> true, false, false);
+        this.hand = hand;
+        this.heldStack = inv.player.getItemInHand(hand);
+        this.rebar = new HeldItemInventory(inv.player, this.heldStack, 1, 1, (s, st) -> true, false, false);
 
         this.addSlot(new Slot(rebar, 0, 53, 36) {
             @Override public boolean mayPickup(Player player) { return false; }
@@ -54,8 +59,12 @@ public class RebarMenu extends AbstractContainerMenu {
     @Override
     public void clicked(int index, int button, ClickType mode, Player player) {
         // prevents the player from moving around the currently open box
-        if (mode == ClickType.SWAP && button == selected) return;
-        if (index == selected + 28) return;
+        if (hand == InteractionHand.MAIN_HAND) {
+            if (mode == ClickType.SWAP && button == selected) return;
+            if (index == selected + 28) return;
+        } else if (hand == InteractionHand.OFF_HAND) {
+            if (mode == ClickType.SWAP && button == 40) return;
+        }
 
         if (index != 0) {
             super.clicked(index, button, mode, player);
@@ -73,6 +82,6 @@ public class RebarMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return true;
+        return !this.heldStack.isEmpty() && player.getItemInHand(this.hand) == this.heldStack;
     }
 }

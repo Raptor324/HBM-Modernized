@@ -35,6 +35,16 @@ public class ScrewdriverInteractionHandler {
             // Verschlossene Tuer ohne Schleichen: normaler Klick = Knackversuch (Original tryToggle/canAccess)
             if (doorEntity.isLocked() && !player.isShiftKeyDown()) return EventResult.pass();
 
+            if (player.isShiftKeyDown()) {
+                com.hbm_m.block.entity.doors.DoorDecl decl = doorEntity.getDoorDecl();
+                if (decl != null && decl.hasSkins()) {
+                    if (!level.isClientSide) {
+                        doorEntity.cycleSkinIndex();
+                    }
+                    return EventResult.interruptTrue();
+                }
+            }
+
             // Блокируем стандартное взаимодействие (открытие/закрытие двери).
             // GUI выбора скина открываем только на клиенте.
             if (level.isClientSide) {
@@ -52,7 +62,7 @@ public class ScrewdriverInteractionHandler {
     }
 
     private static boolean isScrewdriverStack(ItemStack stack) {
-        return !stack.isEmpty() && stack.getItem() == ModItems.SCREWDRIVER.get() || stack.getItem() == ModItems.SCREWDRIVER_DESH.get();
+        return !stack.isEmpty() && (stack.getItem() == ModItems.SCREWDRIVER.get() || stack.getItem() == ModItems.SCREWDRIVER_DESH.get());
     }
 
     private static DoorBlockEntity resolveDoorController(Level level, BlockPos clickedPos) {

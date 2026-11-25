@@ -113,7 +113,15 @@ public class RBMKColumnFillerBlock extends Block implements com.hbm_m.interfaces
         BlockPos basePos = findBase(level, pos, true);
         if (basePos == null) basePos = findBase(level, pos, false);
         if (basePos == null) return;
+        // Player-driven filler breaks route here (vanilla's playerWillDestroy fires on the
+        // filler, not on the base), so raise RBMKColumnBlock's lid-drop marker before the base
+        // goes away; explosions route in with player == null and keep the marker false, which is
+        // what makes the lid vanish on 1.7.10-style explosion destruction (RBMKBase.breakBlock is
+        // never called there). The marker is cleared once the base's onRemove consumed it.
+        boolean playerDriven = player != null;
+        if (playerDriven) RBMKColumnBlock.playerDrivenRemoval = true;
         level.destroyBlock(basePos, player == null || !player.isCreative(), player);
+        if (playerDriven) RBMKColumnBlock.playerDrivenRemoval = false;
     }
 
     /** Pick-block on the filler hands over the column item, not nothing. */

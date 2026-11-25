@@ -43,7 +43,7 @@ public class CompactLauncherBlock extends DummyableMachineBlock implements IBomb
     protected com.hbm_m.multiblock.MultiblockStructureHelper defineStructure() {
         var b = com.hbm_m.multiblock.DummyableStructureBuilder.create().box(0, 0, 1, 1, 1, 1);
         b.extra(1, 0, 1).extra(1, 0, -1).extra(-1, 0, 1).extra(-1, 0, -1);
-        return b.placementOffset(0).build(() -> ModBlocks.STRUCT_LAUNCHER.get().defaultBlockState());
+        return b.placementOffset(0).build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     /** Das Original kennt keine Ausrichtung. */
@@ -83,8 +83,8 @@ public class CompactLauncherBlock extends DummyableMachineBlock implements IBomb
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     //?} else {
     /*@Override
-    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return com.hbm_m.platform.BlockHooks.useItemResult(hbmUse(state, level, pos, player, hand, hit));
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return hbmUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     private InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     *///?}

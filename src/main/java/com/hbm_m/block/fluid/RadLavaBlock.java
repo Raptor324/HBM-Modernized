@@ -46,7 +46,8 @@ public class RadLavaBlock extends VolcanicBlock {
     @Override
     public void onSolidify(Level level, BlockPos pos, int lavaCount, int basaltCount, RandomSource rand) {
         int r = rand.nextInt(400);
-        Block above = level.getBlockState(pos.above(10)).getBlock();
+        BlockPos abovePos = pos.above(10);
+        Block above = level.isOutsideBuildHeight(abovePos) ? Blocks.AIR : level.getBlockState(abovePos).getBlock();
         boolean canMakeGem = lavaCount + basaltCount == 6 && lavaCount < 3 && (above == ModBlocks.SELLAFIELD_SLAKED.get() || above == ModBlocks.RAD_LAVA_BLOCK.get());
         int meta = 5 + rand.nextInt(3);
 
@@ -63,6 +64,7 @@ public class RadLavaBlock extends VolcanicBlock {
 
     @Override
     public BlockState getReaction(Level level, BlockPos pos) {
+        if (level.isOutsideBuildHeight(pos)) return null;
         BlockState s = level.getBlockState(pos);
         if (s.getFluidState().is(FluidTags.WATER)) return Blocks.STONE.defaultBlockState();
         if (s.is(BlockTags.LOGS)) return ModBlocks.WASTE_LOG.get().defaultBlockState();

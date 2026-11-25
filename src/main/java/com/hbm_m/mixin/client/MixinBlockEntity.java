@@ -21,9 +21,6 @@ public class MixinBlockEntity implements NucleusTrackedBlockEntity {
     @Unique
     private Object hbm_m$boundsEntry = null;
 
-    @Unique
-    private boolean hbm_m$demolished = false;
-
     @Override
     public boolean hbm_m$isNucleusRegistered() {
         return this.hbm_m$nucleusRegistered;
@@ -52,15 +49,5 @@ public class MixinBlockEntity implements NucleusTrackedBlockEntity {
     @Override
     public void hbm_m$setBoundsEntry(Object entry) {
         this.hbm_m$boundsEntry = entry;
-    }
-
-    @Override
-    public boolean hbm_m$isDemolished() {
-        return this.hbm_m$demolished;
-    }
-
-    @Override
-    public void hbm_m$setDemolished(boolean demolished) {
-        this.hbm_m$demolished = demolished;
     }
 }

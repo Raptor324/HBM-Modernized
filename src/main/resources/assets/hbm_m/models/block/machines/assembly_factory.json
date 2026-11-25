@@ -1,18 +1,11 @@
 {
+	"loader": "hbm_m:machine_parts_loader",
+	"model": "hbm_m:models/block/machines/assembly_factory.obj",
+	"flip_v": true,
+	"render_type": "minecraft:cutout",
 	"textures": {
-		"particle": "hbm_m:block/machine/assembly_factory"
-	},
-	"loader": "forge:composite",
-	"children": {
-		"assembly_factory_model": {
-			"loader": "hbm_m:nmesh_obj",
-			"model": "hbm_m:models/block/machines/assembly_factory.obj",
-			"flip_v": true,
-			"render_type": "minecraft:cutout",
-			"textures": {
-				"default": "hbm_m:block/machine/assembly_factory"
-			}
-		}
+		"particle": "hbm_m:block/machine/assembly_factory",
+		"default": "hbm_m:block/machine/assembly_factory"
 	},
 	"transform": {
 		"translation": [

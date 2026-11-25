@@ -51,8 +51,7 @@ public class ItemGunNI4NI extends ItemGunBaseNT implements com.hbm_m.item.ICusto
                     setCoinCount(stack, newCount);
 
                     if (isHeld) {
-                        SoundEvent ev = HbmSoundsNT.get("hbm:item.techBoop");
-                        if (ev != null) world.playSound(null, entity.getX(), entity.getY(), entity.getZ(), ev, SoundSource.PLAYERS, 1.0F, 1F + newCount / (float) maxCoin);
+                        com.hbm_m.item.weapon.sedna.factory.Lego.playSound(entity, "hbm:item.techBoop", 1.0F, 1F + newCount / (float) maxCoin);
                     }
                 }
             }

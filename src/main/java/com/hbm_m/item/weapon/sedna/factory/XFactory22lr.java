@@ -156,7 +156,7 @@ public class XFactory22lr {
 
     @SuppressWarnings("incomplete-switch") public static BiFunction<ItemStack, GunAnimation, BusAnimation> LAMBDA_STAR_F_ANIMS = (stack, type) -> {
         // Original: MainRegistry.proxy.me().inventory (Animationen laufen nur clientseitig)
-        int ammo = ((ItemGunBaseNT) stack.getItem()).getConfig(stack, 0).getReceivers(stack)[0].getMagazine(stack).getAmount(stack, com.hbm_m.client.weapon.GunClientHooks.clientPlayer().getInventory());
+        int ammo = ((ItemGunBaseNT) stack.getItem()).getConfig(stack, 0).getReceivers(stack)[0].getMagazine(stack).getAmount(stack, XFactory12ga.clientInventory());
         switch(type) {
         case EQUIP: return new BusAnimation()
                 .addBus("EQUIP", new BusAnimationSequence().addPos(45, 0, 0, 0).addPos(0, 0, 0, 500, IType.SIN_DOWN));

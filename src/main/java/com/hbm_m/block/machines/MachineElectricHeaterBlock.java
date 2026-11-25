@@ -5,6 +5,7 @@ import com.hbm_m.blockentity.machines.MachineElectricHeaterBlockEntity;
 import com.hbm_m.item.ModItems;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -105,5 +106,13 @@ public class MachineElectricHeaterBlock extends DummyableMachineBlock implements
     /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
+
+    // Verbatim port of the original HeaterElectric.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {0, 0, 2, Direction.SOUTH.get3DDataValue()}
+        }, facing);
     }
 }

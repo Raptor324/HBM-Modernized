@@ -6,6 +6,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.hbm_m.client.render.weapon.bridge.ExternalGunRenderBridge;
 import com.hbm_m.client.weapon.GunItemRenderer;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -35,7 +36,9 @@ public abstract class MixinItemInHandLayer<T extends LivingEntity, M extends Ent
     private void hbm_m$renderAkimboLeftHand(PoseStack poseStack, MultiBufferSource buffer, int packedLight, T livingEntity, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {
         ItemStack mainStack = livingEntity.getMainHandItem();
         ItemStack offStack = livingEntity.getOffhandItem();
-        if (offStack.isEmpty() && !mainStack.isEmpty()) {
+        // Externe Renderer-Bridge (TACZ): Akimbo-Einzweihand-Injektion auslassen, der externe
+        // Mod verwaltet die 3rd-Person-Arme selbst.
+        if (offStack.isEmpty() && !mainStack.isEmpty() && !ExternalGunRenderBridge.get().isHandled(mainStack)) {
             ItemRenderWeaponBase renderer = GunItemRenderer.get(mainStack);
             if (renderer != null && renderer.isAkimbo(livingEntity)) {
                 HumanoidArm mainArm = livingEntity.getMainArm();

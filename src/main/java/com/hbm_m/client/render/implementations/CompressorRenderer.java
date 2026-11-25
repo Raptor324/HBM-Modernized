@@ -19,10 +19,10 @@ import net.minecraft.world.level.block.state.BlockState;
 /** 1:1 {@code RenderCompressor} und {@code RenderCompressorCompact}. */
 public final class CompressorRenderer {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/compressor.obj"));
-    public static final SimpleObjModel CONDENSER = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/condenser.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/compressor.png");
-    public static final ResourceLocation TEX_COMPACT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/compressor_compact.png");
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/compressor.obj"));
+    public static final SimpleObjModel CONDENSER = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/condenser_powered.obj"));
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/compressor.png");
+    public static final ResourceLocation TEX_COMPACT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/compressor_compact.png");
 
     private CompressorRenderer() {}
 

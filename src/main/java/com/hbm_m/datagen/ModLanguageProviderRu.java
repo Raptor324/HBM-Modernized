@@ -13,6 +13,7 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
+import com.hbm_m.item.weapon.sedna.WeaponItems;
 import com.hbm_m.lib.RefStrings;
 
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -274,9 +275,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.alloy_shovel", "Лопата из продвинутого сплава");
 
         add("item.hbm_m.meteorite_sword", "Метеоритовый меч");
-        add("item.hbm_m.meteorite_sword_seared", "Закалённый метеоритовый меч");
-        add("item.hbm_m.meteorite_sword_hardened", "Упрочнённый метеоритовый меч");
-        add("item.hbm_m.meteorite_sword_alloyed", "Легированный метеоритовый меч");
+        add("item.hbm_m.meteorite_sword_seared", "Метеоритовый меч (Опалённый)");
+        add("item.hbm_m.meteorite_sword_hardened", "Метеоритовый меч (Закалённый)");
+        add("item.hbm_m.meteorite_sword_alloyed", "Метеоритовый меч (Легированный)");
         add("item.hbm_m.meteorite_sword_irradiated", "Метеоритовый меч (Облучённый)");
         add("item.hbm_m.meteorite_sword_fused", "Метеоритовый меч (Сплавленный)");
 
@@ -524,12 +525,12 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.BATTERY_RED_CELL_24.get(), "Красная энергоячейка x24");
 
         // Большие батареи-паки (бэкпорт оригинала)
-        add(ModItems.BATTERY_PACK_REDSTONE.get(), "Редстоуновый аккумулятор");
-        add(ModItems.BATTERY_PACK_LEAD.get(), "Свинцово-серный аккумулятор");
-        add(ModItems.BATTERY_PACK_LITHIUM.get(), "Литий-ионный аккумулятор");
-        add(ModItems.BATTERY_PACK_SODIUM.get(), "Натриево-железный аккумулятор");
-        add(ModItems.BATTERY_PACK_SCHRABIDIUM.get(), "Шрабидиевый аккумулятор");
-        add(ModItems.BATTERY_PACK_QUANTUM.get(), "Квантовый аккумулятор");
+        add(ModItems.BATTERY_PACK_BATTERY_REDSTONE.get(), "Редстоуновый аккумулятор");
+        add(ModItems.BATTERY_PACK_BATTERY_LEAD.get(), "Свинцово-серный аккумулятор");
+        add(ModItems.BATTERY_PACK_BATTERY_LITHIUM.get(), "Литий-ионный аккумулятор");
+        add(ModItems.BATTERY_PACK_BATTERY_SODIUM.get(), "Натриево-железный аккумулятор");
+        add(ModItems.BATTERY_PACK_BATTERY_SCHRABIDIUM.get(), "Шрабидиевый аккумулятор");
+        add(ModItems.BATTERY_PACK_BATTERY_QUANTUM.get(), "Квантовый аккумулятор");
         add(ModItems.BATTERY_PACK_CAPACITOR_COPPER.get(), "Медный конденсатор");
         add(ModItems.BATTERY_PACK_CAPACITOR_GOLD.get(), "Золотой конденсатор");
         add(ModItems.BATTERY_PACK_CAPACITOR_NIOBIUM.get(), "Ниобиевый конденсатор");
@@ -595,6 +596,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE_DENSE), "Плотный золотой провод");
         add(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE_DENSE), "Плотный медный провод");
         add(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.WIRE_DENSE), "Плотный алюминиевый провод");
+        add(ModMaterialItems.item(ModMaterials.DEMOMAT, MaterialShape.WIRE_DENSE), "Плотный провод (Кастомный металл демо)");
         // Стальной провод (ориг. wire_fine, 4545/30 MAT_STEEL; формат ориг. "Провод (%s)")
         add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.WIRE), "Провод (Сталь)");
         // Провода без аналога в оригинале (используются в recipes Arc Welder).
@@ -627,6 +629,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModMaterialItems.item(ModMaterials.BBRONZE, MaterialShape.PLATE_CAST), "Литая пластина (Висмутовая бронза)");
         add(ModMaterialItems.item(ModMaterials.STAR_METAL, MaterialShape.PLATE_CAST), "Литая пластина (Звёздный металл)");
         add(ModMaterialItems.item(ModMaterials.ALLOY, MaterialShape.PLATE_CAST), "Литая пластина (Продвинутый сплав)");
+        add(ModMaterialItems.item(ModMaterials.DEMOMAT, MaterialShape.PLATE_CAST), "Литая пластина (Кастомный металл демо)");
         // Сварные пластины (ориг. plate_welded, 4532; формат ориг. "Сваренная пластина (%s)")
         add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_WELDED), "Сваренная пластина (Сталь)");
         add(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE_WELDED), "Сваренная пластина (Титан)");
@@ -639,6 +642,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_WELDED), "Сваренная пластина (Медь)");
         add(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.PLATE_WELDED), "Сваренная пластина (Алюминий)");
         add(ModMaterialItems.item(ModMaterials.CMB, MaterialShape.PLATE_WELDED), "Сваренная пластина (Сталь Альянса)");
+        add(ModMaterialItems.item(ModMaterials.DEMOMAT, MaterialShape.PLATE_WELDED), "Сваренная пластина (Кастомный металл демо)");
 
         add(ModItems.BATTERY_SCHRABIDIUM.get(), "Шрабидиевая батарейка");
 
@@ -1462,6 +1466,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.BEDROCK_ORE_FRAGMENT_REDSTONE.get(), "Фрагмент бедрок-руды (Красный камень)");
         add(ModItems.BEDROCK_ORE_FRAGMENT_BAUXITE.get(), "Фрагмент бедрок-руды (Боксит)");
         add(ModItems.BEDROCK_ORE_FRAGMENT_CRYOLITE.get(), "Фрагмент бедрок-руды (Криолит)");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_ILMENITE.get(), "Фрагмент бедрок-руды (Ильменит)");
         add(ModItems.BEDROCK_ORE_FRAGMENT_URANIUM.get(), "Фрагмент бедрок-руды (Уран)");
         add(ModItems.BEDROCK_ORE_FRAGMENT_U238.get(), "Фрагмент бедрок-руды (Уран-238)");
         add(ModItems.BEDROCK_ORE_FRAGMENT_PO210.get(), "Фрагмент бедрок-руды (Полоний-210)");
@@ -1555,7 +1560,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.BOLT_STEEL.get(), "Стержень (Сталь)");          // boltntm = "Стержень (%s)" + hbmmat.steel
         add(ModItems.BOLT_LEAD.get(), "Стержень (Свинец)");           // hbmmat.lead
         add(ModItems.BOLT_TUNGSTEN.get(), "Стержень (Вольфрам)");     // hbmmat.tungsten
-        add(ModItems.BOLT_HIGHSPEED_STEEL.get(), "Стержень (Быстрорежущая сталь)"); // boltntm-паттерн + hbmmat.durasteel оригинала
+        add(ModItems.BOLT_DURA_STEEL.get(), "Стержень (Быстрорежущая сталь)"); // boltntm-паттерн + hbmmat.durasteel оригинала
         // Ориг. item.powder_fire.name/.desc (ru_RU.lang).
         add("item.hbm_m.fire_powder", "Красный фосфор");
         // Ключи matshape.* оригинала (ru_RU.lang 1587-1594) — тултип количества ScrapItem.
@@ -1573,7 +1578,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.RAG.get(), "Тряпка");
         add("tooltip.hbm_m.rag.desc1", "Бросьте в воду, чтобы намочить.");
         add("tooltip.hbm_m.rag.desc2", "Нажмите ПКМ, чтобы помочиться на тряпку.");
-        add(ModItems.INGOT_HIGHSPEED_STEEL.get(), "Слиток быстрорежущей стали"); // item.ingot_dura_steel.name оригинала
+        add(ModItems.INGOT_DURA_STEEL.get(), "Слиток быстрорежущей стали"); // item.ingot_dura_steel.name оригинала
         add(ModItems.INGOT_TUNGSTEN_CARBIDE.get(), "Карбид-вольфрамовый слиток"); // item.ingot_tungsten_carbide.name оригинала
         add(ModItems.CANNED_ASBESTOS.get(), "Консервированный асбест");
         add(ModItems.CANNED_ASS.get(), "Консервированная задница");
@@ -2126,7 +2131,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.mining_laser.depth", "Глубина: %d");
         add(ModBlocks.OILBURNER.get(), "Нефтяная горелка");
         add("container.hbm_m.oilburner", "Нефтяная горелка");
-        add(ModBlocks.OILBURNER_HP.get(), "Нефтяная горелка ВД");
         add(ModBlocks.ORBUS.get(), "Орбус (WIP)");
         add(ModBlocks.ORE_SLOPPER.get(), "Рудный шлаппер");
         add("container.hbm_m.ore_slopper", "Рудный шлаппер");
@@ -2134,10 +2138,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("container.hbm_m.plasma_forge", "Плазменная кузница (WIP)");
         add(ModBlocks.PYROOVEN.get(), "Пиролизная печь");
         add(ModBlocks.QUADRUPOLE.get(), "Квадрупольный магнит (WIP)");
-        add(ModBlocks.RADGEN.get(), "Радиоизотопный генератор (WIP)");
         add(ModBlocks.RADIOLYSIS.get(), "Камера радиолиза");
         add("container.hbm_m.radiolysis", "Камера радиолиза");
-        add(ModBlocks.REACTOR_SMALL.get(), "Малый реактор (WIP)");
         add(ModBlocks.RFC.get(), "Генератор RFC (WIP)");
         add(ModBlocks.ROTARY_FURNACE.get(), "Вращающаяся печь");
         add(ModItems.ARC_ELECTRODE.get(), "Графитовый электрод");
@@ -2178,10 +2180,25 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.WATZ_PUMP.get(), "Насос WATZ (WIP)");
         add(ModBlocks.MACHINE_SUPERCOMPUTER.get(), "Суперкомпьютер");
         add("container.hbm_m.machine_supercomputer", "Суперкомпьютер");
-        add("block.hbm_m.network_separator", "Сетевой разделитель");
-        add("block.hbm_m.flow_control_pump", "Помпа контроля потока");
+        add(ModBlocks.LAUNCHPAD_SOYUZ.get(), "Пусковая площадка Союза");
+        add(ModBlocks.NETWORK_SEPARATOR.get(), "Сетевой разделитель");
+        add(ModBlocks.FLOW_CONTROL_PUMP.get(), "Насос управления потоком");
+        add(ModBlocks.MACHINE_CONVERTER_HE_RF.get(), "Преобразователь HE в RF");
+        add(ModBlocks.MACHINE_CONVERTER_RF_HE.get(), "Преобразователь RF в HE");
         add("block.hbm_m.deco_computer", "Персональный компьютер IBM 300PL");
+        // Milestone 5: Energy & Special Weapons
+        add(ModItems.GUN_B92.get(), "§9Энергетический пистолет B92§r");
+        add(ModItems.GUN_B92_AMMO.get(), "§9B92 Energy Cell§r");
+        add(WeaponItems.gun("gun_tau"), "Тау-пушка");
+        add(WeaponItems.gun("gun_coilgun"), "Гаусс-пушка");
+        add(WeaponItems.gun("gun_n_i_4_n_i"), "Энергетический револьвер \"N I 4 N I\"");
+        add(WeaponItems.gun("gun_folly"), "Пушка \"Folly\"");
+        add(WeaponItems.gun("gun_aberrator"), "Пистолет \"Aberrator\"");
+        add(WeaponItems.gun("gun_aberrator_eott"), "Пистолеты \"Eyes Of The Tempest\"");
         add(ModItems.GUN_FLIEGERFAUST.get(), "HIMRAAL");
+        add(ModItems.AMMO_FIREEXT.get(), "Бак с водой для огнетушителя");
+        add(ModItems.AMMO_FIREEXT_FOAM.get(), "Бак с пеной для огнетушителя");
+        add(ModItems.AMMO_FIREEXT_SAND.get(), "Бак с песком для огнетушителя");
         add(ModItems.NUGGET_TITANIUM.get(), "Титановый самородок");
         add(ModItems.NUGGET_COPPER.get(), "Медный самородок");
         add(ModItems.NUGGET_TUNGSTEN.get(), "Вольфрамовый самородок");
@@ -2190,7 +2207,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.NUGGET_LITHIUM.get(), "Литиевый самородок");
         add(ModItems.NUGGET_SODIUM.get(), "Натриевый самородок");
         add(ModItems.NUGGET_STRONTIUM.get(), "Стронциевый самородок");
-        add(ModItems.POWDER_FIRE.get(), "Красный фосфор");
         add(ModItems.DEMOSHAPE_IRON.get(), "Демонстрация особой формы (Железо)");
         add(ModItems.DEMOSHAPE_STEEL.get(), "Демонстрация особой формы (Сталь)");
         add(ModItems.DEMOSHAPE_CUSTOM.get(), "Демонстрация особой формы (Особый металл)");
@@ -2200,12 +2216,14 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.MOLD_DEMOSHAPE.get(), "Литейная форма (Демонстрация особой формы)");
         add(ModBlocks.LAUNCHPAD_LAMBDA.get(), "Пусковая площадка Лямбды");
         add("container.hbm_m.launchpad_lambda", "Пусковая площадка Лямбды");
+        add("container.hbm_m.launchpad_soyuz", "Пусковая площадка Союз");
+        add("desc.gui.soyuz.idle", "Простой");
+        add("desc.gui.soyuz.loading", "Загрузка");
+        add("desc.gui.soyuz.fueling", "Заправка");
+        add("desc.gui.soyuz.ready", "Готов");
         add(ModItems.MISSILE_LAMBDA.get(), "Лямбда-98");
         add("desc.gui.lambda.auto", "§4Автоматический режим$Запускает обратный отсчёт$автоматически, если возможно.");
         add("desc.gui.lambda.manual", "§4Ручной режим$Запуск ракеты нужно$начать кнопкой.");
-        add("desc.gui.soyuz.idle", "Простой");
-        add("desc.gui.soyuz.loading", "Загрузка");
-        add("desc.gui.soyuz.ready", "Готов");
         add(ModBlocks.MACHINE_TAPE_DRIVE.get(), "Стойка дата-накопителей");
         add("container.hbm_m.machine_tape_drive", "Стойка дата-накопителей");
         add(ModItems.SATELLITE_SCIENCE.get(), "Космическая лаборатория");
@@ -2297,7 +2315,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.airnukebomb_a", "Ядерная бомба [снаряд]");
 
 
-        add("block.hbm_m.wire_coated", "Провод из красной меди");
+        add("block.hbm_m.wire_coated", "Изолированный провод");
         // ══════════ Сеть длинной ЛЭП (порт 1.7.10) ══════════
         add("block.hbm_m.red_wire_coated", "Изолированный красный кабель");
         add("block.hbm_m.red_connector", "Красный разъём");
@@ -2342,6 +2360,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.powder_desh_mix", "Смесь деш");
         add("item.hbm_m.powder_nitan_mix", "Нитановая смесь");
         add("block.hbm_m.freaky_alien_block", "Блок ебанутого инопланетянина");
+        add("fluid.hbm_m.unstable_sanity", "Концентрат РЕН-ТВ");
+        add("hbmfluid.trait.sanity", "(хмм пахнет как моча, странно)");
         add("block.hbm_m.reinforced_stone", "Уплотнённый камень");
         add("block.hbm_m.reinforced_stone_slab", "Плита из уплотнённого камня");
         add("block.hbm_m.reinforced_stone_stairs", "Ступеньки из уплотнённого камня");
@@ -2522,6 +2542,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("fluid.hbm_m.estradiol", "Раствор эстрадиола");
         add("fluid.hbm_m.pheromone", "Феромон-бустер");
         add("fluid.hbm_m.pheromone_m", "Модифицированный феромон-бустер");
+        add("fluid.hbm_m.custom_demo", "Кастомный флюид демо");
         add("fluid.hbm_m.seedslurry", "Жидкая рассада");
         add("fluid.hbm_m.enderjuice", "Эндер-сок");
         add("fluid.hbm_m.xpjuice", "Жидкий опыт");
@@ -2766,6 +2787,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.drone_waypoint", "Путевая точка для дронов");
         add("block.hbm_m.drone_waypoint_request", "Логистическая путевая точка для дронов");
         add("block.hbm_m.ducrete", "Дюкретовая плитка");
+        add(ModBlocks.DUCRETE_SLAB.get(), "Плита из дюкрета");
+        add(ModBlocks.DUCRETE_TILE_SLAB.get(), "Плита из дюкретовой плитки");
         add("block.hbm_m.dynamite", "Динамит");
         add("block.hbm_m.factory_advanced_hull", "Корпус усовершенствованной фабрики");
         add("block.hbm_m.factory_titanium_hull", "Корпус базовой фабрики");
@@ -2812,6 +2835,11 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.glass_trinitite", "Тринититовое стекло");
         add("block.hbm_m.glass_uranium", "Урановое стекло");
         add("block.hbm_m.glyphid_base", "Блок улья глифидов");
+        add(ModBlocks.GLYPHID_BASE_INFESTED.get(), "Блок улья глифидов (Заражённый)");
+        add(ModBlocks.GLYPHID_BASE_RADIOACTIVE.get(), "Блок улья глифидов (Радиоактивный)");
+        add(ModBlocks.GLYPHID_SPAWNER.get(), "Спавнер улья глифидов");
+        add(ModBlocks.GLYPHID_SPAWNER_INFESTED.get(), "Спавнер улья глифидов (Заражённый)");
+        add(ModBlocks.GLYPHID_SPAWNER_RADIOACTIVE.get(), "Спавнер улья глифидов (Радиоактивный)");
         add("block.hbm_m.gravel_diamond", "Измельчённые алмазы");
         add("block.hbm_m.gravel_obsidian", "Измельчённый обсидиан");
         add("block.hbm_m.hadron_coil_alloy", "Плотная сверхпроводящая катушка");
@@ -2829,7 +2857,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.icf_block", "Лазер ICF");
         add("block.hbm_m.icf_component", "Стабилизатор ICF");
         add("block.hbm_m.icf_controller", "Контроллер лазера ICF");
-        add("block.hbm_m.iter", "Термоядерный реактор");
         add("block.hbm_m.ladder_aluminium", "Алюминиевая лестница");
         add("block.hbm_m.ladder_cobalt", "Кобальтовая лестница");
         add("block.hbm_m.ladder_copper", "Медная лестница");
@@ -3225,7 +3252,19 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("sounds.hbm_m.techbleep", "Технологический сигнал");
         add("msg.hbm_m.rbmk_console.no_console_found", "Поблизости нет пульта РБМК");
         add("msg.hbm_m.rbmk_tool.stored", "Позиция сохранена: %s, %s, %s");
+        add("msg.hbm_m.rbmk_tool.set", "РБМК соединён!");
         add("msg.hbm_m.rbmk_tool.no_position", "Сначала нажмите на колонну ПКМ");
+        add("upgrade.acid", "Требуется кислота %s");
+        add("upgrade.burn", "Сжигает %smB/t за %sHE");
+        add("upgrade.consumption", "Потребление %s");
+        add("upgrade.coolantConsumption", "Потребление охладителя %s");
+        add("upgrade.delay", "Время %s");
+        add("upgrade.efficiency", "Эффективность %s");
+        add("upgrade.fortune", "Удача %s");
+        add("upgrade.overheatChance", "Шанс перегрева %s");
+        add("upgrade.productivity", "Продуктивность %s");
+        add("upgrade.range", "Радиус %s");
+        add("upgrade.speed", "Скорость процесса %s");
         add("tooltip.hbm_m.rbmk_tool.stored", "Сохранённая позиция: %s, %s, %s");
         add("tooltip.hbm_m.rbmk_tool.empty", "Позиция не сохранена");
         add(ModBlocks.RBMK_ROD.get(), "РБМК Топливный канал");
@@ -3270,8 +3309,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.RBMK_DISPLAY_BLANK.get(),       "РБМК Пустая панель");
         add(ModBlocks.FLARE_STACK.get(), "Факельная башня (WIP)");
         add(ModBlocks.PUMPJACK.get(), "Станок-качалка (WIP)");
-        add(ModBlocks.RADAR.get(), "Радар (WIP)");
-        add(ModBlocks.LARGE_RADAR.get(), "Большой радар (WIP)");
+        add(ModBlocks.RADAR.get(), "Радар");
+        add(ModBlocks.LARGE_RADAR.get(), "Большой радар");
         add(ModBlocks.RADAR_SCREEN.get(), "Экран радара");
         add(ModBlocks.CRACKING_TOWER.get(), "Крекинг башня (WIP)");
         add(ModBlocks.FRACTION_TOWER.get(), "Фракционная башня (WIP)");
@@ -3293,7 +3332,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.CHEMICAL_PLANT.get(), "Химическая установка");
         add(ModBlocks.MACHINE_CENTRIFUGE.get(), "Центрифуга");
         add(ModBlocks.INDUSTRIAL_TURBINE.get(), "Промышленная турбина");
-        add(ModBlocks.TURBINE.get(), "Турбина (WIP)");
         add(ModBlocks.SUBSTATION.get(), "Подстанция (WIP)");
         add("container.hbm_m.wood_burner", "Дровяной генератор");
         add(ModBlocks.TURRET_SENTRY.get(), "Турель \"Часовой\"");
@@ -3496,7 +3534,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("container.hbm_m.vacuum_distill", "Вакуумная дистилляция");
         add("container.hbm_m.turbofan", "Турбовентилятор");
         add("container.hbm_m.industrial_turbine", "Промышленная турбина");
-        add("container.hbm_m.radar", "Радар (WIP)");
+        add("container.hbm_m.radar", "Радар");
         add("chat.radar.tolow", "Радар должен быть установлен выше!");
         add("gui.hbm_m.radar.scan_missiles", "Сканировать ракеты");
         add("gui.hbm_m.radar.scan_players", "Сканировать игроков");
@@ -3505,7 +3543,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.radar.tooltip.detect_shells", "Обнаружение снарядов");
         add("gui.hbm_m.radar.tooltip.detect_players", "Обнаружение игроков");
         add("gui.hbm_m.radar.tooltip.smart_mode", "Умный режим");
-        add("gui.hbm_m.radar.tooltip.smart_mode.desc", "Выход редстоуна игнорирует удаляющиеся ракеты");
+        add("gui.hbm_m.radar.tooltip.smart_mode.desc", "Выход редстоуна игнорирует восходящие ракеты");
         add("gui.hbm_m.radar.tooltip.red_mode", "Режим красного камня");
         add("gui.hbm_m.radar.tooltip.red_mode.on", "Включён: Сигнал редстоуна базируется на дальности");
         add("gui.hbm_m.radar.tooltip.red_mode.off", "Выключен: Сигнал редстоуна базируется на уровне цели");
@@ -3518,11 +3556,29 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.radar.tooltip.show_map", "Показать карту");
         add("gui.hbm_m.radar.tooltip.toggle_gui", "Переключить интерфейс");
         add("gui.hbm_m.radar.tooltip.clear_map", "Очистить карту");
+        add("radar.target.abm", "Антибаллистическая ракета");
+        add("radar.target.custom10", "Ракета 10 размера");
+        add("radar.target.custom1015", "Ракета 10/15 размера");
+        add("radar.target.custom15", "Ракета 15 размера");
+        add("radar.target.custom1520", "Ракета 15/20 размера");
+        add("radar.target.custom20", "Ракета 20 размера");
+        add("radar.target.custom", "Пользовательская ракета");
+        add("radar.target.doomsday", "Ракета Судного Дня");
+        add("radar.target.dropship", "Грузовой модуль доставки");
+        add("radar.target.meteor", "Метеор");
+        add("radar.target.shuttle", "Космический шаттл Reliant Robin");
+        add("radar.target.tier0", "Ракета 0-го уровня");
+        add("radar.target.tier1", "Ракета 1-го уровня");
+        add("radar.target.tier2", "Ракета 2-го уровня");
+        add("radar.target.tier3", "Ракета 3-го уровня");
+        add("radar.target.tier4", "Ракета 4-го уровня");
+        add("radar.target.mirvlet", "Боеголовка РГЧ ИН");
+        add("radar.target.player", "Игрок");
+        add("radar.target.artillery", "Артиллерийский снаряд");
         add("tooltip.hbm_m.radar_linker.linked", "Привязан к:");
         add("tooltip.hbm_m.radar_linker.not_linked", "Не привязан. ПКМ по пусковой установке.");
         add("message.hbm_m.radar_linker.linked", "Пусковая установка привязана к радару");
         add("container.hbm_m.fraction_tower", "Фракционная башня (WIP)");
-        add("container.hbm_m.turbine", "Турбина (WIP)");
         add("container.hbm_m.substation", "Подстанция (WIP)");
         add("container.hbm_m.heating_oven", "Нагревательная печь");
         add("container.hbm_m.machine_battery", "Энергохранилище");
@@ -3590,6 +3646,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("door.skin.hbm_m.qe_containment_door.trefoil", "Радиация");
         add("door.skin.hbm_m.qe_containment_door.trefoil_yellow", "Радиация 2");
         add("door.skin.hbm_m.vault_door.default", "Vault 101");
+        add("door.skin.hbm_m.vault_door.skin_87", "Vault 87");
         add("door.skin.hbm_m.vault_door.skin_106", "Vault 106");
         add("door.skin.hbm_m.vault_door.skin_2", "Vault 2");
         add("door.skin.hbm_m.vault_door.skin_99", "Vault 99");
@@ -3786,6 +3843,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("config.hbm_m.restart.message", "Некоторые изменения вступят в силу только после перезапуска игры или перезагрузки ресурсов (F3+T). Применить?");
         add("config.hbm_m.reset", "Сбросить");
         add("config.hbm_m.reset.all", "Сбросить всё");
+        add("config.hbm_m.search", "Поиск");
+        add("config.hbm_m.search.hint", "Поиск...");
         add("config.hbm_m.reset.title", "Сбросить настройки?");
         add("config.hbm_m.reset.message", "Сбросить все значения текущей стороны к значениям по умолчанию? Изменения применятся после сохранения.");
 
@@ -3846,8 +3905,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Дистанция для рендеринга динамических частей .obj моделей");
         add("text.autoconfig.hbm_m.option.modelStaticRenderDistance", "Дистанция для рендеринга статических частей .obj моделей");
-        // occlusionCullingMode.* уже добавлены в начале (GPU-окклюзия мультиблоков) — старый дубль удалён;
-        // оставлен только gpu_unsupported для config.hbm_m.field.* (уникальный ключ)
         add("config.hbm_m.field.occlusionCullingMode.gpu_unsupported", "GPU-отсечение не поддерживается вашим видеоадаптером: %s");
         add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath", "Ванильный immediate-путь (резерв)");
         add("text.autoconfig.hbm_m.option.mdiCleanFrameReuse", "MDI: переиспользование чистого кадра");
@@ -4001,7 +4058,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Дистанция для рендеринга динамических частей .obj моделей (в чанках)");
         add("text.autoconfig.hbm_m.option.modelStaticRenderDistance.@Tooltip", "Дистанция для рендеринга статических частей .obj моделей (в чанках)");
         add("text.autoconfig.hbm_m.option.enableMissileNetworkTrack.@Tooltip", "Включите это, если хотите чтобы сервер отсылал всем клиентам пакеты с местоположением баллистических ракет, чтобы их было видно ЗА ванильной дальностью прорисовки.");
-        // text.autoconfig.hbm_m.option.occlusionCullingMode.@Tooltip уже добавлен в начале — дубль удалён
         add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath.@Tooltip", "Рисовать все OBJ-станки ванильным immediate-путём (putBulkData) вместо автоматического VBO/инстансинг-пайплайна. Аварийный резерв, если станки рендерятся белыми/невидимыми или сломанными.");
 
         add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip", "Дальность отрисовки полосок здоровья мобов (чанки). Больше значение - дальше видно, но выше нагрузка.");
@@ -4330,6 +4386,338 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("cannery.cargo_elevator.ror.1", "Установите у шахты Radio Torch Controller для приёма беспроводных команд Редстоун-по-радио (ROR).");
         add("cannery.cargo_elevator.ror.2", "Команда 'setextension!5' отправляет платформу на 2-й этаж, останавливая её вровень с промежуточной площадкой!");
         add("cannery.cargo_elevator.ror.3", "Команда 'setextension!10' поднимает платформу на 3-й этаж. ROR позволяет создавать полноценные многоэтажные системы вызова!");
+
+        add("gui.hbm_m.radio_autocal.docs", String.join("\n", new String[] {
+                "# AUTOCAL — Автоматический калькулятор",
+                "",
+                "## Об этом документе",
+                "Эта документация составлена так, чтобы быть понятной даже людям без опыта программирования. Она охватывает как сам блок AUTOCAL, так и язык сценариев MS-ES1, на котором он программируется.",
+                "",
+                "Внимательно прочтите этот документ, так как все описанные концепции необходимы для работы с блоком AUTOCAL.",
+                "",
+                "## О блоке AUTOCAL",
+                "Автоматический калькулятор AUTOCAL — это простое устройство, которое построчно читает скрипт и выполняет соответствующие действия. Его можно запрограммировать на определённое поведение, математические вычисления и обработку сигналов. С внешним миром он взаимодействует исключительно с помощью сигналов Redstone-over-Radio (RoR): по RoR он получает значения для обработки и отправляет ответные сигналы для отображения или управления другими RoR-приёмниками.",
+                "",
+                "Первая кнопка — переключатель питания (вкл/выкл). Включение AUTOCAL запускает скрипт с первой строки. Если скрипт завершается, возникает ошибка (при выключенном параметре «игнорировать ошибки»), выполняется команда `shutdown` или программа не загружена, устройство автоматически выключается.",
+                "",
+                "Вторая кнопка — параметр «игнорировать ошибки». Красный крест означает, что параметр выключен: при возникновении ошибки в программе (неизвестная команда, отсутствующие или неверные параметры и всё, что скрипт не может обработать) устройство выключится. Если параметр включён, ошибочная инструкция просто пропускается. Это может привести к неопределённому или неожиданному поведению, однако в некоторых случаях это не критично. Рекомендуется держать этот параметр выключенным, так как это упрощает поиск очевидных ошибок в скрипте.",
+                "",
+                "Третья кнопка — параметр «автоматическая перезагрузка». Если устройство выключается по любой причине, оно автоматически попытается запуститься снова. Это позволяет организовать простой «цикл», в котором один и тот же скрипт повторяется каждый раз после завершения за счёт перезагрузки AUTOCAL в конце. Учтите, что при перезагрузке удаляются все сохранённые переменные (подробнее о переменных ниже).",
+                "",
+                "Четвёртая кнопка отвечает за загрузку скрипта в устройство. Скрипт должен находиться в папке установки Minecraft, в подпапке `hbmComputerUpload`, под именем `script.txt`. Нажатие этой кнопки отправляет содержимое файла скрипта в блок AUTOCAL.",
+                "",
+                "Пятая кнопка открывает файл скрипта. Если файл скрипта ещё не существует, будут созданы папка и пустой файл.",
+                "",
+                "Шестая кнопка предназначена для скачивания файла скрипта. Существующий файл `script.txt` удаляется и заменяется скриптом, загруженным в AUTOCAL. (В текущей версии не поддерживается.)",
+                "",
+                "Простой порядок программирования AUTOCAL: нажмите кнопку №5, чтобы открыть файл, напишите программу, используйте кнопку №4 для прошивки программы в AUTOCAL, а затем включите устройство первой кнопкой.",
+                "",
+                "## О языке MS-ES1",
+                "Скрипты для блоков AUTOCAL пишутся на языке *Machine Script - Equestrian Standard, Version 1*, или MS-ES1. MS-ES1 поддерживает именованные переменные, сравнение значений, (условные) переходы, вычисление математических выражений и чтение/запись сигналов RoR. Скорость обработки строк определяется *тактовой частотой* (clock speed), которую можно задать в скрипте. Это значение указывает количество строк, обрабатываемых за один игровой тик: частота по умолчанию, равная 1, означает обработку 20 строк в секунду (в одной секунде 20 тиков). Максимальная тактовая частота определяется значением серверного конфига `AUTOCAL_MAX_CLOCK` (по умолчанию 20, то есть 400 строк в секунду).",
+                "",
+                "Пример: `/ntmserver set AUTOCAL_MAX_CLOCK 10` -> устанавливает максимальную тактовую частоту равной 10.",
+                "",
+                "## О версии MS-ES v1.1",
+                "MS-ES v1.1 (или MS-ES1 FEID, «First Extended Instruction Set») — вторая версия интерпретатора скриптов AUTOCAL. В ней добавлены полезные функции, такие как разделение строк, получение подстрок, буфер на основе стека и чтение мирового времени. Например, стек позволяет организовать стек вызовов: теперь можно делать вложенные переходы в подпрограммы без необходимости сохранять точки возврата в отдельные переменные. Операции разделения строк и получения подстрок позволяют разбирать объединённые строки и, например, извлекать отдельные координаты из одной строки. Одна отправка по RoR теперь может передавать сериализованные данные (несколько значений в одной строке), которые затем можно разобрать обратно.",
+                "",
+                "Программы, написанные на MS-ES1, в основном совместимы с интерпретатором MS-ES1.1, однако в MS-ES1.1 введено ограничение на длину значений в буфере — 256 символов.",
+                "",
+                "## О буфере",
+                "Буфер — это единичная «ячейка» информации, с которой работают многие команды. Одни команды записывают результат в буфер, другие изменяют его содержимое, а третьи используют его в качестве входных данных. Содержимое буфера можно сохранить в именованную переменную, а сохранённую переменную при необходимости снова загрузить в буфер. Буфер сохраняется, пока AUTOCAL работает; при перезагрузке или выключении его содержимое теряется.",
+                "",
+                "## О стеке (v1.1)",
+                "Стек работает похоже на буфер: у каждого блока AUTOCAL есть один стек, способный хранить произвольный текст. Разница в том, что буфер хранит только одно значение, а стек может хранить список до 256 значений. Значения в стеке подчиняются принципу LIFO («последним пришёл — первым ушёл»), то есть первыми читаются самые недавно добавленные значения. Стек поддерживает команды `push` (добавление элемента), `pop` (чтение и удаление элемента) и `peek` (чтение без удаления).",
+                "",
+                "## О переменных",
+                "MS-ES1 позволяет сохранять именованные переменные для дальнейшего использования. Ограничения на количество переменных нет. Все переменные хранятся в виде текста («строк»), однако в зависимости от команды и контекста этот текст может интерпретироваться как число (целое или дробное). Переменные, как и буфер, хранятся только пока программа работает; при выключении AUTOCAL все сохранённые переменные теряются.",
+                "",
+                "## О подстановке переменных",
+                "Многие команды поддерживают *подстановку переменных* — специальный формат, позволяющий вставить содержимое одной или нескольких переменных прямо в параметр. Формат подстановки: `$имя переменной$` — этот фрагмент заменяется значением переменной с указанным именем.",
+                "",
+                "Пример: `eval $val1$ + $val2$` при `val1` = 4 и `val2` = 8 преобразуется в `eval 4 + 8`.",
+                "",
+                "Особый случай: к содержимому буфера также можно обратиться через подстановку `$buffer$`. Следовательно, переменную с именем \"buffer\" **нельзя** получить через подстановку переменных.",
+                "",
+                "## О Redstone-over-Radio (RoR)",
+                "У RoR есть важное ограничение: в течение одного игрового тика нельзя отправить несколько независимых сигналов по одному и тому же каналу. Последующие сигналы на том же канале в том же тике перезаписывают предыдущий, за исключением числовых (целых) значений, которые складываются (например, отправка «5» и «7» в одном тике даст сигнал «12»). Поскольку тактовая частота AUTOCAL позволяет теоретически отправить несколько сигналов в один канал за один тик, может потребоваться *завершить* выполнение в текущем тике, даже если остались тактовые циклы. Для этого используется команда `endtick`.",
+                "",
+                "## Скрипт (Команды)",
+                "",
+                "### Комментарии",
+                "Строки, начинающиеся с `# ` (решётка + пробел), являются комментариями и игнорируются. При встрече такой строки AUTOCAL пропускает её, не тратя тактовый цикл.",
+                "",
+                "Пример: `# Это комментарий` -> строка ничего не делает, но полезна для пояснений и заметок к другим командам.",
+                "",
+                "### nop",
+                "`nop` (no operation — нет операции) — команда, которая тратит один тактовый цикл, но не производит никакого эффекта. Полезна только в особых случаях, когда важна точная синхронизация по тактам.",
+                "",
+                "### clockspeed",
+                "`clockspeed <скорость>` задаёт тактовую частоту AUTOCAL (количество строк, выполняемых за один тик). Её можно менять в любой момент скрипта, но обычно удобнее задать её в самом начале.",
+                "",
+                "Пример: `clockspeed 5` -> устанавливает скорость AUTOCAL на 5 строк за тик (100 строк в секунду).",
+                "",
+                "### dest",
+                "`dest <имя>` создаёт точку перехода (метку). С помощью команд перехода можно заставить AUTOCAL вернуться назад или перейти вперёд к этой точке. Если программа доходит до метки обычным последовательным чтением, а не прыжком, тактовый цикл не тратится (как и с комментариями). Имена меток должны быть уникальными: если задано несколько меток с одним именем, более поздняя перезапишет предыдущую.",
+                "",
+                "Пример: `dest start` -> создаёт точку перехода с именем \"start\"; любая команда перехода к \"start\" вернёт выполнение скрипта к этой строке.",
+                "",
+                "### jmp",
+                "`jmp <метка>` безусловно переводит выполнение программы к метке с указанным именем. Поддерживает подстановку переменных!",
+                "",
+                "Пример: `jmp start` -> переходит к метке \"start\".",
+                "Пример: `jmp $dest$` -> переходит к метке, имя которой хранится в переменной \"dest\".",
+                "",
+                "### jmpif",
+                "`jmpif <метка>` переводит выполнение программы к метке с указанным именем, если содержимое буфера равно `true`. В противном случае программа просто переходит к следующей строке. Поддерживает подстановку переменных!",
+                "",
+                "Пример:",
+                "`jmpif skip`",
+                "`nop`",
+                "`dest skip`",
+                "`nop`",
+                "",
+                "-> Если в буфере `true`, программа перейдёт к метке \"skip\" и выполнит только второй `nop`. Иначе выполнятся оба `nop`.",
+                "",
+                "### jmpnot",
+                "`jmpnot <метка>` переводит выполнение программы к метке с указанным именем, если содержимое буфера **не** равно `true`. По сути это инверсия `jmpif`, добавленная для удобства тех, кто привык к оператору `if` в традиционных языках. Поддерживает подстановку переменных!",
+                "",
+                "Пример:",
+                "`jmpnot skip` <- if",
+                "`nop`         <- then",
+                "`jmp end`",
+                "`dest skip`",
+                "`nop`         <- else",
+                "`dest end`    <- end",
+                "",
+                "-> Используя два перехода (условный и безусловный), можно эмулировать конструкцию `if/else`. Если в буфере `true`, выполнится первый `nop`. Иначе выполнится второй `nop`. Второй переход (`jmp end`) позволяет пропустить ветку \"else\" после выполнения ветки \"then\".",
+                "",
+                "### endtick",
+                "`endtick` приостанавливает выполнение скрипта до следующего игрового тика. Это важно при последовательной отправке нескольких сигналов RoR в один и тот же канал, так как за один тик канал может удерживать только один сигнал.",
+                "",
+                "### shutdown",
+                "`shutdown` выключает блок AUTOCAL. Если включена автоматическая перезагрузка, это фактически перезапускает скрипт с нуля, очищая все сохранённые переменные и буфер. В противном случае AUTOCAL останется выключенным до ручного запуска.",
+                "",
+                "### load",
+                "`load <имя>` берёт значение переменной с указанным именем и копирует его в буфер. Многие команды работают напрямую с буфером, поэтому помимо подстановки переменных это единственный способ получить доступ к значению переменной.",
+                "",
+                "Пример: `load val` -> если переменная \"val\" содержит `5`, значение буфера будет перезаписано числом `5`.",
+                "",
+                "### save",
+                "`save <имя>` берёт значение из буфера и сохраняет его в переменную с указанным именем. Это единственный способ изменять переменные и сохранять значения на будущее вне буфера.",
+                "",
+                "Пример: `save val` -> если в буфере находится `12`, будет создана (или обновлена) переменная \"val\" со значением `12`.",
+                "",
+                "### buffer",
+                "`buffer <значение>` записывает указанное значение напрямую в буфер. Это позволяет передавать значения из кода командам, работающим с буфером.",
+                "",
+                "Пример:",
+                "`buffer Horseshoe`",
+                "`save item`",
+                "",
+                "-> Запишет в буфер значение `Horseshoe`, а затем сохранит его в переменную \"item\".",
+                "",
+                "### push (v1.1)",
+                "`push [значение]` добавляет указанное значение в стек. Если значение не указано, в стек записывается текущее содержимое буфера. Учтите, что стек вмещает не более 256 значений! Поддерживает подстановку переменных!",
+                "",
+                "### pop (v1.1)",
+                "`pop` извлекает (читает и удаляет) последнее добавленное значение из стека и записывает его в буфер.",
+                "",
+                "### peek (v1.1)",
+                "`peek` записывает последнее добавленное значение из стека в буфер, но не удаляет его из стека, в отличие от `pop`.",
+                "",
+                "### eval",
+                "`eval [выражение]` вычисляет указанное математическое выражение. Проще говоря, всё, что понимает встроенный калькулятор NTM (открывается по умолчанию клавишей N), понимает и эта команда. Выражение указывать необязательно: если оно не задано, команда попытается вычислить текущее содержимое буфера. `eval` выдаёт **дробные** числа, а не **целые**, поэтому для отправки по RoR результат нужно округлять! Результат вычисления сохраняется в буфер. Поддерживает подстановку переменных!",
+                "",
+                "Пример: `eval 4 + 5` -> вычисляет \"4+5\" и сохраняет `9` в буфер.",
+                "Пример: `eval $val$ / 2` -> берёт значение \"val\", делит на 2 и сохраняет результат в буфер.",
+                "",
+                "Пример:",
+                "`load calc`",
+                "`eval`",
+                "",
+                "-> Запишет значение \"calc\" в буфер, а затем вычислит его как математическое выражение. Если \"calc\" равно `5+2`, то `eval` запишет в буфер `7`.",
+                "",
+                "### evalr",
+                "`evalr [выражение]` работает аналогично `eval`, но округляет результат до ближайшего целого числа. Целые числа важны для RoR, так как стрелочные индикаторы, цифровые дисплеи и логические приёмники работают только с целыми числами, а не с дробями.",
+                "",
+                "### rounddown / floor",
+                "`rounddown` или `floor` пытается интерпретировать содержимое буфера как десятичное число, округляет его **вниз** до ближайшего меньшего целого и записывает результат обратно в буфер.",
+                "",
+                "Пример: `rounddown` -> если в буфере `4.2`, новое значение буфера станет `4`.",
+                "Пример: `rounddown` -> если в буфере `4.6`, новое значение буфера станет `4`.",
+                "",
+                "### roundup / ceil",
+                "`roundup` или `ceil` пытается интерпретировать содержимое буфера как десятичное число, округляет его **вверх** до ближайшего большего целого и записывает результат обратно в буфер.",
+                "",
+                "Пример: `roundup` -> если в буфере `4.2`, новое значение буфера станет `5`.",
+                "Пример: `roundup` -> если в буфере `4.6`, новое значение буфера станет `5`.",
+                "",
+                "### round / nearest",
+                "`round` или `nearest` пытается интерпретировать содержимое буфера как десятичное число, округляет его до **ближайшего** целого и записывает результат обратно в буфер.",
+                "",
+                "Пример: `round` -> если в буфере `4.2`, новое значение буфера станет `4`.",
+                "Пример: `round` -> если в буфере `4.6`, новое значение буфера станет `5`.",
+                "",
+                "### concat",
+                "`concat <текст>` работает похоже на `buffer <текст>`, но поддерживает подстановку переменных. Это позволяет объединять текст из нескольких переменных.",
+                "",
+                "Пример: `concat $first$ and $second$` -> если переменная \"first\" равна `Cats`, а \"second\" равна `dogs`, в буфер будет записано `Cats and dogs`.",
+                "",
+                "### eq",
+                "`eq <значение>` (equals) — сравнивает содержимое буфера с указанным значением. Буфер станет `true`, если значения равны, и `false` в противном случае. Поддерживает подстановку переменных!",
+                "",
+                "Пример: `eq Brick` -> если в буфере `Brick`, в него запишется `true`, иначе `false`.",
+                "Пример: `eq $comp$` -> если значение буфера равно значению переменной \"comp\", в буфер запишется `true`, иначе `false`.",
+                "",
+                "### gtb",
+                "`gtb <значение>` (greater than buffer) — сравнивает буфер с указанным числом. В буфер запишется `true`, если переданное число **больше** значения в буфере, и `false` иначе. Поддерживает подстановку переменных!",
+                "",
+                "Пример: `gtb 4` -> если в буфере `3` или меньше, в буфер запишется `true`, иначе `false`.",
+                "Пример: `gtb $comp$` -> если буфер меньше значения \"comp\", в буфер запишется `true`, иначе `false`.",
+                "",
+                "### ltb",
+                "`ltb <значение>` (less than buffer) — сравнивает буфер с указанным числом. В буфер запишется `true`, если переданное число **меньше** значения в буфере, и `false` иначе. Поддерживает подстановку переменных!",
+                "",
+                "Пример: `ltb 4` -> если в буфере `5` или больше, в буфер запишется `true`, иначе `false`.",
+                "Пример: `ltb $comp$` -> если буфер больше значения \"comp\", в буфер запишется `true`, иначе `false`.",
+                "",
+                "### geb",
+                "`geb <значение>` (greater than or equal buffer) — переданное значение больше или равно значению в буфере.",
+                "",
+                "### leb",
+                "`leb <значение>` (less than or equal buffer) — переданное значение меньше или равно значению в буфере.",
+                "",
+                "### splitter (v1.1)",
+                "`splitter <значение>` задаёт символ (или текст) разделителя, который используется в операциях разделения строк. Этот параметр хранится отдельно на каждый блок AUTOCAL, подобно `clockspeed`. По умолчанию разделитель равен `;`. Поддерживает подстановку переменных!",
+                "",
+                "### split (v1.1)",
+                "`split <индекс>` разделяет содержимое буфера по разделителю, берёт фрагмент с нужным индексом (нумерация с 1) и записывает его в буфер.",
+                "",
+                "Пример:",
+                "`buffer cats;and;dogs`",
+                "`split 3`",
+                "",
+                "-> Запишет в буфер третий фрагмент, то есть `dogs`.",
+                "",
+                "### splitcount (v1.1)",
+                "`splitcount` разделяет содержимое буфера, подсчитывает количество получившихся фрагментов и записывает это число в буфер.",
+                "",
+                "Пример:",
+                "`buffer cats;and;dogs;and;birds`",
+                "`splitcount`",
+                "",
+                "-> Запишет в буфер количество фрагментов, то есть `5`.",
+                "",
+                "### length (v1.1)",
+                "`length` подсчитывает количество символов в тексте, хранящемся в буфере, и записывает это число в буфер.",
+                "",
+                "Пример:",
+                "`buffer cats and dogs`",
+                "`length`",
+                "",
+                "-> Запишет в буфер количество символов в строке `cats and dogs`, то есть `13`.",
+                "",
+                "### first (v1.1)",
+                "`first <количество>` берёт первые X символов из буфера и записывает их обратно в буфер. Это операция взятия подстроки, всегда начинающаяся с первого символа.",
+                "",
+                "Пример:",
+                "`buffer cats and dogs`",
+                "`first 4`",
+                "",
+                "-> Запишет в буфер первые четыре символа буфера — `cats`.",
+                "",
+                "### last (v1.1)",
+                "`last <количество>` берёт последние X символов из буфера и записывает их обратно в буфер. Это операция взятия подстроки, всегда заканчивающаяся последним символом.",
+                "",
+                "Пример:",
+                "`buffer cats and dogs`",
+                "`last 4`",
+                "",
+                "-> Запишет в буфер последние четыре символа буфера — `dogs`.",
+                "",
+                "### send",
+                "`send <канал>` отправляет сигнал Redstone-over-Radio в указанный канал; значением сигнала будет текущее содержимое буфера. Для повторной отправки в тот же канал необходимо дождаться следующего игрового тика, поэтому после отправки рекомендуется использовать `endtick`. Поддерживает подстановку переменных!",
+                "",
+                "Пример:",
+                "`buffer Hello!`",
+                "`send transmission`",
+                "",
+                "-> Отправит RoR-сигнал `Hello!` на канал \"transmission\".",
+                "",
+                "Пример:",
+                "`buffer SOS`",
+                "`send $target$`",
+                "",
+                "-> Отправит RoR-сигнал \"SOS\" на канал, имя которого сохранено в переменной \"target\".",
+                "",
+                "### listen",
+                "`listen <канал>` прослушивает указанный канал RoR и записывает сигнал в буфер. Обнаруживает все сигналы, даже устаревшие, а не только отправленные в прошлом тике, поэтому получение сигнала не всегда означает новые данные. Поддерживает подстановку переменных!",
+                "",
+                "Пример:",
+                "`listen input`",
+                "`eval $buffer$ * 100`",
+                "`send output`",
+                "",
+                "-> Получит сигнал из канала RoR \"input\", умножит его на 100 и отправит результат в канал \"output\".",
+                "",
+                "### poll (v1.1)",
+                "`poll <канал>` прослушивает указанный канал RoR и записывает сигнал в буфер. В отличие от `listen`, обнаруживает только сигналы, отправленные за последний тик. Поддерживает подстановку переменных!",
+                "",
+                "### worldtime (v1.1)",
+                "`worldtime` сохраняет в буфер количество тиков, прошедших с момента создания мира. Если сохранить результат в переменную и сравнивать его позже, можно делать точные таймеры, не зависящие от `clockspeed`.",
+                "",
+                "## Продвинутое использование",
+                "",
+                "### Условные переходы",
+                "Базовые условия `if/else` — основа большинства программ. Чтобы изменять поведение в зависимости от разных значений, нужно выполнить сравнение, а затем условный переход.",
+                "",
+                "В этом примере число \"val\" обрабатывается в зависимости от величины: значения 4 и меньше умножаются на 2, а остальные делятся на 2:",
+                "",
+                "`buffer 4`       <- помещаем `4` в буфер для сравнения",
+                "`gtb $val$`      <- \"val\" больше значения в буфере?",
+                "`jmpnot else`    <- если нет, переходим к \"else\"",
+                "`eval $val$ / 2` <- если да, делим на 2",
+                "`save val`       <- ...и сохраняем в \"val\"",
+                "`jmp end`        <- переходим к \"end\", чтобы пропустить блок \"else\"",
+                "`dest else`      <- else...",
+                "`eval $val$ * 2` <- умножаем на 2",
+                "`save val`       <- ...и сохраняем в \"val\"",
+                "`dest end`       <- независимо от выбранной ветки мы всегда попадём сюда",
+                "",
+                "### Методы (функции)",
+                "Тем, кто знаком с языками высокого уровня, уже знакома эта концепция — переиспользуемые фрагменты кода с набором параметров и необязательным возвращаемым значением. Для этого используются несколько переменных и переходов, чтобы такой код можно было вызывать из любого места:",
+                "",
+                "В этом примере реализована простая функция линейной интерполяции (lerp).",
+                "",
+                "`dest lerp`",
+                "`eval $a$ + ($b$ - $a$) * $i$`",
+                "`save result`",
+                "`jmp $return$`",
+                "",
+                "Эта функция требует переменные \"a\", \"b\" и \"i\" в качестве параметров и сохраняет результат в переменную \"result\". Вызвать её можно так:",
+                "",
+                "`buffer 4`          <- сначала задаём параметры для функции",
+                "`save a`",
+                "`buffer 7`",
+                "`save b`",
+                "`buffer 0.6`",
+                "`save i`",
+                "`buffer returnhere` <- затем задаём имя точки возврата",
+                "`save return`",
+                "`jmp lerp`          <- вызываем функцию",
+                "`dest returnhere`   <- после завершения функции выполнение вернётся сюда",
+                "",
+                "В итоге переменная \"result\" будет содержать нужное значение."
+        }));
+        add("gui.hbm_m.reactor_research.flux", "Поток");
+        add("gui.hbm_m.reactor_research.heat", "Нагрев");
+        add("gui.hbm_m.reactor_research.control", "Стержни");
+        add("gui.hbm_m.reactor_research.info.submerged.0", "Для охлаждения реактор должен");
+        add("gui.hbm_m.reactor_research.info.submerged.1", "быть окружён водой по бокам.");
+        add("gui.hbm_m.reactor_research.info.submerged.2", "Нейтронный поток передаётся");
+        add("gui.hbm_m.reactor_research.info.submerged.3", "соседним реакторам-размножителям.");
+        add("gui.hbm_m.reactor_research.info.fuel.0", "В реакторе используется пластинчатое топливо.");
+        add("gui.hbm_m.reactor_research.info.fuel.1", "Для запуска реакции нужен источник нейтронов.");
     }
 }
 //?}

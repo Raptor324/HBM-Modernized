@@ -169,11 +169,17 @@ public class ClientModEvents {
                 if (!lines.isEmpty())
                     lines.add(Component.empty());
 
+                // entry.type() is EnumBombType: on 1.21.1 TranslatableContents rejects
+                // non-whitelisted args (only Component/Number/Boolean/String) and throws
+                // (crash on hover). toString() = display name, identical rendering on both targets.
+                ChatFormatting stageColor = entry.type() == com.hbm_m.explosion.CustomNukeExplosion.EnumBombType.FREAKY
+                        ? ChatFormatting.GREEN : ChatFormatting.GOLD;
+
                 if (entry.entry() == com.hbm_m.explosion.CustomNukeExplosion.EnumEntryType.ADD)
-                    lines.add(Component.literal("Adds " + entry.value() + " to the custom nuke stage " + entry.type()).withStyle(ChatFormatting.GOLD));
+                    lines.add(Component.translatable("tooltip.hbm_m.custom_nuke.add", entry.value(), entry.type().toString()).withStyle(stageColor));
 
                 if (entry.entry() == com.hbm_m.explosion.CustomNukeExplosion.EnumEntryType.MULT)
-                    lines.add(Component.literal("Adds multiplier " + entry.value() + " to the custom nuke stage " + entry.type()).withStyle(ChatFormatting.GOLD));
+                    lines.add(Component.translatable("tooltip.hbm_m.custom_nuke.mult", entry.value(), entry.type().toString()).withStyle(stageColor));
             }
         }
     }

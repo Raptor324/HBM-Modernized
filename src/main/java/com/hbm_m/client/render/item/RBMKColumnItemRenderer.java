@@ -66,9 +66,30 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
             return;
         }
 
-        boolean column = be instanceof RBMKColumnBlockEntity;
+        // Crane Console in inventory 1:1 ItemRenderLibrary (rbmk_crane_console):
+        // renderInventory T(0,-3,0) S(3.5); renderCommon Console_Coonsole, Joystick, Meter1, Meter2.
+        if (displayContext == ItemDisplayContext.GUI && be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKCraneConsoleBlockEntity) {
+            java.util.Map<String, java.util.List<float[]>> obj = com.hbm_m.client.render.implementations.RBMKColumnRenderer.getObj("models/rbmk/models/crane_console.obj");
+            net.minecraft.client.renderer.texture.TextureAtlasSprite sprite = com.hbm_m.client.render.implementations.RBMKColumnRenderer.sprite(com.hbm_m.lib.RefStrings.MODID, "block/machine/crane_console");
+            com.mojang.blaze3d.vertex.VertexConsumer vc = buffer.getBuffer(net.minecraft.client.renderer.RenderType.solid());
+            poseStack.pushPose();
+            OrigInventoryTransform.apply(poseStack);
+            poseStack.translate(0, -3, 0);
+            poseStack.scale(3.5F, 3.5F, 3.5F);
+            for (String part : new String[] {"Console_Coonsole", "Joystick", "Meter1", "Meter2"}) {
+                java.util.List<float[]> g = obj.get(part);
+                if (g != null) com.hbm_m.client.render.implementations.RBMKColumnRenderer.renderObjGroup(vc, poseStack.last().pose(), g, sprite, 1f, 1f, 1f, packedLight, packedOverlay);
+            }
+            poseStack.popPose();
+            return;
+        }
+
+        boolean isSpecialMachine = be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKAutoloaderBlockEntity
+                || be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKCraneConsoleBlockEntity
+                || be instanceof com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity;
+        boolean column = be instanceof RBMKColumnBlockEntity && !isSpecialMachine;
         // Inventory matches original renderInventoryBlock (dedicated path instead of in-world BER)
-        if (displayContext == ItemDisplayContext.GUI) {
+        if (displayContext == ItemDisplayContext.GUI && column) {
             String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
             RBMKColumnInventoryRender.Kind kind = RBMKColumnInventoryRender.kind(id);
             if (kind != null) {
@@ -79,7 +100,7 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
                 return;
             }
         }
-        if (!column && !(be instanceof com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity)) {
+        if (!column && !isSpecialMachine) {
             // Steam inlet/outlet are simple blocks (RBMKInlet/RBMKOutlet) in original without column renderer ->
             // render block model.
             poseStack.pushPose();
@@ -91,14 +112,16 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
 
         poseStack.pushPose();
         // Display wrapper suppresses display values of builtin/entity model -> apply here to ensure proper orientation.
-        if (column) applyDisplay(stack, displayContext, poseStack);
+        if (column || be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKCraneConsoleBlockEntity) {
+            applyDisplay(stack, displayContext, poseStack);
+        }
         // RBMKColumnRenderer draws the column at its true in-world size: RBMKDials.COLUMN_HEIGHT+1
         // blocks tall, plus a 0.25 lid plate on top. Handed to the item renderer unscaled that is
         // four times the height of an item slot, so it would render as a single cube's worth of
         // column with the rest cut off above the slot. Shrink the whole thing to fit the unit cube
         // the item transforms expect, keeping it centred in X/Z and standing on the bottom face -
         // the icon then shows the complete column instead of its lowest block.
-        if (be instanceof RBMKColumnBlockEntity) {
+        if (column) {
             // 1:1 original renderInventoryBlock (RenderRBMKRod/-Reflector: T(0,-0.675,0), RenderRBMKControl
             // for other columns: T(0,-0.75,0); scale 0.35 each), block center as origin.
             Object b = state.getBlock();

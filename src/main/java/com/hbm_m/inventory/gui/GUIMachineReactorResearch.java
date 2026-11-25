@@ -17,12 +17,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * 1:1 {@code GUIReactorResearch}: drei Siebensegmentanzeigen (Fluss, Temperatur, Sollstellung), ein unsichtbares
  * dreistelliges Eingabefeld (8,99) fuer die Stabstellung in Prozent, der Knopf (44,97) schickt sie an den Reaktor.
  * Ist die Stellung hoechstens 50 %, leuchten die Stabmarken im Kerndiagramm.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineReactorResearch extends GuiInfoScreen<MachineReactorResearchMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -52,9 +55,9 @@ public class GUIMachineReactorResearch extends GuiInfoScreen<MachineReactorResea
         if (reactor != null) this.field = String.valueOf((int) (reactor.level * 100));
     }
 
-    private static Component[] lines(String... text) {
-        Component[] out = new Component[text.length];
-        for (int i = 0; i < text.length; i++) out[i] = Component.literal(text[i]);
+    private static Component[] translatedLines(String... keys) {
+        Component[] out = new Component[keys.length];
+        for (int i = 0; i < keys.length; i++) out[i] = Component.translatable(keys[i]);
         return out;
     }
 
@@ -63,28 +66,26 @@ public class GUIMachineReactorResearch extends GuiInfoScreen<MachineReactorResea
         com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
 
-        drawCustomInfoStat(g, mouseX, mouseY, -14, 23, 16, 16, leftPos - 6, topPos + 23 + 16, lines(
-                "The reactor has to be submerged",
-                "in water on its sides to cool.",
-                "The neutron flux is provided to",
-                "adjacent breeding reactors."));
+        drawCustomInfoStat(g, mouseX, mouseY, -14, 23, 16, 16, leftPos - 6, topPos + 23 + 16, translatedLines(
+                "gui.hbm_m.reactor_research.info.submerged.0",
+                "gui.hbm_m.reactor_research.info.submerged.1",
+                "gui.hbm_m.reactor_research.info.submerged.2",
+                "gui.hbm_m.reactor_research.info.submerged.3"));
 
-        drawCustomInfoStat(g, mouseX, mouseY, -14, 61, 16, 16, leftPos - 6, topPos + 61 + 16, lines(
-                "This reactor is fueled with plate fuel.",
-                "The reaction needs a neutron source to start."));
+        drawCustomInfoStat(g, mouseX, mouseY, -14, 61, 16, 16, leftPos - 6, topPos + 61 + 16, translatedLines(
+                "gui.hbm_m.reactor_research.info.fuel.0",
+                "gui.hbm_m.reactor_research.info.fuel.1"));
 
         this.renderTooltip(g, mouseX, mouseY);
     }
 
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        String[] labels = { "Flux", "Heat", "Control" };
-
         g.drawString(this.font, this.title, 121 - this.font.width(this.title) / 2, 6, 15066597, false);
         g.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
-        g.drawString(this.font, labels[0], 6, 13, 15066597, false);
-        g.drawString(this.font, labels[1], 6, 51, 15066597, false);
-        g.drawString(this.font, labels[2], 6, 89, 15066597, false);
+        g.drawString(this.font, Component.translatable("gui.hbm_m.reactor_research.flux"), 6, 13, 15066597, false);
+        g.drawString(this.font, Component.translatable("gui.hbm_m.reactor_research.heat"), 6, 51, 15066597, false);
+        g.drawString(this.font, Component.translatable("gui.hbm_m.reactor_research.control"), 6, 89, 15066597, false);
     }
 
     @Override

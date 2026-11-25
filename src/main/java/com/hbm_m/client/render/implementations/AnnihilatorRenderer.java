@@ -16,9 +16,9 @@ import net.minecraft.resources.ResourceLocation;
 /** 1:1 {@code RenderAnnihilator}: Gehaeuse, drehende Walze und das laufende Band (Texturverschiebung). */
 public class AnnihilatorRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineAnnihilatorBlockEntity> {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/annihilator.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/annihilator.png");
-    public static final ResourceLocation BELT_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/annihilator_belt.png");
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/annihilator.obj"));
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/annihilator.png");
+    public static final ResourceLocation BELT_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/annihilator_belt.png");
 
     public AnnihilatorRenderer(BlockEntityRendererProvider.Context ctx) { }
 

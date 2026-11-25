@@ -8,7 +8,6 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.interfaces.IFrameSupportable;
-import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -16,193 +15,87 @@ import com.hbm_m.multiblock.PartRole;
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
-import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IMultiblockController {
+/**
+ * 1:1 {@code MachineAssemblyMachine} ({@code BlockDummyable}, {@code getDimensions {2,0,1,1,1,1}}, {@code getOffset 1}):
+ * 3x3x3 mit dem Kern unten in der Mitte; die acht Randzellen des Sockels sind Anschluesse.
+ * {@link MachinePrecAssBlock} erbt - wie im Original - diesen Block und tauscht nur die BlockEntity.
+ */
+public class MachineAdvancedAssemblerBlock extends DummyableMachineBlock {
 
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-    /** Рама видима, когда сверху сбормашины стоят блоки. Хранится в BlockState для запекания в чанк (Embeddium/Sodium). */
+    /** Rahmen sichtbar, wenn ueber der Maschine Bloecke stehen. Im BlockState, damit Embeddium/Sodium ihn mitbackt. */
     public static final BooleanProperty FRAME = BooleanProperty.create("frame");
 
-    private final MultiblockStructureHelper structureHelper;
-
-    public MachineAdvancedAssemblerBlock(Properties pProperties) {
-        super(pProperties);
-        this.registerDefaultState(this.stateDefinition.any()
-        .setValue(FACING, Direction.NORTH)
-        .setValue(FRAME, false));
-
-        this.structureHelper = defineStructureNew();
+    public MachineAdvancedAssemblerBlock(Properties properties) {
+        super(properties);
     }
 
-
+    @Override
+    protected BlockState withDefaults(BlockState state) {
+        return state.setValue(FRAME, false);
+    }
 
     @Override
-    public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
-        super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
-        if (!pLevel.isClientSide() && !pState.is(pOldState.getBlock())) {
-            BlockPos core = placeMultiblockStructure(pLevel, pPos, pState);
-            if (core == null) {
-                return;
-            }
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
+        builder.add(FRAME);
+    }
 
-            if (pLevel.getBlockEntity(core) instanceof IFrameSupportable be) {
-                be.checkForFrame();
-            }
+    @Override
+    protected void onStructurePlaced(Level level, BlockPos core) {
+        if (level.getBlockEntity(core) instanceof IFrameSupportable be) {
+            be.checkForFrame();
         }
     }
 
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
-            if (!level.isClientSide()) {
-                MultiblockStructureHelper helper = getStructureHelper();
-                Direction facing = state.getValue(FACING);
-
-                BlockEntity blockEntity = level.getBlockEntity(pos);
-                if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {
-                    be.dropInventoryContents();
-                }
-
-                helper.destroyStructure(level, pos, facing);
-            }
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
-    }
-
-    @Override public RenderShape getRenderShape(BlockState pState) { return RenderShape.MODEL; }
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) { pBuilder.add(FACING, FRAME); }
-    @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext pContext) { return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection().getOpposite()); }
-
-    @Override
-    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
-        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
-    }
-
-    @Nullable @Override public BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) { return new MachineAdvancedAssemblerBlockEntity(pPos, pState); }
-
-    @Nullable
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pType) {
-        return createTickerHelper(pType, ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerBlockEntity::tick);
-    }
-
-    //? if < 1.21.1 {
-    @Override
-    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        if (pPlayer.isShiftKeyDown()) return InteractionResult.sidedSuccess(pLevel.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
-        return openMenu(pState, pLevel, pPos, pPlayer, pHand, pHit);
-    }
-    //?} else {
-    /*@Override
-    protected InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
-        if (pPlayer.isShiftKeyDown()) return InteractionResult.sidedSuccess(pLevel.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
-        return openMenu(pState, pLevel, pPos, pPlayer, InteractionHand.MAIN_HAND, pHit);
-    }
-    *///?}
-
-    private InteractionResult openMenu(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        if (!pLevel.isClientSide()) {
-            if (pLevel.getBlockEntity(pPos) instanceof MenuProvider provider) {
-                MenuRegistry.openExtendedMenu((ServerPlayer) pPlayer, provider, buf -> buf.writeBlockPos(pPos));
-            }
-        }
-        return InteractionResult.sidedSuccess(pLevel.isClientSide());
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
-        MultiblockStructureHelper helper = getStructureHelper();
-        if (helper != null) {
-            // Теперь это вернет идеально подогнанную форму 3х3х3
-            return helper.getControllerCellShape(pState.getValue(FACING));
-        }
-        return Shapes.block();
-    }
-    
-    @Override public MultiblockStructureHelper getStructureHelper() { return this.structureHelper; }
-    
     /**
-     * Определяет структуру мультиблока используя рецептоподобный способ с ролями.
-     * ВАЖНО: Структура ОБЯЗАТЕЛЬНО должна содержать ровно ОДИН контроллер (символ с ролью CONTROLLER).
-     * 
-     * @return MultiblockStructureHelper с определённой структурой и ролями
+     * Struktur per ASCII-Schichten (unten nach oben).
+     * 'C' = Kern (genau einer), 'B' = Anschluss (UNIVERSAL_CONNECTOR), 'A' = gewoehnliche Zelle.
      */
-    private static MultiblockStructureHelper defineStructureNew() {
-        // - 'A' = DEFAULT (обычная часть структуры)
-        // - 'B' = UNIVERSAL_CONNECTOR (универсальный коннектор)
-        // - 'L' = LADDER (по нему можно взобраться как по лестнице)
-        // - 'C' = CONTROLLER (блок контроллера - ОБЯЗАТЕЛЬНО, ровно 1!)
-        // - '.' = пустота (символ не в roleMap, будет игнорирован)
-        
-        // Слои структуры 3x3x3
+    @Override
+    protected MultiblockStructureHelper defineStructure() {
         String[] layer0 = {
             "BBB",
             "BCB",
             "BBB"
         };
-        
-        String[] layer1 = {
+        String[] layer = {
             "AAA",
             "AAA",
             "AAA"
         };
-        
-        String[] layer2 = {
-            "AAA",
-            "AAA",
-            "AAA"
-        };
-        
-        // === roleMap: программист сам определяет маппинг ===
-        // ВАЖНО: роль CONTROLLER ОБЯЗАТЕЛЬНА и должен быть ровно ОДИН контроллер!
+
         Map<Character, PartRole> roleMap = Map.of(
-            'A', PartRole.DEFAULT,              // Обычная часть структуры
-            'B', PartRole.UNIVERSAL_CONNECTOR, // Универсальный коннектор
-            'L', PartRole.LADDER,              // Лестница
-            'C', PartRole.CONTROLLER           // Контроллер (ОБЯЗАТЕЛЬНО!)
+            'A', PartRole.DEFAULT,
+            'B', PartRole.UNIVERSAL_CONNECTOR,
+            'C', PartRole.CONTROLLER
         );
 
         Map<Character, boolean[]> fluidSideMap = Map.of(
             'C', MultiblockSideTuples.fluid(true, true, true, true, true, false),
             'B', MultiblockSideTuples.fluid(true, true, true, true, true, false)
         );
-
         Map<Character, boolean[]> energySideMap = Map.of(
             'C', MultiblockSideTuples.energy(true, true, true, true, true, false),
             'B', MultiblockSideTuples.energy(true, true, true, true, true, false)
         );
 
-
-
-        // Используем createFromLayersWithRoles - автоматически найдёт позицию контроллера
         return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
-            new String[][]{layer0, layer1, layer2},
+            new String[][]{layer0, layer, layer},
             null,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
             roleMap,
@@ -211,19 +104,7 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
             fluidSideMap
         );
     }
-    
-    /**
-     * Старый способ определения структуры
-     */
-    // private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
-    //     ImmutableMap.Builder<BlockPos, Supplier<BlockState>> builder = ImmutableMap.builder();
-    //     for (int y = 0; y <= 2; y++) for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) {
-    //         if (x == 0 && y == 0 && z == 0) continue;
-    //         builder.put(new BlockPos(x, y, z), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
-    //     }
-    //     return builder.build();
-    // }
-    
+
     @Override
     public int[][] getAllPorts(Direction facing) {
         return rotatePorts(new int[][] {
@@ -242,13 +123,36 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
         }, facing);
     }
 
-    @Override 
-    public PartRole getPartRole(BlockPos localOffset) { 
-        // Используем универсальный метод разрешения ролей из хелпера
-        if (structureHelper != null) {
-            return structureHelper.resolvePartRole(localOffset, this);
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new MachineAdvancedAssemblerBlockEntity(pos, state);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(type, ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerBlockEntity::tick);
+    }
+
+    //? if < 1.21.1 {
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return open(level, pos, player);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return open(level, pos, player);
+    }
+    *///?}
+
+    /** Original {@code standardOpenBehavior}: geschlichen -> true ohne GUI. */
+    private InteractionResult open(Level level, BlockPos pos, Player player) {
+        if (!level.isClientSide() && !player.isShiftKeyDown() && level.getBlockEntity(pos) instanceof MenuProvider provider) {
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, provider, buf -> buf.writeBlockPos(pos));
         }
-        return PartRole.DEFAULT;
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     //? if >1.20.1 {

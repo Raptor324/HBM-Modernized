@@ -89,7 +89,7 @@ public final class ToolRecipeGenerator {
         var bi = m(ModMaterials.BISMUTH, MaterialShape.INGOT);
         var meteorite = m(ModMaterials.METEORITE, MaterialShape.INGOT);
         var wBolt = ModItems.BOLT_TUNGSTEN;
-        var duraBolt = ModItems.BOLT_HIGHSPEED_STEEL;
+        var duraBolt = ModItems.BOLT_DURA_STEEL;
         var fiber = m(ModMaterials.FIBERGLASS, MaterialShape.INGOT);
         var dntPowder = m(ModMaterials.DINEUTRONIUM, MaterialShape.POWDER);
         g.shaped(ModItems.BISMUTH_PICKAXE, 1, p(" BM", "BPB", "TB "), 'B', bi, 'M', meteorite, 'P', ModItems.STARMETAL_PICKAXE, 'T', wBolt);
@@ -127,7 +127,7 @@ public final class ToolRecipeGenerator {
         g.shaped(ModItems.REDSTONE_SWORD, 1, p("R", "R", "S"), 'R', Items.REDSTONE_BLOCK, 'S', stick);
         g.shaped(ModItems.BIG_SWORD, 1, p("QIQ", "QIQ", "GSG"), 'G', Items.GOLD_INGOT, 'S', stick, 'I', Items.IRON_INGOT, 'Q', Items.QUARTZ);
 
-        // CraftingManager: Maschinen-Upgrades (upgrade_nullifier fehlt noch: powder_fire existiert nicht)
+        // CraftingManager: Maschinen-Upgrades (upgrade_nullifier в OrigCraftingRecipeGenerator)
         var cuPlate = m(ModMaterials.COPPER, MaterialShape.PLATE);
         var tiPlate = m(ModMaterials.TITANIUM, MaterialShape.PLATE);
         var steelPlate = m(ModMaterials.STEEL, MaterialShape.PLATE);

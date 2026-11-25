@@ -27,12 +27,17 @@ import net.minecraft.world.level.block.state.BlockState;
  * (5-6, bei {@code safe} ohne Blockschaden) und einen {@link Meteorite}. Ohne {@code enableMeteorStrikes}
  * verschwindet er sofort.
  */
-public class EntityMeteor extends Entity {
+public class EntityMeteor extends Entity implements api.hbm_m.entity.IRadarDetectable {
 
     public boolean safe = false;
 
     /** Client: Flug-Schleifenklang (Original AudioWrapper). */
     public Object audioFly;
+
+    @Override
+    public api.hbm_m.entity.IRadarDetectable.RadarTargetType getTargetType() {
+        return api.hbm_m.entity.IRadarDetectable.RadarTargetType.METEOR;
+    }
 
     public EntityMeteor(EntityType<? extends EntityMeteor> type, Level world) {
         super(type, world);

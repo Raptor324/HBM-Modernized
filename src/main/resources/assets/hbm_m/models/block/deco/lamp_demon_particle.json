@@ -1,5 +1,5 @@
 {
- "textures": {
-  "particle": "hbm_m:block/deco/lamp_demon"
- }
+  "textures": {
+    "particle": "hbm_m:block/lamp_demon"
+  }
 }

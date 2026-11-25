@@ -22,7 +22,8 @@ public class WeaponModPolymerFurniture extends WeaponModBase {
 	}
 
 	public static BiConsumer<ItemStack, LambdaContext> LAMBDA_RECOIL_G3 = (stack, ctx) -> {
-		ItemGunBaseNT.setupRecoil((float) (ctx.getPlayer().getRandom().nextGaussian() * 0.125), (float) (ctx.getPlayer().getRandom().nextGaussian() * 0.125));
+		if (ctx.entity == null) return;
+		ItemGunBaseNT.setupRecoil((float) (ctx.entity.getRandom().nextGaussian() * 0.125), (float) (ctx.entity.getRandom().nextGaussian() * 0.125));
 	};
 
 }

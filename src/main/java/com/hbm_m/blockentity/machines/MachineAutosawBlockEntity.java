@@ -569,7 +569,7 @@ public class MachineAutosawBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
 
     /** Original {@code deserialize}: Drehung dreistufig nachziehen. */
     @Override
-    protected void applyClientUpdate(CompoundTag nbt) {
+    protected void applyClientUpdate(CompoundTag nbt, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
         this.isOn = nbt.getBoolean("isOn");
         this.isSuspended = nbt.getBoolean("isSuspended");
         this.syncYaw = nbt.getFloat("yaw");

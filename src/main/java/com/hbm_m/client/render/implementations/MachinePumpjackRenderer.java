@@ -36,10 +36,11 @@ public final class MachinePumpjackRenderer {
     public static void register() {
         MachineRenderers.machine("pumpjack", ModBlockEntities.PUMPJACK_BE.get(),
                 MachinePumpjackBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Base")
-            .rotatingPart("Rotor", new Vector3f(1.0F, 0.0F, 0.0F), new Vector3f(0.0F, 1.5F, -5.5F),
+            .rotatingPart("Rotor", new Vector3f(1.0F, 0.0F, 0.0F), new Vector3f(0.5F, 1.5F, -5.0F),
                     (be, pt) -> Mth.lerp(pt, be.prevRot, be.rot) - 90.0)
-            .rotatingPart("Head", new Vector3f(1.0F, 0.0F, 0.0F), new Vector3f(0.0F, 3.5F, -3.5F),
+            .rotatingPart("Head", new Vector3f(1.0F, 0.0F, 0.0F), new Vector3f(0.5F, 3.5F, -3.0F),
                     (be, pt) -> Math.toDegrees(Math.sin(Math.toRadians(Mth.lerp(pt, be.prevRot, be.rot)))) * 0.25)
             .translatingPart("Carriage", new Vector3f(0.0F, 1.0F, 0.0F),
                     (be, pt) -> -Math.sin(Math.toRadians(Mth.lerp(pt, be.prevRot, be.rot))))
@@ -63,6 +64,8 @@ public final class MachinePumpjackRenderer {
     }
 
     private static void renderCablesAndRods(MachinePumpjackBlockEntity pj, float f, PoseStack ps, MultiBufferSource buf) {
+        ps.pushPose();
+        ps.translate(0.5, 0.0, 0.5);
         float rotation = pj.prevRot + (pj.rot - pj.prevRot) * f;
 
         Vec3NT backPos = Vec3NT.createVectorHelper(0, 0, -2);
@@ -135,6 +138,7 @@ public final class MachinePumpjackRenderer {
                 p, height + 1.5, -p,
                 p, 0.75, -p,
                 -p, 0.75, p);
+        ps.popPose();
     }
 
     private static void quad(VertexConsumer vc, Matrix4f m, int r, int g, int b,

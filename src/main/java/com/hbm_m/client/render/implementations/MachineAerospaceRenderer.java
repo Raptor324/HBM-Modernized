@@ -45,6 +45,7 @@ public final class MachineAerospaceRenderer {
         MachineRenderers.machine("launch_pad_large",
                 ModBlockEntities.LAUNCH_PAD_LARGE_BE.get(),
                 LaunchPadLargeBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Pad")
             .hook(new MachineRenderHook<LaunchPadLargeBlockEntity>() {
                 @Override
@@ -98,6 +99,7 @@ public final class MachineAerospaceRenderer {
                     VertexConsumer vc = buf.getBuffer(RenderType.entityCutout(tex));
 
                     ps.pushPose();
+                    ps.translate(0.5, 0.0, 0.5);
                     MODEL.renderPart(parts[0], ps, vc, light);
                     if (hasMissile && pad.erected) {
                         MODEL.renderPart(parts[3], ps, vc, light);

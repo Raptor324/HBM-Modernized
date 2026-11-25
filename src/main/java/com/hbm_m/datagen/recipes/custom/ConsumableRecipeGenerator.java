@@ -234,7 +234,7 @@ public final class ConsumableRecipeGenerator {
 
         // Servos
         shaped(w, ModItems.SERVO_SET, 1, p("MBM", "PBP", "MBM"), 'M', ModItems.MOTOR, 'B', ModItems.BOLT_STEEL, 'P', ironPlate);
-        shaped(w, ModItems.SERVO_SET_DESH, 1, p("MBM", "PSP", "MBM"), 'M', ModItems.MOTOR_DESH, 'B', ModItems.BOLT_HIGHSPEED_STEEL, 'P', m(ModMaterials.DESH, MaterialShape.PLATE), 'S', ModItems.SERVO_SET);
+        shaped(w, ModItems.SERVO_SET_DESH, 1, p("MBM", "PSP", "MBM"), 'M', ModItems.MOTOR_DESH, 'B', ModItems.BOLT_DURA_STEEL, 'P', m(ModMaterials.DESH, MaterialShape.PLATE), 'S', ModItems.SERVO_SET);
 
         // Boot Mods
         shaped(w, ModItems.PADS_RUBBER, 1, p("P P", "IDI", "P P"), 'P', anyRubber, 'I', ironPlate, 'D', ModItems.DUCTTAPE);

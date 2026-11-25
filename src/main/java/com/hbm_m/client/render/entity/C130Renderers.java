@@ -28,8 +28,8 @@ public final class C130Renderers {
 
     public static final SimpleObjModel C130 = new SimpleObjModel(rl("models/weapons/c130.obj"));
     public static final ResourceLocation C130_TEX = rl("textures/models/weapons/c130_0.png");
-    public static final SimpleObjModel CONSERVECRATE = new SimpleObjModel(rl("models/blocks/conservecrate.obj"));
-    public static final SimpleObjModel SOYUZ_LANDER = new SimpleObjModel(rl("models/soyuz_lander.obj"));
+    public static final SimpleObjModel CONSERVECRATE = new SimpleObjModel(rl("models/block/crate_conserve.obj"));
+    public static final SimpleObjModel SOYUZ_LANDER = new SimpleObjModel(rl("models/block/machines/soyuz_capsule_item.obj"));
     public static final ResourceLocation SUPPLY_CRATE_TEX = rl("textures/block/crate_can.png");
     public static final ResourceLocation CHUTE_TEX = rl("textures/models/soyuz_capsule/soyuz_chute.png");
 

@@ -341,7 +341,7 @@ public class ModelHelper {
         if (quads == null || quads.isEmpty()) {
             return quads;
         }
-        List<BakedQuad> result = null;
+        List<BakedQuad> result = new ArrayList<>(quads.size());
         for (int i = 0; i < quads.size(); i++) {
             BakedQuad quad = quads.get(i);
             List<BakedQuad> pieces = splitQuadTiles(quad);
@@ -350,21 +350,12 @@ public class ModelHelper {
                 // как в normalizeQuadUvsPerQuad: вход call-site'ов — атласные UV,
                 // а контракт share-кеша — нормализованные [0..1]. Passthrough без
                 // формулы оставлял в кеше атласные UV → ремап uvRect «протекал» атласом.
-                BakedQuad normalized = normalizeQuadUvsPerQuad(java.util.List.of(quad)).get(0);
-                if (result != null) {
-                    result.add(normalized);
-                }
-                continue;
+                result.add(normalizeQuadUvsPerQuad(java.util.List.of(quad)).get(0));
+            } else {
+                result.addAll(pieces);
             }
-            if (result == null) {
-                result = new ArrayList<>(quads.size());
-                for (int j = 0; j < i; j++) {
-                    result.add(quads.get(j));
-                }
-            }
-            result.addAll(pieces);
         }
-        return result != null ? result : quads;
+        return result;
     }
 
     /** Ёмкость скратч-полигона разбивки (квад × 4 полуплоскости тайла — максимум 8 вершин). */

@@ -60,6 +60,8 @@ public final class HbmFluidRegistry {
             ModFluids.SUNFLOWEROIL, ModFluids.NITAN, ModFluids.DHC, ModFluids.BALEFIRE,
             // processing fluids
             ModFluids.SALIENT, ModFluids.SEEDSLURRY, ModFluids.COLLOID, ModFluids.VITRIOL,
+            // Joke: REN-TV concentrate (no 1.7.10 analog) - packagable so it gets pack/barrel recipes
+            ModFluids.UNSTABLE_SANITY,
             ModFluids.SLOP, ModFluids.IONGEL, ModFluids.PEROXIDE, ModFluids.SULFURIC_ACID,
             ModFluids.NITRIC_ACID, ModFluids.SOLVENT, ModFluids.RADIOSOLVENT, ModFluids.SCHRABIDIC,
             ModFluids.UF6, ModFluids.PUF6, ModFluids.SAS3, ModFluids.PAIN, ModFluids.DEATH,
@@ -86,7 +88,9 @@ public final class HbmFluidRegistry {
             // smoke
             ModFluids.SMOKE, ModFluids.SMOKE_LEADED, ModFluids.SMOKE_POISON,
             // bug meth
-            ModFluids.PHEROMONE, ModFluids.PHEROMONE_M
+            ModFluids.PHEROMONE, ModFluids.PHEROMONE_M,
+            // demo
+            ModFluids.CUSTOM_DEMO
         );
     }
 

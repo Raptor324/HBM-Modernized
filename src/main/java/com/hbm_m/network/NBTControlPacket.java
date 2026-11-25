@@ -32,7 +32,7 @@ public class NBTControlPacket implements C2SPacket {
     public static void handle(NBTControlPacket packet, PacketContext context) {
         context.queue(() -> {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
-            if (player.level().getBlockEntity(packet.pos) instanceof IControlReceiver rec && rec.hasPermission(player))
+            if (ModPacketHandler.blockEntityAt(player, packet.pos) instanceof IControlReceiver rec && rec.hasPermission(player))
                 rec.receiveControl(player, packet.data);
         });
     }

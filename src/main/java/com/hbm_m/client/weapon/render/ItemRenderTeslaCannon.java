@@ -8,6 +8,7 @@ import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
 import com.hbm_m.render.anim.HbmAnimations;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 /** 1:1 {@code ItemRenderTeslaCannon}. */
@@ -56,7 +57,8 @@ public class ItemRenderTeslaCannon extends ItemRenderWeaponBase {
 		GunGL.translate(0, 0, recoil[2]);
 		GunGL.rotate(recoil[2] * 2, 1, 0, 0);
 
-		int amount = Math.max((int) count[0], gun.getConfig(stack, 0).getReceivers(stack)[0].getMagazine(stack).getAmount(stack, Minecraft.getInstance().player.getInventory()));
+		Player player = Minecraft.getInstance().player;
+		int amount = Math.max((int) count[0], gun.getConfig(stack, 0).getReceivers(stack)[0].getMagazine(stack).getAmount(stack, player != null ? player.getInventory() : null));
 
 		GunGL.renderPart(WeaponResources.tesla_cannon, "Gun");
 		GunGL.renderPart(WeaponResources.tesla_cannon, "Extension");

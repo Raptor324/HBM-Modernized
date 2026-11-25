@@ -1500,18 +1500,7 @@ public final class AssemblyMachineRecipeGenerator {
                     .save(v, "assembler/radarlarge"), "expensive")
                 .save();
 
-        // ass.forcefield
-        AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:machine_forcefield", 1), 600, 100)
-                .addIngredient(ore("oredict/plate/dura_steel"), 8)
-                .addIngredient(Ingredient.of(item("hbm_m:plate_desh")), 4)
-                .addIngredient(Ingredient.of(item("hbm_m:coil_gold_torus")), 6)
-                .addIngredient(Ingredient.of(item("hbm_m:coil_magnetized_tungsten")), 12)
-                .addIngredient(Ingredient.of(item("hbm_m:motor")), 1)
-                .addIngredient(Ingredient.of(item("hbm_m:upgrade_radius")), 1)
-                .addIngredient(Ingredient.of(item("hbm_m:upgrade_health")), 1)
-                .addIngredient(Ingredient.of(item("hbm_m:advanced_circuit")), 4)
-                .addIngredient(Ingredient.of(item("hbm_m:machine_transformer")), 1)
-                .save(writer, "assembler/forcefield");
+        // ass.forcefield — duplicate removed; 1:1 recipe lives in AssemblerRecipeGenerator ("machine_forcefield")
 
         // ass.strandcaster [Fassungen: expensive]
         ConfigRecipes.variants(writer)

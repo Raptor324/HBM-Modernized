@@ -163,7 +163,8 @@ public final class NtDirectPass {
      */
     public static int bindPackFboIfDetached() {
         if (!ShaderCompatibilityDetector.isExternalShaderActive()
-                || ShaderCompatibilityDetector.isRenderingShadowPass()) {
+                || ShaderCompatibilityDetector.isRenderingShadowPass()
+                || com.hbm_m.client.render.ClientRenderFlags.guiRenderFrame()) {
             return -1;
         }
         int currentFbo = org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER_BINDING);

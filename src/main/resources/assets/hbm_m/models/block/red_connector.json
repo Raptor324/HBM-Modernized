@@ -4,8 +4,8 @@
   "flip_v": true,
   "render_type": "minecraft:solid",
   "textures": {
-    "particle": "hbm_m:block/red_connector",
-    "surface": "hbm_m:block/red_connector"
+    "particle": "hbm_m:block/connector",
+    "surface": "hbm_m:block/connector"
   },
   "transform": {
     "translation": [

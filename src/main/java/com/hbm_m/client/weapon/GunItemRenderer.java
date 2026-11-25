@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.hbm_m.client.handler.GunLivingRenderTracker;
+import com.hbm_m.client.render.weapon.bridge.ExternalGunRenderBridge;
 import com.hbm_m.client.weapon.ItemRenderWeaponBase.ItemRenderType;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -45,8 +46,19 @@ public class GunItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     @Override
     public void renderByItem(ItemStack stack, ItemDisplayContext ctx, PoseStack ps, MultiBufferSource buffers, int light, int overlay) {
+        // Externe Renderer-Bridge (TACZ): wenn der externe Mod diesen Stack hier zeichnet, sofort zurueck.
+        if (ExternalGunRenderBridge.get().renderByItem(stack, ctx, ps, buffers, light, overlay)) return;
         ItemRenderWeaponBase renderer = get(stack);
         if (renderer == null) return;
+        if (ctx == ItemDisplayContext.GUI && !renderer.hasInventoryModel()) {
+            net.minecraft.client.renderer.entity.ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
+            net.minecraft.client.resources.model.BakedModel model = itemRenderer.getModel(stack, null, null, 0);
+            net.minecraft.client.resources.model.BakedModel guiModel = model.applyTransform(ItemDisplayContext.GUI, new PoseStack(), false);
+            itemRenderer.renderModelLists(guiModel, stack, light, overlay, ps,
+                    net.minecraft.client.renderer.entity.ItemRenderer.getFoilBufferDirect(
+                            buffers, net.minecraft.client.renderer.Sheets.translucentCullBlockSheet(), true, stack.hasFoil()));
+            return;
+        }
         boolean firstPerson = ctx == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND || ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND;
         if (firstPerson && renderer.customFirstPerson()) return;
 
@@ -117,29 +129,38 @@ public class GunItemRenderer extends BlockEntityWithoutLevelRenderer {
                     }
                 }
                 case FIRST_PERSON_RIGHT_HAND, FIRST_PERSON_LEFT_HAND -> {
-                    // Original ItemRenderChainsaw setzte player.isSwingInProgress=false und unterdrueckte damit
-                    // die drei Schwung-Rotationen (-20 Y, -20 Z, -80 X) der 1.7.10-Basismatrix. 1.20 legt dieselben
-                    // Rotationen (applyItemArmAttackTransform aus getAttackAnim) VOR dem BEWLR-Aufruf in die Pose,
-                    // das Feld swinging hat darauf keinen Einfluss -> hier rechnerisch zuruecknehmen, sonst
-                    // liegt der Vanilla-Zumachen-Schwung doppelt auf der eigenen SWING_ROT-Animation.
+                    // Original ItemRenderChainsaw/ItemRenderCrucible setzten player.isSwingInProgress=false und
+                    // unterdrueckten damit Schwung-Translation und -Rotationen der 1.7.10-Basismatrix. 1.20/1.21
+                    // legt dieselben Transformationen VOR dem BEWLR-Aufruf in die Pose -> hier rechnerisch
+                    // zuruecknehmen, sonst liegt der Vanilla-Schwung doppelt auf der eigenen SWING_ROT-Animation.
                     if (renderer.suppressVanillaSwing()) {
                         Player player = Minecraft.getInstance().player;
                         if (player != null) {
                             float swing = player.getAttackAnim(com.hbm_m.platform.RenderHooks.getPartialTickRaw());
-                            int side = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? -1 : 1;
-                            float f1 = Mth.sin(swing * swing * (float) Math.PI);
-                            float f2 = Mth.sin(Mth.sqrt(swing) * (float) Math.PI);
-                            ps.mulPose(Axis.YP.rotationDegrees(side * 45F));                 // invers zu YP(-45)
-                            ps.mulPose(Axis.XP.rotationDegrees(f2 * 80F));                   // invers zu XP(-80)
-                            ps.mulPose(Axis.ZP.rotationDegrees(side * f2 * 20F));            // invers zu ZP(-20)
-                            ps.mulPose(Axis.YP.rotationDegrees(side * (f1 * 20F - 45F)));    // invers zu YP(45-20)
+                            if (swing > 0.0F) {
+                                int side = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND ? -1 : 1;
+                                float f1 = Mth.sin(swing * swing * (float) Math.PI);
+                                float f2 = Mth.sin(Mth.sqrt(swing) * (float) Math.PI);
+                                float f3 = Mth.sin(Mth.sqrt(swing) * (float) (Math.PI * 2.0));
+                                float f4 = Mth.sin(swing * (float) Math.PI);
+                                ps.mulPose(Axis.YP.rotationDegrees(side * 45F));                 // invers zu YP(-45)
+                                ps.mulPose(Axis.XP.rotationDegrees(f2 * 80F));                   // invers zu XP(-80)
+                                ps.mulPose(Axis.ZP.rotationDegrees(side * f2 * 20F));            // invers zu ZP(-20)
+                                ps.mulPose(Axis.YP.rotationDegrees(side * (f1 * 20F - 45F)));    // invers zu YP(45-20)
+                                ps.translate(side * 0.4F * f2, -0.2F * f3, 0.2F * f4);           // invers zu Vanilla-Schwung-Translation
+                            }
                         }
                     }
-                    // 1.7.10 ItemRenderer.renderItemInFirstPerson fuer IItemRenderer ohne Render-Helfer:
-                    // Rest der Basismatrix (translate 0.56/-0.52/-0.72 + Equip-Progress macht die Vanilla-Hand),
-                    // hier bleiben rotate 45 Y und scale 0.4 aus 1.7.10 uebrig (1.20 macht beides nicht)
+                    // 1.7.10 ItemRenderer.renderItemInFirstPerson -> ItemRenderer.renderItem -> ForgeHooksClient.renderEquippedItem:
+                    // Translate (0.56, -0.52, -0.72) + Equip-Progress macht die Vanilla-Hand; hier folgen
+                    // rotate 45 Y, scale 0.4 und die ForgeHooksClient.renderEquippedItem-Basismatrix.
                     ps.mulPose(Axis.YP.rotationDegrees(45));
                     ps.scale(0.4F, 0.4F, 0.4F);
+                    ps.translate(0F, -0.3F, 0F);
+                    ps.scale(1.5F, 1.5F, 1.5F);
+                    ps.mulPose(Axis.YP.rotationDegrees(50));
+                    ps.mulPose(Axis.ZP.rotationDegrees(335));
+                    ps.translate(-0.9375F, -0.0625F, 0F);
                     renderer.renderItem(ItemRenderType.EQUIPPED_FIRST_PERSON, stack, null, Minecraft.getInstance().player);
                 }
                 case GROUND, FIXED, HEAD, NONE -> {

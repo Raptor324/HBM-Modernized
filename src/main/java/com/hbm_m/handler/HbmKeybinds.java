@@ -41,6 +41,12 @@ public final class HbmKeybinds {
     public static final KeyMapping abilityAlt = key("abilityAlt", GLFW.GLFW_KEY_LEFT_ALT);
     public static final KeyMapping copyToolAlt = key("copyToolAlt", GLFW.GLFW_KEY_LEFT_ALT);
     public static final KeyMapping copyToolCtrl = key("copyToolCtrl", GLFW.GLFW_KEY_LEFT_CONTROL);
+    /** Dev: copy display name + registry ID of every non-empty hotbar slot to the clipboard. */
+    public static final KeyMapping devCopyHotbar = key("devCopyHotbar", InputConstants.UNKNOWN.getValue());
+    /** Dev: copy display name + registry ID of the block/entity under the crosshair (unbound by default). */
+    public static final KeyMapping devCopyTarget = key("devCopyTarget", InputConstants.UNKNOWN.getValue());
+    /** Dev: dump blocks and items missing translations (both completely untranslated and falling back to English). */
+    public static final KeyMapping devDumpMissingLang = key("devDumpMissingLang", InputConstants.UNKNOWN.getValue());
     public static final KeyMapping reloadKey = key("reload", GLFW.GLFW_KEY_R);
     public static final KeyMapping gunPrimaryKey = mouse("gunPrimary", GLFW.GLFW_MOUSE_BUTTON_LEFT);
     public static final KeyMapping gunSecondaryKey = mouse("gunSecondary", GLFW.GLFW_MOUSE_BUTTON_RIGHT);
@@ -70,10 +76,20 @@ public final class HbmKeybinds {
         registrar.accept(abilityAlt);
         registrar.accept(copyToolAlt);
         registrar.accept(copyToolCtrl);
+        registrar.accept(devCopyHotbar);
+        registrar.accept(devCopyTarget);
+        registrar.accept(devDumpMissingLang);
     }
+
+    /** Optional external keybind override (e.g. TACZ addon routing gun inputs through TACZ keybinds). */
+    public static volatile java.util.function.Function<EnumKeybind, Boolean> externalGunKeybindOverride;
 
     /** Original {@code ClientProxy.getIsKeyPressed}. */
     public static boolean getIsKeyPressed(EnumKeybind key) {
+        if (externalGunKeybindOverride != null) {
+            Boolean overridden = externalGunKeybindOverride.apply(key);
+            if (overridden != null) return overridden;
+        }
         return switch (key) {
             case JETPACK -> Minecraft.getInstance().options.keyJump.isDown();
             case TOGGLE_JETPACK -> jetpackKey.isDown();
@@ -122,6 +138,8 @@ public final class HbmKeybinds {
         if (calculatorKey.consumeClick() && mc.screen == null) {
             com.hbm_m.inventory.gui.GUICalculator.open();
         }
+
+        com.hbm_m.client.dev.ItemCopyDevHook.onClientTick(mc);
     }
 
     public static void onPressedClient(Player player, EnumKeybind key, boolean state) {

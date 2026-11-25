@@ -16,8 +16,8 @@ import net.minecraft.resources.ResourceLocation;
 /** 1:1 {@code RenderSteamEngine}: Sockel, Schwungrad, Welle, Pleuel und Kolben mit exakter Kurbelgeometrie. */
 public class SteamEngineRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineSteamEngineBlockEntity> {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/steam_engine.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/steam_engine.png");
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/steam_engine.obj"));
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/steam_engine.png");
 
     public SteamEngineRenderer(BlockEntityRendererProvider.Context ctx) { }
 

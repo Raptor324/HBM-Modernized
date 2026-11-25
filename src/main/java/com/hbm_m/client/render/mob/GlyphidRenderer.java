@@ -29,7 +29,7 @@ import net.minecraft.util.Mth;
 public class GlyphidRenderer<T extends EntityGlyphid> extends MobRenderer<T, GlyphidRenderer.ModelGlyphid<T>> {
 
     public static final SimpleObjModel GLYPHID = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/mobs/glyphid.obj"));
-    public static final SimpleObjModel PROJECTILES = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/projectiles.obj"));
+    public static final SimpleObjModel PROJECTILES = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/projectiles/projectiles.obj"));
     public static final ResourceLocation glyphid_infested_tex = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/glyphid_infestation.png");
     public static final ResourceLocation mini_nuke_tex = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/projectiles/mini_nuke.png");
 

@@ -20,6 +20,19 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ExperienceOrb;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 
@@ -105,6 +118,118 @@ public final class RenderOverhead {
             if (!label.isEmpty()) drawTag(pose, camera, src, 1F, len, label, vec.x, vec.y, vec.z, 100, true, mk.color, mk.color);
         }
         src.endBatch();
+        RenderSystem.disableBlend();
+    }
+
+    private static final TagKey<EntityType<?>> BOSSES_TAG_FORGE =
+            TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath("forge", "bosses"));
+    private static final TagKey<EntityType<?>> BOSSES_TAG_C =
+            TagKey.create(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath("c", "bosses"));
+
+    public static boolean isBoss(Entity ent) {
+        if (ent.getType().is(BOSSES_TAG_FORGE) || ent.getType().is(BOSSES_TAG_C)) {
+            return true;
+        }
+        for (String tag : ent.getTags()) {
+            if ("boss".equalsIgnoreCase(tag)) return true;
+        }
+        if (ent instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon
+                || ent instanceof net.minecraft.world.entity.boss.wither.WitherBoss
+                || ent instanceof net.minecraft.world.entity.boss.EnderDragonPart
+                || ent instanceof com.hbm_m.entity.mob.EntityHunterChopper
+                || ent instanceof com.hbm_m.entity.mob.EntityMaskMan
+                || ent instanceof com.hbm_m.entity.mob.EntityQuackos
+                || ent instanceof com.hbm_m.entity.mob.EntityUFO
+                || ent instanceof com.hbm_m.entity.mob.botprime.EntityBOTPrimeHead
+                || ent instanceof com.hbm_m.entity.mob.botprime.EntityBOTPrimeBase) {
+            return true;
+        }
+        if (ent instanceof Enemy && !(ent instanceof Monster
+                || ent instanceof net.minecraft.world.entity.monster.Slime
+                || ent instanceof net.minecraft.world.entity.monster.Ghast
+                || ent instanceof net.minecraft.world.entity.monster.Phantom
+                || ent instanceof net.minecraft.world.entity.monster.Shulker
+                || ent instanceof net.minecraft.world.entity.monster.hoglin.Hoglin)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 1:1 port of {@code RenderOverhead.renderThermalSight(partialTicks)} from 1.7.10.
+     * Renders entity bounding box wireframes with color coding within 64 blocks without depth test.
+     */
+    public static void renderThermalSight(PoseStack pose, Camera camera, float partialTicks) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) return;
+
+        Player player = mc.player;
+        Vec3 cam = camera.getPosition();
+
+        RenderSystem.disableDepthTest();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+
+        Tesselator tess = Tesselator.getInstance();
+        BufferBuilder buf = com.hbm_m.platform.RenderHooks.beginTesselator(tess, VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+        Matrix4f m = pose.last().pose();
+
+        for (Entity ent : mc.level.entitiesForRendering()) {
+            if (ent == null || ent == player) continue;
+            if (player.distanceToSqr(ent) > 4096.0D) continue;
+
+            float r, g, b;
+            if (isBoss(ent)) {
+                r = 1.0F; g = 0.5F; b = 0.0F;
+            } else if (ent instanceof Monster || ent instanceof Enemy) {
+                r = 1.0F; g = 0.0F; b = 0.0F;
+            } else if (ent instanceof Player) {
+                r = 1.0F; g = 0.0F; b = 1.0F;
+            } else if (ent instanceof LivingEntity) {
+                r = 0.0F; g = 1.0F; b = 0.0F;
+            } else if (ent instanceof ItemEntity) {
+                r = 1.0F; g = 1.0F; b = 0.5F;
+            } else if (ent instanceof ExperienceOrb) {
+                if (player.tickCount % 10 < 5) {
+                    r = 1.0F; g = 1.0F; b = 0.5F;
+                } else {
+                    r = 0.5F; g = 1.0F; b = 0.5F;
+                }
+            } else {
+                continue;
+            }
+
+            if (!ent.isAlive() || (ent instanceof LivingEntity living && living.getHealth() <= 0)) {
+                r = 0.0F; g = 0.0F; b = 0.0F;
+            }
+
+            double dx = Mth.lerp(partialTicks, ent.xOld, ent.getX()) - ent.getX();
+            double dy = Mth.lerp(partialTicks, ent.yOld, ent.getY()) - ent.getY();
+            double dz = Mth.lerp(partialTicks, ent.zOld, ent.getZ()) - ent.getZ();
+            AABB bb = ent.getBoundingBox().move(dx, dy, dz);
+
+            float x0 = (float) (bb.minX - cam.x);
+            float y0 = (float) (bb.minY - cam.y);
+            float z0 = (float) (bb.minZ - cam.z);
+            float x1 = (float) (bb.maxX - cam.x);
+            float y1 = (float) (bb.maxY - cam.y);
+            float z1 = (float) (bb.maxZ - cam.z);
+
+            float[][] l = {
+                    { x0, y1, z0, x0, y0, z0 }, { x0, y1, z0, x1, y1, z0 }, { x1, y1, z0, x1, y0, z0 }, { x0, y0, z0, x1, y0, z0 },
+                    { x1, y0, z0, x1, y0, z1 }, { x1, y1, z1, x1, y1, z0 }, { x1, y1, z1, x1, y0, z1 }, { x0, y1, z0, x0, y1, z1 },
+                    { x0, y1, z1, x0, y0, z1 }, { x0, y1, z1, x1, y1, z1 }, { x0, y0, z1, x1, y0, z1 }, { x0, y0, z0, x0, y0, z1 }
+            };
+
+            for (float[] s : l) {
+                com.hbm_m.platform.RenderHooks.vertexColor(buf, m, s[0], s[1], s[2], r, g, b, 1.0F);
+                com.hbm_m.platform.RenderHooks.vertexColor(buf, m, s[3], s[4], s[5], r, g, b, 1.0F);
+            }
+        }
+
+        com.hbm_m.platform.RenderHooks.drawWithShader(buf);
+        RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
     }
 

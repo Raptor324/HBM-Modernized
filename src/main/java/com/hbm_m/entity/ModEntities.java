@@ -1089,6 +1089,22 @@ public class ModEntities {
                             .clientTrackingRange(64).updateInterval(1)
                             .build("chemthrower_splash"));
 
+    /** Joke: the giant freaky alien face over a freaky_alien_block custom nuke detonation (no 1.7.10 analog). */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.effect.EntityFreakyAlienFace>> FREAKY_ALIEN_FACE =
+            ENTITY_TYPES.register("freaky_alien_face",
+                    () -> EntityType.Builder.<com.hbm_m.entity.effect.EntityFreakyAlienFace>of(com.hbm_m.entity.effect.EntityFreakyAlienFace::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F).fireImmune()
+                            .clientTrackingRange(128).updateInterval(10)
+                            .build("freaky_alien_face"));
+
+    /** Joke: UFO that flies in, fires a laser beam into the ground, and flies away. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.effect.EntityFreakyUfo>> FREAKY_UFO =
+            ENTITY_TYPES.register("freaky_ufo",
+                    () -> EntityType.Builder.<com.hbm_m.entity.effect.EntityFreakyUfo>of(com.hbm_m.entity.effect.EntityFreakyUfo::new, MobCategory.MISC)
+                            .sized(2.0F, 2.0F).fireImmune()
+                            .clientTrackingRange(128).updateInterval(1)
+                            .build("freaky_ufo"));
+
     /** 1:1 port of {@code EntityMaskMan}: 2x5 boss, 1000 HP. */
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.mob.EntityMaskMan>> MASKMAN =
             ENTITY_TYPES.register("maskman",

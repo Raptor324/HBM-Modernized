@@ -70,7 +70,7 @@ public class RBMKToolItem extends Item implements com.hbm_m.item.ITooltipProvide
         // and silently left the console's grid empty with no indication why. Surfacing the actual
         // coordinates in both the success and failure message lets a wrong link be diagnosed at a
         // glance instead of just staring at a blank grid.
-        if (!(level.getBlockEntity(linked) instanceof com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity)) {
+        if (!(level.getBlockEntity(linked) instanceof com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity col && col.participatesInHeatNetwork())) {
             player.displayClientMessage(
                     Component.translatable("msg.hbm_m.rbmk_console.linked_invalid",
                             linked.getX(), linked.getY(), linked.getZ()).withStyle(ChatFormatting.RED), true);
@@ -95,7 +95,9 @@ public class RBMKToolItem extends Item implements com.hbm_m.item.ITooltipProvide
         }
 
         BlockPos linked = new BlockPos(tag.getInt(NBT_X), tag.getInt(NBT_Y), tag.getInt(NBT_Z));
-        Direction facing = player.getDirection().getOpposite();
+        Direction facing = crane.getBlockState().hasProperty(com.hbm_m.block.machines.rbmk.RBMKCraneConsoleBlock.FACING)
+                ? crane.getBlockState().getValue(com.hbm_m.block.machines.rbmk.RBMKCraneConsoleBlock.FACING)
+                : player.getDirection().getOpposite();
         crane.setTarget(level, linked, facing);
         player.displayClientMessage(
                 Component.translatable("msg.hbm_m.rbmk_crane.linked").withStyle(ChatFormatting.GREEN), true);
@@ -121,7 +123,7 @@ public class RBMKToolItem extends Item implements com.hbm_m.item.ITooltipProvide
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        for (String s : net.minecraft.client.resources.language.I18n.get(this.getDescriptionId() + ".desc").split("\\$")) {
+        for (String s : net.minecraft.locale.Language.getInstance().getOrDefault(this.getDescriptionId() + ".desc").split("\\$")) {
             tooltip.add(Component.literal(s).withStyle(ChatFormatting.YELLOW));
         }
         CompoundTag tag = com.hbm_m.platform.StackNbt.read(stack);

@@ -72,7 +72,7 @@ public class ICFComponentBlock extends Block implements com.hbm_m.api.block.IToo
         return List.of(
                 new CostEntry(List.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST)), 1),
                 // Original: DURA.bolt() - Durastahl heisst in diesem Port High-Speed Steel.
-                new CostEntry(List.of(ModItems.BOLT_HIGHSPEED_STEEL.get()), 4));
+                new CostEntry(List.of(ModItems.BOLT_DURA_STEEL.get()), 4));
     }
 
     private record CostEntry(List<Item> items, int count) {}

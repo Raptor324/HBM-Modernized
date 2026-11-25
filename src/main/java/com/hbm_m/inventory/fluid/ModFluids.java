@@ -359,6 +359,8 @@ public class ModFluids {
     public static final FluidEntry WASTEFLUID = registerFluid("wastefluid", 0x544400);
     public static final FluidEntry RADIOSOLVENT = registerFluid("radiosolvent", 0xA4D7DD);
     public static final FluidEntry SALIENT = registerFluid("salient", 0x457F2D);
+    /** Joke: dissolved freaky alien block, "Concentrate REN-TV" / "Unstable Sanity" (no 1.7.10 analog). */
+    public static final FluidEntry UNSTABLE_SANITY = registerFluid("unstable_sanity", 0xE8D44D);
     public static final FluidEntry IONGEL = registerFluid("iongel", 0xB8FFFF);
     public static final FluidEntry FULLERENE = registerFluid("fullerene", 0xFF7FED);
     public static final FluidEntry NITAN = registerFluid("nitan", 0x8018ad);
@@ -383,6 +385,7 @@ public class ModFluids {
     public static final FluidEntry CUSTOM_OIL = registerHeavyFluid("custom_oil", 0x020202);
     public static final FluidEntry CUSTOM_LAVA = registerHeavyFluid("custom_lava", 0xFF3300);
     public static final FluidEntry CUSTOM_TOXIN = registerFluid("custom_toxin", 0x544400);
+    public static final FluidEntry CUSTOM_DEMO = registerFluid("custom_demo", 0xFF0000);
     public static final FluidEntry TOXIN_BASE = registerFluid("toxin_base", 0x544400);
 
     // Special

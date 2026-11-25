@@ -801,6 +801,8 @@ public final class NucleusGpuBaker {
         int prevDrawIndirect = GL11.glGetInteger(GL40.GL_DRAW_INDIRECT_BUFFER_BINDING);
         int prevDispatchIndirect = GL11.glGetInteger(GL43.GL_DISPATCH_INDIRECT_BUFFER_BINDING);
         int[] prevSsbos = new int[5];
+        boolean ssbosSaved = false;
+        boolean ssbosRestored = false;
         saveSsboBindings(prevSsbos);
         // Tier 2/3 and IrisRenderBatch all reset this before applying the pack program;
         // the bake path did not - blockEntityId stuck at whatever BE Iris rendered last,
@@ -2144,7 +2146,7 @@ public final class NucleusGpuBaker {
         GL15.glBindBuffer(GL46.GL_PARAMETER_BUFFER, pool.paramSsbo);
         GL15.glBufferData(GL46.GL_PARAMETER_BUFFER, mdicCountBuf, GL15.GL_DYNAMIC_DRAW);
         GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, pool.cmdSsbo);
-        GL30.glBindVertexArray(pool.vao);
+        GlVaoSafety.bindVertexArray(pool.vao);
         if (mode == MODE_SHADOW || mode == MODE_MAIN) {
             // One bindIrisExtendedAttributes call for the WHOLE multi-draw: the
             // locations are pack-program-dependent and the pointers snapshot
@@ -2284,7 +2286,7 @@ public final class NucleusGpuBaker {
         // must not destroy GPU-written slots that cache-hit entries still draw
         // from on the GPU-count path.
         GL15.glBufferData(GL40.GL_DRAW_INDIRECT_BUFFER, buf, GL15.GL_DYNAMIC_DRAW);
-        GL30.glBindVertexArray(pool.vao);
+        GlVaoSafety.bindVertexArray(pool.vao);
         if (mode == MODE_SHADOW || mode == MODE_MAIN) {
             // One bindIrisExtendedAttributes call for the WHOLE multi-draw: the
             // locations are pack-program-dependent and the pointers snapshot
@@ -2472,6 +2474,8 @@ public final class NucleusGpuBaker {
         int prevDispatchIndirect = GL11.glGetInteger(GL43.GL_DISPATCH_INDIRECT_BUFFER_BINDING);
         int previousProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
         int[] prevSsbos = new int[5];
+        boolean ssbosSaved = false;
+        boolean ssbosRestored = false;
         int previousBlockEntityId = com.hbm_m.client.render.shader.IrisExtendedShaderAccess
                 .setCurrentRenderedBlockEntity(0);
         try (com.hbm_m.client.render.shader.IrisPhaseGuard guard =
@@ -2494,6 +2498,7 @@ public final class NucleusGpuBaker {
             // Rethinking Voxels); our compute dispatches below must not clobber
             // them to 0 before flushPool draws.
             saveSsboBindings(prevSsbos);
+            ssbosSaved = true;
 
             if (!MAIN_BAKE_QUEUE.isEmpty()) {
                 // Capacity pre-pass over MAIN_BAKE_QUEUE
@@ -2569,6 +2574,7 @@ public final class NucleusGpuBaker {
             }
             try (RenderStateGuard ignored = RenderStateGuard.snapshot()) {
                 restoreSsboBindings(prevSsbos);
+                ssbosRestored = true;
                 RenderSystem.enableDepthTest();
                 RenderSystem.depthFunc(GL11.GL_LEQUAL);
                 RenderSystem.depthMask(true);
@@ -2613,6 +2619,9 @@ public final class NucleusGpuBaker {
             available = false;
             releaseResourcesInternal();
         } finally {
+            if (ssbosSaved && !ssbosRestored) {
+                restoreSsboBindings(prevSsbos);
+            }
             MAIN_BAKE_QUEUE.clear();
             PENDING_MAIN.clear();
             com.hbm_m.client.render.shader.IrisExtendedShaderAccess

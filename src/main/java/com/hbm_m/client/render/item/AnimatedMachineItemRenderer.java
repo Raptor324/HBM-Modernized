@@ -51,10 +51,11 @@ public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer
     private static final ResourceLocation STIRLING = rl("textures/block/machine/stirling.png");
     private static final ResourceLocation STIRLING_STEEL = rl("textures/block/machine/stirling_steel.png");
     private static final ResourceLocation STIRLING_CREATIVE = rl("textures/block/machine/stirling_creative.png");
-    private static final SimpleObjModel KLYSTRON = new SimpleObjModel(rl("models/block/machines/klystron.obj"));
-    private static final SimpleObjModel MHDT = new SimpleObjModel(rl("models/block/machines/mhdt.obj"));
-    private static final SimpleObjModel TORUS = new SimpleObjModel(rl("models/block/machines/torus.obj"));
-    private static final SimpleObjModel RADAR_LARGE = new SimpleObjModel(rl("models/block/machines/radar_large.obj"));
+    private static SimpleObjModel KLYSTRON = new SimpleObjModel(rl("models/block/machines/klystron.obj"));
+    private static SimpleObjModel MHDT = new SimpleObjModel(rl("models/block/machines/mhdt.obj"));
+    private static SimpleObjModel TORUS = new SimpleObjModel(rl("models/block/machines/torus.obj"));
+    private static SimpleObjModel RADAR = new SimpleObjModel(rl("models/block/machines/radar.obj"));
+    private static SimpleObjModel RADAR_LARGE = new SimpleObjModel(rl("models/block/machines/radar_large.obj"));
 
     private AnimatedMachineItemRenderer() {
         super(Minecraft.getInstance().getBlockEntityRenderDispatcher(), Minecraft.getInstance().getEntityModels());
@@ -63,9 +64,21 @@ public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer
     @Override
     public void renderByItem(ItemStack stack, ItemDisplayContext ctx, PoseStack ps, MultiBufferSource buf, int light, int overlay) {
         String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
+        // RBMK crane console is a multiblock item (MultiblockBlockItem -> this renderer) but its icon
+        // is drawn by RBMKColumnItemRenderer (1:1 ItemRenderLibrary rbmk_crane_console).
+        if ("rbmk_crane_console".equals(id)) {
+            RBMKColumnItemRenderer.INSTANCE.renderByItem(stack, ctx, ps, buf, light, overlay);
+            return;
+        }
         // Turrets: 1:1 ItemRenderLibrary (custom inventory chain, applied prior to display transform)
         if (TurretItemRenderer.handles(id)) {
             TurretItemRenderer.render(id, stack, ctx, ps, buf, light);
+            return;
+        }
+        // Precision assembler: 1:1 RenderPrecAss#getRenderer — корпус + 4 манипулятора renderArm×4
+        // (оригинал 1.7.10 штампует руку 4 раза с поворотом 90°, а не рисует OBJ целиком).
+        if ("machine_precass".equals(id)) {
+            com.hbm_m.client.render.implementations.MachinePrecAssRenderer.renderItem(stack, ctx, ps, buf, light);
             return;
         }
         double time = System.currentTimeMillis();
@@ -131,6 +144,7 @@ public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer
                 ps.popPose();
             }
             case "klystron", "klystron_creative" -> {
+                if (KLYSTRON == null) KLYSTRON = new SimpleObjModel(rl("models/block/machines/klystron.obj"));
                 // Root of block model: (0.5, 0, 1.5), 90 degrees
                 ps.translate(0.5, 0, 1.5);
                 ps.mulPose(Axis.YP.rotationDegrees(90));
@@ -143,6 +157,7 @@ public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer
                 KLYSTRON.renderPart("Rotor", ps, vc, light);
             }
             case "mhdt" -> {
+                if (MHDT == null) MHDT = new SimpleObjModel(rl("models/block/machines/mhdt.obj"));
                 ps.translate(0.5, 0, 0.5);
                 ps.mulPose(Axis.YP.rotationDegrees(90));
                 VertexConsumer vc = buf.getBuffer(RenderType.entityCutout(rl("textures/block/machine/mhdt.png")));
@@ -155,6 +170,7 @@ public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer
                 MHDT.renderPart("Coils", ps, vc, light);
             }
             case "torus" -> {
+                if (TORUS == null) TORUS = new SimpleObjModel(rl("models/block/machines/torus.obj"));
                 ps.translate(0.5, 0, 0.5);
                 VertexConsumer vc = buf.getBuffer(RenderType.entityCutout(rl("textures/block/machine/torus.png")));
                 TORUS.renderPart("Torus", ps, vc, light);
@@ -186,9 +202,20 @@ public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer
                 float mult = (float) (Math.sin(time / 200D) / 2 + 0.5) * 0.1F + 0.9F;
                 LanternRenderer.LANTERN.renderPartColor("Light", ps, buf.getBuffer(ClientRenderHandler.CustomRenderTypes.SOLID_COLOR_NOCULL), 1F * mult, 1F * mult, 0.7F * mult, 1F);
             }
-            case "large_radar" -> {
+            case "radar" -> {
+                if (RADAR == null) RADAR = new SimpleObjModel(rl("models/block/machines/radar.obj"));
                 ps.translate(0.5, 0, 0.5);
-                VertexConsumer vc = buf.getBuffer(RenderType.entityCutout(rl("textures/block/machine/radar_large.png")));
+                VertexConsumer vcBase = buf.getBuffer(RenderType.entityCutoutNoCull(rl("textures/block/machine/radar_base.png")));
+                RADAR.renderPart("Base", ps, vcBase, light);
+                ps.mulPose(Axis.YN.rotationDegrees((float) (time % 3600 * 0.1D)));
+                ps.translate(-0.125, 0, 0);
+                VertexConsumer vcDish = buf.getBuffer(RenderType.entityCutoutNoCull(rl("textures/block/machine/radar_dish.png")));
+                RADAR.renderPart("Dish", ps, vcDish, light);
+            }
+            case "large_radar" -> {
+                if (RADAR_LARGE == null) RADAR_LARGE = new SimpleObjModel(rl("models/block/machines/radar_large.obj"));
+                ps.translate(0.5, 0, 0.5);
+                VertexConsumer vc = buf.getBuffer(RenderType.entityCutoutNoCull(rl("textures/block/machine/radar_large.png")));
                 RADAR_LARGE.renderPart("Radar", ps, vc, light);
                 ps.mulPose(Axis.YN.rotationDegrees((float) (time % 3600 * 0.1D)));
                 RADAR_LARGE.renderPart("Dish", ps, vc, light);

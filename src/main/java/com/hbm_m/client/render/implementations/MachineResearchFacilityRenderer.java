@@ -47,13 +47,13 @@ import net.minecraft.world.phys.Vec3;
 public final class MachineResearchFacilityRenderer {
 
     public static final ResourceLocation SUPERCOMPUTER_SCAN_TEX =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/supercomputer_scan.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/supercomputer_scan.png");
     private static final SimpleObjModel SUPERCOMPUTER_MODEL =
-            new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/supercomputer.obj"));
+            new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/supercomputer_item.obj"));
     private static final SimpleObjModel EXPOSURE_CHAMBER_MODEL =
-            new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/exposure_chamber.obj"));
+            new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/exposure_chamber.obj"));
     private static final ResourceLocation EXPOSURE_CHAMBER_TEX =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/exposure_chamber.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/exposure_chamber.png");
 
     public static void register() {
         // ── Supercomputer ────────────────────────────────────────────────────
@@ -86,13 +86,17 @@ public final class MachineResearchFacilityRenderer {
         MachineRenderers.machine("exposure_chamber",
                 ModBlockEntities.EXPOSURE_CHAMBER_BE.get(),
                 MachineExposureChamberBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Chamber")
-            .rotateY("Magnets", 0f, 0f, (be, pt) -> (double) Mth.lerp(pt, be.prevRotation, be.rotation))
+            .rotateY("Magnets", 0.5f, 0.5f, (be, pt) -> (double) Mth.lerp(pt, be.prevRotation, be.rotation))
             .hook(new MachineRenderHook<MachineExposureChamberBlockEntity>() {
                 @Override
                 public void render(MachineExposureChamberBlockEntity chamber, float pt, PoseStack ps,
                                    MultiBufferSource buf, int light, int overlay, MachineRenderApi api) {
                     if (!chamber.isOn) return;
+
+                    ps.pushPose();
+                    ps.translate(0.5, 0.0, 0.5);
 
                     double rotation = Mth.lerp(pt, chamber.prevRotation, chamber.rotation);
                     long time = chamber.getLevel() == null ? 0 : chamber.getLevel().getGameTime();
@@ -150,6 +154,7 @@ public final class MachineResearchFacilityRenderer {
                             0xffff80, 0xffffff, (int) (System.currentTimeMillis() % 360), 15, 0.125F, 1, 0, BeamPronter.forkAlpha());
                     BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, -1), EnumWaveType.SPIRAL, EnumBeamType.LINE,
                             0xff8080, 0xffffff, (int) (System.currentTimeMillis() % 360) + 180, 15, 0.125F, 1, 0, BeamPronter.forkAlpha());
+                    ps.popPose();
                     ps.popPose();
                 }
 
@@ -219,9 +224,17 @@ public final class MachineResearchFacilityRenderer {
         MachineRenderers.machine("forcefield",
                 ModBlockEntities.FORCE_FIELD_BE.get(),
                 ForceFieldBlockEntity.class)
+            .blockTransform((be, anim) -> {
+                anim.translate(0.5, 0.0, 0.5);
+                anim.rotate(180F, 0F, 1F, 0F);
+            })
             .part("Base")
-            .part("Top")
+            .rotatingPart("Top", 0F, 1F, 0F, 0F, 0F, 0F, 0F, 1.0F, 0F,
+                    (be, pt) -> (be.isFieldOn() && be.getEnergyStored() > 0)
+                            ? -(System.currentTimeMillis() / 10.0) % 360.0 : 0.0)
             .itemParts("Base", "Top")
+            .animationEpoch(be -> (be.isFieldOn() && be.getEnergyStored() > 0)
+                    ? (int) (System.currentTimeMillis() / 10L) : 0)
             .hook(new MachineRenderHook<ForceFieldBlockEntity>() {
                 @Override
                 public void render(ForceFieldBlockEntity be, float pt, PoseStack ps,
@@ -230,7 +243,10 @@ public final class MachineResearchFacilityRenderer {
                     if (!fieldUp) return;
 
                     int segments = (int) (16 + be.getRadius() * 0.125F);
+                    ps.pushPose();
+                    ps.translate(0.0, 0.5, 0.0);
                     drawSphere(ps, buf, segments, segments * 2, be.getRadius(), be.getColor());
+                    ps.popPose();
                 }
 
                 @Override

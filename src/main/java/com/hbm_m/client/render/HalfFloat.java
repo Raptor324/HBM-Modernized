@@ -102,6 +102,24 @@ public final class HalfFloat {
         return Float.intBitsToFloat(pack2RawInt(lo16, hi16));
     }
 
+    /** binary16 bit pattern (low 16 bits) -> float32. Exact decode including subnormals, Inf, NaN. */
+    public static float unpack(int h) {
+        int sign = (h & 0x8000) << 16;
+        int exp = (h >> 10) & 0x1F;
+        int mant = h & 0x03FF;
+        if (exp == 0) {
+            if (mant == 0) {
+                return Float.intBitsToFloat(sign);
+            }
+            float val = mant * 5.9604645e-8f;
+            return (h & 0x8000) != 0 ? -val : val;
+        }
+        if (exp == 31) {
+            return Float.intBitsToFloat(sign | 0x7F800000 | (mant << 13));
+        }
+        return Float.intBitsToFloat(sign | ((exp + 112) << 23) | (mant << 13));
+    }
+
     /**
      * Wraps degrees into (-180, 180] so the packed half keeps full 0.125 deg
      * precision. Deliberately NOT {@code Mth.wrapDegrees} (which returns

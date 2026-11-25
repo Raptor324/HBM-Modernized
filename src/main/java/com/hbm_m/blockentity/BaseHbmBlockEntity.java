@@ -394,13 +394,14 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
      * <p>Переопределяйте, если нужно другое поведение (например, invalidate cached
      * render-state, как в {@code MachineFluidTankBlockEntity}).
      */
-    protected void applyClientUpdate(@NotNull CompoundTag tag) {
-        readNbtData(tag, null);
-    }
-
-    /** Как выше, но с реестрами (neoforge 1.21.1 передаёт реальный Provider из пакета). */
+    /** Как выше, но с реестрами (neoforge 1.21.1 передаёт реальный Provider из пакета, forge передаёт null). */
     protected void applyClientUpdate(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
         readNbtData(tag, registries);
+    }
+
+    /** Хук для клиентской синхронизации в {@code getUpdateTag} (позволяет скрывать секретные поля вроде PIN замка). */
+    protected void writeClientSyncTag(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        writeNbtData(tag, registries);
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════
@@ -447,7 +448,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
     public @NotNull CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
         tag.putBoolean("tilted", tilted);
-        writeNbtData(tag, null);
+        writeClientSyncTag(tag, null);
         return tag;
     }
     //?} else {
@@ -455,7 +456,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
     public @NotNull CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         tag.putBoolean("tilted", tilted);
-        writeNbtData(tag, registries);
+        writeClientSyncTag(tag, registries);
         return tag;
     }
     *///?}
@@ -471,7 +472,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
     public void handleUpdateTag(@NotNull CompoundTag tag) {
         nucleusRenderDirty = true;
         readTiltClient(tag);
-        applyClientUpdate(tag);
+        applyClientUpdate(tag, null);
     }
 
     @Override
@@ -480,7 +481,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
             readTiltClient(tag);
-            applyClientUpdate(tag);
+            applyClientUpdate(tag, null);
         }
     }
     //?} else {

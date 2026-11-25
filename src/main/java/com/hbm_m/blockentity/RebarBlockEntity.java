@@ -139,7 +139,7 @@ public class RebarBlockEntity extends BaseHbmBlockEntity implements IFluidReceiv
     }
 
     @Override
-    protected void applyClientUpdate(@NotNull CompoundTag tag) {
+    protected void applyClientUpdate(@NotNull CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
         if (tag.contains("progress")) this.progress = tag.getInt("progress");
         if (tag.contains("block")) readNbtData(tag, null);
     }

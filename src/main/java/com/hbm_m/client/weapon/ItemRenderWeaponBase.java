@@ -50,6 +50,9 @@ public abstract class ItemRenderWeaponBase {
     /** Original {@code Item.isFull3D} — waehlt den Drittperson-Basistransform in {@code RenderBiped.renderEquippedItems}. */
     public boolean isFull3D() { return false; }
 
+    /** false = 1.7-IItemRenderer, der INVENTORY nicht behandelt (flaches GUI-Icon aus {@code SeparateTransformsModel}). */
+    public boolean hasInventoryModel() { return true; }
+
     /**
      * Original-Hack {@code player.isSwingInProgress = false} im Renderer: unterdrueckt die Vanilla-Schwung-Rotationen
      * der 1.7.10-Erstperson-Basismatrix. Nur der Chainsaw nutzte das; hier rueckgaengig gemacht, weil 1.20 die

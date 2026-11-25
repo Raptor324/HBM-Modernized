@@ -8,7 +8,11 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
+import com.hbm_m.lib.RefStrings;
 
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -29,19 +33,45 @@ import net.minecraft.world.level.material.Fluid;
  */
 public class RBMKOutgasserRecipes {
 
-    /** One activation result: a solid output, a fluid output, or both. Either may be absent. */
-    public record OutgasserRecipe(ItemStack solidOutput, Fluid fluidType, int fluidAmount) {
+    /**
+     * One activation result: a solid output, a fluid output, or both. Either may be absent.
+     * {@code fusionOnly} is 1:1 {@code OutgasserRecipe.fusionOnly}: such inputs are rejected by the
+     * outgasser and belong to the fusion breeder instead (the default table has none of them; they
+     * only appear in user-supplied {@code hbmIrradiation.json} recipes on 1.7.10).
+     */
+    public record OutgasserRecipe(ItemStack solidOutput, Fluid fluidType, int fluidAmount, boolean fusionOnly) {
+
+        public OutgasserRecipe(ItemStack solidOutput, Fluid fluidType, int fluidAmount) {
+            this(solidOutput, fluidType, fluidAmount, false);
+        }
 
         public boolean hasFluid() { return fluidType != null && fluidAmount > 0; }
         public boolean hasSolid() { return solidOutput != null && !solidOutput.isEmpty(); }
     }
 
     private static final Map<Item, OutgasserRecipe> RECIPES = new LinkedHashMap<>();
+
+    /**
+     * 1:1 {@code OutgasserRecipes.getOutput} dict fallback: the same defaults keyed on the port's
+     * 1:1 OreDictionary tags ({@code hbm_m:oredict/...} from {@code OreDictTagData}), so any
+     * third-party item carrying the same dict tag (any mod's gold ingot, any coal gem) activates
+     * too. Consulted only when the concrete-Item lookup misses, mirroring the original's
+     * exact-stack pass before the dict-key pass.
+     */
+    private static final Map<TagKey<Item>, OutgasserRecipe> TAG_RECIPES = new LinkedHashMap<>();
     private static boolean initialised = false;
 
     private static void put(Item input, ItemStack solid, Fluid fluid, int amount) {
         if (input == null || input == Items.AIR) return;
         RECIPES.put(input, new OutgasserRecipe(solid, fluid, amount));
+    }
+
+    /** {@code new OreDictStack(KEY)} of the original, keyed on the port's {@code hbm_m:oredict} tag. */
+    private static void putTag(String oredictPath, ItemStack solid, Fluid fluid, int amount) {
+        if (oredictPath == null) return;
+        TAG_RECIPES.put(TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, oredictPath)),
+                new OutgasserRecipe(solid, fluid, amount));
     }
 
     private static ItemStack one(net.minecraft.core.Registry<Item> ignored, Item item) {
@@ -105,6 +135,22 @@ public class RBMKOutgasserRecipes {
         // --- the tars themselves gas off further ---
         put(ModItems.OIL_TAR_COAL.get(), ItemStack.EMPTY, ModFluids.COALOIL.getSource(),      100);
         put(ModItems.OIL_TAR_WAX.get(),  ItemStack.EMPTY, ModFluids.RADIOSOLVENT.getSource(), 100);
+
+        // --- the original table's OreDictStack defaults (OutgasserRecipes.registerDefaults), keyed
+        // on the port's 1:1 dict tags so third-party items carrying the same tags activate too.
+        // blockLithium, billetThorium232 and ingotPVC have no hbm_m:oredict tag in OreDictTagData -
+        // their canon items stay covered by the concrete table above.
+        putTag("oredict/ingot/lithium",     ItemStack.EMPTY, tritium,  1_000);
+        putTag("oredict/dust/lithium",      ItemStack.EMPTY, tritium,  1_000);
+        putTag("oredict/dust_tiny/lithium", ItemStack.EMPTY, tritium,    100);
+        putTag("oredict/ingot/gold",  one(null, ModMaterialItems.item(ModMaterials.AU198, MaterialShape.INGOT)),  null, 0);
+        putTag("oredict/nugget/gold", one(null, ModMaterialItems.item(ModMaterials.AU198, MaterialShape.NUGGET)), null, 0);
+        putTag("oredict/dust/gold",   one(null, ModMaterialItems.item(ModMaterials.AU198, MaterialShape.POWDER)), null, 0);
+        putTag("oredict/ingot/thorium232",  one(null, ModMaterialItems.item(ModMaterials.THORIUM_FUEL, MaterialShape.INGOT)),  null, 0);
+        putTag("oredict/nugget/thorium232", one(null, ModMaterialItems.item(ModMaterials.THORIUM_FUEL, MaterialShape.NUGGET)), null, 0);
+        putTag("oredict/gem/coal",  coalTar.copy(), syngas,  50);
+        putTag("oredict/dust/coal", coalTar.copy(), syngas,  50);
+        putTag("oredict/block/coal", new ItemStack(ModItems.OIL_TAR_COAL.get(), 9), syngas, 500);
     }
 
     private static Item ModBlocksItem(net.minecraft.world.level.block.Block block) {
@@ -114,7 +160,13 @@ public class RBMKOutgasserRecipes {
     public static OutgasserRecipe getRecipe(ItemStack input) {
         if (input == null || input.isEmpty()) return null;
         init();
-        return RECIPES.get(input.getItem());
+        // 1:1 OutgasserRecipes.getOutput: the exact stack first, then the item's dict keys.
+        OutgasserRecipe exact = RECIPES.get(input.getItem());
+        if (exact != null) return exact;
+        for (Map.Entry<TagKey<Item>, OutgasserRecipe> e : TAG_RECIPES.entrySet()) {
+            if (input.is(e.getKey())) return e.getValue();
+        }
+        return null;
     }
 
     /** Every registered activation, for JEI and the outgasser's own item filter. */

@@ -81,14 +81,13 @@ public final class FleijaSphereMesh {
 
         List<Tri> tris = new ArrayList<>();
         for (NMeshData.SubMesh sm : nmesh.subMeshes()) {
-            float[] verts = sm.vertices;
-            int[] idx = sm.indices;
-            for (int i = 0; i + 2 < idx.length; i += 3) {
-                int b0 = idx[i] * 8, b1 = idx[i + 1] * 8, b2 = idx[i + 2] * 8;
+            int iCount = sm.indexCount();
+            for (int i = 0; i + 2 < iCount; i += 3) {
+                int v0 = sm.index(i), v1 = sm.index(i + 1), v2 = sm.index(i + 2);
                 tris.add(new Tri(
-                        verts[b0], verts[b0 + 1], verts[b0 + 2],
-                        verts[b1], verts[b1 + 1], verts[b1 + 2],
-                        verts[b2], verts[b2 + 1], verts[b2 + 2]));
+                        sm.posX(v0), sm.posY(v0), sm.posZ(v0),
+                        sm.posX(v1), sm.posY(v1), sm.posZ(v1),
+                        sm.posX(v2), sm.posY(v2), sm.posZ(v2)));
             }
         }
         return List.copyOf(tris);

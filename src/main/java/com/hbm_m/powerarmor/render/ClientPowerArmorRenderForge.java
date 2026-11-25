@@ -1,91 +1,44 @@
 //? if forge {
 package com.hbm_m.powerarmor.render;
 
+import java.util.List;
+
+import com.hbm_m.client.render.armor.ArmorLayerRegistrar;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.mixin.client.LivingEntityRendererInvoker;
-import com.hbm_m.powerarmor.layer.AJROPowerArmorLayer;
-import com.hbm_m.powerarmor.layer.AJRPowerArmorLayer;
-import com.hbm_m.powerarmor.layer.BismuthPowerArmorLayer;
-import com.hbm_m.powerarmor.layer.DNTPowerArmorLayer;
-import com.hbm_m.client.render.GasMaskLayer;
-import com.hbm_m.powerarmor.layer.T51PowerArmorLayer;
 
-import net.minecraft.client.renderer.entity.ArmorStandRenderer;
-import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
-import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+/**
+ * Registers unified 3D armor, accessories, and gas mask render layers on Forge (1.20.1).
+ */
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientPowerArmorRenderForge {
 
     @SubscribeEvent
     public static void onAddLayers(EntityRenderersEvent.AddLayers event) {
-        // players
         addPowerArmorLayers(event.getSkin("default"));
         addPowerArmorLayers(event.getSkin("slim"));
-
-        // armor stand
-        var armorStandRenderer = event.getRenderer(EntityType.ARMOR_STAND);
-        if (armorStandRenderer instanceof ArmorStandRenderer standRenderer) {
-            addPowerArmorLayers(standRenderer);
-        }
-
-        registerForHumanoidMobs(event);
-    }
-
-    private static void registerForHumanoidMobs(EntityRenderersEvent.AddLayers event) {
-        registerForMobType(event, EntityType.ZOMBIE);
-        registerForMobType(event, EntityType.SKELETON);
-        registerForMobType(event, EntityType.WITHER_SKELETON);
-        registerForMobType(event, EntityType.STRAY);
-        registerForMobType(event, EntityType.DROWNED);
-        registerForMobType(event, EntityType.HUSK);
-        registerForMobType(event, EntityType.PIGLIN);
-        registerForMobType(event, EntityType.PIGLIN_BRUTE);
-        registerForMobType(event, EntityType.ZOMBIFIED_PIGLIN);
+        ArmorLayerRegistrar.addMobAndStandLayers(type -> getRendererUnchecked(event, type), ClientPowerArmorRenderForge::addPowerArmorLayers);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static <T extends net.minecraft.world.entity.monster.Monster> void registerForMobType(
-        EntityRenderersEvent.AddLayers event, EntityType<T> entityType
-    ) {
-        try {
-            var renderer = event.getRenderer(entityType);
-            if (renderer instanceof HumanoidMobRenderer humanoidRenderer) {
-                addPowerArmorLayers(humanoidRenderer);
-            }
-        } catch (Exception ignored) {
-            // some mobs may not have a humanoid renderer; safe to ignore
-        }
+    private static net.minecraft.client.renderer.entity.EntityRenderer<?> getRendererUnchecked(
+            EntityRenderersEvent.AddLayers event, EntityType type) {
+        return event.getRenderer(type);
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings("unchecked")
     private static void addPowerArmorLayers(LivingEntityRenderer<?, ?> renderer) {
         if (renderer == null) return;
-
-        // addLayer(...) protected → добавляем напрямую в список layers через mixin accessor
-        LivingEntityRendererInvoker accessor = (LivingEntityRendererInvoker) renderer;
-        accessor.hbm_m$getLayers().add(new T51PowerArmorLayer((LivingEntityRenderer) renderer));
-        accessor.hbm_m$getLayers().add(new AJRPowerArmorLayer((LivingEntityRenderer) renderer));
-        accessor.hbm_m$getLayers().add(new AJROPowerArmorLayer((LivingEntityRenderer) renderer));
-        accessor.hbm_m$getLayers().add(new BismuthPowerArmorLayer((LivingEntityRenderer) renderer));
-        accessor.hbm_m$getLayers().add(new DNTPowerArmorLayer((LivingEntityRenderer) renderer));
-        accessor.hbm_m$getLayers().add(new com.hbm_m.client.render.armor.ObjArmorLayer((LivingEntityRenderer) renderer));
-        accessor.hbm_m$getLayers().add(new com.hbm_m.client.render.armor.ArmorAccessoryLayer((LivingEntityRenderer) renderer));
-        accessor.hbm_m$getLayers().add(new GasMaskLayer((LivingEntityRenderer) renderer));
-        // Костюмы химзащиты - по слою на окрас (общая геометрия, разные текстуры).
-        for (com.hbm_m.item.hazmat.HazmatArmorItem.Variant variant : com.hbm_m.item.hazmat.HazmatArmorItem.Variant.values()) {
-            accessor.hbm_m$getLayers().add(new com.hbm_m.item.hazmat.render.HazmatArmorLayer<>((LivingEntityRenderer) renderer, variant));
-        }
+        ArmorLayerRegistrar.appendToLayerList((List<Object>) (List<?>) ((LivingEntityRendererInvoker) renderer).hbm_m$getLayers(), renderer);
     }
 
     private ClientPowerArmorRenderForge() {}
 }
 //?}
-

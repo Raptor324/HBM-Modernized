@@ -287,8 +287,8 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
 
     /** Original deserialize: {@code turnProgress = 2} bei jedem Paket. */
     @Override
-    protected void applyClientUpdate(CompoundTag tag) {
-        super.applyClientUpdate(tag);
+    protected void applyClientUpdate(CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
+        super.applyClientUpdate(tag, registries);
         this.turnProgress = 2;
     }
 

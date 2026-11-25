@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import com.hbm_m.compat.create.MultiblockExpander;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IMultiblockPart;
+import com.simibubi.create.content.contraptions.Contraption;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -41,7 +43,8 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  * и null-NBT. Это допустимо, т.к. Create сам обрабатывает NBT для BlockEntity позже.
  * </p>
  */
-@Mixin(targets = "com.simibubi.create.content.contraptions.Contraption")
+@Pseudo
+@Mixin(value = Contraption.class, remap = false)
 public abstract class ContraptionMixin {
 
     @Shadow
@@ -64,7 +67,7 @@ public abstract class ContraptionMixin {
         method = "searchMovedStructure",
         at = @At("RETURN"),
         remap = false,
-        require = 1
+        require = 0
     )
     private void hbm_m$expandToFullMultiblockAfterSearch(
             Level world,

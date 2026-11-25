@@ -24,7 +24,8 @@ public class SolderingStationControlPacket implements C2SPacket {
     public static void handle(SolderingStationControlPacket pkt, PacketContext ctx) {
         ctx.queue(() -> {
             if (!(ctx.getPlayer() instanceof ServerPlayer player)) return;
-            if (ModPacketHandler.blockEntityAt(player, pkt.pos) instanceof MachineSolderingStationBlockEntity be)
+            if (ModPacketHandler.blockEntityAt(player, pkt.pos) instanceof MachineSolderingStationBlockEntity be
+                    && com.hbm_m.inventory.menu.MenuReach.canReach(player, pkt.pos, player.level().getBlockState(pkt.pos)))
                 be.toggleCollisionPrevention();
         });
     }

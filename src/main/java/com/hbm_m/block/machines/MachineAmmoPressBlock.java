@@ -37,11 +37,6 @@ public class MachineAmmoPressBlock extends DummyableMachineBlock {
     protected MultiblockStructureHelper defineStructure() {
         return DummyableStructureBuilder.create()
                 .box(1, 0, 0, 0, 1, 1)
-                .extra(0, 0, 1)
-                .extra(0, 0, -1)
-                .extra(0, 1, 0)
-                .extra(0, 1, 1)
-                .extra(0, 1, -1)
                 .placementOffset(0)
                 .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }

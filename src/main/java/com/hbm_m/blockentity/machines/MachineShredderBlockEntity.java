@@ -226,13 +226,23 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         if (canWork) {
             progress++;
             if (progress >= PROCESSING_SPEED) {
+                // Joke: the freaky alien block chews through the blades (no 1.7.10 analog)
+                boolean freakyInput = false;
+                for (int i = INPUT_START; i <= INPUT_END; i++) {
+                    if (!inventory.getStackInSlot(i).isEmpty()
+                            && inventory.getStackInSlot(i).is(com.hbm_m.block.ModBlocks.FREAKY_ALIEN_BLOCK.get().asItem())) {
+                        freakyInput = true;
+                        break;
+                    }
+                }
+                int bladeWear = freakyInput ? 50 : 1;
                 for (int i = BLADE_LEFT; i <= BLADE_RIGHT; i++) {
                     ItemStack blade = inventory.getStackInSlot(i);
                     if (!blade.isEmpty() && blade.getItem() instanceof ItemBlades bladeItem) {
                         int maxDamage = bladeItem.getMaxDamage(blade);
                         if (maxDamage > 0) {
                             int oldDamage = blade.getDamageValue();
-                            int newDamage = Math.min(maxDamage, oldDamage + 1);
+                            int newDamage = Math.min(maxDamage, oldDamage + bladeWear);
                             if (newDamage != oldDamage) {
                                 blade.setDamageValue(newDamage);
                                 if (oldDamage < maxDamage && newDamage >= maxDamage) {

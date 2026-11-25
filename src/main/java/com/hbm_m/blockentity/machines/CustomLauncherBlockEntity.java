@@ -186,8 +186,8 @@ public abstract class CustomLauncherBlockEntity extends BaseMachineBlockEntity
 
     @Override
     public boolean sendCommandEntity(Entity target) {
-        // Original: (int) Math.floor(target.posX) fuer x UND z
-        return sendCommandPosition(new BlockPos((int) Math.floor(target.getX()), worldPosition.getY(), (int) Math.floor(target.getX())));
+        // Original TileEntityCompactLauncher.sendCommandEntity: posX und posZ
+        return sendCommandPosition(new BlockPos((int) Math.floor(target.getX()), worldPosition.getY(), (int) Math.floor(target.getZ())));
     }
 
     @Override

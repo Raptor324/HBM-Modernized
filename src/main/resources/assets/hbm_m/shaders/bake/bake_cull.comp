@@ -232,6 +232,7 @@ void main() {
     uint gid = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * (gl_NumWorkGroups.x * 64u);
     if (uPass == 0) {
         bool isVisible = testBakeInstanceVisibility(gid);
+        bool isCulled = (gid < uint(uInstCount)) && !isVisible;
 #if defined(NUCLEUS_BALLOT)
         uvec4 ballot = subgroupBallot(isVisible);
         uint visCount = subgroupBallotBitCount(ballot);
@@ -246,14 +247,14 @@ void main() {
         }
 
         if (uDebugCullMode != 0) {
-            uvec4 culledBallot = subgroupBallot(!isVisible);
+            uvec4 culledBallot = subgroupBallot(isCulled);
             uint culledCount = subgroupBallotBitCount(culledBallot);
             uint culledScanBase = 0u;
             if (culledCount != 0u && gl_SubgroupInvocationID == 0u) {
                 culledScanBase = atomicAdd(ctl[1u], culledCount);
             }
             culledScanBase = subgroupBroadcastFirst(culledScanBase);
-            if (!isVisible) {
+            if (isCulled) {
                 uint slot = culledScanBase + subgroupBallotExclusiveBitCount(culledBallot);
                 ctl[16u + uint(uInstCount) - 1u - slot] = gid;
             }
@@ -262,7 +263,7 @@ void main() {
         if (isVisible) {
             uint slot = atomicAdd(ctl[0u], 1u);
             ctl[16u + slot] = gid;
-        } else if (uDebugCullMode != 0) {
+        } else if (uDebugCullMode != 0 && isCulled) {
             uint slot = atomicAdd(ctl[1u], 1u);
             ctl[16u + uint(uInstCount) - 1u - slot] = gid;
         }

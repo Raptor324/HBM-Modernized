@@ -92,9 +92,9 @@ public class BatteryPackBakedModel extends AbstractMultipartBakedModel implement
                 }
                 all.addAll(com.hbm_m.platform.RenderHooks.getPartQuads(part, null, null, rand));
             }
-            // Исходные display-трансформы рассчитаны на модель, сдвинутую на
-            // offset_y = -0.5 (центрирование вертикали: OBJ занимает y 0..2).
-            all = shiftY(all, -0.5f);
+            // OBJ занимает X/Z вокруг 0 (-0.938..0.938) и Y в 0.125..1.875 (центр (0, 1, 0)).
+            // ItemRenderer перед рендером сдвигает на (-0.5, -0.5, -0.5), поэтому центрируем модель в (0.5, 0.5, 0.5).
+            all = shift(all, 0.5f, -0.5f, 0.5f);
             cachedItemQuads = all;
             itemQuadsCached = true;
         }
@@ -111,9 +111,9 @@ public class BatteryPackBakedModel extends AbstractMultipartBakedModel implement
         return ItemOverrides.EMPTY;
     }
 
-    /** Сдвиг позиций квадов по Y (форм-агностично: stride = длина/4). */
-    private static List<BakedQuad> shiftY(List<BakedQuad> quads, float dy) {
-        if (quads.isEmpty() || dy == 0f) return quads;
+    /** Сдвиг позиций квадов (форм-агностично: stride = длина/4). */
+    private static List<BakedQuad> shift(List<BakedQuad> quads, float dx, float dy, float dz) {
+        if (quads.isEmpty() || (dx == 0f && dy == 0f && dz == 0f)) return quads;
         List<BakedQuad> out = new ArrayList<>(quads.size());
         for (BakedQuad quad : quads) {
             int[] verts = quad.getVertices();
@@ -122,8 +122,9 @@ public class BatteryPackBakedModel extends AbstractMultipartBakedModel implement
             int[] copy = verts.clone();
             for (int v = 0; v < 4; v++) {
                 int i = v * stride;
-                float y = Float.intBitsToFloat(copy[i + 1]);
-                copy[i + 1] = Float.floatToIntBits(y + dy);
+                copy[i]     = Float.floatToIntBits(Float.intBitsToFloat(copy[i]) + dx);
+                copy[i + 1] = Float.floatToIntBits(Float.intBitsToFloat(copy[i + 1]) + dy);
+                copy[i + 2] = Float.floatToIntBits(Float.intBitsToFloat(copy[i + 2]) + dz);
             }
             out.add(new BakedQuad(copy, quad.getTintIndex(), quad.getDirection(), quad.getSprite(), quad.isShade()));
         }

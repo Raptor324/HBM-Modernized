@@ -4,7 +4,9 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.handler.rbmk.RBMKNeutronHandler.RBMKType;
 import com.hbm_m.inventory.menu.RBMKStorageMenu;
 import com.hbm_m.item.rbmk.RBMKRodItem;
+import com.hbm_m.platform.ModItemStackHandler;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
@@ -36,19 +38,17 @@ public class RBMKStorageBlockEntity extends RBMKColumnBlockEntity
         baseTick(level, pos, state, be);
         if (level.isClientSide) return;
 
-        // CE's compaction (TileEntityRBMKStorage.update): a single full pass every tick that walks
-        // the slots and slides each occupied one down onto the lowest free index. The port used a
-        // bubble-one-step-every-10-ticks variant instead, so a rack unloaded from the middle took
-        // over a hundred ticks to close the gap that CE closes immediately - long enough for the
-        // crane to read slot 0 as empty and skip the column entirely.
-        int freeSlot = 0;
-        for (int i = 0; i < SLOTS; i++) {
-            if (slots_empty(be.slots[i])) continue;
-            if (slots_empty(be.slots[freeSlot])) {
-                be.slots[freeSlot] = be.slots[i].copy();
-                be.slots[i] = ItemStack.EMPTY;
+        // 1:1 TileEntityRBMKStorage.updateEntity: compaction only runs every 10 ticks, and each
+        // pass is a single bubble shift - an occupied slot slides down exactly one position per
+        // pass, so a mid-rack gap closes gradually over several passes and the crane can observe
+        // the half-closed gap during that window.
+        if (level.getGameTime() % 10 == 0) {
+            for (int i = 0; i < SLOTS - 1; i++) {
+                if (slots_empty(be.slots[i]) && !slots_empty(be.slots[i + 1])) {
+                    be.slots[i] = be.slots[i + 1];
+                    be.slots[i + 1] = ItemStack.EMPTY;
+                }
             }
-            freeSlot++;
         }
     }
 
@@ -122,4 +122,101 @@ public class RBMKStorageBlockEntity extends RBMKColumnBlockEntity
                 slots[idx] = com.hbm_m.platform.StackNbt.parse(s.getCompound("item"), registries);
         }
     }
+
+    // ─── Automation (hoppers/pipes) ──────────────────────────────────────────
+
+    /** 1:1 {@code TileEntityRBMKStorage.isItemValidForSlot}: automation only takes RBMK rods. */
+    public boolean isItemValidForSlot(int slot, ItemStack stack) {
+        return stack.getItem() instanceof RBMKRodItem;
+    }
+
+    /**
+     * 1:1 {@code TileEntityRBMKStorage} automation surface. {@code getAccessibleSlotsFromSide}
+     * exposes all 12 slots to pipes/hoppers from every side, {@code isItemValidForSlot} restricts
+     * insertion to rods, {@code canExtractItem} allows extraction from every slot. Live view of the
+     * raw {@link #slots} array - the tick, the menu and the NBT keep working on the same storage.
+     */
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        return automationHandler;
+    }
+
+    private final ModItemStackHandler automationHandler = new ModItemStackHandler(SLOTS) {
+
+        @Override
+        public int getSlots() { return SLOTS; }
+
+        @Override
+        public ItemStack getStackInSlot(int slot) { return slots[slot]; }
+
+        @Override
+        public void setStackInSlot(int slot, ItemStack stack) {
+            slots[slot] = stack;
+            onContentsChanged(slot);
+        }
+
+        @Override
+        public boolean isItemValid(int slot, ItemStack stack) { return isItemValidForSlot(slot, stack); }
+
+        @Override
+        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+            if (stack.isEmpty() || !isItemValidForSlot(slot, stack)) return stack;
+
+            ItemStack existing = slots[slot];
+            int limit = Math.min(stack.getMaxStackSize(), getSlotLimit(slot));
+            if (!existing.isEmpty()) {
+                if (!ItemStack.isSameItem(existing, stack) || existing.getCount() >= limit) return stack;
+                int accepted = Math.min(stack.getCount(), limit - existing.getCount());
+                if (!simulate) {
+                    existing.grow(accepted);
+                    onContentsChanged(slot);
+                }
+                return accepted >= stack.getCount() ? ItemStack.EMPTY
+                                                    : stack.copyWithCount(stack.getCount() - accepted);
+            }
+            int accepted = Math.min(stack.getCount(), limit);
+            if (accepted <= 0) return stack;
+            if (!simulate) {
+                slots[slot] = stack.copyWithCount(accepted);
+                onContentsChanged(slot);
+            }
+            return accepted >= stack.getCount() ? ItemStack.EMPTY
+                                                : stack.copyWithCount(stack.getCount() - accepted);
+        }
+
+        @Override
+        public ItemStack extractItem(int slot, int amount, boolean simulate) {
+            // canExtractItem: every slot can be drained
+            if (amount <= 0) return ItemStack.EMPTY;
+            ItemStack existing = slots[slot];
+            if (existing.isEmpty()) return ItemStack.EMPTY;
+            int toExtract = Math.min(amount, existing.getCount());
+            ItemStack extracted = existing.copyWithCount(toExtract);
+            if (!simulate) {
+                if (toExtract >= existing.getCount()) slots[slot] = ItemStack.EMPTY;
+                else existing.shrink(toExtract);
+                onContentsChanged(slot);
+            }
+            return extracted;
+        }
+
+        @Override
+        protected void onContentsChanged(int slot) {
+            setChanged();
+        }
+    };
+
+    //? if forge {
+    // Forge exposes items only through the BE's own getCapability (ModCapabilities' generic
+    // ItemHandler registration exists on NeoForge alone); same split as RBMKAutoloaderBlockEntity.
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
+            net.minecraftforge.common.capabilities.Capability<T> cap,
+            @org.jetbrains.annotations.Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER) {
+            return net.minecraftforge.common.util.LazyOptional.of(() -> automationHandler).cast();
+        }
+        return super.getCapability(cap, side);
+    }
+    //?}
 }

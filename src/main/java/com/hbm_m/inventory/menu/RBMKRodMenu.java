@@ -1,7 +1,6 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKRodBlockEntity;
-import com.hbm_m.item.rbmk.RBMKRodItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.SimpleContainer;
@@ -38,12 +37,9 @@ public class RBMKRodMenu extends AbstractContainerMenu {
         if (be != null) container.setItem(0, be.fuelSlot.copy());
 
         // Fuel rod slot — matches the real gui_rbmk_element.png layout (slot 0)
+        // 1:1 with the original ContainerRBMKRod: a plain Slot with no mayPlace restriction,
+        // so any item can be placed; only hot-rod pickup is gated (mayPickup / clicked).
         addSlot(new Slot(container, 0, 80, 45) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return stack.getItem() instanceof RBMKRodItem;
-            }
-
             @Override
             public boolean mayPickup(Player player) {
                 // тайл может отсутствовать на клиенте (реплей Flashback)

@@ -26,6 +26,8 @@ import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * GUI радара (порт GUIMachineRadarNT из 1.7.10, текстура gui_radar_nt.png).
@@ -36,6 +38,7 @@ import net.minecraft.world.entity.player.Inventory;
  * Порт дословный: UV тумблеров 238/4..54, боковая панель двумя кусками (+84 и +154),
  * бар энергии 8,221/0,234/200×16, развёртка GL_SMOOTH-клином, метки по blipLevel.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
 
     private static final ResourceLocation TEXTURE =
@@ -377,7 +380,12 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
                     + (int) ((contact[2] - radarZ) * 1.0D / radarWidth * MAP_SIZE);
             if (mouseX + 5 > cx && mouseX - 4 <= cx && mouseY + 5 > cz && mouseY - 4 <= cz) {
                 List<Component> text = new ArrayList<>();
-                text.add(Component.literal(radar.getTargetTypeName(contact[4])));
+                String customName = contact.length >= 7 ? radar.getContactCustomName(contact[6]) : null;
+                if (customName != null && !customName.isEmpty()) {
+                    text.add(Component.literal(customName));
+                } else {
+                    text.add(radar.getTargetTypeComponent(contact[4]));
+                }
                 text.add(Component.literal(contact[0] + " / " + contact[2]));
                 text.add(Component.translatable("gui.hbm_m.radar.contact.alt", contact[1]));
                 guiGraphics.renderComponentTooltip(this.font, text, cx, cz);

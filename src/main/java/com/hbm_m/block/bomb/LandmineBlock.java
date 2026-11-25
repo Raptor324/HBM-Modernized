@@ -105,13 +105,9 @@ public class LandmineBlock extends Block implements EntityBlock, IBomb {
                                  List<Component> tooltip,
                                  TooltipFlag flag) {
     *///?}
-        if (this == ModBlocks.MINE_FAT.get()) {
-            tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line1").withStyle(ChatFormatting.DARK_RED));
-            tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line2").withStyle(ChatFormatting.RED));
-            tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line3").withStyle(ChatFormatting.GRAY));
-        } else if (this == ModBlocks.NAVAL_MINE.get()) {
+        if (this == ModBlocks.NAVAL_MINE.get()) {
             tooltip.add(Component.translatable("tooltip.hbm_m.naval_mine.line1").withStyle(ChatFormatting.GRAY));
-        } else {
+        } else if (this != ModBlocks.MINE_FAT.get()) {
             tooltip.add(Component.translatable("tooltip.hbm_m.mine.line1").withStyle(ChatFormatting.GRAY));
         }
     }

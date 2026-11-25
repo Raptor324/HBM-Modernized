@@ -776,12 +776,18 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
     private @Nullable IEnergyReceiver controllerReceiver() {
         if (level == null || controllerPos == null || !this.role.canReceiveEnergy()) return null;
         BlockEntity be = level.getBlockEntity(controllerPos);
+        if (be instanceof NetworkSeparatorBlockEntity sep) {
+            return sep.isInputPart(worldPosition) ? sep : null;
+        }
         return be instanceof IEnergyReceiver r ? r : null;
     }
 
     private @Nullable IEnergyProvider controllerProvider() {
         if (level == null || controllerPos == null || !this.role.canSendEnergy()) return null;
         BlockEntity be = level.getBlockEntity(controllerPos);
+        if (be instanceof NetworkSeparatorBlockEntity sep) {
+            return sep.isOutputPart(worldPosition) ? sep : null;
+        }
         return be instanceof IEnergyProvider p ? p : null;
     }
 
@@ -1171,16 +1177,6 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         readSideMask(pTag, "ClimbSides", allowedClimbSides);
         readSideMask(pTag, "EnergySides", allowedEnergySides);
         readSideMask(pTag, "FluidSides", allowedFluidSides);
-    }
-
-    @Override
-    protected void applyClientUpdate(@NotNull CompoundTag tag) {
-        super.applyClientUpdate(tag);
-        // Фантомный блок не участвует в chunk mesh: ремеш секции не нужен,
-        // коннекторам достаточно пересчёта соседних труб/проводов.
-        if (level != null && level.isClientSide && (isFluidConnector(role) || role.canReceiveEnergy() || role.canSendEnergy())) {
-            FluidDuctBlock.refreshAdjacentDucts(level, worldPosition);
-        }
     }
 
     @Override

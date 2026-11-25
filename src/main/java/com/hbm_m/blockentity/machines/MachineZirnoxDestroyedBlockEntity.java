@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.util.ContaminationUtil;
 import com.hbm_m.util.ContaminationUtil.ContaminationType;
 import com.hbm_m.util.ContaminationUtil.HazardType;
@@ -52,10 +51,8 @@ public class MachineZirnoxDestroyedBlockEntity extends BaseHbmBlockEntity {
             return;
         }
 
-        // 200^3 entity query + per-entity block line march — phase-spread, not every tick.
-        if (blockEntity.probeDue(10)) {
-            blockEntity.radiate(level, pos);
-        }
+        // Original: radiate() every server tick (TileEntityZirnoxDestroyed.updateEntity).
+        blockEntity.radiate(level, pos);
 
         RandomSource random = level.getRandom();
         if (random.nextInt(5000) == 0) {
@@ -115,7 +112,9 @@ public class MachineZirnoxDestroyedBlockEntity extends BaseHbmBlockEntity {
             ContaminationUtil.contaminate(entity, HazardType.RADIATION, ContaminationType.CREATIVE, effectiveRads);
 
             if (onFire && len < 5D) {
-                entity.hurt(ModDamageSources.radiation(level), 2F);
+                // Original: e.attackEntityFrom(DamageSource.onFire, 2) — the burn hit uses the
+                // vanilla fire damage source, not the mod's radiation source.
+                entity.hurt(level.damageSources().onFire(), 2F);
                 entity.setRemainingFireTicks(Math.max(entity.getRemainingFireTicks(), 40));
             }
         }

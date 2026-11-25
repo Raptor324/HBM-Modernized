@@ -118,15 +118,15 @@ public class ItemConserve extends Item implements ITooltipProvider {
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (player.canEat(false)) player.startUsingItem(hand);
-        return InteractionResultHolder.consume(stack);
+        if (player.canEat(false)) {
+            player.startUsingItem(hand);
+            return InteractionResultHolder.consume(stack);
+        }
+        return InteractionResultHolder.pass(stack);
     }
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         HbmFoodItem.addDescLines(this.getDescriptionId() + ".desc", tooltip);
-        if (stack.is(ModItems.CANNED_BHOLE.get())) {
-            tooltip.add(Component.translatable("item.hbm_m.canned_bhole.desc").withStyle(ChatFormatting.GRAY));
-        }
     }
 }

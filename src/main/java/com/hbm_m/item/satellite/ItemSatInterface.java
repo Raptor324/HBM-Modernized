@@ -55,8 +55,13 @@ public class ItemSatInterface extends ItemSatChip implements IItemControlReceive
 
     @Override
     public void receiveControl(Player player, ItemStack stack, CompoundTag data) {
+        if (this != com.hbm_m.item.ModItems.SAT_COORD.get()) return;
         if (!(player.level() instanceof ServerLevel server)) return;
+        int x = data.getInt("x");
+        int z = data.getInt("z");
+        if (!server.getWorldBorder().isWithinBounds(x, z)) return;
+        int y = data.contains("y") ? net.minecraft.util.Mth.clamp(data.getInt("y"), server.getMinBuildHeight(), server.getMaxBuildHeight()) : -1;
         Satellite sat = SatelliteManager.get(server).getSatFromFreq(this.getFreq(stack));
-        if (sat != null) sat.onCoordAction(server, player, data.getInt("x"), data.contains("y") ? data.getInt("y") : -1, data.getInt("z"));
+        if (sat != null) sat.onCoordAction(server, player, x, y, z);
     }
 }

@@ -1,0 +1,19 @@
+{
+  "loader": "hbm_m:nmesh_obj",
+  "model": "hbm_m:models/block/machines/network_separator.obj",
+  "flip_v": true,
+  "shade_quads": false,
+  "ao": false,
+  "smooth_shade": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "hbm_m:block/machine/network_separator",
+    "default": "hbm_m:block/machine/network_separator"
+  },
+  "transform": {
+    "origin": "corner",
+    "translation": [0.5, 0, 0.5],
+    "rotation": [0, 90, 0],
+    "scale": 1.0
+  }
+}

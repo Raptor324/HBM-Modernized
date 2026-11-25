@@ -113,11 +113,15 @@ public final class PartTabMetaItems {
                 "shell", null, 0xA0A0A0, null, false, plain()));
         add(new Entry("shell_saturnite", "shell", "Saturnite Shell", "Оболочка (Сатурнит)",
                 "shell", null, 0x3AC4DA, null, false, plain()));
+        add(new Entry("shell_demomat", "shell", "Custom Metal Demo Shell", "Оболочка (Кастомный металл демо)",
+                "shell", null, 0xFDCA88, null, false, plain()));
         // BIGMT в оригинале: hbmmat.bigmt отсутствует в lang, словарь OreDictManager — Saturnite.
 
         // ── 4534 pipe: 6 из 7 мет уже есть, доблена резина ─────────────────────────────
         add(new Entry("pipe_rubber", "pipe", "Rubber Pipe", "Резиновая труба",
                 "pipe", null, 0x817F75, null, false, plain()));
+        add(new Entry("pipe_demomat", "pipe", "Custom Metal Demo Pipe", "Труба (Кастомный металл демо)",
+                "pipe", null, 0xFDCA88, null, false, plain()));
 
         // ── 4576..4582 part_* (ItemAutogen LIGHTBARREL/HEAVYBARREL/LIGHTRECEIVER/
         //    HEAVYRECEIVER/MECHANISM/STOCK/GRIP) ─────────────────────────────────────────
@@ -288,10 +292,10 @@ public final class PartTabMetaItems {
                 "Low-Density Element", "Элемент малой плотности", "low_density_element", null, 0, null, false, plain()));
         add(new Entry("part_generic_hde", "part_generic",
                 "Heavy Duty Element", "Элемент повышенной прочности", "heavy_duty_element", null, 0, null, false, plain()));
-        add(new Entry("part_generic_glass_polarized", "part_generic",
-                "Polarized Lens", "Поляризованная линза", "glass_polarized", null, 0, null, false, plain()));
         add(new Entry("part_generic_alclad", "part_generic",
                 "Aviation Grade Sheeting", "Авиационное листовое покрытие", "plate_alclad_generic", null, 0, null, false, plain()));
+        add(new Entry("part_generic_glass_polarized", "part_generic",
+                "Polarized Lens", "Поляризованная линза", "glass_polarized", null, 0, null, false, plain()));
 
         // ── 4573 parts_legendary (ItemEnumMulti EnumLegendaryType, multiName=false —
         //    все меты называются одинаково, текстуры свои) ──────────────────────────────

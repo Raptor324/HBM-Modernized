@@ -182,6 +182,9 @@ fun Project.registerNeoForgeResourceNormalizer() {
 					if (out.contains("\"forge:separate_transforms\"")) {
 						out = out.replace("\"forge:separate_transforms\"", "\"neoforge:separate_transforms\"")
 					}
+					if (out.contains("\"forge:composite\"")) {
+						out = out.replace("\"forge:composite\"", "\"neoforge:composite\"")
+					}
 					if (out.contains("\"forge_data\":")) {
 						out = out.replace("\"forge_data\":", "\"neoforge_data\":")
 					}

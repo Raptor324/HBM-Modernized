@@ -23,8 +23,9 @@ import net.minecraft.world.phys.BlockHitResult;
  * Порт {@code com.hbm.blocks.generic.Guide} ({@code book_guide}) 1.7.10.
  * Горизонтально направленный блок с 6 текстурами сторон.
  * При клике правой кнопкой мыши на клиенте открывает официальную вики мода.
+ * При наведении прицела показывает HUD «Click to open wiki» ({@link com.hbm_m.interfaces.ILookOverlay}).
  */
-public class GuideBlock extends HorizontalDirectionalBlock {
+public class GuideBlock extends HorizontalDirectionalBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final String WIKI_URL = "https://nucleartech.wiki/wiki/Main_Page";
@@ -92,5 +93,16 @@ public class GuideBlock extends HorizontalDirectionalBlock {
             return InteractionResult.sidedSuccess(level.isClientSide());
         }
         return InteractionResult.PASS;
+    }
+
+    // 1:1 Guide.printHook 1.7.10: «Click to open wiki» правее прицела, тень 0x006000 со смещением (+1; -19), текст 0x00FF00 на (0; -20).
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        var mc = net.minecraft.client.Minecraft.getInstance();
+        int pX = mc.getWindow().getGuiScaledWidth() / 2 + 8;
+        int pZ = mc.getWindow().getGuiScaledHeight() / 2;
+        String title = "Click to open wiki";
+        guiGraphics.drawString(mc.font, title, pX + 1, pZ - 19, 0x006000, true);
+        guiGraphics.drawString(mc.font, title, pX, pZ - 20, 0x00FF00, true);
     }
 }

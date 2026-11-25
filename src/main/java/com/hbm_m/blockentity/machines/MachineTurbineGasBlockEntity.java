@@ -336,9 +336,18 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
 
     @Override
     public void receiveControl(CompoundTag data) {
-        if (data.contains("slidPos")) powerSliderPos = (int) data.getDouble("slidPos");
+        if (data.contains("slidPos")) {
+            double v = data.getDouble("slidPos");
+            if (Double.isFinite(v)) {
+                powerSliderPos = net.minecraft.util.Mth.clamp((int) Math.round(v), 0, 60);
+            }
+        }
         if (data.contains("autoMode")) autoMode = data.getBoolean("autoMode");
-        if (data.contains("state")) state = data.getInt("state");
+        if (data.contains("state")) {
+            int req = data.getInt("state");
+            if (req == 0) state = 0;
+            else if (req == -1 && state == 0) state = -1;
+        }
         this.setChanged();
     }
 
@@ -433,8 +442,8 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
     }
 
     @Override
-    protected void applyClientUpdate(CompoundTag tag) {
-        super.applyClientUpdate(tag);
+    protected void applyClientUpdate(CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
+        super.applyClientUpdate(tag, registries);
         this.energy = tag.getLong("powerBeforeNet");
         this.state = tag.getInt("syncState");
         this.rpm = tag.getInt("syncRpm");

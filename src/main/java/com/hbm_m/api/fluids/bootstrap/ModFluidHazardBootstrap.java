@@ -251,6 +251,7 @@ public final class ModFluidHazardBootstrap {
         h(ModFluids.FULLERENE, 3, 3, 3, FluidHazardSymbol.NONE);
         h(ModFluids.PHEROMONE, 0, 0, 0, FluidHazardSymbol.NONE);
         h(ModFluids.PHEROMONE_M, 0, 0, 0, FluidHazardSymbol.NONE);
+        h(ModFluids.CUSTOM_DEMO, 1, 2, 0, FluidHazardSymbol.OXIDIZER);
         h(ModFluids.OIL_DS, 2, 1, 0, FluidHazardSymbol.NONE);
         h(ModFluids.HOTOIL_DS, 2, 3, 0, FluidHazardSymbol.NONE);
         h(ModFluids.CRACKOIL_DS, 2, 1, 0, FluidHazardSymbol.NONE);

@@ -35,7 +35,8 @@ public class AnnihilatorPoolC2SPacket implements C2SPacket {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
 
             BlockEntity be = ModPacketHandler.blockEntityAt(player, msg.pos);
-            if (be instanceof MachineAnnihilatorBlockEntity annihilator) {
+            if (be instanceof MachineAnnihilatorBlockEntity annihilator
+                    && com.hbm_m.inventory.menu.MenuReach.canReach(player, msg.pos, player.level().getBlockState(msg.pos))) {
                 annihilator.setPoolName(msg.poolName);
             }
         });

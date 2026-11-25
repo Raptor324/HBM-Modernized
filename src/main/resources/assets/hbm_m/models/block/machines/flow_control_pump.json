@@ -1,0 +1,26 @@
+{
+  "loader": "hbm_m:machine_parts_loader",
+  "model": "hbm_m:models/block/machines/flow_control_pump.obj",
+  "flip_v": true,
+  "smooth_shade": true,
+  "ao": false,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "hbm_m:block/machine/flow_control_pump",
+    "default": "hbm_m:block/machine/flow_control_pump"
+  },
+  "transform": {
+    "translation": [0.5, 0, 0.5],
+    "rotation": [0, 0, 0],
+    "scale": 1.0
+  },
+  "display": {
+    "gui": { "rotation": [30, 225, 0], "translation": [0, 0, 0], "scale": [0.25, 0.25, 0.25] },
+    "ground": { "rotation": [0, 0, 0], "translation": [0, 3, 0], "scale": [0.2, 0.2, 0.2] },
+    "fixed": { "rotation": [0, 180, 0], "translation": [0, 0, 0], "scale": [0.25, 0.25, 0.25] },
+    "thirdperson_righthand": { "rotation": [75, 45, 0], "translation": [0, 2.5, 0], "scale": [0.2, 0.2, 0.2] },
+    "thirdperson_lefthand": { "rotation": [75, 45, 0], "translation": [0, 2.5, 0], "scale": [0.2, 0.2, 0.2] },
+    "firstperson_righthand": { "rotation": [0, 45, 0], "translation": [0, 0, 0], "scale": [0.2, 0.2, 0.2] },
+    "firstperson_lefthand": { "rotation": [0, 225, 0], "translation": [0, 0, 0], "scale": [0.2, 0.2, 0.2] }
+  }
+}

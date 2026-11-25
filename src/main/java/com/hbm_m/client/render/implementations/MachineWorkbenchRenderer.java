@@ -115,7 +115,7 @@ public final class MachineWorkbenchRenderer {
             case 5 -> animator.rotate(0, 0, 1, 0);
             default -> {}
         }
-        animator.translate(-0.5, 0.0, 0.5);
+        animator.translate(-1.0, 0.0, 0.0);
     }
 
     private static void renderWeldingArc(PoseStack ps, MultiBufferSource buf, MachineArcWelderBlockEntity welder) {

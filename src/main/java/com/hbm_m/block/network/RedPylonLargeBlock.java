@@ -28,79 +28,11 @@ public class RedPylonLargeBlock extends RedPylonCoreBlock {
     private static final MultiblockStructureHelper STRUCTURE = defineStructure();
 
     private static MultiblockStructureHelper defineStructure() {
-        // Сетка 7x7 (relX: -3..+3, relZ: -3..+3), центр [3, 3] = relX 0, relZ 0
-        String[] layer0 = {
-            ".......",
-            ".......",
-            "..L.L..",
-            "...C...",
-            "..L.L..",
-            ".......",
-            "......."
-        };
-        String[] layerLower = {
-            ".......",
-            ".......",
-            "..OOO..",
-            "..OPO..",
-            "..OOO..",
-            ".......",
-            "......."
-        };
-        String[] layerShaft = {
-            ".......",
-            ".......",
-            ".......",
-            "...P...",
-            ".......",
-            ".......",
-            "......."
-        };
-        // Верхние перекладины ("руки") на y=11..13 покрывают прямые и диагональные лучи
-        String[] layerArms = {
-            "A..A..A",
-            ".A.A.A.",
-            "..AAA..",
-            "AAATAAA",
-            "..AAA..",
-            ".A.A.A.",
-            "A..A..A"
-        };
-
-        Map<Character, PartRole> roleMap = Map.of(
-            'C', PartRole.CONTROLLER,
-            'L', PartRole.DEFAULT,
-            'O', PartRole.DEFAULT,
-            'P', PartRole.DEFAULT,
-            'T', PartRole.DEFAULT,
-            'A', PartRole.DEFAULT
-        );
-
-        Map<Character, VoxelShape> shapeMap = Map.of(
-            'C', Block.box(2, 0, 2, 14, 16, 14),
-            'L', Block.box(2, 0, 2, 14, 16, 14),
-            'O', Block.box(1, 0, 1, 15, 16, 15),
-            'P', Block.box(4, 0, 4, 12, 16, 12),
-            'T', Block.box(3, 0, 3, 13, 16, 13),
-            'A', Block.box(2, 4, 2, 14, 12, 14)
-        );
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-            new String[][]{
-                layer0,
-                layerLower, layerLower, layerLower, layerLower, // y=1..4 (3x3 нижняя решётка)
-                layerShaft, layerShaft, layerShaft, layerShaft, layerShaft, layerShaft, // y=5..10 (1x1 шахта)
-                layerArms, layerArms, layerArms // y=11..13 (руки/перекладины)
-            },
-            Map.of(),
-            () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            roleMap,
-            shapeMap,
-            shapeMap,
-            null,
-            null,
-            null
-        ).withPlacementOffset(0);
+        // 1:1 PylonLarge (1.7.10): getDimensions() = {13, 0, 1, 1, 1, 1}, getOffset() = 0 -> 3x14x3 box.
+        return com.hbm_m.multiblock.DummyableStructureBuilder.create()
+                .box(13, 0, 1, 1, 1, 1)
+                .placementOffset(0)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     public RedPylonLargeBlock(Properties properties) {

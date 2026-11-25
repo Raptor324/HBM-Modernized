@@ -46,9 +46,9 @@ public class NeutronNodeWorld {
         streamWorlds.remove(level);
     }
 
-    /** CE's {@code removeEmptyWorlds}: drop stream worlds that carry no streams at all. */
+    /** CE's {@code removeEmptyWorlds}: drop stream worlds that carry no streams at all (stale cached nodes are re-created on the next spreadFlux). */
     public static void removeEmptyWorlds() {
-        streamWorlds.values().removeIf(sw -> sw.streams.isEmpty() && sw.nodeCache.isEmpty());
+        streamWorlds.values().removeIf(sw -> sw.streams.isEmpty());
     }
 
     /**

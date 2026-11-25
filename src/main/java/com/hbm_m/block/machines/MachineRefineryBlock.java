@@ -287,4 +287,18 @@ if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClien
         return CODEC;
     }
     *///?}
+    // Verbatim port of the original MachineRefinery.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 1, Direction.EAST.get3DDataValue()},
+            {1, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {1, 0, -1, Direction.EAST.get3DDataValue()},
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-1, 0, 1, Direction.WEST.get3DDataValue()},
+            {-1, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {-1, 0, -1, Direction.WEST.get3DDataValue()},
+            {-1, 0, -1, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

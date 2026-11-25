@@ -23,9 +23,12 @@ import net.minecraft.world.phys.AABB;
  * 1:1 port of {@code RBMKDebrisRadiating}: the worst of the meltdown rubble - an exposed core
  * fragment.
  *
- * <p>It dumps an enormous dose over a 100-block radius, falling off with distance, and slowly
- * counts its {@code decay} state up until it finally settles into ordinary burning rubble. Boron
- * sand alongside it speeds that decay up forty-fold, which is the intended way to make the site
+ * <p>Every tick cycle it dumps a flat 1,000,000 rads, divided by the explosion resistance of the
+ * blocks along the ray to each target's eye and by the square of the distance, over a 100-block
+ * radius; anything within 5 blocks also takes flat 100 {@code inFire} damage (no ignite), and a
+ * marshmallow in hand roasts 1-in-100 within 10. It counts its {@code decay} state up until it
+ * finally settles into ordinary burning rubble. Boron sand alongside it speeds that decay up
+ * forty-fold (1-in-25 instead of 1-in-1000), which is the intended way to make the site
  * survivable - otherwise it sits there irradiating everything for a very long time.</p>
  */
 public class RBMKDebrisRadiatingBlock extends Block {
@@ -33,16 +36,9 @@ public class RBMKDebrisRadiatingBlock extends Block {
     /** The original's block metadata, counted 0-15 before it settles down. */
     public static final IntegerProperty DECAY = IntegerProperty.create("decay", 0, 15);
 
-    /**
-     * CE emits {@code 100 * chance} rads and {@code 40 * chance} of fire over a 32-block radius,
-     * where {@code chance} is the same 1000 (or 25 next to boron sand) that governs how fast the
-     * rubble decays - so packing boron around the site cuts both the dose and the heat forty-fold
-     * as well as speeding up the decay. The port used a flat 1,000,000 rads over 100 blocks and no
-     * fire at all, which was both far fiercer and completely indifferent to boron.
-     */
-    private static final double RANGE = 32D;
-    private static final float RAD_PER_CHANCE = 100F;
-    private static final float FIRE_PER_CHANCE = 40F;
+    /** 1.7.10 {@code RBMKDebrisRadiating.radiate}: flat dose and 100-block reach. */
+    private static final float RADS = 1_000_000F;
+    private static final double RANGE = 100D;
 
     public RBMKDebrisRadiatingBlock(Properties props) {
         super(props);
@@ -54,6 +50,7 @@ public class RBMKDebrisRadiatingBlock extends Block {
         builder.add(DECAY);
     }
 
+    /** 1.7.10 {@code RBMKDebrisRadiating.tickRate}: 20-40 ticks between updates. */
     private static int nextDelay(RandomSource random) {
         return 20 + random.nextInt(20);
     }
@@ -66,13 +63,10 @@ public class RBMKDebrisRadiatingBlock extends Block {
 
     @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        // CE picks one random side per tick and lets that single side decide the decay chance,
-        // which is also what scales the radiation. Sample it once, up front, so both agree.
-        Direction sampled = Direction.values()[random.nextInt(6)];
-        int chance = RBMKDebrisBurningBlock.isSuppressant(level.getBlockState(pos.relative(sampled))) ? 25 : 1000;
-
-        radiate(level, pos, RAD_PER_CHANCE * chance);
-        RBMKDebrisBurningBlock.scorch(level, pos, RANGE, FIRE_PER_CHANCE * chance);
+        radiate(level, pos);
+        // 1.7.10 runs the fire term inside radiate's entity loop; as its own helper here, with
+        // the same flat inFire-100-within-5 semantics (no ignite).
+        RBMKDebrisBurningBlock.scorch(level, pos);
 
         if (random.nextInt(5) == 0) {
             spawnFlame(level, pos, random);
@@ -80,10 +74,20 @@ public class RBMKDebrisRadiatingBlock extends Block {
                     1.0F + random.nextFloat(), random.nextFloat() * 0.7F + 0.3F);
         }
 
+        // 1.7.10 picks one random side per tick and lets that single side decide gas spread and
+        // the decay chance. Sample it once, up front, so both agree.
+        Direction sampled = Direction.values()[random.nextInt(6)];
         BlockPos side = pos.relative(sampled);
-        if (random.nextInt(10) == 0 && level.getBlockState(side).isAir()) {
+        BlockState neighbour = level.getBlockState(side);
+
+        if (random.nextInt(10) == 0 && neighbour.isAir()) {
             level.setBlockAndUpdate(side, ModBlocks.GAS_MELTDOWN.get().defaultBlockState());
         }
+
+        // Boron sand helps stop the fission reaction; 0.66% chance every 20-40 ticks for one side
+        // (1.7.10 RBMKDebrisRadiating.updateTick: chance = 25 with boron sand, else 1000). The
+        // 25-vs-1000 roll only affects the decay speed, never the dose.
+        int chance = RBMKDebrisBurningBlock.isBoronSuppressant(neighbour) ? 25 : 1000;
 
         if (random.nextInt(chance) == 0) {
             int decay = state.getValue(DECAY);
@@ -98,21 +102,42 @@ public class RBMKDebrisRadiatingBlock extends Block {
         }
     }
 
-    /** Dose falls off with the square of the distance, exactly as CE's {@code radiate} does. */
-    private static void radiate(Level level, BlockPos pos, float rads) {
-        AABB area = new AABB(pos).inflate(RANGE);
+    /**
+     * 1:1 with 1.7.10 {@code RBMKDebrisRadiating.radiate}: the flat 1,000,000 rads are divided by
+     * the explosion resistance of every block marched on the ray to the target's eye (walls and
+     * lead shield whatever is behind them) and by the square of the distance; the resistance sum
+     * is floored at 1. A marshmallow in hand roasts 1-in-100 within 10. The fire term (flat
+     * {@code inFire}-100 within 5 blocks, no ignite) is applied right after, see
+     * {@link RBMKDebrisBurningBlock#scorch}.
+     */
+    private static void radiate(ServerLevel level, BlockPos pos) {
         double cx = pos.getX() + 0.5, cy = pos.getY() + 0.5, cz = pos.getZ() + 0.5;
 
-        for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, area)) {
+        for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class,
+                new AABB(cx, cy, cz, cx, cy, cz).inflate(RANGE))) {
             double dx = e.getX() - cx;
             double dy = (e.getY() + e.getEyeHeight()) - cy;
             double dz = e.getZ() - cz;
             double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (len > RANGE) continue;
+            if (len < 1.0E-4) len = 1.0E-4;
+            double nx = dx / len, ny = dy / len, nz = dz / len;
 
-            double dmgLen = Math.max(len, RANGE * 0.05D);
-            float dose = (float) (rads / (dmgLen * dmgLen));
-            ContaminationUtil.contaminate(e, HazardType.RADIATION, ContaminationType.CREATIVE, dose);
+            // Wall occlusion: march the ray block-by-block and sum each traversed block's
+            // explosion resistance (1.7.10 :93-105).
+            float res = 0;
+            for (int i = 1; i < len; i++) {
+                int ix = (int) Math.floor(cx + nx * i);
+                int iy = (int) Math.floor(cy + ny * i);
+                int iz = (int) Math.floor(cz + nz * i);
+                BlockState step = level.getBlockState(new BlockPos(ix, iy, iz));
+                res += step.getBlock().getExplosionResistance(step, level, new BlockPos(ix, iy, iz), null);
+            }
+            if (res < 1) res = 1;
+
+            float eRads = RADS;
+            eRads /= res;
+            eRads /= (float) (len * len);
+            ContaminationUtil.contaminate(e, HazardType.RADIATION, ContaminationType.CREATIVE, eRads);
 
             // 1.7.10 RBMKDebrisRadiating.radiate: ein Marshmallow in der Hand roestet naeher als 10 Bloecke
             // mit 1 % pro Durchlauf (Meta 1 = eigener Gegenstand marshmallow_roasted)

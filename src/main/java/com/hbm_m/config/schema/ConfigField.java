@@ -6,6 +6,7 @@ import net.minecraft.util.Mth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 
 /**
  * Метаданные одного конфигурационного поля + адаптер доступа к живому значению.
@@ -47,6 +48,12 @@ public final class ConfigField {
     private final Class<?> staticOwner;
     private String comment = null;      // Комментарий в JSON (для ручного редактирования пользователем; null = без комментария)
     private boolean resetOnUpgrade = false; // Сброс к дефолту при миграции (смена версии мода), см. HbmConfigStore.load
+    /**
+     * Условие видимости поля в GUI (null = всегда видимо). Вычисляется динамически при каждом
+     * построении списка: поле для моста с чужим модом прячется, если этого мода нет в сборке.
+     * Значение поля при этом сохраняется/сериализуется как обычно (см. HbmConfigStore).
+     */
+    private BooleanSupplier visibility = null;
 
     private ConfigField(Builder b) {
         this.key = Objects.requireNonNull(b.key);
@@ -60,6 +67,7 @@ public final class ConfigField {
         this.max = b.max;
         this.staticOwner = b.staticOwner;
         this.resetOnUpgrade = b.resetOnUpgrade;
+        this.visibility = b.visibility;
     }
 
     // ================================================================
@@ -88,6 +96,7 @@ public final class ConfigField {
         private Double max;
         private Class<?> staticOwner;  // null → Feld in ModClothConfig
         private boolean resetOnUpgrade;
+        private BooleanSupplier visibility;
 
         private Builder(String key, FieldType type) {
             this.key = Objects.requireNonNull(key);
@@ -123,6 +132,9 @@ public final class ConfigField {
 
         /** Public static Feld {@code key} der Klasse {@code owner} (z.B. WorldConfig) statt eines ModClothConfig-Feldes. */
         public Builder staticIn(Class<?> owner) { this.staticOwner = owner; return this; }
+
+        /** Поле показывается в GUI только пока {@code condition} истинно (например, чужой мод в сборке). */
+        public Builder visibleWhen(BooleanSupplier condition) { this.visibility = condition; return this; }
 
         public ConfigField build() { return new ConfigField(this); }
     }
@@ -322,6 +334,15 @@ public final class ConfigField {
         return this;
     }
 
+    /**
+     * Чейнинг после компактных фабрик (bool/integer/...): поле показывается в GUI только пока
+     * {@code condition} истинно. Значение поля при этом сериализуется как обычно.
+     */
+    public ConfigField visibleWhen(BooleanSupplier condition) {
+        this.visibility = condition;
+        return this;
+    }
+
     public String getComment() {
         return comment;
     }
@@ -329,6 +350,19 @@ public final class ConfigField {
     /** Помечено ли поле к сбросу при миграции (смена версии мода). */
     public boolean isResetOnUpgrade() {
         return resetOnUpgrade;
+    }
+
+    /**
+     * Видимо ли поле в GUI сейчас (условие {@code visibleWhen}; {@code true} без условия).
+     * Независимо от результата поле участвует в сериализации и сетевых снапшотах.
+     */
+    public boolean isVisible() {
+        try {
+            return visibility == null || visibility.getAsBoolean();
+        } catch (Throwable t) {
+            // Условие видимости не должно ронять GUI/сохранение конфига (ранний статик-этап).
+            return true;
+        }
     }
 
     /** Чейнинг после компактных фабрик (возвращает {@code ConfigField}, как {@link #withComment}). */

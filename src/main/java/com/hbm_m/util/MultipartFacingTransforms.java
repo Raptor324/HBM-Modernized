@@ -126,6 +126,20 @@ public final class MultipartFacingTransforms {
         return normalizeDeg360(90 + facingDeg + declOffsetDeg);
     }
 
+    /**
+     * Launchpad-семейство (LaunchpadSoyuz, таблица {@code RenderLaunchpadSoyuz}/
+     * {@code RenderLaunchpadLambda}: Metadata-10 2/4/3/5 -> 90/180/270/0 Grad при
+     * {@code FACING == BlockDummyable}-dir): N -> 180, S -> 90, W -> 270, E -> 0.
+     */
+    public static int launchpadPoseRotationYDegrees(Direction facing) {
+        return switch (facing) {
+            case NORTH -> 90;
+            case WEST -> 180;
+            case SOUTH -> 270;
+            default -> 0;
+        };
+    }
+
     public static int normalizeDeg360(int degrees) {
         int d = degrees % 360;
         if (d < 0) {

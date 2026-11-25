@@ -220,37 +220,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.MOTOR_BISMUTH.get(), 2)
                 .save(writer, "rotary_furnace");
 
-        // Conveyor belts — ported as placeable blocks matching 1.7.10 BlockConveyor
-        // (which had ItemBlockBase and could be placed directly as blocks).
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR.get(), 4), 80, 40)
-                .addIngredient(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 4)
-                .addIngredient(Ingredient.of(Items.REDSTONE), 2)
-                .save(writer, "conveyor");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_DOUBLE.get(), 4), 100, 50)
-                .addIngredient(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 8)
-                .addIngredient(Ingredient.of(Items.REDSTONE), 3)
-                .save(writer, "conveyor_double");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_TRIPLE.get(), 4), 120, 60)
-                .addIngredient(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 12)
-                .addIngredient(Ingredient.of(Items.REDSTONE), 4)
-                .save(writer, "conveyor_triple");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_EXPRESS.get(), 4), 100, 60)
-                .addIngredient(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 4)
-                .addIngredient(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT), 2)
-                .addIngredient(Ingredient.of(Items.REDSTONE), 4)
-                .save(writer, "conveyor_express");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_LIFT.get(), 2), 100, 60)
-                .addIngredient(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 6)
-                .addIngredient(Ingredient.of(Items.REDSTONE), 2)
-                .save(writer, "conveyor_lift");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_CHUTE.get(), 2), 80, 40)
-                .addIngredient(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 6)
-                .save(writer, "conveyor_chute");
+        // Conveyor belts have no Assembler recipes in 1.7.10; they are crafted as conveyor_wand_* in CraftingManager.
 
         // Microwave — no ass.* recipe existed in the original 1.7.10 either; invented here.
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.MICROWAVE.get(), 1), 120, 60)
@@ -1336,16 +1306,6 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "zirnox");
 
         AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.TURBINE.get(), 1), 160, 250)
-                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 8)
-                .addIngredient(ModMaterialItems.item(ModMaterials.BIORUBBER, MaterialShape.INGOT), 4)
-                .addIngredient(ModItems.TURBINE_TITANIUM.get(), 2)
-                .addIngredient(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE_DENSE), 4)
-                .addIngredient(ModItems.PIPE_COPPER.get(), 4)
-                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 1)
-                .save(writer, "turbine");
-
-        AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.INDUSTRIAL_TURBINE.get(), 1), 240, 400)
                 .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 16)
                 .addIngredient(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT), 4)
@@ -1505,7 +1465,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PLATE_CAST_DARK.get(), 16)
                 .addIngredient(ModItems.INSULATOR.get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 4)
-                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 16)
+                .addIngredient(ModItems.BOLT_DURA_STEEL.get(), 16)
                 .addIngredient(Ingredient.of(Tags.Items.DYES_GREEN), 4)
                 .save(writer, "large_vehicle_door");
 
@@ -1540,7 +1500,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.PLATE), 4)
                 .addIngredient(ModItems.INSULATOR.get(), 8)
                 .addIngredient(ModItems.MOTOR.get(), 2)
-                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 32)
+                .addIngredient(ModItems.BOLT_DURA_STEEL.get(), 32)
                 .addIngredient(Ingredient.of(Tags.Items.DYES_BLACK), 4)
                 .save(writer, "door_qe_containment");
 
@@ -1549,7 +1509,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4)
                 .addIngredient(ModItems.INSULATOR.get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 4)
-                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 4)
+                .addIngredient(ModItems.BOLT_DURA_STEEL.get(), 4)
                 .addIngredient(ModItems.FLUORITE.get(), 4)
                 .addIngredient(Items.GLASS, 4)
                 .save(writer, "door_qe_sliding");
@@ -1560,7 +1520,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.PLATE), 8)
                 .addIngredient(ModItems.INSULATOR.get(), 16)
                 .addIngredient(ModItems.MOTOR.get(), 4)
-                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 16)
+                .addIngredient(ModItems.BOLT_DURA_STEEL.get(), 16)
                 .addIngredient(Ingredient.of(Tags.Items.DYES_GREEN), 4)
                 .save(writer, "round_airlock_door");
 
@@ -1570,7 +1530,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.PLATE), 16)
                 .addIngredient(ModItems.INSULATOR.get(), 8)
                 .addIngredient(ModItems.MOTOR.get(), 4)
-                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 32)
+                .addIngredient(ModItems.BOLT_DURA_STEEL.get(), 32)
                 .addIngredient(Ingredient.of(Tags.Items.DYES_RED), 4)
                 .save(writer, "secure_access_door");
 
@@ -1579,7 +1539,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 16)
                 .addIngredient(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.PLATE), 8)
                 .addIngredient(ModItems.MOTOR.get(), 2)
-                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 8)
+                .addIngredient(ModItems.BOLT_DURA_STEEL.get(), 8)
                 .save(writer, "fire_door");
 
         AssemblerRecipeBuilder.assemblerRecipe(
@@ -1588,7 +1548,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.INGOT), 32)
                 .addIngredient(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE), 8) //PLATE_CAST_LEAD NEEDED
                 .addIngredient(ModItems.MOTOR.get(), 3)
-                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 32)
+                .addIngredient(ModItems.BOLT_DURA_STEEL.get(), 32)
                 .addIngredient(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT), 12)
                 .save(writer, "door_vault_tech");
 
@@ -1597,7 +1557,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 12)
                 .addIngredient(ModItems.INSULATOR.get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 2)
-                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 4)
+                .addIngredient(ModItems.BOLT_DURA_STEEL.get(), 4)
                 .addIngredient(Ingredient.of(Tags.Items.DYES_WHITE), 2)
                 .save(writer, "door_sliding_seal");
 
@@ -1617,20 +1577,20 @@ public final class AssemblerRecipeGenerator {
                         new ItemStack(ModBlocks.CARGO_DOOR.get(), 1), 200, 100)
                 .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 32)
                 .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4)
-                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 4)
+                .addIngredient(ModItems.BOLT_DURA_STEEL.get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 2)
                 .addIngredient(Ingredient.of(Tags.Items.DYES_GRAY), 1)
                 .save(writer, "cargo_door");
 
         // Blast door: NEXT ass.blastdoor.json (200 тиков, 100 power) —
         // #c:ingots/steel×12, #c:plates/lead×6, rubber×2, #c:bolts/dura_steel×8,
-        // motor×1. DURA_STEEL = «High-Speed Steel» → BOLT_HIGHSPEED_STEEL.
+        // motor×1. DURA_STEEL = «High-Speed Steel» → BOLT_DURA_STEEL.
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModBlocks.BLAST_DOOR.get(), 1), 200, 100)
                 .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 12)
                 .addIngredient(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE), 6)
                 .addIngredient(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT), 2)
-                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 8)
+                .addIngredient(ModItems.BOLT_DURA_STEEL.get(), 8)
                 .addIngredient(ModItems.MOTOR.get(), 1)
                 .save(writer, "blast_door");
     }

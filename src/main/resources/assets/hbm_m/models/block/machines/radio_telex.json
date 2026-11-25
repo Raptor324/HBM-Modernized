@@ -8,23 +8,26 @@
       "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/machines/telex.obj",
       "flip_v": true,
+      "render_type": "minecraft:cutout",
       "textures": {
+        "default": "hbm_m:block/machine/telex",
         "texture": "hbm_m:block/machine/telex"
       }
     }
   },
   "transform": {
+    "origin": "corner",
     "translation": [
       0.5,
       0,
-      -1.5
+      0.5
     ],
     "rotation": [
       0,
       90,
       0
     ],
-    "scale": 1
+    "scale": 1.0
   },
   "display": {
     "gui": {

@@ -20,19 +20,20 @@ public class LargeNukeMenu extends AbstractContainerMenu {
     public final LargeNukeType type;
 
     public LargeNukeMenu(int id, Inventory playerInv, FriendlyByteBuf extraData) {
-        this(id, playerInv, (extraData == null ? null : (LargeNukeBlockEntity) playerInv.player.level().getBlockEntity(extraData.readBlockPos())));
+        this(id, playerInv, (extraData != null && playerInv.player.level().getBlockEntity(extraData.readBlockPos()) instanceof LargeNukeBlockEntity ln) ? ln : null);
     }
 
     public LargeNukeMenu(int id, Inventory inventory, LargeNukeBlockEntity blockEntity) {
         super(ModMenuTypes.LARGE_NUKE_MENU.get(), id);
         this.be = blockEntity;
-        this.type = blockEntity.getNukeType();
+        this.type = blockEntity != null ? blockEntity.getNukeType() : LargeNukeType.values()[0];
+        net.minecraft.world.Container c = blockEntity != null ? blockEntity : new net.minecraft.world.SimpleContainer(type.slots());
 
         for (int slot = 0; slot < type.slots(); slot++) {
             final int index = slot;
-            addSlot(new Slot(be, index, type.slotX(index), type.slotY(index)) {
+            addSlot(new Slot(c, index, type.slotX(index), type.slotY(index)) {
                 @Override
-                public boolean mayPlace(ItemStack stack) { return be.canPlaceItem(index, stack); }
+                public boolean mayPlace(ItemStack stack) { return be != null && be.canPlaceItem(index, stack); }
             });
         }
 

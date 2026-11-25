@@ -26,7 +26,7 @@ import java.util.Map;
 public class RBMKDebrisRenderer extends EntityRenderer<RBMKDebrisEntity> {
 
     /** The original keeps one mesh per debris type under {@code models/projectiles/}. */
-    private static final String MODEL_DIR = "models/rbmk/models/";
+    private static final String MODEL_DIR = "models/projectiles/";
 
     public RBMKDebrisRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);

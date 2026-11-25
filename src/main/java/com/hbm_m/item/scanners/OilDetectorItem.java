@@ -81,7 +81,7 @@ public class OilDetectorItem extends Item implements ITooltipProvider {
 
     /** Original {@code PlayerInformPacket(..., ID_DETONATOR)}. */
     private static void inform(net.minecraft.server.level.ServerPlayer sp, String key, ChatFormatting color, int rgb) {
-        com.hbm_m.network.InfoToastPacket.sendTo(sp, Component.translatable(key).withStyle(color), 60, com.hbm_m.client.overlay.OverlayInfoToast.ID_DETONATOR, rgb);
+        com.hbm_m.network.InfoToastPacket.sendTo(sp, Component.translatable(key).withStyle(color), 20, com.hbm_m.network.InfoToastPacket.ID_DETONATOR, rgb);
     }
 
     /** Saeule von y+15 bis ueber {@code bottom} abwaerts: erster Lagerstaettentyp-Suffix, sonst null. */

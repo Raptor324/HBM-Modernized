@@ -18,6 +18,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
@@ -137,4 +138,15 @@ public class MachinePumpBlock extends DummyableMachineBlock implements com.hbm_m
         return simpleCodec(p -> new MachinePumpBlock(p, this.electric));
     }
     *///?}
+
+    // Verbatim port of the original MachinePump.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 0, Direction.EAST.get3DDataValue()},
+            {-1, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {0, 0, -1, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

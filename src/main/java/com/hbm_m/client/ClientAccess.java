@@ -44,4 +44,18 @@ public final class ClientAccess {
     public static void playUiSound(SoundEvent sound, float pitch) {
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(sound, pitch));
     }
+
+    public static void showInfoToast(net.minecraft.network.chat.Component text, int ticks, int id, int rgb) {
+        if (Minecraft.getInstance().level != null) {
+            com.hbm_m.client.overlay.OverlayInfoToast.show(text, ticks, id, rgb);
+        }
+    }
+
+    public static void showInfoToast(net.minecraft.network.chat.Component text, int ticks, int id) {
+        showInfoToast(text, ticks, id, 0xFFFFFF);
+    }
+
+    public static boolean hasShiftDown() {
+        return net.minecraft.client.gui.screens.Screen.hasShiftDown();
+    }
 }

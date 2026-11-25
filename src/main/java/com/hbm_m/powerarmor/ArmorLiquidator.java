@@ -45,10 +45,13 @@ public class ArmorLiquidator extends ModArmorFSB {
                 java.util.Map.entry(Attributes.MOVEMENT_SPEED, AttributeHooks.modifier(ArmorAttributes.fixed(this.getType()), "Armor modifier", -0.1D, AttributeHooks.MULTIPLY_BASE)));
     }
 
-    /** Original getArmorModel: die Liquidatorhaube nutzt das M65-Modell (GasMaskLayer). */
+    /** Original getArmorModel: die Liquidatorhaube nutzt das M65-Modell (GasMaskLayer). Nur der Helm (ArmorLiquidatorMask),
+     * nicht der Anzug. Klassen-Check, weil {@code initializeClient} (Architectury-Mixin) bereits aus dem
+     * {@code Item}-Superkonstruktor laeuft: dort sind RegistrySupplier UND alle Instanzfelder
+     * (auch {@code ArmorItem.type}) noch nicht gesetzt — instanceof ist das Einzige, was dort funktioniert. */
     @Override
     public boolean isObjArmor() {
-        return this == com.hbm_m.item.ModItems.LIQUIDATOR_HELMET.get();
+        return this instanceof ArmorLiquidatorMask;
     }
 
     @Override

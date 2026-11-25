@@ -9,6 +9,7 @@ import com.hbm_m.blockentity.machines.MachineSuperComputerBlockEntity;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -89,15 +90,6 @@ public class MachineSuperComputerBlock extends DummyableMachineBlock {
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
-    @Override
-    //? if < 1.21.1 {
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
-    //?} else {
-    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
-    *///?}
-        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
-    }
-
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineSuperComputerBlock> CODEC = simpleCodec(MachineSuperComputerBlock::new);
 
@@ -106,4 +98,16 @@ public class MachineSuperComputerBlock extends DummyableMachineBlock {
         return CODEC;
     }
     *///?}
+
+    // Verbatim port of the original MachineSuperComputer.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {0, 0, 8, Direction.SOUTH.get3DDataValue()},
+            {1, 0, 7, Direction.EAST.get3DDataValue()},
+            {-1, 0, 7, Direction.WEST.get3DDataValue()},
+            {1, 0, 5, Direction.EAST.get3DDataValue()},
+            {-1, 0, 5, Direction.WEST.get3DDataValue()}
+        }, facing);
+    }
 }

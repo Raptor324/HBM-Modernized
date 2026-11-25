@@ -17,6 +17,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -148,4 +149,15 @@ public class MachineOilburnerBlock extends DummyableMachineBlock implements com.
         return CODEC;
     }
     *///?}
+
+    // Verbatim port of the original HeaterOilburner.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 0, Direction.EAST.get3DDataValue()},
+            {-1, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {0, 0, -1, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

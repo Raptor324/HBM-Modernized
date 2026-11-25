@@ -52,6 +52,11 @@ public class MachineZirnoxBlock extends BaseEntityBlock implements IMultiblockCo
     }
 
     private static MultiblockStructureHelper defineStructure() {
+        // zirnox#3: fluids connect ONLY at the 5 discrete TilePort cells of the original
+        // (TileEntityReactorZirnox.getPorts + top (0,y+4,0)): (x+2,y+1/z) and (x+2,y+3/z) on
+        // their outward EAST face, (x-2,y+1/z) and (x-2,y+3,z) on their outward WEST face,
+        // and the chimney top on UP. Distinct symbols per tip because the mask rotates with FACING.
+        // The core itself has no UNINOS connection points in the original - closed on all sides.
         String[] layerBase = {
             "OOOOO",
             "OOOOO",
@@ -62,14 +67,14 @@ public class MachineZirnoxBlock extends BaseEntityBlock implements IMultiblockCo
         String[] layerRing = {
             "OOOOO",
             "OOOOO",
-            "FOOOF",
+            "GOOOF",
             "OOOOO",
             "OOOOO"
         };
         String[] layerCap = {
             ".....",
             ".OOO.",
-            "FOOOF",
+            "GOOOF",
             ".OOO.",
             "....."
         };
@@ -80,21 +85,32 @@ public class MachineZirnoxBlock extends BaseEntityBlock implements IMultiblockCo
             ".OOO.",
             "....."
         };
+        String[] layerTop = {
+            ".....",
+            ".OOO.",
+            "OOTOO",
+            ".OOO.",
+            "....."
+        };
 
         Map<Character, PartRole> roleMap = Map.of(
             'O', PartRole.DEFAULT,
             'F', PartRole.FLUID_CONNECTOR,
+            'G', PartRole.FLUID_CONNECTOR,
+            'T', PartRole.FLUID_CONNECTOR,
             'C', PartRole.CONTROLLER
         );
 
         Map<Character, boolean[]> fluidSideMap = Map.of(
-            'C', MultiblockSideTuples.fluid(true, true, true, true, true, false),
-            'F', MultiblockSideTuples.fluid(true, true, true, true, true, false)
+            'C', MultiblockSideTuples.fluid(false, false, false, false, false, false),
+            'F', MultiblockSideTuples.fluid(false, false, false, true, false, false),
+            'G', MultiblockSideTuples.fluid(false, false, true, false, false, false),
+            'T', MultiblockSideTuples.fluid(false, false, false, false, true, false)
         );
 
 
         return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
-            new String[][]{layerBase, layerRing, layerCap2, layerCap, layerCap2},
+            new String[][]{layerBase, layerRing, layerCap2, layerCap, layerTop},
             null,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
             roleMap,
@@ -239,7 +255,7 @@ public class MachineZirnoxBlock extends BaseEntityBlock implements IMultiblockCo
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Nullable

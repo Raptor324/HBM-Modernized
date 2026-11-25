@@ -72,6 +72,8 @@ public class ItemTurretBiometry extends Item implements ITooltipProvider {
     }
 
     public static void addName(ItemStack stack, String s) {
+        if (s == null || s.isEmpty()) return;
+        if (s.length() > 32) s = s.substring(0, 32);
         CompoundTag tag = StackNbt.orCreate(stack);
 
         String[] names = getNames(stack);
@@ -82,6 +84,8 @@ public class ItemTurretBiometry extends Item implements ITooltipProvider {
 
         if (names != null)
             count = names.length;
+        if (count >= 64)
+            return;
 
         tag.putInt("playercount", count + 1);
         tag.putString("player_" + count, s);

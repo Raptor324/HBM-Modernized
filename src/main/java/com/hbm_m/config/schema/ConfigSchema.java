@@ -359,6 +359,12 @@ public final class ConfigSchema {
         reg(ConfigField.integer("polaroidOverride", ConfigSide.SERVER, ApplyMode.LIVE, "general", 0, 18).withComment("1-18 forces the polaroid number, 0 = random [Original: generalOverride]"));
         reg(ConfigField.bool("dropCrys", ConfigSide.SERVER, ApplyMode.LIVE, "weapons").withComment("Whether xen crystals should move blocks when dropped [Original: 10.04_dropCrys]"));
         reg(ConfigField.bool("dropDead", ConfigSide.SERVER, ApplyMode.LIVE, "weapons").withComment("Whether dead man's explosives should explode when dropped [Original: 10.05_dropDead]"));
+        // ── SERVER: compat (мосты с чужими модами) ──────────────────
+        reg(ConfigField.bool("taczBridge", ConfigSide.SERVER, ApplyMode.LIVE, "compat")
+                .visibleWhen(com.hbm_m.compat.tacz.TaczBridgeCompat::isLoaded)
+                .withComment("Runtime master switch for the hbm_tacz addon (TACZ weapon bridge). "
+                        + "Off = vanilla SEDNA rendering/physics; TACZ modules on weapons are stashed and restored on re-enable. "
+                        + "Only shown in the GUI when hbm_tacz is in the modlist."));
         // (enableExtendedLogging, netherAmbientRad, basaltDeltasRadMult, enablePollution,
         // enableLeadFromBlocks, enableLeadPoisoning, enablePoison, buffMobThreshold,
         // pollutionMult — уже зарегистрированы выше (machines-вариант); дубликаты FFA опущены.)
@@ -399,20 +405,24 @@ public final class ConfigSchema {
         return out;
     }
 
-    /** Категории заданной стороны в порядке регистрации (без дубликатов). */
+    /**
+     * Категории заданной стороны в порядке регистрации (без дубликатов).
+     * Категории, все поля которых сейчас невидимы (например, мост с чужим модом, которого нет
+     * в сборке), не попадают в список — вкладка в GUI не создаётся.
+     */
     public static List<String> categories(ConfigSide side) {
         Set<String> seen = new LinkedHashSet<>();
         for (ConfigField f : FIELDS.values()) {
-            if (f.getSide() == side) seen.add(f.getCategory());
+            if (f.getSide() == side && f.isVisible()) seen.add(f.getCategory());
         }
         return new ArrayList<>(seen);
     }
 
-    /** Поля категории заданной стороны в порядке регистрации. */
+    /** Поля категории заданной стороны в порядке регистрации (невидимые поля пропускаются). */
     public static List<ConfigField> byCategory(ConfigSide side, String category) {
         List<ConfigField> out = new ArrayList<>();
         for (ConfigField f : FIELDS.values()) {
-            if (f.getSide() == side && f.getCategory().equals(category)) out.add(f);
+            if (f.getSide() == side && f.getCategory().equals(category) && f.isVisible()) out.add(f);
         }
         return out;
     }

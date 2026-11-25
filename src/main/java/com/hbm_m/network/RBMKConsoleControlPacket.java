@@ -67,7 +67,11 @@ public class RBMKConsoleControlPacket implements C2SPacket {
     public static void handle(RBMKConsoleControlPacket pkt, PacketContext ctx) {
         ctx.queue(() -> {
             if (!(ctx.getPlayer() instanceof ServerPlayer player)) return;
+            if (pkt.action == ACTION_SET_ORIGIN) return;
             if (ModPacketHandler.blockEntityAt(player, pkt.consolePos) instanceof MachineRbmkConsoleBlockEntity console) {
+                // hasPermission: lengthVector() < 20 (original NBTControlPacket ->
+                // TileEntityRBMKConsole#hasPermission)
+                if (player.distanceToSqr(pkt.consolePos.getX(), pkt.consolePos.getY(), pkt.consolePos.getZ()) > 400.0D) return;
                 console.handleControl(player.serverLevel(), pkt.action, pkt.doubleVal, pkt.intVal, pkt.selectedIndices);
             }
         });

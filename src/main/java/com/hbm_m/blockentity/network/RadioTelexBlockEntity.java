@@ -147,10 +147,16 @@ public class RadioTelexBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEnt
         }
     }
 
+    private long lastPrintTick = -20L;
+
+    private static String clampStr(String s, int max) {
+        return s == null ? "" : (s.length() > max ? s.substring(0, max) : s);
+    }
+
     @Override
     public void receiveControl(CompoundTag data) {
         for (int i = 0; i < 5; i++) {
-            if (data.contains("tx" + i)) this.txBuffer[i] = data.getString("tx" + i);
+            if (data.contains("tx" + i)) this.txBuffer[i] = clampStr(data.getString("tx" + i), 128);
         }
 
         String cmd = data.getString("cmd");
@@ -171,12 +177,12 @@ public class RadioTelexBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEnt
         }
 
         if ("sve".equals(cmd)) {
-            this.txChannel = data.getString("txChan");
-            this.rxChannel = data.getString("rxChan");
+            this.txChannel = clampStr(data.getString("txChan"), 64);
+            this.rxChannel = clampStr(data.getString("rxChan"), 64);
         }
 
-        if (data.contains("txChannel")) this.txChannel = data.getString("txChannel");
-        if (data.contains("rxChannel")) this.rxChannel = data.getString("rxChannel");
+        if (data.contains("txChannel")) this.txChannel = clampStr(data.getString("txChannel"), 64);
+        if (data.contains("rxChannel")) this.rxChannel = clampStr(data.getString("rxChannel"), 64);
 
         setChanged();
         if (level != null && !level.isClientSide) {
@@ -186,6 +192,9 @@ public class RadioTelexBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEnt
 
     public void print() {
         if (level == null || level.isClientSide) return;
+        long now = level.getGameTime();
+        if (now - lastPrintTick < 20L) return;
+        lastPrintTick = now;
 
         ItemStack stack = new ItemStack(Items.PAPER);
         List<String> text = new ArrayList<>();

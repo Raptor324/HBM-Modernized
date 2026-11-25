@@ -20,8 +20,8 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class TapeDriveRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineTapeDriveBlockEntity> {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/tape_drive.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/tape_drive.png");
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/tape_drive_item.obj"));
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/tape_drive.png");
 
     public TapeDriveRenderer(BlockEntityRendererProvider.Context ctx) { }
 

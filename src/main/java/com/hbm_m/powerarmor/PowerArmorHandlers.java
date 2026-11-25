@@ -101,43 +101,7 @@ public final class PowerArmorHandlers {
         }
         
         // ========== NORMAL DAMAGE HANDLING ==========
-        if (!ModArmorFSB.hasFSBArmor(player)) return;
-        ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
-        if (!(chestStack.getItem() instanceof ModPowerArmorItem)) return;
-        
-        // Рассчитываем урон через систему DT/DR
-        float calculatedDamage = DamageResistanceHandler.calculateDamage(
-            player,
-            event.getSource(),
-            event.getAmount(),
-            0F, // pierceDT (временно 0, система подготовлена для будущего использования)
-            0F  // pierceDR
-        );
-        
-        if (calculatedDamage < event.getAmount()) {
-            // Пишем в "персистентные" данные игрока, чтобы прочитать на LOWEST фазе.
-            CompoundTag data = MobHooks.getPersistentData(player);
-            data.putFloat("hbm_power_armor_damage", calculatedDamage);
-        }
-    }
-    //?}
-
-    /**
-     * LOWEST priority - применяем наш урон ПОСЛЕ всей ванильной обработки
-     */
-    //? if forge {
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onLivingHurt(LivingHurtEvent event) {
-        if (!(event.getEntity() instanceof Player player)) return;
-        if (player.level().isClientSide) return;
-        if (player.getAbilities().instabuild || player.isSpectator()) return;
-        
-        CompoundTag data = MobHooks.getPersistentData(player);
-        if (data.contains("hbm_power_armor_damage")) {
-            float calculated = data.getFloat("hbm_power_armor_damage");
-            event.setAmount(calculated);
-            data.remove("hbm_power_armor_damage");
-        }
+        // DT/DR is already applied uniformly by HbmForgeEvents.onEntityDamagedResistance (DamageResistanceHandler)
     }
     //?}
 
@@ -412,21 +376,6 @@ public final class PowerArmorHandlers {
                 proj.setDeltaMovement(proj.getDeltaMovement().scale(-0.5));
                 proj.hurtMarked = true;
             }
-        }
-    }
-
-    @net.neoforged.bus.api.SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
-    public static void onDamagePre(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Pre event) {
-        if (!(event.getEntity() instanceof Player player)) return;
-        if (player.level().isClientSide) return;
-        if (player.getAbilities().instabuild || player.isSpectator()) return;
-        if (!ModArmorFSB.hasFSBArmor(player)) return;
-        if (!(player.getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof ModPowerArmorItem)) return;
-
-        float calculated = com.hbm_m.powerarmor.resist.DamageResistanceHandler.calculateDamage(
-                player, event.getSource(), event.getNewDamage(), 0F, 0F);
-        if (calculated < event.getNewDamage()) {
-            event.setNewDamage(calculated);
         }
     }
 

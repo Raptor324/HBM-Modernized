@@ -62,10 +62,16 @@ public class RBMKControlPacket implements C2SPacket {
         ctx.queue(() -> {
             if (!(ctx.getPlayer() instanceof ServerPlayer player)) return;
             if (!(ModPacketHandler.blockEntityAt(player, pkt.pos) instanceof RBMKControlBlockEntity be)) return;
+            // hasPermission: lengthVector() < 20 (original NBTControlPacket ->
+            // TileEntityRBMKControlManual/Auto#hasPermission)
+            if (player.distanceToSqr(pkt.pos.getX(), pkt.pos.getY(), pkt.pos.getZ()) > 400.0D) return;
 
             switch (pkt.action) {
                 case ACTION_SET_TARGET -> be.setTarget(pkt.doubleVal);
-                case ACTION_SET_COLOR -> be.color = (short) Mth.clamp(pkt.intVal, -1, 4);
+                // 1:1 with TileEntityRBMKControlManual.receiveControl: clicking the already-active
+                // color button un-groups the rod (original sets `color = null`, the port uses -1).
+                // The GUI always sends 0..4, the toggle happens here on the server.
+                case ACTION_SET_COLOR -> be.color = (short) (pkt.intVal == be.color ? -1 : Mth.clamp(pkt.intVal, 0, 4));
                 case ACTION_SET_FUNCTION -> {
                     if (be instanceof RBMKControlAutoBlockEntity auto) {
                         int ord = Mth.clamp(pkt.intVal, 0,
@@ -77,12 +83,13 @@ public class RBMKControlPacket implements C2SPacket {
                     if (be instanceof RBMKControlAutoBlockEntity auto) {
                         // Client-supplied doubles land straight in NBT; NaN would survive every
                         // later comparison and jam the automation.
-                        auto.levelUpper = sanitize(pkt.doubleVal4[0]);
-                        auto.levelLower = sanitize(pkt.doubleVal4[1]);
-                        auto.heatUpper  = sanitize(pkt.doubleVal4[2]);
-                        auto.heatLower  = sanitize(pkt.doubleVal4[3]);
+                        auto.levelUpper = Mth.clamp(sanitize(pkt.doubleVal4[0]), 0.0, 100.0);
+                        auto.levelLower = Mth.clamp(sanitize(pkt.doubleVal4[1]), 0.0, 100.0);
+                        auto.heatUpper  = Mth.clamp(sanitize(pkt.doubleVal4[2]), 0.0, 9999.0);
+                        auto.heatLower  = Mth.clamp(sanitize(pkt.doubleVal4[3]), 0.0, 9999.0);
                     }
                 }
+                default -> { return; }
             }
             be.setChanged();
         });

@@ -64,10 +64,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     /**
      * Vertex stride for instanced/static machine part meshes:
-     * pos(12) + normal(12) + uv(8) + int {@code bone_id}(4) = 36 bytes.
+     * pos(12) + normal(4: snorm8x3+pad) + uv(8: float2) + int {@code bone_id}(4) = 28 bytes.
      * See {@code block_lit.vsh} (USE_VERTEX_BONE_ID) and bone UBO in {@link InstancedStaticPartRenderer}.
      */
-    public static final int MACHINE_PART_VERTEX_STRIDE_BYTES = 36;
+    public static final int MACHINE_PART_VERTEX_STRIDE_BYTES = 28;
 
     /** Optional companion mesh in Iris-extended {@code NEW_ENTITY} format, lazy-built. */
     @Nullable
@@ -844,6 +844,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             if (previousShader != null) {
                 RenderSystem.setShader(() -> previousShader);
             }
+            com.hbm_m.client.render.shader.ShaderBindResync.resetBlendModeToOpaque();
             RenderSystem.setShaderTexture(0, previousTexture0);
 
             // IMPORTANT: DO NOT unbind TU1/TU2. Raw glBindTexture(0) left GlStateManager cache with

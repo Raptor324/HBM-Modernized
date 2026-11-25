@@ -10,6 +10,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -95,4 +96,16 @@ public class MachineExposureChamberBlock extends DummyableMachineBlock {
     /*public static final com.mojang.serialization.MapCodec<MachineExposureChamberBlock> CODEC = simpleCodec(MachineExposureChamberBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
+
+    // Verbatim port of the original MachineExposureChamber.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {-7, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {-7, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-8, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {-8, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-8, 0, 0, Direction.WEST.get3DDataValue()}
+        }, facing);
+    }
 }

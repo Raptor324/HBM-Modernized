@@ -46,7 +46,8 @@ public interface IMultiblockController {
     /**
      * Ports for multiblock placement highlight (ported from 1.7.10 BlockDummyable.getAllPorts).
      * Returns an array of [x, y, z, faceDirection3DDataValue] relative to the core in world coordinates.
-     * If empty, MultiblockStructureHelper.getAutoPorts will automatically supply ports based on connectors.
+     * The empty default mirrors the original BlockDummyable: machines that do not override this
+     * simply show no port markers on the placement highlight.
      */
     default int[][] getAllPorts(Direction facing) {
         return new int[0][0];

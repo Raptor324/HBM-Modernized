@@ -252,6 +252,17 @@ public final class OcclusionCullingHelper {
         return shouldRender(be.getBlockPos(), be.getLevel(), renderBounds);
     }
 
+    /**
+     * Config-independent frustum-only test for geometry that vanilla BER culling cannot see
+     * (infinite render bounds, geometry spanning far beyond its BE block, e.g. pipe segments).
+     * Always true in the Iris shadow pass: the captured main-camera frustum would wrongly
+     * cull off-screen shadow casters.
+     */
+    public static boolean passesFrustum(AABB renderBounds) {
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()) return true;
+        return aabbPassesBerPassFrustum(renderBounds);
+    }
+
     public static boolean shouldRender(BlockPos pos, Level level, AABB renderBounds) {
         ModClothConfig.OcclusionCullingMode mode = ModClothConfig.get().getEffectiveOcclusionCullingMode();
         if (mode != ModClothConfig.OcclusionCullingMode.CPU) return true;

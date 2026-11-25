@@ -39,7 +39,7 @@ public final class MachineFactoryRenderer {
         MachineRenderers.machine("assembly_factory", ModBlockEntities.ASSEMBLY_FACTORY_BE.get(),
                 MachineAssemblyFactoryBlockEntity.class)
             .part("Base")
-            .conditionalPart("Frame", be -> be.frame)
+            .conditionalPart("Frame", be -> com.hbm_m.multiblock.MultiblockFrameHelper.isFrameVisible(be.getBlockState()))
             // Sliders & articulated robotic tool arm parts
             .part("Slider1", (be, pt, gt, ps) -> animateSlider1(be, pt, ps))
             .part("ArmLower1", (be, pt, gt, ps) -> animateArm1(be, pt, ps, 0))
@@ -80,7 +80,7 @@ public final class MachineFactoryRenderer {
                     return true;
                 }
             })
-            .itemParts("Base", "Frame")
+            .itemExcept("Frame")
             .register();
     }
 
@@ -96,12 +96,18 @@ public final class MachineFactoryRenderer {
             case EAST -> animator.rotate(270, 0, 1, 0);
             default -> {}
         }
+        // Parts are baked with JSON root translation (0.5, 0, 0.5).
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private static void pivot(PoseStack ps, double y, double z, double angle) {
         ps.translate(0.0, y, z);
         ps.mulPose(Axis.XP.rotationDegrees((float) angle));
         ps.translate(0.0, -y, -z);
+    }
+
+    private static void pivotBaked(PoseStack ps, double y, double z, double angle) {
+        pivot(ps, y, z + 0.5, angle);
     }
 
     private static boolean animateSlider1(MachineAssemblyFactoryBlockEntity be, float pt, PoseStack ps) {
@@ -114,11 +120,11 @@ public final class MachineFactoryRenderer {
         double slide1 = be.animations[0].getSlider(pt);
         double[] arm1 = be.animations[0].striker.getPositions(pt);
         ps.translate(0.5 - slide1, 0, 0);
-        pivot(ps, 1.625, -0.9375, -arm1[0]);
+        pivotBaked(ps, 1.625, -0.9375, -arm1[0]);
         if (stage == 0) return true;
-        pivot(ps, 2.375, -0.9375, -arm1[1]);
+        pivotBaked(ps, 2.375, -0.9375, -arm1[1]);
         if (stage == 1) return true;
-        pivot(ps, 2.375, -0.4375, -arm1[2]);
+        pivotBaked(ps, 2.375, -0.4375, -arm1[2]);
         if (stage == 2) return true;
         ps.translate(0, arm1[3], 0);
         return true;
@@ -134,15 +140,15 @@ public final class MachineFactoryRenderer {
         double slide1 = be.animations[0].getSlider(pt);
         double[] arm2 = be.animations[0].saw.getPositions(pt);
         ps.translate(-0.5 + slide1, 0, 0);
-        pivot(ps, 1.625, 0.9375, arm2[0]);
+        pivotBaked(ps, 1.625, 0.9375, arm2[0]);
         if (stage == 0) return true;
-        pivot(ps, 2.375, 0.9375, arm2[1]);
+        pivotBaked(ps, 2.375, 0.9375, arm2[1]);
         if (stage == 1) return true;
-        pivot(ps, 2.375, 0.4375, arm2[2]);
+        pivotBaked(ps, 2.375, 0.4375, arm2[2]);
         if (stage == 2) return true;
         ps.translate(0, arm2[3], 0);
         if (stage == 3) return true;
-        pivot(ps, 1.625, 0.3125, -arm2[4]);
+        pivotBaked(ps, 1.625, 0.3125, -arm2[4]);
         return true;
     }
 
@@ -156,11 +162,11 @@ public final class MachineFactoryRenderer {
         double slide2 = be.animations[1].getSlider(pt);
         double[] arm3 = be.animations[1].striker.getPositions(pt);
         ps.translate(-0.5 + slide2, 0, 0);
-        pivot(ps, 1.625, 0.9375, arm3[0]);
+        pivotBaked(ps, 1.625, 0.9375, arm3[0]);
         if (stage == 0) return true;
-        pivot(ps, 2.375, 0.9375, arm3[1]);
+        pivotBaked(ps, 2.375, 0.9375, arm3[1]);
         if (stage == 1) return true;
-        pivot(ps, 2.375, 0.4375, arm3[2]);
+        pivotBaked(ps, 2.375, 0.4375, arm3[2]);
         if (stage == 2) return true;
         ps.translate(0, arm3[3], 0);
         return true;
@@ -176,15 +182,15 @@ public final class MachineFactoryRenderer {
         double slide2 = be.animations[1].getSlider(pt);
         double[] arm4 = be.animations[1].saw.getPositions(pt);
         ps.translate(0.5 - slide2, 0, 0);
-        pivot(ps, 1.625, -0.9375, -arm4[0]);
+        pivotBaked(ps, 1.625, -0.9375, -arm4[0]);
         if (stage == 0) return true;
-        pivot(ps, 2.375, -0.9375, -arm4[1]);
+        pivotBaked(ps, 2.375, -0.9375, -arm4[1]);
         if (stage == 1) return true;
-        pivot(ps, 2.375, -0.4375, -arm4[2]);
+        pivotBaked(ps, 2.375, -0.4375, -arm4[2]);
         if (stage == 2) return true;
         ps.translate(0, arm4[3], 0);
         if (stage == 3) return true;
-        pivot(ps, 1.625, -0.3125, arm4[4]);
+        pivotBaked(ps, 1.625, -0.3125, arm4[4]);
         return true;
     }
 
@@ -195,6 +201,10 @@ public final class MachineFactoryRenderer {
                 assemfac.getBlockPos().getY() + 1.0, assemfac.getBlockPos().getZ() + 0.5) >= 35.0 * 35.0) {
             return;
         }
+
+        ps.pushPose();
+        // Cancel baked-space -0.5/-0.5 from applyFactoryTransform for immediate-mode OBJ-space overlays.
+        ps.translate(0.5, 0.0, 0.5);
 
         // 1. Recipe icons on 4 modules
         for (int i = 0; i < 4; i++) {
@@ -250,6 +260,7 @@ public final class MachineFactoryRenderer {
             drawSparkFan(sparks, ps.last().pose(), ps.last().normal(), 1.0625D, -0.3125D, wide, -1);
             ps.popPose();
         }
+        ps.popPose();
     }
 
     private static void drawSparkFan(VertexConsumer vc, Matrix4f m, Matrix3f n,

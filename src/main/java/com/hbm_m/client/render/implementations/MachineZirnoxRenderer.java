@@ -10,9 +10,9 @@ import com.hbm_m.util.MultipartFacingTransforms;
 /**
  * ZIRNOX on the {@link MachineRenderers} factory - port of 1.7.10 {@code RenderZirnox}:
  * <ul>
- *   <li>a single static part "Plane" ({@code o Plane} in zirnox.obj); no animation -
- *       the original {@code tilted} flag (reactor toppling from the machine gravity
- *       system 528) is not ported, since the modernization has no such subsystem;</li>
+ *   <li>a single static part "Plane" ({@code o Plane} in zirnox.obj); tilt from
+ *       the machine gravity system 528 ({@code be.tilted}: drop -0.5, rotZ 10,
+ *       rotY 5 before facing) matches 1.7.10 {@code RenderZirnox};</li>
  *   <li>FACING rotation follows the original table (metadata-10): N -&gt; 90, S -&gt; 270,
  *       W -&gt; 180, E -&gt; 0. The JSON root transform carries the base +90
  *       ({@code origin: corner, T(0.5,0,0.5), R(0,90,0)} - the repo-wide convention for
@@ -37,6 +37,7 @@ public final class MachineZirnoxRenderer {
                 MachineZirnoxBlockEntity.class)
             .part("Plane")
             .blockTransform(MachineZirnoxRenderer::applyBlockTransform)
+            .animationEpoch(be -> be.tilted ? 1L : 0L)
             .register();
     }
 
@@ -46,7 +47,12 @@ public final class MachineZirnoxRenderer {
         // Standard pattern (crystallizer): the JSON root transform T(0.5,0,0.5)*R(90)
         // is baked into the part quads, so the facing yaw goes in the middle.
         animator.translate(0.5, 0.0, 0.5);
-        animator.rotate(MultipartFacingTransforms.legacyFacingRotationYDegrees(
+        if (be.tilted) {
+            animator.translate(0.0, -0.5, 0.0);
+            animator.rotate(10.0F, 0.0F, 0.0F, 1.0F);
+            animator.rotate(5.0F, 0.0F, 1.0F, 0.0F);
+        }
+        animator.rotate(90.0F + MultipartFacingTransforms.legacyFacingRotationYDegrees(
                 be.getBlockState().getValue(MachineZirnoxBlock.FACING)), 0, 1, 0);
         animator.translate(-0.5f, 0.0f, -0.5f);
     }

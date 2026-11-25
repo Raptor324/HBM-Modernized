@@ -60,7 +60,7 @@ public class BoxCableBakedModel implements BakedModel {
     private final TextureAtlasSprite[] ends = new TextureAtlasSprite[5];
     private TextureAtlasSprite curveTL, curveTR, curveBL, curveBR;
     private TextureAtlasSprite particle;
-    private boolean spritesReady;
+    private volatile boolean spritesReady;
 
     public BoxCableBakedModel(int size, ItemTransforms transforms) {
         this.size = size;
@@ -87,17 +87,13 @@ public class BoxCableBakedModel implements BakedModel {
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
-        if (side == null) {
-            // Предмет (state == null) — все грани одним списком; блок в чанке — пусто,
-            // все квады уже отданы в своих side-группах (иначе двойной рендер).
-            if (state != null) return List.of();
-        }
         if (!ensureSprites()) return List.of();
 
         List<BakedQuad> out = new ArrayList<>(12);
         double lower = boundsLower(), upper = 1 - lower;
 
         if (state == null || !state.hasProperty(BoxCableBlock.SIZE)) {
+            if (side != null) return List.of();
             // Инвентарный вид (RenderBoxDuct.renderInventoryBlock): прогон по Z, торцы = end[size].
             // ВНИМАНИЕ: в Forge 1.7.10 имена uvRotate-полей НЕ совпадают с гранями
             // (проверено по байткоду RenderBlocks): uvRotateNorth крутит WEST(XNeg),
@@ -123,7 +119,7 @@ public class BoxCableBakedModel implements BakedModel {
             box(out, 0, lower, lower, 1, upper, upper, side, state, 90, 90, 270, 90, 90, 90, this::iconFor);
         } else if ((mask & 0b111100) == 0 && mask > 0) {
             // Straight along Z: длинные грани E/W — 90°, торцы N/S — end (north=1, south=2)
-            box(out, lower, lower, 0, upper, upper, 1, side, state, 0, 0, 90, 90, 270, 90, this::iconFor);
+            box(out, lower, lower, 0, upper, upper, 1, side, state, 0, 0, 270, 90, 0, 0, this::iconFor);
         } else if ((mask & 0b110011) == 0 && mask > 0) {
             // Straight along Y
             box(out, lower, 0, lower, upper, 1, upper, side, state, 0, 0, 0, 0, 0, 0, this::iconFor);
@@ -185,12 +181,29 @@ public class BoxCableBakedModel implements BakedModel {
         if (side == null) {
             for (Direction d : Direction.values()) {
                 if (draw != null && !draw.contains(d)) continue;
+                // In world rendering (state != null), faces on the outer 0.0/1.0 block boundary are
+                // emitted under side == d so chunk culling can hide them against solid neighbors.
+                // Inset faces (0 < coord < 1) must be emitted under side == null so adjacent blocks
+                // do not cull the thin cable's side walls.
+                if (state != null && isBoundaryFace(d, x0, y0, z0, x1, y1, z1)) continue;
                 face(out, d, x0, y0, z0, x1, y1, z1, rotationFor(d, rotTop, rotBottom, rotEast, rotWest, rotNorth, rotSouth), icons.get(d, state));
             }
             return;
         }
         if (draw != null && !draw.contains(side)) return;
+        if (state != null && !isBoundaryFace(side, x0, y0, z0, x1, y1, z1)) return;
         face(out, side, x0, y0, z0, x1, y1, z1, rotationFor(side, rotTop, rotBottom, rotEast, rotWest, rotNorth, rotSouth), icons.get(side, state));
+    }
+
+    private static boolean isBoundaryFace(Direction d, double x0, double y0, double z0, double x1, double y1, double z1) {
+        return switch (d) {
+            case DOWN -> y0 <= 1e-4;
+            case UP -> y1 >= 1.0 - 1e-4;
+            case NORTH -> z0 <= 1e-4;
+            case SOUTH -> z1 >= 1.0 - 1e-4;
+            case WEST -> x0 <= 1e-4;
+            case EAST -> x1 >= 1.0 - 1e-4;
+        };
     }
 
     private static int rotationFor(Direction d, int rotTop, int rotBottom, int rotEast, int rotWest, int rotNorth, int rotSouth) {

@@ -90,8 +90,8 @@ public class PABeamlineBlockEntity extends BaseMachineBlockEntity implements IPa
 
     /** Original deserialize: {@code if(didPass) light = 2F}. */
     @Override
-    protected void applyClientUpdate(CompoundTag tag) {
-        super.applyClientUpdate(tag);
+    protected void applyClientUpdate(CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
+        super.applyClientUpdate(tag, registries);
         if (tag.getBoolean("didPass")) this.light = 2F;
     }
 

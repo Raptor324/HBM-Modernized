@@ -27,14 +27,16 @@ public class MachineSatLinkerMenu extends AbstractContainerMenu {
     private final MachineSatLinkerBlockEntity blockEntity;
 
     public MachineSatLinkerMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, (MachineSatLinkerBlockEntity) inv.player.level().getBlockEntity(extraData.readBlockPos()));
+        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()) instanceof MachineSatLinkerBlockEntity sl ? sl : null);
     }
 
     public MachineSatLinkerMenu(int id, Inventory inv, MachineSatLinkerBlockEntity entity) {
         super(ModMenuTypes.MACHINE_SATLINKER_MENU.get(), id);
         this.blockEntity = entity;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        var container = entity != null
+                ? new ModItemStackHandlerContainer(entity.getInventory(), entity::setChanged)
+                : new ModItemStackHandlerContainer(new com.hbm_m.platform.ModItemStackHandler.Dummy(TE_SLOT_COUNT), () -> {});
 
         addSlot(new Slot(container, MachineSatLinkerBlockEntity.SLOT_COPY_SOURCE, 44, 36));
         addSlot(new Slot(container, MachineSatLinkerBlockEntity.SLOT_COPY_TARGET, 80, 36));

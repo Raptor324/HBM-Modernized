@@ -4,8 +4,8 @@
   "flip_v": true,
   "render_type": "minecraft:solid",
   "textures": {
-    "particle": "hbm_m:block/wire_coated",
-    "surface": "hbm_m:block/wire_coated"
+    "particle": "hbm_m:block/cable_neo",
+    "surface": "hbm_m:block/cable_neo"
   },
   "transform": {
     "translation": [

@@ -145,7 +145,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
             }
         }
 
-        sendUpdateToClient();
+        if (probeDue(10)) sendUpdateToClient();
     }
 
     public void onDestroy(ItemStack stack) {
@@ -256,7 +256,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
         if (pool != null && !pool.isEmpty()) {
             this.pool = pool;
             this.setChanged();
-            sendUpdateToClient();
+            if (probeDue(10)) sendUpdateToClient();
         }
     }
 

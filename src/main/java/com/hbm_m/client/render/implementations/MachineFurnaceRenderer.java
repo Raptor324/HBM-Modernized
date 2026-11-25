@@ -75,6 +75,8 @@ public final class MachineFurnaceRenderer {
                     float a = 0.5F;
 
                     VertexConsumer vc = buf.getBuffer(ClientRenderHandler.CustomRenderTypes.DETONATOR_LASER_GLOW);
+                    ps.pushPose();
+                    ps.translate(0.5, 0.0, 0.5);
                     Matrix4f m = ps.last().pose();
                     for (int i = 0; i < 4; i++) {
                         float x = 1.0F + i * 0.0625F;
@@ -83,6 +85,7 @@ public final class MachineFurnaceRenderer {
                         com.hbm_m.platform.RenderHooks.vertexColor(vc, m, x, 0.5F, 1.0F, r, g, b, a);
                         com.hbm_m.platform.RenderHooks.vertexColor(vc, m, x, 0.5F, -1.0F, r, g, b, a);
                     }
+                    ps.popPose();
                 }
 
                 @Override
@@ -112,7 +115,7 @@ public final class MachineFurnaceRenderer {
         MachineRenderers.machine("combination_oven", ModBlockEntities.COMBINATION_OVEN_BE.get(),
                 MachineCombinationOvenBlockEntity.class)
             .part("Plane")
-            .blockTransform((be, animator) -> animator.translate(0.5, 0.0, 0.5))
+            .blockTransform((be, animator) -> {})
             .hook(new MachineRenderHook<MachineCombinationOvenBlockEntity>() {
                 @Override
                 public void render(MachineCombinationOvenBlockEntity te, float partialTick, PoseStack ps,
@@ -127,7 +130,7 @@ public final class MachineFurnaceRenderer {
                     float vMin = 0.0F;
                     float vMax = 1.0F;
 
-                    ps.translate(0.0, 1.75, 0.0);
+                    ps.translate(0.5, 1.75, 0.5);
                     ps.mulPose(Axis.YP.rotationDegrees(-Minecraft.getInstance().gameRenderer.getMainCamera().getYRot()));
 
                     float scaleH = 1.0F;
@@ -158,7 +161,8 @@ public final class MachineFurnaceRenderer {
             case 4 -> animator.rotate(270, 0, 1, 0);
             default -> {}
         }
-        animator.translate(-0.5, 0.0, -0.5);
+        // -0.5/-0.5 cancels JSON root translation [0.5, 0, 0.5], plus 1.7.10 RenderFurnaceIron glTranslated(-0.5, 0, -0.5).
+        animator.translate(-1.0, 0.0, -1.0);
     }
 
     private static void applySteelFurnaceTransform(MachineFurnaceSteelBlockEntity furnace, LegacyAnimator animator) {
@@ -172,6 +176,7 @@ public final class MachineFurnaceRenderer {
             }
         }
         animator.rotate(-90, 0, 1, 0);
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private static void applyRotaryFurnaceTransform(MachineRotaryFurnaceBlockEntity furnace, LegacyAnimator animator) {
@@ -184,6 +189,7 @@ public final class MachineFurnaceRenderer {
                 default -> {}
             }
         }
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private static void renderFireQuad(VertexConsumer vc, Matrix4f m, Matrix3f n,

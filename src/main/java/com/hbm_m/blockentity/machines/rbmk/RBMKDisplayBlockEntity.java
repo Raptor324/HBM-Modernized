@@ -105,7 +105,7 @@ public class RBMKDisplayBlockEntity extends RBMKPanelDeviceBlockEntity {
 
                 // Same 15x15 sweep as MachineRbmkConsoleBlockEntity.scanReactor, around a target
                 // read from NBT: without the guard it loads chunks off a persisted position.
-                if (com.hbm_m.util.Compat.getTileStandard(level, cPos) instanceof RBMKColumnBlockEntity col) {
+                if (com.hbm_m.util.Compat.getTileStandard(level, cPos) instanceof RBMKColumnBlockEntity col && col.participatesInHeatNetwork()) {
                     CompoundTag d = col.getNBTForConsole();
                     d.putDouble("heat", col.heat);
                     d.putDouble("maxHeat", col.maxHeat());

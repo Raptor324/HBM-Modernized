@@ -220,7 +220,8 @@ public enum ModMaterials {
     BORAX("borax", java.util.EnumSet.noneOf(MaterialShape.class)),
     SODIUM("sodium", java.util.EnumSet.noneOf(MaterialShape.class)),
     FLUX("flux", java.util.EnumSet.noneOf(MaterialShape.class)),
-    SLAG("slag", java.util.EnumSet.noneOf(MaterialShape.class));
+    SLAG("slag", java.util.EnumSet.noneOf(MaterialShape.class)),
+    DEMOMAT("demomat", java.util.EnumSet.of(MaterialShape.PLATE_CAST, MaterialShape.PLATE_WELDED, MaterialShape.WIRE_DENSE), "ru_ru", "Кастомный металл демо", "en_us", "Custom Metal Demo");
 
     private final String id;
     private final java.util.Set<MaterialShape> shapes;

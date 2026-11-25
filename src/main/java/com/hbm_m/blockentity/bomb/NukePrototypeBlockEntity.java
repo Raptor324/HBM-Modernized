@@ -18,24 +18,30 @@ public class NukePrototypeBlockEntity extends NukeBaseBlockEntity {
         super(ModBlockEntities.NUKE_PROTOTYPE_BE.get(), pos, state, 14);
     }
 
-    @Override
-    public int getMaxStackSize() {
-        return 1;
-    }
-
+    // Original GUI is unrestricted: TileEntityNukePrototype.isItemValidForSlot returns false
+    // (hoppers only) while 1.7.10 Slot.isItemValid defaults to true, so any item can be placed
+    // by the player; readiness is enforced by isReady(). Hoppers have no access at all
+    // (NukeBaseBlockEntity.getSlotsForFace returns an empty array, mirroring
+    // getAccessibleSlotsFromSide = new int[0]).
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        var item = stack.getItem();
-        return item == ModItems.CELL_SAS3.get()
-            || item == ModItems.ROD_QUAD_LEAD.get()
-            || item == ModItems.ROD_QUAD_NP237.get()
-            || item == ModItems.ROD_QUAD_URANIUM.get();
+        return true;
     }
 
+    // Original TileEntityNukePrototype.isReady (TileEntityNukePrototype.java:185-207): SAS-3 cells
+    // in slots 0/1/12/13 and a fixed quad-rod pattern U U L L Np Np L L U U in slots 2..11
+    // (original compares rod_quad damage = BreedingRodType ordinal; port has one item per type).
     @Override
     public boolean isReady() {
-        for (ItemStack stack : slots) {
-            if (stack.isEmpty()) return false;
+        var sas = ModItems.CELL_SAS3.get();
+        var uranium = ModItems.ROD_QUAD_URANIUM.get();
+        var lead = ModItems.ROD_QUAD_LEAD.get();
+        var np = ModItems.ROD_QUAD_NP237.get();
+        net.minecraft.world.item.Item[] pattern = {
+            sas, sas, uranium, uranium, lead, lead, np, np, lead, lead, uranium, uranium, sas, sas
+        };
+        for (int i = 0; i < pattern.length; i++) {
+            if (i >= slots.size() || slots.get(i).getItem() != pattern[i]) return false;
         }
         return true;
     }

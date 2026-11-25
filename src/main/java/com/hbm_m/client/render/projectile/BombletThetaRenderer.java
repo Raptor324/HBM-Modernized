@@ -21,8 +21,8 @@ import net.minecraft.util.Mth;
  */
 public class BombletThetaRenderer extends EntityRenderer<EntityBombletZeta> {
 
-    private static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/projectiles/bomblet_theta.obj"));
-    private static final ResourceLocation ZETA_TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity_obj/bomblet_zeta.png");
+    private static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/bomb/airbomb.obj"));
+    private static final ResourceLocation ZETA_TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/airbomb.png");
 
     public BombletThetaRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);

@@ -1,6 +1,18 @@
 {
- "parent": "minecraft:item/generated",
- "textures": {
-  "layer0": "hbm_m:block/bomb/det_cord"
- }
+	"parent": "minecraft:block/block",
+	"loader": "hbm_m:nmesh_obj",
+	"model": "hbm_m:models/block/bomb/det_cord_cz.obj",
+	"flip_v": true,
+	"render_type": "minecraft:cutout",
+	"textures": {
+		"texture": "hbm_m:block/bomb/det_cord",
+		"particle": "hbm_m:block/bomb/det_cord"
+	},
+	"display": {
+		"gui": {
+			"rotation": [30, 45, 0],
+			"translation": [0, 0, 0],
+			"scale": [0.78125, 0.78125, 0.78125]
+		}
+	}
 }

@@ -63,8 +63,7 @@ public final class MachineChemistryRenderer {
         MachineRenderers.machine("mixer", ModBlockEntities.MIXER_BE.get(),
                 MachineMixerBlockEntity.class)
             .part("Main")
-            .rotateY("Mixer", 0f, 0f, (be, pt) -> -(Mth.lerp(pt, be.prevRotation, be.rotation)))
-            .blockTransform((be, animator) -> animator.translate(0.5, 0.0, 0.5))
+            .rotateY("Mixer", 0.5f, 0.5f, (be, pt) -> -(Mth.lerp(pt, be.prevRotation, be.rotation)))
             .hook(new MachineRenderHook<MachineMixerBlockEntity>() {
                 @Override
                 public void render(MachineMixerBlockEntity mixer, float partialTick, PoseStack ps,
@@ -87,19 +86,32 @@ public final class MachineChemistryRenderer {
     }
 
     private static void registerPUREX() {
+        // purex.nmesh запекается с root-transform (T(0.5,0,0.5)) — квады частей живут в
+        // "bake"-пространстве (OBJ + 0.5). Все части компенсируют смещение T(-0.5,0,-0.5),
+        // а пивоты суставов задаются в bake-координатах (конвенция advassembler).
         MachineRenderers.machine("purex", ModBlockEntities.PUREX_BE.get(),
                 MachinePUREXBlockEntity.class)
-            .part("Base")
-            .conditionalPart("Frame", be -> be.frame)
-            .rotatingPart("Fan", 0f, 0f, 1f, 1.5f, 1.25f, 0f, 0f, 0f, 0f,
+            .staticPart("Base", MachineChemistryRenderer::applyBakeOffset)
+            .conditionalPart("Frame", MachineChemistryRenderer::applyBakeOffset,
+                    be -> com.hbm_m.multiblock.MultiblockFrameHelper.isFrameVisible(be.getBlockState()))
+            // Legacy: R_z(anim*45) через OBJ-пивот (1.5, 1.25, 0) = bake (2.0, 1.25, 0.5).
+            .rotatingPart("Fan", 0f, 0f, 1f, 2.0f, 1.25f, 0.5f, -0.5f, 0f, -0.5f,
                     (be, pt) -> Mth.lerp(pt, be.prevAnim, be.anim) * 45.0)
-            .translatingPart("Pump", new Vector3f(1f, 0f, 0f), (be, pt) -> {
+            // Legacy: T(sps(anim*0.25)*0.5, 0, 0) в OBJ-пространстве — сдвиг до компенсации.
+            .translatingPart("Pump", new Vector3f(1f, 0f, 0f), new Vector3f(-0.5f, 0f, -0.5f), (be, pt) -> {
                 float anim = Mth.lerp(pt, be.prevAnim, be.anim);
                 return (float) (sps(anim * 0.25) * 0.5);
             })
             .blockTransform(MachineChemistryRenderer::applyPurexTransform)
             .itemParts("Base", "Fan", "Pump")
             .register();
+    }
+
+    /** Компенсация запечённого root-transform (T(0.5,0,0.5)) для статичных частей. */
+    private static boolean applyBakeOffset(com.hbm_m.blockentity.BaseMachineBlockEntity be, float partialTick,
+                                           long gameTime, PoseStack pose) {
+        pose.translate(-0.5f, 0f, -0.5f);
+        return true;
     }
 
     private static void registerPyroOven() {
@@ -128,6 +140,7 @@ public final class MachineChemistryRenderer {
             }
         }
         animator.rotate(180, 0, 1, 0);
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private static void applyRadiolysisTransform(MachineRadiolysisBlockEntity te, LegacyAnimator animator) {
@@ -140,6 +153,7 @@ public final class MachineChemistryRenderer {
                 default -> {}
             }
         }
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private static void applyPurexTransform(MachinePUREXBlockEntity purex, LegacyAnimator animator) {
@@ -165,6 +179,7 @@ public final class MachineChemistryRenderer {
                 default -> {}
             }
         }
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private static void renderMixerFluid(MachineMixerBlockEntity mixer, PoseStack ps, MultiBufferSource buf) {
@@ -185,6 +200,7 @@ public final class MachineChemistryRenderer {
         float a = 0.75F;
 
         ps.pushPose();
+        ps.translate(0.5, 0.0, 0.5);
         float fillRatio = (float) ((double) totalFill / (double) totalMax * 0.99);
         float fluidHeight = 0.2F + fillRatio * 0.8F;
 

@@ -4,6 +4,11 @@
 
     { "type": "single", "resource": "block/machine/lava_gray" },
     { "type": "single", "resource": "block/machine/lava" },
+    { "type": "single", "resource": "hbm_m:models/compact_launcher" },
+    { "type": "single", "resource": "hbm_m:models/missile_parts/launch_table" },
+    { "type": "single", "resource": "hbm_m:models/missile_parts/launch_table_small_pad" },
+    { "type": "single", "resource": "hbm_m:models/missile_parts/launch_table_small_scaffold_base" },
+    { "type": "single", "resource": "hbm_m:models/missile_parts/launch_table_small_scaffold_connector" },
     { "type": "directory", "source": "block", "prefix": "block/" },
     { "type": "directory", "source": "gui/fluids", "prefix": "gui/fluids/" },
     { "type": "directory", "source": "fluid_barrel", "prefix": "fluid_barrel/" },

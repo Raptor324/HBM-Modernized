@@ -69,6 +69,30 @@ public class ItemAmmoHIMARS extends Item implements ITooltipProvider {
         this.type = type;
     }
 
+    //? if forge {
+    @Override
+    @SuppressWarnings("removal")
+    public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.AmmoHIMARSItemRenderer.instance();
+            }
+        });
+    }
+    //?} elif neoforge {
+    /*@Override
+    @SuppressWarnings("removal")
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.AmmoHIMARSItemRenderer.instance();
+            }
+        });
+    }
+    *///?}
+
     /** Original {@code getItemDamage()} eines Raketenstapels, -1 fuer Fremdgegenstaende. */
     public static int typeOf(ItemStack stack) {
         return stack.getItem() instanceof ItemAmmoHIMARS a ? a.type : -1;

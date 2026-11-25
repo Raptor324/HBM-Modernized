@@ -5,18 +5,25 @@ import org.jetbrains.annotations.NotNull;
 import com.hbm_m.blockentity.bomb.BombMultiBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.BombMultiMenu;
+import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
- * Экран многоцелевой бомбы (плоский фон, 4 заряда + 2 модификатора).
+ * Экран многоцелевой бомбы — 1:1 {@code GUIBombMulti}: текстура bombGeneric
+ * (в порте — байт-в-байт та же bomb_generic.png), фон 176x166 и значок
+ * совместимости модификаторов (слоты 2 и 5) в правом верхнем углу (124, 34).
  */
 @OnlyIn(Dist.CLIENT)
 public class GUIBombMulti extends GuiInfoScreen<BombMultiMenu> {
+
+    private static final ResourceLocation TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/bomb_generic.png");
 
     private final BombMultiBlockEntity be;
 
@@ -32,24 +39,25 @@ public class GUIBombMulti extends GuiInfoScreen<BombMultiMenu> {
         GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
-
-        if (be != null && be.isReady()) { // тайл может отсутствовать в реплее Flashback
-            guiGraphics.drawCenteredString(this.font,
-                    Component.translatable("gui.hbm_m.bomb_multi.ready").withStyle(net.minecraft.ChatFormatting.DARK_RED),
-                    this.leftPos + imageWidth / 2, this.topPos + 76, 0);
-        }
     }
 
     @Override
     protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        guiGraphics.fill(this.leftPos, this.topPos, this.leftPos + imageWidth, this.topPos + imageHeight, 0xFFC6C6C6);
-        guiGraphics.renderOutline(this.leftPos, this.topPos, imageWidth, imageHeight, 0xFF000000);
-        int[][] pos = {{44, 18}, {116, 18}, {44, 54}, {116, 54}, {71, 27}, {89, 45}};
-        for (int[] p : pos) {
-            int sx = this.leftPos + p[0] - 1;
-            int sy = this.topPos + p[1] - 1;
-            guiGraphics.fill(sx, sy, sx + 18, sy + 18, 0xFF8B8B8B);
-            guiGraphics.renderOutline(sx, sy, 18, 18, 0xFF373737);
+        guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, imageWidth, imageHeight);
+
+        // Оригинал GUIBombMulti.drawGuiContainerBackgroundLayer: при совпадающих
+        // модификаторах — иконка их типа (строки 0-5), при разных — иконка «не совпадает»
+        // (строка 7). При пустых модификаторах (оба 0) иконка не рисуется.
+        if (be != null) { // тайл может отсутствовать в реплее Flashback
+            int type2 = be.return2type();
+            int type5 = be.return5type();
+            if (type2 == type5) {
+                if (type2 >= 1 && type2 <= 6) {
+                    guiGraphics.blit(TEXTURE, this.leftPos + 124, this.topPos + 34, 176, (type2 - 1) * 18, 18, 18);
+                }
+            } else {
+                guiGraphics.blit(TEXTURE, this.leftPos + 124, this.topPos + 34, 176, 7 * 18, 18, 18);
+            }
         }
     }
 

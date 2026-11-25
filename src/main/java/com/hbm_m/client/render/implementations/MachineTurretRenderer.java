@@ -8,14 +8,22 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.TurretBaseBlockEntity;
 import com.hbm_m.blockentity.machines.TurretStats;
 import com.hbm_m.client.render.PartGeometry;
+import com.hbm_m.client.render.machine.MachineRenderApi;
+import com.hbm_m.client.render.machine.MachineRenderHook;
 import com.hbm_m.client.render.machine.MachineRenderers;
 import com.hbm_m.client.render.machine.MachineSpecBuilder;
+import com.hbm_m.client.weapon.WeaponResources;
+import com.hbm_m.item.weapon.ItemAmmoHIMARS;
+import com.hbm_m.item.weapon.ItemAmmoHIMARS.HIMARSRocket;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
@@ -80,6 +88,37 @@ public final class MachineTurretRenderer {
                     (be, pt, gt, pose) -> animatePitchPart(stats, key, be, pt, pose),
                     be -> resolvePartQuads(key),
                     be -> key);
+        }
+
+        if (stats == TurretStats.HIMARS) {
+            builder.hook(new MachineRenderHook<TurretBaseBlockEntity>() {
+                @Override
+                public void render(TurretBaseBlockEntity be, float pt, PoseStack ps,
+                                   MultiBufferSource buf, int light, int overlay, MachineRenderApi api) {
+                    if (be.himarsTypeLoaded < 0 || be.himarsTypeLoaded >= ItemAmmoHIMARS.itemTypes.length) return;
+                    HIMARSRocket type = ItemAmmoHIMARS.itemTypes[be.himarsTypeLoaded];
+                    if (type == null) return;
+
+                    ps.pushPose();
+                    Vec3 off = be.getHorizontalOffset();
+                    ps.translate(off.x, off.y, off.z);
+                    animatePitchPart(stats, "himars_crane", be, pt, ps);
+
+                    VertexConsumer vc = buf.getBuffer(RenderType.entityCutoutNoCull(type.texture));
+                    if (type.modelType == 0) {
+                        WeaponResources.turret_himars.renderPart("TubeStandard", ps, vc, light);
+                        for (int i = 0; i < be.himarsAmmo; i++) {
+                            WeaponResources.turret_himars.renderPart("CapStandard" + (5 - i + 1), ps, vc, light);
+                        }
+                    } else if (type.modelType == 1) {
+                        WeaponResources.turret_himars.renderPart("TubeSingle", ps, vc, light);
+                        if (be.himarsAmmo > 0) {
+                            WeaponResources.turret_himars.renderPart("CapSingle", ps, vc, light);
+                        }
+                    }
+                    ps.popPose();
+                }
+            });
         }
 
         builder.animationEpoch(MachineTurretRenderer::animationEpoch);

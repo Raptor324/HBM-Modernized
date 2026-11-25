@@ -75,7 +75,27 @@ public class NukeFleijaMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        return ItemStack.EMPTY;
+        // Original ContainerNukeFleija.transferStackInSlot: only bomb slots (0-10) are
+        // shift-clicked into the player inventory; player -> bomb transfer is not supported.
+        Slot slot = this.slots.get(index);
+        if (slot == null || !slot.hasItem()) return ItemStack.EMPTY;
+        ItemStack original = slot.getItem();
+        ItemStack copy = original.copy();
+
+        if (index <= NukeFleijaBlockEntity.SLOTS - 1) {
+            if (!this.moveItemStackTo(original, NukeFleijaBlockEntity.SLOTS, this.slots.size(), true)) {
+                return ItemStack.EMPTY;
+            }
+        } else {
+            return ItemStack.EMPTY;
+        }
+
+        if (original.isEmpty()) {
+            slot.set(ItemStack.EMPTY);
+        } else {
+            slot.setChanged();
+        }
+        return copy;
     }
 }
 

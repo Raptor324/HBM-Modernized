@@ -50,6 +50,7 @@ public class GUINukeFatMan extends GuiInfoScreen<NukeFatManMenu> {
         List<Component> text = new ArrayList<>();
         text.add(Component.translatable("gui.hbm_m.nuke_fat_man.requires").withStyle(ChatFormatting.DARK_BLUE));
         text.add(Component.translatable("gui.hbm_m.nuke_fat_man.line_lenses").withStyle(ChatFormatting.GRAY));
+        text.add(Component.translatable("gui.hbm_m.nuke_fat_man.line_lenses2").withStyle(ChatFormatting.GRAY));
         text.add(Component.translatable("gui.hbm_m.nuke_fat_man.line_core").withStyle(ChatFormatting.GRAY));
         text.add(Component.translatable("gui.hbm_m.nuke_fat_man.line_igniter").withStyle(ChatFormatting.GRAY));
         this.drawCustomInfoStat(guiGraphics, mouseX, mouseY, -16, 16, 16, 16,

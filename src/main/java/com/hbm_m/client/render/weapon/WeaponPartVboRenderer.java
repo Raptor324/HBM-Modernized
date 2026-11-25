@@ -177,7 +177,7 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
     private static boolean previousCullFaceEnabled, previousDepthMask, previousDepthTestEnabled, previousBlendEnabled;
     private static int previousSrcRgb, previousDstRgb, previousSrcAlpha, previousDstAlpha;
     private static ShaderInstance previousShader;
-    private static int previousTexture0, previousTexture2;
+    private static int previousTexture0, previousTexture1, previousTexture2;
 
     /** Set by {@code GunGL.buffer()} when quads are queued into the shared BufferSource;
      * the next weapon part flushes first so submission order (flashes, smoke) is kept. */
@@ -517,6 +517,7 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
         previousDstAlpha = GL11.glGetInteger(GL14.GL_BLEND_DST_ALPHA);
         previousShader = RenderSystem.getShader();
         previousTexture0 = RenderSystem.getShaderTexture(0);
+        previousTexture1 = RenderSystem.getShaderTexture(1);
         previousTexture2 = RenderSystem.getShaderTexture(2);
 
         RenderSystem.setShader(() -> shader);
@@ -555,9 +556,9 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
             shader.setSampler("Sampler0", weaponTex);
         }
 
-        // Sampler2: dynamic lightmap, or 1x1 white texture for mode 2 (NO_LIGHTMAP)
+        // Sampler2: dynamic lightmap, or 1x1 white texture for mode 2 (NO_LIGHTMAP) / GUI
         int activeLightmapGlId;
-        if (mode == 2) {
+        if (mode == 2 || guiLighting) {
             activeLightmapGlId = resolveWhiteTextureGlId(mc);
         } else {
             RenderSystem.activeTexture(GL13.GL_TEXTURE1);
@@ -664,13 +665,11 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
             RenderSystem.setShader(() -> previousShader);
         }
         RenderSystem.setShaderTexture(0, previousTexture0);
-        RenderSystem.setShaderTexture(1, 0);
+        RenderSystem.setShaderTexture(1, previousTexture1);
         RenderSystem.setShaderTexture(2, previousTexture2);
-        Minecraft.getInstance().gameRenderer.lightTexture().turnOffLightLayer();
-        GlStateManager._activeTexture(GL13.GL_TEXTURE2);
-        GlStateManager._bindTexture(0);
-        GlStateManager._activeTexture(GL13.GL_TEXTURE1);
-        GlStateManager._bindTexture(0);
+        // Do NOT call lightTexture().turnOffLightLayer() or bindTexture(0) on TU1/TU2:
+        // WeaponPartVboRenderer runs mid-ENTITIES phase (3rd-person guns, dropped items, bullets, casings)
+        // and disabling/zeroing overlay & lightmap breaks all subsequent entities in the frame.
         GlStateManager._activeTexture(GL13.GL_TEXTURE0);
         GlVaoSafety.bindVertexArray(previousVao);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);

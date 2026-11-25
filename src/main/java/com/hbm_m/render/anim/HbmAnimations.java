@@ -50,6 +50,22 @@ public class HbmAnimations {
         return BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
     }
 
+    /** Original {@code ModEventHandlerClient}: abgelaufene Bus-Animationen aus der Hotbar entfernen. */
+    public static void tick() {
+        long now = System.currentTimeMillis();
+        for (int i = 0; i < hotbar.length; i++) {
+            for (int j = 0; j < hotbar[i].length; j++) {
+                Animation animation = hotbar[i][j];
+                if (animation == null || animation.holdLastFrame) {
+                    continue;
+                }
+                if (now - animation.startMillis > animation.animation.getDuration()) {
+                    hotbar[i][j] = null;
+                }
+            }
+        }
+    }
+
     public static Animation getRelevantAnim() { return getRelevantAnim(0); }
 
     public static Animation getRelevantAnim(int index) {

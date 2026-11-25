@@ -51,7 +51,7 @@ public class SetAssemblerRecipeC2SPacket implements C2SPacket {
                     msg.blockPos.getY() + 0.5,
                     msg.blockPos.getZ() + 0.5) > 64.0) return;
 
-            BlockEntity be = player.level().getBlockEntity(msg.blockPos);
+            BlockEntity be = ModPacketHandler.blockEntityAt(player, msg.blockPos);
             if (be instanceof MachineAdvancedAssemblerBlockEntity assembler) {
                 assembler.setSelectedRecipe(msg.recipeId);
             }

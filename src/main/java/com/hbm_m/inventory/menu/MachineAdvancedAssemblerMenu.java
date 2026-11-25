@@ -35,12 +35,7 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
 
     // Конструктор, вызываемый с сервера
     public MachineAdvancedAssemblerMenu(int pContainerId, Inventory pPlayerInventory, MachineAdvancedAssemblerBlockEntity pBlockEntity, ContainerData pData) {
-        this(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), pContainerId, pPlayerInventory, pBlockEntity, pData);
-    }
-
-    /** Used by {@code MachinePrecAssMenu} - see {@code MachineAdvancedAssemblerBlockEntity}'s matching protected constructor. */
-    protected MachineAdvancedAssemblerMenu(net.minecraft.world.inventory.MenuType<?> type, int pContainerId, Inventory pPlayerInventory, MachineAdvancedAssemblerBlockEntity pBlockEntity, ContainerData pData) {
-        super(type, pContainerId);
+        super(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), pContainerId);
         // Убедимся, что данных пришло нужное количество
         checkContainerDataCount(pData, 2);
         this.blockEntity = pBlockEntity;
@@ -60,13 +55,16 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
             }
         });
         this.addSlot(new Slot(container, 1, 35, 126)); // Blueprint
-        // Slots 2-3 are OUTPUT_SLOT_START..END in the BE (MachineAdvancedAssemblerBlockEntity):
-        // extract-only, same as slot 16.
-        this.addSlot(new Slot(container, 2, 152, 108) { // Output
-            @Override public boolean mayPlace(ItemStack stack) { return false; }
+        // Slots 2-3: Upgrades (1:1 ContainerMachineAssemblyMachine)
+        this.addSlot(new Slot(container, 2, 152, 108) {
+            @Override public boolean mayPlace(ItemStack stack) {
+                return stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade;
+            }
         });
-        this.addSlot(new Slot(container, 3, 152, 126) { // Output
-            @Override public boolean mayPlace(ItemStack stack) { return false; }
+        this.addSlot(new Slot(container, 3, 152, 126) {
+            @Override public boolean mayPlace(ItemStack stack) {
+                return stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade;
+            }
         });
         for (int i = 0; i < 4; ++i) for (int j = 0; j < 3; ++j) { // Input
             this.addSlot(new Slot(container, 4 + (i * 3) + j, 8 + j * 18, 18 + i * 18));
@@ -204,6 +202,8 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
                 if (!this.moveItemStackTo(slotStack, 0, 1, false)) return ItemStack.EMPTY;
             } else if (slotOriginal.getItem() instanceof com.hbm_m.item.industrial.ItemBlueprints) {
                 if (!this.moveItemStackTo(slotStack, 1, 2, false)) return ItemStack.EMPTY;
+            } else if (slotOriginal.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
+                if (!this.moveItemStackTo(slotStack, 2, 4, false)) return ItemStack.EMPTY;
             } else {
                 if (!this.moveItemStackTo(slotStack, 4, 16, false)) return ItemStack.EMPTY;
             }

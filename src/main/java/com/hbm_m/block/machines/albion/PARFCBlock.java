@@ -9,6 +9,7 @@ import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -42,6 +43,11 @@ public class PARFCBlock extends PAMultiblockBlock {
                 .extra(0, -1, 0)
                 .placementOffset(0)
                 .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
+
+    @Override
+    public int getHeightOffset() {
+        return 1;
     }
 
     /** audit13: Original {@code onBlockActivated -> standardOpenBehavior} - GUI des Kerns von jeder Zelle aus. */
@@ -81,5 +87,18 @@ public class PARFCBlock extends PAMultiblockBlock {
     /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
+
+    // Verbatim port of the original BlockPARFC.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {3, 1, 0, Direction.UP.get3DDataValue()},
+            {-3, 1, 0, Direction.UP.get3DDataValue()},
+            {0, 1, 0, Direction.UP.get3DDataValue()},
+            {3, -1, 0, Direction.DOWN.get3DDataValue()},
+            {-3, -1, 0, Direction.DOWN.get3DDataValue()},
+            {0, -1, 0, Direction.DOWN.get3DDataValue()}
+        }, facing);
     }
 }

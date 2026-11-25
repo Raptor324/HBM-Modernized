@@ -135,7 +135,7 @@ public final class NeiUniversalJeiRecipes {
         List<ItemStack> torch = List.of(new ItemStack(ModItems.BLOWTORCH.get()), new ItemStack(ModItems.ACETYLENE_TORCH.get()));
         List<Entry> list = new ArrayList<>();
         // BOLT watz_end:0 + 4x DURA.bolt -> watz_end:1
-        list.add(new Entry(clean(Slot.of(it(ModItems.BOLT_HIGHSPEED_STEEL.get(), 4)), Slot.of(new ItemStack(ModBlocks.WATZ_END.get()))),
+        list.add(new Entry(clean(Slot.of(it(ModItems.BOLT_DURA_STEEL.get(), 4)), Slot.of(new ItemStack(ModBlocks.WATZ_END.get()))),
                 List.of(Slot.of(new ItemStack(ModBlocks.WATZ_END_BOLTED.get()))), bolt));
         // TORCH fusion_component:0 + STEEL.plateCast -> fusion_component:1
         list.add(new Entry(clean(Slot.of(mat(ModMaterials.STEEL, MaterialShape.PLATE_CAST, 1)), Slot.of(new ItemStack(ModBlocks.FUSION_COMPONENT.get()))),
@@ -145,7 +145,7 @@ public final class NeiUniversalJeiRecipes {
                 Slot.of(new ItemStack(ModBlocks.ICF_COMPONENT_VESSEL.get()))),
                 List.of(Slot.of(new ItemStack(ModBlocks.ICF_COMPONENT_VESSEL_WELDED.get()))), torch));
         // BOLT icf_component:3 + STEEL.plateCast + 4x DURA.bolt -> icf_component:4
-        list.add(new Entry(clean(Slot.of(mat(ModMaterials.STEEL, MaterialShape.PLATE_CAST, 1)), Slot.of(it(ModItems.BOLT_HIGHSPEED_STEEL.get(), 4)),
+        list.add(new Entry(clean(Slot.of(mat(ModMaterials.STEEL, MaterialShape.PLATE_CAST, 1)), Slot.of(it(ModItems.BOLT_DURA_STEEL.get(), 4)),
                 Slot.of(new ItemStack(ModBlocks.ICF_COMPONENT_STRUCTURE.get()))),
                 List.of(Slot.of(new ItemStack(ModBlocks.ICF_COMPONENT_STRUCTURE_BOLTED.get()))), bolt));
         return list;
@@ -155,7 +155,7 @@ public final class NeiUniversalJeiRecipes {
 
     public static List<Entry> construction() {
         List<Entry> list = new ArrayList<>();
-        Item duraBolt = ModItems.BOLT_HIGHSPEED_STEEL.get();
+        Item duraBolt = ModItems.BOLT_DURA_STEEL.get();
 
         /* WATZ */
         list.add(new Entry(clean(

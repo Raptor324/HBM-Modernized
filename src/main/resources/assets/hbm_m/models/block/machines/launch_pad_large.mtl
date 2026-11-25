@@ -1,5 +1,5 @@
 newmtl pad
-Ka 1 1 1
+Ka 0.0 0.0 0.0
 Kd 1 1 1
 Ks 0 0 0
 d 1.0
@@ -7,7 +7,7 @@ illum 1
 map_Kd hbm_m:block/launchpad/pad
 
 newmtl atlas
-Ka 1 1 1
+Ka 0.0 0.0 0.0
 Kd 1 1 1
 Ks 0 0 0
 d 1.0

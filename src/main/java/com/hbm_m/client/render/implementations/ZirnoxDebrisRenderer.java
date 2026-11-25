@@ -35,11 +35,13 @@ public class ZirnoxDebrisRenderer extends EntityRenderer<ZirnoxDebrisEntity> {
         float rot = entity.lastRot + (entity.rot - entity.lastRot) * partialTicks;
         if (entity.getDebrisType() == ZirnoxDebrisEntity.DebrisType.GRAPHITE) {
             // Same mesh/skin the original and RBMK debris use for graphite chunks.
-            Map<String, List<float[]>> obj = RBMKColumnRenderer.getObj("models/rbmk/models/deb_graphite.obj");
+            Map<String, List<float[]>> obj = RBMKColumnRenderer.getObj("models/projectiles/deb_graphite.obj");
             if (!obj.isEmpty()) {
                 TextureAtlasSprite sprite = RBMKColumnRenderer.sprite(
                         com.hbm_m.lib.RefStrings.MODID, "block/block_graphite");
                 poseStack.mulPose(Axis.YP.rotationDegrees(entity.getId() % 360));
+                poseStack.mulPose(Axis.YP.rotationDegrees(rot));
+                poseStack.mulPose(Axis.XP.rotationDegrees(rot * 0.5F));
                 RBMKColumnRenderer.renderObjGroup(buffer.getBuffer(net.minecraft.client.renderer.RenderType.solid()),
                         poseStack.last().pose(), obj.values().iterator().next(), sprite,
                         1F, 1F, 1F, packedLight, OverlayTexture.NO_OVERLAY);

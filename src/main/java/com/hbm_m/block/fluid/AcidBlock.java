@@ -47,6 +47,7 @@ public class AcidBlock extends HbmFluidBlock {
     }
 
     public void reactToBlocks(Level level, BlockPos pos) {
+        if (level.isOutsideBuildHeight(pos)) return;
         BlockState s = level.getBlockState(pos);
         if (s.getBlock() != this && !s.isAir()) level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
     }

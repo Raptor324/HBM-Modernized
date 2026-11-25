@@ -3,7 +3,6 @@ package com.hbm_m.client.render.implementations;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
@@ -18,18 +17,10 @@ import com.hbm_m.main.MainRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.state.BlockState;
 
-/**
- * Radar (small and large) on the {@link MachineRenderers} factory: Base is
- * static, Dish is animated. Geometry of both depends on the model variant
- * ({@link MachineRadarBakedModel#isLargeRadar()}), so both are declared as
- * dynamic parts with a per-BE cache key (small/large). The dish spins via
- * prevRotation/rotation while powered.
- */
 public final class MachineRadarRenderer {
 
     /** Dish pivot offset for the small radar (original {@code glTranslated(-0.125, 0, 0)}). */
@@ -40,20 +31,6 @@ public final class MachineRadarRenderer {
     public static void register() {
         MachineRenderers.machine("radar", ModBlockEntities.RADAR_BE.get(), MachineRadarBlockEntity.class)
             .dynamicPart("Base", MachineRadarRenderer::baseQuads, MachineRadarRenderer::sizeKey)
-            // Dish: TRACKED rig (ANIM TRACK FORMAT v2) - one full revolution per
-            // spin segment, driven by the segment header (t0/u0/durationTicks).
-            // Legacy spin rate: rotation += 5 deg/tick while powered -> 72 ticks
-            // per revolution; the track runs 0 -> -360 (legacy applied -angle).
-            // Segment classifier (pure in the synced BE state): powered -> t0 = 1,
-            // duration 72; unpowered -> duration 0 = FROZEN at u0 = 0 (rest pose).
-            // The words are a pure function of the epoch (the segment start),
-            // so the epoch-keyed AnimParams word cache in MachineBer hits while
-            // the dish spins and the CPU skips rig evaluation entirely.
-            // Node layout vs the legacy animator T(0.5,0,0.5)*R(-a)*T(off)*T(-0.5):
-            // rotate node about pivot (0.5, 0, 0.5) then translate node (off, 0, 0)
-            // compose to the identical matrix (both trailing translates sit after
-            // the rotation). The small radar's pivot offset is a STREAMED node
-            // (segment-pure: constant per model size, TRACKED_STREAM_BUDGET = 4).
             .trackedChainPart("Dish", "Dish",
                     0f, 0f, 0f, 0f,
                     MachineRadarRenderer::dishQuads, MachineRadarRenderer::sizeKey,
@@ -61,8 +38,6 @@ public final class MachineRadarRenderer {
                     be -> 0.0,
                     MachineRadarRenderer::dishDuration,
                     MachineSpec.JointNode.rotate(0f, 1f, 0f, 0.5f, 0f, 0.5f,
-                            // Never called - the node is tracked (its value comes
-                            // from DISH_SPIN_TRACK).
                             (be, pt, gt, out, off) -> true,
                             DISH_SPIN_TRACK),
                     MachineSpec.JointNode.translate(1f, 0f, 0f,
@@ -71,6 +46,7 @@ public final class MachineRadarRenderer {
                                 return true;
                             }))
             .blockTransform(MachineRadarRenderer::applyBlockTransform)
+            .itemParts("Base", "Radar", "Dish")
             .register();
     }
 
@@ -91,8 +67,7 @@ public final class MachineRadarRenderer {
     }
 
     private static boolean isLarge(MachineRadarBlockEntity be) {
-        AbstractMultipartBakedModel model = radarModel(be);
-        return model != null && model.getPart("Radar") != null;
+        return be.isLargeRadar();
     }
 
     private static String sizeKey(MachineRadarBlockEntity be) {
@@ -117,29 +92,21 @@ public final class MachineRadarRenderer {
         return MeshRenderCache.getOrCompilePartGeometry(cacheKey, part).solidQuads();
     }
 
-    // -- Dish tracked-rig epoch/header (pure in the synced BE state) ------
-
-    /** Legacy spin: {@code rotation += 5F} per powered tick -> 360/5 = 72 ticks per revolution. */
     private static final double DISH_TICKS_PER_REV = 72.0;
-    /** Tracked spin node: one full revolution per cycle, opposite the legacy +rotation
-     * (the legacy animator applied {@code rotateY(-angle)}). */
     private static final MachineSpec.Track DISH_SPIN_TRACK = MachineSpec.Track.linear(-360f, 0f);
 
     private static boolean dishPowered(MachineRadarBlockEntity be) {
         return be.isActive() || be.getEnergyStored() > 0;
     }
 
-    /** Segment start tick (level.getGameTime() domain) - the machine epoch. */
     private static long dishSegmentStart(MachineRadarBlockEntity be) {
         return dishPowered(be) ? 1L : 0L;
     }
 
-    /** Segment duration in ticks; a decoded 0 freezes u at u0 (dish parked at rest). */
     private static double dishDuration(MachineRadarBlockEntity be) {
         return dishPowered(be) ? DISH_TICKS_PER_REV : 0.0;
     }
 
-    /** Block transform (verbatim from legacy applyFacingRotation). */
     private static void applyBlockTransform(MachineRadarBlockEntity be, LegacyAnimator animator) {
         BlockState state = be.getBlockState();
         if (!state.hasProperty(HorizontalDirectionalBlock.FACING)) return;

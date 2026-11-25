@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
 import com.hbm_m.item.weapon.sedna.WeaponItems;
 import com.hbm_m.item.weapon.sedna.factory.GunFactory.EnumAmmo;
+import com.hbm_m.item.weapon.sedna.factory.GunFactory.EnumModSpecial;
 
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.world.item.Item;
@@ -40,7 +41,7 @@ public final class WeaponTab {
             "gun_autoshotgun", "gun_autoshotgun_shredder", "gun_autoshotgun_sexy", "gun_autoshotgun_heretic",
             "gun_quadro", "gun_lag", "gun_minigun", "gun_minigun_dual", "gun_minigun_lacunae", "gun_missile_launcher",
             "gun_tesla_cannon", "gun_laser_pistol", "gun_laser_pistol_pew_pew", "gun_laser_pistol_morning_glory",
-            "gun_stg77", "gun_tau", "gun_fatman", "gun_lasrifle", "gun_stinger", "gun_coilgun", "gun_hangman", "gun_mas36",
+            "gun_stg77", "gun_tau", "gun_fatman", "gun_lasrifle", "gun_stinger", "gun_fliegerfaust", "gun_coilgun", "gun_hangman", "gun_mas36",
             "gun_bolter", "gun_folly", "gun_aberrator", "gun_aberrator_eott", "gun_double_barrel",
             "gun_double_barrel_sacred_dragon", "gun_n_i_4_n_i",
             "gun_fireext", "gun_charge_thrower", "gun_drill", "gun_pa_melee", "gun_pa_ranged"
@@ -60,6 +61,33 @@ public final class WeaponTab {
         for (EnumAmmo a : EnumAmmo.order) output.accept(new ItemStack(WeaponItems.ammo(a)));
         for (RegistrySupplier<Item> sup : WeaponItems.WEAPON_MOD_GENERIC.values()) output.accept(new ItemStack(sup.get()));
         for (RegistrySupplier<Item> sup : WeaponItems.WEAPON_MOD_SPECIAL.values()) output.accept(new ItemStack(sup.get()));
+        for (RegistrySupplier<Item> sup : WeaponItems.WEAPON_MOD_CALIBER.values()) output.accept(new ItemStack(sup.get()));
+    }
+
+    /**
+     * SEDNA items for Chunk 2 onwards (starting from item 101: remaining ammo_standard from index 41 onwards,
+     * weapon_mod_generic, weapon_mod_special, weapon_mod_caliber) awaiting verification by subsequent workers.
+     * @deprecated Used prior to Chunk 2 verification; see {@link #appendSednaItemsRemainingFromChunk3(Consumer)}.
+     */
+    @Deprecated
+    public static void appendSednaItemsRemainingFromChunk2(Consumer<ItemStack> output) {
+        for (int i = 41; i < EnumAmmo.order.length; i++) {
+            output.accept(new ItemStack(WeaponItems.ammo(EnumAmmo.order[i])));
+        }
+        for (RegistrySupplier<Item> sup : WeaponItems.WEAPON_MOD_GENERIC.values()) output.accept(new ItemStack(sup.get()));
+        for (RegistrySupplier<Item> sup : WeaponItems.WEAPON_MOD_SPECIAL.values()) output.accept(new ItemStack(sup.get()));
+        for (RegistrySupplier<Item> sup : WeaponItems.WEAPON_MOD_CALIBER.values()) output.accept(new ItemStack(sup.get()));
+    }
+
+    /**
+     * SEDNA items for Chunk 3 onwards (items 201-210: remaining weapon_mod_special [SIFTER, CANISTERS]
+     * and weapon_mod_caliber).
+     * @deprecated Used prior to Chunk 3 verification; items 201-210 are now directly placed in Chunk 3 of CreativeModeTabEventHandler.
+     */
+    @Deprecated
+    public static void appendSednaItemsRemainingFromChunk3(Consumer<ItemStack> output) {
+        output.accept(new ItemStack(WeaponItems.modSpecial(EnumModSpecial.SIFTER)));
+        output.accept(new ItemStack(WeaponItems.modSpecial(EnumModSpecial.CANISTERS)));
         for (RegistrySupplier<Item> sup : WeaponItems.WEAPON_MOD_CALIBER.values()) output.accept(new ItemStack(sup.get()));
     }
 }

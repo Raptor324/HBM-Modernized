@@ -36,15 +36,22 @@ public final class MachineAcceleratorRenderer {
         MachineRenderers.machine("cyclotron",
                 ModBlockEntities.CYCLOTRON_BE.get(),
                 MachineCyclotronBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Body")
-            .conditionalPart("B1", be -> be.getPlug(0))
-            .conditionalPart("B2", be -> be.getPlug(1))
-            .conditionalPart("B3", be -> be.getPlug(2))
-            .conditionalPart("B4", be -> be.getPlug(3))
+            .conditionalPart("B1Empty", be -> !be.getPlug(0))
+            .conditionalPart("B1Filled", be -> be.getPlug(0))
+            .conditionalPart("B2Empty", be -> !be.getPlug(1))
+            .conditionalPart("B2Filled", be -> be.getPlug(1))
+            .conditionalPart("B3Empty", be -> !be.getPlug(2))
+            .conditionalPart("B3Filled", be -> be.getPlug(2))
+            .conditionalPart("B4Empty", be -> !be.getPlug(3))
+            .conditionalPart("B4Filled", be -> be.getPlug(3))
             .hook(new MachineRenderHook<MachineCyclotronBlockEntity>() {
                 @Override
                 public void render(MachineCyclotronBlockEntity be, float pt, PoseStack ps,
                                    MultiBufferSource buf, int light, int overlay, MachineRenderApi api) {
+                    ps.pushPose();
+                    ps.translate(0.5, 0.0, 0.5);
                     boolean plugged = be.getPlug(0) && be.getPlug(1) && be.getPlug(2) && be.getPlug(3);
                     if (plugged) {
                         ps.pushPose();
@@ -80,6 +87,7 @@ public final class MachineAcceleratorRenderer {
                                 BeamPronter.forkAlpha());
                         ps.popPose();
                     }
+                    ps.popPose();
                 }
 
                 @Override
@@ -88,13 +96,14 @@ public final class MachineAcceleratorRenderer {
                             || be.getEnergyStored() > 0;
                 }
             })
-            .itemParts("Body")
+            .itemParts("Body", "B1Empty", "B2Empty", "B3Empty", "B4Empty")
             .register();
 
         // ── PA Beamline ──────────────────────────────────────────────────────
-        MachineRenderers.machine("pa_beamline",
+        MachineRenderers.machine("beamline",
                 ModBlockEntities.PA_BEAMLINE_BE.get(),
                 PABeamlineBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .conditionalPart("Beamline", be -> !be.hasWindow())
             .conditionalPart("BeamlineWindow", be -> be.hasWindow())
             .conditionalPart("BeamlineGlass", be -> be.hasWindow())
@@ -104,7 +113,7 @@ public final class MachineAcceleratorRenderer {
                 public void render(PABeamlineBlockEntity be, float pt, PoseStack ps,
                                    MultiBufferSource buf, int light, int overlay, MachineRenderApi api) {
                     ps.pushPose();
-                    ps.translate(0, 0.5, 0);
+                    ps.translate(0.5, 0.5, 0.5);
                     long t = System.currentTimeMillis();
                     BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, 1.0),
                             BeamPronter.EnumWaveType.RANDOM, BeamPronter.EnumBeamType.LINE,

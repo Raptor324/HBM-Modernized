@@ -210,14 +210,63 @@ public class HazardRegistry {
                 new HazardEntry(RADIATION, 0.1f)));
 
         HazardSystem.register(ModBlocks.SCHRABIDIUM_ORE.get(), new HazardData(
-                new HazardEntry(RADIATION, 0.5f)));
+                new HazardEntry(RADIATION, 15.0f),
+                new HazardEntry(BLINDING, BLINDING_SCHRAB)));
         HazardSystem.register(ModBlocks.SCHRABIDIUM_ORE_NETHER.get(), new HazardData(
-                new HazardEntry(RADIATION, 0.5f)));
+                new HazardEntry(RADIATION, 15.0f),
+                new HazardEntry(BLINDING, BLINDING_SCHRAB)));
         HazardSystem.register(ModBlocks.SCHRABIDIUM_ORE_GNEISS.get(), new HazardData(
-                new HazardEntry(RADIATION, 0.5f)));
+                new HazardEntry(RADIATION, 15.0f),
+                new HazardEntry(BLINDING, BLINDING_SCHRAB)));
+        HazardSystem.register(ModBlocks.ORE_SELLAFIELD_SCHRABIDIUM.get(), new HazardData(
+                new HazardEntry(RADIATION, 15.0f),
+                new HazardEntry(BLINDING, BLINDING_SCHRAB)));
         HazardSystem.register(ModBlocks.BLOCK_SCHRABIDIUM_CLUSTER.get(), new HazardData(
                 new HazardEntry(RADIATION, 15.0f * 10.0f),
                 new HazardEntry(BLINDING, BLINDING_SCHRAB)));
+
+        // Missing tabBlocks hazards (1.7.10 HazardRegistry / OreDictManager parity)
+        for (net.minecraft.world.level.block.Block asbestosBlock : new net.minecraft.world.level.block.Block[] {
+                ModBlocks.ASBESTOS_ORE.get(),
+                ModBlocks.ASBESTOS_ORE_DEEPSLATE.get(),
+                ModBlocks.GNEISS_ASBESTOS_ORE.get(),
+                ModBlocks.ORE_BASALT_ASBESTOS.get(),
+                ModBlocks.STONE_RESOURCE_ASBESTOS.get(),
+                ModBlocks.BLOCK_ASBESTOS.get()
+        }) {
+            HazardSystem.register(asbestosBlock, new HazardData(new HazardEntry(ASBESTOS, 1.0f)));
+        }
+        for (net.minecraft.world.level.block.Block lithiumBlock : new net.minecraft.world.level.block.Block[] {
+                ModBlocks.LITHIUM_ORE.get(),
+                ModBlocks.LITHIUM_ORE_DEEPSLATE.get(),
+                ModBlocks.GNEISS_LITHIUM_ORE.get(),
+                ModBlocks.BLOCK_LITHIUM.get()
+        }) {
+            HazardSystem.register(lithiumBlock, new HazardData(new HazardEntry(HYDROACTIVE, 1.0f)));
+        }
+        HazardSystem.register(ModBlocks.BLOCK_WHITE_PHOSPHORUS.get(), new HazardData(
+                new HazardEntry(HOT, 5.0f)));
+        HazardSystem.register(ModBlocks.NETHER_PLUTONIUM_ORE.get(), new HazardData(
+                new HazardEntry(RADIATION, 7.5f)));
+        HazardSystem.register(ModBlocks.ORE_NETHER_PLUTONIUM.get(), new HazardData(
+                new HazardEntry(RADIATION, 7.5f)));
+        HazardSystem.register(ModBlocks.BLOCK_PU_MIX.get(), new HazardData(
+                new HazardEntry(RADIATION, 62.5f)));
+        HazardSystem.register(ModBlocks.BLOCK_YELLOWCAKE.get(), new HazardData(
+                new HazardEntry(RADIATION, 10.5f)));
+        HazardSystem.register(ModBlocks.BLOCK_TRINITITE.get(), new HazardData(
+                new HazardEntry(RADIATION, 1.0f)));
+        HazardSystem.register(ModBlocks.BLOCK_WASTE_VITRIFIED.get(), new HazardData(
+                new HazardEntry(RADIATION, 75.0f)));
+        for (net.minecraft.world.level.block.Block highRadBlock : new net.minecraft.world.level.block.Block[] {
+                ModBlocks.BLOCK_WASTE.get(),
+                ModBlocks.BLOCK_WASTE_PAINTED.get(),
+                ModBlocks.ANCIENT_SCRAP.get(),
+                ModBlocks.BLOCK_CORIUM.get(),
+                ModBlocks.BLOCK_CORIUM_COBBLE.get()
+        }) {
+            HazardSystem.register(highRadBlock, new HazardData(new HazardEntry(RADIATION, 150.0f)));
+        }
 
         HazardSystem.register(Items.GUNPOWDER, new HazardData(
                 new HazardEntry(EXPLOSIVE, 1.0f)));
@@ -226,6 +275,43 @@ public class HazardRegistry {
                 new HazardEntry(RADIATION, 0.5f)));
         HazardSystem.register(ModItems.FAT_MAN_CORE.get(), new HazardData(
                 new HazardEntry(RADIATION, 5f)));
+        // Missing tabNuke hazards (1.7.10 HazardRegistry parity)
+        HazardSystem.register(ModBlocks.NUKE_FSTBMB.get(), new HazardData(
+                new HazardEntry(DIGAMMA, 0.01f)));
+        HazardSystem.register(ModItems.DEMON_CORE_OPEN.get(), new HazardData(
+                new HazardEntry(RADIATION, 5f)));
+        HazardSystem.register(ModItems.DEMON_CORE_CLOSED.get(), new HazardData(
+                new HazardEntry(RADIATION, 100_000f)));
+        HazardSystem.register(ModItems.GADGET_CORE.get(), new HazardData(
+                new HazardEntry(RADIATION, 5f)));
+        HazardSystem.register(ModItems.BOY_TARGET.get(), new HazardData(
+                new HazardEntry(RADIATION, 2f)));
+        HazardSystem.register(ModItems.BOY_BULLET.get(), new HazardData(
+                new HazardEntry(RADIATION, 1f)));
+        HazardSystem.register(ModItems.BOY_PROPELLANT.get(), new HazardData(
+                new HazardEntry(EXPLOSIVE, 2f)));
+        HazardSystem.register(ModItems.MIKE_CORE.get(), new HazardData(
+                new HazardEntry(RADIATION, 0.25f)));
+        HazardSystem.register(ModItems.TSAR_CORE.get(), new HazardData(
+                new HazardEntry(RADIATION, 7.5f)));
+        HazardSystem.register(ModItems.FLEIJA_PROPELLANT.get(), new HazardData(
+                new HazardEntry(RADIATION, 15f),
+                new HazardEntry(EXPLOSIVE, 8f),
+                new HazardEntry(BLINDING, 50f)));
+        HazardSystem.register(ModItems.FLEIJA_CORE.get(), new HazardData(
+                new HazardEntry(RADIATION, 10f)));
+        HazardSystem.register(ModItems.SOLINIUM_PROPELLANT.get(), new HazardData(
+                new HazardEntry(EXPLOSIVE, 10f)));
+        HazardSystem.register(ModItems.SOLINIUM_CORE.get(), new HazardData(
+                new HazardEntry(RADIATION, 14f),
+                new HazardEntry(BLINDING, 45f)));
+        HazardSystem.register(ModItems.EGG_BALEFIRE_SHARD.get(), new HazardData(
+                new HazardEntry(RADIATION, 30_000f)));
+        HazardSystem.register(ModItems.EGG_BALEFIRE.get(), new HazardData(
+                new HazardEntry(RADIATION, 300_000f)));
+        // Missing tabConsumable hazard (1.7.10 HazardRegistry.java:180)
+        HazardSystem.register(ModItems.INSERT_POLONIUM.get(), new HazardData(
+                new HazardEntry(RADIATION, 100.0f)));
         HazardSystem.register(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET), new HazardData(
                 new HazardEntry(RADIATION, 3.75f)));
 
@@ -636,6 +722,64 @@ public class HazardRegistry {
 
         // Лампа из заряда-демона: закрытый демонический заряд на подставке — полная доза заряда.
         hazard(ModBlocks.LAMP_DEMON.get().asItem(), new HazardEntry(RADIATION, 100000f));
+
+        // 1:1 parity with 1.7.10 HazardRegistry.registerItems()
+        hazard(Items.PUMPKIN_PIE, new HazardEntry(EXPLOSIVE, 1.0f));
+        hazard(ModItems.STICK_DYNAMITE.get(), new HazardEntry(EXPLOSIVE, 1.0f));
+        hazard(ModItems.STICK_TNT.get(), new HazardEntry(EXPLOSIVE, 1.5f));
+        hazard(ModItems.STICK_SEMTEX.get(), new HazardEntry(EXPLOSIVE, 2.5f));
+        hazard(ModItems.STICK_C4.get(), new HazardEntry(EXPLOSIVE, 2.5f));
+
+        hazard(ModItems.CELL_TRITIUM.get(), new HazardEntry(RADIATION, 0.001f));
+        hazard(ModItems.CELL_SAS3.get(), new HazardEntry(RADIATION, 5.0f), new HazardEntry(BLINDING, 60.0f));
+        hazard(ModItems.CELL_BALEFIRE.get(), new HazardEntry(RADIATION, 50.0f));
+
+        hazard(ModItems.DEBRIS_GRAPHITE.get(), new HazardEntry(RADIATION, 70.0f), new HazardEntry(HOT, 5.0f));
+        hazard(ModItems.DEBRIS_METAL.get(), new HazardEntry(RADIATION, 5.0f));
+        hazard(ModItems.DEBRIS_FUEL.get(), new HazardEntry(RADIATION, 500.0f), new HazardEntry(HOT, 5.0f));
+        hazard(ModItems.DEBRIS_CONCRETE.get(), new HazardEntry(RADIATION, 30.0f));
+        hazard(ModItems.DEBRIS_EXCHANGER.get(), new HazardEntry(RADIATION, 25.0f));
+        hazard(ModItems.DEBRIS_SHRAPNEL.get(), new HazardEntry(RADIATION, 2.5f));
+        hazard(ModItems.DEBRIS_ELEMENT.get(), new HazardEntry(RADIATION, 100.0f));
+
+        // RTG pellets (1.7.10 HazardRegistry.java:337-347, rtg = 1.5f)
+        registerRTGPellet(ModItems.PELLET_RTG.get(), 15.0f, 0f, 3.0f, 0f);
+        registerRTGPellet(ModItems.PELLET_RTG_RADIUM.get(), 11.25f, 0f, 0f, 0f);
+        registerRTGPellet(ModItems.PELLET_RTG_WEAK.get(), 5.25f, 0f, 0f, 0f);
+        registerRTGPellet(ModItems.PELLET_RTG_STRONTIUM.get(), 22.5f, 0f, 0f, 0f);
+        registerRTGPellet(ModItems.PELLET_RTG_COBALT.get(), 45.0f, 0f, 0f, 0f);
+        registerRTGPellet(ModItems.PELLET_RTG_ACTINIUM.get(), 45.0f, 0f, 0f, 0f);
+        registerRTGPellet(ModItems.PELLET_RTG_POLONIUM.get(), 112.5f, 0f, 3.0f, 0f);
+        registerRTGPellet(ModItems.PELLET_RTG_LEAD.get(), 15_000.0f, 0f, 7.0f, 50.0f);
+        registerRTGPellet(ModItems.PELLET_RTG_GOLD.get(), 750.0f, 0f, 5.0f, 0f);
+        registerRTGPellet(ModItems.PELLET_RTG_AMERICIUM.get(), 12.75f, 0f, 0f, 0f);
+        hazard(ModItems.PELLET_RTG_DEPLETED_NEPTUNIUM.get(), new HazardEntry(RADIATION, 3.75f));
+
+        // Chicago Pile MK2 & MK1 rods (1.7.10 HazardRegistry.java:350-362)
+        hazard(ModItems.PILE_ROD_RA226BE.get(), new HazardEntry(RADIATION, 33.75f));
+        hazard(ModItems.PILE_ROD_PO210BE.get(), new HazardEntry(RADIATION, 337.5f));
+        hazard(ModItems.PILE_ROD_NU.get(), new HazardEntry(RADIATION, 0.525f));
+        hazard(ModItems.PILE_ROD_MK2_PU239.get(), new HazardEntry(RADIATION, 7.5f));
+        hazard(ModItems.PILE_ROD_RGP.get(), new HazardEntry(RADIATION, 9.375f));
+        hazard(ModItems.PILE_ROD_WASTE.get(), new HazardEntry(RADIATION, 22.5f));
+        hazard(ModItems.PILE_ROD_THORIUM.get(), new HazardEntry(RADIATION, 0.15f));
+        hazard(ModItems.PILE_ROD_THORIUM_FUEL.get(), new HazardEntry(RADIATION, 2.625f));
+
+        hazard(ModItems.PILE_ROD_URANIUM.get(), new HazardEntry(RADIATION, 0.525f));
+        hazard(ModItems.PILE_ROD_PU239.get(), new HazardEntry(RADIATION, 5.8f));
+        hazard(ModItems.PILE_ROD_PLUTONIUM.get(), new HazardEntry(RADIATION, 6.425f));
+        hazard(ModItems.PILE_ROD_SOURCE.get(), new HazardEntry(RADIATION, 33.75f));
+
+        hazard(ModItems.HOLOTAPE_DAMAGED.get(), new HazardEntry(DIGAMMA, 1_000.0f));
+    }
+
+    private static void registerRTGPellet(Item pellet, float base, float target, float hot, float blinding) {
+        if (pellet == null) return;
+        List<HazardEntry> entries = new ArrayList<>();
+        entries.add(new HazardEntry(RADIATION, base).addMod(new com.hbm_m.hazard.modifier.HazardModifierRTGRadiation(target)));
+        if (hot > 0) entries.add(new HazardEntry(HOT, hot));
+        if (blinding > 0) entries.add(new HazardEntry(BLINDING, blinding));
+        HazardSystem.register(pellet, new HazardData(entries.toArray(new HazardEntry[0])));
     }
 
     private static void hazard(Item item, HazardEntry... entries) {

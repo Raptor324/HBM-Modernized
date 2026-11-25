@@ -156,7 +156,7 @@ public class MachineCraneGrabberBlockEntity extends CraneBaseBlockEntity impleme
             }
         }
 
-        sendUpdateToClient();
+        if (probeDue(20)) sendUpdateToClient();
     }
 
     public boolean matchesFilter(ItemStack stack) {
@@ -171,7 +171,7 @@ public class MachineCraneGrabberBlockEntity extends CraneBaseBlockEntity impleme
     public void nextMode(int i) {
         this.matcher.nextMode(i, inventory.getStackInSlot(i));
         setChanged();
-        sendUpdateToClient();
+        if (probeDue(20)) sendUpdateToClient();
     }
 
     @Override public int[] getFilterSlots() { return new int[] { 0, 9 }; }
@@ -184,7 +184,7 @@ public class MachineCraneGrabberBlockEntity extends CraneBaseBlockEntity impleme
         if (data.contains("whitelist")) this.isWhitelist = !this.isWhitelist;
         if (data.contains("slot")) setFilterContents(data);
         setChanged();
-        sendUpdateToClient();
+        if (probeDue(20)) sendUpdateToClient();
     }
 
     @Override

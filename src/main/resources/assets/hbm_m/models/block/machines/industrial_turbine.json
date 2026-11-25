@@ -8,8 +8,8 @@
     "default": "hbm_m:block/machine/industrial_turbine"
   },
   "transform": {
-    "translation": [0.5, 0, -0.5],
-    "rotation": [0, 90, 0],
+    "translation": [0.5, 0, 0.5],
+    "rotation": [0, 0, 0],
     "scale": 1.0
   },
   "display": {

@@ -29,10 +29,7 @@ public class NukeSoliniumBlockEntity extends NukeBaseBlockEntity {
         return Component.translatable("container.hbm_m.nuke_solinium");
     }
 
-    @Override
-    public int getMaxStackSize() {
-        return 1;
-    }
+    // 1:1 legacy TileEntityNukeSolinium.getInventoryStackLimit = 64 (компоненты сами стекаются в 1)
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {

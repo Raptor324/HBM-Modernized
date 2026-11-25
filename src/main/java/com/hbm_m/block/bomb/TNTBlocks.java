@@ -6,11 +6,12 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.generic.FissureBlock;
 import com.hbm_m.entity.item.EntityTNTPrimedBase;
 import com.hbm_m.explosion.ExplosionNukeSmall;
+import com.hbm_m.world.biome.CraterBiomes;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -64,15 +65,15 @@ public final class TNTBlocks {
 
             int range = 5;
             boolean crater = isCraterBiome(world, BlockPos.containing(x, y, z));
-            // ore_bedrock (BlockBedrockOreTE) folgt mit dem Grundgesteinerz-System; bis dahin gibt es hier nichts umzuwandeln
-            Block oreBedrock = BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("hbm_m", "ore_bedrock"));
+            // ore_bedrock (BlockBedrockOreTE) ist im Port als ore_bedrock_mineral registriert (ModBlocks.ORE_BEDROCK)
+            Block oreBedrock = ModBlocks.ORE_BEDROCK.get();
 
             for (int i = -range; i <= range; i++) {
                 for (int j = -range; j <= range; j++) {
                     for (int k = -range; k <= range; k++) {
                         BlockPos p = BlockPos.containing(Math.floor(x + i), Math.floor(y + j), Math.floor(z + k));
                         BlockState state = world.getBlockState(p);
-                        if (oreBedrock != Blocks.AIR && state.is(oreBedrock)) {
+                        if (state.is(oreBedrock)) {
                             world.setBlock(p, ModBlocks.ORE_VOLCANO.get().defaultBlockState().setValue(FissureBlock.CRATER, crater), 3);
                         } else if (state.is(ModBlocks.ORE_BEDROCK_OIL.get())) {
                             world.setBlock(p, Blocks.BEDROCK.defaultBlockState(), 3);
@@ -83,8 +84,9 @@ public final class TNTBlocks {
         }
     }
 
-    /** {@code BiomeGenCraterBase}: die Kraterbiome des Originals ({@code crater}, {@code crater_inner}, {@code crater_outer}). */
+    /** {@code BiomeGenCraterBase}: die drei Kraterbiome des Originals ({@code crater}, {@code inner_crater}, {@code outer_crater}). */
     public static boolean isCraterBiome(Level world, BlockPos pos) {
-        return world.getBiome(pos).unwrapKey().map(k -> k.location().getNamespace().equals("hbm_m") && k.location().getPath().startsWith("crater")).orElse(false);
+        ResourceKey<Biome> key = world.getBiome(pos).unwrapKey().orElse(null);
+        return key == CraterBiomes.CRATER_KEY || key == CraterBiomes.INNER_CRATER_KEY || key == CraterBiomes.OUTER_CRATER_KEY;
     }
 }

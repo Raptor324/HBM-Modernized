@@ -13,6 +13,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -120,4 +121,15 @@ public class MachineSubstationBlock extends DummyableMachineBlock {
         return CODEC;
     }
     *///?}
+
+    // Verbatim port of the original Substation.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {-1, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {-1, 0, -1, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

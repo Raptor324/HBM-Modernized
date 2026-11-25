@@ -37,6 +37,12 @@ public class BombMultiBlockEntity extends NukeBaseBlockEntity {
         return false;
     }
 
+    /** Original {@code getInventoryStackLimit}: 1 Stack-Groesse pro Slot. */
+    @Override
+    public int getMaxStackSize() {
+        return 1;
+    }
+
     @Override
     public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction direction) {
         return false;

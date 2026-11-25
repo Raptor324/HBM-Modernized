@@ -83,24 +83,11 @@ public final class RetainedInstanceGraph {
     }
 
     public void onMachineAddedAsync(BlockEntity be) {
-        if (be == null || be.getLevel() == null || !be.getLevel().isClientSide()) {
-            return;
-        }
-        handoffQueue.offer(() -> {
-            if (isManaged(be)) onMachineAdded(be);
-        });
+        NucleusDispatcherBypass.onMachineAdded(be);
     }
 
     public void onMachineRemovedAsync(BlockEntity be) {
-        if (be == null || be.getLevel() == null || !be.getLevel().isClientSide()) {
-            return;
-        }
-        long posKey = be.getBlockPos().asLong();
-        BlockEntityType<?> type = be.getType();
-        handoffQueue.offer(() -> {
-            onMachineRemoved(be);
-            NucleusDispatcherBypass.dropMachineCaches(type, posKey, be);
-        });
+        NucleusDispatcherBypass.onMachineRemoved(be);
     }
 
     public void onMachineRemovedAsync(long blockKey) {
@@ -135,8 +122,7 @@ public final class RetainedInstanceGraph {
     public void onChunkLoaded(LevelChunk chunk) {
         if (chunk == null) return;
         for (BlockEntity be : chunk.getBlockEntities().values()) {
-            if (isManaged(be) && !be.isRemoved()
-                    && !NucleusDispatcherBypass.isDemolished(be.getBlockPos().asLong())) {
+            if (isManaged(be) && NucleusDispatcherBypass.isLiveInClientWorld(be)) {
                 NucleusDispatcherBypass.addMachine(be);
             }
         }
@@ -147,8 +133,7 @@ public final class RetainedInstanceGraph {
     }
 
     public void onMachineAdded(BlockEntity be) {
-        if (be == null || be.isRemoved() || !isManaged(be)) return;
-        if (NucleusDispatcherBypass.isDemolished(be.getBlockPos().asLong())) return;
+        if (be == null || !isManaged(be)) return;
         NucleusDispatcherBypass.addMachine(be);
     }
 

@@ -51,6 +51,7 @@ public final class MachinePetrochemRenderer {
         // catalytic_reformer.obj is merged into a single group "Plane"
         MachineRenderers.machine("catalytic_reformer", ModBlockEntities.CATALYTIC_REFORMER_BE.get(),
                 MachineCatalyticReformerBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Plane")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
@@ -61,6 +62,7 @@ public final class MachinePetrochemRenderer {
                                    MultiBufferSource buf, int light, int overlay, MachineRenderApi api) {
                     if (Polaroid.id() == 11) {
                         ps.pushPose();
+                        ps.translate(0.5, 0.0, 0.5);
                         ps.translate(-1.125, 1.375, 1);
                         float s = 0.125F;
                         ps.scale(s, s, s);
@@ -102,6 +104,7 @@ public final class MachinePetrochemRenderer {
         // cracking_tower.obj is merged into a single group "Cube_Cube.001"
         MachineRenderers.machine("cracking_tower", ModBlockEntities.CRACKING_TOWER_BE.get(),
                 MachineCrackingTowerBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Cube_Cube.001")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
@@ -113,6 +116,10 @@ public final class MachinePetrochemRenderer {
         // fraction_tower.obj is merged into a single group "Plane"
         MachineRenderers.machine("fraction_tower", ModBlockEntities.FRACTION_TOWER_BE.get(),
                 MachineFractionTowerBlockEntity.class)
+            .blockTransform((be, animator) -> {
+                animator.setupBlockTransform(ObjBerHelper.facing(be));
+                animator.translate(-0.5, 0.0, -1.5);
+            })
             .part("Plane")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
@@ -124,6 +131,7 @@ public final class MachinePetrochemRenderer {
         // vacuum_distill.obj is merged into a single group "Cylinder"
         MachineRenderers.machine("vacuum_distill", ModBlockEntities.VACUUM_DISTILL_BE.get(),
                 MachineVacuumDistillBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Cylinder")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
@@ -134,6 +142,7 @@ public final class MachinePetrochemRenderer {
     private static void registerRefueler() {
         MachineRenderers.machine("refueler", ModBlockEntities.REFUELER_BE.get(),
                 RefuelerBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Fueler")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
@@ -146,6 +155,7 @@ public final class MachinePetrochemRenderer {
                     double fillLevel = refueler.prevFillLevel + (refueler.fillLevel - refueler.prevFillLevel) * pt;
                     int color = FluidType.forFluid(refueler.tank.getTankType()).getColor();
                     ps.pushPose();
+                    ps.translate(0.5, 0.0, 0.5);
                     REFUELER_MODEL.renderPartColorClippedY("Fluid", ps,
                             buf.getBuffer(ClientRenderHandler.CustomRenderTypes.ADDITIVE_TRIANGLES),
                             ((color >> 16) & 0xFF) / 255F, ((color >> 8) & 0xFF) / 255F, (color & 0xFF) / 255F, 0.75F,

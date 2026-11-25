@@ -1,12 +1,16 @@
 package com.hbm_m.client.model.nmesh;
 
+import com.hbm_m.client.model.nmesh.NMeshLoader;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -16,14 +20,16 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Immutable in-memory representation of a binary {@code .nmesh} file (Version 3, Little-Endian).
- * Contains pre-triangulated, pre-welded sub-meshes with pre-calculated AABBs, tangents, MTL
- * diffuse/ambient colors, and material bindings.
+ * Immutable in-memory representation of a binary {@code .nmesh} file (Version 4, Little-Endian;
+ * backward-compatible with Version 3 on read).
+ * Contains pre-triangulated, pre-welded sub-meshes with pre-calculated AABBs, MTL
+ * diffuse/ambient colors, compact vertex attributes (float32 pos, binary16 UV, snorm8x3 normal),
+ * and material bindings.
  */
 public final class NMeshData {
 
     public static final int MAGIC = 0x4E4D5348; // "NMSH"
-    public static final int VERSION = 3;
+    public static final int VERSION = 4;
 
     public static final class SubMesh {
         public final String objectName;
@@ -37,26 +43,24 @@ public final class NMeshData {
         public final float kaR, kaG, kaB;
         public final float minX, minY, minZ, maxX, maxY, maxZ;
         public final int vertexCount;
-        /** Contiguous 8 floats per vertex: x, y, z, nx, ny, nz, u, v (raw unflipped V). */
-        public final float[] vertices;
-        /** Precomputed packed tangents (1 int per vertex: 4 signed bytes tx, ty, tz, tw). */
-        public final int[] tangents;
-        /** 0-based triangle indices (length is a multiple of 3). */
-        public final int[] indices;
-
-        public SubMesh(String objectName, String groupName, String materialName, String mapKdTexture,
-                       float minX, float minY, float minZ, float maxX, float maxY, float maxZ,
-                       int vertexCount, float[] vertices, int[] tangents, int[] indices) {
-            this(objectName, groupName, materialName, mapKdTexture,
-                    1f, 1f, 1f, 0f, 0f, 0f,
-                    minX, minY, minZ, maxX, maxY, maxZ,
-                    vertexCount, vertices, tangents, indices);
-        }
+        /** Contiguous 3 floats per vertex: x, y, z. */
+        public final float[] positions;
+        /** Packed snorm8x3 normals (1 int per vertex: bx | (by << 8) | (bz << 16)). */
+        public final int[] packedNormals;
+        /** Contiguous 2 floats per vertex: u, v (raw unflipped V). */
+        public final float[] uvs;
+        /** 0-based triangle indices when vertexCount <= 65535 (unsigned 16-bit). */
+        @Nullable
+        public final short[] shortIndices;
+        /** 0-based triangle indices fallback when vertexCount > 65535. */
+        @Nullable
+        public final int[] intIndices;
 
         public SubMesh(String objectName, String groupName, String materialName, String mapKdTexture,
                        float kdR, float kdG, float kdB, float kaR, float kaG, float kaB,
                        float minX, float minY, float minZ, float maxX, float maxY, float maxZ,
-                       int vertexCount, float[] vertices, int[] tangents, int[] indices) {
+                       int vertexCount, float[] positions, int[] packedNormals, float[] uvs,
+                       @Nullable short[] shortIndices, @Nullable int[] intIndices) {
             this.objectName = objectName != null ? objectName : "";
             this.groupName = groupName != null ? groupName : "";
             if (!this.objectName.isEmpty() && !this.groupName.isEmpty() && !this.objectName.equals(this.groupName)) {
@@ -83,16 +87,39 @@ public final class NMeshData {
             this.maxY = maxY;
             this.maxZ = maxZ;
             this.vertexCount = vertexCount;
-            this.vertices = vertices;
-            this.tangents = tangents;
-            this.indices = indices;
+            this.positions = positions;
+            this.packedNormals = packedNormals;
+            this.uvs = uvs;
+            this.shortIndices = shortIndices;
+            this.intIndices = intIndices;
         }
 
-        public SubMesh(String objectName, String groupName, String materialName,
-                       float minX, float minY, float minZ, float maxX, float maxY, float maxZ,
-                       int vertexCount, float[] vertices, int[] tangents, int[] indices) {
-            this(objectName, groupName, materialName, "", minX, minY, minZ, maxX, maxY, maxZ,
-                    vertexCount, vertices, tangents, indices);
+        public int indexCount() {
+            return shortIndices != null ? shortIndices.length : (intIndices != null ? intIndices.length : 0);
+        }
+
+        public int index(int i) {
+            return shortIndices != null ? (shortIndices[i] & 0xFFFF) : intIndices[i];
+        }
+
+        public float posX(int v) { return positions[v * 3]; }
+        public float posY(int v) { return positions[v * 3 + 1]; }
+        public float posZ(int v) { return positions[v * 3 + 2]; }
+
+        public float normX(int v) { return ((byte) (packedNormals[v] & 0xFF)) / 127.0f; }
+        public float normY(int v) { return ((byte) ((packedNormals[v] >> 8) & 0xFF)) / 127.0f; }
+        public float normZ(int v) { return ((byte) ((packedNormals[v] >> 16) & 0xFF)) / 127.0f; }
+
+        public float u(int v) { return uvs[v * 2]; }
+        public float v(int v) { return uvs[v * 2 + 1]; }
+
+        public int packedNormal(int v) { return packedNormals[v]; }
+
+        public static int packNormal(float nx, float ny, float nz) {
+            int bx = ((int) Math.round(Math.max(-1f, Math.min(1f, nx)) * 127f)) & 0xFF;
+            int by = ((int) Math.round(Math.max(-1f, Math.min(1f, ny)) * 127f)) & 0xFF;
+            int bz = ((int) Math.round(Math.max(-1f, Math.min(1f, nz)) * 127f)) & 0xFF;
+            return bx | (by << 8) | (bz << 16);
         }
 
         public boolean matchesPart(String targetPart) {
@@ -165,7 +192,7 @@ public final class NMeshData {
                 throw new IOException("Invalid .nmesh magic in " + location + ": 0x" + Integer.toHexString(magic));
             }
             int version = buf.getInt();
-            if (version != VERSION) {
+            if (version != 3 && version != VERSION) {
                 throw new IOException("Unsupported .nmesh version " + version + " in " + location);
             }
             int subCount = buf.getInt();
@@ -196,36 +223,108 @@ public final class NMeshData {
                     throw new IOException("Corrupted .nmesh submesh in " + location + ": negative count v=" + vCount + ", i=" + iCount);
                 }
 
-                float[] verts = new float[vCount * 8];
-                buf.asFloatBuffer().get(verts);
-                buf.position(buf.position() + vCount * 8 * 4);
+                float[] positions = new float[vCount * 3];
+                int[] packedNormals = new int[vCount];
+                float[] uvs = new float[vCount * 2];
+                short[] shortIndices = vCount <= 65535 ? new short[iCount] : null;
+                int[] intIndices = vCount > 65535 ? new int[iCount] : null;
 
-                int[] tangents = new int[vCount];
-                buf.asIntBuffer().get(tangents);
-                buf.position(buf.position() + vCount * 4);
+                if (version == 4) {
+                    buf.asFloatBuffer().get(positions);
+                    buf.position(buf.position() + vCount * 12);
 
-                int[] indices = new int[iCount];
-                if (vCount <= 65535) {
-                    short[] sIndices = new short[iCount];
-                    buf.asShortBuffer().get(sIndices);
-                    buf.position(buf.position() + iCount * 2);
-                    for (int i = 0; i < iCount; i++) {
-                        indices[i] = sIndices[i] & 0xFFFF;
+                    buf.asFloatBuffer().get(uvs);
+                    buf.position(buf.position() + vCount * 8);
+
+                    for (int v = 0; v < vCount; v++) {
+                        int bx = buf.get() & 0xFF;
+                        int by = buf.get() & 0xFF;
+                        int bz = buf.get() & 0xFF;
+                        packedNormals[v] = bx | (by << 8) | (bz << 16);
+                    }
+
+                    int prev = 0;
+                    if (vCount <= 256) {
+                        for (int i = 0; i < iCount; i++) {
+                            int delta = buf.get() & 0xFF;
+                            int idx = (prev + delta) & 0xFF;
+                            prev = idx;
+                            if (idx >= vCount) {
+                                throw new IOException("Corrupted .nmesh submesh in " + location
+                                        + ": triangle index " + idx + " out of range for " + vCount + " vertices");
+                            }
+                            shortIndices[i] = (short) idx;
+                        }
+                    } else if (vCount <= 65535) {
+                        ShortBuffer sb = buf.asShortBuffer();
+                        for (int i = 0; i < iCount; i++) {
+                            int delta = sb.get() & 0xFFFF;
+                            int idx = (prev + delta) & 0xFFFF;
+                            prev = idx;
+                            if (idx >= vCount) {
+                                throw new IOException("Corrupted .nmesh submesh in " + location
+                                        + ": triangle index " + idx + " out of range for " + vCount + " vertices");
+                            }
+                            shortIndices[i] = (short) idx;
+                        }
+                        buf.position(buf.position() + iCount * 2);
+                    } else {
+                        IntBuffer ib = buf.asIntBuffer();
+                        for (int i = 0; i < iCount; i++) {
+                            int idx = prev + ib.get();
+                            prev = idx;
+                            if (idx < 0 || idx >= vCount) {
+                                throw new IOException("Corrupted .nmesh submesh in " + location
+                                        + ": triangle index " + idx + " out of range for " + vCount + " vertices");
+                            }
+                            intIndices[i] = idx;
+                        }
+                        buf.position(buf.position() + iCount * 4);
                     }
                 } else {
-                    buf.asIntBuffer().get(indices);
-                    buf.position(buf.position() + iCount * 4);
-                }
-                for (int i = 0; i < iCount; i++) {
-                    if (indices[i] < 0 || indices[i] >= vCount) {
-                        throw new IOException("Corrupted .nmesh submesh in " + location
-                                + ": triangle index " + indices[i] + " out of range for " + vCount + " vertices");
+                    // Legacy Version 3 read support
+                    float[] verts = new float[vCount * 8];
+                    buf.asFloatBuffer().get(verts);
+                    buf.position(buf.position() + vCount * 8 * 4);
+                    // Skip tangents (vCount * 4 bytes)
+                    buf.position(buf.position() + vCount * 4);
+
+                    for (int v = 0; v < vCount; v++) {
+                        int b = v * 8;
+                        int p = v * 3;
+                        positions[p] = verts[b];
+                        positions[p + 1] = verts[b + 1];
+                        positions[p + 2] = verts[b + 2];
+                        packedNormals[v] = SubMesh.packNormal(verts[b + 3], verts[b + 4], verts[b + 5]);
+                        uvs[v * 2] = verts[b + 6];
+                        uvs[v * 2 + 1] = verts[b + 7];
+                    }
+
+                    if (vCount <= 65535) {
+                        buf.asShortBuffer().get(shortIndices);
+                        buf.position(buf.position() + iCount * 2);
+                        for (int i = 0; i < iCount; i++) {
+                            int idx = shortIndices[i] & 0xFFFF;
+                            if (idx >= vCount) {
+                                throw new IOException("Corrupted .nmesh submesh in " + location
+                                        + ": triangle index " + idx + " out of range for " + vCount + " vertices");
+                            }
+                        }
+                    } else {
+                        buf.asIntBuffer().get(intIndices);
+                        buf.position(buf.position() + iCount * 4);
+                        for (int i = 0; i < iCount; i++) {
+                            if (intIndices[i] < 0 || intIndices[i] >= vCount) {
+                                throw new IOException("Corrupted .nmesh submesh in " + location
+                                        + ": triangle index " + intIndices[i] + " out of range for " + vCount + " vertices");
+                            }
+                        }
                     }
                 }
                 list.add(new SubMesh(objName, grpName, matName, mapKd,
                         kdR, kdG, kdB, kaR, kaG, kaB,
                         minX, minY, minZ, maxX, maxY, maxZ,
-                        vCount, verts, tangents, indices));
+                        vCount, positions, packedNormals, uvs, shortIndices, intIndices));
             }
             return new NMeshData(location, list);
         } catch (BufferUnderflowException | IllegalArgumentException | IndexOutOfBoundsException | NegativeArraySizeException e) {
@@ -248,9 +347,12 @@ public final class NMeshData {
             totalBytes += 48; // 6 floats (Kd, Ka) + 6 floats (AABB)
 
             totalBytes += 8;  // vCount, iCount
-            totalBytes += sm.vertexCount * 8 * 4; // verts
-            totalBytes += sm.vertexCount * 4;     // tangents
-            totalBytes += sm.indices.length * (sm.vertexCount <= 65535 ? 2 : 4);
+            totalBytes += sm.vertexCount * 12; // positions
+            totalBytes += sm.vertexCount * 8;  // uvs
+            totalBytes += sm.vertexCount * 3;  // snorm8x3 normals
+            int iCount = sm.indexCount();
+            int idxStride = sm.vertexCount <= 256 ? 1 : (sm.vertexCount <= 65535 ? 2 : 4);
+            totalBytes += iCount * idxStride;
         }
 
         ByteBuffer buf = ByteBuffer.allocate(totalBytes).order(ByteOrder.LITTLE_ENDIAN);
@@ -275,23 +377,47 @@ public final class NMeshData {
             buf.putFloat(sm.maxY);
             buf.putFloat(sm.maxZ);
             buf.putInt(sm.vertexCount);
-            buf.putInt(sm.indices.length);
+            int iCount = sm.indexCount();
+            buf.putInt(iCount);
 
-            buf.asFloatBuffer().put(sm.vertices);
-            buf.position(buf.position() + sm.vertexCount * 8 * 4);
+            FloatBuffer fb = buf.asFloatBuffer();
+            fb.put(sm.positions);
+            buf.position(buf.position() + sm.vertexCount * 12);
 
-            buf.asIntBuffer().put(sm.tangents);
-            buf.position(buf.position() + sm.vertexCount * 4);
+            FloatBuffer uvb = buf.asFloatBuffer();
+            uvb.put(sm.uvs);
+            buf.position(buf.position() + sm.vertexCount * 8);
 
-            if (sm.vertexCount <= 65535) {
-                ShortBuffer sb = buf.asShortBuffer();
-                for (int idx : sm.indices) {
-                    sb.put((short) idx);
+            for (int v = 0; v < sm.vertexCount; v++) {
+                int n = sm.packedNormals[v];
+                buf.put((byte) (n & 0xFF));
+                buf.put((byte) ((n >> 8) & 0xFF));
+                buf.put((byte) ((n >> 16) & 0xFF));
+            }
+
+            int prev = 0;
+            if (sm.vertexCount <= 256) {
+                for (int i = 0; i < iCount; i++) {
+                    int idx = sm.index(i);
+                    buf.put((byte) ((idx - prev) & 0xFF));
+                    prev = idx;
                 }
-                buf.position(buf.position() + sm.indices.length * 2);
+            } else if (sm.vertexCount <= 65535) {
+                ShortBuffer sb = buf.asShortBuffer();
+                for (int i = 0; i < iCount; i++) {
+                    int idx = sm.index(i);
+                    sb.put((short) (idx - prev));
+                    prev = idx;
+                }
+                buf.position(buf.position() + iCount * 2);
             } else {
-                buf.asIntBuffer().put(sm.indices);
-                buf.position(buf.position() + sm.indices.length * 4);
+                IntBuffer ib = buf.asIntBuffer();
+                for (int i = 0; i < iCount; i++) {
+                    int idx = sm.index(i);
+                    ib.put(idx - prev);
+                    prev = idx;
+                }
+                buf.position(buf.position() + iCount * 4);
             }
         }
         return buf.array();

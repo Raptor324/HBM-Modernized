@@ -126,9 +126,13 @@ public class RadioAutocalBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockE
 
         if (data.contains("payload")) {
             this.ctx.jmp.clear();
-            this.script = data.getString("payload").split("\n");
-            for (int i = 0; i < script.length; i++) {
-                script[i] = script[i].trim();
+            String raw = data.getString("payload");
+            if (raw.length() > 16384) raw = raw.substring(0, 16384);
+            String[] lines = raw.split("\n", 257);
+            int count = Math.min(lines.length, 256);
+            this.script = new String[count];
+            for (int i = 0; i < count; i++) {
+                script[i] = lines[i].trim();
                 this.msesv1ext.generateJumpPoints(ctx, script[i], i);
             }
             if (this.isOn) stop("Script has changed");

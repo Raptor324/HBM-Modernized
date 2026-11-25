@@ -51,6 +51,11 @@ public class RBMKOutgasserJeiCategory extends JeiGenericRecipeCategory<RBMKOutga
         List<Activation> out = new ArrayList<>();
         for (Map.Entry<net.minecraft.world.item.Item, OutgasserRecipe> e : RBMKOutgasserRecipes.getRecipes().entrySet()) {
             OutgasserRecipe r = e.getValue();
+            // fusionOnly entries belong to the fusion breeder (1:1 OutgasserHandler.machineOverrides
+            // re-maps their machine tile there). The shared generic category has fixed per-category
+            // machine stacks and no per-recipe override slot, and the default table contains no
+            // fusion-only recipes - so they are filtered out instead of shown under the wrong machine.
+            if (r.fusionOnly()) continue;
             out.add(new Activation(new ItemStack(e.getKey()),
                     r.solidOutput(), r.fluidType(), r.fluidAmount()));
         }

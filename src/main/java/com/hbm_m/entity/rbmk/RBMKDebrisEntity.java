@@ -2,9 +2,6 @@ package com.hbm_m.entity.rbmk;
 
 import com.hbm_m.handler.rbmk.RBMKDials;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.util.ContaminationUtil;
-import com.hbm_m.util.ContaminationUtil.ContaminationType;
-import com.hbm_m.util.ContaminationUtil.HazardType;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -20,7 +17,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -151,37 +147,22 @@ public class RBMKDebrisEntity extends Entity {
     }
 
     /**
-     * Fuel and graphite chunks stay dangerously hot. The original applies its radiation potion at
-     * amplifier 9 (fuel) or 4 (graphite); this port has no radiation potion and instead doses
-     * through {@link ContaminationUtil}, the same route {@code ZirnoxDebrisEntity} already takes,
-     * with the two tiers kept proportional to the original's amplifiers.
+     * Fuel and graphite chunks stay dangerously hot. 1:1 with
+     * {@code EntityRBMKDebris.onUpdate} (1.7.10 :100-107): BOTH types dose every living being
+     * within {@code boundingBox.expand(2.5, 2.5, 2.5)} each tick by applying the radiation
+     * potion for 60 seconds - amplifier 9 for fuel, 4 for graphite. No distance-scaled field.
      */
     private void irradiateNearby() {
-        // CE irradiates from FUEL debris only, and does it through ContaminationUtil.radiate with a
-        // range of 16 and a source strength of 100 - an inverse-square field, not a flat dose. The
-        // port applied a flat 2000/900 rads to everything within 2.5 blocks and included graphite,
-        // which made standing next to a graphite chunk far deadlier than standing next to fuel.
-        if (getDebrisType() != DebrisType.FUEL) return;
+        DebrisType type = getDebrisType();
+        if (type != DebrisType.FUEL && type != DebrisType.GRAPHITE) return;
 
-        AABB area = getBoundingBox().inflate(RAD_RANGE);
-        double cx = getX(), cy = getY(), cz = getZ();
-
-        for (LivingEntity e : level().getEntitiesOfClass(LivingEntity.class, area)) {
-            double dx = e.getX() - cx;
-            double dy = (e.getY() + e.getEyeHeight()) - cy;
-            double dz = e.getZ() - cz;
-            double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (len > RAD_RANGE) continue;
-
-            // CE clamps the effective distance at 5% of the range so point-blank is finite.
-            double dmgLen = Math.max(len, RAD_RANGE * 0.05D);
-            float dose = (float) (RAD_STRENGTH / (dmgLen * dmgLen));
-            ContaminationUtil.contaminate(e, HazardType.RADIATION, ContaminationType.CREATIVE, dose);
+        int amplifier = type == DebrisType.FUEL ? 9 : 4;
+        for (LivingEntity e : level().getEntitiesOfClass(LivingEntity.class,
+                getBoundingBox().inflate(2.5))) {
+            e.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                    com.hbm_m.platform.EffectHooks.of(com.hbm_m.effect.ModEffects.RADIATION), 60 * 20, amplifier));
         }
     }
-
-    private static final double RAD_RANGE = 16D;
-    private static final float RAD_STRENGTH = 100F;
 
     @Override
     public net.minecraft.world.entity.EntityDimensions getDimensions(net.minecraft.world.entity.Pose pose) {
@@ -196,18 +177,19 @@ public class RBMKDebrisEntity extends Entity {
     }
 
     /**
-     * Ticks before despawning, once the perma-scrap dial is switched off. Every one of these was a
-     * tenth of CE's figure ({@code EntityRBMKDebris.getLifetime}), so scrap from a meltdown swept
-     * itself off the site ten times faster than it should - graphite in particular is meant to lie
-     * around for two and a half hours, not fifteen minutes.
+     * Ticks before despawning, once the perma-scrap dial is switched off. 1:1 with
+     * {@code EntityRBMKDebris.getLifetime} (1.7.10 :139-150): blank/element scrap lies around for
+     * 3 minutes, fuel for 10, graphite for a full 15, the lid only 30 seconds and a control rod
+     * one minute. The despawn check adds the same {@code getEntityId() % 50} jitter as the
+     * original.
      */
     private int getLifetime() {
         return switch (getDebrisType()) {
-            case BLANK, ELEMENT -> 30 * 60 * 20;
-            case FUEL           -> 100 * 60 * 20;
-            case GRAPHITE       -> 150 * 60 * 20;
-            case LID            -> 300 * 20;
-            case ROD            -> 600 * 20;
+            case BLANK, ELEMENT -> 3 * 60 * 20;
+            case FUEL           -> 10 * 60 * 20;
+            case GRAPHITE       -> 15 * 60 * 20;
+            case LID            -> 30 * 20;
+            case ROD            -> 60 * 20;
         };
     }
 

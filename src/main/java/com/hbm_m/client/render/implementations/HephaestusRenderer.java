@@ -18,10 +18,10 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class HephaestusRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineHephaestusBlockEntity> {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/hephaestus.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/hephaestus.png");
-    public static final ResourceLocation LAVA = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/lava.png");
-    public static final ResourceLocation COBBLE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/cobblestone.png");
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/hephaestus.obj"));
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/hephaestus.png");
+    public static final ResourceLocation LAVA = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/lava.png");
+    public static final ResourceLocation COBBLE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/cobblestone.png");
 
     public HephaestusRenderer(BlockEntityRendererProvider.Context ctx) { }
 

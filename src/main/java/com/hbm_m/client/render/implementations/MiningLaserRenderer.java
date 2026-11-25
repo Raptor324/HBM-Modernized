@@ -20,10 +20,10 @@ import net.minecraft.world.phys.Vec3;
  */
 public class MiningLaserRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineMiningLaserBlockEntity> {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/mining_laser.obj"));
-    public static final ResourceLocation BASE_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/mining_laser_base.png");
-    public static final ResourceLocation PIVOT_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/mining_laser_pivot.png");
-    public static final ResourceLocation LASER_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/mining_laser_laser.png");
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/mining_laser_item.obj"));
+    public static final ResourceLocation BASE_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/mining_laser_base.png");
+    public static final ResourceLocation PIVOT_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/mining_laser_pivot.png");
+    public static final ResourceLocation LASER_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/mining_laser_laser.png");
 
     public MiningLaserRenderer(BlockEntityRendererProvider.Context ctx) { }
 

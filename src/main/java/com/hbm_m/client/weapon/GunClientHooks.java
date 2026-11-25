@@ -6,6 +6,7 @@ import java.util.function.BiFunction;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.client.render.weapon.bridge.ExternalGunRenderBridge;
 import com.hbm_m.item.weapon.sedna.GunConfig;
 import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
 import com.hbm_m.item.weapon.sedna.ItemGunBaseNT.LambdaContext;
@@ -60,6 +61,10 @@ public final class GunClientHooks {
         if (stack.isEmpty() || !(stack.getItem() instanceof ItemGunBaseNT gun)) return;
         if (typeOrdinal < 0 || typeOrdinal >= GunAnimation.values().length) return;
         GunAnimation type = GunAnimation.values()[typeOrdinal];
+
+        // Externe Renderer-Bridge (TACZ): Animationsereignis weiterleiten, bevor HBM seine
+        // eigene Bus-Animation aufsetzt (die HBM-Verarbeitung bleibt unveraendert).
+        ExternalGunRenderBridge.get().onGunAnimation(stack, type, receiverIndex, gunIndex);
 
         try {
             GunConfig config = gun.getConfig(stack, gunIndex);
@@ -117,6 +122,8 @@ public final class GunClientHooks {
      * wie im Original, da sich die echte Spielerrotation aendert.
      */
     public static void onRenderFrame() {
+        HbmAnimations.tick();
+
         Player player = clientPlayer();
         if (player == null) {
             lastFrameNanos = 0L;
@@ -146,6 +153,19 @@ public final class GunClientHooks {
         // Die Gesamtsumme (geometrische Reihe = kick/(1-decay)) ist damit von der Framerate unabhaengig.
         float decay = Mth.clamp(ItemGunBaseNT.recoilDecay, 0.0F, 0.999F);
         float decayStep = (float) Math.pow(decay, dt);
+
+        // Externe Renderer-Bridge (TACZ): der externe Mod besitzt den Kamerarueckstoss - HBM-Kick
+        // nicht auf die Rotation anwenden. setupRecoil akkumuliert, deshalb klingen die Impulse
+        // hier weiter ab, damit der Static-State nicht unendlich waechst.
+        ItemStack heldStack = player.getMainHandItem();
+        if (heldStack.getItem() instanceof ItemGunBaseNT
+                && ExternalGunRenderBridge.get().isHandled(heldStack)
+                && ExternalGunRenderBridge.get().shouldSuppressNativeRecoil(heldStack)) {
+            ItemGunBaseNT.recoilVertical *= decayStep;
+            ItemGunBaseNT.recoilHorizontal *= decayStep;
+            return;
+        }
+
         float impulseScale = (1.0F - decayStep) / (1.0F - decay);
         // Nicht im Original: "Irre-Rueckstoss" multipliziert den Kick mit 10
         float crazy = ModClothConfig.get().gunCrazyRecoil ? 10.0F : 1.0F;
@@ -203,6 +223,9 @@ public final class GunClientHooks {
         Player player = clientPlayer();
         if (player == null) return false;
         ItemStack toRender = player.getMainHandItem();
+        // Externe Renderer-Bridge (TACZ) zeichnet die Waffe: false = Vanilla-Hand nicht abbrechen,
+        // damit der externe FirstPersonRenderHandler das RenderHandEvent uebernehmen kann.
+        if (ExternalGunRenderBridge.get().isHandled(toRender)) return false;
         ItemRenderWeaponBase renderer = GunItemRenderer.get(toRender);
         if (renderer == null || !renderer.customFirstPerson()) return false;
         if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()
@@ -234,7 +257,9 @@ public final class GunClientHooks {
 
         if (ItemGunBaseNT.aimingProgress == ItemGunBaseNT.prevAimingProgress && ItemGunBaseNT.aimingProgress == 1F) {
             GunConfig cfg = gun.getConfig(stack, 0);
-            if (cfg.getScopeTexture(stack) != null) GunHud.renderScope(g, cfg.getScopeTexture(stack));
+            // Externe Renderer-Bridge (TACZ) besitzt das Zielfernrohr-Overlay; die HUD-Komponenten
+            // (Munition/Haltbarkeit) bleiben weiter unten unveraendert.
+            if (cfg.getScopeTexture(stack) != null && !ExternalGunRenderBridge.get().isHandled(stack)) GunHud.renderScope(g, cfg.getScopeTexture(stack));
         }
 
         int confNo = gun.getConfigCount();

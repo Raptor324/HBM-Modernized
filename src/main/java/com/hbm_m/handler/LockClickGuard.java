@@ -30,10 +30,13 @@ public final class LockClickGuard {
         ILockable lockable = LockHelper.resolve(be);
         if (lockable == null || !lockable.isLocked()) return false;
 
-        // Замочные предметы решают свою логику в useOn — не мешаем им
+        // Замочные предметы решают свою логику в useOn — глушим useBlock, чтобы ванильный сундук не открылся
         net.minecraft.world.item.ItemStack held = player.getMainHandItem();
         if (held.getItem() instanceof ItemCounterfeitKeys || held.getItem() instanceof ItemLock) {
-            return false;
+            return true;
+        }
+        if (level.isClientSide) {
+            return true;
         }
         return !lockable.canAccess(player);
     }

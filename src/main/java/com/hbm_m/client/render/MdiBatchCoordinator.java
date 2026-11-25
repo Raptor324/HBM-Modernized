@@ -1328,16 +1328,6 @@ public final class MdiBatchCoordinator {
                 RenderSystem.depthFunc(GL11.GL_LEQUAL);
                 RenderSystem.depthMask(true);
                 RenderSystem.disableCull();
-                if (!ditherFade) {
-                    // Smooth alpha fade mode (nucleusDitherFade == false): for every
-                    // opaque instance (vFadeAlpha == 1.0) GL_SRC_ALPHA /
-                    // GL_ONE_MINUS_SRC_ALPHA with depthMask(true) writes 100% srcColor
-                    // and full depth - visually identical to blending off - while the
-                    // far fade ring alpha-blends into the already-drawn terrain/sky.
-                    // No CPU-side min-fade scan is needed for this decision.
-                    RenderSystem.enableBlend();
-                    RenderSystem.defaultBlendFunc();
-                }
                 // No alpha blending on the MDI path, ever. Dither mode never
                 // blends - the FSH discards by screen hash. When the batch
                 // contains fading instances (minFade < 1), the dither path is
@@ -1658,6 +1648,7 @@ public final class MdiBatchCoordinator {
                 RenderSystem.enableCull();
                 RenderSystem.disableBlend();
                 RenderSystem.defaultBlendFunc();
+                com.hbm_m.client.render.shader.ShaderBindResync.resetBlendModeToOpaque();
 
                 // Explicitly unbind custom shader program to prevent leaking into subsequent passes
                 GlStateManager._glUseProgram(0);

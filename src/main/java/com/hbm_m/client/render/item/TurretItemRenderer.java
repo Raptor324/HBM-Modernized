@@ -37,7 +37,8 @@ public final class TurretItemRenderer {
     public static boolean handles(String id) {
         return switch (id) {
             case "turret_chekhov", "turret_friendly", "turret_jeremy", "turret_tauon", "turret_richard", "turret_howard",
-                 "turret_howard_damaged", "turret_maxwell", "turret_fritz", "turret_arty", "turret_himars", "turret_sentry" -> true;
+                 "turret_howard_damaged", "turret_maxwell", "turret_fritz", "turret_arty", "turret_himars", "turret_sentry",
+                 "turret_sentry_damaged" -> true;
             default -> false;
         };
     }
@@ -48,6 +49,16 @@ public final class TurretItemRenderer {
 
     public static void render(String id, ItemStack stack, ItemDisplayContext ctx, PoseStack ps, MultiBufferSource buf, int light) {
         ps.pushPose();
+        // 1.7.10 reference: the turret's machine_obj definition (frame + item tail with the
+        // per-turret itemTranslate/scale) composed the way the legacy 1.7.10 BEWLR draws it. The
+        // historical per-turret table below stays as the fallback for entries the reference lacks.
+        com.google.gson.JsonObject entry = com.hbm_m.client.render.display.DisplayReference.entry(id);
+        if (entry != null && com.hbm_m.client.render.display.DisplayReference.applyReferencePose(
+                new com.hbm_m.client.render.display.PoseStackReferenceAdapter(ps), entry, ctx, 0F)) {
+            renderCommon(id, ps, buf, light, false);
+            ps.popPose();
+            return;
+        }
         // renderInventory(): offset and scale per turret
         double ty;
         double tx = 0;
@@ -60,7 +71,7 @@ public final class TurretItemRenderer {
             case "turret_fritz" -> { ty = -2; s = 4; }
             case "turret_arty" -> { tx = -3; ty = -4; s = 3.5; }
             case "turret_himars" -> { ty = -2; s = 3.5; }
-            case "turret_sentry" -> { ty = -4; s = 7; }
+            case "turret_sentry", "turret_sentry_damaged" -> { tx = -0.5; ty = -3.75; s = 6.5; }
             default -> { ty = -3; s = 4; } // Chekhov, Friendly
         }
         if (ctx == ItemDisplayContext.GUI) {
@@ -75,29 +86,29 @@ public final class TurretItemRenderer {
             ps.scale(k, k, k);
             ps.mulPose(Axis.YP.rotationDegrees(90));
         }
-        renderCommon(id, ps, buf, light);
+        renderCommon(id, ps, buf, light, true);
         ps.popPose();
     }
 
     /** renderCommon() / renderCommonWithStack() from original item renderers */
-    private static void renderCommon(String id, PoseStack ps, MultiBufferSource buf, int light) {
+    private static void renderCommon(String id, PoseStack ps, MultiBufferSource buf, int light, boolean applyCommonPose) {
         switch (id) {
             case "turret_chekhov" -> {
-                ps.translate(-0.75, 0, 0);
+                if (applyCommonPose) ps.translate(-0.75, 0, 0);
                 part(ps, buf, light, "turret_chekhov", "Base", tex("base"));
                 part(ps, buf, light, "turret_chekhov", "Carriage", tex("carriage"));
                 part(ps, buf, light, "turret_chekhov", "Body", tex("chekhov"));
                 part(ps, buf, light, "turret_chekhov", "Barrels", tex("chekhov_barrels"));
             }
             case "turret_friendly" -> {
-                ps.translate(-0.75, 0, 0);
+                if (applyCommonPose) ps.translate(-0.75, 0, 0);
                 part(ps, buf, light, "turret_chekhov", "Base", tex("base_friendly"));
                 part(ps, buf, light, "turret_chekhov", "Carriage", tex("carriage_friendly"));
                 part(ps, buf, light, "turret_chekhov", "Body", tex("chekhov"));
                 part(ps, buf, light, "turret_chekhov", "Barrels", tex("chekhov_barrels"));
             }
             case "turret_jeremy" -> {
-                ps.translate(-0.5, 0, 0);
+                if (applyCommonPose) ps.translate(-0.5, 0, 0);
                 part(ps, buf, light, "turret_chekhov", "Base", tex("base"));
                 part(ps, buf, light, "turret_chekhov", "Carriage", tex("carriage"));
                 part(ps, buf, light, "turret_jeremy", "Gun", tex("jeremy"));
@@ -114,7 +125,7 @@ public final class TurretItemRenderer {
                 part(ps, buf, light, "turret_richard", "Launcher", tex("richard"));
             }
             case "turret_howard" -> {
-                ps.translate(-0.75, 0, 0);
+                if (applyCommonPose) ps.translate(-0.75, 0, 0);
                 part(ps, buf, light, "turret_chekhov", "Base", tex("base"));
                 part(ps, buf, light, "turret_howard", "Carriage", tex("carriage_ciws"));
                 part(ps, buf, light, "turret_howard", "Body", tex("howard"));
@@ -122,7 +133,7 @@ public final class TurretItemRenderer {
                 part(ps, buf, light, "turret_howard", "BarrelsBottom", tex("howard_barrels"));
             }
             case "turret_howard_damaged" -> {
-                ps.translate(-0.75, 0, 0);
+                if (applyCommonPose) ps.translate(-0.75, 0, 0);
                 part(ps, buf, light, "turret_chekhov", "Base", tex("rusted_base"));
                 part(ps, buf, light, "turret_howard", "Carriage", tex("rusted_carriage_ciws"));
                 part(ps, buf, light, "turret_howard_damaged", "Body", tex("rusted_howard"));
@@ -140,8 +151,10 @@ public final class TurretItemRenderer {
                 part(ps, buf, light, "turret_fritz", "Gun", tex("fritz"));
             }
             case "turret_arty" -> {
-                ps.mulPose(Axis.YP.rotationDegrees(-90));
-                ps.scale(0.5F, 0.5F, 0.5F);
+                if (applyCommonPose) {
+                    ps.mulPose(Axis.YP.rotationDegrees(-90));
+                    ps.scale(0.5F, 0.5F, 0.5F);
+                }
                 part(ps, buf, light, "turret_arty", "Base", tex("arty"));
                 part(ps, buf, light, "turret_arty", "Carriage", tex("arty"));
                 ps.translate(0, 3, 0);
@@ -151,8 +164,10 @@ public final class TurretItemRenderer {
                 part(ps, buf, light, "turret_arty", "Barrel", tex("arty"));
             }
             case "turret_himars" -> {
-                ps.mulPose(Axis.YP.rotationDegrees(-90));
-                ps.scale(0.5F, 0.5F, 0.5F);
+                if (applyCommonPose) {
+                    ps.mulPose(Axis.YP.rotationDegrees(-90));
+                    ps.scale(0.5F, 0.5F, 0.5F);
+                }
                 part(ps, buf, light, "turret_arty", "Base", tex("arty"));
                 part(ps, buf, light, "turret_himars", "Carriage", tex("himars"));
                 part(ps, buf, light, "turret_himars", "Launcher", tex("himars"));
@@ -161,9 +176,15 @@ public final class TurretItemRenderer {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/projectiles/himars_standard.png"));
             }
             case "turret_sentry" -> {
-                ps.mulPose(Axis.YP.rotationDegrees(90));
+                if (applyCommonPose) ps.mulPose(Axis.YP.rotationDegrees(90));
                 for (String p : new String[] {"Base", "Pivot", "Body", "Drum", "BarrelL", "BarrelR"}) {
                     part(ps, buf, light, "turret_sentry", p, tex("sentry"));
+                }
+            }
+            case "turret_sentry_damaged" -> {
+                if (applyCommonPose) ps.mulPose(Axis.YP.rotationDegrees(90));
+                for (String p : new String[] {"Base", "Pivot", "Body", "Drum", "BarrelL", "BarrelR"}) {
+                    part(ps, buf, light, "turret_sentry", p, tex("sentry_damaged"));
                 }
             }
             default -> { }

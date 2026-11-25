@@ -8,6 +8,7 @@
       "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/radio_autocal.obj",
       "flip_v": true,
+      "render_type": "minecraft:cutout",
       "textures": {
         "default": "hbm_m:block/radio_autocal"
       }
@@ -20,8 +21,8 @@
   },
   "display": {
     "gui": {
-      "rotation": [ 30, 45, 0 ],
-      "translation": [ 0, -3, 0 ],
+      "rotation": [ 30, 225, 0 ],
+      "translation": [ 0, -4, 0 ],
       "scale": [ 0.4, 0.4, 0.4 ]
     },
     "ground": {

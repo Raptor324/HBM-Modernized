@@ -6,7 +6,7 @@
 	"children": {
 		"rtg_model": {
 			"loader": "hbm_m:nmesh_obj",
-			"model": "hbm_m:models/block/machines/rtg_item.obj",
+			"model": "hbm_m:models/block/machines/rtg_static.obj",
 			"flip_v": true,
 			"render_type": "minecraft:cutout",
 			"textures": {

@@ -18,9 +18,9 @@ import net.minecraft.world.level.block.state.BlockState;
 public class DecoBlockRenderer implements com.hbm_m.client.render.HbmBerBounds<DecoBlockEntity> {
 
     public static final SimpleObjModel BOXCAR = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/boxcar.obj"));
-    public static final ResourceLocation BOXCAR_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/boxcar.png");
+    public static final ResourceLocation BOXCAR_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/deco/boxcar_model.png");
     public static final SimpleObjModel DUCHESS = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/duchessgambit.obj"));
-    public static final ResourceLocation DUCHESS_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/duchessgambit.png");
+    public static final ResourceLocation DUCHESS_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/deco/duchessgambit.png");
 
     public DecoBlockRenderer(BlockEntityRendererProvider.Context ctx) { }
 

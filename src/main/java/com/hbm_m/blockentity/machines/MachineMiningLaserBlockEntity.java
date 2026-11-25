@@ -609,8 +609,8 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity implem
     }
 
     @Override
-    protected void applyClientUpdate(@NotNull CompoundTag tag) {
-        super.applyClientUpdate(tag);
+    protected void applyClientUpdate(@NotNull CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
+        super.applyClientUpdate(tag, registries);
         lastTargetX = tag.getInt("ltX");
         lastTargetY = tag.getInt("ltY");
         lastTargetZ = tag.getInt("ltZ");

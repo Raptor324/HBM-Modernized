@@ -26,16 +26,18 @@ public enum PipeRenderShape implements StringRepresentable {
         if (mask == 0) {
             return ISOLATED;
         }
-        // THROUGH_* means a full straight pipe spanning BOTH directions (the through_*_base
-        // models enable the two opposing faces): only true straight runs qualify. A
-        // single-sided connection must be COMPLEX so the multipart draws just the one arm.
-        if (mask == 48) { // east + west
+        // 1:1 RenderTestPipe.renderWorldBlock: the straight through_* model (both opposing
+        // arms) is drawn for a double connection OR a SINGLE connection on that axis
+        // (masks 0b100000/0b010000, 0b001000/0b000100, 0b000010/0b000001). A single arm
+        // alone looks like a half-block stub — the original never draws that.
+        // Only mixed multi-axis connections fall to COMPLEX (arms + corner octants).
+        if (mask == 48 || mask == 32 || mask == 16) { // east and/or west
             return THROUGH_X;
         }
-        if (mask == 24) { // up + down
+        if (mask == 24 || mask == 8 || mask == 4) { // up and/or down
             return THROUGH_Y;
         }
-        if (mask == 3) { // north + south
+        if (mask == 3 || mask == 2 || mask == 1) { // north and/or south
             return THROUGH_Z;
         }
         return COMPLEX;

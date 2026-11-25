@@ -1,9 +1,14 @@
 package com.hbm_m.blockentity.machines;
 
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.api.tile.ILockableTile;
+import com.hbm_m.api.tile.LockState;
 import com.hbm_m.block.UniversalMachinePartBlock;
 import com.hbm_m.block.machines.TransitionSealBlock;
 import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.interfaces.ILockable;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.core.BlockPos;
@@ -23,7 +28,10 @@ import net.minecraft.world.phys.AABB;
  * clip runs exactly 24 seconds, i.e. 480 ticks, with the frame ring spaced around the
  * core.
  */
-public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
+public class TransitionSealBlockEntity extends BaseHbmBlockEntity implements ILockableTile, ILockable {
+
+    /** Original TileEntityDoorGeneric extends TileEntityLockableBase: Stiftschloss der Tuer. */
+    public final LockState lockState = new LockState();
 
     /** The transition_seal.dae clip is exactly 24 seconds long (577 LINEAR keyframes at 1/24 s). */
     public static final float DURATION_TICKS = 24F * 20F;
@@ -66,23 +74,33 @@ public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
         return animTicks >= DURATION_TICKS;
     }
 
+    /** Normalized opening progress in [0, 1] for progressive collision. */
+    public float getOpenProgress() {
+        return Math.max(0F, Math.min(1F, animTicks / DURATION_TICKS));
+    }
+
     /**
-     * True while the core or any block of the frame ring is receiving redstone power.
-     * The frame ring surrounds the 26 x 24 wall, so a button or lever anywhere on the
-     * frame operates the door.
+     * True while the core or any block of the 26 x 24 multiblock wall is receiving
+     * redstone power (1.7.10 BlockDoorGeneric.onNeighborBlockChange parity).
      */
     public boolean isPowered() {
         if(level == null) return false;
         if(level.hasNeighborSignal(worldPosition)) return true;
 
         boolean zAxis = isZAxis();
+        BlockPos.MutableBlockPos checkPos = new BlockPos.MutableBlockPos();
+        int cx = worldPosition.getX();
+        int cy = worldPosition.getY();
+        int cz = worldPosition.getZ();
         for(int dy = 0; dy <= RING_HEIGHT; dy++) {
-            for(int dz : new int[] { -RING_WIDTH, RING_WIDTH }) {
-                if(hasSignalAt(dy, dz, zAxis)) return true;
+            for(int dw = -RING_WIDTH; dw <= RING_WIDTH; dw++) {
+                if(zAxis) {
+                    checkPos.set(cx, cy + dy, cz + dw);
+                } else {
+                    checkPos.set(cx + dw, cy + dy, cz);
+                }
+                if(level.hasNeighborSignal(checkPos)) return true;
             }
-        }
-        for(int dz = -RING_WIDTH; dz <= RING_WIDTH; dz++) {
-            if(hasSignalAt(0, dz, zAxis) || hasSignalAt(RING_HEIGHT, dz, zAxis)) return true;
         }
         return false;
     }
@@ -92,11 +110,6 @@ public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
         if(level == null) return false;
         Direction facing = level.getBlockState(worldPosition).getValue(TransitionSealBlock.FACING);
         return facing == Direction.EAST || facing == Direction.WEST;
-    }
-
-    private boolean hasSignalAt(int dy, int dz, boolean zAxis) {
-        BlockPos pos = zAxis ? worldPosition.offset(0, dy, dz) : worldPosition.offset(dz, dy, 0);
-        return level.hasNeighborSignal(pos);
     }
 
     //? if forge {
@@ -145,34 +158,105 @@ public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
         return cachedPowered;
     }
 
+    public void invalidateRedstoneCache() {
+        this.cachedPoweredValid = false;
+    }
+
+    // ==================== Schloss (Original TileEntityLockableBase / TileEntityDoorGeneric) ====================
+
+    @Override public LockState getLockState() { return lockState; }
+    @Override public boolean isLocked() { return lockState.isLocked; }
+
+    @Override
+    public void lock() {
+        lockState.lock(this);
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    @Override
+    public void unlock() {
+        lockState.isLocked = false;
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    @Override public void setPins(int pins) { lockState.lock = pins; setChanged(); }
+    @Override public int getPins() { return lockState.lock; }
+    @Override public void setMod(double mod) { lockState.lockMod = mod; setChanged(); }
+    @Override public double getMod() { return lockState.lockMod; }
+    @Override public boolean isCheesable() { return lockState.cheesable; }
+    @Override public void setCheesable(boolean cheesable) { lockState.cheesable = cheesable; setChanged(); }
+
+    @Override public double getLockMod() { return lockState.lockMod; }
+    @Override public void setLockMod(double mod) { lockState.lockMod = mod; setChanged(); }
+    @Override public BlockPos getLockPos() { return worldPosition; }
+    @Override public Level getLockLevel() { return level; }
+
+    /** Display notification above hotbar when access is denied. */
+    public void notifyLocked(@Nullable net.minecraft.world.entity.player.Player player) {
+        if (player != null) {
+            player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.hbm_m.door_locked"), true);
+        }
+    }
+
     /**
      * audit10: Original {@code TileEntityDoorGeneric.tryToggle(player)} - nur ganz offen oder ganz zu schaltbar;
      * ein geschlossenes Tor unter Redstone-Strom bleibt "verriegelt".
      */
     public boolean tryToggle() {
+        return tryToggle(null);
+    }
+
+    public boolean tryToggle(@Nullable net.minecraft.world.entity.player.Player player) {
+        if (isLocked() && player == null) return false;
         if (moving) return false;
         if (!isOpen() && isPowered()) return false;
-        opening = !isOpen();
-        moving = true;
-        setChanged();
-        if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+
+        if (level != null && !level.isClientSide) {
+            if (canAccess(player)) {
+                opening = !isOpen();
+                moving = true;
+                setChanged();
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            } else {
+                notifyLocked(player);
+            }
+        }
         return true;
     }
 
     public void updateEntity() {
         if(level == null) return;
 
-        boolean powered = level.isClientSide ? isPowered() : cachedPowered();
+        boolean powered = cachedPowered();
         float prev = animTicks;
         boolean prevOpen = prev >= DURATION_TICKS;
         boolean wasMoving = moving;
 
-        // Toggle on rising edge: a single redstone pulse will start the animation toward
-        // the opposite state and it will continue until fully open/closed without
-        // requiring the power to be held.
-        if(powered && !prevPowered) {
-            opening = !isOpen();
-            moving = true;
+        // 1.7.10 TileEntityDoorGeneric parity: level-sensitive redstone control.
+        // Signal ON opens a closed door; falling edge (signal OFF) closes an open door.
+        // A short pulse (e.g. button) turns off while still opening, so the door stays open.
+        if(!moving && !isLocked()) {
+            if(powered && !isOpen()) {
+                opening = true;
+                moving = true;
+                if(!level.isClientSide) {
+                    setChanged();
+                    level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+                }
+            } else if(!powered && prevPowered && isOpen()) {
+                opening = false;
+                moving = true;
+                if(!level.isClientSide) {
+                    setChanged();
+                    level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+                }
+            }
         }
         prevPowered = powered;
 
@@ -190,11 +274,9 @@ public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
         if(!level.isClientSide) {
             if(moving && !wasMoving) {
                 // 1.7.10 parity: DoorDecl.getCloseSoundStart() defaults to the open
-                // sound - the same long mechanical track plays in both directions.
-                level.playSound(null, worldPosition, ModSounds.TRANSITION_SEAL_OPEN.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
-            }
-            if(!moving && wasMoving) {
-                level.playSound(null, worldPosition, ModSounds.METAL_STOP_1.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
+                // sound - the same long mechanical track plays in both directions. Sound volume 6.0F.
+                // DoorDecl.TRANSITION_SEAL has no open/close end sound (null).
+                level.playSound(null, worldPosition, ModSounds.TRANSITION_SEAL_OPEN.get(), SoundSource.BLOCKS, 6.0F, 1.0F);
             }
             if(animTicks != prev) setChanged();
             if(isOpen() != prevOpen) {
@@ -214,6 +296,7 @@ public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
         tag.putBoolean("prevPowered", prevPowered);
         tag.putBoolean("opening", opening);
         tag.putBoolean("moving", moving);
+        lockState.write(tag);
     }
 
     @Override
@@ -223,5 +306,11 @@ public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
         prevPowered = tag.getBoolean("prevPowered");
         opening = tag.getBoolean("opening");
         moving = tag.getBoolean("moving");
+        if (tag.contains("lockMod")) {
+            lockState.read(tag);
+        } else {
+            lockState.isLocked = tag.getBoolean("locked");
+            lockState.lock = tag.getInt("lock");
+        }
     }
 }

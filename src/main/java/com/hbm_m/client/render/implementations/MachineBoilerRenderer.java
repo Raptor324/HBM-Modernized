@@ -37,6 +37,7 @@ public final class MachineBoilerRenderer {
         // boiler.obj is merged into a single group "Plane" - pressure pulsation applies to the entire model.
         MachineRenderers.machine("boiler", ModBlockEntities.BOILER_BE.get(),
                 MachineBoilerBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Plane", (be, pt, gt, ps) -> {
                 if (be.tanks != null && be.tanks.length > 1 && be.tanks[1].getFill() > be.tanks[1].getMaxFill() * 0.9) {
                     double sine = Math.sin(System.currentTimeMillis() / 50.0 % (Math.PI * 2)) * 0.01;
@@ -53,6 +54,7 @@ public final class MachineBoilerRenderer {
     private static void registerSolarBoiler() {
         MachineRenderers.machine("solar_boiler", ModBlockEntities.SOLAR_BOILER_BE.get(),
                 MachineSolarBoilerBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Base")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
@@ -67,6 +69,9 @@ public final class MachineBoilerRenderer {
                     VertexConsumer vc = buf.getBuffer(ClientRenderHandler.CustomRenderTypes.RBMK_CHERENKOV);
                     BlockPos bp = boiler.getBlockPos();
                     int beamCount = 0;
+
+                    ps.pushPose();
+                    ps.translate(0.5, 0.0, 0.5);
 
                     for (BlockPos co : boiler.secondary) {
                         beamCount++;
@@ -118,6 +123,7 @@ public final class MachineBoilerRenderer {
 
                         ps.popPose();
                     }
+                    ps.popPose();
                 }
 
                 @Override

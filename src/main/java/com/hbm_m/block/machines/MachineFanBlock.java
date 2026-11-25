@@ -130,7 +130,7 @@ public class MachineFanBlock extends BaseEntityBlock implements IToolable {
     private void inform(Level world, Player player, BlockPos pos, String suffix) {
         if (world.isClientSide) return;
         if (player instanceof ServerPlayer sp) {
-            InfoToastPacket.sendTo(sp, Component.translatable(getDescriptionId() + suffix).withStyle(ChatFormatting.GOLD), 60, 10, 0xFFAA00);
+            InfoToastPacket.sendTo(sp, Component.translatable(getDescriptionId() + suffix).withStyle(ChatFormatting.GOLD), 20, 10, 0xFFAA00);
         }
         world.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.BLOCKS, 0.5F, 0.5F);
     }

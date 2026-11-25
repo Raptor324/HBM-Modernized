@@ -25,8 +25,17 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  */
 public class NukeCustomBlock extends NukeBaseBlock implements IBomb {
 
+    private static final com.hbm_m.multiblock.MultiblockStructureHelper STRUCTURE_HELPER = createBombStructure(new String[] {
+            "XCX"
+    });
+
     public NukeCustomBlock(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public com.hbm_m.multiblock.MultiblockStructureHelper getStructureHelper() {
+        return STRUCTURE_HELPER;
     }
 
     @Override
@@ -69,6 +78,7 @@ public class NukeCustomBlock extends NukeBaseBlock implements IBomb {
 
                 Direction facing = world.getBlockState(pos).getValue(BlockStateProperties.HORIZONTAL_FACING);
                 EntityFallingNuke bomb = new EntityFallingNuke(ModEntities.FALLING_NUKE.get(), world, v.tnt, v.nuke, v.hydro, v.amat, v.dirty, v.schrab, v.euph);
+                bomb.freaky = v.freaky;
                 bomb.setFacing(facing);
                 bomb.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 0, 0);
                 entity.clearSlots();

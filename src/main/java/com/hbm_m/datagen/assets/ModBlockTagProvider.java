@@ -211,8 +211,14 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
         // Д. Блоки, добываемые ЛЮБОЙ киркой (без needs-тега): broadcaster_pc в оригинале —
         // Material.iron без setHarvestLevel (уровень 0); NEXT не задаёт для него needs_*.
+        // rbmk_debris* тоже: оригинальный pribris-фэмили (Material.iron, hardness 50) не задаёт
+        // harvest level — любую кирку достаточно (audit4-правило ниже).
         Set<Block> anyPickaxeBlocks = Set.of(
-                ModBlocks.BROADCASTER_PC.get()
+                ModBlocks.BROADCASTER_PC.get(),
+                ModBlocks.RBMK_DEBRIS.get(),
+                ModBlocks.RBMK_DEBRIS_BURNING.get(),
+                ModBlocks.RBMK_DEBRIS_DIGAMMA.get(),
+                ModBlocks.RBMK_DEBRIS_RADIATING.get()
         );
 
         // audit4: Werkzeugtyp nach Original-Material (rock/iron/anvil -> Spitzhacke, wood -> Axt,

@@ -197,11 +197,21 @@ public class ItemPileRodMK2 extends Item implements ITooltipProvider {
             }
         }
 
-        // Original: I18nUtil.autoBreak(fontRenderer, <name>.desc, 225), jede Zeile gelb
-        String desc = net.minecraft.client.resources.language.I18n.get(this.getDescriptionId() + ".desc");
-        for (net.minecraft.network.chat.FormattedText line : net.minecraft.client.Minecraft.getInstance().font.getSplitter()
-                .splitLines(desc, 225, net.minecraft.network.chat.Style.EMPTY)) {
-            tooltip.add(Component.literal(line.getString()).withStyle(ChatFormatting.YELLOW));
+        String descKey = this.getDescriptionId() + ".desc";
+        if (dev.architectury.platform.Platform.getEnvironment() == dev.architectury.utils.Env.CLIENT) {
+            ClientDescHelper.addWrapped(tooltip, descKey);
+        } else {
+            tooltip.add(Component.translatable(descKey).withStyle(ChatFormatting.YELLOW));
+        }
+    }
+
+    private static final class ClientDescHelper {
+        private static void addWrapped(List<Component> tooltip, String descKey) {
+            String desc = net.minecraft.locale.Language.getInstance().getOrDefault(descKey);
+            for (net.minecraft.network.chat.FormattedText line : net.minecraft.client.Minecraft.getInstance().font.getSplitter()
+                    .splitLines(desc, 225, net.minecraft.network.chat.Style.EMPTY)) {
+                tooltip.add(Component.literal(line.getString()).withStyle(ChatFormatting.YELLOW));
+            }
         }
     }
 }

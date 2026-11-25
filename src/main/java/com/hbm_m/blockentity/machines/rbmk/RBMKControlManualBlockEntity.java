@@ -90,6 +90,11 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity impleme
     protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
         tag.putDouble("startingLevel", startingLevel);
+        // 1:1 with TileEntityRBMKControlManual.writeToNBT ("mult"): the live multiplier (level +
+        // positive-scram surge) feeds the DODD diagnostic overlay. The original only wrote it to
+        // disk/diag NBT (auto rods, which inherit the base writeToNBT, never carry it) - the
+        // `diag` flag is set only by getDiagData, so the per-tick sync tag stays lean as before.
+        if (diag) tag.putDouble("mult", getMult());
     }
 
     @Override

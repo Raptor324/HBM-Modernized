@@ -135,7 +135,7 @@ public final class TankRenderers {
     public static class Orbus implements com.hbm_m.client.render.HbmBerBounds<MachineFluidTankBlockEntity> {
 
         static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/orbus.obj"));
-        static final SimpleObjModel SPHERE_UV = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/sphere_uv.obj"));
+        static final SimpleObjModel SPHERE_UV = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/sphere_uv.obj"));
         static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/orbus.png");
 
         public Orbus(BlockEntityRendererProvider.Context ctx) { }
@@ -189,7 +189,7 @@ public final class TankRenderers {
      */
     public static class Barrel implements com.hbm_m.client.render.HbmBerBounds<MachineFluidTankBlockEntity> {
 
-        static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/blocks/barrel.obj"));
+        static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/barrel.obj"));
 
         public Barrel(BlockEntityRendererProvider.Context ctx) { }
 

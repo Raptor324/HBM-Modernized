@@ -37,7 +37,7 @@ import net.minecraft.world.phys.AABB;
  * Clientseitig laeuft das Mahlrad an und aus, das Geruest erscheint, sobald ueber der Muehle ein Block sitzt, und
  * beim Mahlen spritzt Staub des gemahlenen Blocks.
  */
-public class MachineRockMillBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineRockMillBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, com.hbm_m.interfaces.IFrameSupportable {
 
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_BLUEPRINT = 1;
@@ -56,7 +56,6 @@ public class MachineRockMillBlockEntity extends BaseMachineBlockEntity implement
     public float rotation;
     public float prevRotation;
     public float rotationSpeed = 0F;
-    public boolean frame = false;
 
     public final MachineModuleRockMill rockMillModule;
 
@@ -129,7 +128,7 @@ public class MachineRockMillBlockEntity extends BaseMachineBlockEntity implement
                     sound, net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 0.75F);
         }
 
-        sendUpdateToClient();
+        if (probeDue(5)) sendUpdateToClient();
     }
 
     private void clientTick(Level world) {
@@ -142,10 +141,6 @@ public class MachineRockMillBlockEntity extends BaseMachineBlockEntity implement
             this.rotation -= 360F;
         }
 
-        if (world.getGameTime() % 20 == 0) {
-            frame = !world.getBlockState(worldPosition.above(3)).isAir();
-        }
-
         if (this.didProcess) {
             double angle = world.random.nextDouble() * Math.PI * 2D;
             double vx = Math.cos(angle), vz = Math.sin(angle);
@@ -154,6 +149,28 @@ public class MachineRockMillBlockEntity extends BaseMachineBlockEntity implement
                     worldPosition.getX() + 0.5 + vx * 2.25, worldPosition.getY() + 1.5, worldPosition.getZ() + 0.5 + vz * 2.25,
                     vx * speed, -0.1D, vz * speed);
         }
+    }
+
+    // ==================== Multiblock frame (BlockState property) ====================
+
+    @Override
+    public void checkForFrame() {
+        if (level != null && !level.isClientSide) {
+            com.hbm_m.multiblock.MultiblockStructureHelper.updateFrameForController(level, worldPosition);
+        }
+    }
+
+    @Override
+    public boolean setFrameVisible(boolean visible) {
+        if (level != null && !level.isClientSide) {
+            return com.hbm_m.multiblock.MultiblockFrameHelper.applyFrameToBlockState(level, worldPosition, visible);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isFrameVisible() {
+        return com.hbm_m.multiblock.MultiblockFrameHelper.isFrameVisible(getBlockState());
     }
 
     // ==================== Rezeptwahl ====================

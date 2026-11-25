@@ -74,51 +74,56 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
     // ─── Tick ────────────────────────────────────────────────────────────────
 
     public static void tick(Level level, BlockPos pos, BlockState state, RBMKBoilerBlockEntity be) {
-        baseTick(level, pos, state, be);
-        if (level.isClientSide) return;
+        // TileEntityRBMKBoiler.updateEntity performs the heat-to-steam conversion BEFORE calling
+        // super.updateEntity() (moveHeat + boilWater): this tick's converted heat participates in
+        // the same tick's column equalization, and equalization never pulls heat away before it
+        // was converted. The port used to run baseTick first, inverting that order.
+        if (!level.isClientSide) {
+            be.exchangeFluids(level);
 
-        be.lastConsumption = 0;
-        be.lastOutput      = 0;
-        if (be.ventDelay > 0) be.ventDelay--;
+            be.lastConsumption = 0;
+            be.lastOutput      = 0;
+            if (be.ventDelay > 0) be.ventDelay--;
 
-        int grade = be.getSteamGrade();
-        double heatAvail = be.heat - HEAT_THRESHOLD[grade];
+            int grade = be.getSteamGrade();
+            double heatAvail = be.heat - HEAT_THRESHOLD[grade];
 
-        if (heatAvail > 0) {
-            double heatPerMb = RBMKDials.getBoilerHeatConsumption(level);
-            double factor    = STEAM_FACTOR[grade];
-            int waterUsed, steamProduced;
+            if (heatAvail > 0) {
+                double heatPerMb = RBMKDials.getBoilerHeatConsumption(level);
+                double factor    = STEAM_FACTOR[grade];
+                int waterUsed, steamProduced;
 
-            if (grade == 3) {
-                steamProduced = (int) Math.floor((heatAvail / heatPerMb) * 100 / factor);
-                waterUsed     = (int) Math.floor(steamProduced / 100.0 * factor);
-                if (be.waterTank.getFill() < waterUsed) {
-                    steamProduced = (int) Math.floor(be.waterTank.getFill() * 100.0 / factor);
+                if (grade == 3) {
+                    steamProduced = (int) Math.floor((heatAvail / heatPerMb) * 100 / factor);
                     waterUsed     = (int) Math.floor(steamProduced / 100.0 * factor);
-                }
-            } else {
-                waterUsed     = (int) Math.min(Math.floor(heatAvail / heatPerMb), be.waterTank.getFill());
-                steamProduced = (int) Math.floor(waterUsed * 100.0 / factor);
-            }
-
-            if (waterUsed > 0) {
-                be.lastConsumption = waterUsed;
-                be.lastOutput      = steamProduced;
-
-                be.waterTank.setFill(be.waterTank.getFill() - waterUsed);
-                be.steamTank.setFill(be.steamTank.getFill() + steamProduced);
-
-                if (be.steamTank.getFill() > be.steamTank.getMaxFill()) {
-                    be.steamTank.setFill(be.steamTank.getMaxFill());
-                    be.vent(level, pos);
+                    if (be.waterTank.getFill() < waterUsed) {
+                        steamProduced = (int) Math.floor(be.waterTank.getFill() * 100.0 / factor);
+                        waterUsed     = (int) Math.floor(steamProduced / 100.0 * factor);
+                    }
+                } else {
+                    waterUsed     = (int) Math.min(Math.floor(heatAvail / heatPerMb), be.waterTank.getFill());
+                    steamProduced = (int) Math.floor(waterUsed * 100.0 / factor);
                 }
 
-                be.heat -= waterUsed * heatPerMb;
-                be.setChanged();
+                if (waterUsed > 0) {
+                    be.lastConsumption = waterUsed;
+                    be.lastOutput      = steamProduced;
+
+                    be.waterTank.setFill(be.waterTank.getFill() - waterUsed);
+                    be.steamTank.setFill(be.steamTank.getFill() + steamProduced);
+
+                    if (be.steamTank.getFill() > be.steamTank.getMaxFill()) {
+                        be.steamTank.setFill(be.steamTank.getMaxFill());
+                        be.vent(level, pos);
+                    }
+
+                    be.heat -= waterUsed * heatPerMb;
+                    be.setChanged();
+                }
             }
         }
 
-        be.exchangeFluids(level);
+        baseTick(level, pos, state, be);
     }
 
     /**
@@ -143,9 +148,13 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
     }
 
     /**
-     * {@code getOutputPos}: steam always leaves through the top of the column, and additionally
-     * out of the sides and bottom of a loader sitting directly underneath - the loader is what
-     * gives a boiler channel a reachable outlet at floor level. Each entry is the neighbouring
+     * The original's unified port shape. {@code ModulePortManFluidAdaptive.update} combines the
+     * raw shapes with {@code PortDef.combine} into ONE position set and binds BOTH the input and
+     * the output ports to it (L83-99), with the shapes from {@code TileEntityRBMKBase.getPorts*}:
+     * the top of the column (y+h, POS_Y), the bottom (y, NEG_Y), plus - with a classic loader at
+     * y-2 - all six faces around y-2, or with a close loader at y-1 all six faces around y-1
+     * (replacing the plain bottom). So in 1.7.10 water can enter via the roof port and steam can
+     * leave via the bottom port; the tanks are not split by face. Each entry is the neighbouring
      * position paired with the direction pointing from this column towards it.
      */
     private java.util.List<com.mojang.datafixers.util.Pair<BlockPos, Direction>> getOutputPos(Level level) {
@@ -154,34 +163,32 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
         java.util.List<com.mojang.datafixers.util.Pair<BlockPos, Direction>> out = new java.util.ArrayList<>();
         out.add(com.mojang.datafixers.util.Pair.of(pos.above(h + 1), Direction.UP));
 
-        BlockPos loader = null;
-        if (level.getBlockState(pos.below()).is(com.hbm_m.block.ModBlocks.RBMK_LOADER.get())) {
-            loader = pos.below();
-        } else if (level.getBlockState(pos.below(2)).is(com.hbm_m.block.ModBlocks.RBMK_LOADER.get())) {
-            loader = pos.below(2);
-        }
-        if (loader != null) {
-            for (Direction dir : Direction.values()) {
-                if (dir == Direction.UP) continue;
-                out.add(com.mojang.datafixers.util.Pair.of(loader.relative(dir), dir));
-            }
+        // Original precedence in TileEntityRBMKBoiler.updateEntity: the classic loader (y-2) wins
+        if (level.getBlockState(pos.below(2)).is(com.hbm_m.block.ModBlocks.RBMK_LOADER.get())) {
+            out.add(com.mojang.datafixers.util.Pair.of(pos.below(), Direction.DOWN));
+            addAllSides(out, pos.below(2));
+        } else if (level.getBlockState(pos.below()).is(com.hbm_m.block.ModBlocks.RBMK_LOADER.get())) {
+            addAllSides(out, pos.below());
+        } else {
+            out.add(com.mojang.datafixers.util.Pair.of(pos.below(), Direction.DOWN));
         }
         return out;
     }
 
+    private static void addAllSides(java.util.List<com.mojang.datafixers.util.Pair<BlockPos, Direction>> out, BlockPos around) {
+        for (Direction dir : Direction.values()) {
+            out.add(com.mojang.datafixers.util.Pair.of(around.relative(dir), dir));
+        }
+    }
+
     /**
-     * The original's {@code trySubscribe(feed, ..., yCoord - 1, NEG_Y)} plus a {@code tryProvide}
-     * for every output position. This replaces a hand-rolled "push into whatever fluid handler is
-     * next door" pass: the port has the full MK2 fluid network, so the channel should join it the
-     * same way every other machine does, otherwise it can only ever talk to a block it is
-     * physically touching and never to a pipe run.
+     * The original binds the feed AND the steam to every position of the unified shape and calls
+     * checkSubscribe/checkProvide on all ports every tick, regardless of fill - so both operations
+     * run on every position here too (tryProvide handles an empty tank by simply offering nothing).
      */
     private void exchangeFluids(Level level) {
-        BlockPos pos = getBlockPos();
-        trySubscribe(waterTank, level, pos.below(), Direction.DOWN);
-
-        if (steamTank.getFill() <= 0) return;
         for (com.mojang.datafixers.util.Pair<BlockPos, Direction> target : getOutputPos(level)) {
+            trySubscribe(waterTank, level, target.getFirst(), target.getSecond());
             tryProvide(steamTank, level, target.getFirst(), target.getSecond());
         }
     }
@@ -330,6 +337,10 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
      * destroyed the stored steam every fourth click.
      */
     public void cycleCompressor() {
+        // TileEntityRBMKBoiler.cyceCompressor L188: compression is refused while the column is
+        // still hot AND the feed tank holds water - no cheap steam multiplication while boiling.
+        if (heat > 50 && waterTank.getFill() > 0) return;
+
         int grade = getSteamGrade();
         int fill  = steamTank.getFill();
 

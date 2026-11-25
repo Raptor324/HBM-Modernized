@@ -106,23 +106,46 @@ public class TransitionSealBlock extends BaseEntityBlock implements IMultiblockC
     @Override
     public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player,
                                                      net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
-        return hbmOnUse(level, pos, player);
+        return hbmOnUse(level, pos, player, hand);
     }
     //?} else {
     /*@Override
     protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.phys.BlockHitResult hit) {
-        return hbmOnUse(level, pos, player);
+        return hbmOnUse(level, pos, player, net.minecraft.world.InteractionHand.MAIN_HAND);
     }
     *///?}
 
-    private net.minecraft.world.InteractionResult hbmOnUse(Level level, BlockPos pos, net.minecraft.world.entity.player.Player player) {
-        if (!level.isClientSide && !player.isShiftKeyDown()) {
-            if (level.getBlockEntity(pos) instanceof TransitionSealBlockEntity seal) {
-                return seal.tryToggle() ? net.minecraft.world.InteractionResult.SUCCESS : net.minecraft.world.InteractionResult.PASS;
+    private net.minecraft.world.InteractionResult hbmOnUse(Level level, BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand) {
+        if (player.isShiftKeyDown()) {
+            return net.minecraft.world.InteractionResult.PASS;
+        }
+
+        for (net.minecraft.world.item.ItemStack held : new net.minecraft.world.item.ItemStack[] { player.getMainHandItem(), player.getOffhandItem() }) {
+            if (!held.isEmpty() && (held.getItem() instanceof com.hbm_m.item.ItemLock
+                    || held.getItem() instanceof com.hbm_m.item.ItemCounterfeitKeys
+                    || held.getItem() instanceof com.hbm_m.item.tool.ItemLock
+                    || held.getItem() instanceof com.hbm_m.item.tool.ItemCounterfeitKeys)) {
+                return net.minecraft.world.InteractionResult.PASS;
+            }
+        }
+
+        if (level.getBlockEntity(pos) instanceof TransitionSealBlockEntity seal) {
+            if (seal.tryToggle(player)) {
+                return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide);
             }
             return net.minecraft.world.InteractionResult.PASS;
         }
-        return player.isShiftKeyDown() ? net.minecraft.world.InteractionResult.PASS : net.minecraft.world.InteractionResult.SUCCESS;
+        return net.minecraft.world.InteractionResult.PASS;
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
+        super.neighborChanged(state, level, pos, block, fromPos, isMoving);
+        if (!level.isClientSide) {
+            if (level.getBlockEntity(pos) instanceof TransitionSealBlockEntity seal) {
+                seal.invalidateRedstoneCache();
+            }
+        }
     }
 
     @Override
@@ -209,6 +232,17 @@ public class TransitionSealBlock extends BaseEntityBlock implements IMultiblockC
      * opening and the footprint at every point.
      */
     public static VoxelShape getCellCollisionShape(BlockGetter level, BlockPos corePos, BlockState state, BlockPos cellPos) {
+        return getCellCollisionShape(level, corePos, state, cellPos, 1.0F);
+    }
+
+    /**
+     * Collision of a single cell of the 26 x 24 wall. While the door is opening or open,
+     * cells inside the elliptical doorway (semi-axes 10.5 x 9.5) become passable
+     * progressively from bottom to top as {@code openProgress} rises from 0 to 1.
+     */
+    public static VoxelShape getCellCollisionShape(BlockGetter level, BlockPos corePos, BlockState state, BlockPos cellPos, float openProgress) {
+        if (openProgress <= 0F) return Shapes.block();
+
         Direction facing = state.getValue(FACING);
         boolean zAxis = facing == Direction.EAST || facing == Direction.WEST;
         int dw = zAxis ? cellPos.getZ() - corePos.getZ() : cellPos.getX() - corePos.getX();
@@ -216,7 +250,7 @@ public class TransitionSealBlock extends BaseEntityBlock implements IMultiblockC
 
         double ex = dw / 10.5;
         double ey = (dy - 11.5) / 9.5;
-        if(ex * ex + ey * ey <= 1.0) return Shapes.empty();
+        if(ex * ex + ey * ey <= 1.0 && dy < 2.0 + 20.0 * openProgress) return Shapes.empty();
         return Shapes.block();
     }
 

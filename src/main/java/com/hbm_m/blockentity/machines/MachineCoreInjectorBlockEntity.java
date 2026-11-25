@@ -104,7 +104,7 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity imple
         be.applyIdentifiers();
         be.injectIntoCore(level, pos, state);
         // Original networkPackNT: Strahllaenge und Tanks gehen jeden Tick an den Client (RenderCoreComponent)
-        be.sendUpdateToClient();
+        if (be.probeDue(5)) be.sendUpdateToClient();
     }
 
     /**

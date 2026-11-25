@@ -10,18 +10,17 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import com.hbm_m.platform.MobHooks;
 
 /**
  * 1:1 port of {@code RBMKDebrisBurning}: the glowing rubble left where a reactor column burned
  * through.
  *
- * <p>It is not decoration - it keeps working after the meltdown. Every tick it puffs flame, has a
- * chance to push meltdown gas into an adjacent air block, and eventually burns itself out into
- * plain rubble. Foam and boron sand next to it make that burn-out ten times more likely, which is
- * the original's intended way of fighting a meltdown site rather than waiting it out.</p>
+ * <p>It is not decoration - it keeps working after the meltdown. Every tick cycle it puffs flame
+ * (1-in-5), has a 1-in-10 chance to push meltdown gas into an adjacent air block, and eventually
+ * burns itself out into plain rubble. Foam and boron sand next to it make that burn-out ten times
+ * more likely (1-in-10 instead of 1-in-100), which is the original's intended way of fighting a
+ * meltdown site rather than waiting it out. The burning rubble itself damages nobody.</p>
  */
 public class RBMKDebrisBurningBlock extends Block {
 
@@ -29,18 +28,10 @@ public class RBMKDebrisBurningBlock extends Block {
         super(props);
     }
 
-    /**
-     * CE's {@code RBMKDebrisBurning.tickRate} is 100-120 ticks, not 20-40. The port ticked five
-     * times as fast, so with the same 1-in-100 burn-out roll the fire went out roughly five times
-     * sooner than intended.
-     */
+    /** 1.7.10 {@code RBMKDebrisBurning.tickRate}: 100-120 ticks between updates. */
     private static int nextDelay(RandomSource random) {
         return 100 + random.nextInt(20);
     }
-
-    /** Range and strength of the heat field around burning rubble (CE: {@code radiate(.., 32, 0, 0, 50)}). */
-    private static final double FIRE_RANGE = 32D;
-    private static final float FIRE_STRENGTH = 50F;
 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
@@ -50,10 +41,6 @@ public class RBMKDebrisBurningBlock extends Block {
 
     @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        // Burning rubble is genuinely hot: CE bathes a 32-block radius in a fire field. The port
-        // only drew flame particles, so you could stand in the middle of a burning crater unharmed.
-        scorch(level, pos, FIRE_RANGE, FIRE_STRENGTH);
-
         if (random.nextInt(5) == 0) {
             spawnFlame(level, pos, random);
             level.playSound(null, pos, SoundEvents.FIRE_AMBIENT, SoundSource.BLOCKS,
@@ -69,7 +56,8 @@ public class RBMKDebrisBurningBlock extends Block {
             level.setBlockAndUpdate(side, ModBlocks.GAS_MELTDOWN.get().defaultBlockState());
         }
 
-        // Foam smothers the fire, boron stops the fission - both cut the burn-out timer massively.
+        // Foam helps stop the fire; Boron smothers it. 1.66% chance every 100-120 seconds for one
+        // side (1.7.10 RBMKDebrisBurning.updateTick: chance = 10 with foam/boron, else 100).
         boolean suppressed = isSuppressant(level.getBlockState(side));
         int chance = suppressed ? 10 : 100;
 
@@ -80,35 +68,42 @@ public class RBMKDebrisBurningBlock extends Block {
         }
     }
 
-    /** CE checks for boron sand and nothing else. */
+    /**
+     * 1.7.10 {@code RBMKDebrisBurning.updateTick} burn-out roll counts foam_layer, block_foam,
+     * sand_boron_layer and the boron sand mix (the port's one-block-per-variant analog of the
+     * {@code sand_mix} BORON metadata is the full {@code sand_boron} block) - all four cut the
+     * burn-out timer tenfold.
+     */
     static boolean isSuppressant(BlockState state) {
-        return state.is(ModBlocks.SAND_BORON.get());
+        return state.is(ModBlocks.FOAM_LAYER.get()) || state.is(ModBlocks.BLOCK_FOAM.get())
+                || isBoronSuppressant(state);
     }
 
     /**
-     * CE's {@code ContaminationUtil.radiate} fire term: damage falls off with the square of the
-     * distance and the entity is set alight for five seconds once it is above the noise floor.
+     * 1.7.10 {@code RBMKDebrisRadiating.updateTick} decay roll counts only the boron sands
+     * ({@code sand_boron_layer} and the {@code sand_mix} BORON metadata) - foam does nothing
+     * there.
      */
-    static void scorch(ServerLevel level, BlockPos pos, double range, float strength) {
+    static boolean isBoronSuppressant(BlockState state) {
+        return state.is(ModBlocks.SAND_BORON_LAYER.get()) || state.is(ModBlocks.SAND_BORON.get());
+    }
+
+    /**
+     * 1.7.10 {@code RBMKDebrisRadiating.radiate}: flat 100 {@code inFire} damage to every living
+     * being within 5 blocks of the rubble's centre - no ignite, no distance falloff. Distance is
+     * measured to the entity's eye, matching the original's {@code len} computation.
+     */
+    static void scorch(ServerLevel level, BlockPos pos) {
         double cx = pos.getX() + 0.5, cy = pos.getY() + 0.5, cz = pos.getZ() + 0.5;
-        net.minecraft.world.phys.AABB area = new net.minecraft.world.phys.AABB(pos).inflate(range);
 
         for (net.minecraft.world.entity.LivingEntity e :
-                level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, area)) {
-            if (e.fireImmune()) continue;
-
+                level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
+                        new net.minecraft.world.phys.AABB(pos).inflate(5))) {
             double dx = e.getX() - cx;
             double dy = (e.getY() + e.getEyeHeight()) - cy;
             double dz = e.getZ() - cz;
-            double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (len > range) continue;
-
-            double dmgLen = Math.max(len, range * 0.05D);
-            float damage = (float) (strength / (dmgLen * dmgLen));
-            if (damage <= 0.025F) continue;
-
-            e.hurt(level.damageSources().inFire(), damage);
-            com.hbm_m.platform.MobHooks.setSecondsOnFire(e, 5);
+            if (Math.sqrt(dx * dx + dy * dy + dz * dz) < 5)
+                e.hurt(level.damageSources().inFire(), 100F);
         }
     }
 

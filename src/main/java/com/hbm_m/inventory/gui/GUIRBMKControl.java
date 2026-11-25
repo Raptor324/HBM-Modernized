@@ -97,9 +97,11 @@ public class GUIRBMKControl extends GuiInfoScreen<RBMKControlMenu> {
             }
 
             // Farbgroup (color group) assignment buttons.
+            // 1:1 with GUIRBMKControl.mouseClicked: the original only SENDS the packet (0..4,
+            // unconditionally) and never mutates the client tile - the toggle-off on clicking the
+            // active color is decided server-side, so a local prediction would mask it.
             if (isPointInRect(28, 26 + k * 11, 12, 10, (int) mouseX, (int) mouseY)) {
                 playClickSound();
-                be.color = (short) k;
                 RBMKControlPacket.sendSetColor(be.getBlockPos(), k);
                 return true;
             }

@@ -95,22 +95,21 @@ public final class ClusterSubmunitionMesh {
 
         List<Tri> tris = new ArrayList<>();
         for (NMeshData.SubMesh sm : nmesh.getSubMeshesForPart("MiniNuke")) {
-            float[] verts = sm.vertices;
-            int[] idx = sm.indices;
-            for (int i = 0; i + 2 < idx.length; i += 3) {
-                int b0 = idx[i] * 8, b1 = idx[i + 1] * 8, b2 = idx[i + 2] * 8;
-                Vec3 a = new Vec3(verts[b0], verts[b0 + 1], verts[b0 + 2]);
-                Vec3 b = new Vec3(verts[b1], verts[b1 + 1], verts[b1 + 2]);
-                Vec3 c = new Vec3(verts[b2], verts[b2 + 1], verts[b2 + 2]);
+            int iCount = sm.indexCount();
+            for (int i = 0; i + 2 < iCount; i += 3) {
+                int v0 = sm.index(i), v1 = sm.index(i + 1), v2 = sm.index(i + 2);
+                Vec3 a = new Vec3(sm.posX(v0), sm.posY(v0), sm.posZ(v0));
+                Vec3 b = new Vec3(sm.posX(v1), sm.posY(v1), sm.posZ(v1));
+                Vec3 c = new Vec3(sm.posX(v2), sm.posY(v2), sm.posZ(v2));
                 if (!isValidTriangle(a, b, c)) {
                     continue;
                 }
-                Vec2 ua = new Vec2(verts[b0 + 6], verts[b0 + 7]);
-                Vec2 ub = new Vec2(verts[b1 + 6], verts[b1 + 7]);
-                Vec2 uc = new Vec2(verts[b2 + 6], verts[b2 + 7]);
-                Vec3 na = new Vec3(verts[b0 + 3], verts[b0 + 4], verts[b0 + 5]);
-                Vec3 nb = new Vec3(verts[b1 + 3], verts[b1 + 4], verts[b1 + 5]);
-                Vec3 nc = new Vec3(verts[b2 + 3], verts[b2 + 4], verts[b2 + 5]);
+                Vec2 ua = new Vec2(sm.u(v0), sm.v(v0));
+                Vec2 ub = new Vec2(sm.u(v1), sm.v(v1));
+                Vec2 uc = new Vec2(sm.u(v2), sm.v(v2));
+                Vec3 na = new Vec3(sm.normX(v0), sm.normY(v0), sm.normZ(v0));
+                Vec3 nb = new Vec3(sm.normX(v1), sm.normY(v1), sm.normZ(v1));
+                Vec3 nc = new Vec3(sm.normX(v2), sm.normY(v2), sm.normZ(v2));
                 tris.add(new Tri(a, b, c, ua, ub, uc, faceNormal(a, b, c, na, nb, nc)));
             }
         }

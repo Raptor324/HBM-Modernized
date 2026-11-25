@@ -16,6 +16,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
@@ -97,4 +98,14 @@ public class MachineSteamEngineBlock extends DummyableMachineBlock implements co
     /*public static final com.mojang.serialization.MapCodec<MachineSteamEngineBlock> CODEC = simpleCodec(MachineSteamEngineBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
+
+    // Verbatim port of the original MachineSteamEngine.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 1, 0, Direction.EAST.get3DDataValue()},
+            {1, 1, 1, Direction.EAST.get3DDataValue()},
+            {1, 1, -1, Direction.EAST.get3DDataValue()}
+        }, facing);
+    }
 }

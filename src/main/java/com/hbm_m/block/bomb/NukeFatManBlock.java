@@ -179,16 +179,12 @@ public class NukeFatManBlock extends BaseEntityBlock implements IMultiblockContr
         if (be instanceof NukeFatManBlockEntity nukeBe) {
             if (nukeBe.isReady()) {
                 nukeBe.clearContent();
-                Direction facing = level.getBlockState(pos).getValue(FACING);
-                structureHelper.destroyStructure(level, pos, facing);
                 level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
                 NuclearExplosionAPI.startFatMan(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
                 return BombReturnCode.DETONATED;
             }
             if (nukeBe.isFilled()) {
                 nukeBe.clearContent();
-                Direction facing = level.getBlockState(pos).getValue(FACING);
-                structureHelper.destroyStructure(level, pos, facing);
                 level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
                 NuclearExplosionAPI.startFatMan(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
                 return BombReturnCode.DETONATED;

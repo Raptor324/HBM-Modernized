@@ -8,8 +8,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
+import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.interfaces.IFrameSupportable;
+import com.hbm_m.multiblock.MultiblockFrameHelper;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.inventory.UpgradeManager;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -45,7 +49,7 @@ import net.minecraft.world.phys.AABB;
  * Schlagbolzen klopfen der Reihe nach.
  */
 public class MachinePrecAssBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2,
-        com.hbm_m.interfaces.IUpgradeInfoProvider {
+        IFrameSupportable, com.hbm_m.interfaces.IUpgradeInfoProvider {
 
     public static final int SLOT_COUNT = 22;
 
@@ -60,7 +64,9 @@ public class MachinePrecAssBlockEntity extends BaseMachineBlockEntity implements
     public final FluidTank outputTank = new FluidTank(ModFluids.NONE.getSource(), 4_000);
 
     public boolean didProcess = false;
-    public boolean frame = false;
+
+    /** Клиентский кэш иконки выбранного рецепта для hook-рендера (обновляется раз в тик). */
+    public ItemStack clientRecipeIcon = ItemStack.EMPTY;
 
     public final MachineModulePrecAss assemblerModule;
     public final UpgradeManager upgradeManager = new UpgradeManager();
@@ -135,14 +141,21 @@ public class MachinePrecAssBlockEntity extends BaseMachineBlockEntity implements
         this.didProcess = this.assemblerModule.didProcess;
         if (this.assemblerModule.needsSync) setChanged();
 
+        if (world.getGameTime() % 20 == 0) {
+            checkForFrame();
+        }
+
         // networkPackNT(100)
-        sendUpdateToClient();
+        if (probeDue(10)) sendUpdateToClient();
     }
 
     private void clientTick(Level world, BlockPos pos) {
         if (world.getGameTime() % 20 == 0) {
-            frame = !world.getBlockState(pos.above(3)).isAir();
+            // Рамка хранится в BlockState (FRAME property); на клиенте только читаем.
         }
+
+        PrecAssRecipe clientRecipe = assemblerModule.peekRecipe();
+        this.clientRecipeIcon = clientRecipe != null ? clientRecipe.getResultItemSafe() : ItemStack.EMPTY;
 
         com.hbm_m.client.sound.MachineLoopSoundClient.tick(this, "hbm:block.motor", this.didProcess, 0.5F, 0.75F, 50);
 
@@ -362,6 +375,28 @@ public class MachinePrecAssBlockEntity extends BaseMachineBlockEntity implements
     public AABB getRenderBoundingBox() {
         return new AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
                 worldPosition.getX() + 2, worldPosition.getY() + 3, worldPosition.getZ() + 2);
+    }
+
+    // ==================== IFrameSupportable (1:1 MachineAdvancedAssemblerBlockEntity) ====================
+
+    @Override
+    public void checkForFrame() {
+        if (level != null && !level.isClientSide) {
+            MultiblockStructureHelper.updateFrameForController(level, worldPosition);
+        }
+    }
+
+    @Override
+    public boolean setFrameVisible(boolean visible) {
+        if (level != null && !level.isClientSide) {
+            return MultiblockFrameHelper.applyFrameToBlockState(level, worldPosition, visible);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isFrameVisible() {
+        return MultiblockFrameHelper.isFrameVisible(getBlockState());
     }
 
     //? if forge {

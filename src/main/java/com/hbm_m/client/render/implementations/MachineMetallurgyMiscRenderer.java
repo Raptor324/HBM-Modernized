@@ -59,8 +59,8 @@ public final class MachineMetallurgyMiscRenderer {
         MachineRenderers.machine("rockmill", ModBlockEntities.ROCKMILL_BE.get(),
                 MachineRockMillBlockEntity.class)
             .part("Base")
-            .conditionalPart("Frame", be -> be.frame)
-            .rotateY("Wheel", 0f, 0f, (be, pt) -> -(Mth.lerp(pt, be.prevRotation, be.rotation)))
+            .conditionalPart("Frame", be -> com.hbm_m.multiblock.MultiblockFrameHelper.isFrameVisible(be.getBlockState()))
+            .rotateY("Wheel", 0.5f, 0.5f, (be, pt) -> -(Mth.lerp(pt, be.prevRotation, be.rotation)))
             .blockTransform(MachineMetallurgyMiscRenderer::applyRockMillTransform)
             .itemParts("Base", "Wheel")
             .register();
@@ -108,6 +108,7 @@ public final class MachineMetallurgyMiscRenderer {
                 default -> {}
             }
         }
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private static void renderMassStorageFront(MachineMassStorageBlockEntity storage, PoseStack ps, MultiBufferSource buf) {

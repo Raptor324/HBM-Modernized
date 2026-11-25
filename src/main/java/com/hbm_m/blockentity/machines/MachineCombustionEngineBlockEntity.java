@@ -272,7 +272,7 @@ public class MachineCombustionEngineBlockEntity extends com.hbm_m.blockentity.Ma
 
     /** Original {@code receiveControl("setting")}. */
     public void setThrottle(int throttle) {
-        setting = throttle;
+        setting = net.minecraft.util.Mth.clamp(throttle, 0, 30);
         syncIfStateChanged(getEnergyStored(), (isOn ? 1L : 0L) | (wasOn ? 2L : 0L) | (((long) setting) << 2) | (((long) tank.getFill()) << 8) | (((long) playersUsing) << 32));
     }
 
@@ -301,7 +301,7 @@ public class MachineCombustionEngineBlockEntity extends com.hbm_m.blockentity.Ma
     @Override
     public void receiveControl(CompoundTag data) {
         if (data.contains("turnOn")) this.isOn = !this.isOn;
-        if (data.contains("setting")) this.setting = data.getInt("setting");
+        if (data.contains("setting")) this.setting = net.minecraft.util.Mth.clamp(data.getInt("setting"), 0, 30);
         setChanged();
         sendUpdateToClient();
     }

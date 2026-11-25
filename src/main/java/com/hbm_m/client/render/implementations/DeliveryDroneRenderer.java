@@ -78,21 +78,20 @@ public class DeliveryDroneRenderer extends EntityRenderer<EntityDroneBase> {
             String key = !sm.objectName.isEmpty() ? sm.objectName
                     : (!sm.groupName.isEmpty() ? sm.groupName : "default");
             List<float[]> tris = OBJ_PARTS.computeIfAbsent(key, k -> new ArrayList<>());
-            float[] verts = sm.vertices;
-            int[] idx = sm.indices;
-            for (int i = 0; i + 2 < idx.length; i += 3) {
+            int iCount = sm.indexCount();
+            for (int i = 0; i + 2 < iCount; i += 3) {
                 float[] t = new float[24];
                 for (int c = 0; c < 3; c++) {
-                    int b = idx[i + c] * 8;
-                    t[c * 8 + 0] = verts[b + 0];
-                    t[c * 8 + 1] = verts[b + 1];
-                    t[c * 8 + 2] = verts[b + 2];
+                    int vi = sm.index(i + c);
+                    t[c * 8 + 0] = sm.posX(vi);
+                    t[c * 8 + 1] = sm.posY(vi);
+                    t[c * 8 + 2] = sm.posZ(vi);
                     // raw u,v: render() applies (1 - v) on output.
-                    t[c * 8 + 3] = verts[b + 6];
-                    t[c * 8 + 4] = verts[b + 7];
-                    t[c * 8 + 5] = verts[b + 3];
-                    t[c * 8 + 6] = verts[b + 4];
-                    t[c * 8 + 7] = verts[b + 5];
+                    t[c * 8 + 3] = sm.u(vi);
+                    t[c * 8 + 4] = sm.v(vi);
+                    t[c * 8 + 5] = sm.normX(vi);
+                    t[c * 8 + 6] = sm.normY(vi);
+                    t[c * 8 + 7] = sm.normZ(vi);
                 }
                 tris.add(t);
             }

@@ -152,8 +152,11 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
             double angle = level.random.nextInt(4) * 9.0D;
             for (int i = 0; i < 8; i++) {
                 double rad = Math.toRadians(angle);
+                // CE TileEntityRBMKRodReaSim builds the fan with Vec3NT.rotateAroundYDeg, which
+                // maps (1,0,0) to (cos a, 0, -sin a) - the sine is negative, or the quantized
+                // 8-ray residues mod 45 deg differ from the original's.
                 sw.addStream(new RBMKNeutronStream(node,
-                        new Vec3(Math.cos(rad), 0, Math.sin(rad)), flux * 0.75, ratio));
+                        new Vec3(Math.cos(rad), 0, -Math.sin(rad)), flux * 0.75, ratio));
                 angle += 45.0D;
             }
             return;
@@ -182,15 +185,13 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
         if (level.random.nextInt(3) == 0) reduce++;
 
         if (hadFuel) {
-            // A fuelled channel leaves corium instead of ordinary rubble - but only up to the same
-            // cut-off the passive columns use. The port ignored `reduce` here and filled the whole
-            // column with corium regardless of how deep in the reactor it sat, so every meltdown
-            // produced a solid corium slab rather than CE's crater profile.
+            // A fuelled channel fills the ENTIRE column with corium, top to bottom, with no
+            // reduce cutoff - CE's TileEntityRBMKRod.onMelt only passes `reduce` to standardMelt
+            // for unfuelled columns, and the fuel debris count stays 1+rand(h).
             BlockPos base = getBlockPos();
             for (int i = h; i >= 0; i--) {
-                level.setBlock(base.above(i), i <= h + 1 - reduce
-                        ? com.hbm_m.block.ModBlocks.RBMK_CORIUM.get().defaultBlockState()
-                        : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+                level.setBlock(base.above(i),
+                        com.hbm_m.block.ModBlocks.RBMK_CORIUM.get().defaultBlockState(), 3);
             }
             int count = 1 + level.random.nextInt(h);
             for (int i = 0; i < count; i++) spawnDebris(level, "fuel");
@@ -253,7 +254,9 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
     @Override public RBMKType  getRBMKType()       { return RBMKType.ROD; }
     @Override public boolean   isModerated()       { return moderated; }
     @Override public double    maxHeat()           { return 1500; }
-    @Override public ColumnType getConsoleType()   { return ColumnType.FUEL; }
+    // CE TileEntityRBMKRodReaSim.getCosoleType returns ColumnType.FUEL_SIM, giving ReaSim
+    // channels their own 10px console icon (offset 90) and the shared FUEL stat lines.
+    @Override public ColumnType getConsoleType()   { return isReaSim() ? ColumnType.FUEL_SIM : ColumnType.FUEL; }
 
     // ─── DODD diagnostic ────────────────────────────────────────────────────────
 

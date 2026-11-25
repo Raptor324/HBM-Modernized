@@ -243,6 +243,25 @@ public class LegoClient {
 		GunGL.renderPart(WeaponResources.projectiles, "MissileMIRV");
 	};
 
+	public static BiConsumer<EntityBulletBaseMK4, Float> RENDER_FLIEGERFAUST = (bullet, interp) -> {
+
+		GunGL.pushMatrix();
+		GunGL.scale(0.25F * 4, 0.125F, 0.125F);
+		GunGL.rotate(90, 0, 0, 1);
+		GunGL.translate(0, 0.25, 0);
+		GunGL.bindTexture(WeaponResources.grenade_tex);
+		GunGL.renderPart(WeaponResources.projectiles, "Grenade");
+		GunGL.popMatrix();
+
+		GunGL.fullbright(true);
+		GunGL.pushMatrix();
+		GunGL.rotate(bullet.xRotO + (bullet.getXRot() - bullet.xRotO) * interp + 180, 0.0F, 0.0F, -1.0F);
+		GunGL.rotate(bullet.yRotO + (bullet.getYRot() - bullet.yRotO) * interp - 90.0F, 0.0F, -1.0F, 0.0F);
+		renderFlareSprite(bullet, interp, 1F, 0.875F, 0.25F, 0.375, 0.125F, 0.25F);
+		GunGL.popMatrix();
+		GunGL.fullbright(false);
+	};
+
 	public static BiConsumer<EntityBulletBaseMK4, Float> RENDER_RPZB = (bullet, interp) -> {
 
 		GunGL.pushMatrix();

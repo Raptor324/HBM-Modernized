@@ -1,5 +1,6 @@
 package com.hbm_m.client.model.nmesh;
 
+import com.hbm_m.client.render.HalfFloat;
 import com.hbm_m.client.render.cache.RenderCacheManager;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.client.Minecraft;
@@ -11,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.ref.SoftReference;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,7 +28,7 @@ import java.util.function.Function;
  */
 public final class NMeshLoader {
 
-    private static final ConcurrentHashMap<ResourceLocation, NMeshData> CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<ResourceLocation, SoftReference<NMeshData>> CACHE = new ConcurrentHashMap<>();
 
     static {
         RenderCacheManager.register(reason -> CACHE.clear());
@@ -51,7 +53,8 @@ public final class NMeshLoader {
     public static @Nullable NMeshData load(ResourceLocation modelLocation) {
         if (modelLocation == null) return null;
         ResourceLocation nmeshLoc = toNMeshLocation(modelLocation);
-        NMeshData cached = CACHE.get(nmeshLoc);
+        SoftReference<NMeshData> ref = CACHE.get(nmeshLoc);
+        NMeshData cached = ref != null ? ref.get() : null;
         if (cached != null) {
             return cached;
         }
@@ -66,7 +69,7 @@ public final class NMeshLoader {
         if (nmeshRes != null) {
             try (InputStream in = nmeshRes.open()) {
                 NMeshData data = NMeshData.read(nmeshLoc, in);
-                CACHE.put(nmeshLoc, data);
+                CACHE.put(nmeshLoc, new SoftReference<>(data));
                 return data;
             } catch (Exception e) {
                 MainRegistry.LOGGER.error("Failed to read binary .nmesh {}", nmeshLoc, e);
@@ -85,7 +88,7 @@ public final class NMeshLoader {
         if (objRes != null) {
             try (InputStream in = objRes.open()) {
                 NMeshData data = compileObjStream(nmeshLoc, in);
-                CACHE.put(nmeshLoc, data);
+                CACHE.put(nmeshLoc, new SoftReference<>(data));
                 return data;
             } catch (Exception e) {
                 MainRegistry.LOGGER.error("Failed to parse fallback .obj {}", objLoc, e);
@@ -346,7 +349,9 @@ public final class NMeshLoader {
         int[] hashTable = new int[tableSize];
         Arrays.fill(hashTable, -1);
 
-        float[] uniqueVerts = new float[rawCount * 8];
+        float[] uniquePos = new float[rawCount * 3];
+        int[] uniqueNorm = new int[rawCount];
+        float[] uniqueUv = new float[rawCount * 2];
         int[] indices = new int[rawCount];
         int uniqueCount = 0;
 
@@ -374,19 +379,15 @@ public final class NMeshLoader {
             int w0 = floatBits(x);
             int w1 = floatBits(y);
             int w2 = floatBits(z);
-            int w3 = floatBits(nx);
-            int w4 = floatBits(ny);
-            int w5 = floatBits(nz);
-            int w6 = floatBits(u);
-            int w7 = floatBits(vt);
+            int pNorm = NMeshData.SubMesh.packNormal(nx, ny, nz);
+            int wU = floatBits(u);
+            int wV = floatBits(vt);
 
             int h = w0 * 31 + w1;
             h = h * 31 + w2;
-            h = h * 31 + w3;
-            h = h * 31 + w4;
-            h = h * 31 + w5;
-            h = h * 31 + w6;
-            h = h * 31 + w7;
+            h = h * 31 + pNorm;
+            h = h * 31 + wU;
+            h = h * 31 + wV;
             h ^= (h >>> 16);
 
             int slot = h & mask;
@@ -395,27 +396,23 @@ public final class NMeshLoader {
                 int cand = hashTable[slot];
                 if (cand < 0) {
                     found = uniqueCount++;
-                    int b = found * 8;
-                    uniqueVerts[b]     = x;
-                    uniqueVerts[b + 1] = y;
-                    uniqueVerts[b + 2] = z;
-                    uniqueVerts[b + 3] = nx;
-                    uniqueVerts[b + 4] = ny;
-                    uniqueVerts[b + 5] = nz;
-                    uniqueVerts[b + 6] = u;
-                    uniqueVerts[b + 7] = vt;
+                    int p = found * 3;
+                    uniquePos[p]     = x;
+                    uniquePos[p + 1] = y;
+                    uniquePos[p + 2] = z;
+                    uniqueNorm[found] = pNorm;
+                    uniqueUv[found * 2]     = u;
+                    uniqueUv[found * 2 + 1] = vt;
                     hashTable[slot] = found;
                     break;
                 }
-                int b = cand * 8;
-                if (floatBits(uniqueVerts[b]) == w0
-                        && floatBits(uniqueVerts[b + 1]) == w1
-                        && floatBits(uniqueVerts[b + 2]) == w2
-                        && floatBits(uniqueVerts[b + 3]) == w3
-                        && floatBits(uniqueVerts[b + 4]) == w4
-                        && floatBits(uniqueVerts[b + 5]) == w5
-                        && floatBits(uniqueVerts[b + 6]) == w6
-                        && floatBits(uniqueVerts[b + 7]) == w7) {
+                int p = cand * 3;
+                if (floatBits(uniquePos[p]) == w0
+                        && floatBits(uniquePos[p + 1]) == w1
+                        && floatBits(uniquePos[p + 2]) == w2
+                        && uniqueNorm[cand] == pNorm
+                        && floatBits(uniqueUv[cand * 2]) == wU
+                        && floatBits(uniqueUv[cand * 2 + 1]) == wV) {
                     found = cand;
                     break;
                 }
@@ -424,8 +421,19 @@ public final class NMeshLoader {
             indices[i] = found;
         }
 
-        float[] finalVerts = Arrays.copyOf(uniqueVerts, uniqueCount * 8);
-        int[] tangents = computePackedTangents(uniqueCount, finalVerts, indices);
+        float[] finalPos = Arrays.copyOf(uniquePos, uniqueCount * 3);
+        int[] finalNorm = Arrays.copyOf(uniqueNorm, uniqueCount);
+        float[] finalUv = Arrays.copyOf(uniqueUv, uniqueCount * 2);
+        short[] shortIndices = null;
+        int[] intIndices = null;
+        if (uniqueCount <= 65535) {
+            shortIndices = new short[rawCount];
+            for (int i = 0; i < rawCount; i++) {
+                shortIndices[i] = (short) indices[i];
+            }
+        } else {
+            intIndices = indices;
+        }
         if (!Float.isFinite(minX)) {
             minX = minY = minZ = 0f;
             maxX = maxY = maxZ = 1f;
@@ -433,58 +441,6 @@ public final class NMeshLoader {
         return new NMeshData.SubMesh(obj, grp, mat, mapKd,
                 kdR, kdG, kdB, kaR, kaG, kaB,
                 minX, minY, minZ, maxX, maxY, maxZ,
-                uniqueCount, finalVerts, tangents, indices);
-    }
-
-    private static int[] computePackedTangents(int vertexCount, float[] verts, int[] indices) {
-        float[] tan1 = new float[vertexCount * 3];
-        float[] tan2 = new float[vertexCount * 3];
-        for (int i = 0; i + 2 < indices.length; i += 3) {
-            int i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2];
-            int b0 = i0 * 8, b1 = i1 * 8, b2 = i2 * 8;
-            float dx1 = verts[b1] - verts[b0], dy1 = verts[b1 + 1] - verts[b0 + 1], dz1 = verts[b1 + 2] - verts[b0 + 2];
-            float dx2 = verts[b2] - verts[b0], dy2 = verts[b2 + 1] - verts[b0 + 1], dz2 = verts[b2 + 2] - verts[b0 + 2];
-            float du1 = verts[b1 + 6] - verts[b0 + 6];
-            // Minecraft uses flipped V (1.0 - V) at render time, so dv -> -dv
-            float dv1 = -(verts[b1 + 7] - verts[b0 + 7]);
-            float du2 = verts[b2 + 6] - verts[b0 + 6];
-            float dv2 = -(verts[b2 + 7] - verts[b0 + 7]);
-            float det = du1 * dv2 - du2 * dv1;
-            if (Math.abs(det) < 1e-8f) continue;
-            float r = 1.0f / det;
-            float sx = (dv2 * dx1 - dv1 * dx2) * r;
-            float sy = (dv2 * dy1 - dv1 * dy2) * r;
-            float sz = (dv2 * dz1 - dv1 * dz2) * r;
-            float tx = (du1 * dx2 - du2 * dx1) * r;
-            float ty = (du1 * dy2 - du2 * dy1) * r;
-            float tz = (du1 * dz2 - du2 * dz1) * r;
-            for (int idx : new int[]{i0, i1, i2}) {
-                int tOff = idx * 3;
-                tan1[tOff] += sx; tan1[tOff + 1] += sy; tan1[tOff + 2] += sz;
-                tan2[tOff] += tx; tan2[tOff + 1] += ty; tan2[tOff + 2] += tz;
-            }
-        }
-        int[] packed = new int[vertexCount];
-        for (int v = 0; v < vertexCount; v++) {
-            int b = v * 8, tOff = v * 3;
-            float nx = verts[b + 3], ny = verts[b + 4], nz = verts[b + 5];
-            float tx = tan1[tOff], ty = tan1[tOff + 1], tz = tan1[tOff + 2];
-            float dot = nx * tx + ny * ty + nz * tz;
-            tx -= nx * dot; ty -= ny * dot; tz -= nz * dot;
-            float len = (float) Math.sqrt(tx * tx + ty * ty + tz * tz);
-            if (len > 1e-6f) {
-                tx /= len; ty /= len; tz /= len;
-            } else {
-                tx = 1f; ty = 0f; tz = 0f;
-            }
-            float cx = ny * tz - nz * ty, cy = nz * tx - nx * tz, cz = nx * ty - ny * tx;
-            float handedness = (cx * tan2[tOff] + cy * tan2[tOff + 1] + cz * tan2[tOff + 2]) < 0f ? -1f : 1f;
-            int bx = ((int) Math.round(Math.max(-1f, Math.min(1f, tx)) * 127f)) & 0xFF;
-            int by = ((int) Math.round(Math.max(-1f, Math.min(1f, ty)) * 127f)) & 0xFF;
-            int bz = ((int) Math.round(Math.max(-1f, Math.min(1f, tz)) * 127f)) & 0xFF;
-            int bw = (handedness < 0f ? -127 : 127) & 0xFF;
-            packed[v] = bx | (by << 8) | (bz << 16) | (bw << 24);
-        }
-        return packed;
+                uniqueCount, finalPos, finalNorm, finalUv, shortIndices, intIndices);
     }
 }

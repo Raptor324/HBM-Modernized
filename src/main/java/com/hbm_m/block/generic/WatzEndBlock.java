@@ -30,14 +30,14 @@ public class WatzEndBlock extends Block implements IToolable {
         int have = 0;
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack st = player.getInventory().getItem(i);
-            if (st.is(ModItems.BOLT_HIGHSPEED_STEEL.get())) have += st.getCount();
+            if (st.is(ModItems.BOLT_DURA_STEEL.get())) have += st.getCount();
         }
         if (have < 4) return false;
 
         int need = 4;
         for (int i = 0; i < player.getInventory().getContainerSize() && need > 0; i++) {
             ItemStack st = player.getInventory().getItem(i);
-            if (!st.is(ModItems.BOLT_HIGHSPEED_STEEL.get())) continue;
+            if (!st.is(ModItems.BOLT_DURA_STEEL.get())) continue;
             int take = Math.min(need, st.getCount());
             st.shrink(take);
             need -= take;

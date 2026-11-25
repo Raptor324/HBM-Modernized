@@ -24,8 +24,8 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class RenderMinecartTest extends MinecartRenderer<EntityMinecartTest> {
 
-    private static final SimpleObjModel boyModel = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/projectiles/lilboy1.obj"));
-    private static final ResourceLocation boyTexture = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/lilboy.png");
+    private static final SimpleObjModel boyModel = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/bomb/nuke_boy.obj"));
+    private static final ResourceLocation boyTexture = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/bomb/nuke_boy.png");
 
     public RenderMinecartTest(EntityRendererProvider.Context ctx) {
         super(ctx, ModelLayers.TNT_MINECART);

@@ -199,7 +199,7 @@ public abstract class MachineCompressorBaseBlockEntity extends BaseMachineBlockE
 
     @Override
     public void receiveControl(CompoundTag data) {
-        int compression = data.getInt("compression");
+        int compression = net.minecraft.util.Mth.clamp(data.getInt("compression"), 0, 5);
 
         if (compression != tanks[0].getPressure()) {
             tanks[0].withPressure(compression);

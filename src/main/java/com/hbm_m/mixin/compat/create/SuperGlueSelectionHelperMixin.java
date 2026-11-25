@@ -3,11 +3,13 @@ package com.hbm_m.mixin.compat.create;
 import java.util.Set;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.hbm_m.compat.create.MultiblockExpander;
+import com.simibubi.create.content.contraptions.glue.SuperGlueSelectionHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -28,7 +30,8 @@ import net.minecraft.world.level.Level;
  * Используется {@link MultiblockExpander#expandToFullMultiblock(Level, java.util.Collection)}.
  * </p>
  */
-@Mixin(targets = "com.simibubi.create.content.contraptions.glue.SuperGlueSelectionHelper")
+@Pseudo
+@Mixin(value = SuperGlueSelectionHelper.class, remap = false)
 public abstract class SuperGlueSelectionHelperMixin {
 
     // cancellable is required for setReturnValue below - without it Mixin throws
@@ -37,7 +40,7 @@ public abstract class SuperGlueSelectionHelperMixin {
         method = "searchGlueGroup",
         at = @At("RETURN"),
         remap = false,
-        require = 1,
+        require = 0,
         cancellable = true
     )
     private static void hbm_m$expandGlueGroupToFullMultiblock(

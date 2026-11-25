@@ -18,8 +18,8 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class SawbladeRenderer extends EntityRenderer<CogEntity> {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/sawmill.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/sawmill.png");
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/sawmill.obj"));
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/sawmill.png");
 
     public SawbladeRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);

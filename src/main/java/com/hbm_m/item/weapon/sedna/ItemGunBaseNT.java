@@ -12,11 +12,14 @@ import java.util.function.Function;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.weapon.ExternalGunCommonBridge;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.handler.EnumKeybind;
 import com.hbm_m.interfaces.IKeybindReceiver;
 import com.hbm_m.inventory.ComparableStack;
 import com.hbm_m.item.weapon.sedna.factory.GunFactory.EnumAmmo;
+import com.hbm_m.item.weapon.sedna.factory.GunStateDecider;
+import com.hbm_m.item.weapon.sedna.factory.XFactory556mm;
 import com.hbm_m.item.weapon.sedna.mags.IMagazine;
 import com.hbm_m.item.weapon.sedna.mags.MagazineInfinite;
 import com.hbm_m.item.weapon.sedna.mods.XWeaponModManager;
@@ -180,13 +183,18 @@ public class ItemGunBaseNT extends Item implements IKeybindReceiver {
         return super.getName(stack);
     }
 
+    public int getConfigsCount() {
+        return this.configs_DNA.length;
+    }
+
     @Override
     //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
     //?} else {
     /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
     *///?}
-        Player player = com.hbm_m.client.weapon.GunClientHooks.clientPlayer();
+        boolean isClient = dev.architectury.platform.Platform.getEnvironment() == dev.architectury.utils.Env.CLIENT;
+        Player player = isClient ? com.hbm_m.client.weapon.GunClientHooks.clientPlayer() : null;
         int configs = this.configs_DNA.length;
         for (int i = 0; i < configs; i++) {
             GunConfig config = getConfig(stack, i);
@@ -225,7 +233,7 @@ public class ItemGunBaseNT extends Item implements IKeybindReceiver {
             case DEBUG -> list.add(Component.translatable("gui.weapon.quality.debug").withStyle(BobMathUtil.getBlink() ? ChatFormatting.YELLOW : ChatFormatting.GOLD));
         }
 
-        if (com.hbm_m.client.weapon.GunClientHooks.isWeaponTableOpen() && !this.recognizedMods.isEmpty()) {
+        if (isClient && com.hbm_m.client.weapon.GunClientHooks.isWeaponTableOpen() && !this.recognizedMods.isEmpty()) {
             list.add(Component.translatable("gui.weapon.accepts").append(":").withStyle(ChatFormatting.RED));
             for (ComparableStack comp : this.recognizedMods) list.add(Component.literal("  ").append(comp.toStack().getHoverName()).withStyle(ChatFormatting.RED));
         }
@@ -244,6 +252,8 @@ public class ItemGunBaseNT extends Item implements IKeybindReceiver {
 
     public void handleKeybind(LivingEntity entity, @Nullable Container inventory, ItemStack stack, EnumKeybind keybind, boolean newState) {
         if (!ModClothConfig.get().enableGuns) return;
+
+        ExternalGunCommonBridge.get().onKeybind(this, entity, inventory, stack, keybind, newState);
 
         int configs = this.configs_DNA.length;
 
@@ -340,6 +350,7 @@ public class ItemGunBaseNT extends Item implements IKeybindReceiver {
             }
             setIsAiming(stack, false);
             setReloadCancel(stack, false);
+            ExternalGunCommonBridge.get().onPostInventoryTick(this, stack, world, entity, slot, false);
             return;
         }
 
@@ -367,8 +378,17 @@ public class ItemGunBaseNT extends Item implements IKeybindReceiver {
             /// STTATE MACHINE ///
             int timer = getTimer(stack, i);
             if (timer > 0) setTimer(stack, i, timer - 1);
-            if (timer <= 1) configs[i].getDecider(stack).accept(stack, ctx[i]);
+            if (timer <= 1) {
+                BiConsumer<ItemStack, LambdaContext> decider = configs[i].getDecider(stack);
+                if (decider == XFactory556mm.LAMBDA_STG77_DECIDER
+                        && ExternalGunCommonBridge.get().shouldUseStandardAutoDecider(stack)) {
+                    decider = GunStateDecider.LAMBDA_STANDARD_DECIDER;
+                }
+                decider.accept(stack, ctx[i]);
+            }
         }
+
+        ExternalGunCommonBridge.get().onPostInventoryTick(this, stack, world, entity, slot, true);
     }
 
     /** Waffen schwingen nicht und bauen keine Bloecke ab (Original: MouseEvent wird fuer Waffen abgefangen). */
@@ -394,12 +414,18 @@ public class ItemGunBaseNT extends Item implements IKeybindReceiver {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override
             public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                return com.hbm_m.client.weapon.GunItemRenderer.INSTANCE;
+                // Externe Renderer-Bridge (TACZ): dynamisch pro Abruf, damit eine spaete Registrierung greift
+                return com.hbm_m.client.render.weapon.bridge.ExternalGunRenderBridge.get()
+                        .resolveCustomRenderer(com.hbm_m.client.weapon.GunItemRenderer.INSTANCE);
             }
 
             /** Original ModEventHandlerRenderer: Waffen halten den Arm wie beim Bogen ({@code aimedBow}). */
             @Override
             public net.minecraft.client.model.HumanoidModel.ArmPose getArmPose(LivingEntity entity, net.minecraft.world.InteractionHand hand, ItemStack stack) {
+                // Externe Bridge uebernimmt die 3rd-Person-Arme (TACZ playerAnimator) - nicht BOW_AND_ARROW dazwischenfunken
+                if (com.hbm_m.client.render.weapon.bridge.ExternalGunRenderBridge.get().isHandled(stack)) {
+                    return net.minecraft.client.model.HumanoidModel.ArmPose.EMPTY;
+                }
                 com.hbm_m.client.weapon.ItemRenderWeaponBase renderer = com.hbm_m.client.weapon.GunItemRenderer.get(stack);
                 if (renderer != null && renderer.isAkimbo(entity)) {
                     return net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;
@@ -428,12 +454,18 @@ public class ItemGunBaseNT extends Item implements IKeybindReceiver {
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             @Override
             public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                return com.hbm_m.client.weapon.GunItemRenderer.INSTANCE;
+                // Externe Renderer-Bridge (TACZ): dynamisch pro Abruf, damit eine spaete Registrierung greift
+                return com.hbm_m.client.render.weapon.bridge.ExternalGunRenderBridge.get()
+                        .resolveCustomRenderer(com.hbm_m.client.weapon.GunItemRenderer.INSTANCE);
             }
 
             /^* Original ModEventHandlerRenderer: Waffen halten den Arm wie beim Bogen ({@code aimedBow}). ^/
             @Override
             public net.minecraft.client.model.HumanoidModel.ArmPose getArmPose(LivingEntity entity, net.minecraft.world.InteractionHand hand, ItemStack stack) {
+                // Externe Bridge uebernimmt die 3rd-Person-Arme (TACZ playerAnimator) - nicht BOW_AND_ARROW dazwischenfunken
+                if (com.hbm_m.client.render.weapon.bridge.ExternalGunRenderBridge.get().isHandled(stack)) {
+                    return net.minecraft.client.model.HumanoidModel.ArmPose.EMPTY;
+                }
                 com.hbm_m.client.weapon.ItemRenderWeaponBase renderer = com.hbm_m.client.weapon.GunItemRenderer.get(stack);
                 if (renderer != null && renderer.isAkimbo(entity)) {
                     return net.minecraft.client.model.HumanoidModel.ArmPose.ITEM;

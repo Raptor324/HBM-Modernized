@@ -1,9 +1,9 @@
 package com.hbm_m.client.model.nmesh;
 
+import com.hbm_m.client.render.HalfFloat;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.mojang.math.Transformation;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -71,6 +71,14 @@ public final class NMeshPartBakedModel implements BakedModel {
      * MTL Ka drives a baked fake lightmap (full-bright effect) and disables quad shading.
      */
     private final boolean emissiveAmbient;
+    /**
+     * Smooth per-vertex shading ("smooth_shade" in the model JSON): the vanilla block face weights
+     * (UP 1.0, DOWN 0.5, N/S 0.8, E/W 0.6) are evaluated on each vertex's TRUE normal and baked
+     * into the vertex colour, so the GPU interpolates the diffuse across curved triangles — the
+     * 1.7.10 fixed-function GL_SMOOTH look. Off = flat per-mesh Kd colour; the per-quad
+     * "shade_quads" flag stays off when this is on (it would double-darken).
+     */
+    private final boolean smoothShade;
     private volatile List<BakedQuad> lazyQuads;
     /** Culled faces per direction. */
     private volatile Map<Direction, List<BakedQuad>> lazyQuadsBySide;
@@ -100,13 +108,33 @@ public final class NMeshPartBakedModel implements BakedModel {
                                boolean shade, boolean ambientOcclusion, boolean cullFaces, int tintIndex,
                                @Nullable RenderType blockRenderType, @Nullable RenderType itemRenderType,
                                boolean emissiveAmbient) {
+        this(subMeshes, flipV, rootTransform, transforms, shade, ambientOcclusion, cullFaces, tintIndex,
+                blockRenderType, itemRenderType, emissiveAmbient, false);
+    }
+
+    public NMeshPartBakedModel(List<BoundSubMesh> subMeshes, boolean flipV,
+                               Transformation rootTransform, ItemTransforms transforms,
+                               boolean shade, boolean ambientOcclusion, boolean cullFaces, int tintIndex,
+                               @Nullable RenderType blockRenderType, @Nullable RenderType itemRenderType,
+                               boolean emissiveAmbient, boolean smoothShade) {
+        this(subMeshes, flipV, rootTransform, transforms, shade, ambientOcclusion, cullFaces, tintIndex,
+                blockRenderType, itemRenderType, emissiveAmbient, smoothShade, false);
+    }
+
+    private NMeshPartBakedModel(List<BoundSubMesh> subMeshes, boolean flipV,
+                               Transformation rootTransform, ItemTransforms transforms,
+                               boolean shade, boolean ambientOcclusion, boolean cullFaces, int tintIndex,
+                               @Nullable RenderType blockRenderType, @Nullable RenderType itemRenderType,
+                               boolean emissiveAmbient, boolean smoothShade, boolean alreadyRebased) {
         this.subMeshes = List.copyOf(subMeshes);
         this.flipV = flipV;
         // Forge ObjModel.makeQuad semantics: the incoming ModelState/root transform is referenced on
         // the CENTER of the block, but OBJ-derived vertex coords are referenced on the CORNER, so the
         // transform must be re-based (blockCenterToCorner) before it is applied to raw vertices.
         // Without this, rotated/translated models shift by the rotation-pivot delta in GUI/hand.
-        this.rootTransform = rebaseCenterToCorner(rootTransform != null ? rootTransform : Transformation.identity());
+        this.rootTransform = alreadyRebased && rootTransform != null
+                ? rootTransform
+                : rebaseCenterToCorner(rootTransform != null ? rootTransform : Transformation.identity());
         this.transforms = transforms != null ? transforms : ItemTransforms.NO_TRANSFORMS;
         this.shade = shade;
         this.ambientOcclusion = ambientOcclusion;
@@ -115,6 +143,7 @@ public final class NMeshPartBakedModel implements BakedModel {
         this.blockRenderType = blockRenderType;
         this.itemRenderType = itemRenderType;
         this.emissiveAmbient = emissiveAmbient;
+        this.smoothShade = smoothShade;
         TextureAtlasSprite p = null;
         for (BoundSubMesh b : this.subMeshes) {
             if (b.sprite() != null) {
@@ -125,9 +154,58 @@ public final class NMeshPartBakedModel implements BakedModel {
         this.particleSprite = p;
     }
 
+    /**
+     * Copy with smooth per-vertex shading enabled. Used by part loaders that bake through the
+     * legacy constructor (shade = true) but read a "smooth_shade" JSON key: the per-quad shade
+     * flag is dropped together with the change (it would double-darken).
+     */
+    public NMeshPartBakedModel withSmoothShade() {
+        if (this.smoothShade) {
+            return this;
+        }
+        return new NMeshPartBakedModel(subMeshes, flipV, rootTransform, transforms,
+                shade, ambientOcclusion, cullFaces, tintIndex, blockRenderType, itemRenderType,
+                emissiveAmbient, true, true);
+    }
+
+    /**
+     * Merges multiple {@link NMeshPartBakedModel}s into a single composite model without
+     * decompressing to {@link BakedQuad}s, provided they share compatible baking flags and
+     * root transform. Returns {@code null} if any parameter mismatches.
+     */
+    public static @Nullable NMeshPartBakedModel tryMerge(List<NMeshPartBakedModel> models) {
+        if (models == null || models.isEmpty()) return null;
+        if (models.size() == 1) return models.get(0);
+        NMeshPartBakedModel first = models.get(0);
+        int totalSubMeshes = 0;
+        for (NMeshPartBakedModel m : models) {
+            if (m == null) return null;
+            if (m.flipV != first.flipV
+                    || m.shade != first.shade
+                    || m.ambientOcclusion != first.ambientOcclusion
+                    || m.cullFaces != first.cullFaces
+                    || m.tintIndex != first.tintIndex
+                    || m.emissiveAmbient != first.emissiveAmbient
+                    || m.smoothShade != first.smoothShade
+                    || !java.util.Objects.equals(m.blockRenderType, first.blockRenderType)
+                    || !java.util.Objects.equals(m.itemRenderType, first.itemRenderType)
+                    || !m.rootTransform.equals(first.rootTransform)) {
+                return null;
+            }
+            totalSubMeshes += m.subMeshes.size();
+        }
+        List<BoundSubMesh> combined = new java.util.ArrayList<>(totalSubMeshes);
+        for (NMeshPartBakedModel m : models) {
+            combined.addAll(m.subMeshes);
+        }
+        return new NMeshPartBakedModel(combined, first.flipV, first.rootTransform, first.transforms,
+                first.shade, first.ambientOcclusion, first.cullFaces, first.tintIndex,
+                first.blockRenderType, first.itemRenderType, first.emissiveAmbient, first.smoothShade, true);
+    }
+
     public boolean isEmpty() {
         for (BoundSubMesh b : subMeshes) {
-            if (b.subMesh().vertexCount > 0 && b.subMesh().indices.length > 0) {
+            if (b.subMesh().vertexCount > 0 && b.subMesh().indexCount() > 0) {
                 return false;
             }
         }
@@ -188,7 +266,7 @@ public final class NMeshPartBakedModel implements BakedModel {
         int totalIndices = 0;
         for (BoundSubMesh b : subMeshes) {
             totalVerts += b.subMesh().vertexCount;
-            totalIndices += b.subMesh().indices.length;
+            totalIndices += b.subMesh().indexCount();
         }
         if (totalVerts == 0 || totalIndices == 0) {
             return null;
@@ -255,20 +333,19 @@ public final class NMeshPartBakedModel implements BakedModel {
                 // Precompute midTexCoord as the true barycenter (UV0 + UV1 + UV2) / 3.0f for all triangles in this sub-mesh
                 float[] midUArr = null;
                 float[] midVArr = null;
+                int smICount = sm.indexCount();
                 if (midTexOff >= 0) {
                     midUArr = new float[sm.vertexCount];
                     midVArr = new float[sm.vertexCount];
                     int[] triCountPerVert = new int[sm.vertexCount];
-                    int[] smIdx = sm.indices;
-                    float[] verts = sm.vertices;
-                    for (int t = 0; t + 2 < smIdx.length; t += 3) {
-                        int i0 = smIdx[t], i1 = smIdx[t + 1], i2 = smIdx[t + 2];
-                        float uA = u0 + verts[i0 * 8 + 6] * du;
-                        float vA = v0 + (flipV ? (1.0f - verts[i0 * 8 + 7]) : verts[i0 * 8 + 7]) * dv;
-                        float uB = u0 + verts[i1 * 8 + 6] * du;
-                        float vB = v0 + (flipV ? (1.0f - verts[i1 * 8 + 7]) : verts[i1 * 8 + 7]) * dv;
-                        float uC = u0 + verts[i2 * 8 + 6] * du;
-                        float vC = v0 + (flipV ? (1.0f - verts[i2 * 8 + 7]) : verts[i2 * 8 + 7]) * dv;
+                    for (int t = 0; t + 2 < smICount; t += 3) {
+                        int i0 = sm.index(t), i1 = sm.index(t + 1), i2 = sm.index(t + 2);
+                        float uA = u0 + sm.u(i0) * du;
+                        float vA = v0 + (flipV ? (1.0f - sm.v(i0)) : sm.v(i0)) * dv;
+                        float uB = u0 + sm.u(i1) * du;
+                        float vB = v0 + (flipV ? (1.0f - sm.v(i1)) : sm.v(i1)) * dv;
+                        float uC = u0 + sm.u(i2) * du;
+                        float vC = v0 + (flipV ? (1.0f - sm.v(i2)) : sm.v(i2)) * dv;
                         float triMidU = (uA + uB + uC) / 3.0f;
                         float triMidV = (vA + vB + vC) / 3.0f;
 
@@ -281,24 +358,25 @@ public final class NMeshPartBakedModel implements BakedModel {
                             midUArr[v] /= triCountPerVert[v];
                             midVArr[v] /= triCountPerVert[v];
                         } else {
-                            midUArr[v] = u0 + verts[v * 8 + 6] * du;
-                            midVArr[v] = v0 + (flipV ? (1.0f - verts[v * 8 + 7]) : verts[v * 8 + 7]) * dv;
+                            midUArr[v] = u0 + sm.u(v) * du;
+                            midVArr[v] = v0 + (flipV ? (1.0f - sm.v(v)) : sm.v(v)) * dv;
                         }
                     }
                 }
 
-                float[] verts = sm.vertices;
-                for (int v = 0; v < sm.vertexCount; v++) {
-                    int b = v * 8;
-                    float x = verts[b];
-                    float y = verts[b + 1];
-                    float z = verts[b + 2];
-                    float nx = verts[b + 3];
-                    float ny = verts[b + 4];
-                    float nz = verts[b + 5];
-                    float rawU = verts[b + 6];
-                    float rawV = flipV ? (1.0f - verts[b + 7]) : verts[b + 7];
+                int[] smTangents = tangentOff >= 0 ? computePackedTangents(sm) : null;
 
+                for (int v = 0; v < sm.vertexCount; v++) {
+                    float x = sm.posX(v);
+                    float y = sm.posY(v);
+                    float z = sm.posZ(v);
+                    float nx = sm.normX(v);
+                    float ny = sm.normY(v);
+                    float nz = sm.normZ(v);
+                    float rawU = sm.u(v);
+                    float rawV = flipV ? (1.0f - sm.v(v)) : sm.v(v);
+
+                    int nPacked = sm.packedNormal(v);
                     if (hasTransform) {
                         posTmp.set(x, y, z, 1.0f).mul(posMat);
                         x = posTmp.x;
@@ -311,6 +389,7 @@ public final class NMeshPartBakedModel implements BakedModel {
                             ny = nrmTmp.y / len;
                             nz = nrmTmp.z / len;
                         }
+                        nPacked = NMeshData.SubMesh.packNormal(nx, ny, nz);
                         if (x < minX) minX = x; if (x > maxX) maxX = x;
                         if (y < minY) minY = y; if (y > maxY) maxY = y;
                         if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
@@ -318,10 +397,6 @@ public final class NMeshPartBakedModel implements BakedModel {
 
                     float u = u0 + rawU * du;
                     float vt = v0 + rawV * dv;
-
-                    int nPacked = (((int) Math.round(Math.max(-1f, Math.min(1f, nx)) * 127f)) & 0xFF)
-                            | ((((int) Math.round(Math.max(-1f, Math.min(1f, ny)) * 127f)) & 0xFF) << 8)
-                            | ((((int) Math.round(Math.max(-1f, Math.min(1f, nz)) * 127f)) & 0xFF) << 16);
 
                     int globalV = vertBase + v;
                     weldedPositions[globalV * 3]     = x;
@@ -358,9 +433,9 @@ public final class NMeshPartBakedModel implements BakedModel {
                     }
                     if (tangentOff >= 0) {
                         int packedTangent;
-                        if (sm.tangents != null && sm.tangents.length > v) {
+                        if (smTangents != null && smTangents.length > v) {
                             if (hasTransform) {
-                                int rawTan = sm.tangents[v];
+                                int rawTan = smTangents[v];
                                 float tx = ((byte) (rawTan & 0xFF)) / 127.0f;
                                 float ty = ((byte) ((rawTan >> 8) & 0xFF)) / 127.0f;
                                 float tz = ((byte) ((rawTan >> 16) & 0xFF)) / 127.0f;
@@ -377,7 +452,7 @@ public final class NMeshPartBakedModel implements BakedModel {
                                 int bz = ((int) Math.round(Math.max(-1f, Math.min(1f, tz)) * 127f)) & 0xFF;
                                 packedTangent = bx | (by << 8) | (bz << 16) | (bw << 24);
                             } else {
-                                packedTangent = sm.tangents[v];
+                                packedTangent = smTangents[v];
                             }
                         } else {
                             packedTangent = 127 | (127 << 24); // default +X unit tangent, +1 handedness
@@ -386,9 +461,8 @@ public final class NMeshPartBakedModel implements BakedModel {
                     }
                 }
 
-                int[] smIdx = sm.indices;
-                for (int i = 0; i < smIdx.length; i++) {
-                    combinedIndices[idxCursor++] = vertBase + smIdx[i];
+                for (int i = 0; i < smICount; i++) {
+                    combinedIndices[idxCursor++] = vertBase + sm.index(i);
                 }
                 vertBase += sm.vertexCount;
             }
@@ -414,13 +488,14 @@ public final class NMeshPartBakedModel implements BakedModel {
         int totalIndices = 0;
         for (BoundSubMesh b : subMeshes) {
             totalVerts += b.subMesh().vertexCount;
-            totalIndices += b.subMesh().indices.length;
+            totalIndices += b.subMesh().indexCount();
         }
         if (totalVerts == 0 || totalIndices == 0) {
             return null;
         }
 
-        final int strideBytes = SingleMeshVboRenderer.MACHINE_PART_VERTEX_STRIDE_BYTES; // 36 bytes
+        final int strideBytes = SingleMeshVboRenderer.MACHINE_PART_VERTEX_STRIDE_BYTES; // 28 bytes
+        final int intsPerVert = strideBytes >>> 2; // 7 ints
 
         // Material colors preservation: check if submeshes have non-default diffuse/ambient
         boolean hasMaterialColor = false;
@@ -492,29 +567,23 @@ public final class NMeshPartBakedModel implements BakedModel {
                     dv = sprite.getV1() - v0;
                 }
 
-                float[] verts = sm.vertices;
                 for (int v = 0; v < sm.vertexCount; v++) {
-                    int b = v * 8;
-                    float x = verts[b];
-                    float y = verts[b + 1];
-                    float z = verts[b + 2];
-                    float nx = verts[b + 3];
-                    float ny = verts[b + 4];
-                    float nz = verts[b + 5];
-                    float rawU = verts[b + 6];
-                    float rawV = flipV ? (1.0f - verts[b + 7]) : verts[b + 7];
+                    float x = sm.posX(v);
+                    float y = sm.posY(v);
+                    float z = sm.posZ(v);
+                    int nPacked = sm.packedNormal(v);
+                    float rawU = sm.u(v);
+                    float rawV = flipV ? (1.0f - sm.v(v)) : sm.v(v);
 
                     if (hasTransform) {
                         posTmp.set(x, y, z, 1.0f).mul(posMat);
                         x = posTmp.x;
                         y = posTmp.y;
                         z = posTmp.z;
-                        nrmTmp.set(nx, ny, nz).mul(nrmMat);
+                        nrmTmp.set(sm.normX(v), sm.normY(v), sm.normZ(v)).mul(nrmMat);
                         float len = nrmTmp.length();
                         if (len > 1e-6f) {
-                            nx = nrmTmp.x / len;
-                            ny = nrmTmp.y / len;
-                            nz = nrmTmp.z / len;
+                            nPacked = NMeshData.SubMesh.packNormal(nrmTmp.x / len, nrmTmp.y / len, nrmTmp.z / len);
                         }
 
                         if (x < minX) minX = x; if (x > maxX) maxX = x;
@@ -522,24 +591,22 @@ public final class NMeshPartBakedModel implements BakedModel {
                         if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
                     }
 
-                    float u = u0 + rawU * du;
-                    float vt = v0 + rawV * dv;
+                    float u = (normalizeUv || sprite == null) ? rawU : (u0 + rawU * du);
+                    float vt = (normalizeUv || sprite == null) ? rawV : (v0 + rawV * dv);
 
-                    int outOff = (vertBase + v) * 9;
+                    int outOff = (vertBase + v) * intsPerVert;
                     vbInts.put(outOff,     Float.floatToRawIntBits(x));
                     vbInts.put(outOff + 1, Float.floatToRawIntBits(y));
                     vbInts.put(outOff + 2, Float.floatToRawIntBits(z));
-                    vbInts.put(outOff + 3, Float.floatToRawIntBits(nx));
-                    vbInts.put(outOff + 4, Float.floatToRawIntBits(ny));
-                    vbInts.put(outOff + 5, Float.floatToRawIntBits(nz));
-                    vbInts.put(outOff + 6, Float.floatToRawIntBits(u));
-                    vbInts.put(outOff + 7, Float.floatToRawIntBits(vt));
-                    vbInts.put(outOff + 8, perVertexBoneId);
+                    vbInts.put(outOff + 3, nPacked);
+                    vbInts.put(outOff + 4, Float.floatToRawIntBits(u));
+                    vbInts.put(outOff + 5, Float.floatToRawIntBits(vt));
+                    vbInts.put(outOff + 6, perVertexBoneId);
                 }
 
-                int[] smIdx = sm.indices;
-                for (int i = 0; i < smIdx.length; i++) {
-                    ib.put(idxCursor++, vertBase + smIdx[i]);
+                int smICount = sm.indexCount();
+                for (int i = 0; i < smICount; i++) {
+                    ib.put(idxCursor++, vertBase + sm.index(i));
                 }
                 vertBase += sm.vertexCount;
             }
@@ -610,46 +677,62 @@ public final class NMeshPartBakedModel implements BakedModel {
                 int colorPacked = (clampByte(kdR)) | (clampByte(kdG) << 8) | (clampByte(kdB) << 16) | (255 << 24);
                 int uv2 = 0;
                 boolean effectiveShade = shade;
+                if (smoothShade) {
+                    // The per-vertex colour below carries the directional diffuse; the per-quad
+                    // shade flag would multiply the same weights a second time.
+                    effectiveShade = false;
+                }
                 if (emissiveAmbient) {
                     int fakeLight = (int) ((sm.kaR + sm.kaG + sm.kaB) * 15 / 3.0f);
                     uv2 = LightTexture.pack(fakeLight, fakeLight);
-                    effectiveShade = fakeLight == 0 && shade;
+                    effectiveShade = effectiveShade && (fakeLight == 0);
                 }
 
-                float[] verts = sm.vertices;
-                int[] idx = sm.indices;
-                for (int t = 0; t + 2 < idx.length; t += 3) {
+                int smICount = sm.indexCount();
+                for (int t = 0; t + 2 < smICount; t += 3) {
                     int[] quadData = new int[32];
-                    int i0 = idx[t], i1 = idx[t + 1], i2 = idx[t + 2];
+                    int i0 = sm.index(t), i1 = sm.index(t + 1), i2 = sm.index(t + 2);
                     int[] tri = { i0, i1, i2, i2 }; // degenerate 4th vertex, same as Forge (Math.min(i, len-1))
                     float[] tx = new float[4], ty = new float[4], tz = new float[4];
                     float[] tnx = new float[4], tny = new float[4], tnz = new float[4];
                     for (int corner = 0; corner < 4; corner++) {
                         int vi = tri[corner];
-                        int b = vi * 8;
-                        float x = verts[b], y = verts[b + 1], z = verts[b + 2];
-                        float nx = verts[b + 3], ny = verts[b + 4], nz = verts[b + 5];
-                        float rawU = verts[b + 6];
-                        float rawV = flipV ? (1.0f - verts[b + 7]) : verts[b + 7];
+                        float x = sm.posX(vi), y = sm.posY(vi), z = sm.posZ(vi);
+                        float nx = sm.normX(vi), ny = sm.normY(vi), nz = sm.normZ(vi);
+                        float rawU = sm.u(vi);
+                        float rawV = flipV ? (1.0f - sm.v(vi)) : sm.v(vi);
+                        int nPacked = sm.packedNormal(vi);
                         if (hasTransform) {
                             posTmp.set(x, y, z, 1.0f).mul(posMat);
                             x = posTmp.x; y = posTmp.y; z = posTmp.z;
                             nrmTmp.set(nx, ny, nz).mul(nrmMat);
                             float len = nrmTmp.length();
                             if (len > 1e-6f) { nx = nrmTmp.x / len; ny = nrmTmp.y / len; nz = nrmTmp.z / len; }
+                            nPacked = NMeshData.SubMesh.packNormal(nx, ny, nz);
                         }
                         tx[corner] = x; ty[corner] = y; tz[corner] = z;
                         tnx[corner] = nx; tny[corner] = ny; tnz[corner] = nz;
+                        // Smooth shading (vanilla face weights on the transformed TRUE normal,
+                        // interpolated by the GPU across the triangle — no per-quad posterization).
+                        int cornerColor = colorPacked;
+                        if (smoothShade) {
+                            float snx = tnx[corner], sny = tny[corner], snz = tnz[corner];
+                            float slen = (float) Math.sqrt(snx * snx + sny * sny + snz * snz);
+                            if (slen > 1e-6f) {
+                                snx /= slen; sny /= slen; snz /= slen;
+                            }
+                            float n2x = snx * snx, n2y = sny * sny, n2z = snz * snz;
+                            float diff = n2x * 0.6f + n2y * (sny > 0f ? 1f : 0.5f) + n2z * 0.8f;
+                            cornerColor = (clampByte(kdR * diff)) | (clampByte(kdG * diff) << 8)
+                                    | (clampByte(kdB * diff) << 16) | (255 << 24);
+                        }
                         float u = u0 + rawU * du;
                         float v = v0 + rawV * dv;
-                        int nPacked = (((int) Math.round(Math.max(-1f, Math.min(1f, nx)) * 127f)) & 0xFF)
-                                | ((((int) Math.round(Math.max(-1f, Math.min(1f, ny)) * 127f)) & 0xFF) << 8)
-                                | ((((int) Math.round(Math.max(-1f, Math.min(1f, nz)) * 127f)) & 0xFF) << 16);
                         int o = corner * 8;
                         quadData[o]     = Float.floatToRawIntBits(x);
                         quadData[o + 1] = Float.floatToRawIntBits(y);
                         quadData[o + 2] = Float.floatToRawIntBits(z);
-                        quadData[o + 3] = colorPacked;
+                        quadData[o + 3] = cornerColor;
                         quadData[o + 4] = Float.floatToRawIntBits(u);
                         quadData[o + 5] = Float.floatToRawIntBits(v);
                         quadData[o + 6] = uv2;
@@ -676,6 +759,65 @@ public final class NMeshPartBakedModel implements BakedModel {
                     ? Collections.unmodifiableList(unculled)
                     : Collections.emptyList();
         }
+    }
+
+    /**
+     * Lazily computes packed tangents (tx, ty, tz, tw as 4 signed bytes) when an Iris/Oculus
+     * shaderpack requests {@code at_tangent}.
+     */
+    private static int[] computePackedTangents(NMeshData.SubMesh sm) {
+        int vertexCount = sm.vertexCount;
+        float[] tan1 = new float[vertexCount * 3];
+        float[] tan2 = new float[vertexCount * 3];
+        int iCount = sm.indexCount();
+        for (int i = 0; i + 2 < iCount; i += 3) {
+            int i0 = sm.index(i), i1 = sm.index(i + 1), i2 = sm.index(i + 2);
+            float dx1 = sm.posX(i1) - sm.posX(i0), dy1 = sm.posY(i1) - sm.posY(i0), dz1 = sm.posZ(i1) - sm.posZ(i0);
+            float dx2 = sm.posX(i2) - sm.posX(i0), dy2 = sm.posY(i2) - sm.posY(i0), dz2 = sm.posZ(i2) - sm.posZ(i0);
+            float u0 = sm.u(i0), v0 = sm.v(i0);
+            float du1 = sm.u(i1) - u0;
+            // Minecraft uses flipped V (1.0 - V) at render time, so dv -> -dv
+            float dv1 = -(sm.v(i1) - v0);
+            float du2 = sm.u(i2) - u0;
+            float dv2 = -(sm.v(i2) - v0);
+            float det = du1 * dv2 - du2 * dv1;
+            if (Math.abs(det) < 1e-8f) continue;
+            float r = 1.0f / det;
+            float sx = (dv2 * dx1 - dv1 * dx2) * r;
+            float sy = (dv2 * dy1 - dv1 * dy2) * r;
+            float sz = (dv2 * dz1 - dv1 * dz2) * r;
+            float tx = (du1 * dx2 - du2 * dx1) * r;
+            float ty = (du1 * dy2 - du2 * dy1) * r;
+            float tz = (du1 * dz2 - du2 * dz1) * r;
+            for (int k = 0; k < 3; k++) {
+                int idx = sm.index(i + k);
+                int tOff = idx * 3;
+                tan1[tOff] += sx; tan1[tOff + 1] += sy; tan1[tOff + 2] += sz;
+                tan2[tOff] += tx; tan2[tOff + 1] += ty; tan2[tOff + 2] += tz;
+            }
+        }
+        int[] packed = new int[vertexCount];
+        for (int v = 0; v < vertexCount; v++) {
+            int tOff = v * 3;
+            float nx = sm.normX(v), ny = sm.normY(v), nz = sm.normZ(v);
+            float tx = tan1[tOff], ty = tan1[tOff + 1], tz = tan1[tOff + 2];
+            float dot = nx * tx + ny * ty + nz * tz;
+            tx -= nx * dot; ty -= ny * dot; tz -= nz * dot;
+            float len = (float) Math.sqrt(tx * tx + ty * ty + tz * tz);
+            if (len > 1e-6f) {
+                tx /= len; ty /= len; tz /= len;
+            } else {
+                tx = 1f; ty = 0f; tz = 0f;
+            }
+            float cx = ny * tz - nz * ty, cy = nz * tx - nx * tz, cz = nx * ty - ny * tx;
+            float handedness = (cx * tan2[tOff] + cy * tan2[tOff + 1] + cz * tan2[tOff + 2]) < 0f ? -1f : 1f;
+            int bx = ((int) Math.round(Math.max(-1f, Math.min(1f, tx)) * 127f)) & 0xFF;
+            int by = ((int) Math.round(Math.max(-1f, Math.min(1f, ty)) * 127f)) & 0xFF;
+            int bz = ((int) Math.round(Math.max(-1f, Math.min(1f, tz)) * 127f)) & 0xFF;
+            int bw = (handedness < 0f ? -127 : 127) & 0xFF;
+            packed[v] = bx | (by << 8) | (bz << 16) | (bw << 24);
+        }
+        return packed;
     }
 
     private static int clampByte(float v) {
@@ -759,8 +901,7 @@ public final class NMeshPartBakedModel implements BakedModel {
         if (blockRenderType != null) {
             return ChunkRenderTypeSet.of(blockRenderType);
         }
-        // IForgeBakedModel default: unqualified `super.` cannot reach interface default methods.
-        return ItemBlockRenderTypes.getRenderLayers(state);
+        return BakedModel.super.getRenderTypes(state, rand, data);
     }
 
     /** Honours the model JSON "render_type" hint for item rendering (entity-layer equivalent). */

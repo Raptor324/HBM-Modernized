@@ -1,7 +1,13 @@
 package com.hbm_m.block.bomb;
 
+import java.util.Map;
+
 import com.hbm_m.api.bomb.IBomb;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.bomb.NukeBaseBlockEntity;
+import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -9,7 +15,9 @@ import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.RenderShape;
@@ -18,12 +26,63 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
-public abstract class NukeBaseBlock extends Block implements EntityBlock, IBomb {
+public abstract class NukeBaseBlock extends Block implements EntityBlock, IBomb, IMultiblockController {
+
+    private static final MultiblockStructureHelper DEFAULT_STRUCTURE_HELPER = new MultiblockStructureHelper(
+            java.util.Map.of(),
+            () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
 
     public NukeBaseBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH));
+    }
+
+    public static MultiblockStructureHelper createBombStructure(String[] layer0) {
+        return createBombStructure(new String[][] { layer0 }, Shapes.block());
+    }
+
+    public static MultiblockStructureHelper createBombStructure(String[] layer0, VoxelShape partShape) {
+        return createBombStructure(new String[][] { layer0 }, partShape);
+    }
+
+    public static MultiblockStructureHelper createBombStructure(String[][] layers, VoxelShape partShape) {
+        Map<Character, PartRole> roleMap = Map.of(
+                'X', PartRole.DEFAULT,
+                'C', PartRole.CONTROLLER
+        );
+        Map<Character, VoxelShape> shapeMap = Map.of(
+                'X', partShape,
+                'C', partShape
+        );
+        return MultiblockStructureHelper.createFromLayersWithRoles(
+                layers,
+                Map.of(),
+                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
+                roleMap,
+                shapeMap,
+                shapeMap
+        );
+    }
+
+    @Override
+    public MultiblockStructureHelper getStructureHelper() {
+        return DEFAULT_STRUCTURE_HELPER;
+    }
+
+    @Override
+    public PartRole getPartRole(BlockPos localOffset) {
+        MultiblockStructureHelper helper = getStructureHelper();
+        if (helper != null && helper != DEFAULT_STRUCTURE_HELPER) {
+            return helper.resolvePartRole(localOffset, this);
+        }
+        // Бомба — одиночный блок без частей-коннекторов, у DEFAULT_STRUCTURE_HELPER пустая
+        // структура. Делегирование в resolvePartRole зацикливалось: вне структуры хелпер
+        // звал controller.getPartRole() обратно (StackOverflowError).
+        return PartRole.DEFAULT;
     }
 
     @Override
@@ -53,9 +112,33 @@ public abstract class NukeBaseBlock extends Block implements EntityBlock, IBomb 
 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        MultiblockStructureHelper helper = getStructureHelper();
+        if (!level.isClientSide && !state.is(oldState.getBlock()) && helper != null && helper != DEFAULT_STRUCTURE_HELPER) {
+            if (placeMultiblockStructure(level, pos, state) == null) {
+                return;
+            }
+        }
         if (level.hasNeighborSignal(pos)) {
             explode(level, pos);
         }
+    }
+
+    @Override
+    public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
+        MultiblockStructureHelper helper = getStructureHelper();
+        if (helper != null && helper != DEFAULT_STRUCTURE_HELPER) {
+            return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
+        }
+        return super.canSurvive(state, level, pos);
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        MultiblockStructureHelper helper = getStructureHelper();
+        if (helper != null && helper != DEFAULT_STRUCTURE_HELPER) {
+            return helper.generateShapeFromParts(state.getValue(BlockStateProperties.HORIZONTAL_FACING));
+        }
+        return super.getShape(state, level, pos, context);
     }
 
     @Override
@@ -71,6 +154,12 @@ public abstract class NukeBaseBlock extends Block implements EntityBlock, IBomb 
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof net.minecraft.world.Container container) {
                 Containers.dropContents(level, pos, container);
+            }
+            if (!level.isClientSide) {
+                MultiblockStructureHelper helper = getStructureHelper();
+                if (helper != null && helper != DEFAULT_STRUCTURE_HELPER) {
+                    helper.destroyStructure(level, pos, state.getValue(BlockStateProperties.HORIZONTAL_FACING));
+                }
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);

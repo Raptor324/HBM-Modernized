@@ -30,7 +30,7 @@ import com.hbm_m.platform.BlockHooks;
  * Базовый блок для всех ящиков HBM.
  * Сохраняет содержимое при разрушении (как Shulker Box).
  */
-public abstract class BaseCrateBlock extends BaseEntityBlock {
+public abstract class BaseCrateBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     protected BaseCrateBlock(Properties properties) {
         super(properties);
@@ -193,6 +193,15 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
         }
         f /= crate.getSlotCount();
         return net.minecraft.util.Mth.floor(f * 14.0F) + (filled > 0 ? 1 : 0);
+    }
+
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof net.minecraft.world.Nameable nameable) || !nameable.hasCustomName()) return;
+        net.minecraft.network.chat.Component customName = nameable.getCustomName();
+        if (customName == null) return;
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics, customName, 0xffff00, 0x404000, java.util.List.of());
     }
 
     private void playOpenSound(Level level, BlockPos pos) {

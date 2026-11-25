@@ -41,7 +41,7 @@ public class ItemBoltgun extends Item implements com.hbm_m.item.IAnimatedItem<co
                 ModItems.BOLT_SPIKE.get(),
                 ModItems.BOLT_STEEL.get(),
                 ModItems.BOLT_TUNGSTEN.get(),
-                ModItems.BOLT_HIGHSPEED_STEEL.get());
+                ModItems.BOLT_DURA_STEEL.get());
     }
 
     @Override

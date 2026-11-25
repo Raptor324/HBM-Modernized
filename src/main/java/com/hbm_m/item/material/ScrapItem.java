@@ -64,7 +64,7 @@ public class ScrapItem extends Item implements ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(formatAmount(getAmount(stack), net.minecraft.client.gui.screens.Screen.hasShiftDown()));
+        tooltip.add(formatAmount(getAmount(stack), com.hbm_m.util.StandardInfo.isShiftDown()));
         // Original ItemScraps.addInformation: fluessige Zusatzstoffe sind nicht giessbar
         com.hbm_m.inventory.material.Mats.MaterialStack contents = ItemScraps.getMats(stack);
         if (contents != null && ItemScraps.isLiquid(stack)

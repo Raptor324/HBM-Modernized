@@ -346,4 +346,32 @@ public class BarrelTankBlock extends BaseEntityBlock
         return CODEC;
     }
     *///?}
+
+    // Verbatim port of the original MachineBigAssTank.getAllPorts and MachineOrbus.getAllPorts:
+    // this block class serves both multiblocks (machine_bigasstank / orbus), discriminated by the
+    // stored BE-type supplier; plain barrels have no structure helper and never reach the
+    // placement-highlight port query.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        BlockEntityType<? extends MachineFluidTankBlockEntity> beType = this.beTypeSupplier.get();
+        if (beType == com.hbm_m.blockentity.ModBlockEntities.ORBUS_BE.get()) {
+            return rotatePorts(new int[][] {
+                {0, 0, -1, Direction.DOWN.get3DDataValue()},
+                {0, 0, 0, Direction.DOWN.get3DDataValue()},
+                {1, 0, -1, Direction.DOWN.get3DDataValue()},
+                {1, 0, 0, Direction.DOWN.get3DDataValue()},
+                {0, 4, -1, Direction.UP.get3DDataValue()},
+                {0, 4, 0, Direction.UP.get3DDataValue()},
+                {1, 4, -1, Direction.UP.get3DDataValue()},
+                {1, 4, 0, Direction.UP.get3DDataValue()}
+            }, facing);
+        }
+        if (beType == com.hbm_m.blockentity.ModBlockEntities.BIGASSTANK_BE.get()) {
+            return rotatePorts(new int[][] {
+                {0, 0, 6, Direction.SOUTH.get3DDataValue()},
+                {0, 0, -6, Direction.NORTH.get3DDataValue()}
+            }, facing);
+        }
+        return com.hbm_m.interfaces.IMultiblockController.super.getAllPorts(facing);
+    }
 }

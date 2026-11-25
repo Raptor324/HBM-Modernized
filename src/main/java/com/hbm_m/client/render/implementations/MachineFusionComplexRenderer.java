@@ -57,6 +57,16 @@ public final class MachineFusionComplexRenderer {
         MachineRenderers.machine("fusion_torus",
                 ModBlockEntities.FUSION_TORUS_BE.get(),
                 FusionTorusBlockEntity.class)
+            .blockTransform((be, animator) -> {
+                animator.translate(0.5, 0.0, 0.5);
+                if (be.tilted) {
+                    animator.translate(0.0, -1.0, 0.0);
+                    animator.rotate(10.0F, 0.0F, 0.0F, 1.0F);
+                    animator.rotate(5.0F, 0.0F, 1.0F, 0.0F);
+                }
+            })
+            .animationEpoch(be -> be.tilted ? 1L : 0L)
+            .part("Torus")
             .rotateY("Magnet", 0f, 0f, (be, pt) -> (double) Mth.lerp(pt, be.prevMagnet, be.magnet))
             .conditionalPart("Bolts2", be -> be.connections[0])
             .conditionalPart("Bolts4", be -> be.connections[1])

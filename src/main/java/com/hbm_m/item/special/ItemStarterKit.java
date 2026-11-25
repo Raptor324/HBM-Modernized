@@ -196,7 +196,7 @@ public class ItemStarterKit extends Item implements ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
-        if (EMPTY_INV.contains(kit)) list.add(Component.literal("Please empty inventory before opening!"));
-        if (DISPLACE.contains(kit)) list.add(Component.literal("Armor will be displaced by hazmat suit."));
+        if (EMPTY_INV.contains(kit)) list.add(Component.translatable("tooltip.hbm_m.kit.empty_inv"));
+        if (DISPLACE.contains(kit)) list.add(Component.translatable("tooltip.hbm_m.kit.displace_armor"));
     }
 }

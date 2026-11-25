@@ -107,6 +107,9 @@ public final class HbmForgeEvents {
     /** Original: Steuerungsrezepte aus hbmCustomMachines.json per CraftingManager - hier in den RecipeManager gelegt. */
     @SubscribeEvent
     public static void onServerStarted(net.minecraftforge.event.server.ServerStartedEvent event) {
+        // CE RBMKDials.createDials ran at FMLServerStartingEvent: dialSaveDials=false resets the
+        // RBMK dial gamerules to their defaults (RBMKGameRules.resetDialsOnWorldStart).
+        com.hbm_m.handler.rbmk.RBMKGameRules.resetDialsOnWorldStart(event.getServer());
         injectCustomMachineRecipes(event.getServer());
     }
 
@@ -699,7 +702,7 @@ public final class HbmForgeEvents {
 
     @SubscribeEvent
     public static void onFoodEaten(LivingEntityUseItemEvent.Finish event) {
-        if (!(event.getEntity() instanceof Player player)) return;
+        if (!(event.getEntity() instanceof Player player) || player.level().isClientSide) return;
         ItemStack stack = event.getItem();
 
         if (!stack.isEmpty() && stack.isEdible() && stack.hasTag()) {

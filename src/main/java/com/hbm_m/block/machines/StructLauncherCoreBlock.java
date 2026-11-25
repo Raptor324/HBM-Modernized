@@ -63,13 +63,25 @@ public class StructLauncherCoreBlock extends BaseEntityBlock {
             if (!(state.getBlock() instanceof StructLauncherCoreBlock core)) return;
 
             if (!core.large && isCompact(w, pos)) {
+                clearFootprint(w, pos, 1);
                 w.setBlock(pos, ModBlocks.COMPACT_LAUNCHER.get().defaultBlockState(), 3);
             }
 
             if (core.large) {
                 Direction dir = isTable(w, pos);
                 if (dir != null) {
+                    clearFootprint(w, pos, 4);
                     w.setBlock(pos, ModBlocks.LAUNCH_TABLE.get().defaultBlockState().setValue(DummyableMachineBlock.FACING, dir), 3);
+                }
+            }
+        }
+
+        private static void clearFootprint(Level w, BlockPos pos, int radius) {
+            for (int i = -radius; i <= radius; i++) {
+                for (int j = -radius; j <= radius; j++) {
+                    if (!(i == 0 && j == 0)) {
+                        w.setBlock(pos.offset(i, 0, j), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+                    }
                 }
             }
         }

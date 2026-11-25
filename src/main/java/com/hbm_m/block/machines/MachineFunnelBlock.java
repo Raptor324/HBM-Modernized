@@ -50,7 +50,7 @@ public class MachineFunnelBlock extends BaseEntityBlock {
 
     @Override
     public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return Shapes.block();
+        return Shapes.empty();
     }
 
     @Nullable

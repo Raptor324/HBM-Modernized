@@ -16,6 +16,7 @@ import com.hbm_m.util.BobMathUtil;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.level.Level;
@@ -88,4 +89,13 @@ public class MachineSolarBoilerBlock extends DummyableMachineBlock implements co
     /*public static final com.mojang.serialization.MapCodec<MachineSolarBoilerBlock> CODEC = simpleCodec(MachineSolarBoilerBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
+
+    // Verbatim port of the original MachineSolarBoiler.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {0, 2, 0, Direction.UP.get3DDataValue()},
+            {0, 0, 0, Direction.DOWN.get3DDataValue()},
+        }, facing);
+    }
 }

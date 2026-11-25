@@ -28,27 +28,27 @@
     },
     "Legs": {
       "model": "hbm_m:models/soyuz/soyuz_launcher_legs.obj",
-      "texture": "hbm_m:block/soyuz/launcher_legs"
+      "texture": "hbm_m:block/soyuz/launcher_leg"
     }
   },
   "display": {
     "gui": {
       "rotation": [ 30, 225, 0 ],
-      "translation": [ 0, 0, 0 ],
+      "translation": [ 0, -4.75, 0 ],
       "scale": [ 0.0125, 0.0125, 0.0125 ]
     },
     "fixed": {
       "rotation": [ 0, 0, 0 ],
-      "translation": [ 0, 0, 0 ],
+      "translation": [ 0, -5.5, 0 ],
       "scale": [ 0.0125, 0.0125, 0.0125 ]
     },
     "ground": {
-      "translation": [ 0, 0, 0 ],
+      "translation": [ 0, 1, 0 ],
       "scale": [ 0.008, 0.008, 0.008 ]
     },
     "thirdperson_righthand": {
       "rotation": [ 75, 45, 0 ],
-      "translation": [ 0, 0, 0 ],
+      "translation": [ 0, 1.5, 0 ],
       "scale": [ 0.01, 0.01, 0.01 ]
     },
     "firstperson_righthand": {

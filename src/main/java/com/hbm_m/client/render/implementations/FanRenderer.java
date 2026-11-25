@@ -16,7 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 /** 1:1 {@code RenderFan}: Rahmen nach der Ausrichtung gedreht, Fluegel um die eigene Achse. */
 public class FanRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineFanBlockEntity> {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/fan.obj"));
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/fan.obj"));
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/fan.png");
 
     public FanRenderer(BlockEntityRendererProvider.Context ctx) { }

@@ -130,6 +130,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
 
     private final List<Entity> trackedEntities = new ArrayList<>();
     public final List<int[]> nearbyMissiles = new ArrayList<>();
+    public final java.util.Map<Integer, String> contactCustomNames = new java.util.HashMap<>();
 
     public MachineRadarBlockEntity(BlockPos pos, BlockState state) {
         // Original: maxPower = 100_000, Annahme bis zum vollen Speicher
@@ -517,6 +518,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         }
 
         nearbyMissiles.clear();
+        contactCustomNames.clear();
         trackedEntities.clear();
         jammed = false;
 
@@ -678,6 +680,9 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     private int[] createContact(Entity entity, int type, boolean mobContact) {
         // Порт RadarEntry: добавлен entityID (индекс 6) — без него невозможен клик-перехват
         // конкретной ракеты через sendCommandEntity (1.7.10 RadarEntry.entityID).
+        if (entity instanceof Player player) {
+            contactCustomNames.put(entity.getId(), player.getGameProfile().getName());
+        }
         return new int[] {
                 (int) entity.getX(),
                 (int) entity.getY(),
@@ -719,6 +724,18 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             return IRadarDetectable.RadarTargetType.MISSILE_TIER0.name;
         }
         return values[index].name;
+    }
+
+    public Component getTargetTypeComponent(int index) {
+        IRadarDetectable.RadarTargetType[] values = IRadarDetectable.RadarTargetType.values();
+        if (index < 0 || index >= values.length) {
+            return Component.translatable(IRadarDetectable.RadarTargetType.MISSILE_TIER0.translationKey);
+        }
+        return Component.translatable(values[index].translationKey);
+    }
+
+    public @org.jetbrains.annotations.Nullable String getContactCustomName(int entityId) {
+        return contactCustomNames.get(entityId);
     }
 
     public long getPowerScaled(int scale) {
@@ -918,6 +935,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     private void clearScanData() {
         jammed = false;
         nearbyMissiles.clear();
+        contactCustomNames.clear();
         trackedEntities.clear();
     }
 
@@ -1011,7 +1029,12 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             contactTag.putInt("v", entry[3]);
             contactTag.putInt("t", entry[4]);
             contactTag.putInt("m", entry.length >= 6 ? entry[5] : 0);
-            contactTag.putInt("eid", entry.length >= 7 ? entry[6] : -1);
+            int eid = entry.length >= 7 ? entry[6] : -1;
+            contactTag.putInt("eid", eid);
+            String customName = contactCustomNames.get(eid);
+            if (customName != null && !customName.isEmpty()) {
+                contactTag.putString("name", customName);
+            }
             contacts.add(contactTag);
         }
         tag.put("contacts", contacts);
@@ -1087,9 +1110,14 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         }
 
         nearbyMissiles.clear();
+        contactCustomNames.clear();
         ListTag contacts = tag.getList("contacts", Tag.TAG_COMPOUND);
         for (int i = 0; i < contacts.size(); i++) {
             CompoundTag contactTag = contacts.getCompound(i);
+            int eid = contactTag.getInt("eid");
+            if (contactTag.contains("name")) {
+                contactCustomNames.put(eid, contactTag.getString("name"));
+            }
             nearbyMissiles.add(new int[] {
                     contactTag.getInt("x"),
                     contactTag.getInt("y"),
@@ -1097,7 +1125,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
                     contactTag.getInt("v"),
                     contactTag.getInt("t"),
                     contactTag.getInt("m"),
-                    contactTag.getInt("eid")
+                    eid
             });
         }
     }
@@ -1142,7 +1170,12 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             contactTag.putInt("v", entry[3]);
             contactTag.putInt("t", entry[4]);
             contactTag.putInt("m", entry.length >= 6 ? entry[5] : 0);
-            contactTag.putInt("eid", entry.length >= 7 ? entry[6] : -1);
+            int eid = entry.length >= 7 ? entry[6] : -1;
+            contactTag.putInt("eid", eid);
+            String customName = contactCustomNames.get(eid);
+            if (customName != null && !customName.isEmpty()) {
+                contactTag.putString("name", customName);
+            }
             contacts.add(contactTag);
         }
         tag.put("contacts", contacts);
@@ -1200,7 +1233,12 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             contactTag.putInt("v", entry[3]);
             contactTag.putInt("t", entry[4]);
             contactTag.putInt("m", entry.length >= 6 ? entry[5] : 0);
-            contactTag.putInt("eid", entry.length >= 7 ? entry[6] : -1);
+            int eid = entry.length >= 7 ? entry[6] : -1;
+            contactTag.putInt("eid", eid);
+            String customName = contactCustomNames.get(eid);
+            if (customName != null && !customName.isEmpty()) {
+                contactTag.putString("name", customName);
+            }
             contacts.add(contactTag);
         }
         tag.put("contacts", contacts);
@@ -1251,12 +1289,17 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
 
         if (tag.contains("contacts")) {
             nearbyMissiles.clear();
+            contactCustomNames.clear();
             ListTag contacts = tag.getList("contacts", Tag.TAG_COMPOUND);
             for (int i = 0; i < contacts.size(); i++) {
                 CompoundTag ct = contacts.getCompound(i);
+                int eid = ct.getInt("eid");
+                if (ct.contains("name")) {
+                    contactCustomNames.put(eid, ct.getString("name"));
+                }
                 nearbyMissiles.add(new int[] {
                         ct.getInt("x"), ct.getInt("y"), ct.getInt("z"),
-                        ct.getInt("v"), ct.getInt("t"), ct.getInt("m"), ct.getInt("eid")
+                        ct.getInt("v"), ct.getInt("t"), ct.getInt("m"), eid
                 });
             }
         }

@@ -34,8 +34,9 @@ public class RBMKLidItem extends Item {
                 com.hbm_m.blockentity.machines.rbmk.RBMKSteamInletBlockEntity.findColumnCore(level, pos);
         if (col != null && col.isLidRemovable() && !col.hasLid()) {
             col.setLidState(lidType);
-            if (!ctx.getPlayer().isCreative())
-                ctx.getItemInHand().shrink(1);
+            // 1:1 with ItemRBMKLid.onItemUse: stack.stackSize-- runs unconditionally, no
+            // creative-mode exception - the lid is consumed in every game mode.
+            ctx.getItemInHand().shrink(1);
             // Play appropriate placement sound
             if (lidType == 2)
                 level.playSound(null, pos, SoundEvents.GLASS_PLACE, SoundSource.BLOCKS, 1.0f, 0.8f);

@@ -47,7 +47,7 @@ public final class MachinePressGroupRenderer {
                     if (press.getSyncStack().isEmpty()) return;
 
                     ps.pushPose();
-                    ps.translate(0.0, 1.0, 0.0);
+                    ps.translate(0.5, 1.0, 0.5);
                     ps.mulPose(Axis.YP.rotationDegrees(90.0F));
                     ps.mulPose(Axis.XP.rotationDegrees(-90.0F));
                     ps.translate(1.0F, 1.0F - 0.0625F * 165.0F / 100.0F, 0.0F);
@@ -92,12 +92,17 @@ public final class MachinePressGroupRenderer {
                 float lift = Mth.lerp(pt, be.prevLift, be.lift);
                 return lift * 0.5F - 0.5F;
             })
-            .translatingPart("Bullets", new Vector3f(0f, 1f, 0f), (be, pt) -> {
+            .part("Bullets", (be, pt, gt, ps) -> {
+                if (be.animState != MachineAmmoPressBlockEntity.AnimationState.RETRACTING
+                        && be.animState != MachineAmmoPressBlockEntity.AnimationState.LOWERING) {
+                    return false;
+                }
                 float lift = Mth.lerp(pt, be.prevLift, be.lift);
-                return lift * 0.5F - 0.5F;
+                ps.translate(0f, lift * 0.5F - 0.5F, 0f);
+                return true;
             })
             .blockTransform(MachinePressGroupRenderer::applyAmmoPressTransform)
-            .itemParts("Frame", "Press", "Shells")
+            .itemParts("Frame", "Press", "Shells", "Bullets")
             .register();
     }
 
@@ -111,6 +116,7 @@ public final class MachinePressGroupRenderer {
             case 5 -> animator.rotate(180, 0, 1, 0);
             default -> {}
         }
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private static void applyConveyorPressTransform(MachineConveyorPressBlockEntity press, LegacyAnimator animator) {
@@ -122,6 +128,7 @@ public final class MachinePressGroupRenderer {
             case 5 -> animator.rotate(0, 0, 1, 0);
             default -> {}
         }
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private static void applyAmmoPressTransform(MachineAmmoPressBlockEntity tile, LegacyAnimator animator) {
@@ -134,6 +141,7 @@ public final class MachinePressGroupRenderer {
                 default -> {}
             }
         }
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private MachinePressGroupRenderer() {}

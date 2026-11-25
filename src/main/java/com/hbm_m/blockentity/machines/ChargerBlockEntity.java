@@ -190,9 +190,9 @@ public class ChargerBlockEntity extends BaseMachineBlockEntity {
 
     /** Original synchronisiert nur charge/particles; usingTicks rechnet der Client selbst weiter. */
     @Override
-    protected void applyClientUpdate(CompoundTag tag) {
+    protected void applyClientUpdate(CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
         int keep = usingTicks;
-        super.applyClientUpdate(tag);
+        super.applyClientUpdate(tag, registries);
         usingTicks = keep;
     }
 

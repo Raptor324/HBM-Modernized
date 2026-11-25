@@ -188,6 +188,8 @@ public abstract class DoorDecl {
 
     public int getSkinCount() { return 0; }
 
+    public DoorSkin[] getSkins() { return new DoorSkin[0]; }
+
     public boolean isLadder(boolean open) { return false; }
 
     public AABB getBlockBound(int x, int y, int z, boolean open, boolean forCollision) {
@@ -726,15 +728,38 @@ public abstract class DoorDecl {
             defineStructure(builder.parseVertical(closed, open, 'C'));
         }
 
+        private static final DoorSkin[] LARGE_VEHICLE_SKINS = new DoorSkin[] {
+            DoorSkin.of("clear"),
+            DoorSkin.DEFAULT,
+            DoorSkin.of("rad"),
+            DoorSkin.of("black"),
+            DoorSkin.of("blue"),
+            DoorSkin.of("red")
+        };
+
+        @Override
+        public DoorSkin[] getSkins() {
+            return LARGE_VEHICLE_SKINS;
+        }
+
+        @Override
+        public boolean hasSkins() {
+            return true;
+        }
+
+        @Override
+        public int getSkinCount() {
+            return LARGE_VEHICLE_SKINS.length;
+        }
+
         @Override
         public String[] getPartNames() {
-            return new String[] { "frame", "door" };
+            return new String[] { "frame", "doorLeft", "doorRight" };
         }
 
         @Override
         public ResourceLocation getBlockId() {
-                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "large_vehicle_door");
-
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "large_vehicle_door");
         }
 
         @Override
@@ -753,9 +778,9 @@ public abstract class DoorDecl {
 
         @Override
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-            if ("doorLeft".equals(partName)) {
+            if ("doorLeft".equalsIgnoreCase(partName) || "Left".equalsIgnoreCase(partName)) {
                 set(trans, 0, 0, 3.0F * getNormTime(openTicks));
-            } else if ("doorRight".equals(partName)) {
+            } else if ("doorRight".equalsIgnoreCase(partName) || "Right".equalsIgnoreCase(partName)) {
                 set(trans, 0, 0, -3.0F * getNormTime(openTicks));
             } else {
                 super.getTranslation(partName, openTicks, child, trans);
@@ -954,12 +979,35 @@ public abstract class DoorDecl {
             return DoorModelSelection.modern(DoorSkin.DEFAULT);
         }
 
+        private static final DoorSkin[] FIRE_DOOR_SKINS = new DoorSkin[] {
+            DoorSkin.DEFAULT,
+            DoorSkin.of("black"),
+            DoorSkin.of("orange"),
+            DoorSkin.of("yellow"),
+            DoorSkin.of("trefoil")
+        };
+
+        @Override
+        public DoorSkin[] getSkins() {
+            return FIRE_DOOR_SKINS;
+        }
+
+        @Override
+        public boolean hasSkins() {
+            return true;
+        }
+
+        @Override
+        public int getSkinCount() {
+            return FIRE_DOOR_SKINS.length;
+        }
+
         @Override public int getOpenTime() { return 160; }
 
         @Override
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-            if ("door".equals(partName) || !"frame".equals(partName)) {
-                set(trans, 0, 3.0F * getNormTime(openTicks), 0);
+            if ("door".equalsIgnoreCase(partName) || !"frame".equalsIgnoreCase(partName)) {
+                set(trans, 0, 2.75F * getNormTime(openTicks), 0);
             } else {
                 set(trans, 0, 0, 0);
             }
@@ -976,7 +1024,7 @@ public abstract class DoorDecl {
         @Override public SoundEvent getOpenSoundEnd() { return ModSounds.WGH_STOP.get(); }
         @Override public SoundEvent getOpenSoundLoop() { return ModSounds.WGH_START.get(); }
         @Override public SoundEvent getSoundLoop2() { return ModSounds.ALARM_6.get(); }
-        @Override public float getSoundVolume() { return 1.5f; }
+        @Override public float getSoundVolume() { return 2.0f; }
     };
 
     public static final DoorDecl SLIDING_BLAST_DOOR = new DoorDecl() {
@@ -1039,25 +1087,34 @@ public abstract class DoorDecl {
             return DoorModelSelection.modern(DoorSkin.DEFAULT);
         }
 
+        private static final DoorSkin[] SLIDING_BLAST_SKINS = new DoorSkin[] {
+            DoorSkin.DEFAULT,
+            DoorSkin.of("industrial")
+        };
+
+        @Override
+        public DoorSkin[] getSkins() {
+            return SLIDING_BLAST_SKINS;
+        }
+
+        @Override
+        public boolean hasSkins() {
+            return true;
+        }
+
+        @Override
+        public int getSkinCount() {
+            return SLIDING_BLAST_SKINS.length;
+        }
+
         @Override 
         public int getOpenTime() { 
             return 24; 
         }
 
-        // Створки разъезжаются В СТОРОНЫ от центрального шва: левая створка
-        // (x=0,-1,-2) уходит влево, правая (x=1,2) вправо — проём открывается от
-        // центра наружу (хвостовой край створки первым). Порог j/steps.
         @Override
         public int[][] getDoorOpenRanges() {
-            // ось 2 = движение по X (как у vehicle door). Ширина нечётная (7),
-            // поэтому центральная колонка x=0 — одна: щель в 1 блок, затем
-            // симметричные пары x=±1 (1/3) и x=±2 (2/3)
-            return new int[][] { { 0, 0, 0, -3, 4, 2 }, { 0, 0, 0, 3, 4, 2 } };
-        }
-
-        @Override
-        public float getRetractionThreshold(int j, int steps, int rangeIdx) {
-            return (float) j / steps;
+            return new int[][] { { -2, 0, 0, 4, 5, 1 } };
         }
 
         @Override
@@ -1080,9 +1137,18 @@ public abstract class DoorDecl {
                 getTranslation(partName, openTicks, child, trans);
                 return;
             }
-            // MODERN/OBJ-pipeline: dual-phase слайдинг.
+            // MODERN/OBJ-pipeline: dual-phase слайдинг (1:1 паритет с BusAnimation 1.7.10).
             float t = openTicks;
-            float doorProg = Math.max(0f, Math.min(1f, (t - 7f) / 17f)); // 7..24 → 0..1
+            float doorProg;
+            if (t <= 7f) {
+                doorProg = 0f;
+            } else if (t <= 11f) {
+                doorProg = 0.05f * ((t - 7f) / 4f);
+            } else {
+                float sinProg = Math.min(1f, (t - 11f) / 13f);
+                float sinUp = (float) (1.0 - Math.cos(sinProg * Math.PI / 2.0));
+                doorProg = 0.05f + 0.95f * sinUp;
+            }
             float maxOpen = 2.125f;
             if ("LeftDoor".equals(partName) || "LeftLock".equals(partName)) {
                 set(trans, 0, 0, maxOpen * doorProg);
@@ -1216,6 +1282,7 @@ public abstract class DoorDecl {
 
         @Override public SoundEvent getOpenSoundEnd() { return ModSounds.SLIDING_DOOR_OPENED.get(); }
         @Override public SoundEvent getOpenSoundLoop() { return ModSounds.SLIDING_DOOR_OPENING.get(); }
+        @Override public SoundEvent getSoundLoop2() { return ModSounds.SLIDING_DOOR_OPENING.get(); }
         @Override public SoundEvent getCloseSoundEnd() { return ModSounds.SLIDING_DOOR_SHUT.get(); }
         @Override public float getSoundVolume() { return 2.0f; }
     };
@@ -1340,6 +1407,28 @@ public abstract class DoorDecl {
             return DoorModelSelection.modern(DoorSkin.DEFAULT);
         }
 
+        private static final DoorSkin[] SECURE_ACCESS_SKINS = new DoorSkin[] {
+            DoorSkin.DEFAULT,
+            DoorSkin.of("gray"),
+            DoorSkin.of("black"),
+            DoorSkin.of("yellow")
+        };
+
+        @Override
+        public DoorSkin[] getSkins() {
+            return SECURE_ACCESS_SKINS;
+        }
+
+        @Override
+        public boolean hasSkins() {
+            return true;
+        }
+
+        @Override
+        public int getSkinCount() {
+            return SECURE_ACCESS_SKINS.length;
+        }
+
         @Override
         public String[] getPartNames() {
             return new String[] { "frame", "door" };
@@ -1349,7 +1438,7 @@ public abstract class DoorDecl {
         
         @Override
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-            if(!partName.equals("base")) {
+            if ("door".equalsIgnoreCase(partName)) {
                 set(trans, 0, 3.5F * getNormTime(openTicks), 0);
             } else {
                 super.getTranslation(partName, openTicks, child, trans);
@@ -2023,6 +2112,21 @@ public abstract class DoorDecl {
             defineStructure(builder.parseVertical(closed, open, 'C'));
         }
 
+        private static final DoorSkin[] VAULT_SKINS = new DoorSkin[] {
+            DoorSkin.DEFAULT,
+            DoorSkin.of("skin_87"),
+            DoorSkin.of("skin_106"),
+            DoorSkin.of("skin_81"),
+            DoorSkin.of("skin_111"),
+            DoorSkin.of("skin_2"),
+            DoorSkin.of("skin_99")
+        };
+
+        @Override
+        public DoorSkin[] getSkins() {
+            return VAULT_SKINS;
+        }
+
         @Override
         public ResourceLocation getBlockId() {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "vault_door");
@@ -2031,7 +2135,7 @@ public abstract class DoorDecl {
 
         @Override
         public DoorModelSelection getDefaultModelSelection() {
-            return DoorModelSelection.modern(DoorSkin.of("vault_door_skin_101"));
+            return DoorModelSelection.modern(DoorSkin.DEFAULT);
         }
 
         @Override
@@ -2051,7 +2155,7 @@ public abstract class DoorDecl {
 
         @Override
         public int getSkinCount() {
-            return 3;
+            return VAULT_SKINS.length;
         }
 
         @Override
@@ -2179,8 +2283,8 @@ public abstract class DoorDecl {
             int openTicks = door.getOpenTicks();
 
             if (door.state == 3) { // STATE_OPENING (Тики растут с 0 до 120)
-                // Используем 1 вместо 0, т.к. в serverTick счетчик инкрементируется до проверки
-                if (openTicks == 1) { 
+                // Используем 0 || 1 (тик 0 в 1.7.10, инкрементируется до 1 в serverTick)
+                if (openTicks == 0 || openTicks == 1) { 
                     level.playSound(null, pos, ModSounds.VAULT_SCRAPE.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
                 }
                 if (openTicks >= 45 && openTicks <= 115 && (openTicks - 45) % 10 == 0) {

@@ -37,7 +37,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * und schraeg (+rot -dir); alle drei Nebenzellen sind Strom-/Fluid-Proxies ({@code TileEntityProxyCombo().power().fluid()}).
  * Kein GUI.
  */
-public class MachineIntakeBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineIntakeBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     private final MultiblockStructureHelper structureHelper;
@@ -157,4 +157,41 @@ public class MachineIntakeBlock extends BaseEntityBlock implements IMultiblockCo
         return CODEC;
     }
     *///?}
+
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineIntakeBlockEntity intake)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        net.minecraft.ChatFormatting powerCol = intake.getEnergyStored() < intake.getMaxEnergyStored() / 20
+                ? net.minecraft.ChatFormatting.RED : net.minecraft.ChatFormatting.GREEN;
+        text.add(net.minecraft.network.chat.Component.literal(
+                "Power: " + com.hbm_m.util.BobMathUtil.getShortNumber(intake.getEnergyStored()) + "HE")
+                .withStyle(powerCol));
+        text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                .append(com.hbm_m.inventory.fluid.FluidType.forFluid(intake.compair.getTankType())
+                        .getLocalizedName().copy().withStyle(net.minecraft.ChatFormatting.RESET))
+                .append(net.minecraft.network.chat.Component.literal(
+                        ": " + intake.compair.getFill() + "/" + intake.compair.getMaxFill() + "mB")
+                        .withStyle(net.minecraft.ChatFormatting.RESET)));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
+
+    // Verbatim port of the original MachineIntake.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {0, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {0, 0, -1, Direction.NORTH.get3DDataValue()},
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {1, 0, 0, Direction.EAST.get3DDataValue()},
+            {1, 0, -1, Direction.EAST.get3DDataValue()},
+            {0, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, -1, Direction.WEST.get3DDataValue()}
+        }, facing);
+    }
 }

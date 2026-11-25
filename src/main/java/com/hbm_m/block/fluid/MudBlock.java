@@ -57,11 +57,13 @@ public class MudBlock extends HbmFluidBlock {
     }
 
     public void reactToBlocks(Level level, BlockPos pos) {
+        if (level.isOutsideBuildHeight(pos)) return;
         BlockState s = level.getBlockState(pos);
         if (!isMud(s) && !s.getFluidState().isEmpty()) level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
     }
 
     public void reactToBlocks2(Level level, BlockPos pos) {
+        if (level.isOutsideBuildHeight(pos)) return;
         BlockState s = level.getBlockState(pos);
         if (isMud(s) || s.isAir()) return;
         var b = s.getBlock();

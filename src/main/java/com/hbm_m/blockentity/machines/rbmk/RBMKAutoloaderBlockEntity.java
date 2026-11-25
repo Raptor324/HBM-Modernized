@@ -5,11 +5,13 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.handler.rbmk.RBMKNeutronHandler.RBMKType;
 import com.hbm_m.inventory.menu.RBMKAutoloaderMenu;
 import com.hbm_m.item.rbmk.RBMKRodItem;
+import com.hbm_m.platform.ModItemStackHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -52,6 +54,13 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
     private boolean isRetracting = true;
     private int delay = 0;
 
+    /**
+     * Client-only transient state for the operating sound: true while the piston's last synced
+     * value was inside the original's {@code renderPiston > 0.01 && renderPiston < 0.99} band, so
+     * leaving the band can fire the one-shot {@code wgh_stop}. Never persisted.
+     */
+    private boolean loopPlaying = false;
+
     public static final double SPEED = 0.005D;
     private static final int END_DELAY = 40;
 
@@ -90,6 +99,18 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
 
         if (level.isClientSide) {
             be.lastPiston = be.piston;
+
+            // Original client branch (TileEntityRBMKAutoloader L142-155): while the interpolated
+            // piston is between 0.01 and 0.99 the lift loop "hbm:door.wgh_start" plays at volume
+            // 0.75 (AudioWrapper, 25F range); on leaving the band the loop stops and
+            // "hbm:door.wgh_stop" plays once at volume 2F. Both sounds ship with the port.
+            boolean moving = be.piston > 0.01 && be.piston < 0.99;
+            com.hbm_m.client.sound.MachineLoopSoundClient.tick(be, "hbm:door.wgh_start", moving, 0.75F, 1.0F, 25);
+            if (be.loopPlaying && !moving) {
+                level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                        com.hbm_m.sound.ModSounds.WGH_STOP.get(), SoundSource.BLOCKS, 2F, 1F, false);
+            }
+            be.loopPlaying = moving;
             return;
         }
 
@@ -171,7 +192,7 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
      * from {@code TileEntityMachineBase}, not {@code TileEntityRBMKBase}. It must not swap heat
      * with the columns around it.
      */
-    @Override protected boolean participatesInHeatNetwork() { return false; }
+    @Override public boolean participatesInHeatNetwork() { return false; }
 
     /**
      * The piston travels four blocks <b>down</b> into the fuel channel, so the inherited column box
@@ -233,7 +254,117 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
         }
     }
 
+    // ─── Automation (hoppers/pipes) ──────────────────────────────────────────
+
+    /**
+     * 1:1 {@code TileEntityRBMKAutoloader} automation surface. {@code getAccessibleSlotsFromSide}
+     * exposes all 18 slots to pipes/hoppers while the piston is retracted (an empty array while
+     * extended); {@code isItemValidForSlot} restricts insertion to rods with enrichment*100 >=
+     * cycle into slots 0-8; {@code canExtractItem} allows extraction only from slots 9-17. This
+     * handler is a live view of the raw {@link #slots} array, so the tick logic, the menu and the
+     * NBT persistence keep working on the same storage.
+     */
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        return automationHandler;
+    }
+
+    private final ModItemStackHandler automationHandler = new ModItemStackHandler(SLOTS) {
+
+        @Override
+        public int getSlots() { return SLOTS; }
+
+        @Override
+        public ItemStack getStackInSlot(int slot) { return slots[slot]; }
+
+        @Override
+        public void setStackInSlot(int slot, ItemStack stack) {
+            slots[slot] = stack;
+            onContentsChanged(slot);
+        }
+
+        @Override
+        public boolean isItemValid(int slot, ItemStack stack) { return isItemValidForSlot(slot, stack); }
+
+        @Override
+        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+            if (stack.isEmpty()) return ItemStack.EMPTY;
+            // piston extended = the original's empty accessible-slot array
+            if (piston > 0 || slot >= INPUT_SLOTS || !isItemValidForSlot(slot, stack)) return stack;
+
+            ItemStack existing = slots[slot];
+            int limit = Math.min(stack.getMaxStackSize(), getSlotLimit(slot));
+            if (!existing.isEmpty()) {
+                if (!ItemStack.isSameItem(existing, stack) || existing.getCount() >= limit) return stack;
+                int accepted = Math.min(stack.getCount(), limit - existing.getCount());
+                if (!simulate) {
+                    existing.grow(accepted);
+                    onContentsChanged(slot);
+                }
+                return accepted >= stack.getCount() ? ItemStack.EMPTY
+                                                    : stack.copyWithCount(stack.getCount() - accepted);
+            }
+            int accepted = Math.min(stack.getCount(), limit);
+            if (accepted <= 0) return stack;
+            if (!simulate) {
+                slots[slot] = stack.copyWithCount(accepted);
+                onContentsChanged(slot);
+            }
+            return accepted >= stack.getCount() ? ItemStack.EMPTY
+                                                : stack.copyWithCount(stack.getCount() - accepted);
+        }
+
+        @Override
+        public ItemStack extractItem(int slot, int amount, boolean simulate) {
+            // canExtractItem: only the spent-rod half (slots 9-17), and only while retracted
+            if (amount <= 0 || piston > 0 || slot < INPUT_SLOTS) return ItemStack.EMPTY;
+            ItemStack existing = slots[slot];
+            if (existing.isEmpty()) return ItemStack.EMPTY;
+            int toExtract = Math.min(amount, existing.getCount());
+            ItemStack extracted = existing.copyWithCount(toExtract);
+            if (!simulate) {
+                if (toExtract >= existing.getCount()) slots[slot] = ItemStack.EMPTY;
+                else existing.shrink(toExtract);
+                onContentsChanged(slot);
+            }
+            return extracted;
+        }
+
+        @Override
+        protected void onContentsChanged(int slot) {
+            setChanged();
+        }
+    };
+
+    //? if forge {
+    // Forge exposes items only through the BE's own getCapability (ModCapabilities' generic
+    // ItemHandler registration exists on NeoForge alone); same split as RBMKHeaterBlockEntity.
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
+            net.minecraftforge.common.capabilities.Capability<T> cap,
+            @org.jetbrains.annotations.Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER) {
+            return net.minecraftforge.common.util.LazyOptional.of(() -> automationHandler).cast();
+        }
+        return super.getCapability(cap, side);
+    }
+    //?}
+
     /* ── Устройство настройки: порог обогащения цикла (оригинал, clamp 5..95) ── */
+
+    /**
+     * 1:1 {@code TileEntityRBMKAutoloader.receiveControl}: cycle is adjusted by ±5 and clamped to
+     * 5..95 server-side. The GUI's percent readout follows on its own - the column base tick sends
+     * the client update tag (built from writeNbtData, which carries the "cycle" key) every tick.
+     * Reached through {@code RBMKAutoloaderPacket}, whose permission check is the normal menu
+     * reach, matching the original's {@code hasPermission = isUseableByPlayer}.
+     */
+    public void receiveCycleControl(boolean minus, boolean plus) {
+        if (minus && this.cycle > 5)  this.cycle -= 5;
+        if (plus && this.cycle < 95)  this.cycle += 5;
+        this.cycle = net.minecraft.util.Mth.clamp(this.cycle, 5, 95);
+        setChanged();
+    }
 
     @Override
     public net.minecraft.nbt.CompoundTag getSettings(Level level, BlockPos pos) {

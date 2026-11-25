@@ -13,6 +13,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -55,59 +56,87 @@ public final class SealBlocks {
         }
 
         /** Rahmenmitte liegt {@code size} Bloecke hinter der Vorderseite. */
-        private static int[] off(Level world, BlockPos pos, int size) {
+        public static int[] off(Level world, BlockPos pos, int size) {
             BlockState s = world.getBlockState(pos);
             Direction back = s.hasProperty(FACING) ? s.getValue(FACING).getOpposite() : Direction.SOUTH;
             return new int[] { back.getStepX() * size, back.getStepZ() * size };
         }
 
-        private static boolean frame(Level world, int x, int y, int z) {
+        public static boolean frame(Level world, int x, int y, int z) {
             BlockState s = world.getBlockState(new BlockPos(x, y, z));
             return s.is(ModBlocks.SEAL_FRAME.get()) || s.is(ModBlocks.SEAL_CONTROLLER.get());
         }
 
         public static int getFrameSize(Level world, BlockPos pos) {
+            BlockState state = world.getBlockState(pos);
+            if (!state.is(ModBlocks.SEAL_CONTROLLER.get())) return 0;
             int x = pos.getX(), y = pos.getY(), z = pos.getZ();
             for (int size = 1; size < 7; size++) {
                 boolean valid = true;
                 int[] o = off(world, pos, size);
                 int xOff = o[0], zOff = o[1];
-                for (int X = x - size; X <= x + size; X++) if (!frame(world, X + xOff, y, z + size + zOff)) valid = false;
-                for (int X = x - size; X <= x + size; X++) if (!frame(world, X + xOff, y, z - size + zOff)) valid = false;
-                for (int Z = z - size; Z <= z + size; Z++) if (!frame(world, x - size + xOff, y, Z + zOff)) valid = false;
-                for (int Z = z - size; Z <= z + size; Z++) if (!frame(world, x + size + xOff, y, Z + zOff)) valid = false;
+                for (int X = x - size; X <= x + size; X++) {
+                    if (!frame(world, X + xOff, y, z + size + zOff)) { valid = false; break; }
+                }
+                if (!valid) continue;
+                for (int X = x - size; X <= x + size; X++) {
+                    if (!frame(world, X + xOff, y, z - size + zOff)) { valid = false; break; }
+                }
+                if (!valid) continue;
+                for (int Z = z - size; Z <= z + size; Z++) {
+                    if (!frame(world, x - size + xOff, y, Z + zOff)) { valid = false; break; }
+                }
+                if (!valid) continue;
+                for (int Z = z - size; Z <= z + size; Z++) {
+                    if (!frame(world, x + size + xOff, y, Z + zOff)) { valid = false; break; }
+                }
                 if (valid) return size;
             }
             return 0;
         }
 
         public static void closeSeal(Level world, BlockPos pos, int size) {
+            if (world.isClientSide) return;
             int[] o = off(world, pos, size);
-            for (int X = pos.getX() - size + 1; X <= pos.getX() + size - 1; X++) for (int Z = pos.getZ() - size + 1; Z <= pos.getZ() + size - 1; Z++) {
-                BlockPos p = new BlockPos(X + o[0], pos.getY(), Z + o[1]);
-                if (world.getBlockState(p).isAir() && !world.isClientSide) {
-                    world.setBlockAndUpdate(p, ModBlocks.SEAL_HATCH.get().defaultBlockState());
-                    if (world.getBlockEntity(p) instanceof HatchBlockEntity te) te.setControllerPos(pos);
+            for (int X = pos.getX() - size + 1; X <= pos.getX() + size - 1; X++) {
+                for (int Z = pos.getZ() - size + 1; Z <= pos.getZ() + size - 1; Z++) {
+                    BlockPos p = new BlockPos(X + o[0], pos.getY(), Z + o[1]);
+                    if (world.getBlockState(p).isAir()) {
+                        world.setBlockAndUpdate(p, ModBlocks.SEAL_HATCH.get().defaultBlockState());
+                        if (world.getBlockEntity(p) instanceof com.hbm_m.blockentity.machines.HatchBlockEntity te) {
+                            te.setControllerPos(pos);
+                        }
+                    }
                 }
             }
         }
 
         public static void openSeal(Level world, BlockPos pos, int size) {
+            if (world.isClientSide) return;
             int[] o = off(world, pos, size);
-            for (int X = pos.getX() - size + 1; X <= pos.getX() + size - 1; X++) for (int Z = pos.getZ() - size + 1; Z <= pos.getZ() + size - 1; Z++) {
-                BlockPos p = new BlockPos(X + o[0], pos.getY(), Z + o[1]);
-                if (world.getBlockState(p).is(ModBlocks.SEAL_HATCH.get()) && !world.isClientSide) world.setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
+            for (int X = pos.getX() - size + 1; X <= pos.getX() + size - 1; X++) {
+                for (int Z = pos.getZ() - size + 1; Z <= pos.getZ() + size - 1; Z++) {
+                    BlockPos p = new BlockPos(X + o[0], pos.getY(), Z + o[1]);
+                    if (world.getBlockState(p).is(ModBlocks.SEAL_HATCH.get())) {
+                        world.setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
+                    }
+                }
             }
         }
 
         public static boolean isSealClosed(Level world, BlockPos pos, int size) {
             int[] o = off(world, pos, size);
-            for (int X = pos.getX() - size + 1; X <= pos.getX() + size - 1; X++) for (int Z = pos.getZ() - size + 1; Z <= pos.getZ() + size - 1; Z++)
-                if (world.getBlockState(new BlockPos(X + o[0], pos.getY(), Z + o[1])).is(ModBlocks.SEAL_HATCH.get())) return true;
+            for (int X = pos.getX() - size + 1; X <= pos.getX() + size - 1; X++) {
+                for (int Z = pos.getZ() - size + 1; Z <= pos.getZ() + size - 1; Z++) {
+                    if (world.getBlockState(new BlockPos(X + o[0], pos.getY(), Z + o[1])).is(ModBlocks.SEAL_HATCH.get())) {
+                        return true;
+                    }
+                }
+            }
             return false;
         }
 
-        private static void toggle(Level world, BlockPos pos) {
+        public static void toggle(Level world, BlockPos pos) {
             int i = getFrameSize(world, pos);
             if (i != 0) {
                 if (isSealClosed(world, pos, i)) openSeal(world, pos, i);
@@ -165,6 +194,17 @@ public final class SealBlocks {
 
         @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
 
+        @Override
+        public float getExplosionResistance(BlockState state, BlockGetter level, BlockPos pos, net.minecraft.world.level.Explosion explosion) {
+            return Float.POSITIVE_INFINITY;
+        }
+
+        public void setControllerPos(Level world, BlockPos pos, BlockPos controllerPos) {
+            if (world.getBlockEntity(pos) instanceof com.hbm_m.blockentity.machines.HatchBlockEntity te) {
+                te.setControllerPos(controllerPos);
+            }
+        }
+
         @Nullable @Override
         public BlockEntity newBlockEntity(BlockPos pos, BlockState state) { return new HatchBlockEntity(pos, state); }
 
@@ -180,49 +220,9 @@ public final class SealBlocks {
     }
 
     /** 1:1 {@code TileEntityHatch}. */
-    public static class HatchBlockEntity extends BlockEntity {
-        private BlockPos controller = BlockPos.ZERO;
-
-        public HatchBlockEntity(BlockPos pos, BlockState state) { super(ModBlockEntities.SEAL_HATCH.get(), pos, state); }
-
-        public void setControllerPos(BlockPos p) { controller = p.immutable(); setChanged(); }
-
-        public static void serverTick(Level world, BlockPos pos, BlockState state, HatchBlockEntity te) {
-            if (!world.getBlockState(te.controller).is(ModBlocks.SEAL_CONTROLLER.get())) {
-                world.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-            } else if (Controller.getFrameSize(world, te.controller) == 0) {
-                world.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-            }
-        }
-
-        @Override
-        //? if < 1.21.1 {
-        public void load(CompoundTag nbt) {
-        //?} else {
-        /*public void loadAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
-        *///?}
-            //? if < 1.21.1 {
-            super.load(nbt);
-            //?} else {
-            /*super.loadAdditional(nbt, registries);
-            *///?}
-            controller = new BlockPos(nbt.getInt("x1"), nbt.getInt("y1"), nbt.getInt("z1"));
-        }
-
-        @Override
-        //? if < 1.21.1 {
-        protected void saveAdditional(CompoundTag nbt) {
-        //?} else {
-        /*protected void saveAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
-        *///?}
-            //? if < 1.21.1 {
-            super.saveAdditional(nbt);
-            //?} else {
-            /*super.saveAdditional(nbt, registries);
-            *///?}
-            nbt.putInt("x1", controller.getX());
-            nbt.putInt("y1", controller.getY());
-            nbt.putInt("z1", controller.getZ());
+    public static class HatchBlockEntity extends com.hbm_m.blockentity.machines.HatchBlockEntity {
+        public HatchBlockEntity(BlockPos pos, BlockState state) {
+            super(pos, state);
         }
     }
 }

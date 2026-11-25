@@ -32,7 +32,8 @@ public class FunnelModeC2SPacket implements C2SPacket {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
 
             BlockEntity be = ModPacketHandler.blockEntityAt(player, msg.pos);
-            if (be instanceof MachineFunnelBlockEntity funnel) {
+            if (be instanceof MachineFunnelBlockEntity funnel
+                    && com.hbm_m.inventory.menu.MenuReach.canReach(player, msg.pos, player.level().getBlockState(msg.pos))) {
                 funnel.cycleMode();
             }
         });

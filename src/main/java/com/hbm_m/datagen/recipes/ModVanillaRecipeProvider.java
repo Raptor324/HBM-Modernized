@@ -214,7 +214,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
             ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.PADLOCK_REINFORCED.get())
                     .define('P', duraPlate.get())
                     .define('D', deshPlate.get())
-                    .define('B', ModItems.BOLT_HIGHSPEED_STEEL.get())
+                    .define('B', ModItems.BOLT_DURA_STEEL.get())
                     .pattern(" P ")
                     .pattern("PBP")
                     .pattern("PDP")
@@ -1862,7 +1862,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/machine_battery_socket_frame"));
 
         // Большие батареи-паки порт двух рецептов оригинала.
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BATTERY_PACK_REDSTONE.get())
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BATTERY_PACK_BATTERY_REDSTONE.get())
                 .pattern("IRI")
                 .pattern("PRP")
                 .pattern("IRI")
@@ -1881,12 +1881,12 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
                 .save(writer, recipeId("crafting/bolt_steel"));
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BOLT_HIGHSPEED_STEEL.get(), 16)
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BOLT_DURA_STEEL.get(), 16)
                 .pattern("$")
                 .pattern("$")
                 .define('$', ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.INGOT))
                 .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.INGOT)))
-                .save(writer, recipeId("crafting/bolt_highspeed_steel"));
+                .save(writer, recipeId("crafting/bolt_dura_steel"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.GRENADE_IF.get())
                 .pattern(" $ ")
@@ -2471,14 +2471,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy("has_advanced_circuit", has(ModItems.ADVANCED_CIRCUIT.get()))
                 .save(writer, recipeId("crafting/turret_chip"));
 
-        // CraftingManager: Redstone-Batterie und Kupfer-Kondensator (battery_pack)
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BATTERY_PACK_BATTERY_REDSTONE.get())
-                .pattern("IRI").pattern("PRP").pattern("IRI")
-                .define('I', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
-                .define('R', Items.REDSTONE_BLOCK)
-                .define('P', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
-                .unlockedBy("has_redstone_block", has(Items.REDSTONE_BLOCK))
-                .save(writer, recipeId("crafting/battery_pack_redstone"));
+        // CraftingManager: Kupfer-Kondensator (battery_pack)
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BATTERY_PACK_CAPACITOR_COPPER.get())
                 .pattern("IRI").pattern("PRP").pattern("IRI")
                 .define('I', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))

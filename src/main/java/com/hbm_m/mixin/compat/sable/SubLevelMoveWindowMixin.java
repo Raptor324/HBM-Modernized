@@ -3,6 +3,7 @@ package com.hbm_m.mixin.compat.sable;
 import com.hbm_m.multiblock.ContraptionAssemblyGuard;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -28,7 +29,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  *
  * <p>Таргет строкой, без compile-зависимости от Sable.
  */
-@Mixin(targets = "dev.ryanhcode.sable.api.SubLevelAssemblyHelper")
+@Pseudo
+@Mixin(targets = "dev.ryanhcode.sable.api.SubLevelAssemblyHelper", remap = false)
 public abstract class SubLevelMoveWindowMixin {
 
     static {

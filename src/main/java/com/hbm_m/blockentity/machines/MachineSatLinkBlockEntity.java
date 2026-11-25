@@ -110,7 +110,7 @@ public class MachineSatLinkBlockEntity extends BaseHbmBlockEntity implements IRO
     }
 
     @Override
-    protected void applyClientUpdate(@NotNull CompoundTag tag) {
+    protected void applyClientUpdate(@NotNull CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
         if (tag.contains("connected")) this.connected = tag.getBoolean("connected");
         if (tag.contains("freq")) this.freq = tag.getInt("freq");
         if (tag.contains("info")) {
@@ -145,20 +145,28 @@ public class MachineSatLinkBlockEntity extends BaseHbmBlockEntity implements IRO
         return new String[] {
                 PREFIX_VALUE + "connected",
                 PREFIX_VALUE + "freq",
+                PREFIX_VALUE + "type",
                 PREFIX_VALUE + "rx",
                 PREFIX_FUNCTION + "setfreq" + NAME_SEPARATOR + "freq",
-                PREFIX_FUNCTION + "tx" + NAME_SEPARATOR + "payload"
+                PREFIX_FUNCTION + "tx" + NAME_SEPARATOR + "payload",
+                PREFIX_FUNCTION + "txrx" + NAME_SEPARATOR + "return freq" + IRORInteractive.PARAM_SEPARATOR + "payload"
         };
     }
 
     @Override
     public String provideRORValue(String name) {
-        // Original vergleicht hier mit PREFIX_VALUE + connected (dem Wahrheitswert), nicht mit "connected"
-        if (name.equals(PREFIX_VALUE + connected)) {
+        if (name.equals(PREFIX_VALUE + "connected")) {
             return this.connected ? "TRUE" : "FALSE";
         }
         if (name.equals(PREFIX_VALUE + "freq")) {
             return "" + this.freq;
+        }
+        if (name.equals(PREFIX_VALUE + "type") && level instanceof ServerLevel server) {
+            Satellite sat = SatelliteManager.get(server).getSatFromFreq(this.freq);
+            if (sat != null) {
+                return sat.getType();
+            }
+            return "";
         }
         if (name.equals(PREFIX_VALUE + "rx") && level instanceof ServerLevel server) {
             Satellite sat = SatelliteManager.get(server).getSatFromFreq(this.freq);
@@ -183,6 +191,22 @@ public class MachineSatLinkBlockEntity extends BaseHbmBlockEntity implements IRO
             String[] cmd = String.join(IRORInteractive.PARAM_SEPARATOR, params).split(" ");
             if (sat != null) {
                 sat.onCommand(server, cmd);
+                SatelliteManager.get(server).setDirty();
+            }
+            RayScanEvents.reportEvent(server, worldPosition, RayScanEvents.INFO_RADIO, 300);
+            this.setChanged();
+        }
+
+        if (name.equals(PREFIX_FUNCTION + "txrx") && params.length > 1 && level instanceof ServerLevel server) {
+            Satellite sat = SatelliteManager.get(server).getSatFromFreq(this.freq);
+
+            String[] args = new String[params.length - 1];
+            System.arraycopy(params, 1, args, 0, args.length);
+            String[] cmd = String.join(IRORInteractive.PARAM_SEPARATOR, args).split(" ");
+
+            if (sat != null) {
+                sat.onCommand(server, cmd);
+                com.hbm_m.blockentity.network.radio.RTTYNetwork.broadcast(server, params[0], sat.tx);
                 SatelliteManager.get(server).setDirty();
             }
             RayScanEvents.reportEvent(server, worldPosition, RayScanEvents.INFO_RADIO, 300);

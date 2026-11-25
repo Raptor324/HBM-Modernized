@@ -3,6 +3,7 @@ package com.hbm_m.client.render.implementations;
 import org.joml.Matrix4f;
 
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.FlowControlPumpBlockEntity;
 import com.hbm_m.blockentity.machines.MachineBigAssTankBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.blockentity.machines.OrbusBlockEntity;
@@ -47,6 +48,22 @@ public final class MachineTankRenderer {
     public static void register() {
         registerBigAssTank();
         registerOrbus();
+        registerFlowControlPump();
+    }
+
+    private static void registerFlowControlPump() {
+        MachineRenderers.machine("flow_control_pump", ModBlockEntities.FLOW_CONTROL_PUMP_BE.get(),
+                FlowControlPumpBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
+            .part("Pump")
+            .part("RailTop", (be, pt, gt, ps) -> be.topRail)
+            .part("RailBottom", (be, pt, gt, ps) -> be.bottomRail)
+            .rotatingPart("Rotor", new org.joml.Vector3f(0.0F, 0.0F, -1.0F), new org.joml.Vector3f(0.5F, 0.5F, 0.5F),
+                    (be, pt) -> net.minecraft.util.Mth.lerp(pt, be.prevRotor, be.rotor))
+            .facing(ObjBerHelper::facing)
+            .viewDistance(256)
+            .itemParts("Pump", "Rotor", "RailBottom")
+            .register();
     }
 
     private static boolean isNone(Fluid fluid) {
@@ -142,11 +159,11 @@ public final class MachineTankRenderer {
     private static void registerOrbus() {
         MachineRenderers.machine("orbus", ModBlockEntities.ORBUS_BE.get(),
                 OrbusBlockEntity.class)
-            .part("Body")
-            .part("Base")
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
+            .part("Sphere.002")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
-            .itemParts("Body", "Base")
+            .itemParts("Sphere.002")
             .hook(new MachineRenderHook<OrbusBlockEntity>() {
                 @Override
                 public void render(OrbusBlockEntity orbus, float pt, PoseStack ps,
@@ -160,6 +177,8 @@ public final class MachineTankRenderer {
                     int c = isNone(fluid) ? 0xFFFFFF : FluidType.forFluid(fluid).getColor();
 
                     ps.pushPose();
+                    ps.translate(0.5, 0.0, 0.5);
+                    ps.pushPose();
                     ps.translate(0, 2.5D + Math.sin(((time + pt) * 0.1D) % (Math.PI * 2D)) * 0.125 * scale, 0);
                     ps.scale((float) scale, (float) scale, (float) scale);
                     SPHERE_UV.renderAllColor(ps, buf.getBuffer(ClientRenderHandler.CustomRenderTypes.SOLID_COLOR_NOCULL),
@@ -171,6 +190,7 @@ public final class MachineTankRenderer {
                     BeamPronter.prontBeam(ps, buf, new Vec3(0, 3, 0), BeamPronter.EnumWaveType.SPIRAL, BeamPronter.EnumBeamType.SOLID, 0x101020, 0x101020, 0, 1, 0F, 6, (float) scale * 0.5F, BeamPronter.forkAlpha());
                     BeamPronter.prontBeam(ps, buf, new Vec3(0, 3, 0), BeamPronter.EnumWaveType.RANDOM, BeamPronter.EnumBeamType.SOLID, 0x202060, 0x202060, (int) (time / 2) % 1000, 6, (float) scale, 2, 0.0625F * (float) scale, BeamPronter.forkAlpha());
                     BeamPronter.prontBeam(ps, buf, new Vec3(0, 3, 0), BeamPronter.EnumWaveType.RANDOM, BeamPronter.EnumBeamType.SOLID, 0x202060, 0x202060, (int) (time / 4) % 1000, 6, (float) scale, 2, 0.0625F * (float) scale, BeamPronter.forkAlpha());
+                    ps.popPose();
                     ps.popPose();
                 }
 

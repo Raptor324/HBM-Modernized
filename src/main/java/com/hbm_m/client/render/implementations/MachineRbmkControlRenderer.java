@@ -7,6 +7,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import com.hbm_m.block.machines.MachineRbmkConsoleBlock;
+import com.hbm_m.block.machines.rbmk.RBMKCraneConsoleBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity;
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity.RBMKColumnData;
@@ -29,6 +30,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
@@ -80,6 +82,7 @@ public final class MachineRbmkControlRenderer {
                 };
                 animator.rotate(rotY, 0, 1, 0);
                 animator.translate(0.5, 0, 0);
+                animator.translate(-0.5, 0, -0.5);
             })
             .part("Cube")
             .hook(new MachineRenderHook<MachineRbmkConsoleBlockEntity>() {
@@ -131,7 +134,9 @@ public final class MachineRbmkControlRenderer {
                                 1, 0, 0, sprite, r, g, b, light, overlay);
 
                         switch (col.type) {
-                            case FUEL -> {
+                            // The original's console renderer shares the fuel dot between FUEL and
+                            // FUEL_SIM (RenderRBMKConsole :82-83).
+                            case FUEL, FUEL_SIM -> {
                                 float e = (float) Math.min(Math.max(col.data.getDouble("enrichment"), 0), 1);
                                 drawDot(vc, m, kx + 0.01, ky, kz, 0F, 0.25F + e * 0.75F, 0F, sprite, light, overlay);
                             }
@@ -162,7 +167,10 @@ public final class MachineRbmkControlRenderer {
                 RBMKCraneConsoleBlockEntity.class)
             .blockTransform((be, animator) -> {
                 animator.translate(0.5, 0, 0.5);
-                float angle = switch (be.facing) {
+                Direction facing = be.getBlockState().hasProperty(RBMKCraneConsoleBlock.FACING)
+                        ? be.getBlockState().getValue(RBMKCraneConsoleBlock.FACING)
+                        : be.facing;
+                float angle = switch (facing) {
                     case NORTH -> 90f;
                     case WEST  -> 180f;
                     case SOUTH -> 270f;
@@ -170,6 +178,7 @@ public final class MachineRbmkControlRenderer {
                 };
                 animator.rotate(angle, 0, 1, 0);
                 animator.translate(0.5, 0, 0);
+                animator.translate(-0.5, 0, -0.5);
             })
             .part("Console_Coonsole")
             // Dynamic Joystick tilting with movement inputs
@@ -256,6 +265,7 @@ public final class MachineRbmkControlRenderer {
         MachineRenderers.machine("rbmk_autoloader",
                 ModBlockEntities.RBMK_AUTOLOADER_BE.get(),
                 RBMKAutoloaderBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Base")
             // Fuel transfer piston/sleeve traveling 4 blocks down into channel
             .translatingPart("Piston", new Vector3f(0f, 1f, 0f),
@@ -310,6 +320,13 @@ public final class MachineRbmkControlRenderer {
 
             String text = be.screenText != null && be.screenText[i] != null ? be.screenText[i] : "";
             if (!text.isEmpty()) {
+                // 1:1 with RenderRBMKConsole: the stored readout is "<lang key>=<value>" and is
+                // resolved at draw time, so the physical panel reads "Temp: 123.4°C" instead of
+                // the raw "rbmk.screen.temp=123.4°C".
+                String[] parts = text.split("=");
+                if (parts.length == 2) {
+                    text = Component.translatable(parts[0], parts[1]).getString();
+                }
                 int width = font.width(text);
                 int height = 9;
                 float f3 = Math.min(0.03F, 0.8F / Math.max(width, 1));

@@ -39,6 +39,11 @@ public class RadioTorchControlPacket implements C2SPacket {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
             var be = ModPacketHandler.blockEntityAt(player, packet.pos);
             if (be instanceof IRadioTorchConfigurable torch) {
+                // hasPermission, 1:1 with the original's panel TEs (e.g. TileEntityRBMKGauge
+                // #hasPermission): getDistanceSq to the BLOCK CENTER < 15*15, else the packet is
+                // dropped. NBTControlPacket.Handler ran the same check before receiveControl.
+                if (player.distanceToSqr(packet.pos.getX() + 0.5D, packet.pos.getY() + 0.5D,
+                        packet.pos.getZ() + 0.5D) > 225.0D) return;
                 torch.receiveControl(packet.data);
             }
         });

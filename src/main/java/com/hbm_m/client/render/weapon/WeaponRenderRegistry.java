@@ -18,6 +18,7 @@ import com.hbm_m.client.render.PartGeometry;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.cache.RenderCacheManager;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
+import com.hbm_m.client.render.weapon.bridge.ExternalGunRenderBridge;
 import com.hbm_m.client.weapon.GunGL;
 import com.hbm_m.client.weapon.WeaponResources;
 import com.hbm_m.main.MainRegistry;
@@ -266,6 +267,10 @@ public final class WeaponRenderRegistry {
         Function<Material, TextureAtlasSprite> spriteGetter = getDefaultSpriteGetter();
         for (ResourceLocation loc : REGISTERED_WEAPON_MODELS) {
             if (!BAKED_MODELS.containsKey(loc)) {
+                // External render bridge (TACZ) claims this weapon model: skip the native VBO
+                // bake to save VRAM. Casings/grenades/non-gun models must never be skipped
+                // (enforced by the bridge implementation).
+                if (ExternalGunRenderBridge.get().shouldSkipNativeVboBake(loc)) continue;
                 try {
                     WeaponMultipartBakedModel model = bakeObjDirect(loc, null, spriteGetter);
                     if (model != null) {

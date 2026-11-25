@@ -2,6 +2,7 @@
   "loader": "hbm_m:machine_parts_loader",
   "model": "hbm_m:models/block/barrel.obj",
   "flip_v": true,
+  "smooth_shade": true,
   "textures": {
     "particle": "hbm_m:block/barrel_tcalloy",
     "default": "hbm_m:block/barrel_tcalloy"

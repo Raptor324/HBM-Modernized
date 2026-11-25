@@ -1,28 +1,72 @@
 package com.hbm_m.block.bomb;
 
+import java.util.Map;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.bomb.IBomb;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.bomb.LargeNukeBlockEntity;
 import com.hbm_m.explosion.NuclearExplosionAPI;
+import com.hbm_m.interfaces.IDetonatable;
+import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
-
+import net.minecraft.core.Direction;
+import net.minecraft.world.Containers;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * Большая ядерная бомба (Gadget / Little Boy / Ivy Mike / Tsar Bomba).
  * Один класс блока на все типы, вариант определяется полем type.
  */
-public class LargeNukeBlock extends NukeBaseBlock implements IBomb {
+public class LargeNukeBlock extends NukeBaseBlock implements IMultiblockController, IBomb, IDetonatable {
 
     public final LargeNukeType type;
+    private final MultiblockStructureHelper structureHelper;
 
     public LargeNukeBlock(LargeNukeType type, Properties properties) {
         super(properties);
         this.type = type;
+        this.structureHelper = defineStructure(type);
+    }
+
+    @Override
+    public boolean onDetonate(Level level, BlockPos pos, BlockState state, Player player) {
+        if (level.isClientSide) return false;
+        BombReturnCode result = explode(level, pos);
+        return result != null && result.wasSuccessful();
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+        if (!level.isClientSide && level.getBlockState(pos).getBlock() == this && level.hasNeighborSignal(pos)) {
+            explode(level, pos);
+        }
+    }
+
+    @Override
+    public MultiblockStructureHelper getStructureHelper() {
+        return structureHelper;
+    }
+
+    @Override
+    public PartRole getPartRole(BlockPos localOffset) {
+        if (structureHelper != null) {
+            return structureHelper.resolvePartRole(localOffset, this);
+        }
+        return PartRole.DEFAULT;
     }
 
     @Nullable
@@ -62,9 +106,68 @@ public class LargeNukeBlock extends NukeBaseBlock implements IBomb {
         return BombReturnCode.UNDEFINED;
     }
 
-    //? if > 1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<LargeNukeBlock> CODEC =
-            simpleCodec(props -> new LargeNukeBlock(LargeNukeType.GADGET, props));
-    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.Block> codec() { return CODEC; }
-     *///?}
+    private static MultiblockStructureHelper defineStructure(LargeNukeType type) {
+        String[][] layers = switch (type) {
+            case GADGET -> new String[][] {
+                {
+                    "AAA",
+                    "ACA",
+                    "AAA"
+                },
+                {
+                    "AAA",
+                    "AAA",
+                    "AAA"
+                }
+            };
+            case BOY -> new String[][] {
+                {
+                    "ACA"
+                }
+            };
+            case MIKE -> new String[][] {
+                { "C" },
+                { "A" },
+                { "A" },
+                { "A" },
+                { "A" },
+                { "A" }
+            };
+            case TSAR -> new String[][] {
+                {
+                    "AAAAAAAA",
+                    "AAAACAAA",
+                    "AAAAAAAA"
+                },
+                {
+                    "AAAAAAAA",
+                    "AAAAAAAA",
+                    "AAAAAAAA"
+                }
+            };
+        };
+
+        Map<Character, PartRole> roleMap = Map.of(
+            'A', PartRole.DEFAULT,
+            'C', PartRole.CONTROLLER
+        );
+
+        Map<Character, VoxelShape> shapeMap = Map.of(
+            'A', Shapes.block(),
+            'C', Shapes.block()
+        );
+        Map<Character, VoxelShape> collisionMap = Map.of(
+            'A', Shapes.block(),
+            'C', Shapes.block()
+        );
+
+        return MultiblockStructureHelper.createFromLayersWithRoles(
+            layers,
+            Map.of(),
+            () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
+            roleMap,
+            shapeMap,
+            collisionMap
+        );
+    }
 }

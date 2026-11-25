@@ -460,9 +460,9 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity
     }
 
     @Override
-    protected void applyClientUpdate(@NotNull CompoundTag tag) {
+    protected void applyClientUpdate(@NotNull CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
         // Применяем NBT (аналог старого handleUpdateTag → load/readNbtData)
-        super.applyClientUpdate(tag);
+        super.applyClientUpdate(tag, registries);
         if (level != null && level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
             refreshAdjacentFluidDuctConnections();

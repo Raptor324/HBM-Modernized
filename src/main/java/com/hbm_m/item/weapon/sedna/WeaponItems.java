@@ -79,6 +79,7 @@ public final class WeaponItems {
             "gun_panzerschreck",
             "gun_stinger",
             "gun_quadro",
+            "gun_fliegerfaust",
             "gun_missile_launcher",
             "gun_g3",
             "gun_g3_zebra",
@@ -128,6 +129,9 @@ public final class WeaponItems {
 
     public static Item ammo(EnumAmmo a) { return AMMO_STANDARD.get(a).get(); }
     public static Item ammo(EnumAmmoSecret a) { return AMMO_SECRET.get(a).get(); }
+    public static Item modGeneric(EnumModGeneric m) { return WEAPON_MOD_GENERIC.get(m).get(); }
+    public static Item modSpecial(EnumModSpecial m) { return WEAPON_MOD_SPECIAL.get(m).get(); }
+    public static Item modCaliber(EnumModCaliber m) { return WEAPON_MOD_CALIBER.get(m).get(); }
 
     /** Original {@code ModItems.gun_x} - nach der Registrierung. */
     public static Item gun(String name) {

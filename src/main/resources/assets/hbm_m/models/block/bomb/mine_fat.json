@@ -1,47 +1,40 @@
 {
-  "loader": "forge:composite",
+  "loader": "hbm_m:nmesh_obj",
+  "model": "hbm_m:models/block/bomb/mine_fat_nt.obj",
+  "flip_v": true,
+  "shade_quads": false,
+  "smooth_shade": true,
+  "ao": false,
+  "emissive_ambient": false,
+  "render_type": "minecraft:cutout",
   "textures": {
+    "default": "hbm_m:block/bomb/mine_fat_model",
     "particle": "hbm_m:block/bomb/mine_fat_model"
-  },
-  "children": {
-    "model": {
-      "loader": "hbm_m:nmesh_obj",
-      "model": "hbm_m:models/block/bomb/mine_fat_nt.obj",
-      "flip_v": true,
-      "textures": {
-        "default": "hbm_m:block/bomb/mine_fat_model"
-      }
-    }
   },
   "transform": {
     "translation": [
-      0,
-      -0.45,
-      0
+      0.5,
+      0.0,
+      0.5
     ],
-    "rotation": [
-      0,
-      0,
-      0
-    ],
-    "scale": 0.5
+    "scale": 1.0
   },
   "display": {
     "gui": {
       "rotation": [
         30,
-        45,
+        315,
         0
       ],
       "translation": [
-        0.5,
-        1.6,
-        0
+        -1.237,
+        8.64,
+        7.572
       ],
       "scale": [
-        0.85,
-        0.85,
-        0.85
+        1.75,
+        1.75,
+        1.75
       ]
     },
     "ground": {

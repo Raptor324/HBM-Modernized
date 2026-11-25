@@ -8,6 +8,7 @@ import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -75,4 +76,16 @@ public class MachineICFBlock extends FusionMultiblockBlock {
         return CODEC;
     }
     *///?}
+
+    // Verbatim port of the original MachineICF.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {0, 5, 0, Direction.UP.get3DDataValue()},
+            {6, 3, 2, Direction.SOUTH.get3DDataValue()},
+            {-6, 3, 2, Direction.SOUTH.get3DDataValue()},
+            {6, 3, -2, Direction.NORTH.get3DDataValue()},
+            {-6, 3, -2, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

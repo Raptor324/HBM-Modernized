@@ -17,6 +17,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 
 /**
  * 1:1 {@code ItemGunChemthrower}: Chemiewerfer, wird ueber {@link IFillableItem} an Fluessigkeitsquellen (Tanks,
@@ -32,6 +33,7 @@ public class ItemGunChemthrower extends ItemGunBaseNT implements IFillableItem {
 
     @Override
     public boolean acceptsFluid(Fluid type, ItemStack stack) {
+        if (type == null || type == Fluids.EMPTY) return false;
         return getFluidType(stack) == type || getMagCount(stack) == 0;
     }
 
@@ -58,11 +60,13 @@ public class ItemGunChemthrower extends ItemGunBaseNT implements IFillableItem {
 
     @Override
     public boolean providesFluid(Fluid type, ItemStack stack) {
+        if (type == null || type == Fluids.EMPTY) return false;
         return getFluidType(stack) == type;
     }
 
     @Override
     public int tryEmpty(Fluid type, int amount, ItemStack stack) {
+        if (type == null || type == Fluids.EMPTY || getFluidType(stack) != type) return 0;
         int fill = getMagCount(stack);
         int toUnload = Math.min(fill, amount);
         toUnload = Math.min(toUnload, transferSpeed);

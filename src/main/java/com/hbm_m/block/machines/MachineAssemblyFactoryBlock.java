@@ -44,14 +44,17 @@ import dev.architectury.registry.menu.MenuRegistry;
  * Rand der untersten Lage und die beiden Laengsreihen der obersten Lage sind Anschluss-Proxies
  * ({@code TileEntityProxyDyn().inventory().power().fluid()}).
  */
-public class MachineAssemblyFactoryBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineAssemblyFactoryBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    /** Frame is visible when blocks stand above the top ring. Lives in the BlockState (see MultiblockFrameHelper). */
+    public static final net.minecraft.world.level.block.state.properties.BooleanProperty FRAME =
+            net.minecraft.world.level.block.state.properties.BooleanProperty.create("frame");
     private final MultiblockStructureHelper structureHelper;
 
     public MachineAssemblyFactoryBlock(BlockBehaviour.Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(FRAME, false));
         this.structureHelper = defineStructure();
     }
 
@@ -157,7 +160,10 @@ public class MachineAssemblyFactoryBlock extends BaseEntityBlock implements IMul
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            placeMultiblockStructure(level, pos, state);
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core != null && level.getBlockEntity(core) instanceof com.hbm_m.interfaces.IFrameSupportable be) {
+                be.checkForFrame();
+            }
         }
     }
 
@@ -191,7 +197,7 @@ public class MachineAssemblyFactoryBlock extends BaseEntityBlock implements IMul
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, FRAME);
     }
 
     @Nullable
@@ -231,6 +237,43 @@ public class MachineAssemblyFactoryBlock extends BaseEntityBlock implements IMul
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.ASSEMBLY_FACTORY_BE.get(), MachineAssemblyFactoryBlockEntity::tick);
+    }
+
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineAssemblyFactoryBlockEntity assemfac)) return;
+
+        net.minecraft.world.phys.HitResult hit = net.minecraft.client.Minecraft.getInstance().hitResult;
+        BlockPos aimed = hit instanceof BlockHitResult bhr ? bhr.getBlockPos() : pos;
+
+        for (BlockPos coolPos : assemfac.coolantLine()) {
+            if (coolPos.equals(aimed)) {
+                java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+                text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(assemfac.water.getTankType())
+                                .getLocalizedName().copy().withStyle(net.minecraft.ChatFormatting.RESET)));
+                text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(assemfac.lps.getTankType())
+                                .getLocalizedName().copy().withStyle(net.minecraft.ChatFormatting.RESET)));
+                com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                        net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+                return;
+            }
+        }
+
+        BlockPos[] io = assemfac.ioParts();
+        for (int i = 0; i < io.length; i++) {
+            if (io[i].equals(aimed)) {
+                java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+                text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.YELLOW)
+                        .append(net.minecraft.network.chat.Component.literal("Recipe field [" + (i + 1) + "]")
+                                .withStyle(net.minecraft.ChatFormatting.RESET)));
+                com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                        net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+                return;
+            }
+        }
     }
 
     //? if >1.20.1 {

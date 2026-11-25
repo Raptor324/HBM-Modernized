@@ -36,8 +36,8 @@ public class NeoCartRenderer<T extends AbstractMinecart & INTMCart> extends Enti
     private static final ResourceLocation CART_WOOD = rl("textures/entity/cart_wood.png");
     private static final ResourceLocation CART_DESTROYER_TEX = rl("textures/entity/cart_destroyer.png");
     private static final ResourceLocation CART_POWDER_TEX = rl("textures/block/block_gunpowder.png");
-    private static final ResourceLocation CART_SEMTEX_SIDE = rl("textures/block/semtex_side.png");
-    private static final ResourceLocation CART_SEMTEX_TOP = rl("textures/block/semtex_bottom.png");
+    private static final ResourceLocation CART_SEMTEX_SIDE = rl("textures/block/bomb/semtex_side.png");
+    private static final ResourceLocation CART_SEMTEX_TOP = rl("textures/block/bomb/semtex_bottom.png");
 
     public NeoCartRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);

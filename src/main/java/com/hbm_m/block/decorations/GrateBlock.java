@@ -114,7 +114,7 @@ public class GrateBlock extends Block {
     /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
     *///?}
         String key = getDescriptionId() + ".desc";
-        if (net.minecraft.client.resources.language.I18n.exists(key))
+        if (net.minecraft.locale.Language.getInstance().has(key))
             list.add(net.minecraft.network.chat.Component.translatable(key).withStyle(net.minecraft.ChatFormatting.GRAY));
     }
 

@@ -49,6 +49,7 @@ public class FusionMhdtRenderer implements com.hbm_m.client.render.HbmBerBounds<
         pose.pushPose();
         pose.translate(0.5D, 0D, 0.5D);
         MachineFusionComplexRenderer.applyFacing(be.getBlockState(), pose);
+        pose.mulPose(Axis.YP.rotationDegrees(90.0F));
 
         float rot = Mth.lerp(partialTick, be.prevRotor, be.rotor) % 15F;
         pose.translate(0D, 1.5D, 0D);

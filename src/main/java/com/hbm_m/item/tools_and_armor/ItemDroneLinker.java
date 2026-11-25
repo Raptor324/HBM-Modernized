@@ -26,7 +26,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public class ItemDroneLinker extends Item {
 
     /** Original {@code MainRegistry.proxy.ID_DRONE}. */
-    public static final int ID_DRONE = 2101;
+    public static final int ID_DRONE = 4;
 
     public ItemDroneLinker(Properties properties) {
         super(properties.stacksTo(1));
@@ -99,7 +99,7 @@ public class ItemDroneLinker extends Item {
                 int x = tag.getInt("x");
                 int y = tag.getInt("y");
                 int z = tag.getInt("z");
-                com.hbm_m.client.overlay.OverlayInfoToast.show(Component.literal("Prev pos: " + x + " / " + y + " / " + z), 20, ID_DRONE);
+                com.hbm_m.client.ClientAccess.showInfoToast(Component.literal("Prev pos: " + x + " / " + y + " / " + z), 20, ID_DRONE);
             }
         }
     }

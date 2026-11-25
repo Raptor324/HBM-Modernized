@@ -9,6 +9,7 @@ import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -40,6 +41,11 @@ public class PADetectorBlock extends PAMultiblockBlock {
                 .extra(-1, 0, -4)
                 .placementOffset(0)
                 .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
+
+    @Override
+    public int getHeightOffset() {
+        return 2;
     }
 
     @Override
@@ -78,5 +84,17 @@ public class PADetectorBlock extends PAMultiblockBlock {
     /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
     *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
+
+    // Verbatim port of the original BlockPADetector.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {-4, 0, 0, Direction.WEST.get3DDataValue()},
+            {-4, 1, 0, Direction.WEST.get3DDataValue()},
+            {-4, -1, 0, Direction.WEST.get3DDataValue()},
+            {-4, 0, 1, Direction.WEST.get3DDataValue()},
+            {-4, 0, -1, Direction.WEST.get3DDataValue()}
+        }, facing);
     }
 }

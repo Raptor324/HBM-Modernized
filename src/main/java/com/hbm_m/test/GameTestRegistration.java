@@ -61,9 +61,22 @@ public final class GameTestRegistration {
         event.register(LegacyBlockTableGameTest.class);
         event.register(GrenadeThrowGameTest.class);
         event.register(SpaceEnvironmentGameTest.class);
+        event.register(SpaceIntegrationGameTest.class);
+        event.register(ExternalCompatGameTest.class);
         event.register(BarrelTankGameTest.class);
         event.register(CreativeTabsGameTest.class); // Creative-Tabs bauen (NeoForge-Absturz 2026-10-13)
         event.register(BedrockFragmentRecipeGameTest.class);
+        event.register(PrecAssPurexGameTest.class);
+        event.register(Armor3dRenderGameTest.class);
+        event.register(BatterySocketDropGameTest.class);
+        event.register(BlastDoorGameTest.class);
+        event.register(DemonLampGameTest.class);
+        event.register(FireDoorGameTest.class);
+        event.register(LargeVehicleDoorGameTest.class);
+        event.register(SealControllerGameTest.class);
+        event.register(SlidingBlastDoorGameTest.class);
+        event.register(VaultDoorGameTest.class);
+        // FluidSlotGameTest, SecureAccessDoorGameTest: currently failing on Forge, kept out of NeoForge registration
     }
     //?} elif neoforge {
     /*@SubscribeEvent
@@ -90,9 +103,22 @@ public final class GameTestRegistration {
         event.register(LegacyBlockTableGameTest.class);
         event.register(GrenadeThrowGameTest.class);
         event.register(SpaceEnvironmentGameTest.class);
+        event.register(SpaceIntegrationGameTest.class);
+        event.register(ExternalCompatGameTest.class);
         event.register(BarrelTankGameTest.class);
         event.register(CreativeTabsGameTest.class); // Creative-Tabs bauen (NeoForge-Absturz 2026-10-13)
         event.register(BedrockFragmentRecipeGameTest.class);
+        event.register(PrecAssPurexGameTest.class);
+        event.register(Armor3dRenderGameTest.class);
+        event.register(BatterySocketDropGameTest.class);
+        event.register(BlastDoorGameTest.class);
+        event.register(DemonLampGameTest.class);
+        event.register(FireDoorGameTest.class);
+        event.register(LargeVehicleDoorGameTest.class);
+        event.register(SealControllerGameTest.class);
+        event.register(SlidingBlastDoorGameTest.class);
+        event.register(VaultDoorGameTest.class);
+        // FluidSlotGameTest, SecureAccessDoorGameTest: currently failing on Forge, kept out of NeoForge registration
     }
      *///?}
 }

@@ -43,10 +43,10 @@ abstract class CompileMutexService : BuildService<CompileMutexService.Params>, A
 			val ch = r.channel
 			var lock = ch.tryLock()
 			if (lock == null) {
-				logger.lifecycle("⏳ [BuildMutex] Другой агент сейчас компилирует проект. Ожидание очереди (${lf.name})...")
+				logger.lifecycle("[BuildMutex] Another build is currently compiling the project. Waiting in queue (${lf.name})...")
 				val t0 = System.currentTimeMillis()
 				lock = ch.lock()
-				logger.lifecycle("▶️ [BuildMutex] Очередь дошла за ${System.currentTimeMillis() - t0} мс, начинаем сборку.")
+				logger.lifecycle("[BuildMutex] Lock acquired after ${System.currentTimeMillis() - t0} ms, starting build.")
 			}
 			raf = r
 			fileLock = lock
@@ -271,13 +271,82 @@ private fun analyzeCompiledClasses(sources: Collection<File>, classDirs: FileCol
 		}
 	}
 
-	// Проверка 3: Осиротевшие .class-файлы от старых сборок
+	// Step 3: Orphaned .class files from old builds
 	for (cf in classFiles) {
 		val top = cf.substringBefore('$')
 		if (top == "package-info" || top == "module-info") continue
 		if (top !in sourceTopLevels) problems += "$cf.class: class without a source file (left over from an old build?)"
 	}
 	return problems
+}
+
+/**
+ * Incrementally mirrors verified .class files from [sourceDir] into [snapshotDir] using atomic
+ * temp-file moves so a live runClient reading [snapshotDir] never sees partial/truncated bytecode.
+ */
+private fun syncClassesSnapshot(sourceDir: File, snapshotDir: File): Int {
+	if (!sourceDir.isDirectory) return 0
+	snapshotDir.mkdirs()
+	val sourceRelPaths = mutableSetOf<String>()
+	var copied = 0
+	sourceDir.walkTopDown().filter { it.isFile && it.name.endsWith(".class") }.forEach { srcFile ->
+		val rel = sourceDir.toPath().relativize(srcFile.toPath()).toString()
+		sourceRelPaths += rel
+		val dstFile = File(snapshotDir, rel)
+		val srcLen = srcFile.length()
+		val srcMod = srcFile.lastModified()
+		if (!dstFile.exists() || dstFile.length() != srcLen || dstFile.lastModified() != srcMod) {
+			dstFile.parentFile.mkdirs()
+			val tmpFile = File(snapshotDir, "$rel.tmp")
+			Files.copy(srcFile.toPath(), tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+			Files.move(tmpFile.toPath(), dstFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+			dstFile.setLastModified(srcMod)
+			copied++
+		}
+	}
+	snapshotDir.walkTopDown().filter { it.isFile && it.name.endsWith(".class") }.forEach { existing ->
+		val rel = snapshotDir.toPath().relativize(existing.toPath()).toString()
+		if (rel !in sourceRelPaths) existing.delete()
+	}
+	return copied
+}
+
+/**
+ * Restores [targetDir] from [snapshotDir] after a failed compilation using atomic moves,
+ * ensuring a live runClient or subsequent inspection never encounters missing .class files.
+ */
+private fun restoreClassesFromSnapshot(snapshotDir: File, targetDir: File): Int {
+	if (!snapshotDir.isDirectory) return 0
+	targetDir.mkdirs()
+	val snapshotRelPaths = mutableSetOf<String>()
+	var restored = 0
+	snapshotDir.walkTopDown().filter { it.isFile && it.name.endsWith(".class") }.forEach { srcFile ->
+		val rel = snapshotDir.toPath().relativize(srcFile.toPath()).toString()
+		snapshotRelPaths += rel
+		val dstFile = File(targetDir, rel)
+		val srcLen = srcFile.length()
+		val srcMod = srcFile.lastModified()
+		if (!dstFile.exists() || dstFile.length() != srcLen || dstFile.lastModified() != srcMod) {
+			dstFile.parentFile.mkdirs()
+			val tmpFile = File(targetDir, "$rel.tmp")
+			Files.copy(srcFile.toPath(), tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+			Files.move(tmpFile.toPath(), dstFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+			dstFile.setLastModified(srcMod)
+			restored++
+		}
+	}
+	targetDir.walkTopDown().filter { it.isFile && it.name.endsWith(".class") }.forEach { existing ->
+		val rel = targetDir.toPath().relativize(existing.toPath()).toString()
+		if (rel !in snapshotRelPaths) existing.delete()
+	}
+	return restored
+}
+
+private fun collectAllJavaSources(compileTask: JavaCompile, sourceSetFiles: Set<File>): Set<File> {
+	val all = LinkedHashSet<File>(sourceSetFiles.size + 64)
+	compileTask.source.files.forEach { if (it.isFile && it.extension == "java") all += it }
+	sourceSetFiles.forEach { if (it.isFile && it.extension == "java") all += it }
+	return all
 }
 
 /**
@@ -359,8 +428,10 @@ fun Project.registerCompiledClassesGuard(jarTaskName: String) {
 	val sources = mainSourceSet.map { it.java }
 	val classDirs = mainSourceSet.map { it.output.classesDirs }
 	val repairCommand = "./gradlew $path:repairCompiledClasses"
+	val lkgDir = layout.buildDirectory.dir("tmp/lkg-classes").get().asFile
+	val restoredMarker = layout.buildDirectory.file("tmp/compileJava-restored.marker").get().asFile
 
-	// Глобальный лок-файл на весь проект (или сабпроект), сериализующий параллельные сборки от разных агентов
+	// Cross-process OS mutex serializing concurrent builds from multiple agents/terminals
 	val mutexProvider = gradle.sharedServices.registerIfAbsent("compileMutex_${path.replace(':', '_')}", CompileMutexService::class.java) {
 		parameters.lockFile = rootProject.file(".gradle/hbm-compile-${project.name}.lock")
 		parameters.compilingMarkerFiles = listOf(
@@ -369,7 +440,7 @@ fun Project.registerCompiledClassesGuard(jarTaskName: String) {
 		)
 	}
 
-	// Захватываем межпроцессный лок перед генерацией кода Stonecutter/KSP/Java
+	// Acquire cross-process mutex before Stonecutter/KSP/Kotlin/Java compilation
 	tasks.matching { it.name in setOf("stonecutterGenerate", "kspKotlin", "compileKotlin", "compileJava") }.configureEach {
 		usesService(mutexProvider)
 		doFirst {
@@ -377,34 +448,80 @@ fun Project.registerCompiledClassesGuard(jarTaskName: String) {
 		}
 	}
 
-	val verify = tasks.register("verifyCompiledClasses") {
-		group = "verification"
-		description = "Cross-checks compilation output & Constant Pool against sources and auto-heals missing classes"
-		dependsOn(mainSourceSet.map { it.classesTaskName })
-		usesService(mutexProvider)
+	fun verifyAndHeal(compileJavaTask: JavaCompile) {
+		val allSources = collectAllJavaSources(compileJavaTask, sources.get().files)
+		var problems = analyzeCompiledClasses(allSources, classDirs.get())
+		if (problems.isNotEmpty()) {
+			logger.warn("[CompiledClassesGuard] Detected ${problems.size} missing or corrupted class(es) after build! Running auto-heal...")
+			problems.take(10).forEach { logger.warn("   - $it") }
 
-		// НИКОГДА не доверяем VFS-кэшу Gradle для этой задачи (проверка занимает ~40 мс, но даёт 100% гарантию)
+			val healed = autoHealCompilation(project, compileJavaTask, allSources)
+			if (healed) {
+				problems = analyzeCompiledClasses(allSources, classDirs.get())
+			}
+			if (problems.isNotEmpty()) {
+				throw GradleException(describeProblems(problems, repairCommand))
+			}
+			logger.lifecycle("[CompiledClassesGuard] Auto-heal successfully restored 100% of classes and Constant Pool references.")
+		}
+		restoredMarker.delete()
+		syncClassesSnapshot(compileJavaTask.destinationDirectory.get().asFile, lkgDir)
+	}
+
+	// Finalizer with NO dependsOn(compileJava/classes): Gradle ALWAYS runs it even when compileJava fails.
+	// On compile failure, restores last-known-good classes so a live runClient does not crash with NoClassDefFoundError
+	// and marks compileJava stale so the next build cannot treat restored classes as UP-TO-DATE.
+	val postCompileGuard = tasks.register("postCompileGuard") {
+		group = "verification"
+		description = "Restores last-known-good classes on compile failure, or verifies output and refreshes snapshot on success"
+		mustRunAfter("compileJava", "compileKotlin", "classes")
+		usesService(mutexProvider)
 		outputs.upToDateWhen { false }
 
 		doLast {
 			try {
-				var problems = analyzeCompiledClasses(sources.get().files, classDirs.get())
-				if (problems.isNotEmpty()) {
-					logger.warn("⚠️ [CompiledClassesGuard] Обнаружено ${problems.size} пропавших/битых классов после сборки! Запуск автоматического самолечения (Auto-Heal)...")
-					problems.take(10).forEach { logger.warn("   • $it") }
-
-					val compileJavaTask = tasks.named<JavaCompile>("compileJava").get()
-					val healed = autoHealCompilation(project, compileJavaTask, sources.get().files)
-					if (healed) {
-						problems = analyzeCompiledClasses(sources.get().files, classDirs.get())
+				val compileJavaTask = tasks.named<JavaCompile>("compileJava").get()
+				if (compileJavaTask.state.failure != null) {
+					val targetDir = compileJavaTask.destinationDirectory.get().asFile
+					val hasSnapshot = lkgDir.isDirectory && lkgDir.walkTopDown().any { it.isFile && it.name.endsWith(".class") }
+					if (hasSnapshot) {
+						val restored = restoreClassesFromSnapshot(lkgDir, targetDir)
+						project.file("build/tmp/compileJava").deleteRecursively()
+						restoredMarker.parentFile?.mkdirs()
+						restoredMarker.writeText(System.currentTimeMillis().toString())
+						logger.warn("[CompiledClassesGuard] compileJava failed; restored $restored class file(s) from last-known-good snapshot to protect live runClient (next compileJava will rebuild cleanly).")
+					} else {
+						project.file("build/tmp/compileJava").deleteRecursively()
+						restoredMarker.parentFile?.mkdirs()
+						restoredMarker.writeText(System.currentTimeMillis().toString())
+						logger.warn("[CompiledClassesGuard] compileJava failed and no last-known-good snapshot exists yet; build/classes may be incomplete until compilation succeeds.")
 					}
-					if (problems.isNotEmpty()) {
-						throw GradleException(describeProblems(problems, repairCommand))
-					}
-					logger.lifecycle("✅ [CompiledClassesGuard] Auto-Heal успешно восстановил 100% классов и ссылок Constant Pool!")
+					return@doLast
 				}
+
+				verifyAndHeal(compileJavaTask)
 			} finally {
-				// Освобождаем лок сразу после проверки, чтобы запущенный следом runClient НЕ держал лок часами
+				mutexProvider.get().release()
+			}
+		}
+	}
+
+	val verify = tasks.register("verifyCompiledClasses") {
+		group = "verification"
+		description = "Cross-checks compilation output & Constant Pool against sources and auto-heals missing classes"
+		dependsOn(mainSourceSet.map { it.classesTaskName })
+		mustRunAfter(postCompileGuard)
+		usesService(mutexProvider)
+
+		// Never trust Gradle VFS cache for verification (~40 ms for 100% guarantee)
+		outputs.upToDateWhen { false }
+
+		doLast {
+			try {
+				val compileJavaTask = tasks.named<JavaCompile>("compileJava").get()
+				verifyAndHeal(compileJavaTask)
+			} finally {
+				// Release lock immediately after verification so runClient does not hold it
 				mutexProvider.get().release()
 			}
 		}
@@ -412,17 +529,17 @@ fun Project.registerCompiledClassesGuard(jarTaskName: String) {
 
 	tasks.named<JavaCompile>("compileJava").configure {
 		outputs.cacheIf { false }
-		// Если до старта compileJava классы уже битые, говорим Gradle что таск НЕ UP-TO-DATE
+		// Never treat compileJava as UP-TO-DATE if classes are missing/corrupted or were restored from LKG after a failed build
 		outputs.upToDateWhen {
-			analyzeCompiledClasses(sources.get().files, classDirs.get()).isEmpty()
+			!restoredMarker.exists() && analyzeCompiledClasses(collectAllJavaSources(this, sources.get().files), classDirs.get()).isEmpty()
 		}
-		// Любой запуск compileJava (даже фоновый от ИИ-агента) ОБЯЗАН завершиться верификацией и снятием лока
-		finalizedBy(verify)
+		// Always run postCompileGuard even if compileJava fails
+		finalizedBy(postCompileGuard)
 	}
 
 	tasks.matching { it.name == "compileKotlin" || it.name == "classes" }.configureEach {
 		outputs.cacheIf { false }
-		finalizedBy(verify)
+		finalizedBy(postCompileGuard)
 	}
 
 	tasks.register("repairCompiledClasses") {
@@ -432,12 +549,16 @@ fun Project.registerCompiledClassesGuard(jarTaskName: String) {
 		doLast {
 			mutexProvider.get().acquire(logger)
 			val compileJavaTask = tasks.named<JavaCompile>("compileJava").get()
-			logger.lifecycle("repairCompiledClasses: performing atomic clean compilation...")
-			if (!autoHealCompilation(project, compileJavaTask, sources.get().files)) {
+			val allSources = collectAllJavaSources(compileJavaTask, sources.get().files)
+			logger.lifecycle("[CompiledClassesGuard] repairCompiledClasses: performing atomic clean compilation...")
+			if (!autoHealCompilation(project, compileJavaTask, allSources)) {
 				classDirs.get().forEach { it.deleteRecursively() }
 				file("build/tmp/compileJava").deleteRecursively()
 				file("build/tmp/compileKotlin").deleteRecursively()
 				file("build/kspCaches").deleteRecursively()
+			} else {
+				restoredMarker.delete()
+				syncClassesSnapshot(compileJavaTask.destinationDirectory.get().asFile, lkgDir)
 			}
 		}
 		finalizedBy("compileJava", "compileKotlin", verify)

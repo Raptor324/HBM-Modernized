@@ -26,14 +26,16 @@ public class MachineSatDockMenu extends AbstractContainerMenu {
     private final MachineSatDockBlockEntity dock;
 
     public MachineSatDockMenu(int id, Inventory inv, FriendlyByteBuf buf) {
-        this(id, inv, (MachineSatDockBlockEntity) inv.player.level().getBlockEntity(buf.readBlockPos()));
+        this(id, inv, inv.player.level().getBlockEntity(buf.readBlockPos()) instanceof MachineSatDockBlockEntity sd ? sd : null);
     }
 
     public MachineSatDockMenu(int id, Inventory inv, MachineSatDockBlockEntity dock) {
         super(ModMenuTypes.SAT_DOCK_MENU.get(), id);
         this.dock = dock;
 
-        Container container = new ModItemStackHandlerContainer(dock.getInventory(), dock::setChanged);
+        Container container = dock != null
+                ? new ModItemStackHandlerContainer(dock.getInventory(), dock::setChanged)
+                : new ModItemStackHandlerContainer(new com.hbm_m.platform.ModItemStackHandler.Dummy(16), () -> {});
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 5; col++) {

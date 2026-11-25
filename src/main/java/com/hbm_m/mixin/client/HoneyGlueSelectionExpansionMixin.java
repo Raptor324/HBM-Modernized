@@ -43,7 +43,7 @@ import java.util.Set;
  * <p>Таргет строкой: без simulated класс не загружается и mixin не применяется.
  */
 @Pseudo
-@Mixin(targets = "dev.simulated_team.simulated.content.entities.honey_glue.HoneyGlueClientHandler")
+@Mixin(targets = "dev.simulated_team.simulated.content.entities.honey_glue.HoneyGlueClientHandler", remap = false)
 public abstract class HoneyGlueSelectionExpansionMixin {
 
     /** Не null только в состоянии BINDING (между первым и вторым кликом). */

@@ -48,9 +48,8 @@ public class MachineOilburnerBlockEntity extends MachinePollutingBlockEntity
     public MachineOilburnerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.OILBURNER_BE.get(), pos, state, 3, 0L, 0L, 0L, 100);
 
-        boolean isHp = state.is(ModBlocks.OILBURNER_HP.get());
-        this.tank = new FluidTank(ModFluids.HEATINGOIL.getSource(), isHp ? 32_000 : 16_000);
-        this.burnMultiplier = isHp ? 2 : 1;
+        this.tank = new FluidTank(ModFluids.HEATINGOIL.getSource(), 16_000);
+        this.burnMultiplier = 1;
     }
 
     @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }

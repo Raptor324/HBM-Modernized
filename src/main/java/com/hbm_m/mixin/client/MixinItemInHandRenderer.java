@@ -8,15 +8,19 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Post-composite дрен аддитивной очереди сразу после hand-прохода.
+ * Post-hand дрен аддитивной очереди в ванильном пайплайне (без активного шейдерпака).
  *
- * <p>Под Iris/Oculus финал пака уже в главном render target (finalizeLevelRendering
- * идёт в конце renderLevel, а hand-проход — после него, поверх композита). Без этого
- * дрена вспышки первого лица, поставленные в очередь во время hand-прохода, доились
- * бы только на TAIL следующего кадра — на кадр позже, с позой камеры прошлой секунды
- * (симптом «вспышка слишком далеко / уехала под землю» при движении). Дрен здесь
- * рисует их в тот же кадр поверх финальной картинки с честным depth-test против
- * глубины сцены. Без пака очередь пуста — вызов no-op.</p>
+ * <p>В ванилле {@code GameRenderer.renderLevel} сначала отрисовывает уровень
+ * (включая {@code AFTER_WEATHER}, где дренятся мировые трассеры), затем очищает
+ * глубину и вызывает {@code renderHandsWithItems} — вспышки от первого лица попадают
+ * в {@link PackAdditiveQueue} уже после {@code AFTER_WEATHER} и без дрена здесь
+ * зависали бы до {@code AFTER_WEATHER} следующего кадра.</p>
+ *
+ * <p>Под Iris/Oculus {@code HandRenderer.renderSolid} вызывает {@code renderHandsWithItems}
+ * <em>до</em> {@code finalizeLevelRendering}, который перезаписывает главный render target
+ * финальным композитом. Поэтому при активном шейдерпаке выходим сразу: всю очередь
+ * (и мировые трассеры, и вспышки руки) дренит {@link MixinIrisRenderingPipelinePreComposite}
+ * на {@code TAIL finalizeLevelRendering}.</p>
  */
 @Mixin(ItemInHandRenderer.class)
 public class MixinItemInHandRenderer {

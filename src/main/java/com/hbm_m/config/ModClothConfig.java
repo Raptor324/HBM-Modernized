@@ -68,6 +68,14 @@ public class ModClothConfig {
     // ════════════════════════════════════════════════════════════════
     // Original ServerConfig (1.7.10, JSON-Konfiguration hbmServer.json)
     // ════════════════════════════════════════════════════════════════
+    /**
+     * Runtime master switch for the TACZ bridge ({@code hbm_tacz} addon), category "compat".
+     * Only visible in the config GUI when the addon is in the modlist (see ConfigSchema).
+     * {@code false} = weapons render and behave through the vanilla SEDNA pipeline exactly as
+     * if the addon were absent; TACZ modules already installed on weapons are stashed in the
+     * stack NBT and come back when the bridge is re-enabled.
+     */
+    public boolean taczBridge = true;
     /** Original: ServerConfig.DAMAGE_COMPATIBILITY_MODE. */
     public boolean damageCompatibilityMode = false;
     /** Original: ServerConfig.MINE_AP_DAMAGE / HE / SHRAP / NUKE / NAVAL. */
@@ -481,7 +489,7 @@ public class ModClothConfig {
      * рисоваться целиком всю анимацию.
      * Флаг: {@code -Dhbm.doorPartCulling=false}.
      */
-    public boolean doorPartCulling = true;
+    public boolean doorPartCulling = false;
 
     /**
      * Графические эффекты - вложенный объект группы «Графические эффекты»

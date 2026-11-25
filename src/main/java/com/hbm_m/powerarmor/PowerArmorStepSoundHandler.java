@@ -100,21 +100,7 @@ public final class PowerArmorStepSoundHandler {
     }
 
     private static SoundEvent getSoundEvent(Level level, String id) {
-        // Поддержка двух форматов:
-        // 1) "hbm_m:step.powered"
-        // 2) "step.powered" (будет считаться как hbm_m:step.powered)
-        net.minecraft.resources.ResourceLocation rl;
-        if (id.contains(":")) {
-            rl = net.minecraft.resources.ResourceLocation.tryParse(id);
-        } else {
-                        rl = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, id);
-
-        }
-
-        if (rl == null) return null;
-
-        return level.registryAccess()
-                .registryOrThrow(net.minecraft.core.registries.Registries.SOUND_EVENT)
-                .get(rl);
+        if (id == null) return null;
+        return com.hbm_m.sound.HbmSoundsNT.get(id);
     }
 }

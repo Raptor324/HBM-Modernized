@@ -1,7 +1,6 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKStorageBlockEntity;
-import com.hbm_m.item.rbmk.RBMKRodItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.SimpleContainer;
@@ -41,12 +40,14 @@ public class RBMKStorageMenu extends AbstractContainerMenu {
 
         // 12 slots in a 3-row x 4-column grid (1:1 port of ContainerRBMKStorage),
         // matching the vertical-column layout baked into gui_rbmk_storage.png.
+        // 1:1 ContainerRBMKStorage: plain Slot instances - the base Slot accepts anything, so hand
+        // placement and shift-click put ANY item into the rack. The rods-only rule lives in the
+        // ISidedInventory automation surface (the BE's item handler), exactly where the original
+        // enforces it.
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
                 int index = i + j * 3;
-                addSlot(new Slot(container, index, 32 + 32 * j, 29 + 16 * i) {
-                    @Override public boolean mayPlace(ItemStack s) { return s.getItem() instanceof RBMKRodItem; }
-                });
+                addSlot(new Slot(container, index, 32 + 32 * j, 29 + 16 * i));
             }
         }
 
@@ -92,7 +93,9 @@ public class RBMKStorageMenu extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player player) {
         if (blockEntity == null) return false; // the tile can be missing on the client
-        return MenuReach.stillValid(player, blockEntity);
+        // 1:1 ContainerRBMKStorage.canInteractWith: returns true unconditionally - the storage GUI
+        // never auto-closes on distance.
+        return true;
     }
 
     @Override

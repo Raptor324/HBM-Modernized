@@ -69,7 +69,7 @@ public class MachineWatzPowerplantBlock extends DummyableMachineBlock {
         if (!state.is(newState.getBlock()) && !level.isClientSide && drop) {
             double x = pos.getX() + 0.5, y = pos.getY() + 0.5, z = pos.getZ() + 0.5;
             level.addFreshEntity(new ItemEntity(level, x, y, z, new ItemStack(ModBlocks.WATZ_END.get(), 48)));
-            for (int j = 0; j < 3; j++) level.addFreshEntity(new ItemEntity(level, x, y, z, new ItemStack(ModItems.BOLT_HIGHSPEED_STEEL.get(), 64)));
+            for (int j = 0; j < 3; j++) level.addFreshEntity(new ItemEntity(level, x, y, z, new ItemStack(ModItems.BOLT_DURA_STEEL.get(), 64)));
             level.addFreshEntity(new ItemEntity(level, x, y, z, new ItemStack(ModBlocks.WATZ_ELEMENT.get(), 36)));
             level.addFreshEntity(new ItemEntity(level, x, y, z, new ItemStack(ModBlocks.WATZ_COOLER.get(), 26)));
             level.addFreshEntity(new ItemEntity(level, x, y, z, new ItemStack(ModBlocks.STRUCT_WATZ_CORE.get(), 1)));

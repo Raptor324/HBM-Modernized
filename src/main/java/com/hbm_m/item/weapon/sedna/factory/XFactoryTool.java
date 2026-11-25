@@ -296,6 +296,8 @@ public class XFactoryTool {
         ct_mortar_charge = new BulletConfig().setItem(EnumAmmo.CT_MORTAR_CHARGE).setDamage(5F).setLife(200).setVel(3F).setGrav(0.035D)
                 .setOnImpact(LAMBDA_MORTAR_CHARGE);
 
+        BulletConfig.clientRotationLocked = cfg -> cfg == ct_hook;
+
         GunFactory.reg("gun_fireext", new ItemGunBaseNT(WeaponQuality.UTILITY, new GunConfig()
                 .dura(5_000).draw(10).inspect(55).reloadChangeType(true).hideCrosshair(false).crosshair(Crosshair.L_CIRCLE)
                 .rec(new Receiver(0)

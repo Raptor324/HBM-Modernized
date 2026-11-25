@@ -31,33 +31,6 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
 
     private static final double SPEED = 0.05D;
 
-    /**
-     * CE moves the crane in whole-block steps, not continuously. A direction is latched into
-     * {@code craneUp/Down/Left/Right} only once every {@link #COOL_DOWN} ticks; while latched the
-     * gantry travels {@link #SPEED} per tick, so one latch is worth exactly
-     * {@code 0.05 * 20 = 1.0} blocks and the crane always comes to rest centred over a column.
-     *
-     * <p>The port applied the movement directly from the live key state instead, so the crane
-     * drifted for as long as the key was held and stopped wherever the operator let go - never
-     * lining up with a channel.</p>
-     */
-    private static final short COOL_DOWN = 20;
-    /**
-     * Starts fully charged so the very first key press latches on the next tick. It used to start
-     * at 0, which burned a whole COOL_DOWN second before the crane reacted to anything after every
-     * chunk load - the first press simply did nothing.
-     */
-    private short ticksSince = COOL_DOWN;
-    private boolean craneUp, craneDown, craneLeft, craneRight;
-
-    private boolean isCooledDown() {
-        if (ticksSince < COOL_DOWN) {
-            ticksSince++;
-            return false;
-        }
-        return true;
-    }
-
     public boolean setUpCrane = false;
     public Direction facing = Direction.NORTH;
     public int craneRotationOffset = 0;
@@ -137,36 +110,32 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
         tiltFront = 0;
         tiltLeft = 0;
 
-        boolean up = false, down = false, left2 = false, right2 = false;
-
         if (!players.isEmpty() && !isCraneLoading()) {
             RBMKCraneKeyState.Keys keys = RBMKCraneKeyState.get(players.get(0).getUUID());
 
-            // Opposite keys cancel out, as in CE's processInput.
-            up    = keys.up   && !keys.down;
-            down  = keys.down && !keys.up;
-            left2 = keys.left && !keys.right;
-            right2 = keys.right && !keys.left;
-
-            if (up)    tiltFront = 30;
-            if (down)  tiltFront = -30;
-            if (left2) tiltLeft  = 30;
-            if (right2) tiltLeft = -30;
+            // 1:1 with TileEntityCraneConsole.updateEntity: tilt and movement are applied
+            // directly from the LIVE held-key state every tick (up && !down etc. cancels the
+            // opposite pair), so the crane stops within one tick of releasing the key. The
+            // previous 20-tick direction latch made the crane coast ~1 block past release.
+            if (keys.up && !keys.down) {
+                tiltFront = 30;
+                posFront += SPEED;
+            }
+            if (!keys.up && keys.down) {
+                tiltFront = -30;
+                posFront -= SPEED;
+            }
+            if (keys.left && !keys.right) {
+                tiltLeft = 30;
+                posLeft += SPEED;
+            }
+            if (!keys.left && keys.right) {
+                tiltLeft = -30;
+                posLeft -= SPEED;
+            }
 
             if (keys.load) goesDown = true;
         }
-
-        if (isCooledDown()) {
-            // Re-arm whenever the requested direction changes, or to keep an existing move going.
-            if (craneUp != up || craneDown != down || craneLeft != left2 || craneRight != right2) ticksSince = 1;
-            else if (craneUp || craneDown || craneLeft || craneRight) ticksSince = 1;
-            craneUp = up; craneDown = down; craneLeft = left2; craneRight = right2;
-        }
-
-        if (craneUp)    posFront += SPEED;
-        if (craneDown)  posFront -= SPEED;
-        if (craneLeft)  posLeft  += SPEED;
-        if (craneRight) posLeft  -= SPEED;
 
         posFront = Math.max(-spanB, Math.min(spanF, posFront));
         posLeft  = Math.max(-spanR, Math.min(spanL, posLeft));
@@ -175,9 +144,9 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
             loadedHeat       = RBMKRodItem.getHullHeat(loadedItem);
             loadedEnrichment = RBMKRodItem.getEnrichment(loadedItem);
         } else {
-            // CE parks both gauges at 20 when the claw is empty, not at 0.
-            loadedHeat = 20;
-            loadedEnrichment = 20;
+            // 1:1 with TileEntityCraneConsole.updateEntity: empty claw -> both gauges read 0.
+            loadedHeat = 0;
+            loadedEnrichment = 0;
         }
 
         setChanged();
@@ -264,7 +233,7 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
 
     @Override public RBMKType   getRBMKType()    { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.BLANK; }
-    @Override protected boolean participatesInHeatNetwork() { return false; }
+    @Override public boolean participatesInHeatNetwork() { return false; }
 
     // ─── NBT ─────────────────────────────────────────────────────────────────
 

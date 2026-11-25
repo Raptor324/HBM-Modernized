@@ -40,7 +40,7 @@ public final class ModSoundTypes {
     //?} else {
     /*public static final net.neoforged.neoforge.common.util.DeferredSoundType PIPE = new net.neoforged.neoforge.common.util.DeferredSoundType(0.85F, 0.85F,
     *///?}
-            () -> HbmSoundsNT.get("block.pipeplaced"), () -> SoundEvents.METAL_STEP, () -> HbmSoundsNT.get("block.pipeplaced"),
+            () -> ModSounds.PIPE_PLACED.get(), () -> SoundEvents.METAL_STEP, () -> ModSounds.PIPE_PLACED.get(),
             () -> SoundEvents.METAL_HIT, () -> SoundEvents.METAL_FALL);
 
     /** {@code platemetal = placeBreakStep("hbm:block.platemetalPlace", "hbm:block.platemetalPlace", "hbm:step.platemetal", 1.0F, 1.0F)}. */

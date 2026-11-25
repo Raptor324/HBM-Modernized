@@ -14,8 +14,9 @@
     }
   },
   "transform": {
+    "origin": "corner",
     "rotation": [ 0, 90, 0 ],
-    "translation": [0.5, 0.0, -1.5 ],
+    "translation": [0.5, 0.0, 0.5],
     "scale": 1.0
   },
   "display": {

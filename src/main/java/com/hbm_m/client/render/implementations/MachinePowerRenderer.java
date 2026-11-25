@@ -72,6 +72,7 @@ public final class MachinePowerRenderer {
     private static void registerCharger() {
         MachineRenderers.machine("charger", ModBlockEntities.CHARGER_BE.get(),
                 ChargerBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Base")
             .lightOverride("Light", be -> LightTexture.FULL_BRIGHT)
             .part("Light")
@@ -80,9 +81,9 @@ public final class MachinePowerRenderer {
                 double extend = Math.min(1.0, time * 2.0);
                 double swivel = Math.max(0.0, (time - 0.5) * 2.0);
                 armOffset(ps, extend);
-                ps.translate(0.0, 0.28, 0.0);
+                ps.translate(0.0, 0.28, 0.5);
                 ps.mulPose(Axis.XP.rotationDegrees((float) (30.0 * swivel)));
-                ps.translate(0.0, -0.28, 0.0);
+                ps.translate(0.0, -0.28, -0.5);
                 return true;
             })
             .part("Right", (be, pt, gt, ps) -> {
@@ -90,9 +91,9 @@ public final class MachinePowerRenderer {
                 double extend = Math.min(1.0, time * 2.0);
                 double swivel = Math.max(0.0, (time - 0.5) * 2.0);
                 armOffset(ps, extend);
-                ps.translate(0.0, 0.28, 0.0);
+                ps.translate(0.0, 0.28, 0.5);
                 ps.mulPose(Axis.XP.rotationDegrees((float) (-30.0 * swivel)));
-                ps.translate(0.0, -0.28, 0.0);
+                ps.translate(0.0, -0.28, -0.5);
                 return true;
             })
             .part("Slide", (be, pt, gt, ps) -> {
@@ -108,15 +109,16 @@ public final class MachinePowerRenderer {
     }
 
     private static void armOffset(PoseStack pose, double extend) {
-        pose.translate(-0.34375, 0.25, 0.0);
+        pose.translate(0.15625, 0.25, 0.0);
         pose.mulPose(Axis.ZP.rotationDegrees(10.0F));
-        pose.translate(0.34375, -0.25, 0.0);
+        pose.translate(-0.15625, -0.25, 0.0);
         pose.translate(0.0, -0.25 * extend, 0.0);
     }
 
     private static void registerRTG() {
         MachineRenderers.machine("rtg", ModBlockEntities.MACHINE_RTG_BE.get(),
                 MachineRTGBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Gen")
             .part("Body")
             .facing(ObjBerHelper::facing)
@@ -131,6 +133,7 @@ public final class MachinePowerRenderer {
                     BlockPos p = te.getBlockPos();
 
                     ps.pushPose();
+                    ps.translate(0.5, 0.0, 0.5);
                     VertexConsumer vc = buf.getBuffer(RenderType.entityCutoutNoCull(RTG_TEX));
 
                     if (canConnect(level, p.east(), Direction.WEST)) RTG_MODEL.renderPart("Connector", ps, vc, light);
@@ -173,6 +176,7 @@ public final class MachinePowerRenderer {
         // tesla.obj is merged into a single group "Cube.001"
         MachineRenderers.machine("tesla", ModBlockEntities.TESLA_BE.get(),
                 TeslaBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Cube.001")
             .facing(ObjBerHelper::facing)
             .viewDistance(256)
@@ -185,7 +189,7 @@ public final class MachinePowerRenderer {
                     VertexConsumer vc = buf.getBuffer(ClientRenderHandler.CustomRenderTypes.SOLID_COLOR_NOCULL);
 
                     ps.pushPose();
-                    ps.translate(0.0, TeslaBlockEntity.ORIGIN_OFFSET_Y, 0.0);
+                    ps.translate(0.5, TeslaBlockEntity.ORIGIN_OFFSET_Y, 0.5);
                     Matrix4f m = ps.last().pose();
                     long seed = be.getLevel().getGameTime() % 1000L + 1L;
                     int index = 0;
@@ -264,7 +268,7 @@ public final class MachinePowerRenderer {
 
                     if (render.getItem() instanceof ItemBatteryPack packItem) {
                         ResourceLocation tex = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
-                                "textures/block/machine/battery_pack/" + packItem.pack.texture + ".png");
+                                "textures/block/machine/" + packItem.pack.texture + ".png");
                         VertexConsumer vc = buf.getBuffer(RenderType.entityCutoutNoCull(tex));
                         BATTERY_MODEL.renderPartEntity(packItem.pack.isCapacitor() ? "Capacitor" : "Battery",
                                 ps, vc, light, overlay, 1.0F, 1.0F, 1.0F, 1.0F);

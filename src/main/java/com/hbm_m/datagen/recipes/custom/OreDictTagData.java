@@ -55,7 +55,7 @@ public final class OreDictTagData {
         put("oredict/block/tungsten", "hbm_m:block_tungsten", "#forge:storage_blocks/tungsten?");
         put("oredict/block/uranium238", "hbm_m:block_u238", "#forge:storage_blocks/u238?");
         put("oredict/block/workers_alloy", "hbm_m:block_desh", "#forge:storage_blocks/desh?");
-        put("oredict/bolt/dura_steel", "hbm_m:bolt_highspeed_steel");
+        put("oredict/bolt/dura_steel", "hbm_m:bolt_dura_steel");
         put("oredict/bolt/steel", "hbm_m:bolt_steel");
         put("oredict/bolt/tungsten", "hbm_m:bolt_tungsten");
         put("oredict/cobblestone", "#forge:cobblestone");
@@ -174,7 +174,7 @@ public final class OreDictTagData {
         put("oredict/ingot/copper", "#forge:ingots/copper", "minecraft:copper_ingot");
         put("oredict/ingot/desh", "hbm_m:desh_ingot", "#forge:ingots/desh?");
         put("oredict/ingot/dineutronium", "hbm_m:dineutronium_ingot", "#forge:ingots/dineutronium?");
-        put("oredict/ingot/dura_steel", "hbm_m:dura_steel_ingot", "hbm_m:ingot_highspeed_steel", "#forge:ingots/dura_steel?");
+        put("oredict/ingot/dura_steel", "hbm_m:dura_steel_ingot", "#forge:ingots/dura_steel?");
         put("oredict/ingot/euphemium", "hbm_m:euphemium_ingot", "#forge:ingots/euphemium?");
         put("oredict/ingot/ferrouranium", "hbm_m:ferrouranium_ingot", "#forge:ingots/ferrouranium?");
         put("oredict/ingot/fiberglass", "hbm_m:fiberglass_ingot", "#forge:ingots/fiberglass?");

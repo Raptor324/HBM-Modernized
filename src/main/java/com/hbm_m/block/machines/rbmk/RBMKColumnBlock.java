@@ -35,6 +35,17 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock implements com.hbm
     /** Set to false to suppress lid drops globally (e.g. during world gen). */
     public static boolean dropLids = true;
 
+    /**
+     * Transient marker for player-driven removal. 1.7.10 drops the lid from {@code RBMKBase.breakBlock}
+     * only, and explosions never call that hook - a column blown up by an explosion loses its lid
+     * entirely. Vanilla's {@code wasExploded} callback cannot express this: it fires AFTER the air
+     * {@code setBlock} (and thus after {@code onRemove}) on both 1.20.1 and 1.21.1. Instead,
+     * {@code playerWillDestroy} (fired before the removal in both game modes) and the filler's
+     * player routing raise this flag; {@link #onColumnRemoved} consumes it, so any other removal
+     * path (explosions, /setblock, fills, pistons) keeps it false and the lid is lost.
+     */
+    static boolean playerDrivenRemoval = false;
+
     protected RBMKColumnBlock(Properties props) {
         super(props);
     }
@@ -84,32 +95,36 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock implements com.hbm
 
         ItemStack held = player.getItemInHand(hand);
 
-        // RBMK linking tool: store this column's position for the next console right-click
+        // 1:1 with the original's GUI-bearing column flow (RBMKBase.openInv, which every GUI
+        // column's onBlockActivated routes through): holding a lid item against an uncapped
+        // column returns false so ITEM use runs - the lid gets placed, no sneak needed. Otherwise
+        // not sneaking opens the GUI - tools and screwdrivers included - and sneaking consumes
+        // the click with no action. A GUI column can therefore never be linked by the tool or
+        // stripped by the screwdriver, exactly like 1.7.10.
+        if (col instanceof MenuProvider mp) {
+            if (held.getItem() instanceof RBMKLidItem && col.isLidRemovable() && !col.hasLid())
+                return InteractionResult.PASS; // fall through to item use - RBMKLidItem places it
+            if (!player.isShiftKeyDown())
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, mp, buf -> buf.writeBlockPos(pos));
+            return InteractionResult.SUCCESS;
+        }
+
+        // Non-GUI columns: the original's onBlockActivated returns false, so plain item use runs,
+        // with no sneak check. The branches below are that item use, in the port's order.
         if (held.getItem() instanceof RBMKToolItem) {
             RBMKToolItem.storeColumnPosition(held, level, pos, player);
             return InteractionResult.SUCCESS;
         }
 
-        // Screwdriver removes lid
         if (held.getItem() instanceof ScrewdriverItem && col.hasLid() && col.isLidRemovable()) {
-            if (!level.isClientSide) dropLid(col, level, pos);
+            dropLid(col, level, pos);
             col.setLidState(0);
             return InteractionResult.SUCCESS;
         }
 
-        // Place lid with lid item
-        if (held.getItem() instanceof RBMKLidItem lid && col.isLidRemovable() && !col.hasLid()) {
-            col.setLidState(lid.lidType);
-            if (!player.isCreative()) held.shrink(1);
-            return InteractionResult.SUCCESS;
-        }
-
-        // Open GUI (if this block has a menu)
-        if (!player.isShiftKeyDown() && col instanceof MenuProvider mp) {
-            MenuRegistry.openExtendedMenu((ServerPlayer) player, mp, buf -> buf.writeBlockPos(pos));
-            return InteractionResult.SUCCESS;
-        }
-
+        // Holding a lid on an uncapped column (or anything else): fall through to item use,
+        // matching the original, where the block never handles lid placement itself -
+        // RBMKLidItem.useOn does (and always consumes the lid, see ItemRBMKLid.onItemUse).
         return InteractionResult.PASS;
     }
 
@@ -256,11 +271,26 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock implements com.hbm
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if < 1.21.1 {
+    @Override
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        playerDrivenRemoval = true;
+        super.playerWillDestroy(level, pos, state, player);
+    }
+    //?} else {
+    /*@Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        playerDrivenRemoval = true;
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+    *///?}
+
     protected void onColumnRemoved(RBMKColumnBlockEntity col, Level level, BlockPos pos) {
-        if (!level.isClientSide && dropLids && col.hasLid() && col.isLidRemovable()
+        if (!level.isClientSide && dropLids && playerDrivenRemoval && col.hasLid() && col.isLidRemovable()
                 && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
             dropLid(col, level, pos);
         }
+        playerDrivenRemoval = false;
     }
 
     private static void dropLid(RBMKColumnBlockEntity col, Level level, BlockPos pos) {

@@ -15,8 +15,23 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class NukeN2Block extends NukeBaseBlock implements IBomb {
 
+    private static final com.hbm_m.multiblock.MultiblockStructureHelper STRUCTURE_HELPER = createBombStructure(new String[][] {
+            { "C" },
+            { "X" },
+            { "X" },
+            { "X" },
+            { "X" },
+            { "X" },
+            { "X" }
+    }, net.minecraft.world.phys.shapes.Shapes.block());
+
     public NukeN2Block(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public com.hbm_m.multiblock.MultiblockStructureHelper getStructureHelper() {
+        return STRUCTURE_HELPER;
     }
 
     @Override

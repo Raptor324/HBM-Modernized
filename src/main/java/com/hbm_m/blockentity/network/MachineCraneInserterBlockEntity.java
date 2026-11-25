@@ -111,7 +111,7 @@ public class MachineCraneInserterBlockEntity extends CraneBaseBlockEntity implem
             *///?}
         }
 
-        sendUpdateToClient();
+        if (probeDue(20)) sendUpdateToClient();
     }
 
     /** Original {@code CraneInserter.onItemEnter}. */
@@ -173,7 +173,7 @@ public class MachineCraneInserterBlockEntity extends CraneBaseBlockEntity implem
     public void receiveControl(CompoundTag data) {
         if (data.contains("destroyer")) this.destroyer = !this.destroyer;
         setChanged();
-        sendUpdateToClient();
+        if (probeDue(20)) sendUpdateToClient();
     }
 
     @Override

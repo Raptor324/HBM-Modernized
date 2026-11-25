@@ -9,6 +9,7 @@ import com.hbm_m.blockentity.machines.LaunchpadLambdaBlockEntity;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -86,15 +87,6 @@ public class LaunchpadLambdaBlock extends DummyableMachineBlock {
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
-    @Override
-    //? if < 1.21.1 {
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
-    //?} else {
-    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
-    *///?}
-        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
-    }
-
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<LaunchpadLambdaBlock> CODEC = simpleCodec(LaunchpadLambdaBlock::new);
 
@@ -103,4 +95,16 @@ public class LaunchpadLambdaBlock extends DummyableMachineBlock {
         return CODEC;
     }
     *///?}
+
+    // Verbatim port of the original LaunchpadLambda.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {-2, 1, 7, Direction.SOUTH.get3DDataValue()},
+            {-3, 1, 7, Direction.SOUTH.get3DDataValue()},
+            {-4, 1, 7, Direction.SOUTH.get3DDataValue()},
+            {-5, 1, 7, Direction.SOUTH.get3DDataValue()},
+            {-6, 1, 7, Direction.SOUTH.get3DDataValue()}
+        }, facing);
+    }
 }

@@ -1,4 +1,3 @@
-// file: build-logic/src/main/kotlin/NucleusMeshCompiler.kt
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.named
 import org.gradle.language.jvm.tasks.ProcessResources
@@ -130,29 +129,129 @@ private fun triangulatePolygon(verts: Array<FloatArray>): IntArray {
 	return out
 }
 
+private fun floatToHalf(f: Float): Short {
+	val bits = java.lang.Float.floatToRawIntBits(f)
+	val sign = (bits ushr 16) and 0x8000
+	val exp = (bits ushr 23) and 0xFF
+	val mant = bits and 0x007FFFFF
+	if (exp == 255) {
+		return (sign or 0x7C00 or (if (mant != 0) 0x0200 or (mant ushr 13) else 0)).toShort()
+	}
+	val e = exp - 127 + 15
+	if (e >= 31) return (sign or 0x7C00).toShort()
+	if (e <= 0) {
+		if (e < -10) return sign.toShort()
+		val m = mant or 0x00800000
+		val shift = 126 - exp
+		var half = m shr shift
+		val rem = m and ((1 shl shift) - 1)
+		val halfPoint = 1 shl (shift - 1)
+		if (rem > halfPoint || (rem == halfPoint && (half and 1) != 0)) half++
+		return (sign or half).toShort()
+	}
+	var half = mant shr 13
+	val rem = mant and 0x1FFF
+	if (rem > 0x1000 || (rem == 0x1000 && (half and 1) != 0)) half++
+	var res = (e shl 10) + half
+	if (res >= 0x7C00) res = 0x7C00
+	return (sign or res).toShort()
+}
+
+private fun quantizeNormalByte(n: Float): Byte =
+	Math.round(n.coerceIn(-1f, 1f) * 127f).coerceIn(-127, 127).toByte()
+
+private class VertexWelder {
+	private var verts = IntArray(64 * 8) // raw int bits of 8 floats per vertex
+	private var table = IntArray(128) { -1 }
+	var size = 0
+		private set
+
+	private fun growTable(newCap: Int) {
+		val newTable = IntArray(newCap) { -1 }
+		val mask = newCap - 1
+		for (i in 0 until size) {
+			val b = i * 8
+			var slot = hash(verts[b], verts[b + 1], verts[b + 2], verts[b + 3],
+				verts[b + 4], verts[b + 5], verts[b + 6], verts[b + 7]) and mask
+			while (newTable[slot] >= 0) slot = (slot + 1) and mask
+			newTable[slot] = i
+		}
+		table = newTable
+	}
+
+	private fun hash(w0: Int, w1: Int, w2: Int, w3: Int, w4: Int, w5: Int, w6: Int, w7: Int): Int {
+		var h = w0 * 31 + w1
+		h = h * 31 + w2
+		h = h * 31 + w3
+		h = h * 31 + w4
+		h = h * 31 + w5
+		h = h * 31 + w6
+		h = h * 31 + w7
+		return h xor (h ushr 16)
+	}
+
+	fun intern(x: Float, y: Float, z: Float, nx: Float, ny: Float, nz: Float, u: Float, v: Float): Int {
+		if (size * 2 >= table.size) growTable(table.size * 2)
+		if ((size + 1) * 8 > verts.size) verts = verts.copyOf(verts.size * 2)
+		val w0 = java.lang.Float.floatToRawIntBits(if (x == 0f) 0f else x)
+		val w1 = java.lang.Float.floatToRawIntBits(if (y == 0f) 0f else y)
+		val w2 = java.lang.Float.floatToRawIntBits(if (z == 0f) 0f else z)
+		val w3 = java.lang.Float.floatToRawIntBits(if (nx == 0f) 0f else nx)
+		val w4 = java.lang.Float.floatToRawIntBits(if (ny == 0f) 0f else ny)
+		val w5 = java.lang.Float.floatToRawIntBits(if (nz == 0f) 0f else nz)
+		val w6 = java.lang.Float.floatToRawIntBits(if (u == 0f) 0f else u)
+		val w7 = java.lang.Float.floatToRawIntBits(if (v == 0f) 0f else v)
+
+		val mask = table.size - 1
+		var slot = hash(w0, w1, w2, w3, w4, w5, w6, w7) and mask
+		while (true) {
+			val cand = table[slot]
+			if (cand < 0) {
+				val idx = size++
+				val b = idx * 8
+				verts[b] = w0; verts[b + 1] = w1; verts[b + 2] = w2
+				verts[b + 3] = w3; verts[b + 4] = w4; verts[b + 5] = w5
+				verts[b + 6] = w6; verts[b + 7] = w7
+				table[slot] = idx
+				return idx
+			}
+			val b = cand * 8
+			if (verts[b] == w0 && verts[b + 1] == w1 && verts[b + 2] == w2 &&
+				verts[b + 3] == w3 && verts[b + 4] == w4 && verts[b + 5] == w5 &&
+				verts[b + 6] == w6 && verts[b + 7] == w7) {
+				return cand
+			}
+			slot = (slot + 1) and mask
+		}
+	}
+
+	fun floatAt(vIdx: Int, comp: Int): Float =
+		java.lang.Float.intBitsToFloat(verts[vIdx * 8 + comp])
+}
+
+private fun resolveMtlFile(objFile: File, mtlRef: String, nucleusAssetsRoots: List<File>): File? {
+	if (mtlRef.contains(":")) {
+		val parts = mtlRef.split(":", limit = 2)
+		for (r in nucleusAssetsRoots) {
+			val f = File(r, "${parts[0]}/${parts[1]}")
+			if (f.isFile) return f
+		}
+	} else {
+		val f = File(objFile.parentFile, mtlRef)
+		if (f.isFile) return f
+		for (r in nucleusAssetsRoots) {
+			val relF = File(r, mtlRef)
+			if (relF.isFile) return relF
+		}
+	}
+	return null
+}
+
 private fun compileObjToNmesh(objFile: File, outFile: File, nucleusAssetsRoots: List<File>) {
 	fun normalize(x: Float, y: Float, z: Float): FloatArray {
 		val len = Math.sqrt(x.toDouble() * x + y.toDouble() * y + z.toDouble() * z)
 		if (len == 0.0) return floatArrayOf(0f, 0f, 0f)
 		return floatArrayOf((x / len).toFloat(), (y / len).toFloat(), (z / len).toFloat())
-	}
-
-	fun resolveMtl(mtlRef: String): File? {
-		if (mtlRef.contains(":")) {
-			val parts = mtlRef.split(":", limit = 2)
-			for (r in nucleusAssetsRoots) {
-				val f = File(r, "${parts[0]}/${parts[1]}")
-				if (f.isFile) return f
-			}
-		} else {
-			val f = File(objFile.parentFile, mtlRef)
-			if (f.isFile) return f
-			for (r in nucleusAssetsRoots) {
-				val relF = File(r, mtlRef)
-				if (relF.isFile) return relF
-			}
-		}
-		return null
 	}
 
 	data class MtlInfo(val mapKd: String, val kd: List<Float>, val ka: List<Float>)
@@ -190,7 +289,7 @@ private fun compileObjToNmesh(objFile: File, outFile: File, nucleusAssetsRoots: 
 		for (raw in lines) {
 			val l = raw.trim()
 			if (l.startsWith("mtllib ")) {
-				val f = resolveMtl(l.substring(7).trim())
+				val f = resolveMtlFile(objFile, l.substring(7).trim(), nucleusAssetsRoots)
 				if (f != null && f.isFile) parseMtl(f)
 			}
 		}
@@ -212,18 +311,18 @@ private fun compileObjToNmesh(objFile: File, outFile: File, nucleusAssetsRoots: 
 	var facesSinceLastO = false
 
 	val order = mutableListOf<BucketKey>()
-	val bucketVerts = linkedMapOf<BucketKey, MutableList<FloatArray>>()
-	val bucketWeld = linkedMapOf<BucketKey, HashMap<String, Int>>()
+	val bucketWelders = linkedMapOf<BucketKey, VertexWelder>()
 	val bucketTris = linkedMapOf<BucketKey, MutableList<IntArray>>()
 
-	fun bucket(key: BucketKey): Triple<MutableList<FloatArray>, HashMap<String, Int>, MutableList<IntArray>> {
-		if (!bucketVerts.containsKey(key)) {
+	fun bucket(key: BucketKey): Pair<VertexWelder, MutableList<IntArray>> {
+		var w = bucketWelders[key]
+		if (w == null) {
 			order.add(key)
-			bucketVerts[key] = mutableListOf()
-			bucketWeld[key] = HashMap()
+			w = VertexWelder()
+			bucketWelders[key] = w
 			bucketTris[key] = mutableListOf()
 		}
-		return Triple(bucketVerts[key]!!, bucketWeld[key]!!, bucketTris[key]!!)
+		return Pair(w, bucketTris[key]!!)
 	}
 
 	fun addFace(corners: List<Triple<Int, Int, Int>>) {
@@ -235,7 +334,7 @@ private fun compileObjToNmesh(objFile: File, outFile: File, nucleusAssetsRoots: 
 		val e2x = p2[0] - p0[0]; val e2y = p2[1] - p0[1]; val e2z = p2[2] - p0[2]
 		val flat = normalize(e1y * e2z - e1z * e2y, e1z * e2x - e1x * e2z, e1x * e2y - e1y * e2x)
 		val key = BucketKey(objName, grpName, matName, mapKdName)
-		val (bv, bw, bt) = bucket(key)
+		val (bw, bt) = bucket(key)
 		val idxs = IntArray(corners.size)
 		for ((i, c) in corners.withIndex()) {
 			val pp = pos[c.first]
@@ -243,18 +342,7 @@ private fun compileObjToNmesh(objFile: File, outFile: File, nucleusAssetsRoots: 
 			val nn = if (c.third >= 0 && c.third < nrm.size) {
 				val n = nrm[c.third]; normalize(n[0], n[1], n[2])
 			} else flat
-			val vtx = floatArrayOf(
-				if (pp[0] == 0.0f) 0.0f else pp[0],
-				if (pp[1] == 0.0f) 0.0f else pp[1],
-				if (pp[2] == 0.0f) 0.0f else pp[2],
-				if (nn[0] == 0.0f) 0.0f else nn[0],
-				if (nn[1] == 0.0f) 0.0f else nn[1],
-				if (nn[2] == 0.0f) 0.0f else nn[2],
-				if (tt[0] == 0.0f) 0.0f else tt[0],
-				if (tt[1] == 0.0f) 0.0f else tt[1]
-			)
-			val k = vtx.joinToString(",") { f -> (if (f == 0.0f) 0.0f else f).toRawBits().toString() }
-			idxs[i] = bw.getOrPut(k) { bv.size.also { bv.add(vtx) } }
+			idxs[i] = bw.intern(pp[0], pp[1], pp[2], nn[0], nn[1], nn[2], tt[0], tt[1])
 		}
 		val faceVerts = Array(corners.size) { i -> pos[corners[i].first] }
 		val triIndices = triangulatePolygon(faceVerts)
@@ -311,80 +399,29 @@ private fun compileObjToNmesh(objFile: File, outFile: File, nucleusAssetsRoots: 
 		}
 	}
 
-	val packedTangents = HashMap<BucketKey, IntArray>()
-	for (key in order) {
-		val bv = bucketVerts[key]!!
-		val bt = bucketTris[key]!!
-		val n = bv.size
-		val tan1 = DoubleArray(n * 3)
-		val tan2 = DoubleArray(n * 3)
-		for (tri in bt) {
-			val a = bv[tri[0]]; val b = bv[tri[1]]; val c = bv[tri[2]]
-			val du1 = (b[6] - a[6]).toDouble()
-			val dv1 = -(b[7] - a[7]).toDouble()
-			val du2 = (c[6] - a[6]).toDouble()
-			val dv2 = -(c[7] - a[7]).toDouble()
-			val det = du1 * dv2 - du2 * dv1
-			if (Math.abs(det) < 1.0e-12) continue
-			val r = 1.0 / det
-			val e1x = (b[0] - a[0]).toDouble(); val e1y = (b[1] - a[1]).toDouble(); val e1z = (b[2] - a[2]).toDouble()
-			val e2x = (c[0] - a[0]).toDouble(); val e2y = (c[1] - a[1]).toDouble(); val e2z = (c[2] - a[2]).toDouble()
-			val flat = normalize(e1y.toFloat() * e2z.toFloat() - e1z.toFloat() * e2y.toFloat(),
-				e1z.toFloat() * e2x.toFloat() - e1x.toFloat() * e2z.toFloat(),
-				e1x.toFloat() * e2y.toFloat() - e1y.toFloat() * e2x.toFloat())
-			val sx = (dv2 * e1x - dv1 * e2x) * r
-			val sy = (dv2 * e1y - dv1 * e2y) * r
-			val sz = (dv2 * e1z - dv1 * e2z) * r
-			val tx = (du1 * e2x - du2 * e1x) * r
-			val ty = (du1 * e2y - du2 * e1y) * r
-			val tz = (du1 * e2z - du2 * e1z) * r
-			for (i in 0..2) {
-				val vi = tri[i]
-				val tOff = vi * 3
-				tan1[tOff] += sx; tan1[tOff + 1] += sy; tan1[tOff + 2] += sz
-				tan2[tOff] += tx; tan2[tOff + 1] += ty; tan2[tOff + 2] += tz
-			}
-		}
-		packedTangents[key] = IntArray(n) { vi ->
-			val nx = bv[vi][3].toDouble(); val ny = bv[vi][4].toDouble(); val nz = bv[vi][5].toDouble()
-			val tOff = vi * 3
-			var tx = tan1[tOff]; var ty = tan1[tOff + 1]; var tz = tan1[tOff + 2]
-			val d = nx * tx + ny * ty + nz * tz
-			tx -= nx * d; ty -= ny * d; tz -= nz * d
-			val len = Math.sqrt(tx * tx + ty * ty + tz * tz)
-			if (len < 1.0e-12) {
-				tx = 1.0; ty = 0.0; tz = 0.0
-			} else {
-				tx /= len; ty /= len; tz /= len
-			}
-			val cx = ny * tz - nz * ty
-			val cy = nz * tx - nx * tz
-			val cz = nx * ty - ny * tx
-			val dot = cx * tan2[tOff] + cy * tan2[tOff + 1] + cz * tan2[tOff + 2]
-			val tw = if (dot < 0.0) -127 else 127
-			fun b(v: Double): Int = Math.round(Math.max(-1.0, Math.min(1.0, v)) * 127.0).toInt().coerceIn(-127, 127)
-			(b(tx) and 0xFF) or ((b(ty) and 0xFF) shl 8) or ((b(tz) and 0xFF) shl 16) or ((tw and 0xFF) shl 24)
-		}
-	}
-
 	outFile.parentFile.mkdirs()
 	fun strBytes(s: String): ByteArray = s.toByteArray(Charsets.UTF_8)
 	var totalBytes = 12
 	for (key in order) {
-		val bv = bucketVerts[key]!!
+		val bw = bucketWelders[key]!!
 		val bt = bucketTris[key]!!
+		val vCount = bw.size
+		val idxCount = bt.size * 3
+		val idxStride = if (vCount <= 256) 1 else if (vCount <= 65535) 2 else 4
 		totalBytes += 2 + strBytes(key.obj).size
 		totalBytes += 2 + strBytes(key.grp).size
 		totalBytes += 2 + strBytes(key.mat).size
 		totalBytes += 2 + strBytes(key.mapKd).size
 		totalBytes += 24 + 24 + 8
-		totalBytes += bv.size * 8 * 4 + bv.size * 4
-		totalBytes += (bt.size * 3) * (if (bv.size <= 65535) 2 else 4)
+		totalBytes += vCount * 12 // positions: 3 * float32
+		totalBytes += vCount * 8  // uvs: 2 * float32
+		totalBytes += vCount * 3  // normals: 3 * snorm8
+		totalBytes += idxCount * idxStride
 	}
 
 	val buf = ByteBuffer.allocate(totalBytes).order(ByteOrder.LITTLE_ENDIAN)
 	buf.putInt(0x4E4D5348)
-	buf.putInt(3)
+	buf.putInt(4)
 	buf.putInt(order.size)
 
 	fun writeStr(s: String) {
@@ -394,8 +431,10 @@ private fun compileObjToNmesh(objFile: File, outFile: File, nucleusAssetsRoots: 
 	}
 
 	for (key in order) {
-		val bv = bucketVerts[key]!!
+		val bw = bucketWelders[key]!!
 		val bt = bucketTris[key]!!
+		val vCount = bw.size
+		val idxCount = bt.size * 3
 		val mtl = mtlMap[key.mat]
 		val kd = mtl?.kd ?: listOf(1f, 1f, 1f)
 		val ka = mtl?.ka ?: listOf(0f, 0f, 0f)
@@ -405,32 +444,71 @@ private fun compileObjToNmesh(objFile: File, outFile: File, nucleusAssetsRoots: 
 
 		var minX = Float.MAX_VALUE; var minY = Float.MAX_VALUE; var minZ = Float.MAX_VALUE
 		var maxX = -Float.MAX_VALUE; var maxY = -Float.MAX_VALUE; var maxZ = -Float.MAX_VALUE
-		for (v in bv) {
-			if (v[0] < minX) minX = v[0]; if (v[1] < minY) minY = v[1]; if (v[2] < minZ) minZ = v[2]
-			if (v[0] > maxX) maxX = v[0]; if (v[1] > maxY) maxY = v[1]; if (v[2] > maxZ) maxZ = v[2]
+		for (vi in 0 until vCount) {
+			val vx = bw.floatAt(vi, 0); val vy = bw.floatAt(vi, 1); val vz = bw.floatAt(vi, 2)
+			if (vx < minX) minX = vx; if (vy < minY) minY = vy; if (vz < minZ) minZ = vz
+			if (vx > maxX) maxX = vx; if (vy > maxY) maxY = vy; if (vz > maxZ) maxZ = vz
 		}
-		if (bv.isEmpty()) { minX = 0f; minY = 0f; minZ = 0f; maxX = 0f; maxY = 0f; maxZ = 0f }
+		if (vCount == 0) { minX = 0f; minY = 0f; minZ = 0f; maxX = 0f; maxY = 0f; maxZ = 0f }
 		buf.putFloat(minX); buf.putFloat(minY); buf.putFloat(minZ)
 		buf.putFloat(maxX); buf.putFloat(maxY); buf.putFloat(maxZ)
-		buf.putInt(bv.size)
-		buf.putInt(bt.size * 3)
+		buf.putInt(vCount)
+		buf.putInt(idxCount)
 
+		// Stream 1: positions (3 * float32)
 		val fb = buf.asFloatBuffer()
-		for (v in bv) fb.put(v)
-		buf.position(buf.position() + bv.size * 8 * 4)
+		for (vi in 0 until vCount) {
+			fb.put(bw.floatAt(vi, 0))
+			fb.put(bw.floatAt(vi, 1))
+			fb.put(bw.floatAt(vi, 2))
+		}
+		buf.position(buf.position() + vCount * 12)
 
-		val packed = packedTangents[key]!!
-		buf.asIntBuffer().put(packed)
-		buf.position(buf.position() + bv.size * 4)
+		// Stream 2: UVs (2 * float32)
+		val uvb = buf.asFloatBuffer()
+		for (vi in 0 until vCount) {
+			uvb.put(bw.floatAt(vi, 6))
+			uvb.put(bw.floatAt(vi, 7))
+		}
+		buf.position(buf.position() + vCount * 8)
 
-		if (bv.size <= 65535) {
+		// Stream 3: normals (3 * snorm8)
+		for (vi in 0 until vCount) {
+			buf.put(quantizeNormalByte(bw.floatAt(vi, 3)))
+			buf.put(quantizeNormalByte(bw.floatAt(vi, 4)))
+			buf.put(quantizeNormalByte(bw.floatAt(vi, 5)))
+		}
+
+		// Stream 4: delta-encoded indices
+		var prev = 0
+		if (vCount <= 256) {
+			for (tri in bt) {
+				for (i in 0..2) {
+					val idx = tri[i]
+					buf.put(((idx - prev) and 0xFF).toByte())
+					prev = idx
+				}
+			}
+		} else if (vCount <= 65535) {
 			val sb = buf.asShortBuffer()
-			for (tri in bt) for (i in 0..2) sb.put(tri[i].toShort())
-			buf.position(buf.position() + bt.size * 3 * 2)
+			for (tri in bt) {
+				for (i in 0..2) {
+					val idx = tri[i]
+					sb.put((idx - prev).toShort())
+					prev = idx
+				}
+			}
+			buf.position(buf.position() + idxCount * 2)
 		} else {
 			val idxBuf = buf.asIntBuffer()
-			for (tri in bt) for (i in 0..2) idxBuf.put(tri[i])
-			buf.position(buf.position() + bt.size * 3 * 4)
+			for (tri in bt) {
+				for (i in 0..2) {
+					val idx = tri[i]
+					idxBuf.put(idx - prev)
+					prev = idx
+				}
+			}
+			buf.position(buf.position() + idxCount * 4)
 		}
 	}
 
@@ -442,8 +520,26 @@ private fun nmeshVersionMatches(f: File): Boolean {
 	return RandomAccessFile(f, "r").use { raf ->
 		val header = ByteArray(8)
 		raf.readFully(header)
-		ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN).getInt(4) == 3
+		ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN).getInt(4) == 4
 	}
+}
+
+private fun maxMtlTimestamp(objFile: File, nucleusAssetsRoots: List<File>): Long {
+	var maxT = 0L
+	val fallback = File(objFile.parentFile, objFile.nameWithoutExtension + ".mtl")
+	if (fallback.isFile) maxT = fallback.lastModified()
+	objFile.useLines(Charsets.UTF_8) { lines ->
+		for (raw in lines) {
+			val l = raw.trim()
+			if (l.startsWith("mtllib ")) {
+				val f = resolveMtlFile(objFile, l.substring(7).trim(), nucleusAssetsRoots)
+				if (f != null && f.isFile && f.lastModified() > maxT) {
+					maxT = f.lastModified()
+				}
+			}
+		}
+	}
+	return maxT
 }
 
 fun Project.registerNucleusMeshCompiler(mcVersion: String) {
@@ -468,8 +564,7 @@ fun Project.registerNucleusMeshCompiler(mcVersion: String) {
 				root.walkTopDown().filter { it.isFile && it.extension == "obj" }.forEach { obj ->
 					val rel = obj.absolutePath.replace('\\', '/').removePrefix("$rootNorm/")
 					val out = File(outDir, rel.removeSuffix(".obj") + ".nmesh")
-					val mtlFile = File(obj.parentFile, obj.nameWithoutExtension + ".mtl")
-					val mtlTime = if (mtlFile.isFile) mtlFile.lastModified() else 0L
+					val mtlTime = maxMtlTimestamp(obj, nucleusAssetsRoots)
 					val srcTime = maxOf(obj.lastModified(), mtlTime)
 					if (out.exists() && out.lastModified() >= srcTime && nmeshVersionMatches(out)) {
 						upToDate++

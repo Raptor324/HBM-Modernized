@@ -209,5 +209,19 @@ public class MachineBlastFurnaceBlock extends BaseEntityBlock implements IMultib
         return CODEC;
     }
      *///?}
+
+    // Verbatim port of the original MachineBlastFurnace.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 0, Direction.EAST.get3DDataValue()},
+            {-1, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {0, 0, -1, Direction.NORTH.get3DDataValue()},
+            {0, 3, 1, Direction.SOUTH.get3DDataValue()},
+            {0, 5, 1, Direction.SOUTH.get3DDataValue()},
+            {0, 6, 0, Direction.UP.get3DDataValue()}
+        }, facing);
+    }
 }
 

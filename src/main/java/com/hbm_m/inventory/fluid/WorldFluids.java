@@ -75,14 +75,14 @@ public final class WorldFluids {
     // mud_fluid: Density 2500, Viscosity 3000, Luminosity 5, Temperature 2773, tickRate 3000 / 200 = 15
     public static final Entry MUD = register("mud_fluid", "mud", 2500, 3000, 5, 2773, 2, 15,
             () -> ModBlocks.MUD_BLOCK, () -> ModItems.BUCKET_MUD);
-    // acid_fluid: 2500 / 1500 / 5 / 2773; BlockFluidBase plant mit tickRate = Viskositaet / 200 = 7
-    public static final Entry ACID = register("acid_fluid", "acid", 2500, 1500, 5, 2773, 2, 7,
+    // acid_fluid: 2500 / 1500 / 5 / 2773; 1.7.10 AcidBlock.tickRate() = 5
+    public static final Entry ACID = register("acid_fluid", "acid", 2500, 1500, 5, 2773, 2, 5,
             () -> ModBlocks.ACID_BLOCK, () -> ModItems.BUCKET_ACID);
-    // toxic_fluid: 2500 / 2000 / 15 / 2773, tickRate 2000 / 200 = 10
-    public static final Entry TOXIC = register("toxic_fluid", "toxic", 2500, 2000, 15, 2773, 2, 10,
+    // toxic_fluid: 2500 / 2000 / 15 / 2773; 1.7.10 ToxicBlock.tickRate() = 15
+    public static final Entry TOXIC = register("toxic_fluid", "toxic", 2500, 2000, 15, 2773, 2, 15,
             () -> ModBlocks.TOXIC_FLUID_BLOCK, () -> ModItems.BUCKET_TOXIC);
-    // schrabidic_fluid: 31200 / 500 / 0 / 273, tickRate 500 / 200 = 2
-    public static final Entry SCHRABIDIC = register("schrabidic_fluid", "schrabidic_acid", 31200, 500, 0, 273, 2, 2,
+    // schrabidic_fluid: 31200 / 500 / 0 / 273; 1.7.10 SchrabidicBlock.tickRate() = 15
+    public static final Entry SCHRABIDIC = register("schrabidic_fluid", "schrabidic_acid", 31200, 500, 0, 273, 2, 15,
             () -> ModBlocks.SCHRABIDIC_BLOCK, () -> ModItems.BUCKET_SCHRABIDIC_ACID);
     // volcanic_lava_fluid: 3000 / 3000 / 15 / 1300, Standard-Tickrate von BlockFluidClassic (Viskositaet/200 = 15)
     public static final Entry VOLCANIC_LAVA = register("volcanic_lava_fluid", "volcanic_lava", 3000, 3000, 15, 1300, 2, 15,

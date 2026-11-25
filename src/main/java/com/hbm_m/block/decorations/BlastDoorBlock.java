@@ -109,7 +109,10 @@ public class BlastDoorBlock extends DoorBlock implements IBomb {
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
-        if (level.getBlockEntity(pos) instanceof BlastDoorBlockEntity door) {
+        BlockEntity be = level.getBlockEntity(pos);
+        BlastDoorBlockEntity door = be instanceof BlastDoorBlockEntity bd ? bd
+                : (be instanceof DoorBlockEntity d && d.getController() instanceof BlastDoorBlockEntity cd ? cd : null);
+        if (door != null) {
             door.tryToggle(player);
         }
         return InteractionResult.SUCCESS;
@@ -120,7 +123,10 @@ public class BlastDoorBlock extends DoorBlock implements IBomb {
     @Override
     public BombReturnCode explode(Level level, BlockPos pos) {
         if (level.isClientSide) return BombReturnCode.UNDEFINED;
-        if (!(level.getBlockEntity(pos) instanceof BlastDoorBlockEntity door)) return BombReturnCode.UNDEFINED;
+        BlockEntity be = level.getBlockEntity(pos);
+        BlastDoorBlockEntity door = be instanceof BlastDoorBlockEntity bd ? bd
+                : (be instanceof DoorBlockEntity d && d.getController() instanceof BlastDoorBlockEntity cd ? cd : null);
+        if (door == null) return BombReturnCode.UNDEFINED;
         if (door.isLocked()) return BombReturnCode.ERROR_INCOMPATIBLE;
         door.tryToggle(null);
         return BombReturnCode.TRIGGERED;

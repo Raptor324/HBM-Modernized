@@ -26,7 +26,7 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class FogRenderer extends EntityRenderer<EntityFogFX> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/fog.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/shockwave.png");
 
     public FogRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);

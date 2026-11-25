@@ -182,7 +182,7 @@ public class MachineCapacitorBlock extends BaseEntityBlock implements com.hbm_m.
                         EnergyFormatter.format(stored), EnergyFormatter.format(this.capacity))
                 .withStyle(ChatFormatting.YELLOW));
 
-        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+        if (com.hbm_m.util.StandardInfo.isShiftDown()) {
             for (String line : Component.translatable("tooltip.hbm_m.capacitor.desc").getString().split("\n")) {
                 pTooltip.add(Component.literal(line).withStyle(ChatFormatting.YELLOW));
             }

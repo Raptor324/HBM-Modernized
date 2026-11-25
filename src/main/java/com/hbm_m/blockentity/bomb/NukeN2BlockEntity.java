@@ -29,13 +29,10 @@ public class NukeN2BlockEntity extends NukeBaseBlockEntity {
     }
 
     @Override
-    public int getMaxStackSize() {
-        return 1;
-    }
-
-    @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return stack.is(ModItems.N2_CHARGE.get());
+        // Оригинал (1.7.10) TileEntityNukeN2.isItemValidForSlot: false. В GUI кладётся
+        // что угодно (vanilla Slot), хопперам доступ запрещён пустым getSlotsForFace.
+        return false;
     }
 
     @Override

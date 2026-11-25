@@ -76,6 +76,22 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
                                            SinglePartBakingContext partContext,
                                            Function<Material, TextureAtlasSprite> spriteGetter,
                                            ModelState modelState) {
+        return bakeSingleNMeshPart(nmesh, partContext, spriteGetter, modelState, false);
+    }
+
+    /**
+     * Запекает одну часть напрямую из данных {@link NMeshData} (nmesh-first путь),
+     * без промежуточного Forge {@link ObjModel}.
+     *
+     * @param smoothShade per-vertex smooth shading (loader JSON key "smooth_shade"); kills the
+     *        per-quad nearest-cardinal shade that draws triangulation diagonals across
+     *        smooth-normal surfaces (barrels etc.)
+     */
+    protected BakedModel bakeSingleNMeshPart(NMeshData nmesh,
+                                           SinglePartBakingContext partContext,
+                                           Function<Material, TextureAtlasSprite> spriteGetter,
+                                           ModelState modelState,
+                                           boolean smoothShade) {
         java.util.List<NMeshData.SubMesh> subs =
                 nmesh.getSubMeshesForPart(partContext.visiblePartName());
         if (subs.isEmpty()) {
@@ -92,7 +108,8 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         // Forge ObjModel.addQuads order: modelState rotation first, then the JSON root transform.
         Transformation root = modelState.getRotation().compose(partContext.getRootTransform());
         return new NMeshPartBakedModel(
-                bound, flipV(), root, partContext.getTransforms());
+                bound, flipV(), root, partContext.getTransforms(),
+                true, true, false, -1, null, null, false, smoothShade);
     }
 
     /**
@@ -113,7 +130,8 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         ResourceLocation model = ResourceLocation.tryParse(modelStr);
         Set<String> partNames = getPartNames(jsonObject);
         boolean flipV = GsonHelper.getAsBoolean(jsonObject, "flip_v", true);
-        return new ObjPartGeometry<>(model, partNames, flipV, this);
+        boolean smoothShade = GsonHelper.getAsBoolean(jsonObject, "smooth_shade", false);
+        return new ObjPartGeometry<>(model, partNames, flipV, this, smoothShade);
     }
 
     public static class ObjPartGeometry<T extends BakedModel> implements IUnbakedGeometry<ObjPartGeometry<T>> {
@@ -186,6 +204,8 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         private final Set<String> partNames;
         private final boolean flipV;
         private final AbstractObjPartModelLoader<T> loader;
+        /** Per-vertex smooth shading (JSON "smooth_shade"); see {@link #bakeSingleNMeshPart}. */
+        private final boolean smoothShade;
         /**
          * Спецификации частей (имя части -> {группа OBJ, текстура-оверрайд}).
          * Пустая карта = классический режим по {@link #partNames}. Позволяет одной OBJ-группе
@@ -195,15 +215,26 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
 
         public ObjPartGeometry(ResourceLocation modelLocation, Set<String> partNames, boolean flipV,
                                AbstractObjPartModelLoader<T> loader) {
-            this(modelLocation, partNames, flipV, loader, Map.of());
+            this(modelLocation, partNames, flipV, loader, false, Map.of());
+        }
+
+        public ObjPartGeometry(ResourceLocation modelLocation, Set<String> partNames, boolean flipV,
+                               AbstractObjPartModelLoader<T> loader, boolean smoothShade) {
+            this(modelLocation, partNames, flipV, loader, smoothShade, Map.of());
         }
 
         public ObjPartGeometry(ResourceLocation modelLocation, Set<String> partNames, boolean flipV,
                                AbstractObjPartModelLoader<T> loader, Map<String, PartSpec> partSpecs) {
+            this(modelLocation, partNames, flipV, loader, false, partSpecs);
+        }
+
+        public ObjPartGeometry(ResourceLocation modelLocation, Set<String> partNames, boolean flipV,
+                               AbstractObjPartModelLoader<T> loader, boolean smoothShade, Map<String, PartSpec> partSpecs) {
             this.modelLocation = modelLocation;
             this.partNames = partNames;
             this.flipV = flipV;
             this.loader = loader;
+            this.smoothShade = smoothShade;
             this.partSpecs = partSpecs;
         }
 
@@ -248,6 +279,9 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
                         String group = spec.group() != null ? spec.group() : entry.getKey();
                         SinglePartBakingContext partContext = new SinglePartBakingContext(context, group, loader, spec.texture());
                         BakedModel baked = loader.bakeNMeshPart(nmesh, partContext, spriteGetter, stateForPart(entry.getKey()));
+                        if (smoothShade && baked instanceof com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmeshPart) {
+                            baked = nmeshPart.withSmoothShade();
+                        }
                         specParts.put(entry.getKey(), baked);
                     }
                     return withJsonParticleIcon(
@@ -263,6 +297,9 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
                     }
                     SinglePartBakingContext partContext = new SinglePartBakingContext(context, partName, loader);
                     BakedModel baked = loader.bakeNMeshPart(nmesh, partContext, spriteGetter, stateForPart(partName));
+                    if (smoothShade && baked instanceof com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmeshPart) {
+                        baked = nmeshPart.withSmoothShade();
+                    }
                     if (baked != null) {
                         bakedParts.put(partName, baked);
                         for (NMeshData.SubMesh sm : nmesh.subMeshes()) {
@@ -285,6 +322,9 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
                     } else {
                         SinglePartBakingContext baseCtx = new SinglePartBakingContext(context, FALLBACK_BASE_PART, loader);
                         BakedModel baked = loader.bakeNMeshPart(nmesh, baseCtx, spriteGetter, stateForPart(FALLBACK_BASE_PART));
+                        if (smoothShade && baked instanceof com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmeshPart) {
+                            baked = nmeshPart.withSmoothShade();
+                        }
                         if (baked != null && !isEffectivelyEmpty(baked)) {
                             bakedParts.put(FALLBACK_BASE_PART, baked);
                             for (NMeshData.SubMesh sm : nmesh.subMeshes()) {

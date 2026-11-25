@@ -37,7 +37,7 @@ public final class DFCRenderers {
     static final ResourceLocation RECEIVER_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/core_receiver.png");
     static final ResourceLocation EMITTER_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/core_emitter.png");
     static final ResourceLocation INJECTOR_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/core_injector.png");
-    static final ResourceLocation STABILIZER_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/core_stabilizer.png");
+    static final ResourceLocation STABILIZER_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/core_stabilizer.png");
 
     /** Original-Ausrichtung: erst 90 Grad, dann je Metadate; 0/1 kippen um X. */
     static void orient(PoseStack ps, BlockEntity be) {
@@ -156,8 +156,8 @@ public final class DFCRenderers {
      */
     public static class Core implements com.hbm_m.client.render.HbmBerBounds<DFCCoreBlockEntity> {
 
-        static final SimpleObjModel SPHERE_UV = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/sphere_uv.obj"));
-        static final SimpleObjModel SPHERE_RUV = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/sphere_ruv.obj"));
+        static final SimpleObjModel SPHERE_UV = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/sphere_uv.obj"));
+        static final SimpleObjModel SPHERE_RUV = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/sphere_ruv.obj"));
 
         public Core(BlockEntityRendererProvider.Context ctx) { }
 

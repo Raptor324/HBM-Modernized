@@ -107,10 +107,12 @@ public class ModPacketHandler {
     public static final ResourceLocation RBMK_CONSOLE_CONTROL        = id("rbmk_console_control");
     public static final ResourceLocation RBMK_CONTROL_CONTROL        = id("rbmk_control_control");
     public static final ResourceLocation RBMK_BOILER_CONTROL         = id("rbmk_boiler_control");
+    public static final ResourceLocation RBMK_AUTOLOADER_CONTROL     = id("rbmk_autoloader_control");
     public static final ResourceLocation RBMK_CRANE_CONTROL          = id("rbmk_crane_control");
     public static final ResourceLocation COPY_TOOL_KEY               = id("copy_tool_key");
     public static final ResourceLocation MACHINE_CONTROL             = id("machine_control");
     public static final ResourceLocation SOYUZ_LAUNCHER_CONTROL      = id("soyuz_launcher_control");
+    public static final ResourceLocation LAUNCHPAD_SOYUZ_CONTROL     = id("launchpad_soyuz_control");
     public static final ResourceLocation NUKE_FSTBMB_CONTROL         = id("nuke_fstbmb_control");
     public static final ResourceLocation SOLDERING_STATION_CONTROL   = id("soldering_station_control");
     public static final ResourceLocation ORPHANED_PHANTOMS     = id("orphaned_phantoms");
@@ -143,7 +145,7 @@ public class ModPacketHandler {
         /*// Dedizierter Server: nur die Pakettypen anmelden (wie registerS2C dort). Die Methodenreferenzen unten
         // wuerden die Paketklassen verlinken, deren Client-Lambdas (Minecraft/LocalPlayer) den Serverstart sprengen.
         if (dev.architectury.platform.Platform.getEnvironment() != Env.CLIENT) {
-            for (ResourceLocation id : new ResourceLocation[] { GEIGER_SOUND, INFO_TOAST, HBM_ANIMATION, RADIATION_DATA, EXT_PROP, EXPLOSION_KNOCKBACK, CHUNK_RAD_DEBUG_BATCH, HIGHLIGHT_BLOCKS, SYNC_ENERGY, AUX_PARTICLE, PWR_PRINTER_SCAN, VANILLA_EXPLOSION, DOOR_CONTRAPTION_STATE, ORPHANED_PHANTOMS, SPAWN_PARTICLE, MISSILE_TRACK, MISSILE_TRACK_STOP, CONFIG_SYNC, IMPACT_SYNC, POLLUTION_SYNC, PERMA_SYNC_MEME, PARTICLE_BURST }) {
+            for (ResourceLocation id : new ResourceLocation[] { GEIGER_SOUND, INFO_TOAST, HBM_ANIMATION, RADIATION_DATA, EXT_PROP, EXPLOSION_KNOCKBACK, CHUNK_RAD_DEBUG_BATCH, HIGHLIGHT_BLOCKS, SYNC_ENERGY, AUX_PARTICLE, PWR_PRINTER_SCAN, VANILLA_EXPLOSION, DOOR_CONTRAPTION_STATE, ORPHANED_PHANTOMS, SPAWN_PARTICLE, MISSILE_TRACK, MISSILE_TRACK_STOP, CONFIG_SYNC, IMPACT_SYNC, POLLUTION_SYNC, PERMA_SYNC_MEME, PARTICLE_BURST, POWER_ARMOR_DASH }) {
                 NetworkManager.registerS2CPayloadType(id);
             }
             return;
@@ -436,9 +438,17 @@ public class ModPacketHandler {
                 RBMKBoilerPacket::decode,
                 RBMKBoilerPacket::handle);
 
+        registerC2S(RBMK_AUTOLOADER_CONTROL,
+                RBMKAutoloaderPacket::decode,
+                RBMKAutoloaderPacket::handle);
+
         registerC2S(SOYUZ_LAUNCHER_CONTROL,
                 SoyuzLauncherControlPacket::decode,
                 SoyuzLauncherControlPacket::handle);
+
+        registerC2S(LAUNCHPAD_SOYUZ_CONTROL,
+                LaunchpadSoyuzControlPacket::decode,
+                LaunchpadSoyuzControlPacket::handle);
 
         registerC2S(NUKE_FSTBMB_CONTROL,
                 NukeFstbmbControlPacket::decode,

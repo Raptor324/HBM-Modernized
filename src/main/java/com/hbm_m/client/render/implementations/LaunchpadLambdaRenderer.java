@@ -23,8 +23,8 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class LaunchpadLambdaRenderer implements com.hbm_m.client.render.HbmBerBounds<LaunchpadLambdaBlockEntity> {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/launchpad_lambda.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/launchpad_lambda.png");
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/launchpad_lambda_item.obj"));
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/launchpad_lambda.png");
 
     public LaunchpadLambdaRenderer(BlockEntityRendererProvider.Context ctx) { }
 

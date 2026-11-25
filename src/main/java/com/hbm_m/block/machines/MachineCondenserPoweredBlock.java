@@ -15,6 +15,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -132,17 +133,21 @@ public class MachineCondenserPoweredBlock extends DummyableMachineBlock implemen
         return !com.hbm_m.api.space.SpaceApi.forkActive() && super.dropFromExplosion(explosion);
     }
 
-    @Override
-    //? if < 1.21.1 {
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
-    //?} else {
-    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
-    *///?}
-        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
-    }
-
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineCondenserPoweredBlock> CODEC = simpleCodec(MachineCondenserPoweredBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
+
+    // Verbatim port of the original MachineCondenserPowered.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {3, 1, 0, Direction.EAST.get3DDataValue()},
+            {-3, 1, 0, Direction.WEST.get3DDataValue()},
+            {1, 1, 1, Direction.SOUTH.get3DDataValue()},
+            {-1, 1, 1, Direction.SOUTH.get3DDataValue()},
+            {1, 1, -1, Direction.NORTH.get3DDataValue()},
+            {-1, 1, -1, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

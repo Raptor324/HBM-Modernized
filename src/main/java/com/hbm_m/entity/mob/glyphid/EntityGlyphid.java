@@ -202,7 +202,36 @@ public class EntityGlyphid extends Monster implements IResistanceProvider {
 
     public byte getArmorBits() { return this.entityData.get(DW_ARMOR); }
     public int getSubtype() { return this.entityData.get(DW_SUBTYPE); }
-    public void setSubtype(int type) { this.entityData.set(DW_SUBTYPE, (byte) type); }
+    public void setSubtype(int type) {
+        this.entityData.set(DW_SUBTYPE, (byte) type);
+        applySubtypeAttributes(type);
+    }
+
+    private static final java.util.UUID RADIOACTIVE_SPEED_ID = java.util.UUID.fromString("a8e2f301-4c9d-4e7a-9b1f-0d1c2e3f4a5b");
+    private static final java.util.UUID RADIOACTIVE_DAMAGE_ID = java.util.UUID.fromString("b9f3a412-5d0e-4f8b-ac20-1e2d3f4a5b6c");
+
+    private void applySubtypeAttributes(int type) {
+        if (this.level().isClientSide) return;
+        boolean radioactive = type == TYPE_RADIOACTIVE;
+        applyRadioactiveMod(this.getAttribute(Attributes.MOVEMENT_SPEED), RADIOACTIVE_SPEED_ID, "Glyphid Radioactive Speed", 1.0D, radioactive);
+        applyRadioactiveMod(this.getAttribute(Attributes.ATTACK_DAMAGE), RADIOACTIVE_DAMAGE_ID, "Glyphid Radioactive Damage", 4.0D, radioactive);
+    }
+
+    private static void applyRadioactiveMod(net.minecraft.world.entity.ai.attributes.AttributeInstance inst, java.util.UUID uuid, String name, double multMinusOne, boolean add) {
+        if (inst == null) return;
+        if (add) {
+            if (!com.hbm_m.platform.AttributeHooks.hasModifier(inst, uuid)) {
+                inst.addPermanentModifier(com.hbm_m.platform.AttributeHooks.modifier(
+                        uuid, name, multMinusOne, com.hbm_m.platform.AttributeHooks.MULTIPLY_BASE));
+            }
+        } else if (com.hbm_m.platform.AttributeHooks.hasModifier(inst, uuid)) {
+            //? if < 1.21.1 {
+            inst.removeModifier(uuid);
+            //?} else {
+            /*inst.removeModifier(com.hbm_m.platform.AttributeHooks.id(uuid));
+            *///?}
+        }
+    }
 
     public StatBundle getStats() {
         return GlyphidStats.getStats().statsGrunt;
@@ -849,7 +878,9 @@ public class EntityGlyphid extends Monster implements IResistanceProvider {
     public void readAdditionalSaveData(CompoundTag nbt) {
         super.readAdditionalSaveData(nbt);
         this.entityData.set(DW_ARMOR, nbt.getByte("armor"));
-        this.entityData.set(DW_SUBTYPE, nbt.getByte("subtype"));
+        int subtype = nbt.getByte("subtype");
+        this.entityData.set(DW_SUBTYPE, (byte) subtype);
+        applySubtypeAttributes(subtype);
 
         this.hasHome = nbt.getBoolean("hasHome");
         this.homeX = nbt.getInt("homeX");

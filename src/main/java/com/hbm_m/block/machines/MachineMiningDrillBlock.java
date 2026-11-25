@@ -10,6 +10,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -95,4 +96,15 @@ public class MachineMiningDrillBlock extends DummyableMachineBlock {
     /*public static final com.mojang.serialization.MapCodec<MachineMiningDrillBlock> CODEC = simpleCodec(MachineMiningDrillBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
+
+    // Verbatim port of the original MachineExcavator.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 1, 3, Direction.SOUTH.get3DDataValue()},
+            {-1, 1, 3, Direction.SOUTH.get3DDataValue()},
+            {3, 1, 0, Direction.EAST.get3DDataValue()},
+            {-3, 1, 0, Direction.WEST.get3DDataValue()}
+        }, facing);
+    }
 }

@@ -342,7 +342,7 @@ public final class ModWorldGenProvider {
                 "cluster_depth_iron", "cluster_depth_titanium", "cluster_depth_tungsten",
                 "ore_bedrock_mineral", "ore_bedrock_oil", "oil_deposit", "stone_keyhole",
                 // FFA: 1:1 HbmWorldGen
-                "coltan_deposit", "hbm_strata", "hbm_worldgen");
+                "coltan_deposit", "hbm_worldgen");
         addModifier(ctx, biomes, placed, "add_overworld_ores", BiomeTags.IS_OVERWORLD, overworldOres,
                 GenerationStep.Decoration.UNDERGROUND_ORES);
 

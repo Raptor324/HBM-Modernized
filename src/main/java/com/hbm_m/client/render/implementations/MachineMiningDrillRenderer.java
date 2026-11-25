@@ -85,12 +85,12 @@ public final class MachineMiningDrillRenderer {
     private static void applyBlockTransform(MachineMiningDrillBlockEntity be, LegacyAnimator animator) {
         Direction facing = be.getBlockState().getValue(MachineMiningDrillBlock.FACING);
         float facingYRot = switch (facing) {
-            case SOUTH -> 180F;
-            case WEST -> 270F;
             case EAST -> 90F;
-            default -> 0F; // NORTH
+            case NORTH -> 180F;
+            case WEST -> 270F;
+            default -> 0F; // SOUTH
         };
-        animator.translate(0.5, 0.0, 0.5);
+        animator.translate(0.5, -3.0, 0.5);
         animator.rotate(facingYRot, 0, 1, 0);
         animator.translate(-0.5, 0.0, -0.5);
     }
@@ -136,9 +136,9 @@ public final class MachineMiningDrillRenderer {
     // --- Falling crushed material (FFA merge loss restore, 1:1 RenderExcavator) ---
 
     private static final ResourceLocation CHUTE_COBBLE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/chute_cobblestone.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/cobblestone.png");
     private static final ResourceLocation CHUTE_GRAVEL =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/chute_gravel.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/gravel.png");
 
     /**
      * Original RenderExcavator: while the chute operates, crushed stone streams down from under the crushers -

@@ -59,7 +59,8 @@ public class CartDestroyerMenu extends AbstractContainerMenu {
         }
 
         Slot slot = this.getSlot(index);
-        slot.set(this.getCarried().copy());
+        ItemStack carried = this.getCarried();
+        slot.set(carried.isEmpty() ? ItemStack.EMPTY : carried.copyWithCount(1));
     }
 
     @Override

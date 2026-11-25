@@ -19,8 +19,8 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class RadGenRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineRadGenBlockEntity> {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/radgen.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/radgen.png");
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/radgen.obj"));
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/radgen.png");
 
     public RadGenRenderer(BlockEntityRendererProvider.Context ctx) { }
 

@@ -63,16 +63,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
 
     @Override
     public boolean shouldRenderOffScreen(T blockEntity) {
-        boolean offScreen = ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
-        if (offScreen) {
-            // SectionCompiler puts the BE into LevelRenderer.globalBlockEntities (rendered
-            // every frame, refreshed ONLY on section recompile). Knowing whether the ghosting
-            // machine lands there is half the ghost diagnosis.
-            com.hbm_m.multiblock.TeardownTrace.log(
-                    "compile: shouldRenderOffScreen=true -> BE {} goes to globalBlockEntities, renderer={}",
-                    blockEntity.getBlockPos().toShortString(), getClass().getSimpleName());
-        }
-        return offScreen;
+        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
     }
 
     @Override
@@ -80,35 +71,14 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         return RenderDistanceHelper.getStaticViewDistanceBlocks();
     }
 
-    /** Suppressed-stale-draw positions already logged (bounded; a stale compiled section
-     * would otherwise fire this every frame while TeardownTrace is on). */
-    private static final it.unimi.dsi.fastutil.longs.LongOpenHashSet SUPPRESSED_DRAW_LOGGED =
-            new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
-
-
     @Override
     public void render(T blockEntity, float partialTick, PoseStack poseStack,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        // Presence invariant (ghost-model class killer): our renderers draw a BE only while
-        // the live world still holds exactly this BE at this position. Vanilla 1.21.1 has no
-        // isRemoved()/presence check in either per-frame BE loop - the compiled-section list
-        // and globalBlockEntities are refreshed only on section recompile, so a removed BE
-        // stuck in either renders forever. Contraption virtual worlds are exempt: their
-        // getBlockEntity() does not mirror placement.
-        if (blockEntity.getLevel() instanceof net.minecraft.client.multiplayer.ClientLevel clientLevel) {
-            if (blockEntity.isRemoved() || clientLevel.getBlockEntity(blockEntity.getBlockPos()) != blockEntity) {
-                if (com.hbm_m.multiblock.TeardownTrace.TRACE
-                        && SUPPRESSED_DRAW_LOGGED.size() < 256
-                        && SUPPRESSED_DRAW_LOGGED.add(blockEntity.getBlockPos().asLong())) {
-                    com.hbm_m.multiblock.TeardownTrace.trace(
-                            "DRAW SUPPRESSED (stale render list): renderer={} pos={} removed={} liveBeMatches={} state={}",
-                            getClass().getSimpleName(), blockEntity.getBlockPos().toShortString(),
-                            blockEntity.isRemoved(),
-                            clientLevel.getBlockEntity(blockEntity.getBlockPos()) == blockEntity,
-                            clientLevel.getBlockState(blockEntity.getBlockPos()));
-                }
-                return;
-            }
+        if (!com.hbm_m.client.render.ClientRenderFlags.guiRenderFrame()
+                && !com.hbm_m.compat.simulated.DiagramRenderCompat.isRenderingDiagram()
+                && !NucleusDispatcherBypass.isLiveInClientWorld(blockEntity)) {
+            NucleusDispatcherBypass.removeMachine(blockEntity);
+            return;
         }
         // Frustum cull FIRST for the main pass. Shadow pass uses light-space
         // bounds; the main-camera frustum here would drop off-screen casters.

@@ -2,6 +2,7 @@ package com.hbm_m.item;
 
 import com.hbm_m.platform.EffectHooks;
 import com.hbm_m.util.CompletionStatus;
+import com.hbm_m.util.CompletionTracker;
 
 import static com.hbm_m.lib.RefStrings.MODID;
 
@@ -197,10 +198,10 @@ public class ModItems {
     public static final RegistrySupplier<Item> DNT_PLATE = ITEMS.register("dnt_plate", () -> new com.hbm_m.powerarmor.ModArmorFSB(ModArmorMaterials.DNT, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/dnt_1.png").cloneStats((com.hbm_m.powerarmor.ModArmorFSB) DNT_HELMET.get()));
     public static final RegistrySupplier<Item> DNT_LEGS = ITEMS.register("dnt_legs", () -> new com.hbm_m.powerarmor.ModArmorFSB(ModArmorMaterials.DNT, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/dnt_2.png").cloneStats((com.hbm_m.powerarmor.ModArmorFSB) DNT_HELMET.get()));
     public static final RegistrySupplier<Item> DNT_BOOTS = ITEMS.register("dnt_boots", () -> new com.hbm_m.powerarmor.ModArmorFSB(ModArmorMaterials.DNT, ArmorItem.Type.BOOTS, new Item.Properties(), "hbm_m:textures/armor/dnt_1.png").cloneStats((com.hbm_m.powerarmor.ModArmorFSB) DNT_HELMET.get()));
-    public static final RegistrySupplier<Item> T51_HELMET = ITEMS.register("t51_helmet", () -> new com.hbm_m.powerarmor.T51Armor(ModArmorMaterials.T51, ArmorItem.Type.HELMET, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 1000000L, 10000L, 1000L, 5L).enableVATS(true).setHasGeigerSound(true).setHasHardLanding(true).addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST, 20, 0)).setStep("hbm:step.metal").setJump("hbm:step.iron_jump").setFall("hbm:step.iron_land").hides("hat").setHazardClass(com.hbm_m.util.ArmorUtil.FULL_NO_LIGHT).setRadResist(1D /*90%*/));
-    public static final RegistrySupplier<Item> T51_PLATE = ITEMS.register("t51_plate", () -> new com.hbm_m.powerarmor.T51Armor(ModArmorMaterials.T51, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 1000000L, 10000L, 1000L, 5L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) T51_HELMET.get()));
-    public static final RegistrySupplier<Item> T51_LEGS = ITEMS.register("t51_legs", () -> new com.hbm_m.powerarmor.T51Armor(ModArmorMaterials.T51, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/starmetal_2.png", 1000000L, 10000L, 1000L, 5L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) T51_HELMET.get()));
-    public static final RegistrySupplier<Item> T51_BOOTS = ITEMS.register("t51_boots", () -> new com.hbm_m.powerarmor.T51Armor(ModArmorMaterials.T51, ArmorItem.Type.BOOTS, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 1000000L, 10000L, 1000L, 5L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) T51_HELMET.get()));
+    public static final RegistrySupplier<Item> T51_HELMET = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("t51_helmet", () -> new com.hbm_m.powerarmor.T51Armor(ModArmorMaterials.T51, ArmorItem.Type.HELMET, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 1000000L, 10000L, 1000L, 5L).enableVATS(true).setHasGeigerSound(true).setHasHardLanding(true).setStep("hbm:step.metal").setJump("hbm:step.iron_jump").setFall("hbm:step.iron_land").hides("hat").setHazardClass(com.hbm_m.util.ArmorUtil.FULL_NO_LIGHT).setRadResist(1D /*90%*/)));
+    public static final RegistrySupplier<Item> T51_PLATE = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("t51_plate", () -> new com.hbm_m.powerarmor.T51Armor(ModArmorMaterials.T51, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 1000000L, 10000L, 1000L, 5L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) T51_HELMET.get())));
+    public static final RegistrySupplier<Item> T51_LEGS = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("t51_legs", () -> new com.hbm_m.powerarmor.T51Armor(ModArmorMaterials.T51, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/starmetal_2.png", 1000000L, 10000L, 1000L, 5L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) T51_HELMET.get())));
+    public static final RegistrySupplier<Item> T51_BOOTS = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("t51_boots", () -> new com.hbm_m.powerarmor.T51Armor(ModArmorMaterials.T51, ArmorItem.Type.BOOTS, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 1000000L, 10000L, 1000L, 5L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) T51_HELMET.get())));
     public static final RegistrySupplier<Item> STEAMSUIT_HELMET = ITEMS.register("steamsuit_helmet", () -> new com.hbm_m.powerarmor.ArmorDesh(ModArmorMaterials.DESH, ArmorItem.Type.HELMET, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", () -> com.hbm_m.inventory.fluid.ModFluids.STEAM.getSource(), 64_000, 500, 50, 1).setHasHardLanding(true).addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DIG_SPEED, 20, 4)).hides("hat").setHazardClass(com.hbm_m.util.ArmorUtil.FULL_PACKAGE).setRadResist(1.3D /*95%*/));
     public static final RegistrySupplier<Item> STEAMSUIT_PLATE = ITEMS.register("steamsuit_plate", () -> new com.hbm_m.powerarmor.ArmorDesh(ModArmorMaterials.DESH, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", () -> com.hbm_m.inventory.fluid.ModFluids.STEAM.getSource(), 64_000, 500, 50, 1).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) STEAMSUIT_HELMET.get()));
     public static final RegistrySupplier<Item> STEAMSUIT_LEGS = ITEMS.register("steamsuit_legs", () -> new com.hbm_m.powerarmor.ArmorDesh(ModArmorMaterials.DESH, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/starmetal_2.png", () -> com.hbm_m.inventory.fluid.ModFluids.STEAM.getSource(), 64_000, 500, 50, 1).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) STEAMSUIT_HELMET.get()));
@@ -209,18 +210,18 @@ public class ModItems {
     public static final RegistrySupplier<Item> DIESELSUIT_PLATE = ITEMS.register("dieselsuit_plate", () -> new com.hbm_m.powerarmor.ArmorDiesel(ModArmorMaterials.DIESEL, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", () -> com.hbm_m.inventory.fluid.ModFluids.DIESEL.getSource(), 64_000, 500, 50, 1).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) DIESELSUIT_HELMET.get()));
     public static final RegistrySupplier<Item> DIESELSUIT_LEGS = ITEMS.register("dieselsuit_legs", () -> new com.hbm_m.powerarmor.ArmorDiesel(ModArmorMaterials.DIESEL, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/starmetal_2.png", () -> com.hbm_m.inventory.fluid.ModFluids.DIESEL.getSource(), 64_000, 500, 50, 1).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) DIESELSUIT_HELMET.get()));
     public static final RegistrySupplier<Item> DIESELSUIT_BOOTS = ITEMS.register("dieselsuit_boots", () -> new com.hbm_m.powerarmor.ArmorDiesel(ModArmorMaterials.DIESEL, ArmorItem.Type.BOOTS, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", () -> com.hbm_m.inventory.fluid.ModFluids.DIESEL.getSource(), 64_000, 500, 50, 1).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) DIESELSUIT_HELMET.get()));
-    public static final RegistrySupplier<Item> AJR_HELMET = ITEMS.register("ajr_helmet", () -> new com.hbm_m.powerarmor.AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties()).enableVATS(true).setHasGeigerSound(true).setHasHardLanding(true).addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.JUMP, 20, 0)).addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST, 20, 0)).setStep("hbm:step.metal").setJump("hbm:step.iron_jump").setFall("hbm:step.iron_land").hides("hat").setHazardClass(com.hbm_m.util.ArmorUtil.FULL_PACKAGE).setRadResist(1.3D /*95%*/));
-    public static final RegistrySupplier<Item> AJR_PLATE = ITEMS.register("ajr_plate", () -> new com.hbm_m.powerarmor.AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties()).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) AJR_HELMET.get()));
-    public static final RegistrySupplier<Item> AJR_LEGS = ITEMS.register("ajr_legs", () -> new com.hbm_m.powerarmor.AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties()).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) AJR_HELMET.get()));
-    public static final RegistrySupplier<Item> AJR_BOOTS = ITEMS.register("ajr_boots", () -> new com.hbm_m.powerarmor.AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties()).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) AJR_HELMET.get()));
-    public static final RegistrySupplier<Item> AJRO_HELMET = ITEMS.register("ajro_helmet", () -> new com.hbm_m.powerarmor.AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties()).enableVATS(true).setHasGeigerSound(true).setHasHardLanding(true).addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.JUMP, 20, 0)).addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST, 20, 0)).setStep("hbm:step.metal").setJump("hbm:step.iron_jump").setFall("hbm:step.iron_land").hides("hat").setHazardClass(com.hbm_m.util.ArmorUtil.FULL_PACKAGE).setRadResist(1.3D /*95%*/));
-    public static final RegistrySupplier<Item> AJRO_PLATE = ITEMS.register("ajro_plate", () -> new com.hbm_m.powerarmor.AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties()).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) AJRO_HELMET.get()));
-    public static final RegistrySupplier<Item> AJRO_LEGS = ITEMS.register("ajro_legs", () -> new com.hbm_m.powerarmor.AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties()).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) AJRO_HELMET.get()));
-    public static final RegistrySupplier<Item> AJRO_BOOTS = ITEMS.register("ajro_boots", () -> new com.hbm_m.powerarmor.AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties()).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) AJRO_HELMET.get()));
-    public static final RegistrySupplier<Item> RPA_HELMET = ITEMS.register("rpa_helmet", () -> new com.hbm_m.powerarmor.ArmorRPA(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 2500000L, 10000L, 2000L, 25L).enableVATS(true).setHasGeigerSound(true).setHasHardLanding(true).addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST, 20, 3)).setStep("hbm:step.powered").setJump("hbm:step.powered").setFall("hbm:step.powered").hides("hat").setHazardClass(com.hbm_m.util.ArmorUtil.FULL_PACKAGE).setRadResist(2D /*99%*/));
-    public static final RegistrySupplier<Item> RPA_PLATE = ITEMS.register("rpa_plate", () -> new com.hbm_m.powerarmor.ArmorRPA(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 2500000L, 10000L, 2000L, 25L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) RPA_HELMET.get()));
-    public static final RegistrySupplier<Item> RPA_LEGS = ITEMS.register("rpa_legs", () -> new com.hbm_m.powerarmor.ArmorRPA(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/starmetal_2.png", 2500000L, 10000L, 2000L, 25L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) RPA_HELMET.get()));
-    public static final RegistrySupplier<Item> RPA_BOOTS = ITEMS.register("rpa_boots", () -> new com.hbm_m.powerarmor.ArmorRPA(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 2500000L, 10000L, 2000L, 25L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) RPA_HELMET.get()));
+    public static final RegistrySupplier<Item> AJR_HELMET = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("ajr_helmet", () -> new com.hbm_m.powerarmor.AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties()).enableVATS(true).setHasGeigerSound(true).setHasHardLanding(true).setStep("hbm:step.metal").setJump("hbm:step.iron_jump").setFall("hbm:step.iron_land").hides("hat").setHazardClass(com.hbm_m.util.ArmorUtil.FULL_PACKAGE).setRadResist(1.3D /*95%*/)));
+    public static final RegistrySupplier<Item> AJR_PLATE = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("ajr_plate", () -> new com.hbm_m.powerarmor.AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties()).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) AJR_HELMET.get())));
+    public static final RegistrySupplier<Item> AJR_LEGS = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("ajr_legs", () -> new com.hbm_m.powerarmor.AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties()).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) AJR_HELMET.get())));
+    public static final RegistrySupplier<Item> AJR_BOOTS = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("ajr_boots", () -> new com.hbm_m.powerarmor.AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties()).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) AJR_HELMET.get())));
+    public static final RegistrySupplier<Item> AJRO_HELMET = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("ajro_helmet", () -> new com.hbm_m.powerarmor.AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties()).enableVATS(true).setHasGeigerSound(true).setHasHardLanding(true).setStep("hbm:step.metal").setJump("hbm:step.iron_jump").setFall("hbm:step.iron_land").hides("hat").setHazardClass(com.hbm_m.util.ArmorUtil.FULL_PACKAGE).setRadResist(1.3D /*95%*/)));
+    public static final RegistrySupplier<Item> AJRO_PLATE = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("ajro_plate", () -> new com.hbm_m.powerarmor.AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties()).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) AJRO_HELMET.get())));
+    public static final RegistrySupplier<Item> AJRO_LEGS = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("ajro_legs", () -> new com.hbm_m.powerarmor.AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties()).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) AJRO_HELMET.get())));
+    public static final RegistrySupplier<Item> AJRO_BOOTS = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("ajro_boots", () -> new com.hbm_m.powerarmor.AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties()).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) AJRO_HELMET.get())));
+    public static final RegistrySupplier<Item> RPA_HELMET = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("rpa_helmet", () -> new com.hbm_m.powerarmor.ArmorRPA(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 2500000L, 10000L, 2000L, 25L).enableVATS(true).setHasGeigerSound(true).setHasHardLanding(true).setStep("hbm:step.powered").setJump("hbm:step.powered").setFall("hbm:step.powered").hides("hat").setHazardClass(com.hbm_m.util.ArmorUtil.FULL_PACKAGE).setRadResist(2D /*99%*/)));
+    public static final RegistrySupplier<Item> RPA_PLATE = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("rpa_plate", () -> new com.hbm_m.powerarmor.ArmorRPA(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 2500000L, 10000L, 2000L, 25L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) RPA_HELMET.get())));
+    public static final RegistrySupplier<Item> RPA_LEGS = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("rpa_legs", () -> new com.hbm_m.powerarmor.ArmorRPA(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/starmetal_2.png", 2500000L, 10000L, 2000L, 25L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) RPA_HELMET.get())));
+    public static final RegistrySupplier<Item> RPA_BOOTS = CompletionTracker.mark(CompletionStatus.COMPLETE, ITEMS.register("rpa_boots", () -> new com.hbm_m.powerarmor.ArmorRPA(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 2500000L, 10000L, 2000L, 25L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) RPA_HELMET.get())));
     public static final RegistrySupplier<Item> NCRPA_HELMET = ITEMS.register("ncrpa_helmet", () -> new com.hbm_m.powerarmor.ArmorNCRPA(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 2500000L, 10000L, 2000L, 25L).enableVATS(true).setHasGeigerSound(true).setHasHardLanding(true).addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DAMAGE_BOOST, 20, 3)).setStep("hbm:step.powered").setJump("hbm:step.powered").setFall("hbm:step.powered").hides("hat").setHazardClass(com.hbm_m.util.ArmorUtil.FULL_PACKAGE).setRadResist(1.7D /*97%*/));
     public static final RegistrySupplier<Item> NCRPA_PLATE = ITEMS.register("ncrpa_plate", () -> new com.hbm_m.powerarmor.ArmorNCRPA(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png", 2500000L, 10000L, 2000L, 25L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) NCRPA_HELMET.get()));
     public static final RegistrySupplier<Item> NCRPA_LEGS = ITEMS.register("ncrpa_legs", () -> new com.hbm_m.powerarmor.ArmorNCRPA(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/starmetal_2.png", 2500000L, 10000L, 2000L, 25L).cloneStats((com.hbm_m.powerarmor.ModArmorFSB) NCRPA_HELMET.get()));
@@ -257,18 +258,22 @@ public class ModItems {
     public static final RegistrySupplier<Item> TRENCHMASTER_LEGS = ITEMS.register("trenchmaster_legs", () -> new com.hbm_m.powerarmor.ArmorTrenchmaster(ModArmorMaterials.TRENCH, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/starmetal_2.png").cloneStats((com.hbm_m.powerarmor.ModArmorFSB) TRENCHMASTER_HELMET.get()));
     public static final RegistrySupplier<Item> TRENCHMASTER_BOOTS = ITEMS.register("trenchmaster_boots", () -> new com.hbm_m.powerarmor.ArmorTrenchmaster(ModArmorMaterials.TRENCH, ArmorItem.Type.BOOTS, new Item.Properties(), "hbm_m:textures/armor/starmetal_1.png").cloneStats((com.hbm_m.powerarmor.ModArmorFSB) TRENCHMASTER_HELMET.get()));
     public static final RegistrySupplier<Item> MASK_OF_INFAMY = ITEMS.register("mask_of_infamy", () -> new com.hbm_m.powerarmor.MaskOfInfamy(ModArmorMaterials.IRON, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1)));
-    public static final RegistrySupplier<Item> HAZMAT_HELMET = ITEMS.register("hazmat_helmet", () -> new com.hbm_m.powerarmor.ArmorHazmatMask(ModArmorMaterials.HAZMAT, ArmorItem.Type.HELMET, new Item.Properties(), "hbm_m:textures/armor/hazmat_1.png"));
-    public static final RegistrySupplier<Item> HAZMAT_PLATE = ITEMS.register("hazmat_plate", () -> new com.hbm_m.powerarmor.ArmorHazmat(ModArmorMaterials.HAZMAT, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/hazmat_1.png"));
-    public static final RegistrySupplier<Item> HAZMAT_LEGS = ITEMS.register("hazmat_legs", () -> new com.hbm_m.powerarmor.ArmorHazmat(ModArmorMaterials.HAZMAT, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/hazmat_2.png"));
-    public static final RegistrySupplier<Item> HAZMAT_BOOTS = ITEMS.register("hazmat_boots", () -> new com.hbm_m.powerarmor.ArmorHazmat(ModArmorMaterials.HAZMAT, ArmorItem.Type.BOOTS, new Item.Properties(), "hbm_m:textures/armor/hazmat_1.png"));
-    public static final RegistrySupplier<Item> HAZMAT_HELMET_RED = ITEMS.register("hazmat_helmet_red", () -> new com.hbm_m.powerarmor.ArmorHazmatMask(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.HELMET, new Item.Properties(), "hbm_m:textures/models/modelhazred.png"));
-    public static final RegistrySupplier<Item> HAZMAT_PLATE_RED = ITEMS.register("hazmat_plate_red", () -> new com.hbm_m.powerarmor.ArmorHazmat(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/hazmat_1_red.png"));
-    public static final RegistrySupplier<Item> HAZMAT_LEGS_RED = ITEMS.register("hazmat_legs_red", () -> new com.hbm_m.powerarmor.ArmorHazmat(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/hazmat_2_red.png"));
-    public static final RegistrySupplier<Item> HAZMAT_BOOTS_RED = ITEMS.register("hazmat_boots_red", () -> new com.hbm_m.powerarmor.ArmorHazmat(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.BOOTS, new Item.Properties(), "hbm_m:textures/armor/hazmat_1_red.png"));
-    public static final RegistrySupplier<Item> HAZMAT_HELMET_GREY = ITEMS.register("hazmat_helmet_grey", () -> new com.hbm_m.powerarmor.ArmorHazmatMask(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.HELMET, new Item.Properties(), "hbm_m:textures/models/modelhazgrey.png"));
-    public static final RegistrySupplier<Item> HAZMAT_PLATE_GREY = ITEMS.register("hazmat_plate_grey", () -> new com.hbm_m.powerarmor.ArmorHazmat(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/hazmat_1_grey.png").cloneStats((com.hbm_m.powerarmor.ModArmorFSB) HAZMAT_HELMET_GREY.get()));
-    public static final RegistrySupplier<Item> HAZMAT_LEGS_GREY = ITEMS.register("hazmat_legs_grey", () -> new com.hbm_m.powerarmor.ArmorHazmat(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/hazmat_2_grey.png").cloneStats((com.hbm_m.powerarmor.ModArmorFSB) HAZMAT_HELMET_GREY.get()));
-    public static final RegistrySupplier<Item> HAZMAT_BOOTS_GREY = ITEMS.register("hazmat_boots_grey", () -> new com.hbm_m.powerarmor.ArmorHazmat(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.BOOTS, new Item.Properties(), "hbm_m:textures/armor/hazmat_1_grey.png").cloneStats((com.hbm_m.powerarmor.ModArmorFSB) HAZMAT_HELMET_GREY.get()));
+    // Жёлтый/красный/серый костюмы химзащиты - 3D OBJ-модель (Mudz) через UnifiedObjArmorLayer,
+    // тултип "Brought to you by Mud Co. Hazmat Supplies". До мерджа с FFA эти предметы
+    // были на классе HazmatArmorItem - мердж подменил их на FSB-версии с плоской
+    // ванильной бронёй; восстановлены дов мерджевые регистрации (id сохранены).
+    public static final RegistrySupplier<Item> HAZMAT_HELMET = ITEMS.register("hazmat_helmet", () -> new com.hbm_m.item.hazmat.HazmatMaskArmorItem(ModArmorMaterials.HAZMAT, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT, ArmorItem.Type.HELMET), com.hbm_m.item.hazmat.HazmatArmorItem.Variant.YELLOW));
+    public static final RegistrySupplier<Item> HAZMAT_PLATE = ITEMS.register("hazmat_plate", () -> new com.hbm_m.item.hazmat.HazmatArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.CHESTPLATE, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT, ArmorItem.Type.CHESTPLATE), com.hbm_m.item.hazmat.HazmatArmorItem.Variant.YELLOW));
+    public static final RegistrySupplier<Item> HAZMAT_LEGS = ITEMS.register("hazmat_legs", () -> new com.hbm_m.item.hazmat.HazmatArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.LEGGINGS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT, ArmorItem.Type.LEGGINGS), com.hbm_m.item.hazmat.HazmatArmorItem.Variant.YELLOW));
+    public static final RegistrySupplier<Item> HAZMAT_BOOTS = ITEMS.register("hazmat_boots", () -> new com.hbm_m.item.hazmat.HazmatArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.BOOTS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT, ArmorItem.Type.BOOTS), com.hbm_m.item.hazmat.HazmatArmorItem.Variant.YELLOW));
+    public static final RegistrySupplier<Item> HAZMAT_HELMET_RED = ITEMS.register("hazmat_helmet_red", () -> new com.hbm_m.item.hazmat.HazmatMaskArmorItem(ModArmorMaterials.HAZMAT_RED, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.HELMET), com.hbm_m.item.hazmat.HazmatArmorItem.Variant.RED));
+    public static final RegistrySupplier<Item> HAZMAT_PLATE_RED = ITEMS.register("hazmat_plate_red", () -> new com.hbm_m.item.hazmat.HazmatArmorItem(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.CHESTPLATE, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.CHESTPLATE), com.hbm_m.item.hazmat.HazmatArmorItem.Variant.RED));
+    public static final RegistrySupplier<Item> HAZMAT_LEGS_RED = ITEMS.register("hazmat_legs_red", () -> new com.hbm_m.item.hazmat.HazmatArmorItem(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.LEGGINGS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.LEGGINGS), com.hbm_m.item.hazmat.HazmatArmorItem.Variant.RED));
+    public static final RegistrySupplier<Item> HAZMAT_BOOTS_RED = ITEMS.register("hazmat_boots_red", () -> new com.hbm_m.item.hazmat.HazmatArmorItem(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.BOOTS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.BOOTS), com.hbm_m.item.hazmat.HazmatArmorItem.Variant.RED));
+    public static final RegistrySupplier<Item> HAZMAT_HELMET_GREY = ITEMS.register("hazmat_helmet_grey", () -> new com.hbm_m.item.hazmat.HazmatMaskArmorItem(ModArmorMaterials.HAZMAT_GREY, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.HELMET), com.hbm_m.item.hazmat.HazmatArmorItem.Variant.GREY));
+    public static final RegistrySupplier<Item> HAZMAT_PLATE_GREY = ITEMS.register("hazmat_plate_grey", () -> new com.hbm_m.item.hazmat.HazmatArmorItem(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.CHESTPLATE, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.CHESTPLATE), com.hbm_m.item.hazmat.HazmatArmorItem.Variant.GREY));
+    public static final RegistrySupplier<Item> HAZMAT_LEGS_GREY = ITEMS.register("hazmat_legs_grey", () -> new com.hbm_m.item.hazmat.HazmatArmorItem(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.LEGGINGS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.LEGGINGS), com.hbm_m.item.hazmat.HazmatArmorItem.Variant.GREY));
+    public static final RegistrySupplier<Item> HAZMAT_BOOTS_GREY = ITEMS.register("hazmat_boots_grey", () -> new com.hbm_m.item.hazmat.HazmatArmorItem(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.BOOTS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.BOOTS), com.hbm_m.item.hazmat.HazmatArmorItem.Variant.GREY));
     public static final RegistrySupplier<Item> HAZMAT_PAA_HELMET = ITEMS.register("hazmat_paa_helmet", () -> new com.hbm_m.powerarmor.ArmorHazmatMask(ModArmorMaterials.PAA, ArmorItem.Type.HELMET, new Item.Properties(), "hbm_m:textures/armor/hazmat_paa_1.png"));
     public static final RegistrySupplier<Item> HAZMAT_PAA_PLATE = ITEMS.register("hazmat_paa_plate", () -> new com.hbm_m.powerarmor.ArmorHazmat(ModArmorMaterials.PAA, ArmorItem.Type.CHESTPLATE, new Item.Properties(), "hbm_m:textures/armor/hazmat_paa_1.png").cloneStats((com.hbm_m.powerarmor.ModArmorFSB) HAZMAT_PAA_HELMET.get()));
     public static final RegistrySupplier<Item> HAZMAT_PAA_LEGS = ITEMS.register("hazmat_paa_legs", () -> new com.hbm_m.powerarmor.ArmorHazmat(ModArmorMaterials.PAA, ArmorItem.Type.LEGGINGS, new Item.Properties(), "hbm_m:textures/armor/hazmat_paa_2.png").cloneStats((com.hbm_m.powerarmor.ModArmorFSB) HAZMAT_PAA_HELMET.get()));
@@ -939,7 +944,7 @@ public class ModItems {
             () -> new ItemCustomLore(new Item.Properties().stacksTo(1)));
 
     public static final RegistrySupplier<Item> FAT_MAN_CORE = ITEMS.register("fat_man_core",
-            () -> new Item(new Item.Properties().rarity(net.minecraft.world.item.Rarity.UNCOMMON)));
+            () -> new ItemCustomLore(new Item.Properties().rarity(net.minecraft.world.item.Rarity.UNCOMMON).stacksTo(1)));
 
     public static final RegistrySupplier<Item> CELL_SAS3 = ITEMS.register("cell_sas3",
             () -> new com.hbm_m.item.ContainerItem(new Item.Properties().rarity(net.minecraft.world.item.Rarity.RARE), () -> ModItems.CELL_EMPTY.get()));
@@ -992,7 +997,7 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BOLT_TUNGSTEN = ITEMS.register("bolt_tungsten",
             () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> BOLT_HIGHSPEED_STEEL = ITEMS.register("bolt_highspeed_steel",
+    public static final RegistrySupplier<Item> BOLT_DURA_STEEL = ITEMS.register("bolt_dura_steel",
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ZIRCONIUM_SHARP = ITEMS.register("zirconium_sharp",
             () -> new Item(new Item.Properties()));
@@ -1218,7 +1223,7 @@ public class ModItems {
     // actually be loaded as reactor fuel (RBMKRodBlock#use gates on `instanceof RBMKRodItem`).
     public static final RegistrySupplier<Item> RBMK_FUEL_DRX = ITEMS.register("rbmk_fuel_drx",
             () -> new RbmkFuelDrxItem(new Item.Properties())
-                    .setYield(100_000_000).setStats(1000, 10).setFunction(RBMKRodItem.EnumBurnFunc.QUADRATIC)
+                    .setYield(10_000_000).setStats(1000, 10).setFunction(RBMKRodItem.EnumBurnFunc.QUADRATIC)
                     .setHeat(0.1).setMeltingPoint(100_000).setTint(0xD77276).setPellet(() -> ModItems.RBMK_PELLET_DRX.get()));
 
     public static final RegistrySupplier<Item> ROD_ZIRNOX_EMPTY = ITEMS.register("rod_zirnox_empty",
@@ -1464,12 +1469,6 @@ public class ModItems {
     public static final RegistrySupplier<Item> OILBURNER = ITEMS.register("oilburner", 
         () -> new MultiblockBlockItem(ModBlocks.OILBURNER.get(), new Item.Properties()));
 
-    public static final RegistrySupplier<Item> OILBURNER_HP = ITEMS.register("oilburner_hp", 
-        () -> new MultiblockBlockItem(ModBlocks.OILBURNER_HP.get(), new Item.Properties()));
-
-    public static final RegistrySupplier<Item> TURBINE = ITEMS.register("turbine", 
-        () -> new MultiblockBlockItem(ModBlocks.TURBINE.get(), new Item.Properties()));
-
 
     public static final RegistrySupplier<Item> PART_LITHIUM    = ITEMS.register("part_lithium",    () -> new Item(new Item.Properties()));
     /** Beryllium particle вЂ” medium-energy cyclotron projectile. */
@@ -1588,10 +1587,10 @@ public class ModItems {
 	public static final RegistrySupplier<Item> PUMPJACK = ITEMS.register("pumpjack",
         () -> new MultiblockBlockItem(ModBlocks.PUMPJACK.get(), new Item.Properties()));
 
-	public static final RegistrySupplier<Item> RADAR = ITEMS.register("radar",
+	public static final RegistrySupplier<Item> RADAR = registerItem("radar", CompletionStatus.COMPLETE,
         () -> new MultiblockBlockItem(ModBlocks.RADAR.get(), new Item.Properties()));
 
-	public static final RegistrySupplier<Item> LARGE_RADAR = ITEMS.register("large_radar",
+	public static final RegistrySupplier<Item> LARGE_RADAR = registerItem("large_radar", CompletionStatus.COMPLETE,
 	    () -> new MultiblockBlockItem(ModBlocks.LARGE_RADAR.get(), new Item.Properties()));
 
 	public static final RegistrySupplier<Item> RADAR_SCREEN = ITEMS.register("radar_screen",
@@ -1755,8 +1754,32 @@ public class ModItems {
 	public static final RegistrySupplier<Item> NUKE_FAT_MAN = ITEMS.register("nuke_fat_man",
         () -> new MultiblockBlockItem(ModBlocks.NUKE_FAT_MAN.get(), new Item.Properties()));
 
+    public static final RegistrySupplier<Item> NUKE_GADGET = ITEMS.register("nuke_gadget",
+        () -> new MultiblockBlockItem(ModBlocks.NUKE_GADGET.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> NUKE_BOY = ITEMS.register("nuke_boy",
+        () -> new MultiblockBlockItem(ModBlocks.NUKE_BOY.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> NUKE_MIKE = ITEMS.register("nuke_mike",
+        () -> new MultiblockBlockItem(ModBlocks.NUKE_MIKE.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> NUKE_TSAR = ITEMS.register("nuke_tsar",
+        () -> new MultiblockBlockItem(ModBlocks.NUKE_TSAR.get(), new Item.Properties()));
+
     public static final RegistrySupplier<Item> NUKE_PROTOTYPE = ITEMS.register("nuke_prototype",
-        () -> new net.minecraft.world.item.BlockItem(com.hbm_m.block.ModBlocks.NUKE_PROTOTYPE.get(), new Item.Properties()));
+        () -> new MultiblockBlockItem(com.hbm_m.block.ModBlocks.NUKE_PROTOTYPE.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> NUKE_FSTBMB = ITEMS.register("nuke_fstbmb",
+        () -> new MultiblockBlockItem(ModBlocks.NUKE_FSTBMB.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> NUKE_CUSTOM = ITEMS.register("nuke_custom",
+        () -> new MultiblockBlockItem(ModBlocks.NUKE_CUSTOM.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> NUKE_SOLINIUM = ITEMS.register("nuke_solinium",
+        () -> new MultiblockBlockItem(ModBlocks.NUKE_SOLINIUM.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> NUKE_N2 = ITEMS.register("nuke_n2",
+        () -> new MultiblockBlockItem(ModBlocks.NUKE_N2.get(), new Item.Properties()));
 
     // РџР РћРўРћРўРРџ Р РђРљР•РўР« (TIER 0, MICRO)
     public static final RegistrySupplier<Item> MISSILE_TEST = ITEMS.register("missile_test",
@@ -1879,13 +1902,15 @@ public class ModItems {
 
 	// MULTIBLOCK DOORS
 
-    public static final RegistrySupplier<Item> LARGE_VEHICLE_DOOR = ITEMS.register("large_vehicle_door",
+    public static final RegistrySupplier<Item> LARGE_VEHICLE_DOOR = registerItem("large_vehicle_door",
+        com.hbm_m.util.CompletionStatus.COMPLETE,
         () -> new DoorBlockItem(ModBlocks.LARGE_VEHICLE_DOOR.get(), new Item.Properties()));
 
     public static final RegistrySupplier<Item> ROUND_AIRLOCK_DOOR = ITEMS.register("round_airlock_door",
         () -> new DoorBlockItem(ModBlocks.ROUND_AIRLOCK_DOOR.get(), new Item.Properties()));
 
-    public static final RegistrySupplier<Item> TRANSITION_SEAL = ITEMS.register("transition_seal",
+    public static final RegistrySupplier<Item> TRANSITION_SEAL = registerItem("transition_seal",
+        com.hbm_m.util.CompletionStatus.COMPLETE,
         () -> new MultiblockBlockItem(ModBlocks.TRANSITION_SEAL.get(), new Item.Properties()));
 
     public static final RegistrySupplier<Item> SILO_HATCH = ITEMS.register("silo_hatch",
@@ -1900,29 +1925,46 @@ public class ModItems {
     public static final RegistrySupplier<Item> WATER_DOOR = ITEMS.register("water_door",
         () -> new DoorBlockItem(ModBlocks.WATER_DOOR.get(), new Item.Properties()));
 
-    public static final RegistrySupplier<Item> FIRE_DOOR = ITEMS.register("fire_door",
+    public static final RegistrySupplier<Item> FIRE_DOOR = registerItem("fire_door",
+        com.hbm_m.util.CompletionStatus.COMPLETE,
         () -> new DoorBlockItem(ModBlocks.FIRE_DOOR.get(), new Item.Properties()));
 
-    public static final RegistrySupplier<Item> SLIDE_DOOR = ITEMS.register("sliding_blast_door",
+    public static final RegistrySupplier<Item> SLIDE_DOOR = registerItem("sliding_blast_door",
+        com.hbm_m.util.CompletionStatus.COMPLETE,
         () -> new DoorBlockItem(ModBlocks.SLIDE_DOOR.get(), new Item.Properties()));
         
     public static final RegistrySupplier<Item> SLIDING_SEAL_DOOR = ITEMS.register("sliding_seal_door",
         () -> new DoorBlockItem(ModBlocks.SLIDING_SEAL_DOOR.get(), new Item.Properties()));
 
-    public static final RegistrySupplier<Item> SECURE_ACCESS_DOOR = ITEMS.register("secure_access_door",
+    public static final RegistrySupplier<Item> SECURE_ACCESS_DOOR = registerItem("secure_access_door",
+        com.hbm_m.util.CompletionStatus.COMPLETE,
         () -> new DoorBlockItem(ModBlocks.SECURE_ACCESS_DOOR.get(), new Item.Properties()));
 
     public static final RegistrySupplier<Item> QE_SLIDING = ITEMS.register("qe_sliding_door",
         () -> new DoorBlockItem(ModBlocks.QE_SLIDING.get(), new Item.Properties()));
 
-    public static final RegistrySupplier<Item> VAULT_DOOR = ITEMS.register("vault_door",
+    public static final RegistrySupplier<Item> VAULT_DOOR = registerItem("vault_door",
+        com.hbm_m.util.CompletionStatus.COMPLETE,
         () -> new DoorBlockItem(ModBlocks.VAULT_DOOR.get(), new Item.Properties()));
 
     public static final RegistrySupplier<Item> CARGO_DOOR = ITEMS.register("cargo_door",
         () -> new DoorBlockItem(ModBlocks.CARGO_DOOR.get(), new Item.Properties()));
 
-    public static final RegistrySupplier<Item> BLAST_DOOR = ITEMS.register("blast_door",
+    public static final RegistrySupplier<Item> BLAST_DOOR = registerItem("blast_door",
+        com.hbm_m.util.CompletionStatus.COMPLETE,
         () -> new DoorBlockItem(ModBlocks.BLAST_DOOR.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> SEAL_CONTROLLER = registerItem("seal_controller",
+        com.hbm_m.util.CompletionStatus.COMPLETE,
+        () -> new BlockItem(ModBlocks.SEAL_CONTROLLER.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> SEAL_FRAME = registerItem("seal_frame",
+        com.hbm_m.util.CompletionStatus.COMPLETE,
+        () -> new BlockItem(ModBlocks.SEAL_FRAME.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> SEAL_HATCH = registerItem("seal_hatch",
+        com.hbm_m.util.CompletionStatus.COMPLETE,
+        () -> new BlockItem(ModBlocks.SEAL_HATCH.get(), new Item.Properties()));
 
 
 
@@ -2113,16 +2155,10 @@ public class ModItems {
     public static final RegistrySupplier<Item> BATTERY_PACK_CAPACITOR_TANTALUM = ITEMS.register("battery_pack_capacitor_tantalum", () -> new com.hbm_m.item.fekal_electric.ItemBatteryPack(new Item.Properties(), com.hbm_m.item.fekal_electric.ItemBatteryPack.EnumBatteryPack.CAPACITOR_TANTALUM));
     public static final RegistrySupplier<Item> BATTERY_PACK_CAPACITOR_BISMUTH = ITEMS.register("battery_pack_capacitor_bismuth", () -> new com.hbm_m.item.fekal_electric.ItemBatteryPack(new Item.Properties(), com.hbm_m.item.fekal_electric.ItemBatteryPack.EnumBatteryPack.CAPACITOR_BISMUTH));
     public static final RegistrySupplier<Item> BATTERY_PACK_CAPACITOR_SPARK = ITEMS.register("battery_pack_capacitor_spark", () -> new com.hbm_m.item.fekal_electric.ItemBatteryPack(new Item.Properties(), com.hbm_m.item.fekal_electric.ItemBatteryPack.EnumBatteryPack.CAPACITOR_SPARK));
-    public static final RegistrySupplier<Item> BATTERY_PACK_REDSTONE = BATTERY_PACK_BATTERY_REDSTONE;
-    public static final RegistrySupplier<Item> BATTERY_PACK_LEAD = BATTERY_PACK_BATTERY_LEAD;
-    public static final RegistrySupplier<Item> BATTERY_PACK_LITHIUM = BATTERY_PACK_BATTERY_LITHIUM;
-    public static final RegistrySupplier<Item> BATTERY_PACK_SODIUM = BATTERY_PACK_BATTERY_SODIUM;
-    public static final RegistrySupplier<Item> BATTERY_PACK_SCHRABIDIUM = BATTERY_PACK_BATTERY_SCHRABIDIUM;
-    public static final RegistrySupplier<Item> BATTERY_PACK_QUANTUM = BATTERY_PACK_BATTERY_QUANTUM;
 
     public static final java.util.List<RegistrySupplier<Item>> BATTERY_PACKS = java.util.List.of(
-            BATTERY_PACK_REDSTONE, BATTERY_PACK_LEAD, BATTERY_PACK_LITHIUM, BATTERY_PACK_SODIUM,
-            BATTERY_PACK_SCHRABIDIUM, BATTERY_PACK_QUANTUM,
+            BATTERY_PACK_BATTERY_REDSTONE, BATTERY_PACK_BATTERY_LEAD, BATTERY_PACK_BATTERY_LITHIUM, BATTERY_PACK_BATTERY_SODIUM,
+            BATTERY_PACK_BATTERY_SCHRABIDIUM, BATTERY_PACK_BATTERY_QUANTUM,
             BATTERY_PACK_CAPACITOR_COPPER, BATTERY_PACK_CAPACITOR_GOLD, BATTERY_PACK_CAPACITOR_NIOBIUM,
             BATTERY_PACK_CAPACITOR_TANTALUM, BATTERY_PACK_CAPACITOR_BISMUTH, BATTERY_PACK_CAPACITOR_SPARK);
 
@@ -2293,7 +2329,8 @@ public class ModItems {
     public static final RegistrySupplier<Item> WARHEAD_NUCLEAR        = ITEMS.register("warhead_nuclear",        () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> MISSILE_ASSEMBLY           = ITEMS.register("missile_assembly",           () -> new Item(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> INGOT_TUNGSTEN_CARBIDE     = ITEMS.register("ingot_tungsten_carbide",     () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> INGOT_HIGHSPEED_STEEL      = ITEMS.register("ingot_highspeed_steel",      () -> new Item(new Item.Properties()));
+    // Слиток быстрорежущей стали — автоген-предмет материала (dura_steel_ingot; display-имя = item.ingot_dura_steel.name оригинала).
+    public static final RegistrySupplier<Item> INGOT_DURA_STEEL      = ModMaterialItems.get(ModMaterials.DURA_STEEL, MaterialShape.INGOT);
     public static final RegistrySupplier<Item> NEUTRON_REFLECTOR          = ITEMS.register("neutron_reflector",          () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WARHEAD_GENERIC_SMALL      = ITEMS.register("warhead_generic_small",      () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WARHEAD_CLUSTER_LARGE      = ITEMS.register("warhead_cluster_large",      () -> new Item(new Item.Properties()));
@@ -3355,7 +3392,7 @@ public class ModItems {
     /** Restport: 1:1 GunB92 / GunB92Cell / WeaponizedCell (Altwaffe "Star Blaster", Strahl EntityB92Beam). */
     public static final RegistrySupplier<Item> GUN_B92 = ITEMS.register("gun_b92", () -> new com.hbm_m.item.weapon.GunB92Item(new Item.Properties()));
     public static final RegistrySupplier<Item> GUN_B92_AMMO = ITEMS.register("gun_b92_ammo", () -> new com.hbm_m.item.weapon.GunB92CellItem(new Item.Properties()));
-    public static final RegistrySupplier<Item> GUN_FLIEGERFAUST = registerItem("gun_fliegerfaust", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> GUN_FLIEGERFAUST = com.hbm_m.item.weapon.sedna.WeaponItems.GUNS.get("gun_fliegerfaust");
     public static final RegistrySupplier<Item> NUGGET_TITANIUM = registerItem("nugget_titanium", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> NUGGET_COPPER = registerItem("nugget_copper", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> NUGGET_TUNGSTEN = registerItem("nugget_tungsten", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
@@ -3364,7 +3401,6 @@ public class ModItems {
     public static final RegistrySupplier<Item> NUGGET_LITHIUM = registerItem("nugget_lithium", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> NUGGET_SODIUM = registerItem("nugget_sodium", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> NUGGET_STRONTIUM = registerItem("nugget_strontium", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> POWDER_FIRE = registerItem("powder_fire", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> DEMOSHAPE_IRON = registerItem("demoshape_iron", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> DEMOSHAPE_STEEL = registerItem("demoshape_steel", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> DEMOSHAPE_CUSTOM = registerItem("demoshape_custom", com.hbm_m.util.CompletionStatus.NOT_IMPLEMENTED, () -> new Item(new Item.Properties()));
@@ -3820,11 +3856,11 @@ public class ModItems {
     public static final RegistrySupplier<Item> RBMK_FUEL_HEA242 = ITEMS.register("rbmk_fuel_hea242",
             () -> new RBMKRodItem("Highly Enriched Americium-242 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(45).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setHeat(2.0).setMeltingPoint(3386).setTint(0xA88A8F).setPellet(() -> ModItems.RBMK_PELLET_HEA242.get()));
+                    .setHeat(2.0).setMeltingPoint(2386).setTint(0xA88A8F).setPellet(() -> ModItems.RBMK_PELLET_HEA242.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEAUS = ITEMS.register("rbmk_fuel_heaus",
             () -> new RBMKRodItem("Highly Enriched Australium (Ayerite) Rod", new Item.Properties())
-                    .setYield(100_000_000).setStats(35).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setXenon(0.05, 50).setHeat(2.0).setMeltingPoint(5211).setTint(0xFFEE00).setPellet(() -> ModItems.RBMK_PELLET_HEAUS.get()));
+                    .setYield(100_000_000).setStats(35).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
+                    .setXenon(0.05, 50).setHeat(1.5).setMeltingPoint(5211).setTint(0xFFEE00).setPellet(() -> ModItems.RBMK_PELLET_HEAUS.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEN = ITEMS.register("rbmk_fuel_hen",
             () -> new RBMKRodItem("Highly Enriched Neptunium-237 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(40).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
@@ -4513,6 +4549,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> BEDROCK_ORE_FRAGMENT_REDSTONE = ITEMS.register("bedrock_ore_fragment_redstone", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BEDROCK_ORE_FRAGMENT_BAUXITE = ITEMS.register("bedrock_ore_fragment_bauxite", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BEDROCK_ORE_FRAGMENT_CRYOLITE = ITEMS.register("bedrock_ore_fragment_cryolite", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> BEDROCK_ORE_FRAGMENT_ILMENITE = ITEMS.register("bedrock_ore_fragment_ilmenite", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BEDROCK_ORE_FRAGMENT_URANIUM = ITEMS.register("bedrock_ore_fragment_uranium", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BEDROCK_ORE_FRAGMENT_U238 = ITEMS.register("bedrock_ore_fragment_u238", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BEDROCK_ORE_FRAGMENT_PO210 = ITEMS.register("bedrock_ore_fragment_po210", () -> new Item(new Item.Properties()));

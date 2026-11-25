@@ -135,8 +135,10 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity
     public void receiveControl(CompoundTag data) {
         if (data.contains("toggle")) {
             int i = data.getInt("toggle");
-            modes[i]++;
-            if (modes[i] > 3) modes[i] = 0;
+            if (i >= 0 && i < modes.length) {
+                modes[i]++;
+                if (modes[i] > 3) modes[i] = 0;
+            }
         }
         if (data.contains("slot")) setFilterContents(data);
         setChanged();

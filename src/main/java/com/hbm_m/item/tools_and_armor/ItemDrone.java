@@ -69,7 +69,7 @@ public class ItemDrone extends Item implements ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
-        if (net.minecraft.client.gui.screens.Screen.hasShiftDown()) {
+        if (com.hbm_m.util.StandardInfo.isShiftDown()) {
             String key = "item.hbm_m." + BuiltInRegistries.ITEM.getKey(this).getPath() + ".desc";
             for (String s : Component.translatable(key).getString().split("\\$"))
                 list.add(Component.literal(s).withStyle(ChatFormatting.YELLOW));

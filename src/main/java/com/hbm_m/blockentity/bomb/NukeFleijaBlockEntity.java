@@ -30,7 +30,8 @@ public class NukeFleijaBlockEntity extends NukeBaseBlockEntity {
 
     @Override
     public int getMaxStackSize() {
-        return 1;
+        // Original TileEntityNukeFleija.getInventoryStackLimit: 64
+        return 64;
     }
 
     @Override

@@ -64,8 +64,9 @@ public class ServerboundDoorModelPacket implements C2SPacket {
                 return;
             }
 
-            BlockEntity be = level.getBlockEntity(msg.blockPos);
+            BlockEntity be = ModPacketHandler.blockEntityAt(player, msg.blockPos);
             if (!(be instanceof DoorBlockEntity doorEntity) || !doorEntity.isController()) return;
+            if (doorEntity.isLocked() && !doorEntity.canAccess(player)) return;
 
             doorEntity.setModelSelection(msg.selection);
 

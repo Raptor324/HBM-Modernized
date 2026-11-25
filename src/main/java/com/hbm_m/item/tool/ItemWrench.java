@@ -133,7 +133,7 @@ public class ItemWrench extends SwordItem implements ITooltipProvider {
                     entity.getX() - StackNbt.read(stack).getInt("x"),
                     entity.getY() - StackNbt.read(stack).getInt("y"),
                     entity.getZ() - StackNbt.read(stack).getInt("z"));
-            com.hbm_m.client.overlay.OverlayInfoToast.show(stack.getHoverName().copy().append(": " + ((int) vec.length()) + "m"), 20, ID_WRENCH);
+            com.hbm_m.client.ClientAccess.showInfoToast(stack.getHoverName().copy().append(": " + ((int) vec.length()) + "m"), 20, ID_WRENCH);
         }
     }
 }

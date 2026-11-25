@@ -269,6 +269,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             long recordAddr = instanceBufferAddress + (long) baseFloat * 4L;
             MemoryUtil.memSet(recordAddr, 0, (long) instanceDataSize * 4L);
             MemoryUtil.memPutFloat(recordAddr + (long) FADE_FLOAT_OFFSET * 4L, FADE_MODE_INVISIBLE);
+            MemoryUtil.memPutFloat(recordAddr + (long) (GRAD_FLOAT_OFFSET + 3) * 4L, -1.0f);
         }
 
         // 4. Invalidate direct VBO shadow if present
@@ -969,11 +970,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 GL20.glEnableVertexAttribArray(0);
                 GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, meshStride, 0);
                 GL20.glEnableVertexAttribArray(1);
-                GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, meshStride, 12);
+                GL20.glVertexAttribPointer(1, 3, GL11.GL_BYTE, true, meshStride, 12);
                 GL20.glEnableVertexAttribArray(2);
-                GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, meshStride, 24);
+                GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, meshStride, 16);
                 GL30.glEnableVertexAttribArray(3);
-                GL30.glVertexAttribIPointer(3, 1, GL11.GL_INT, meshStride, 32);
+                GL30.glVertexAttribIPointer(3, 1, GL11.GL_INT, meshStride, 24);
 
                 if (indices != null && indices.remaining() > 0) {
                     eboId = GL15.glGenBuffers();
@@ -1347,6 +1348,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 if (oh.instanceAddr != 0L && oh.instanceAddr != oldAddr) {
                     // Stale holder (should not happen): free what it tracks.
                     MemoryUtil.nmemFree(oh.instanceAddr);
+                }
+                if (oldAddr != 0L) {
+                    MemoryUtil.nmemFree(oldAddr);
                 }
                 oh.instanceAddr = freshAddr;
             }
@@ -2112,6 +2116,36 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 instanceBuffer.clear();
             }
             return;
+        }
+        // Self-healing slot invariant: any allocated slot whose posKey is no longer
+        // registered as a live machine in NucleusDispatcherBypass is freed before flush.
+        if (NucleusDispatcherBypass.isBypassActive() && slotAllocator != null) {
+            int hwm = slotAllocator.getHighWaterMark();
+            boolean anyFreed = false;
+            for (int s = 0; s < hwm; s++) {
+                if (!slotAllocator.isSlotAllocated(s)) continue;
+                long key = s < instanceOcclusionKeys.length ? instanceOcclusionKeys[s] : Long.MIN_VALUE;
+                if (key != Long.MIN_VALUE && !NucleusDispatcherBypass.isPositionLive(key)) {
+                    freeSlotInternal(s, key);
+                    anyFreed = true;
+                }
+            }
+            if (anyFreed) {
+                int newHwm = slotAllocator.getHighWaterMark();
+                instanceCount = Math.min(maxInstances, newHwm);
+                if (instanceBuffer != null) {
+                    int targetPos = Math.min(instanceDataSize * instanceCount, instanceBuffer.capacity());
+                    ((Buffer) instanceBuffer).position(targetPos);
+                }
+                if (newHwm == 0) {
+                    MdiBatchCoordinator coord = MdiBatchCoordinator.active();
+                    if (coord != null) {
+                        coord.evictRenderer(this);
+                    }
+                    MdiBatchCoordinator.evict(this);
+                    IrisShadowBatchCollector.onRendererDestroyed(this);
+                }
+            }
         }
         if (instanceCount == 0) {
             return;

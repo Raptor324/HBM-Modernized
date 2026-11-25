@@ -1,6 +1,8 @@
 package com.hbm_m.blockentity.machines;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,9 +14,13 @@ import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IClientTicker;
 import com.hbm_m.interfaces.IFrameSupportable;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
+import com.hbm_m.interfaces.IUpgradeInfoProvider;
+import com.hbm_m.inventory.UpgradeManager;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
+import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
 import com.hbm_m.multiblock.MultiblockFrameHelper;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -58,16 +64,24 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
  */
 @SuppressWarnings("UnstableApiUsage")
 public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity implements IFrameSupportable, IMultiblockSidedIO,
-        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
+        IUpgradeInfoProvider, com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     private static final int SLOT_COUNT = 17;
     private static final int ENERGY_SLOT = 0;
     private static final int BLUEPRINT_FOLDER_SLOT = 1;
-    private static final int OUTPUT_SLOT_START = 2;
-    private static final int OUTPUT_SLOT_END = 3;
+    private static final int UPGRADE_SLOT_START = 2;
+    private static final int UPGRADE_SLOT_END = 3;
     private static final int INPUT_SLOT_START = 4;
     private static final int INPUT_SLOT_END = 15;
-    private static final int STAMPING_SLOT = 16;
+    private static final int OUTPUT_SLOT = 16;
+
+    private static final Map<UpgradeType, Integer> VALID_UPGRADES = new EnumMap<>(UpgradeType.class);
+    static {
+        VALID_UPGRADES.put(UpgradeType.SPEED, 3);
+        VALID_UPGRADES.put(UpgradeType.POWER, 3);
+        VALID_UPGRADES.put(UpgradeType.OVERDRIVE, 3);
+    }
+    public final UpgradeManager upgradeManager = new UpgradeManager();
 
 
     // Флюиды
@@ -144,23 +158,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     };
 
     public MachineAdvancedAssemblerBlockEntity(BlockPos pos, BlockState state) {
-        this(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pos, state);
-    }
-
-    /**
-     * Used by {@code MachinePrecAssBlockEntity} - the original ("Precision Assembler") is, per the
-     * original author's own comment ("horribly copy-pasted crap device"), mechanically a near-clone
-     * of the Advanced Assembler (same blueprint-folder-driven recipe selection, same 4000mB fluid
-     * I/O tanks) with a different multiblock shell and animated arms; this port reuses this class
-     * wholesale, only capacity/registration differ - same pattern as Bat9000/Orbus in this port.
-     */
-    protected MachineAdvancedAssemblerBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state) {
-        super(type, pos, state, 17, 100_000L, 100_000L);
-
-        // Инициализируем модуль здесь, передавая СЕБЯ (this) как IEnergyReceiver
-        if (this.level != null && !this.level.isClientSide) {
-            this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level).setFluidTanks(inputTank, outputTank);
-        }
+        super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pos, state, SLOT_COUNT, 100_000L, 100_000L);
     }
 
     public boolean isCrafting() {
@@ -196,20 +194,20 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == ENERGY_SLOT) {
-            // Original-GUI prueft den Platz nicht; die Schwertkette legt das Schwert hier ab
-            if (getClass() == MachineAdvancedAssemblerBlockEntity.class && stack.is(com.hbm_m.item.ModItems.METEORITE_SWORD_ALLOYED.get())) return true;
+            // Original-GUI: meteorite_sword_alloyed -> meteorite_sword_machined im Batterieplatz
+            if (stack.is(com.hbm_m.item.ModItems.METEORITE_SWORD_ALLOYED.get())) return true;
             return isEnergyProviderItem(stack);
         }
         if (slot == BLUEPRINT_FOLDER_SLOT) {
             return stack.getItem() instanceof com.hbm_m.item.industrial.ItemBlueprints;
         }
-        if (slot >= OUTPUT_SLOT_START && slot <= OUTPUT_SLOT_END) {
-            return false;
+        if (slot >= UPGRADE_SLOT_START && slot <= UPGRADE_SLOT_END) {
+            return stack.getItem() instanceof ItemMachineUpgrade;
         }
         if (slot >= INPUT_SLOT_START && slot <= INPUT_SLOT_END) {
             return assemblerModule == null || assemblerModule.isItemValidForSlot(slot, stack);
         }
-        return slot == STAMPING_SLOT;
+        return false;
     }
 
     // Крупный AABB под анимации и структуру.
@@ -285,13 +283,23 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         ensureNetworkInitialized();
 
         long gameTime = level.getGameTime();
+
+        AssemblerRecipe currentRecipeForCap = assemblerModule != null ? assemblerModule.getCurrentRecipe() : null;
+        if (currentRecipeForCap == null) currentRecipeForCap = getCachedRecipe();
+        long targetMaxPower = currentRecipeForCap != null ? (long) currentRecipeForCap.getPowerConsumption() * 100L : getMaxEnergyStored();
+        targetMaxPower = Math.max(Math.max(getEnergyStored(), targetMaxPower), 100_000L);
+        if (targetMaxPower != getMaxEnergyStored()) {
+            setEnergyCapacity(targetMaxPower);
+        }
+
         if (gameTime % 5 == 0) {
             chargeMachineFromBattery();
         }
         if (gameTime % 10 == 0) {
-            // НОВАЯ ПРАВИЛЬНАЯ СТРОКА
             updateEnergyDelta(this.getEnergyStored());
         }
+        upgradeManager.checkSlots(inventory, UPGRADE_SLOT_START, UPGRADE_SLOT_END, VALID_UPGRADES);
+
         if (assemblerModule == null && level != null) {
             // Передаем 'this' как IEnergyReceiver
             assemblerModule = new MachineModuleAdvancedAssembler(0, this, inventory, level).setFluidTanks(inputTank, outputTank);
@@ -328,11 +336,21 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 }
             }
 
-            assemblerModule.update(1.0, 1.0, true, blueprintStack);
+            double speed = 1D;
+            double pow = 1D;
+
+            speed += Math.min(upgradeManager.getLevel(UpgradeType.SPEED), 3) / 3D;
+            speed += Math.min(upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
+
+            pow -= Math.min(upgradeManager.getLevel(UpgradeType.POWER), 3) * 0.25D;
+            pow += Math.min(upgradeManager.getLevel(UpgradeType.SPEED), 3) * 1D;
+            pow += Math.min(upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3) * 10D / 3D;
+
+            assemblerModule.update(speed, pow, true, blueprintStack);
             boolean isCraftingNow = assemblerModule.isProcessing();
 
             // Original TileEntityMachineAssemblyMachine: meteorite_sword_alloyed -> meteorite_sword_machined im Batterieplatz
-            if (isCraftingNow && getClass() == MachineAdvancedAssemblerBlockEntity.class
+            if (isCraftingNow
                     && inventory.getStackInSlot(ENERGY_SLOT).is(com.hbm_m.item.ModItems.METEORITE_SWORD_ALLOYED.get())) {
                 inventory.setStackInSlot(ENERGY_SLOT, new ItemStack(com.hbm_m.item.ModItems.METEORITE_SWORD_MACHINED.get()));
             }
@@ -902,5 +920,33 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
         if (side == null) return this.inventory;
         return sidedItems.get(side);
+    }
+
+    // ==================== Upgrades (1:1 TileEntityMachineAssemblyMachine) ====================
+
+    @Override
+    public boolean canProvideInfo(UpgradeType type, int level, boolean extendedInfo) {
+        return type == UpgradeType.SPEED || type == UpgradeType.POWER || type == UpgradeType.OVERDRIVE;
+    }
+
+    @Override
+    public void provideInfo(UpgradeType type, int level, List<Component> info, boolean extendedInfo) {
+        info.add(com.hbm_m.interfaces.IUpgradeInfoProvider.getStandardLabel(getBlockState().getBlock()));
+        if (type == UpgradeType.SPEED) {
+            info.add(Component.translatable(com.hbm_m.interfaces.IUpgradeInfoProvider.KEY_SPEED, "+" + (level * 33) + "%"));
+            info.add(Component.translatable(com.hbm_m.interfaces.IUpgradeInfoProvider.KEY_CONSUMPTION, "+" + (level * 100) + "%"));
+        }
+        if (type == UpgradeType.POWER) {
+            info.add(Component.translatable(com.hbm_m.interfaces.IUpgradeInfoProvider.KEY_CONSUMPTION, "-" + (level * 25) + "%"));
+        }
+        if (type == UpgradeType.OVERDRIVE) {
+            info.add(Component.translatable(com.hbm_m.interfaces.IUpgradeInfoProvider.KEY_SPEED, "+" + (level * 100) + "%"));
+            info.add(Component.translatable(com.hbm_m.interfaces.IUpgradeInfoProvider.KEY_CONSUMPTION, "+" + Math.round(level * 333.33) + "%"));
+        }
+    }
+
+    @Override
+    public Map<UpgradeType, Integer> getValidUpgrades() {
+        return VALID_UPGRADES;
     }
 }

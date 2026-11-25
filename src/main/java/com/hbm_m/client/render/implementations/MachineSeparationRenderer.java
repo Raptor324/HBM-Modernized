@@ -109,7 +109,7 @@ public final class MachineSeparationRenderer {
                 float lift = Mth.lerp(pt, comp.prevPiston, comp.piston);
                 return lift * 3.0F - 3.0F;
             })
-            .rotatingPart("Fan", 1f, 0f, 0f, 0f, 1.5f, 0f, 0f, 0f, 0f,
+            .rotatingPart("Fan", 1f, 0f, 0f, 0.5f, 1.5f, 0.5f, 0f, 0f, 0f,
                     (comp, pt) -> Mth.lerp(pt, comp.prevFanSpin, comp.fanSpin))
             .blockTransform(MachineSeparationRenderer::applyCompressorTransform)
             .itemParts("Compressor", "Pump", "Fan")
@@ -120,9 +120,9 @@ public final class MachineSeparationRenderer {
         MachineRenderers.machine("compressor_compact", ModBlockEntities.COMPRESSOR_COMPACT_BE.get(),
                 MachineCompressorCompactBlockEntity.class)
             .part("Condenser")
-            .rotatingPart("Fan1", 1f, 0f, 0f, 0f, 1.5f, 0f, 0f, 0f, 0f,
+            .rotatingPart("Fan1", 1f, 0f, 0f, 0.5f, 1.5f, 0.5f, 0f, 0f, 0f,
                     (comp, pt) -> Mth.lerp(pt, comp.prevFanSpin, comp.fanSpin))
-            .rotatingPart("Fan2", -1f, 0f, 0f, 0f, 1.5f, 0f, 0f, 0f, 0f,
+            .rotatingPart("Fan2", -1f, 0f, 0f, 0.5f, 1.5f, 0.5f, 0f, 0f, 0f,
                     (comp, pt) -> Mth.lerp(pt, comp.prevFanSpin, comp.fanSpin))
             .blockTransform(MachineSeparationRenderer::applyCompressorCompactTransform)
             .itemParts("Condenser", "Fan1", "Fan2")
@@ -175,6 +175,7 @@ public final class MachineSeparationRenderer {
                 default -> {}
             }
         }
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private static void applyCompressorCompactTransform(MachineCompressorCompactBlockEntity compressor, LegacyAnimator animator) {
@@ -188,6 +189,7 @@ public final class MachineSeparationRenderer {
                 default -> {}
             }
         }
+        animator.translate(-0.5, 0.0, -0.5);
     }
 
     private MachineSeparationRenderer() {}

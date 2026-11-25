@@ -60,7 +60,7 @@ public class SetChemPlantRecipeC2SPacket implements C2SPacket {
                     msg.blockPos.getY() + 0.5,
                     msg.blockPos.getZ() + 0.5) > 256.0) return; // 16 Bloecke: Kerne grosser Multibloecke (Supercomputer) liegen bis zu 8 Bloecke vom Spieler weg
 
-            BlockEntity be = player.level().getBlockEntity(msg.blockPos);
+            BlockEntity be = ModPacketHandler.blockEntityAt(player, msg.blockPos);
             if (be instanceof MachineChemicalPlantBlockEntity chemPlant) {
                 chemPlant.setSelectedRecipe(msg.recipeId);
             } else if (be instanceof com.hbm_m.blockentity.machines.MachinePUREXBlockEntity purex) {

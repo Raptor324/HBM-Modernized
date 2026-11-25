@@ -57,6 +57,10 @@ public class RBMKGraphBlockEntity extends RBMKPanelDeviceBlockEntity {
             if (channel[i] == null || channel[i].isEmpty()) continue;
 
             RTTYNetwork.RttyChannel ch = RTTYNetwork.listen(level, channel[i]);
+            // 1:1 with GraphUnit.update: stale entries (older than broadcast tick + 1) count as
+            // "no signal", so a polling trace records the drop to zero when its channel goes
+            // quiet while a latching trace freezes.
+            if (ch != null && ch.timeStamp < level.getGameTime() - 1) ch = null;
             if (ch != null && ch.signal != null) {
                 pushValue(i, (long) parseNum(String.valueOf(ch.signal), 0));
             } else if (polling[i]) {
@@ -82,6 +86,13 @@ public class RBMKGraphBlockEntity extends RBMKPanelDeviceBlockEntity {
             if (data.contains("gminOff" + i)) minBound[i] = false;
             if (data.contains("gmaxOff" + i)) maxBound[i] = false;
             if (data.contains("polling" + i)) polling[i] = data.getBoolean("polling" + i);
+            // 1:1 with TileEntityRBMKGraph.receiveControl: a user-entered inverted bound is
+            // swapped instead of degenerating the trace.
+            if (minBound[i] && maxBound[i] && graphMax[i] < graphMin[i]) {
+                long temp = graphMax[i];
+                graphMax[i] = graphMin[i];
+                graphMin[i] = temp;
+            }
         }
         for (int i = 0; i < UNITS; i++) {
             if (data.contains("channel" + i)) channel[i] = data.getString("channel" + i);

@@ -73,7 +73,7 @@ public class WandJigsawBlockEntity extends BaseHbmBlockEntity implements IContro
 
     @Override
     public boolean hasPermission(Player player) {
-        return true;
+        return player.canUseGameMasterBlocks() && player.distanceToSqr(worldPosition.getCenter()) <= 64.0;
     }
 
     @Override

@@ -53,6 +53,7 @@ public class CraneControlPacket implements C2SPacket {
 
             BlockEntity be = ModPacketHandler.blockEntityAt(player, msg.pos);
             if (be == null) return;
+            if (!com.hbm_m.inventory.menu.MenuReach.canReach(player, msg.pos, player.level().getBlockState(msg.pos))) return;
 
             switch (msg.action) {
                 case FILTER_MODE -> {

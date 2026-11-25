@@ -88,15 +88,6 @@ public final class AnvilRecipeGenerator {
      * пути крафта нет), регистрируются после всех оригинальных рецептов.
      */
     private static void registerPortStopgaps(Consumer<FinishedRecipe> writer) {
-        // Порт-собственный высокотемпературный горелочный блок: горелка, усиленная
-        // литыми стальными плитами (в оригинале oilburner_hp отсутствует).
-        AnvilRecipeBuilder.inventoryRecipe(stack(ModBlocks.OILBURNER_HP), AnvilTier.STEEL)
-                .withOrder(nextOrder())
-                .withOverlay(AnvilRecipe.OverlayType.CONSTRUCTION)
-                .addInventoryRequirement(stack(ModBlocks.OILBURNER))
-                .addInventoryRequirement(ingCount(matStack(ModMaterials.STEEL, MaterialShape.PLATE_CAST, 1), 8))
-                .addInventoryRequirement(ingCount(stack(ModItems.PIPE_STEEL), 4))
-                .save(writer, anvilId("steel", "port", "oilburner_hp"));
     }
 
     // =====================================================================================

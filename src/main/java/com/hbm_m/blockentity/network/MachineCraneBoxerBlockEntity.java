@@ -98,7 +98,7 @@ public class MachineCraneBoxerBlockEntity extends CraneBaseBlockEntity implement
             }
         }
 
-        sendUpdateToClient();
+        if (probeDue(20)) sendUpdateToClient();
     }
 
     public byte getMode() { return mode; }
@@ -107,7 +107,7 @@ public class MachineCraneBoxerBlockEntity extends CraneBaseBlockEntity implement
     public void receiveControl(CompoundTag data) {
         if (data.contains("toggle")) this.mode = (byte) ((this.mode + 1) % 4);
         setChanged();
-        sendUpdateToClient();
+        if (probeDue(20)) sendUpdateToClient();
     }
 
     @Override

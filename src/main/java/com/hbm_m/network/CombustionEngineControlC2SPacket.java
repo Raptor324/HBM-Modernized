@@ -44,7 +44,7 @@ public class CombustionEngineControlC2SPacket implements C2SPacket {
             if (player.distanceToSqr(msg.blockPos.getX() + 0.5, msg.blockPos.getY() + 0.5,
                     msg.blockPos.getZ() + 0.5) > 20 * 20) return;
 
-            BlockEntity be = player.level().getBlockEntity(msg.blockPos);
+            BlockEntity be = ModPacketHandler.blockEntityAt(player, msg.blockPos);
             if (!(be instanceof MachineCombustionEngineBlockEntity engine)) return;
 
             if (msg.action == 0) {

@@ -44,8 +44,8 @@ public final class JeiExtraCategories {
     public static List<IRecipeCategory<?>> create(IGuiHelper helper) {
         List<IRecipeCategory<?>> out = new ArrayList<>();
 
-        out.add(new JeiSimpleMachineCategory<>(helper, RADGEN, "block.hbm_m.radgen",
-                machine(ModBlocks.RADGEN.get()), new JeiMachineView<RadGenRecipe>() {
+        out.add(new JeiSimpleMachineCategory<>(helper, RADGEN, "block.hbm_m.machine_radgen",
+                machine(ModBlocks.MACHINE_RADGEN.get()), new JeiMachineView<RadGenRecipe>() {
             @Override public List<ItemInput> itemInputs(RadGenRecipe r) {
                 return List.of(new ItemInput(r.getInput(), 1));
             }
@@ -63,6 +63,6 @@ public final class JeiExtraCategories {
     }
 
     public static void registerCatalysts(IRecipeCatalystRegistration registration) {
-        registration.addRecipeCatalyst(machine(ModBlocks.RADGEN.get()), RADGEN);
+        registration.addRecipeCatalyst(machine(ModBlocks.MACHINE_RADGEN.get()), RADGEN);
     }
 }

@@ -56,7 +56,7 @@ public class ItemColtanCompass extends Item {
 
                 double dx = entity.getX() - lastX;
                 double dz = entity.getZ() - lastZ;
-                com.hbm_m.client.overlay.OverlayInfoToast.show(Component.literal(((int) Math.sqrt(dx * dx + dz * dz)) + "m"), 20, ID_COMPASS);
+                com.hbm_m.client.ClientAccess.showInfoToast(Component.literal(((int) Math.sqrt(dx * dx + dz * dz)) + "m"), 20, ID_COMPASS);
             }
 
             if (lease < System.currentTimeMillis()) {

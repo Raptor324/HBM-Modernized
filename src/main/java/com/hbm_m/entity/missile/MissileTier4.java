@@ -117,17 +117,27 @@ public abstract class MissileTier4 extends MissileBaseEntity {
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     for (int z = -1; z <= 1; z++) {
-                        level().setBlock(pos.offset(x, y, z), lava, 3);
+                        BlockPos target = pos.offset(x, y, z);
+                        if (!level().isOutsideBuildHeight(target) && !level().getBlockState(target).is(net.minecraft.world.level.block.Blocks.BEDROCK)) {
+                            level().setBlock(target, lava, 3);
+                        }
                     }
                 }
             }
-            level().setBlock(pos, com.hbm_m.block.ModBlocks.VOLCANO_CORE.get().defaultBlockState(), 3);
+            if (!level().isOutsideBuildHeight(pos)) {
+                level().setBlock(pos, com.hbm_m.block.ModBlocks.VOLCANO_CORE.get().defaultBlockState(), 3);
+            }
         }
     }
 
     public static class MissileDoomsday extends MissileTier4 {
         public MissileDoomsday(EntityType<? extends MissileDoomsday> type, Level level) {
             super(type, level);
+        }
+
+        @Override
+        public api.hbm_m.entity.IRadarDetectable.RadarTargetType getTargetType() {
+            return api.hbm_m.entity.IRadarDetectable.RadarTargetType.DOOMSDAY;
         }
 
         @Override

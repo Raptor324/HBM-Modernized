@@ -41,8 +41,8 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class MachineDFCRenderers {
 
-    static final SimpleObjModel SPHERE_UV = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/sphere_uv.obj"));
-    static final SimpleObjModel SPHERE_RUV = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/sphere_ruv.obj"));
+    static final SimpleObjModel SPHERE_UV = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/sphere_uv.obj"));
+    static final SimpleObjModel SPHERE_RUV = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/sphere_ruv.obj"));
 
     public static void orient(BlockEntity be, LegacyAnimator animator) {
         animator.translate(0.5, 0, 0.5);
@@ -190,12 +190,13 @@ public final class MachineDFCRenderers {
         MachineRenderers.machine("dfc_core",
                 ModBlockEntities.DFC_CORE_BE.get(),
                 DFCCoreBlockEntity.class)
+            .blockTransform((be, animator) -> animator.translate(0.5, 0.0, 0.5))
             .hook(new MachineRenderHook<DFCCoreBlockEntity>() {
                 @Override
                 public void render(DFCCoreBlockEntity core, float pt, PoseStack ps,
                                    MultiBufferSource buf, int light, int overlay, MachineRenderApi api) {
                     ps.pushPose();
-                    ps.translate(0.5, 0.5, 0.5);
+                    ps.translate(0.0, 0.5, 0.0);
                     if (core.getRenderHeat() == 0) {
                         renderStandby(ps, buf);
                     } else if (core.isRenderMeltdown()) {
@@ -244,7 +245,6 @@ public final class MachineDFCRenderers {
 
         float scale = 4.5F * fill / Math.max(1, tot) + 0.5F;
         ps.scale(scale, scale, scale);
-        ps.scale(0.25F, 0.25F, 0.25F);
         SPHERE_RUV.renderAllColor(ps, buf.getBuffer(ClientRenderHandler.CustomRenderTypes.SOLID_COLOR_NOCULL), r * mod, g * mod, b * mod, 1F);
 
         long time = core.getLevel() != null ? core.getLevel().getGameTime() : 0L;

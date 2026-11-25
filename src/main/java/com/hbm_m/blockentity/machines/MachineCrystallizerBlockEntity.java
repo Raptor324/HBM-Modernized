@@ -115,6 +115,11 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         }
     };
 
+    /** Фингерпринт HBM-бака: тип жидкости + заполнение (как в MachineSteamTurbineBlockEntity). */
+    private static long tankFingerprint(FluidTank tank) {
+        return (tank.getTankType() == null ? 0L : tank.getTankType().hashCode()) * 31L + tank.getFill();
+    }
+
     private int progress = 0;
     private int duration = DEFAULT_DURATION;
     private boolean isOn = false;
@@ -199,7 +204,10 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
                     if (in.isEmpty() || in.getCount() < recipe.getInputCount()) recipe = null;
                 }
                 // Анти-sync-spam: пакет только при изменении отрисовываемого состояния (P6).
-                entity.syncIfStateChanged(entity.getEnergyStored(),
+                // Танк в ло: заливка бочки через FluidLoaderRegistry идёт через setFill
+                // (молчаливый backend.setFluid) — без фингерпринта гейдж в GUI не обновился бы,
+                // пока машина не включится (isOn → синк каждый тик).
+                entity.syncIfStateChanged(entity.getEnergyStored() ^ tankFingerprint(entity.tank),
                         (long) entity.progress | ((long) entity.duration << 32));
             } else {
                 entity.progress = 0;

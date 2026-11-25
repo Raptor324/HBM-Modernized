@@ -51,7 +51,7 @@ public class SetFusionRecipeC2SPacket implements C2SPacket {
                     msg.blockPos.getY() + 0.5,
                     msg.blockPos.getZ() + 0.5) > 32 * 32) return;
 
-            BlockEntity be = player.level().getBlockEntity(msg.blockPos);
+            BlockEntity be = ModPacketHandler.blockEntityAt(player, msg.blockPos);
             if (be instanceof FusionTorusBlockEntity torus) {
                 torus.setSelectedRecipeId(msg.recipeId);
             }

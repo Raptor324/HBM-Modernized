@@ -1,5 +1,6 @@
 {
   "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
   "textures": {
     "top": "hbm_m:block/foundry_slagtap_top",
     "side": "hbm_m:block/foundry_slagtap_side",

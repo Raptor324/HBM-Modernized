@@ -32,7 +32,9 @@ public class RBMKIndicatorBlockEntity extends RBMKPanelDeviceBlockEntity {
     public RBMKIndicatorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RBMK_INDICATOR_BE.get(), pos, state);
         Arrays.fill(channel, "");
-        Arrays.fill(max, 1.0);
+        // 1:1 with IndicatorUnit: "public long max = 100" - an unconfigured lamp lights for
+        // values 0..100, not just 0..1.
+        Arrays.fill(max, 100.0);
         for (int i = 0; i < UNITS; i++) unitLabel[i] = "Indicator " + (i + 1);
     }
 
@@ -52,6 +54,10 @@ public class RBMKIndicatorBlockEntity extends RBMKPanelDeviceBlockEntity {
             if (channel[i] == null || channel[i].isEmpty()) continue;
 
             RTTYNetwork.RttyChannel ch = RTTYNetwork.listen(level, channel[i]);
+            // 1:1 with IndicatorUnit.update: stale entries (older than broadcast tick + 1) count
+            // as "no signal" - a polling lamp re-decides on 0, a latching one keeps its last
+            // state.
+            if (ch != null && ch.timeStamp < level.getGameTime() - 1) ch = null;
             if (ch != null && ch.signal != null) {
                 decideLight(i, parseNum(String.valueOf(ch.signal), 0));
             } else if (polling[i]) {
@@ -83,9 +89,25 @@ public class RBMKIndicatorBlockEntity extends RBMKPanelDeviceBlockEntity {
     public void receiveControl(CompoundTag data) {
         receiveSharedControl(data);
         for (int i = 0; i < UNITS; i++) {
-            if (data.contains("channel" + i)) channel[i] = data.getString("channel" + i);
-            if (data.contains("min" + i))     min[i]     = data.getDouble("min" + i);
-            if (data.contains("max" + i))     max[i]     = data.getDouble("max" + i);
+            if (data.contains("channel" + i)) {
+                String ch = data.getString("channel" + i);
+                channel[i] = ch.length() > 64 ? ch.substring(0, 64) : ch;
+            }
+            // 1:1 with TileEntityRBMKIndicator.receiveControl: an ABSENT bound resets the band
+            // to unbounded (original: Integer.MIN_VALUE / Integer.MAX_VALUE) so the lamp always
+            // lights. The GUI only sends the key when its text field actually parses.
+            if (data.contains("min" + i)) {
+                double v = data.getDouble("min" + i);
+                if (Double.isFinite(v)) min[i] = v;
+            } else {
+                min[i] = -Double.MAX_VALUE;
+            }
+            if (data.contains("max" + i)) {
+                double v = data.getDouble("max" + i);
+                if (Double.isFinite(v)) max[i] = v;
+            } else {
+                max[i] = Double.MAX_VALUE;
+            }
             if (data.contains("invert" + i))  invert[i]  = data.getBoolean("invert" + i);
             if (data.contains("polling" + i)) polling[i] = data.getBoolean("polling" + i);
         }
@@ -106,6 +128,10 @@ public class RBMKIndicatorBlockEntity extends RBMKPanelDeviceBlockEntity {
             tag.putDouble("max" + i, max[i]);
             tag.putBoolean("invert" + i, invert[i]);
             tag.putBoolean("polling" + i, polling[i]);
+            // 1:1 with IndicatorUnit ("light" + index): the lamp state is what the whole device
+            // is for - without it the in-world lamp never lit (baseTick ships this tag to
+            // clients every tick, and the renderer reads be.state[i]).
+            tag.putBoolean("light" + i, state[i]);
         }
     }
 
@@ -115,9 +141,10 @@ public class RBMKIndicatorBlockEntity extends RBMKPanelDeviceBlockEntity {
         for (int i = 0; i < UNITS; i++) {
             channel[i] = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
             min[i]     = tag.getDouble("min" + i);
-            max[i]     = tag.contains("max" + i) ? tag.getDouble("max" + i) : 1.0;
+            max[i]     = tag.contains("max" + i) ? tag.getDouble("max" + i) : 100.0;
             invert[i]  = tag.getBoolean("invert" + i);
             polling[i] = tag.getBoolean("polling" + i);
+            state[i]   = tag.getBoolean("light" + i);
         }
     }
 }

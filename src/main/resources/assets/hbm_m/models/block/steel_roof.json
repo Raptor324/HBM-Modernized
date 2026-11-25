@@ -6,9 +6,10 @@
   "children": {
     "steel_roof_model": {
       "loader": "hbm_m:nmesh_obj",
-      "model": "hbm_m:models/block/steel_roof.obj",
+      "model": "hbm_m:models/block/deco/steel_roof.obj",
       "flip_v": true,
       "textures": {
+        "texture": "hbm_m:block/steel_roof_top",
         "default": "hbm_m:block/steel_roof_top"
       }
     }

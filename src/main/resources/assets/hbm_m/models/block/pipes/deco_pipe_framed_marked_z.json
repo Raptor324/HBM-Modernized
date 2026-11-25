@@ -6,9 +6,9 @@
   "render_type": "minecraft:cutout",
   "textures": {
     "top": "hbm_m:block/pipe/pipe_top_marked",
-    "side": "hbm_m:block/pipe/pipe_side_marked",
-    "particle": "hbm_m:block/pipe/pipe_side_marked",
-    "frame": "hbm_m:block/pipe/pipe_frame",
+    "side": "hbm_m:block/waste_charge",
+    "particle": "hbm_m:block/waste_charge",
+    "frame": "hbm_m:block/deco_pipe_framed",
     "mesh": "hbm_m:block/pipe/pipe_mesh"
   }
 }

@@ -56,7 +56,7 @@ import net.minecraft.world.phys.AABB;
 public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
         implements IFluidStandardTransceiverMK2, IUpgradeInfoProvider, IFluidPartDelegateProvider,
         com.hbm_m.api.redstoneoverradio.IRORValueProvider
-        , com.hbm_m.interfaces.IConditionalInvAccess
+        , com.hbm_m.interfaces.IConditionalInvAccess, com.hbm_m.interfaces.IFrameSupportable
 {
 
     private static final String CHEMICAL_PLANT_SOUND_INSTANCE = "com.hbm_m.sound.ChemicalPlantSoundInstance";
@@ -103,7 +103,6 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
 
     public int anim;
     public int prevAnim;
-    public boolean frame = false;
 
 
     protected final ContainerData data = new ContainerData() {
@@ -164,16 +163,34 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
         }
     }
 
+    // ==================== Multiblock frame (BlockState property) ====================
+
+    @Override
+    public void checkForFrame() {
+        if (level != null && !level.isClientSide) {
+            com.hbm_m.multiblock.MultiblockStructureHelper.updateFrameForController(level, worldPosition);
+        }
+    }
+
+    @Override
+    public boolean setFrameVisible(boolean visible) {
+        if (level != null && !level.isClientSide) {
+            return com.hbm_m.multiblock.MultiblockFrameHelper.applyFrameToBlockState(level, worldPosition, visible);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isFrameVisible() {
+        return com.hbm_m.multiblock.MultiblockFrameHelper.isFrameVisible(getBlockState());
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineChemicalFactoryBlockEntity be) {
         for (MachineModuleChemplant m : be.chemplantModule) m.setLevel(level);
 
         if (level.isClientSide) {
             be.prevAnim = be.anim;
             if (be.isAnyProcessing()) be.anim++;
-
-            if (level.getGameTime() % 20 == 0) {
-                be.frame = !level.getBlockState(pos.above(3)).isAir();
-            }
 
             be.clientTick();
             return;

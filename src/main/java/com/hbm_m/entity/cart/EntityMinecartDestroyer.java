@@ -26,7 +26,9 @@ import net.minecraft.world.phys.AABB;
  * 1:1 {@code EntityMinecartDestroyer}: Schrott-Vernichtungslore. 9 exakte und 9 Platzhalter-Filter (Geisterplaetze);
  * alle 5 Ticks verschwinden passende Gegenstaende im Umkreis (2,5 / -1,5..2) mit Holzbruchgeraeusch, dazu Rauch.
  */
-public class EntityMinecartDestroyer extends EntityMinecartContainerBase {
+public class EntityMinecartDestroyer extends EntityMinecartContainerBase implements net.minecraft.world.WorldlyContainer {
+
+    private static final int[] NO_SLOTS = new int[0];
 
     public EntityMinecartDestroyer(EntityType<?> type, Level world) {
         super(type, world);
@@ -43,6 +45,21 @@ public class EntityMinecartDestroyer extends EntityMinecartContainerBase {
 
     @Override
     public boolean canPlaceItem(int slot, @NotNull ItemStack stack) {
+        return false;
+    }
+
+    @Override
+    public int[] getSlotsForFace(@NotNull net.minecraft.core.Direction side) {
+        return NO_SLOTS;
+    }
+
+    @Override
+    public boolean canPlaceItemThroughFace(int index, @NotNull ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction direction) {
+        return false;
+    }
+
+    @Override
+    public boolean canTakeItemThroughFace(int index, @NotNull ItemStack stack, @NotNull net.minecraft.core.Direction direction) {
         return false;
     }
 

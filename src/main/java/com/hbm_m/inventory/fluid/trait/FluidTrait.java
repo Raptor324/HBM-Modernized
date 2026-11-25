@@ -44,6 +44,8 @@ public abstract class FluidTrait {
         registerTrait("noid", FluidTraitSimple.FT_NoID.class);
         registerTrait("nocontainer", FluidTraitSimple.FT_NoContainer.class);
         registerTrait("unsiphonable", FluidTraitSimple.FT_Unsiphonable.class);
+        // Joke: REN-TV concentrate hover line (no 1.7.10 analog)
+        registerTrait("sanity", FT_Sanity.class);
     }
     
     protected static void registerTrait(String name, Class<? extends FluidTrait> clazz) {

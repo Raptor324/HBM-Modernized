@@ -83,6 +83,7 @@ public class GunFactoryClient {
         GunItemRenderer.register(WeaponItems.gun("gun_autoshotgun_sexy"), new ItemRenderSexy(WeaponResources.sexy_tex));
         GunItemRenderer.register(WeaponItems.gun("gun_autoshotgun_heretic"), new ItemRenderSexy(WeaponResources.heretic_tex));
         GunItemRenderer.register(WeaponItems.gun("gun_quadro"), new ItemRenderQuadro());
+        GunItemRenderer.register(WeaponItems.gun("gun_fliegerfaust"), new ItemRenderFliegerfaust());
         GunItemRenderer.register(WeaponItems.gun("gun_minigun"), new ItemRenderMinigun(WeaponResources.minigun_tex));
         GunItemRenderer.register(WeaponItems.gun("gun_minigun_lacunae"), new ItemRenderMinigun(WeaponResources.minigun_lacunae_tex));
         GunItemRenderer.register(WeaponItems.gun("gun_minigun_dual"), new ItemRenderMinigunDual());
@@ -129,6 +130,7 @@ public class GunFactoryClient {
         GunItemRenderer.register(com.hbm_m.item.ModItems.DIAMOND_GAVEL.get(), gavel);
         GunItemRenderer.register(com.hbm_m.item.ModItems.MESE_GAVEL.get(), gavel);
         GunItemRenderer.register(com.hbm_m.item.ModItems.REDSTONE_SWORD.get(), new com.hbm_m.client.weapon.render.ItemRenderRedstoneSword());
+        GunItemRenderer.register(com.hbm_m.item.ModItems.BIG_SWORD.get(), new com.hbm_m.client.weapon.render.ItemRenderBigSword());
 
         //PROJECTILES
         ammo_debug.setRenderer(LegoClient.RENDER_STANDARD_BULLET);
@@ -233,6 +235,7 @@ public class GunFactoryClient {
         
         setRendererBulk(LegoClient.RENDER_RPZB, rocket_rpzb);
         setRendererBulk(LegoClient.RENDER_QD, rocket_qd);
+        setRendererBulk(LegoClient.RENDER_FLIEGERFAUST, rocket_ff);
         setRendererBulk(LegoClient.RENDER_ML, rocket_ml);
         setRendererBulk(LegoClient.RENDER_RPZB, rocket_ncrpa_steer);
         setRendererBulk(LegoClient.RENDER_RPZB, rocket_ncrpa);
@@ -312,6 +315,7 @@ public class GunFactoryClient {
         ((ItemGunBaseNT) WeaponItems.gun("gun_autoshotgun_sexy")).getConfig(null, 0).hud(LegoClient.HUD_COMPONENT_DURABILITY, LegoClient.HUD_COMPONENT_AMMO);
         ((ItemGunBaseNT) WeaponItems.gun("gun_autoshotgun_heretic")).getConfig(null, 0).hud(LegoClient.HUD_COMPONENT_AMMO);
         ((ItemGunBaseNT) WeaponItems.gun("gun_quadro")).getConfig(null, 0).hud(LegoClient.HUD_COMPONENT_DURABILITY, LegoClient.HUD_COMPONENT_AMMO);
+        ((ItemGunBaseNT) WeaponItems.gun("gun_fliegerfaust")).getConfig(null, 0).hud(LegoClient.HUD_COMPONENT_DURABILITY, LegoClient.HUD_COMPONENT_AMMO);
         ((ItemGunBaseNT) WeaponItems.gun("gun_lag")).getConfig(null, 0).hud(LegoClient.HUD_COMPONENT_DURABILITY, LegoClient.HUD_COMPONENT_AMMO);
         ((ItemGunBaseNT) WeaponItems.gun("gun_minigun")).getConfig(null, 0).hud(LegoClient.HUD_COMPONENT_DURABILITY, LegoClient.HUD_COMPONENT_AMMO);
         ((ItemGunBaseNT) WeaponItems.gun("gun_minigun_lacunae")).getConfig(null, 0).hud(LegoClient.HUD_COMPONENT_DURABILITY, LegoClient.HUD_COMPONENT_AMMO);

@@ -1,6 +1,6 @@
 # Material fuer mobile_launch_pad.obj (Iskander-M TEL)
 newmtl default
-Ka 1.000 1.000 1.000
+Ka 0.0 0.0 0.0
 Kd 1.000 1.000 1.000
 Ks 0.000 0.000 0.000
 Ns 10.0

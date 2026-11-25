@@ -147,6 +147,7 @@ public final class LightSampleCache {
     private static final float[] PRECHECK_UV = new float[2];
 
     private static final int PRUNE_EVERY = 600;
+    private static long lastPruneTick = Long.MIN_VALUE;
 
     private LightSampleCache() {}
 
@@ -182,7 +183,8 @@ public final class LightSampleCache {
         if (level != null) {
             currentTick = level.getGameTime();
         }
-        if ((currentTick % PRUNE_EVERY) == 0) {
+        if (currentTick - lastPruneTick >= PRUNE_EVERY || currentTick < lastPruneTick) {
+            lastPruneTick = currentTick;
             CACHE.long2ObjectEntrySet().removeIf(e ->
                 currentTick - e.getValue().lastTick > LIGHT_TTL_TICKS);
             // CACHE8 keys include the renderer's identityHashCode, which changes
@@ -430,8 +432,11 @@ public final class LightSampleCache {
         }
         int minSecX = (net.minecraft.util.Mth.floor(bounds.minX) - 1) >> 4;
         int maxSecX = (net.minecraft.util.Mth.floor(bounds.maxX) + 1) >> 4;
-        int minSecY = Math.max(-4, (net.minecraft.util.Mth.floor(bounds.minY) - 1) >> 4);
-        int maxSecY = Math.min(20, (net.minecraft.util.Mth.floor(bounds.maxY) + 1) >> 4);
+        var level = Minecraft.getInstance().level;
+        int worldMinSecY = (level != null) ? level.getMinSection() : -4;
+        int worldMaxSecY = (level != null) ? (level.getMaxSection() - 1) : 20;
+        int minSecY = Math.max(worldMinSecY, (net.minecraft.util.Mth.floor(bounds.minY) - 1) >> 4);
+        int maxSecY = Math.min(worldMaxSecY, (net.minecraft.util.Mth.floor(bounds.maxY) + 1) >> 4);
         int minSecZ = (net.minecraft.util.Mth.floor(bounds.minZ) - 1) >> 4;
         int maxSecZ = (net.minecraft.util.Mth.floor(bounds.maxZ) + 1) >> 4;
         for (int sx = minSecX; sx <= maxSecX; sx++) {

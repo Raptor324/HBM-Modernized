@@ -30,6 +30,7 @@ public final class MachinePileRenderers {
         MachineRenderers.machine("pile_control",
                 ModBlockEntities.PILE_CONTROL_BE.get(),
                 PileControlBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Base")
             // Vertical control rod insertion / extraction translation
             .translatingPart("Rod", new Vector3f(0f, 1f, 0f),
@@ -41,9 +42,10 @@ public final class MachinePileRenderers {
         MachineRenderers.machine("pile_loader",
                 ModBlockEntities.PILE_LOADER_BE.get(),
                 PileLoaderBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Loader")
-            // Loading lever tilting up to 90 degrees around Z at pivot (-0.1875, 0.5, 0)
-            .rotatingPart("Lever", new Vector3f(0f, 0f, 1f), new Vector3f(-0.1875f, 0.5f, 0f),
+            // Loading lever tilting up to 90 degrees around Z at pivot (-0.1875, 0.5, 0) + bake (0.5, 0, 0.5)
+            .rotatingPart("Lever", new Vector3f(0f, 0f, 1f), new Vector3f(0.3125f, 0.5f, 0.5f),
                     (be, pt) -> be.getExtension() * 90.0)
             // Fuel carriage sliding 0.5 blocks along -X into the channel
             .translatingPart("Slider", new Vector3f(-1f, 0f, 0f),
@@ -62,6 +64,7 @@ public final class MachinePileRenderers {
         MachineRenderers.machine("pile_vent",
                 ModBlockEntities.PILE_VENT_BE.get(),
                 PileVentBlockEntity.class)
+            .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .part("Pipe")
             // Forced ventilation blower fan rotating about Y axis
             .rotateY("Fan", 0.5f, 0.5f,

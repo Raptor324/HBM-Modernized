@@ -65,6 +65,11 @@ public final class DaeQuadBaker {
         Vector4f v0 = new Vector4f();
         Vector4f v1 = new Vector4f();
         Vector4f v2 = new Vector4f();
+        org.joml.Matrix3f normalMat = new org.joml.Matrix3f(matrix);
+        if (Math.abs(normalMat.determinant()) > 1e-6f) {
+            normalMat.invert().transpose();
+        }
+        org.joml.Vector3f nrmTmp = new org.joml.Vector3f();
         List<BakedQuad> quads = new ArrayList<>(mesh.tris.size());
 
         for (int[] tri : mesh.tris) {
@@ -98,6 +103,12 @@ public final class DaeQuadBaker {
                 float nrmX = normalIdx >= 0 && normalIdx + 2 < normals.length ? normals[normalIdx] : 0F;
                 float nrmY = normalIdx >= 0 && normalIdx + 2 < normals.length ? normals[normalIdx + 1] : 1F;
                 float nrmZ = normalIdx >= 0 && normalIdx + 2 < normals.length ? normals[normalIdx + 2] : 0F;
+                nrmTmp.set(nrmX, nrmY, nrmZ).mul(normalMat);
+                if (nrmTmp.lengthSquared() > 1e-12f) {
+                    nrmTmp.normalize();
+                } else {
+                    nrmTmp.set(0F, 1F, 0F);
+                }
 
                 float u = hasUvs && uvIdx >= 0 && uvIdx + 1 < uvs.length ? uvs[uvIdx] : 0F;
                 float w = hasUvs && uvIdx >= 0 && uvIdx + 1 < uvs.length ? 1F - uvs[uvIdx + 1] : 0F;
@@ -112,7 +123,7 @@ public final class DaeQuadBaker {
                 data[base + 4] = Float.floatToIntBits(net.minecraft.util.Mth.lerp(u, sprite.getU0(), sprite.getU1()));
                 data[base + 5] = Float.floatToIntBits(net.minecraft.util.Mth.lerp(w, sprite.getV0(), sprite.getV1()));
                 data[base + 6] = 0;
-                data[base + 7] = packNormal(nrmX, nrmY, nrmZ);
+                data[base + 7] = packNormal(nrmTmp.x, nrmTmp.y, nrmTmp.z);
             }
 
             System.arraycopy(data, 2 * 8, data, 3 * 8, 8);

@@ -157,10 +157,10 @@ public class MachineReactorControlBlockEntity extends BaseMachineBlockEntity {
 
     /** Original: {@code receiveControl} - die vier Schwellen kommen als Block vom Steuerfeld. */
     public void applySettings(double levelLower, double levelUpper, double heatLower, double heatUpper) {
-        this.levelLower = levelLower;
-        this.levelUpper = levelUpper;
-        this.heatLower = heatLower;
-        this.heatUpper = heatUpper;
+        if (Double.isFinite(levelLower)) this.levelLower = net.minecraft.util.Mth.clamp(levelLower, 0.0D, 100.0D);
+        if (Double.isFinite(levelUpper)) this.levelUpper = net.minecraft.util.Mth.clamp(levelUpper, 0.0D, 100.0D);
+        if (Double.isFinite(heatLower)) this.heatLower = net.minecraft.util.Mth.clamp(heatLower, 0.0D, 9999.0D);
+        if (Double.isFinite(heatUpper)) this.heatUpper = net.minecraft.util.Mth.clamp(heatUpper, 0.0D, 9999.0D);
         setChanged();
     }
 

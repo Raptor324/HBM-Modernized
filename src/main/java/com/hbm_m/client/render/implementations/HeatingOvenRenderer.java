@@ -19,8 +19,8 @@ import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 /** 1:1 {@code RenderHeatingOven}: Gehaeuse, Schiebeklappe ({@code door * 0.75 / 135}), Glut voll leuchtend wenn an. */
 public class HeatingOvenRenderer implements com.hbm_m.client.render.HbmBerBounds<HeatingOvenBlockEntity> {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/heating_oven.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/heating_oven.png");
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/heating_oven.obj"));
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/heating_oven.png");
 
     public HeatingOvenRenderer(BlockEntityRendererProvider.Context context) { }
 

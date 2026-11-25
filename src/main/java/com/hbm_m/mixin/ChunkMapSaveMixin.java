@@ -136,11 +136,11 @@ public abstract class ChunkMapSaveMixin {
         // ГВАРД ПОТОКОБЕЗОПАСНОСТИ: тикающий чанк сериализуем синхронно, как ванилла.
         if (holder == null || holder.getTicketLevel() <= 31) return;
 
-        this.poiManager.flush(pos);
         if (!chunk.isUnsaved()) {
             cir.setReturnValue(false);
             return;
         }
+        this.poiManager.flush(pos);
         chunk.setUnsaved(false);
         // markPosition(LEVELCHUNK): ванилла пишет (byte)(proto ? -1 : 1)
         this.chunkTypeCache.put(pos.toLong(), (byte) 1);

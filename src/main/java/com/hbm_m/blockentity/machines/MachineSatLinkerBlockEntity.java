@@ -3,6 +3,8 @@ package com.hbm_m.blockentity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.redstoneoverradio.IRORInteractive;
+import com.hbm_m.api.redstoneoverradio.IRORValueProvider;
 import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineSatLinkerMenu;
@@ -27,8 +29,11 @@ import net.minecraft.world.level.block.state.BlockState;
  * Port of legacy {@code TileEntityMachineSatLinker}: slot 0+1 copies slot 0's satellite chip
  * frequency onto slot 1 (so a designator can be matched to a payload before launch); slot 2
  * assigns a fresh random unused frequency to whatever chip is placed there.
+ * Redstone-over-Radio: value {@code freq} (chip in slot 0) and function {@code setfreq}.
  */
-public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
+public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements MenuProvider, IRORValueProvider, IRORInteractive {
+
+    public static final int SAT_ID_RANGE = 10_000_000; // original TileEntityMachineSatLinker.SAT_ID_RANGE
 
     public static final int SLOT_COPY_SOURCE = 0;
     public static final int SLOT_COPY_TARGET = 1;
@@ -65,7 +70,7 @@ public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements M
         ItemStack toRandomize = be.inventory.getStackInSlot(SLOT_RANDOMIZE);
         if (toRandomize.getItem() instanceof ISatChip) {
             SatelliteManager manager = SatelliteManager.get(server, pos.getX(), pos.getZ());
-            int freq = server.getRandom().nextInt(100_000);
+            int freq = server.getRandom().nextInt(SAT_ID_RANGE);
             if (!manager.isFreqTaken(freq)) {
                 ISatChip.setFreqS(toRandomize, freq);
             }
@@ -99,13 +104,37 @@ public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements M
         return new MachineSatLinkerMenu(containerId, playerInventory, this);
     }
 
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "freq",
+                PREFIX_FUNCTION + "setfreq" + NAME_SEPARATOR + "freq"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "freq").equals(name)) return "" + ISatChip.getFreqS(inventory.getStackInSlot(SLOT_COPY_SOURCE));
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        if ((PREFIX_FUNCTION + "setfreq").equals(name) && params.length == 1) {
+            ISatChip.setFreqS(inventory.getStackInSlot(SLOT_COPY_SOURCE), IRORInteractive.parseInt(params[0], 1, SAT_ID_RANGE));
+            return null;
+        }
+
+        return null;
+    }
+
     //? if forge {
-    /** Original {@code ISidedInventory}: unten {1}, oben {0}, Seiten {2}; nichts hinein, alles heraus. */
+    /** Original {@code ISidedInventory}: alle Seiten {1}; nichts hinein, heraus nur bei gleicher Frequenz von Slot 0 und 1. */
     private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
             new com.hbm_m.blockentity.SidedItemAccess.Rules() {
-                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? new int[] { 1 } : side == net.minecraft.core.Direction.UP ? new int[] { 0 } : new int[] { 2 }; }
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 1 }; }
                 @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
-                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return ISatChip.getFreqS(inventory.getStackInSlot(SLOT_COPY_SOURCE)) == ISatChip.getFreqS(inventory.getStackInSlot(SLOT_COPY_TARGET)); }
             });
 
     @Override
@@ -120,12 +149,12 @@ public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements M
         sidedItems.invalidate();
     }
     //?} elif neoforge {
-    /*/^* Original {@code ISidedInventory}: unten {1}, oben {0}, Seiten {2}; nichts hinein, alles heraus. ^/
+    /*/^* Original {@code ISidedInventory}: alle Seiten {1}; nichts hinein, heraus nur bei gleicher Frequenz von Slot 0 und 1. ^/
     private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
             new com.hbm_m.blockentity.SidedItemAccess.Rules() {
-                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? new int[] { 1 } : side == net.minecraft.core.Direction.UP ? new int[] { 0 } : new int[] { 2 }; }
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 1 }; }
                 @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
-                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return ISatChip.getFreqS(inventory.getStackInSlot(SLOT_COPY_SOURCE)) == ISatChip.getFreqS(inventory.getStackInSlot(SLOT_COPY_TARGET)); }
             });
 
     @Override

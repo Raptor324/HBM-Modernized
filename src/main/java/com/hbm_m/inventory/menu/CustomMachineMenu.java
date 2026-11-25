@@ -24,12 +24,13 @@ public class CustomMachineMenu extends AbstractContainerMenu {
     public final CustomMachineBlockEntity custom;
 
     public CustomMachineMenu(int id, Inventory inv, FriendlyByteBuf extra) {
-        this(id, inv, (CustomMachineBlockEntity) inv.player.level().getBlockEntity(extra.readBlockPos()));
+        this(id, inv, inv.player.level().getBlockEntity(extra.readBlockPos()) instanceof CustomMachineBlockEntity cm ? cm : null);
     }
 
     public CustomMachineMenu(int id, Inventory playerInv, CustomMachineBlockEntity tile) {
         super(ModMenuTypes.CUSTOM_MACHINE_MENU.get(), id);
         this.custom = tile;
+        if (tile == null) return;
         var c = new ModItemStackHandlerContainer(tile.getInventory(), tile::setChanged);
 
         //Input
@@ -83,7 +84,7 @@ public class CustomMachineMenu extends AbstractContainerMenu {
         if (button == 1 && clickType == ClickType.PICKUP && slot.hasItem()) {
             if (!player.level().isClientSide) custom.matcher.nextMode(tileIndex - 10, slot.getItem());
         } else {
-            slot.set(held);
+            slot.set(held.isEmpty() ? ItemStack.EMPTY : held.copyWithCount(1));
             if (!player.level().isClientSide) custom.matcher.initPatternSmart(tileIndex - 10, slot.getItem());
         }
         custom.setChanged();

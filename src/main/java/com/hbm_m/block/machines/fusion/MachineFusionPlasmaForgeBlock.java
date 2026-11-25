@@ -9,6 +9,7 @@ import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -72,4 +73,21 @@ public class MachineFusionPlasmaForgeBlock extends FusionMultiblockBlock {
         return CODEC;
     }
     *///?}
+
+    // Verbatim port of the original MachineFusionPlasmaForge.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {-2, 0, 5, Direction.SOUTH.get3DDataValue()},
+            {-1, 0, 5, Direction.SOUTH.get3DDataValue()},
+            {0, 0, 5, Direction.SOUTH.get3DDataValue()},
+            {1, 0, 5, Direction.SOUTH.get3DDataValue()},
+            {2, 0, 5, Direction.SOUTH.get3DDataValue()},
+            {-2, 0, -5, Direction.NORTH.get3DDataValue()},
+            {-1, 0, -5, Direction.NORTH.get3DDataValue()},
+            {0, 0, -5, Direction.NORTH.get3DDataValue()},
+            {1, 0, -5, Direction.NORTH.get3DDataValue()},
+            {2, 0, -5, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

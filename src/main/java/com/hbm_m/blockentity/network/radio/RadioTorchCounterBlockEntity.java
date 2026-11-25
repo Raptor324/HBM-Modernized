@@ -42,6 +42,16 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
         java.util.Arrays.fill(channel, "");
     }
 
+    @Override
+    public void dropInventoryContents() {
+        // Ghost filter slots must never drop real items
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        return null;
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, RadioTorchCounterBlockEntity be) {
         if (level.isClientSide) return;
         RTTYNetwork.tickIfNeeded(level.getGameTime());

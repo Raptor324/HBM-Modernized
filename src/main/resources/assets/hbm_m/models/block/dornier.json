@@ -8,6 +8,7 @@
       "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/dornier.obj",
       "flip_v": true,
+      "render_type": "minecraft:cutout",
       "textures": {
         "default": "hbm_m:block/dornier"
       }

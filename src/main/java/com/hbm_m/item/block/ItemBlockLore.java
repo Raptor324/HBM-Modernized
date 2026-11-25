@@ -27,7 +27,7 @@ public final class ItemBlockLore {
         if ("gravel_diamond".equals(name)) return Rarity.RARE;
         if ("block_euphemium".equals(name) || "block_euphemium_cluster".equals(name)) return Rarity.EPIC;
         // Original ItemOreBlock.getRarity: uncommon (ore_australium, ore_rare, ore_gneiss_rare, block_australium)
-        if ("australium_ore".equals(name) || "ore_rare".equals(name) || "gneiss_rare_ore".equals(name) || "block_australium".equals(name)) return Rarity.UNCOMMON;
+        if ("australium_ore".equals(name) || "ore_australium".equals(name) || "ore_rare".equals(name) || "gneiss_rare_ore".equals(name) || "block_australium".equals(name)) return Rarity.UNCOMMON;
         return null;
     }
 
@@ -41,7 +41,13 @@ public final class ItemBlockLore {
         }
 
         if (block instanceof RedBarrelBlock) {
-            list.add(Component.literal("Static fluid barrel"));
+            list.add(Component.translatable("tooltip.hbm_m.static_fluid_barrel"));
+        }
+
+        if (block == ModBlocks.NUKE_PROTOTYPE.get()) {
+            list.add(Component.translatable("tooltip.hbm_m.nuke_prototype.1"));
+            list.add(Component.empty());
+            list.add(Component.translatable("tooltip.hbm_m.nuke_prototype.2"));
         }
 
         if (block == ModBlocks.METEOR_BATTERY.get()) {
@@ -49,7 +55,7 @@ public final class ItemBlockLore {
         }
 
         // Original ItemOreBlock.addInformation
-        if (block == ModBlocks.AUSTRALIUM_ORE.get()) {
+        if (block == ModBlocks.AUSTRALIUM_ORE.get() || block == ModBlocks.ORE_AUSTRALIUM.get()) {
             list.add(Component.literal("Australium ore"));
             list.add(Component.literal("Deposit location: X:-400; Z:-400"));
             list.add(Component.literal("Estimated quantity: 490"));

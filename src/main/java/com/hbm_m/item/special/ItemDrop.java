@@ -210,17 +210,17 @@ public class ItemDrop extends Item implements ITooltipProvider {
             list.add(Component.literal("and I don't feel fine."));
         }
         if (this == ModItems.DETONATOR_DEADMAN.get()) {
-            list.add(Component.literal("Shift right-click to set position,"));
-            list.add(Component.literal("drop to detonate!"));
+            list.add(Component.translatable("tooltip.hbm_m.detonator_deadman.1"));
+            list.add(Component.translatable("tooltip.hbm_m.detonator_deadman.2"));
             CompoundTag tag = StackNbt.read(itemstack);
             if (tag == null) {
-                list.add(Component.literal("No position set!"));
+                list.add(Component.translatable("tooltip.hbm_m.detonator_deadman.no_pos"));
             } else {
-                list.add(Component.literal("Set pos to " + tag.getInt("x") + ", " + tag.getInt("y") + ", " + tag.getInt("z")));
+                list.add(Component.translatable("tooltip.hbm_m.detonator_deadman.pos", tag.getInt("x"), tag.getInt("y"), tag.getInt("z")));
             }
         }
         if (this == ModItems.DETONATOR_DE.get()) {
-            list.add(Component.literal("Explodes when dropped!"));
+            list.add(Component.translatable("tooltip.hbm_m.detonator_de.1"));
         }
 
         list.add(Component.literal("[").append(Component.translatable("trait.drop")).append("]").withStyle(ChatFormatting.RED));

@@ -751,7 +751,7 @@ public final class RadiationGameTest {
     //  Group 9: HazardSystem — getHazardLevelFromStack, getHazardsFromStack,
     //  getHazardLevelFromState, cache, sellafiteRadiationForLevel.
     //  Registration: HazardRegistry.registerItems() is called in MainRegistry.setup.
-    //  CRYSTAL_URANIUM=3.5f, CRYSTAL_THORIUM=1.0f, POLONIUM210_BLOCK=750f.
+    //  CRYSTAL_URANIUM=3.5f, CRYSTAL_THORIUM=1.0f, blockPolonium=750f (1.7.10).
     // ════════════════════════════════════════════════════════════════════════
 
     @GameTest(template = "empty3x3x3", batch = "radiation", timeoutTicks = 100)

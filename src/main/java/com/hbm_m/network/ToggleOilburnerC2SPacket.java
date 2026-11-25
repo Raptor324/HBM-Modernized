@@ -40,9 +40,9 @@ public class ToggleOilburnerC2SPacket implements C2SPacket {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
 
             ServerLevel level = player.serverLevel();
-            BlockEntity be    = level.getBlockEntity(msg.pos);
-
-            if (be instanceof MachineOilburnerBlockEntity oilburner) {
+            BlockEntity be    = ModPacketHandler.blockEntityAt(player, msg.pos);
+            if (be instanceof MachineOilburnerBlockEntity oilburner
+                    && com.hbm_m.inventory.menu.MenuReach.canReach(player, msg.pos, player.level().getBlockState(msg.pos))) {
                 oilburner.toggleOn();
             }
         });

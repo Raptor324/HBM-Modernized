@@ -56,11 +56,11 @@ public class NukeFstbmbBlockEntity extends NukeBaseBlockEntity implements IContr
 
             if (timer % 20 == 0)
                 level.playSound(null, worldPosition, HbmSoundsNT.get("hbm:weapon.fstbmbPing"), SoundSource.BLOCKS, 5.0F, 1.0F);
-        }
 
-        if (timer <= 0) {
-            explode();
-            return;
+            if (timer <= 0) {
+                explode();
+                return;
+            }
         }
 
         // Original networkPackNT(250): Timer/Status laufend an die Clients
@@ -82,7 +82,8 @@ public class NukeFstbmbBlockEntity extends NukeBaseBlockEntity implements IContr
             started = true;
         }
 
-        if (meta == 1)
+        // Оригинал TileEntityNukeBalefire.handleButtonPacket: timer задаётся только в диапазоне 1..999 сек
+        if (meta == 1 && value >= 1 && value <= 999)
             timer = value * 20;
 
         sync();

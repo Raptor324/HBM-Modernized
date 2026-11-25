@@ -158,7 +158,11 @@ public class RBMKNeutronHandler {
                 positions[i - 1] = node;
             } else {
                 BlockEntity te = blockPosToTE(level, pos);
-                if (te instanceof RBMKColumnBlockEntity rbmk) {
+                // CE's panels extend BlockContainer/TileEntityLoadedBase, not TileEntityRBMKBase, so
+                // a stream crossing one finds no node and the position falls into the getHits/
+                // irradiate branch. In the port those devices share RBMKColumnBlockEntity - only
+                // columns that opt into the heat network may become neutron nodes.
+                if (te instanceof RBMKColumnBlockEntity rbmk && rbmk.participatesInHeatNetwork()) {
                     node = makeNode(sw, rbmk);
                     positions[i - 1] = node;
                     if (addNode) sw.addNode(node);
@@ -214,7 +218,7 @@ public class RBMKNeutronHandler {
                 RBMKNeutronNode targetNode = sw.getNode(targetPos);
                 if (targetNode == null) {
                     BlockEntity te = blockPosToTE(level, targetPos);
-                    if (te instanceof RBMKColumnBlockEntity rbmk) {
+                    if (te instanceof RBMKColumnBlockEntity rbmk && rbmk.participatesInHeatNetwork()) {
                         targetNode = makeNode(sw, rbmk);
                         sw.addNode(targetNode);
                     } else {
@@ -291,7 +295,7 @@ public class RBMKNeutronHandler {
 
                     if (sw.getNode(pos) == null) {
                         BlockEntity te = blockPosToTE(level, posAfter);
-                        if (te instanceof RBMKColumnBlockEntity rbmk) {
+                        if (te instanceof RBMKColumnBlockEntity rbmk && rbmk.participatesInHeatNetwork()) {
                             sw.addNode(makeNode(sw, rbmk));
                         } else {
                             irradiateFromFlux(level, posAfter);

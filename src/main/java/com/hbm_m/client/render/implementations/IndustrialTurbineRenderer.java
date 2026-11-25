@@ -17,8 +17,8 @@ import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 /** 1:1 {@code RenderIndustrialTurbine}: housing, gauge display based on steam tier ({@code 135 - tier * 90}), rotating flywheel. */
 public class IndustrialTurbineRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineIndustrialTurbineBlockEntity> {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/industrial_turbine.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/industrial_turbine.png");
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/industrial_turbine.obj"));
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/industrial_turbine.png");
 
     public IndustrialTurbineRenderer(BlockEntityRendererProvider.Context context) { }
 

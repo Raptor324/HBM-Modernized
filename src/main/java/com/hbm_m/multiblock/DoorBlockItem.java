@@ -25,6 +25,7 @@ public class DoorBlockItem extends MultiblockBlockItem implements ITooltipProvid
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        if (getBlock() instanceof com.hbm_m.block.decorations.BlastDoorBlock) return;
         tooltip.add(Component.translatable("tooltip." + RefStrings.MODID + ".door_skin").withStyle(ChatFormatting.GRAY));
     }
 }

@@ -19,8 +19,8 @@ import net.minecraft.world.level.material.Fluid;
 /** 1:1 {@code RenderChungus}: Koerper, Hebel nach Dampfstufe, Laufrad mit dem Rotorwinkel. */
 public class ChungusRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineChungusBlockEntity> {
 
-    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/chungus.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/chungus.png");
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/machines/chungus.obj"));
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/chungus.png");
 
     public static final SimpleObjModel MODEL_DESTROYED = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/chungus_destroyed.obj"));
     public static final ResourceLocation TEX_DESTROYED = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/chungus_destroyed.png");

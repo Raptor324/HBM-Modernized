@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public class VendingMachineRenderer implements com.hbm_m.client.render.HbmBerBounds<VendingMachineBlockEntity> {
 
     public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/vending_machine.obj"));
-    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/vending_machine.png");
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/deco/vending_machine.png");
 
     public VendingMachineRenderer(BlockEntityRendererProvider.Context ctx) { }
 

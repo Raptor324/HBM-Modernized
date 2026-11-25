@@ -291,8 +291,8 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle, Replace
         public boolean isDead = false;
         float rangeMod;
         public float colorMod;
-        public Vec3 color;
-        public Vec3 prevColor;
+        public float colorR, colorG, colorB;
+        public float prevColorR, prevColorG, prevColorB;
         public TorexType type;
 
         // Кэш кадра рендера: интерполированная позиция и квадрат дистанции до камеры.
@@ -316,7 +316,9 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle, Replace
             this.colorMod = 0.8F + random.nextFloat() * 0.2F;
             this.type = type;
             this.updateColor();
-            this.prevColor = this.color;
+            this.prevColorR = this.colorR;
+            this.prevColorG = this.colorG;
+            this.prevColorB = this.colorB;
         }
 
         private void update() {
@@ -326,33 +328,36 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle, Replace
             this.prevPosY = this.posY;
             this.prevPosZ = this.posZ;
 
-            Vec3 simPos = new Vec3(NukeTorex.this.x - this.posX, 0, NukeTorex.this.z - this.posZ);
-            double simPosX = NukeTorex.this.x + simPos.length();
+            double sdx = NukeTorex.this.x - this.posX;
+            double sdz = NukeTorex.this.z - this.posZ;
+            double simPosX = NukeTorex.this.x + Math.sqrt(sdx * sdx + sdz * sdz);
             double simPosZ = NukeTorex.this.z;
 
             if (this.type == TorexType.STANDARD) {
-                Vec3 convection = getConvectionMotion(simPosX, simPosZ);
-                Vec3 lift = getLiftMotion(simPosX);
+                computeConvectionMotion(simPosX, simPosZ);
+                double convX = this.motionX;
+                double convY = this.motionY;
+                double convZ = this.motionZ;
+                computeLiftMotion(simPosX);
                 double factor = Mth.clamp((this.posY - NukeTorex.this.y) / NukeTorex.this.coreHeight, 0.0, 1.0);
-                this.motionX = convection.x * factor + lift.x * (1.0 - factor);
-                this.motionY = convection.y * factor + lift.y * (1.0 - factor);
-                this.motionZ = convection.z * factor + lift.z * (1.0 - factor);
+                double invFactor = 1.0 - factor;
+                this.motionX = convX * factor + this.motionX * invFactor;
+                this.motionY = convY * factor + this.motionY * invFactor;
+                this.motionZ = convZ * factor + this.motionZ * invFactor;
             } else if (this.type == TorexType.SHOCK) {
-                double factor = Mth.clamp((this.posY - NukeTorex.this.y) / NukeTorex.this.coreHeight, 0, 1);
-                Vec3 motion = new Vec3(1, 0, 0).yRot(this.angle);
-                this.motionX = motion.x * factor;
-                this.motionY = motion.y * factor;
-                this.motionZ = motion.z * factor;
+                double factor = Mth.clamp((this.posY - NukeTorex.this.y) / NukeTorex.this.coreHeight, 0.0, 1.0);
+                double cosA = Mth.cos(this.angle);
+                double sinA = Mth.sin(this.angle);
+                this.motionX = cosA * factor;
+                this.motionY = 0.0;
+                this.motionZ = -sinA * factor;
             } else if (this.type == TorexType.RING) {
-                Vec3 motion = getRingMotion(simPosX, simPosZ);
-                this.motionX = motion.x;
-                this.motionY = motion.y;
-                this.motionZ = motion.z;
+                computeRingMotion(simPosX, simPosZ);
             } else if (this.type == TorexType.CONDENSATION) {
-                Vec3 motion = getCondensationMotion();
-                this.motionX = motion.x;
-                this.motionY = motion.y;
-                this.motionZ = motion.z;
+                double speed = 0.00002 * NukeTorex.this.age;
+                this.motionX = (posX - NukeTorex.this.x) * speed;
+                this.motionY = 0.0;
+                this.motionZ = (posZ - NukeTorex.this.z) * speed;
             }
 
             double mult = this.motionMult * getSimulationSpeed();
@@ -362,47 +367,108 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle, Replace
             this.updateColor();
         }
 
-        private Vec3 getCondensationMotion() {
-            Vec3 delta = new Vec3(posX - NukeTorex.this.x, 0, posZ - NukeTorex.this.z);
-            double speed = 0.00002 * NukeTorex.this.age;
-            return new Vec3(delta.x * speed, 0, delta.z * speed);
-        }
-
-        private Vec3 getRingMotion(double simPosX, double simPosZ) {
-            if (simPosX > NukeTorex.this.x + torusWidth * 2) return new Vec3(0, 0, 0);
-            Vec3 torusPos = new Vec3(NukeTorex.this.x + torusWidth, NukeTorex.this.y + coreHeight * 0.5, NukeTorex.this.z);
-            Vec3 delta = new Vec3(torusPos.x - simPosX, torusPos.y - this.posY, torusPos.z - simPosZ);
+        private void computeRingMotion(double simPosX, double simPosZ) {
+            if (simPosX > NukeTorex.this.x + torusWidth * 2) {
+                this.motionX = 0.0;
+                this.motionY = 0.0;
+                this.motionZ = 0.0;
+                return;
+            }
+            double torusX = NukeTorex.this.x + torusWidth;
+            double torusY = NukeTorex.this.y + coreHeight * 0.5;
+            double torusZ = NukeTorex.this.z;
+            double dx = torusX - simPosX;
+            double dy = torusY - this.posY;
+            double dz = torusZ - simPosZ;
             double roller = NukeTorex.this.rollerSize * this.rangeMod * 0.25;
-            double dist = delta.length() / roller - 1.0;
-            double func = 1.0 - Math.pow(Math.E, -dist);
-            float angle = (float) (func * Math.PI * 0.5);
-            Vec3 rot = new Vec3(-delta.x / dist, -delta.y / dist, -delta.z / dist).zRot(angle);
-            Vec3 motion = new Vec3(torusPos.x + rot.x - simPosX, torusPos.y + rot.y - this.posY, torusPos.z + rot.z - simPosZ);
-            double speed = 0.001;
-            motion = new Vec3(motion.x * speed, motion.y * speed, motion.z * speed).yRot(this.angle).normalize();
-            return motion;
+            double dist = Math.sqrt(dx * dx + dy * dy + dz * dz) / roller - 1.0;
+            double func = 1.0 - Math.exp(-dist);
+            float rotAngle = (float) (func * Math.PI * 0.5);
+            double rx = -dx / dist;
+            double ry = -dy / dist;
+            double rz = -dz / dist;
+            float cosZ = Mth.cos(rotAngle);
+            float sinZ = Mth.sin(rotAngle);
+            double zrx = rx * cosZ + ry * sinZ;
+            double zry = ry * cosZ - rx * sinZ;
+            double mx = (torusX + zrx - simPosX) * 0.001;
+            double my = (torusY + zry - this.posY) * 0.001;
+            double mz = (torusZ + rz - simPosZ) * 0.001;
+            float cosY = Mth.cos(this.angle);
+            float sinY = Mth.sin(this.angle);
+            double ymx = mx * cosY + mz * sinY;
+            double ymz = mz * cosY - mx * sinY;
+            double len = Math.sqrt(ymx * ymx + my * my + ymz * ymz);
+            if (len > 1e-4) {
+                this.motionX = ymx / len;
+                this.motionY = my / len;
+                this.motionZ = ymz / len;
+            } else {
+                this.motionX = 0.0;
+                this.motionY = 0.0;
+                this.motionZ = 0.0;
+            }
         }
 
-        private Vec3 getConvectionMotion(double simPosX, double simPosZ) {
-            Vec3 torusPos = new Vec3(NukeTorex.this.x + torusWidth, NukeTorex.this.y + coreHeight, NukeTorex.this.z);
-            Vec3 delta = new Vec3(torusPos.x - simPosX, torusPos.y - this.posY, torusPos.z - simPosZ);
+        private void computeConvectionMotion(double simPosX, double simPosZ) {
+            double torusX = NukeTorex.this.x + torusWidth;
+            double torusY = NukeTorex.this.y + coreHeight;
+            double torusZ = NukeTorex.this.z;
+            double dx = torusX - simPosX;
+            double dy = torusY - this.posY;
+            double dz = torusZ - simPosZ;
             double roller = NukeTorex.this.rollerSize * this.rangeMod;
-            double dist = delta.length() / roller - 1.0;
-            double func = 1.0 - Math.pow(Math.E, -dist);
-            float angle = (float) (func * Math.PI * 0.5);
-            Vec3 rot = new Vec3(-delta.x / dist, -delta.y / dist, -delta.z / dist).zRot(angle);
-            Vec3 motion = new Vec3(torusPos.x + rot.x - simPosX, torusPos.y + rot.y - this.posY, torusPos.z + rot.z - simPosZ).yRot(this.angle);
-            return motion.normalize();
+            double dist = Math.sqrt(dx * dx + dy * dy + dz * dz) / roller - 1.0;
+            double func = 1.0 - Math.exp(-dist);
+            float rotAngle = (float) (func * Math.PI * 0.5);
+            double rx = -dx / dist;
+            double ry = -dy / dist;
+            double rz = -dz / dist;
+            float cosZ = Mth.cos(rotAngle);
+            float sinZ = Mth.sin(rotAngle);
+            double zrx = rx * cosZ + ry * sinZ;
+            double zry = ry * cosZ - rx * sinZ;
+            double mx = torusX + zrx - simPosX;
+            double my = torusY + zry - this.posY;
+            double mz = torusZ + rz - simPosZ;
+            float cosY = Mth.cos(this.angle);
+            float sinY = Mth.sin(this.angle);
+            double ymx = mx * cosY + mz * sinY;
+            double ymz = mz * cosY - mx * sinY;
+            double len = Math.sqrt(ymx * ymx + my * my + ymz * ymz);
+            if (len > 1e-4) {
+                this.motionX = ymx / len;
+                this.motionY = my / len;
+                this.motionZ = ymz / len;
+            } else {
+                this.motionX = 0.0;
+                this.motionY = 0.0;
+                this.motionZ = 0.0;
+            }
         }
 
-        private Vec3 getLiftMotion(double simPosX) {
-            double scale = Mth.clamp(1.0 - (simPosX - (NukeTorex.this.x + torusWidth)), 0, 1);
-            Vec3 motion = new Vec3(NukeTorex.this.x - this.posX, (NukeTorex.this.y + convectionHeight) - this.posY, NukeTorex.this.z - this.posZ).normalize();
-            return new Vec3(motion.x * scale, motion.y * scale, motion.z * scale);
+        private void computeLiftMotion(double simPosX) {
+            double scale = Mth.clamp(1.0 - (simPosX - (NukeTorex.this.x + torusWidth)), 0.0, 1.0);
+            double lx = NukeTorex.this.x - this.posX;
+            double ly = (NukeTorex.this.y + convectionHeight) - this.posY;
+            double lz = NukeTorex.this.z - this.posZ;
+            double len = Math.sqrt(lx * lx + ly * ly + lz * lz);
+            if (len > 1e-4) {
+                double inv = scale / len;
+                this.motionX = lx * inv;
+                this.motionY = ly * inv;
+                this.motionZ = lz * inv;
+            } else {
+                this.motionX = 0.0;
+                this.motionY = 0.0;
+                this.motionZ = 0.0;
+            }
         }
 
         private void updateColor() {
-            this.prevColor = this.color;
+            this.prevColorR = this.colorR;
+            this.prevColorG = this.colorG;
+            this.prevColorB = this.colorB;
             double exX = NukeTorex.this.x, exY = NukeTorex.this.y + NukeTorex.this.coreHeight, exZ = NukeTorex.this.z;
             double distX = exX - posX, distY = exY - posY, distZ = exZ - posZ;
             double distSq = distX * distX + distY * distY + distZ * distZ;
@@ -412,16 +478,25 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle, Replace
             double col = 2.0 / dist;
             int nukeType = NukeTorex.this.type;
             if (nukeType == 1) {
-                this.color = new Vec3(Math.max(col * 1, 0.25), Math.max(col * 2, 0.25), Math.max(col * 0.5, 0.25));
+                this.colorR = (float) Math.max(col * 1, 0.25);
+                this.colorG = (float) Math.max(col * 2, 0.25);
+                this.colorB = (float) Math.max(col * 0.5, 0.25);
             } else if (nukeType == 2) {
-                Color awt = Color.getHSBColor(this.angle / 2F / (float) Math.PI, 1F, 1F);
                 if (this.type == TorexType.RING) {
-                    this.color = new Vec3(Math.max(col * 1, 0.25), Math.max(col * 1, 0.25), Math.max(col * 1, 0.25));
+                    float c = (float) Math.max(col, 0.25);
+                    this.colorR = c;
+                    this.colorG = c;
+                    this.colorB = c;
                 } else {
-                    this.color = new Vec3(awt.getRed() / 255.0, awt.getGreen() / 255.0, awt.getBlue() / 255.0);
+                    int rgb = Color.HSBtoRGB(this.angle / 2F / (float) Math.PI, 1F, 1F);
+                    this.colorR = ((rgb >> 16) & 0xFF) / 255.0F;
+                    this.colorG = ((rgb >> 8) & 0xFF) / 255.0F;
+                    this.colorB = (rgb & 0xFF) / 255.0F;
                 }
             } else {
-                this.color = new Vec3(Math.max(col * 2, 0.25), Math.max(col * 1.5, 0.25), Math.max(col * 0.5, 0.25));
+                this.colorR = (float) Math.max(col * 2, 0.25);
+                this.colorG = (float) Math.max(col * 1.5, 0.25);
+                this.colorB = (float) Math.max(col * 0.5, 0.25);
             }
         }
 
@@ -436,12 +511,11 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle, Replace
 
         public Vec3 getInterpColor(float partialTicks) {
             if (this.type == TorexType.CONDENSATION) return new Vec3(1, 1, 1);
-            Vec3 prev = prevColor != null ? prevColor : color;
             double greying = NukeTorex.this.getGreying();
             if (this.type == TorexType.RING) greying += 1;
-            double r = (prev.x + (color.x - prev.x) * partialTicks) * greying;
-            double g = (prev.y + (color.y - prev.y) * partialTicks) * greying;
-            double b = (prev.z + (color.z - prev.z) * partialTicks) * greying;
+            double r = (prevColorR + (colorR - prevColorR) * partialTicks) * greying;
+            double g = (prevColorG + (colorG - prevColorG) * partialTicks) * greying;
+            double b = (prevColorB + (colorB - prevColorB) * partialTicks) * greying;
             return new Vec3(r, g, b);
         }
 
@@ -553,10 +627,12 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle, Replace
         // квайдов задаём сами — иначе ножка/шляпка/роллеры блендятся в
         // порядке спавна, а не по глубине.
         Camera cam = Minecraft.getInstance().gameRenderer.getMainCamera();
+        if (isBehindCamera(cam)) return;
         double cx = cam.getPosition().x;
         double cy = cam.getPosition().y;
         double cz = cam.getPosition().z;
         float sc = (float) getScale();
+        double greying = getGreying();
 
         // Проход O(N): интерполяция + дистанция один раз на cloudlet, без аллокаций
         for (int i = 0; i < cloudlets.size(); i++) {
@@ -593,21 +669,41 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle, Replace
             float lx = (float) ((cloudlet.interpX - this.x) * vScale);
             float ly = (float) ((cloudlet.interpY - this.y) * vScale);
             float lz = (float) ((cloudlet.interpZ - this.z) * vScale);
-            renderCloudlet(matrix, consumer, sodium, lx, ly, lz, cloudlet, partialTicks, camLeft, camUp, vScale);
+            renderCloudlet(matrix, consumer, sodium, lx, ly, lz, cloudlet, partialTicks, camLeft, camUp, vScale, greying);
         }
     }
 
-    private void renderCloudlet(Matrix4f matrix, VertexConsumer consumer, boolean sodium, float posX, float posY, float posZ, Cloudlet cloud, float partialTicks, Vector3f camLeft, Vector3f camUp, float vScale) {
+    private boolean isBehindCamera(Camera cam) {
+        if (cam == null) return false;
+        Vector3f look = cam.getLookVector();
+        Vec3 cp = cam.getPosition();
+        double sc = getScale();
+        double centerX = this.x - cp.x;
+        double centerY = this.y + this.coreHeight * sc * 0.5 - cp.y;
+        double centerZ = this.z - cp.z;
+        double dot = centerX * look.x + centerY * look.y + centerZ * look.z;
+        double maxBoundRadius = Math.max(256.0, (this.torusWidth + this.rollerSize + this.coreHeight) * sc * 1.5 + 160.0);
+        return dot < -maxBoundRadius;
+    }
+
+    private void renderCloudlet(Matrix4f matrix, VertexConsumer consumer, boolean sodium, float posX, float posY, float posZ, Cloudlet cloud, float partialTicks, Vector3f camLeft, Vector3f camUp, float vScale, double greying) {
         // Окклюзия — попиксельно в шейдере nuke_cloud (DhOcclusionGpu).
         float alpha = cloud.getAlpha();
+        if (alpha <= 0.002F) return;
         float scale = cloud.getScale() * vScale;
         SCRATCH_LEFT.set(camLeft).mul(scale);
         SCRATCH_UP.set(camUp).mul(scale);
-        float brightness = cloud.type == TorexType.CONDENSATION ? 0.9F : 0.75F * cloud.colorMod;
-        Vec3 interpColor = cloud.getInterpColor(partialTicks);
-        float r = (float) interpColor.x * brightness;
-        float g = (float) interpColor.y * brightness;
-        float b = (float) interpColor.z * brightness;
+        float r, g, b;
+        if (cloud.type == TorexType.CONDENSATION) {
+            r = g = b = 0.9F;
+        } else {
+            float brightness = 0.75F * cloud.colorMod;
+            double gr = (cloud.type == TorexType.RING) ? greying + 1.0 : greying;
+            float factor = (float) (gr * brightness);
+            r = (cloud.prevColorR + (cloud.colorR - cloud.prevColorR) * partialTicks) * factor;
+            g = (cloud.prevColorG + (cloud.colorG - cloud.prevColorG) * partialTicks) * factor;
+            b = (cloud.prevColorB + (cloud.colorB - cloud.prevColorB) * partialTicks) * factor;
+        }
         ImmediateVertexWriter.billboardQuad(consumer, sodium, matrix, posX, posY, posZ, SCRATCH_LEFT, SCRATCH_UP, r, g, b, alpha, 0, 0, 1, 1);
     }
 
@@ -628,6 +724,50 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle, Replace
     public RenderType getRenderType() {
         // Основной рендер идёт через NUKE_CLOUDS, но возвращаем тип для совместимости.
         return ClientRenderHandler.CustomRenderTypes.nukeClouds(CLOUDLET);
+    }
+
+    public static ResourceLocation getCloudletTexture() {
+        return CLOUDLET;
+    }
+
+    /**
+     * Renders only the cloudlet quads into the given consumer for the screen-space
+     * cloud coverage mask, without sorting or triggering flash/shake side effects.
+     */
+    public void renderCloudletsForMask(VertexConsumer consumer, Camera camera, float partialTicks) {
+        if (cloudlets.isEmpty() || isBehindCamera(camera)) return;
+        float vScale = virtualScale(this.x, this.y, this.z, camera);
+        Vec3 centerOffset = virtualizedOffset(this.x, this.y, this.z, camera);
+
+        PoseStack localPose = new PoseStack();
+        localPose.translate(centerOffset.x, centerOffset.y, centerOffset.z);
+        Matrix4f matrix = localPose.last().pose();
+
+        float sc = (float) getScale();
+        Vector3f camLeft = camera.getLeftVector();
+        Vector3f camUp = camera.getUpVector();
+        boolean sodium = ImmediateVertexWriter.isSodiumBuffer(consumer);
+
+        for (int i = 0; i < cloudlets.size(); i++) {
+            Cloudlet c = cloudlets.get(i);
+            float alpha = c.getAlpha();
+            if (alpha <= 0.005F) continue;
+            double ix = c.prevPosX + (c.posX - c.prevPosX) * partialTicks;
+            double iy = c.prevPosY + (c.posY - c.prevPosY) * partialTicks;
+            double iz = c.prevPosZ + (c.posZ - c.prevPosZ) * partialTicks;
+            if (c.type != TorexType.SHOCK) {
+                ix = (ix - x) * sc + x;
+                iy = (iy - y) * sc + y;
+                iz = (iz - z) * sc + z;
+            }
+            float lx = (float) ((ix - this.x) * vScale);
+            float ly = (float) ((iy - this.y) * vScale);
+            float lz = (float) ((iz - this.z) * vScale);
+            float cScale = c.getScale() * vScale;
+            SCRATCH_LEFT.set(camLeft).mul(cScale);
+            SCRATCH_UP.set(camUp).mul(cScale);
+            ImmediateVertexWriter.billboardQuad(consumer, sodium, matrix, lx, ly, lz, SCRATCH_LEFT, SCRATCH_UP, 1.0F, 1.0F, 1.0F, alpha, 0, 0, 1, 1);
+        }
     }
 }
 

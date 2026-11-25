@@ -7,5 +7,8 @@
   "textures": {
     "texture": "hbm_m:block/bomb/det_cord",
     "particle": "hbm_m:block/bomb/det_cord"
-  }
+  },
+  "shade_quads": false,
+  "ao": false,
+  "emissive_ambient": false
 }

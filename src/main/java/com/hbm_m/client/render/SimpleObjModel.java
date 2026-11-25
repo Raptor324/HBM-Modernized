@@ -67,23 +67,21 @@ public class SimpleObjModel {
             for (var sm : nmesh.subMeshes()) {
                 String key = sm.objectName != null && !sm.objectName.isEmpty() ? sm.objectName
                         : (sm.groupName != null && !sm.groupName.isEmpty() ? sm.groupName : "default");
-                float[] verts = sm.vertices;
-                int[] idx = sm.indices;
+                int iCount = sm.indexCount();
                 List<float[]> tris = parts.computeIfAbsent(key, k -> new ArrayList<>());
-                for (int i = 0; i + 2 < idx.length; i += 3) {
+                for (int i = 0; i + 2 < iCount; i += 3) {
                     float[] t = new float[24];
                     for (int c = 0; c < 3; c++) {
-                        int b = idx[i + c] * 8;
-                        // SimpleObjModel stores u,v BEFORE normals and flips V when rendering (1 - v):
-                        // take raw u,v from index 6..7, normals from index 3..5.
-                        t[c * 8 + 0] = verts[b + 0];
-                        t[c * 8 + 1] = verts[b + 1];
-                        t[c * 8 + 2] = verts[b + 2];
-                        t[c * 8 + 3] = verts[b + 6];
-                        t[c * 8 + 4] = verts[b + 7];
-                        t[c * 8 + 5] = verts[b + 3];
-                        t[c * 8 + 6] = verts[b + 4];
-                        t[c * 8 + 7] = verts[b + 5];
+                        int vi = sm.index(i + c);
+                        // SimpleObjModel stores u,v BEFORE normals and flips V when rendering (1 - v)
+                        t[c * 8 + 0] = sm.posX(vi);
+                        t[c * 8 + 1] = sm.posY(vi);
+                        t[c * 8 + 2] = sm.posZ(vi);
+                        t[c * 8 + 3] = sm.u(vi);
+                        t[c * 8 + 4] = sm.v(vi);
+                        t[c * 8 + 5] = sm.normX(vi);
+                        t[c * 8 + 6] = sm.normY(vi);
+                        t[c * 8 + 7] = sm.normZ(vi);
                     }
                     tris.add(t);
                 }

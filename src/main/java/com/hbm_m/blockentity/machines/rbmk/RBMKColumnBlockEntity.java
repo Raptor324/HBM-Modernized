@@ -100,7 +100,7 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
      * physically part of the fuel-channel grid, so they must never siphon or donate heat just
      * because a player placed one next to a reactor.
      */
-    protected boolean participatesInHeatNetwork() { return true; }
+    public boolean participatesInHeatNetwork() { return true; }
 
     // â"€â"€â"€ Heat â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
@@ -111,10 +111,13 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
      *   <li>the four cardinal neighbours are <b>cached</b> in {@link #neighbourCache} and only
      *       re-resolved when a slot is empty or its block entity went invalid, instead of doing
      *       four {@code getBlockEntity} lookups on every column on every tick;</li>
-     *   <li>the ReaSim water/steam <b>remainder</b> is handed out one unit at a time to the
-     *       neighbours first and only what is left over goes to this column. The port gave the
-     *       whole remainder to itself on top of its already-assigned share, which quietly
-     *       duplicated up to {@code members-1} mB of water and steam per column per tick.</li>
+     *   <li>the ReaSim water/steam <b>remainder</b> (the rounding loss of the floor averages)
+     *       goes to this column in full - CE's {@code moveHeat} sets every member (including
+     *       self) to the averages and then does
+     *       {@code this.reasimWater += rWater; this.reasimSteam += rSteam;}. An earlier port
+     *       revision handed the units out to the neighbours first; both variants conserve the
+     *       total, but only this one lands the extra up to {@code members-1} mB on the ticking
+     *       column, matching the original.</li>
      * </ul>
      */
     protected final RBMKColumnBlockEntity[] neighbourCache = new RBMKColumnBlockEntity[4];
@@ -160,19 +163,19 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
             for (RBMKColumnBlockEntity neighbor : neighbourCache) {
                 if (neighbor == null) continue;
                 neighbor.heat += (targetHeat - neighbor.heat) * stepSize;
+                // set to the averages, rounded down (CE TileEntityRBMKBase.moveHeat)
                 if (reasim) {
                     neighbor.reasimWater = tWater;
                     neighbor.reasimSteam = tSteam;
-                    if (rWater > 0) { neighbor.reasimWater++; rWater--; }
-                    if (rSteam > 0) { neighbor.reasimSteam++; rSteam--; }
                 }
                 neighbor.setChanged();
             }
 
             heat += (targetHeat - heat) * stepSize;
+            // add the modulo to make up for the losses coming from rounding (CE: to SELF only)
             if (reasim) {
-                reasimWater = tWater + Math.max(rWater, 0);
-                reasimSteam = tSteam + Math.max(rSteam, 0);
+                reasimWater = tWater + rWater;
+                reasimSteam = tSteam + rSteam;
             }
             setChanged();
         }
@@ -247,8 +250,10 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         int minX = originPos.getX(), maxX = originPos.getX();
         int minZ = originPos.getZ(), maxZ = originPos.getZ();
 
-        // CE's getFF caps the flood fill at 50000 columns and refuses to touch unloaded chunks, so a
-        // world-edited mega-structure cannot freeze the server or force-load half the world mid-melt.
+        // Port safety EXTRA: the original TileEntityRBMKBase.getFF has no cap and no unloaded-chunk
+        // guard, so a world-edited mega-structure could freeze the server or force-load half the
+        // world mid-melt. These two guards do not change which columns get captured - they only
+        // bound how far the fill runs.
         int safetyLimit = 50_000;
 
         while (!queue.isEmpty() && safetyLimit > 0) {
@@ -264,7 +269,10 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
                 if (visited.contains(np)) continue;
                 visited.add(np);
                 if (!level.isLoaded(np)) continue;
-                if (level.getBlockEntity(np) instanceof RBMKColumnBlockEntity n) {
+                // The original getFF accepts only TileEntityRBMKBase: control-room devices that
+                // share this base class in the port (autoloader, RTTY panels, crane console) are
+                // outside the reactor and a meltdown never pulls them in.
+                if (level.getBlockEntity(np) instanceof RBMKColumnBlockEntity n && n.participatesInHeatNetwork()) {
                     queue.add(n);
                 }
             }
@@ -310,7 +318,9 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         // centred on the group rather than on whichever column happened to trigger it, plus the
         // explosion report. Both were missing - the RBMK_MUSH particle was registered but never
         // spawned by anything, so a meltdown was silent and left no cloud at all.
-        int smallDim = Math.max(maxX - minX, maxZ - minZ) * 2;
+        // CE TileEntityRBMKBase.meltdown: the cloud is sized by the reactor's SMALLER horizontal
+        // extent (a 1-wide strip melts with scale 0).
+        int smallDim = Math.min(maxX - minX, maxZ - minZ);
         double avgX = minX + (maxX - minX) / 2 + 0.5;
         double avgZ = minZ + (maxZ - minZ) / 2 + 0.5;
         double cloudY = originPos.getY() + 1;
@@ -325,7 +335,11 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
                 com.hbm_m.sound.ModSounds.RBMK_EXPLOSION.get(),
                 net.minecraft.sounds.SoundSource.BLOCKS, 50.0F, 1.0F);
 
-        com.hbm_m.advancement.ModAdvancements.grantNearby(level, avgX, cloudY, avgZ, 50D,
+        // The achievement scan is centred on the TRIGGERING column (CE:
+        // AxisAlignedBB.getBoundingBox(xCoord+0.5, yCoord+0.5, zCoord+0.5, ...).expand(50)); the
+        // mushroom cloud and the sound stay at the group centre.
+        com.hbm_m.advancement.ModAdvancements.grantNearby(level,
+                originPos.getX() + 0.5, originPos.getY() + 0.5, originPos.getZ() + 0.5, 50D,
                 com.hbm_m.advancement.ModAdvancements.RBMK_BOOM);
 
         // A meltdown carrying digamma fuel calls down the lance, a hundred blocks above the
@@ -450,9 +464,10 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         com.hbm_m.entity.rbmk.RBMKDebrisEntity debris = com.hbm_m.entity.rbmk.RBMKDebrisEntity.create(
                 level, base.getX() + 0.5, base.getY() + 4.0, base.getZ() + 0.5, debrisType);
 
+        // CE TileEntityRBMKBase.spawnDebris: motionX/Z = gaussian * 0.25, motionY = 0.25 + rand * 1.25.
         double vx = level.random.nextGaussian() * 0.25;
         double vz = level.random.nextGaussian() * 0.25;
-        double vy = 0.5 + level.random.nextDouble() * 1.5;
+        double vy = 0.25 + level.random.nextDouble() * 1.25;
         if (debrisType == com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.LID) {
             vx *= 0.5;
             vz *= 0.5;
@@ -511,7 +526,7 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
     public boolean  isModerated()  { return false; }
 
     public enum ColumnType {
-        BLANK, FUEL, CONTROL, MODERATOR, ABSORBER, REFLECTOR, COOLER, BOILER, HEATER, OUTGASSER, STORAGE
+        BLANK, FUEL, FUEL_SIM, CONTROL, MODERATOR, ABSORBER, REFLECTOR, COOLER, BOILER, HEATER, OUTGASSER, STORAGE
     }
     public abstract ColumnType getConsoleType();
 
@@ -525,8 +540,24 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
     //?}
     public AABB getRenderBoundingBox() {
         BlockPos p = getBlockPos();
+        Level lvl = getLevel();
+        // Column height is dynamic (the dialColumnHeight gamerule, clamped 2..16 minus 1). The
+        // drawn column always matches the physical filler stack above the base, so the culling box
+        // derives its height from those fillers; without any placed fillers it falls back to the
+        // dial, and to the static default only when no level is around (inventory/dialgen).
+        int height;
+        if (lvl == null) {
+            height = com.hbm_m.handler.rbmk.RBMKDials.COLUMN_HEIGHT + 1;
+        } else {
+            int fillers = 0;
+            while (fillers < 16 && lvl.getBlockState(p.above(fillers + 1)).getBlock()
+                    instanceof com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock) {
+                fillers++;
+            }
+            height = fillers > 0 ? fillers + 1 : com.hbm_m.handler.rbmk.RBMKDials.getColumnHeight(lvl) + 1;
+        }
         return new AABB(p.getX(), p.getY(), p.getZ(),
-                        p.getX() + 1, p.getY() + com.hbm_m.handler.rbmk.RBMKDials.COLUMN_HEIGHT + 1, p.getZ() + 1);
+                        p.getX() + 1, p.getY() + height, p.getZ() + 1);
     }
 
     /**
@@ -537,7 +568,7 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
      */
     public String getRenderTexturePrefix() {
         return switch (getConsoleType()) {
-            case FUEL      -> "rbmk_element";
+            case FUEL, FUEL_SIM -> "rbmk_element";
             case BLANK     -> "rbmk_blank";
             case ABSORBER  -> "rbmk_absorber";
             case REFLECTOR -> "rbmk_reflector";

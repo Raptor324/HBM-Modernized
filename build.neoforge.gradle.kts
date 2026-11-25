@@ -54,7 +54,7 @@ neoForge {
 		}
 		register("server") {
 			server()
-			gameDirectory = file("run/")
+			gameDirectory = file("runServer/")
 			ideName = "NeoForge Server (${stonecutter.current.version})"
 			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8",
 				"-Duser.language=en", "-Duser.country=US")
@@ -80,7 +80,7 @@ neoForge {
 				// Точечный прогон одного класса: все тесты зарегистрированы в неймспейс hbm_m,
 				// а тяжёлый интеграционный турбины - в tf_integration (см. TurbofanIntegrationGameTest).
 				// Оверрайд неймспейса: -PgameTestNamespace=hbm_m (NukeProfileGameTest и др.)
-				"-Dneoforge.enabledGameTestNamespaces=${project.findProperty("gameTestNamespace") ?: "tf_integration"}")
+				"-Dneoforge.enabledGameTestNamespaces=${project.findProperty("gameTestNamespace") ?: "hbm_m"}")
 			// Оверрайды NukeProfileGameTest: -PnukeStrength=300 -PnukeBudget=15
 			if (project.hasProperty("nukeStrength")) systemProperty("hbm.nukeProfileStrength", project.property("nukeStrength") as String)
 			if (project.hasProperty("nukeBudget")) systemProperty("hbm.nukeProfileBudgetMinutes", project.property("nukeBudget") as String)

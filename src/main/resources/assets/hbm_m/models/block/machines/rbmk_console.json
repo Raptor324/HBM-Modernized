@@ -1,18 +1,11 @@
 {
+  "loader": "hbm_m:machine_parts_loader",
+  "model": "hbm_m:models/block/rbmk_console.obj",
+  "flip_v": true,
+  "render_type": "minecraft:solid",
   "textures": {
-    "particle": "hbm_m:block/machine/rbmk_control"
-  },
-  "loader": "forge:composite",
-  "children": {
-    "rbmk_console_model": {
-      "loader": "hbm_m:nmesh_obj",
-      "model": "hbm_m:models/block/rbmk_console.obj",
-      "flip_v": true,
-      "render_type": "minecraft:solid",
-      "textures": {
-        "default": "hbm_m:block/machine/rbmk_control"
-      }
-    }
+    "particle": "hbm_m:block/machine/rbmk_control",
+    "default": "hbm_m:block/machine/rbmk_control"
   },
   "transform": {
     "translation": [0.5, 0, 0.5],

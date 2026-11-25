@@ -1,10 +1,7 @@
 package com.hbm_m.network;
 
-import com.hbm_m.client.overlay.OverlayInfoToast;
-
 import dev.architectury.networking.NetworkManager.PacketContext;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,7 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 public class InfoToastPacket implements S2CPacket {
 
     /** ID строки-тоста для газовых опасностей (асбестоз, угольная пыль). */
-    public static final int ID_GAS_HAZARD = 2010;
+    public static final int ID_GAS_HAZARD = 12;
     /** Original {@code ServerProxy.ID_DUCK / ID_JETPACK / ID_MAGNET / ID_HUD}. */
     public static final int ID_DUCK = 0;
     public static final int ID_JETPACK = 5;
@@ -24,6 +21,21 @@ public class InfoToastPacket implements S2CPacket {
     public static final int ID_HUD = 7;
     /** Original {@code ServerProxy.ID_TOOLABILITY}. */
     public static final int ID_TOOLABILITY = 11;
+    /** Original {@code ServerProxy.ID_DETONATOR} (ItemLaserDetonator). */
+    public static final int ID_DETONATOR = 8;
+
+    public static int rgbFromFormatting(net.minecraft.ChatFormatting formatting) {
+        if (formatting == null) {
+            return 0xFFFFFF;
+        }
+        return switch (formatting) {
+            case RED -> 0xFF5555;
+            case YELLOW -> 0xFFFF55;
+            case GREEN -> 0x55FF55;
+            case GOLD -> 0xFFAA00;
+            default -> 0xFFFFFF;
+        };
+    }
 
     private final Component text;
     private final int ticks;
@@ -63,11 +75,7 @@ public class InfoToastPacket implements S2CPacket {
     }
 
     public static void handle(InfoToastPacket msg, PacketContext context) {
-        context.queue(() -> {
-            if (Minecraft.getInstance().level != null) {
-                OverlayInfoToast.show(msg.text, msg.ticks, msg.id, msg.rgb);
-            }
-        });
+        context.queue(() -> com.hbm_m.client.ClientAccess.showInfoToast(msg.text, msg.ticks, msg.id, msg.rgb));
     }
 
     public static void sendTo(ServerPlayer player, String translationKey, int ticks, int id, int rgb) {

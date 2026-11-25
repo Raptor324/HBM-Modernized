@@ -6,6 +6,7 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.block.IToolable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.doors.DoorDecl;
@@ -42,7 +43,18 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class DoorBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.api.bomb.IBomb {
+public class DoorBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.api.bomb.IBomb, IToolable {
+
+    /** 1:1 {@code BlockDoorGeneric.onScrew}: Shift-Rechtsklick mit Schraubendreher schaltet Skins durch. */
+    @Override
+    public boolean onScrew(Level world, Player player, BlockPos pos, Direction side, float fX, float fY, float fZ, InteractionHand hand, ToolType tool) {
+        if (tool != ToolType.SCREWDRIVER || !player.isShiftKeyDown()) return false;
+        BlockEntity be = world.getBlockEntity(pos);
+        DoorBlockEntity door = be instanceof DoorBlockEntity d ? d.getController() : null;
+        if (door == null || door.getDoorDecl() == null || !door.getDoorDecl().hasSkins()) return false;
+        if (world.isClientSide) return true;
+        return door.cycleSkinIndex();
+    }
 
     /** audit10: 1:1 {@code BlockDoorGeneric.explode} - Zuender schalten fernsteuerbare Tueren um. */
     @Override

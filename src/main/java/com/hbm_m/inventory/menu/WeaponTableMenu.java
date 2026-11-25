@@ -113,7 +113,7 @@ public class WeaponTableMenu extends AbstractContainerMenu {
 		ItemStack stack = gun.getItem(0);
 		if (!stack.isEmpty() && stack.getItem() instanceof ItemGunBaseNT) {
 			int configs = ((ItemGunBaseNT) stack.getItem()).getConfigCount();
-			if (configs < button) return false;
+			if (button < 0 || button >= configs) return false;
 
 			XWeaponModManager.install(
 					stack, this.index,
@@ -168,7 +168,7 @@ public class WeaponTableMenu extends AbstractContainerMenu {
 
 	@Override
 	public boolean stillValid(Player player) {
-		return true;
+		return player != null && player.isAlive() && !player.isRemoved();
 	}
 
 	@Override

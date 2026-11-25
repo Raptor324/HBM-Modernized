@@ -30,6 +30,8 @@ public class NukeCustomBlockEntity extends NukeBaseBlockEntity {
     public float dirty;
     public float schrab;
     public float euph;
+    /** Joke-Stufe: freaky_alien_block -> детонация заменяется целиком (нет аналога в 1.7.10). */
+    public float freaky;
 
     public NukeCustomBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.NUKE_CUSTOM_BE.get(), pos, state, SLOTS);
@@ -81,6 +83,7 @@ public class NukeCustomBlockEntity extends NukeBaseBlockEntity {
         this.dirty = v.dirty;
         this.schrab = v.schrab;
         this.euph = v.euph;
+        this.freaky = v.freaky;
     }
 
     public CustomNukeExplosion.Values values() {
@@ -92,6 +95,7 @@ public class NukeCustomBlockEntity extends NukeBaseBlockEntity {
         v.dirty = dirty;
         v.schrab = schrab;
         v.euph = euph;
+        v.freaky = freaky;
         return v;
     }
 

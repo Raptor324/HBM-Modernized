@@ -51,7 +51,7 @@ public class MachineDieselGeneratorBlock extends BaseEntityBlock {
     /*public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
     *///?}
         list.add(net.minecraft.network.chat.Component.literal("Fuel efficiency:").withStyle(net.minecraft.ChatFormatting.YELLOW));
-        String[][] grades = { { "medium", "50" }, { "high", "75" }, { "aviation", "10" } };
+        String[][] grades = { { "low", "0" }, { "medium", "50" }, { "high", "75" }, { "aviation", "10" }, { "gaseous", "0" } };
         for (String[] g : grades) {
             list.add(net.minecraft.network.chat.Component.literal("-").withStyle(net.minecraft.ChatFormatting.YELLOW)
                     .append(net.minecraft.network.chat.Component.translatable("hbmfluid.trait.fuel." + g[0]).withStyle(net.minecraft.ChatFormatting.YELLOW))

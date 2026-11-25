@@ -82,8 +82,8 @@ public final class ChargeBlocks {
             //?} else {
             /*super.appendHoverText(stack, hbmTooltipCtx, list, flag);
             *///?}
-            list.add(Component.literal("Will drop all blocks.").withStyle(ChatFormatting.BLUE));
-            list.add(Component.literal("Does not do damage.").withStyle(ChatFormatting.BLUE));
+            list.add(Component.translatable("tooltip.hbm_m.charge.drop_all").withStyle(ChatFormatting.BLUE));
+            list.add(Component.translatable("tooltip.hbm_m.charge.no_damage").withStyle(ChatFormatting.BLUE));
         }
         //? if >= 1.21.1 {
         /*public static final com.mojang.serialization.MapCodec<Miner> CODEC = simpleCodec(Miner::new);
@@ -123,7 +123,7 @@ public final class ChargeBlocks {
             //?} else {
             /*super.appendHoverText(stack, hbmTooltipCtx, list, flag);
             *///?}
-            list.add(Component.literal("Does not drop blocks.").withStyle(ChatFormatting.BLUE));
+            list.add(Component.translatable("tooltip.hbm_m.charge.no_drop").withStyle(ChatFormatting.BLUE));
         }
         //? if >= 1.21.1 {
         /*public static final com.mojang.serialization.MapCodec<C4> CODEC = simpleCodec(C4::new);
@@ -161,10 +161,10 @@ public final class ChargeBlocks {
             //?} else {
             /*super.appendHoverText(stack, hbmTooltipCtx, list, flag);
             *///?}
-            list.add(Component.literal("Will drop all blocks.").withStyle(ChatFormatting.BLUE));
-            list.add(Component.literal("Does not do damage.").withStyle(ChatFormatting.BLUE));
+            list.add(Component.translatable("tooltip.hbm_m.charge.drop_all").withStyle(ChatFormatting.BLUE));
+            list.add(Component.translatable("tooltip.hbm_m.charge.no_damage").withStyle(ChatFormatting.BLUE));
             list.add(Component.literal("").withStyle(ChatFormatting.BLUE));
-            list.add(Component.literal("Fortune III").withStyle(ChatFormatting.LIGHT_PURPLE));
+            list.add(Component.translatable("tooltip.hbm_m.charge.fortune3").withStyle(ChatFormatting.LIGHT_PURPLE));
         }
         //? if >= 1.21.1 {
         /*public static final com.mojang.serialization.MapCodec<Semtex> CODEC = simpleCodec(Semtex::new);

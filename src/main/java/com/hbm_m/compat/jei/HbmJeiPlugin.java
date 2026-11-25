@@ -431,7 +431,7 @@ public class HbmJeiPlugin implements IModPlugin {
         // AnvilOverlayHandler (ориг. API.registerGuiOverlayHandler(GUIAnvil.class, ..., "ntmAnvil")):
         // выбор construction-рецепта при открытом GUIAnvil фокусирует список рецептов в GUI
         // (focusRecipe), без переноса предметов. Smithing в оригинале overlay-хендлера не имеет.
-        registration.addUniversalRecipeTransferHandler(new AnvilOverlayHandler());
+        registration.addRecipeTransferHandler(new AnvilOverlayHandler(), AnvilJeiCategory.RECIPE_TYPE);
     }
 
     @Override

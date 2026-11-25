@@ -48,7 +48,17 @@ import net.minecraft.world.phys.Vec3;
  */
 public class Lego {
 
+    /** Optional external sound suppressor (e.g. TACZ addon owning all weapon audio). */
+    public static volatile java.util.function.Predicate<ItemStack> externalSoundSuppressor;
+
     public static void playSound(Entity entity, String sound, float volume, float pitch) {
+        if (entity instanceof LivingEntity living) {
+            ItemStack mainHand = living.getMainHandItem();
+            if (com.hbm_m.api.weapon.ExternalGunCommonBridge.get().shouldSuppressNativeSound(mainHand)
+                    || (externalSoundSuppressor != null && externalSoundSuppressor.test(mainHand))) {
+                return;
+            }
+        }
         SoundEvent ev = HbmSoundsNT.get(sound);
         if (ev != null) entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), ev, SoundSource.PLAYERS, volume, pitch);
     }

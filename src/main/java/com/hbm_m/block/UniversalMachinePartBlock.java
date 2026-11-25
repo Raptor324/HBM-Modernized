@@ -294,8 +294,8 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
         }
 
         if (controllerBlock instanceof TransitionSealBlock) {
-            if (pLevel.getBlockEntity(controllerPos) instanceof TransitionSealBlockEntity sealBE && sealBE.isOpen()) {
-                return TransitionSealBlock.getCellCollisionShape(pLevel, controllerPos, controllerState, pPos);
+            if (pLevel.getBlockEntity(controllerPos) instanceof TransitionSealBlockEntity sealBE && sealBE.animTicks > 0F) {
+                return TransitionSealBlock.getCellCollisionShape(pLevel, controllerPos, controllerState, pPos, sealBE.getOpenProgress());
             }
             return Shapes.block();
         }
@@ -371,6 +371,8 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                     doorBE.checkRedstonePower();
                 } else if (be instanceof LaunchPadBaseBlockEntity launchPadBE) {
                     launchPadBE.checkRedstonePower();
+                } else if (be instanceof TransitionSealBlockEntity sealBE) {
+                    sealBE.invalidateRedstoneCache();
                 }
             }
         }
@@ -745,7 +747,30 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
         if (isOrphaned(pLevel, pPos)) {
             return 1.0f;
         }
+        if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null && !controllerPos.equals(pPos)) {
+                BlockState controllerState = pLevel.getBlockState(controllerPos);
+                if (controllerState.getBlock() instanceof IMultiblockController) {
+                    return controllerState.getDestroyProgress(pPlayer, pLevel, controllerPos);
+                }
+            }
+        }
         return super.getDestroyProgress(pState, pPlayer, pLevel, pPos);
+    }
+
+    @Override
+    public float getExplosionResistance(BlockState state, BlockGetter level, BlockPos pos, net.minecraft.world.level.Explosion explosion) {
+        if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null && !controllerPos.equals(pos)) {
+                BlockState controllerState = level.getBlockState(controllerPos);
+                if (controllerState.getBlock() instanceof IMultiblockController) {
+                    return controllerState.getBlock().getExplosionResistance(controllerState, level, controllerPos, explosion);
+                }
+            }
+        }
+        return super.getExplosionResistance(state, level, pos, explosion);
     }
 
     @Override

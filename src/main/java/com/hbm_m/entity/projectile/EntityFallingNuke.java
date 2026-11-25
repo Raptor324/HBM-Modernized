@@ -29,6 +29,8 @@ public class EntityFallingNuke extends Entity {
     float dirty;
     float schrab;
     float euph;
+    /** Joke: freaky alien stage (no 1.7.10 analog). */
+    public float freaky;
 
     public EntityFallingNuke(EntityType<? extends EntityFallingNuke> type, Level world) {
         super(type, world);
@@ -95,10 +97,24 @@ public class EntityFallingNuke extends Entity {
 
         if (!level().getBlockState(new BlockPos(Mth.floor(getX()), Mth.floor(getY()), Mth.floor(getZ()))).isAir()) {
             if (!level().isClientSide) {
-                CustomNukeExplosion.explodeCustom(level(), getX(), getY(), getZ(), tnt, nuke, hydro, amat, dirty, schrab, euph);
+                CustomNukeExplosion.explodeCustom(level(), getX(), getY(), getZ(), toValues());
                 this.discard();
             }
         }
+    }
+
+    /** Stufenwerte inkl. Joke-Flag fuer {@code explodeCustom(Level, ..., Values)}. */
+    public CustomNukeExplosion.Values toValues() {
+        CustomNukeExplosion.Values v = new CustomNukeExplosion.Values();
+        v.tnt = tnt;
+        v.nuke = nuke;
+        v.hydro = hydro;
+        v.amat = amat;
+        v.dirty = dirty;
+        v.schrab = schrab;
+        v.euph = euph;
+        v.freaky = freaky;
+        return v;
     }
 
     public void rotation() {
@@ -117,6 +133,7 @@ public class EntityFallingNuke extends Entity {
         tag.putFloat("dirty", dirty);
         tag.putFloat("schrab", schrab);
         tag.putFloat("euph", euph);
+        tag.putFloat("freaky", freaky);
         tag.putByte("meta", getMeta());
     }
 
@@ -129,6 +146,7 @@ public class EntityFallingNuke extends Entity {
         dirty = tag.getFloat("dirty");
         schrab = tag.getFloat("schrab");
         euph = tag.getFloat("euph");
+        freaky = tag.getFloat("freaky");
         this.entityData.set(META, tag.getByte("meta"));
     }
 

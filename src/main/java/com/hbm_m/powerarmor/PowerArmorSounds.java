@@ -88,21 +88,6 @@ public final class PowerArmorSounds {
 
     private static SoundEvent getSoundEvent(String soundName) {
         if (soundName == null) return null;
-        if (soundName.startsWith("hbm_m:")) {
-            soundName = soundName.substring(6);
-        }
-
-        try {
-            return switch (soundName) {
-                case "step.powered" -> com.hbm_m.sound.ModSounds.STEP_POWERED.get();
-                case "step.metal" -> com.hbm_m.sound.ModSounds.STEP_METAL.get();
-                case "step.iron_jump" -> com.hbm_m.sound.ModSounds.STEP_IRON_JUMP.get();
-                case "step.iron_land" -> com.hbm_m.sound.ModSounds.STEP_IRON_LAND.get();
-                default -> null;
-            };
-        } catch (Exception e) {
-            MainRegistry.LOGGER.error("Failed to get sound event for name: " + soundName, e);
-            return null;
-        }
+        return com.hbm_m.sound.HbmSoundsNT.get(soundName);
     }
 }

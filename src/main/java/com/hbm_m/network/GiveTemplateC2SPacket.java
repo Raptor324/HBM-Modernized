@@ -40,6 +40,7 @@ public class GiveTemplateC2SPacket implements C2SPacket {
     public static void handle(GiveTemplateC2SPacket msg, PacketContext context) {
         context.queue(() -> {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
+            if (msg.recipeOutput == null || msg.recipeOutput.isEmpty()) return;
 
             if (player.isCreative()) handleCreativeMode(player, msg.recipeOutput);
             else                     handleSurvivalMode(player, msg.recipeOutput);
@@ -49,11 +50,12 @@ public class GiveTemplateC2SPacket implements C2SPacket {
     // ── Логика креатива ───────────────────────────────────────────────────────
 
     private static void handleCreativeMode(ServerPlayer player, ItemStack recipeOutput) {
-        if (isStamp(recipeOutput)) {
-            player.getInventory().add(recipeOutput.copy());
+        ItemStack cleanOutput = new ItemStack(recipeOutput.getItem(), 1);
+        if (isStamp(cleanOutput)) {
+            player.getInventory().add(cleanOutput);
         } else {
             ItemStack newTemplate = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
-            ItemAssemblyTemplate.writeRecipeOutput(newTemplate, recipeOutput);
+            ItemAssemblyTemplate.writeRecipeOutput(newTemplate, cleanOutput);
             player.getInventory().add(newTemplate);
         }
     }
@@ -61,8 +63,13 @@ public class GiveTemplateC2SPacket implements C2SPacket {
     // ── Логика выживания ──────────────────────────────────────────────────────
 
     private static void handleSurvivalMode(ServerPlayer player, ItemStack recipeOutput) {
-        if (isStamp(recipeOutput)) handleStampCrafting(player, recipeOutput);
-        else                       handleTemplateCrafting(player, recipeOutput);
+        boolean holdingFolder = player.getMainHandItem().getItem() instanceof com.hbm_m.item.industrial.ItemTemplateFolder
+                || player.getOffhandItem().getItem() instanceof com.hbm_m.item.industrial.ItemTemplateFolder;
+        if (!holdingFolder) return;
+
+        ItemStack cleanOutput = new ItemStack(recipeOutput.getItem(), 1);
+        if (isStamp(cleanOutput)) handleStampCrafting(player, cleanOutput);
+        else                       handleTemplateCrafting(player, cleanOutput);
     }
 
     private static void handleStampCrafting(ServerPlayer player, ItemStack recipeOutput) {
@@ -70,9 +77,7 @@ public class GiveTemplateC2SPacket implements C2SPacket {
         if (cost == null) return;
 
         if (tryConsume(player, cost)) {
-            ItemStack resultStamp = recipeOutput.copy();
-            resultStamp.setCount(1);
-            player.getInventory().add(resultStamp);
+            player.getInventory().add(new ItemStack(recipeOutput.getItem(), 1));
         }
     }
 
@@ -82,7 +87,7 @@ public class GiveTemplateC2SPacket implements C2SPacket {
 
         if (tryConsume(player, cost)) {
             ItemStack newTemplate = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
-            ItemAssemblyTemplate.writeRecipeOutput(newTemplate, recipeOutput);
+            ItemAssemblyTemplate.writeRecipeOutput(newTemplate, new ItemStack(recipeOutput.getItem(), 1));
             player.getInventory().add(newTemplate);
         }
     }

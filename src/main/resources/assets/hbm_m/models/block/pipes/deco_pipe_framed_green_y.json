@@ -8,7 +8,7 @@
     "top": "hbm_m:block/pipe/pipe_top_green",
     "side": "hbm_m:block/pipe/pipe_side_green",
     "particle": "hbm_m:block/pipe/pipe_side_green",
-    "frame": "hbm_m:block/pipe/pipe_frame",
+    "frame": "hbm_m:block/deco_pipe_framed",
     "mesh": "hbm_m:block/pipe/pipe_mesh"
   }
 }

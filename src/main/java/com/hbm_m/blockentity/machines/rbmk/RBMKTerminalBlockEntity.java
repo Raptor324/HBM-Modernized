@@ -27,7 +27,9 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity
 
     public String channel = "";
     public boolean running = false;
-    public String runningValue = "0";
+    // 1:1 with TileEntityRBMKTerminal.repeatCmd: defaults to "" - only a non-empty recorded
+    // command repeats (see the onPanelTick gate).
+    public String runningValue = "";
 
     /** TileEntityRBMKTerminal.history - the 17-line scrollback the renderer prints under the
      *  working line. Newest entry first, exactly like the original's shift-and-insert. */
@@ -37,14 +39,14 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity
     public boolean doesRepeat = false;
 
     /**
-     * Shift everything down one slot and put the new message at the top.
-     *
-     * <p>The loop started at {@code length - 2}, so the last slot was never written and the oldest
-     * line fell off the list a row early - the bottom line of the terminal stayed permanently
-     * blank. CE starts at {@code length - 1}.</p>
+     * 1:1 with {@code TileEntityRBMKTerminal.push}: the loop runs down to index 1 only (starts
+     * at {@code length - 2}), so the bottom (17th) line is never written and the oldest line
+     * falls off a row early - the bottom line of the terminal stays permanently blank. That is
+     * the original's exact quirk; the port's "fixed" version that filled every slot deviated
+     * from 1.7.10.
      */
     public void pushHistory(String msg) {
-        for (int i = history.length - 1; i > 0; i--) history[i] = history[i - 1];
+        for (int i = history.length - 2; i > 0; i--) history[i] = history[i - 1];
         history[0] = msg == null ? "" : msg;
     }
 
@@ -55,7 +57,10 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity
 
     @Override
     protected void onPanelTick(Level level, BlockPos pos) {
-        if (running && !channel.isEmpty()) {
+        // 1:1 with TileEntityRBMKTerminal.updateEntity: the repeat fires every tick only while
+        // BOTH channel and repeat command are non-empty (original L44-46) - so a start issued
+        // before the channel was set begins repeating the moment "chan" is set later.
+        if (running && !channel.isEmpty() && !runningValue.isEmpty()) {
             RTTYNetwork.broadcast(level, channel, runningValue);
         }
     }
@@ -112,6 +117,9 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity
     /** Evaluates a single command line, returning a response string for the GUI's scrollback. */
     public String eval(Level level, String line) {
         if (line == null) return "";
+        // 1:1 with TileEntityRBMKTerminal.eval: push(cmd) runs BEFORE the empty check (L61-62),
+        // so an empty input echoes as a blank line into the scrollback instead of vanishing.
+        pushHistory(line);
         String[] parts = line.trim().split("\\s+", 2);
         if (parts.length == 0 || parts[0].isEmpty()) return "";
 
@@ -126,15 +134,21 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity
                 yield "Set channel to " + (channel.isEmpty() ? "<none>" : channel);
             }
             case "send" -> {
-                if (channel.isEmpty()) yield "no channel set";
-                RTTYNetwork.broadcast(level, channel, arg.isEmpty() ? "1" : arg);
-                yield "sent '" + arg + "' on " + channel;
+                if (channel.isEmpty()) yield "Cannot send - no channel set";
+                // 1:1 with TileEntityRBMKTerminal.eval: the payload is broadcast verbatim -
+                // "send " with an empty payload transmits "" (downstream numeric listeners parse
+                // that as a failure/0), it is never substituted with "1".
+                RTTYNetwork.broadcast(level, channel, arg);
+                yield "Sent signal on " + channel;
             }
+            // 1:1 with TileEntityRBMKTerminal.eval "start": the repeat command is recorded
+            // unconditionally (even with no channel set, and even empty) - the terminal only
+            // begins repeating once BOTH channel and value are non-empty, so a start issued
+            // before setting the channel fires the moment "chan" is set later.
             case "start" -> {
-                if (channel.isEmpty()) yield "no channel set";
                 running = true;
-                runningValue = arg.isEmpty() ? "1" : arg;
-                yield "started continuous send: " + runningValue;
+                runningValue = arg;
+                yield "Repeating signal on " + channel;
             }
             case "stop" -> {
                 running = false;
@@ -146,19 +160,20 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity
                 yield "";
             }
             case "horse" -> "Horse.";
+            // 1:1 with TileEntityRBMKTerminal.eval "selfdestruct": destroy the block without
+            // drops, then the no-block-damage ExplosionVNT(5) with piercing entity processor,
+            // player processor and weapon SFX (RTTYNetwork.selfDestruct is the already-ported
+            // 1:1 equivalent) - the ground stays intact.
             case "selfdestruct" -> {
-                level.destroyBlock(getBlockPos(), false);
-                level.explode(null, getBlockPos().getX() + 0.5, getBlockPos().getY() + 0.5,
-                        getBlockPos().getZ() + 0.5, 5.0F, Level.ExplosionInteraction.BLOCK);
+                RTTYNetwork.selfDestruct(level, getBlockPos());
                 yield "";
             }
             default -> "Unrecognized command!";
         };
 
-        // The original echoes both the command and its response into the panel's scrollback
-        // (TileEntityRBMKTerminal:126-129); history[0] is the newest line.
+        // The original pushes the raw command once at the top of eval (see above) and each
+        // command handler pushes its own response line (TileEntityRBMKTerminal:66-98).
         if (!"clear".equals(cmd)) {
-            pushHistory(line.trim());
             if (result != null && !result.isEmpty()) pushHistory(result);
         }
         doesRepeat = running;
@@ -205,6 +220,6 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity
         running = tag.getBoolean("running");
         doesRepeat = tag.getBoolean("doesRepeat");
         for (int i = 0; i < history.length; i++) history[i] = tag.getString("history" + i);
-        runningValue = tag.contains("runningValue") ? tag.getString("runningValue") : "0";
+        runningValue = tag.contains("runningValue") ? tag.getString("runningValue") : "";
     }
 }

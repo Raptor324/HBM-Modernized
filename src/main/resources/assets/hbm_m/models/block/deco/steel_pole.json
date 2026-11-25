@@ -5,7 +5,7 @@
   "flip_v": true,
   "render_type": "minecraft:cutout",
   "textures": {
-    "texture": "hbm_m:block/deco/steel_beam",
-    "particle": "hbm_m:block/deco/steel_beam"
+    "texture": "hbm_m:block/steel_beam",
+    "particle": "hbm_m:block/steel_beam"
   }
 }

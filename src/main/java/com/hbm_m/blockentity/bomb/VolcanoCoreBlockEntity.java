@@ -40,7 +40,9 @@ public class VolcanoCoreBlockEntity extends BaseHbmBlockEntity {
         super(ModBlockEntities.VOLCANO_CORE.get(), pos, state);
     }
 
-    private int meta() { return getBlockState().getValue(VolcanoBlock.MODE); }
+    private int meta() {
+        return getBlockState().hasProperty(VolcanoBlock.MODE) ? getBlockState().getValue(VolcanoBlock.MODE) : 0;
+    }
     private boolean isRadioactive() { return getBlockState().getBlock() instanceof VolcanoBlock v && v.radioactive; }
     private Block getLava() { return isRadioactive() ? ModBlocks.RAD_LAVA_BLOCK.get() : ModBlocks.VOLCANIC_LAVA_BLOCK.get(); }
     private List<ExAttrib> getExpAttrb() { return isRadioactive() ? VOLCANO_RAD : VOLCANO; }
@@ -67,8 +69,11 @@ public class VolcanoCoreBlockEntity extends BaseHbmBlockEntity {
         if (te.volcanoTimer >= te.getUpdateRate()) {
             te.volcanoTimer = 0;
             if (VolcanoBlock.isGrowing(meta) && pos.getY() < 200) {
-                world.setBlock(pos.above(), state, 3);
-                world.setBlock(pos, te.getLava().defaultBlockState(), 3);
+                BlockPos above = pos.above();
+                if (!world.isOutsideBuildHeight(above)) {
+                    world.setBlock(above, state, 3);
+                    world.setBlock(pos, te.getLava().defaultBlockState(), 3);
+                }
             } else if (VolcanoBlock.isExtinguishing(meta)) {
                 world.setBlock(pos, te.getLava().defaultBlockState(), 3);
             }
@@ -86,8 +91,14 @@ public class VolcanoCoreBlockEntity extends BaseHbmBlockEntity {
     private void blastMagmaChannel() {
         var r = level.random;
         int x = worldPosition.getX(), y = worldPosition.getY(), z = worldPosition.getZ();
-        new ExplosionNT(level, null, x + 0.5, y + r.nextInt(15) + 1.5, z + 0.5, 7).addAllAttrib(getExpAttrb()).explode();
-        new ExplosionNT(level, null, x + 0.5 + r.nextGaussian() * 3, r.nextInt(y + 1), z + 0.5 + r.nextGaussian() * 3, 10).addAllAttrib(getExpAttrb()).explode();
+        int maxY = level.getMaxBuildHeight();
+        double topY = Math.min(maxY - 1, y + r.nextInt(15) + 1.5);
+        new ExplosionNT(level, null, x + 0.5, topY, z + 0.5, 7).addAllAttrib(getExpAttrb()).explode();
+
+        int minY = level.getMinBuildHeight();
+        int span = y - minY + 1;
+        double blastY = span > 0 ? (minY + r.nextInt(span)) : y;
+        new ExplosionNT(level, null, x + 0.5 + r.nextGaussian() * 3, blastY, z + 0.5 + r.nextGaussian() * 3, 10).addAllAttrib(getExpAttrb()).explode();
     }
 
     private void blastMagmaChamber(double size) {
@@ -105,10 +116,12 @@ public class VolcanoCoreBlockEntity extends BaseHbmBlockEntity {
         for (int i = 0; i < count; i++) {
             int x = (int) Math.floor(worldPosition.getX() + r.nextGaussian() * radius);
             int z = (int) Math.floor(worldPosition.getZ() + r.nextGaussian() * radius);
+            if (!level.hasChunk(x >> 4, z >> 4)) continue;
             int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z) + 1 - (int) Math.floor(Math.abs(r.nextGaussian() * depth));
             BlockPos p = new BlockPos(x, y, z);
+            if (level.isOutsideBuildHeight(p)) continue;
             BlockState b = level.getBlockState(p);
-            if (!b.isAir() && b.getBlock().getExplosionResistance() < obsidian) {
+            if (!b.isAir() && !b.is(Blocks.BEDROCK) && b.getBlock().getExplosionResistance() < obsidian) {
                 level.setBlockAndUpdate(p, b.isRedstoneConductor(level, p) ? getLava().defaultBlockState() : Blocks.AIR.defaultBlockState());
             }
         }
@@ -117,15 +130,25 @@ public class VolcanoCoreBlockEntity extends BaseHbmBlockEntity {
     private void raiseMagma() {
         var r = level.random;
         BlockPos p = new BlockPos(worldPosition.getX() - 10 + r.nextInt(21), worldPosition.getY() + r.nextInt(11), worldPosition.getZ() - 10 + r.nextInt(21));
+        if (level.isOutsideBuildHeight(p) || level.isOutsideBuildHeight(p.below())) return;
+        if (!level.hasChunk(p.getX() >> 4, p.getZ() >> 4)) return;
         if (level.getBlockState(p).isAir() && level.getBlockState(p.below()).is(getLava()))
             level.setBlockAndUpdate(p, getLava().defaultBlockState());
     }
 
     private void surroundLava() {
-        for (int i = -1; i <= 1; i++)
-            for (int j = -1; j <= 1; j++)
-                for (int k = -1; k <= 1; k++)
-                    if (i != 0 || j != 0 || k != 0) level.setBlockAndUpdate(worldPosition.offset(i, j, k), getLava().defaultBlockState());
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                for (int k = -1; k <= 1; k++) {
+                    if (i != 0 || j != 0 || k != 0) {
+                        BlockPos p = worldPosition.offset(i, j, k);
+                        if (!level.isOutsideBuildHeight(p) && !level.getBlockState(p).is(Blocks.BEDROCK)) {
+                            level.setBlockAndUpdate(p, getLava().defaultBlockState());
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void spawnBlobs() {

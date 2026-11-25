@@ -51,6 +51,8 @@ public class HeldItemMenu extends AbstractContainerMenu {
     public final Layout layout;
     public final HeldItemInventory box;
     private final int selected;
+    private final InteractionHand hand;
+    private final ItemStack heldStack;
 
     /** Client: Hand und Layout kommen aus dem Puffer. */
     public HeldItemMenu(int id, Inventory inv, FriendlyByteBuf buf) {
@@ -61,7 +63,9 @@ public class HeldItemMenu extends AbstractContainerMenu {
         super(ModMenuTypes.HELD_ITEM_MENU.get(), id);
         this.layout = layout;
         this.selected = inv.selected;
+        this.hand = hand;
         ItemStack held = inv.player.getItemInHand(hand);
+        this.heldStack = held;
         this.box = new HeldItemInventory(inv.player, held, layout.size, layout.stackLimit,
                 layout == Layout.TOOLBOX ? (s, st) -> !(st.getItem() instanceof com.hbm_m.item.tool.ItemToolBox)
                         : layout == Layout.AMMO_BAG ? (s, st) -> !StackNbt.has(st)
@@ -123,14 +127,18 @@ public class HeldItemMenu extends AbstractContainerMenu {
     @Override
     public void clicked(int index, int button, ClickType type, Player player) {
         // prevents the player from moving around the currently open box
-        if (type == ClickType.SWAP && button == selected) return;
-        if (index == selected + 27 + box.getContainerSize()) return;
+        if (hand == InteractionHand.MAIN_HAND) {
+            if (type == ClickType.SWAP && button == selected) return;
+            if (index == selected + 27 + box.getContainerSize()) return;
+        } else if (hand == InteractionHand.OFF_HAND) {
+            if (type == ClickType.SWAP && button == 40) return;
+        }
         super.clicked(index, button, type, player);
     }
 
     @Override
     public boolean stillValid(Player player) {
-        return true;
+        return !this.heldStack.isEmpty() && player.getItemInHand(this.hand) == this.heldStack;
     }
 
     @Override

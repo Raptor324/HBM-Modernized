@@ -261,6 +261,9 @@ public abstract class CraneBaseBlockEntity extends BaseMachineBlockEntity implem
         default void setFilterContents(CompoundTag nbt) {
             BaseMachineBlockEntity tile = (BaseMachineBlockEntity) this;
             int slot = nbt.getInt("slot");
+            int[] range = getFilterSlots();
+            if (range == null || range.length < 2 || slot < range[0] || slot >= range[1]) return;
+            if (slot < 0 || slot >= tile.getInventory().getSlots()) return;
             ItemStack item = StackNbt.parse(nbt.getCompound("stack"));
             item.setCount(1);
             tile.getInventory().setStackInSlot(slot, item);

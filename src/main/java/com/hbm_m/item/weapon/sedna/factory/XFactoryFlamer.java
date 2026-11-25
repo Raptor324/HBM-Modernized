@@ -83,10 +83,14 @@ public class XFactoryFlamer {
     public static BiConsumer<EntityBulletBaseMK4, MovingObjectPosition> LAMBDA_LINGER_NAPALM = (bullet, mop) -> { if (!igniteIfPossible(bullet, mop)) spawnFire(bullet, mop, 2.5F, 1F, 200, EntityFireLingering.TYPE_DIESEL); };
     public static BiConsumer<EntityBulletBaseMK4, MovingObjectPosition> LAMBDA_LINGER_BALEFIRE = (bullet, mop) -> { spawnFire(bullet, mop, 3F, 1F, 300, EntityFireLingering.TYPE_BALEFIRE); };
 
-    /** Original {@code MainRegistry.proxy.me().getDistanceToEntity(bullet)} - nur clientseitig aufgerufen. */
+    /** Original {@code MainRegistry.proxy.me().getDistanceToEntity(bullet)} - safely resolved on client without client-only classes. */
     private static double distToClient(Entity bullet) {
-        Player me = com.hbm_m.client.weapon.GunClientHooks.clientPlayer();
-        return me == null ? Double.MAX_VALUE : me.distanceTo(bullet);
+        for (Player p : bullet.level().players()) {
+            if (p.isLocalPlayer()) {
+                return p.distanceTo(bullet);
+            }
+        }
+        return Double.MAX_VALUE;
     }
 
     public static boolean igniteIfPossible(EntityBulletBaseMK4 bullet, MovingObjectPosition mop) {
@@ -174,7 +178,7 @@ public class XFactoryFlamer {
         GunFactory.reg("gun_flamer_daybreaker", new ItemGunBaseNT(WeaponQuality.LEGENDARY, new GunConfig()
                 .dura(20_000).draw(10).inspect(17).crosshair(Crosshair.L_CIRCLE)
                 .rec(new Receiver(0)
-                        .dmg(25F).spreadHipfire(0F).delay(10).auto(true).reload(90).jam(17).sound("hbm:weapon.fire.blackPowder", 1.0F, 1.0F)
+                        .dmg(25F).spreadHipfire(0F).delay(10).auto(true).reload(90).jam(17).sound("hbm:weapon.fire.blackpowder", 1.0F, 1.0F)
                         .mag(new MagazineFullReload(0, 50).addConfigs(flame_daybreaker_diesel, flame_daybreaker_gas, flame_daybreaker_napalm, flame_daybreaker_balefire))
                         .offset(0.75, -0.0625, -0.25D)
                         .setupStandardFire())

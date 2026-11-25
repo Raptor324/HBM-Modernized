@@ -3,6 +3,7 @@ package com.hbm_m.block.fluid;
 import java.util.function.Supplier;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.platform.MobHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -13,6 +14,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -48,6 +50,7 @@ public class VolcanicBlock extends HbmFluidBlock {
     }
 
     public BlockState getReaction(Level level, BlockPos pos) {
+        if (level.isOutsideBuildHeight(pos)) return null;
         BlockState s = level.getBlockState(pos);
         if (s.getFluidState().is(FluidTags.WATER)) return Blocks.STONE.defaultBlockState();
         if (s.is(BlockTags.LOGS)) return ModBlocks.WASTE_LOG.get().defaultBlockState();
@@ -88,7 +91,8 @@ public class VolcanicBlock extends HbmFluidBlock {
 
     public void onSolidify(Level level, BlockPos pos, int lavaCount, int basaltCount, RandomSource rand) {
         int r = rand.nextInt(200);
-        Block above = level.getBlockState(pos.above(10)).getBlock();
+        BlockPos abovePos = pos.above(10);
+        Block above = level.isOutsideBuildHeight(abovePos) ? Blocks.AIR : level.getBlockState(abovePos).getBlock();
         boolean canMakeGem = lavaCount + basaltCount == 6 && lavaCount < 3 && (above == ModBlocks.BASALT.get() || above == ModBlocks.VOLCANIC_LAVA_BLOCK.get());
 
         if (r < 2) level.setBlock(pos, ModBlocks.ORE_BASALT_SULFUR.get().defaultBlockState(), 3);
@@ -104,6 +108,18 @@ public class VolcanicBlock extends HbmFluidBlock {
         if (((FireBlock) Blocks.FIRE).getBurnOdds(target) > 0) return true;
         if (target.canBeReplaced()) return true;
         return null;
+    }
+
+    /**
+     * Original {@code Material.lava}: 4 Lavaschaden + 15 s Brennen. Bewusst NICHT ueber den Vanilla-Pfad
+     * ({@code FluidTags.LAVA} -> {@code Entity.isInLava}/NeoForge-FluidTypes) geloest - der behandelt
+     * Mod-Fluessigkeiten je Version und Loader unterschiedlich. Explizit hier laeuft es cross-loader gleich.
+     */
+    @Override
+    public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+        if (level.isClientSide || entity.fireImmune()) return;
+        entity.hurt(level.damageSources().lava(), 4.0F);
+        MobHooks.setSecondsOnFire(entity, 15);
     }
 
     @Override

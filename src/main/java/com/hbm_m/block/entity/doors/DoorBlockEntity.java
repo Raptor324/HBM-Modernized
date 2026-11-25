@@ -199,9 +199,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
      * Установить скин (только для MODERN модели)
      */
     public void setSkin(DoorSkin skin) {
-        if (this.modelSelection.isModern()) {
-            setModelSelection(new DoorModelSelection(DoorModelType.MODERN, skin));
-        }
+        setModelSelection(new DoorModelSelection(DoorModelType.MODERN, skin));
     }
     
     /**
@@ -218,10 +216,12 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
      * Сбросить к выбору по умолчанию
      */
     public void resetToDefault() {
-        if (level != null) {
+        if (level != null && level.isClientSide) {
             DoorModelRegistry registry = DoorModelRegistry.getInstance();
             DoorModelSelection defaultSelection = registry.getDefaultSelection(doorDeclId);
             setModelSelection(defaultSelection);
+        } else {
+            setModelSelection(DoorModelSelection.DEFAULT);
         }
     }
 
@@ -414,7 +414,27 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     }
 
     public int getSkinIndex() {
-        return 0; // Реализовать при необходимости
+        DoorDecl decl = getDoorDecl();
+        if (decl == null || !decl.hasSkins()) return 0;
+        DoorSkin[] skins = decl.getSkins();
+        if (skins == null || skins.length == 0) return 0;
+        DoorSkin current = this.modelSelection.getSkin();
+        for (int i = 0; i < skins.length; i++) {
+            if (skins[i].getId().equals(current.getId())) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    public boolean cycleSkinIndex() {
+        DoorDecl decl = getDoorDecl();
+        if (decl == null || !decl.hasSkins()) return false;
+        DoorSkin[] skins = decl.getSkins();
+        if (skins == null || skins.length == 0) return false;
+        int nextIdx = (getSkinIndex() + 1) % skins.length;
+        setSkin(skins[nextIdx]);
+        return true;
     }
 
     // ==================== State Management ====================

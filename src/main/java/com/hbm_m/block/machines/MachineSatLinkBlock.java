@@ -17,6 +17,7 @@ import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -77,8 +78,8 @@ public class MachineSatLinkBlock extends DummyableMachineBlock implements ILookO
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     //?} else {
     /*@Override
-    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return com.hbm_m.platform.BlockHooks.useItemResult(hbmUse(state, world, pos, player, hand, hit));
+    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+        return hbmUse(state, world, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     *///?}
@@ -121,4 +122,19 @@ public class MachineSatLinkBlock extends DummyableMachineBlock implements ILookO
         return CODEC;
     }
     *///?}
+
+    // Verbatim port of the original MachineSatLink.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 0, Direction.EAST.get3DDataValue()},
+            {1, 0, -1, Direction.EAST.get3DDataValue()},
+            {0, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, -1, Direction.WEST.get3DDataValue()},
+            {0, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {1, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {1, 0, -1, Direction.NORTH.get3DDataValue()},
+            {0, 0, -1, Direction.NORTH.get3DDataValue()},
+        }, facing);
+    }
 }

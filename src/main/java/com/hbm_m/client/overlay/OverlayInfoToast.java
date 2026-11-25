@@ -26,13 +26,13 @@ public class OverlayInfoToast {
     public static final int ID_DASH    = 2001;
     public static final int ID_VATS    = 2002;
     public static final int ID_THERMAL = 2003;
-    public static final int ID_FLUID_IDENTIFIER_SWAP = 2004;
+    public static final int ID_FLUID_IDENTIFIER_SWAP = 7;
     /** Режимы кирки / топора / лопаты (аналог ID_TOOLABILITY в 1.7.10). */
-    public static final int ID_TOOL_MODE = 2005;
+    public static final int ID_TOOL_MODE = 11;
     /** Дальномер / лазерный детонатор (аналог ID_DETONATOR = 8 в 1.7.10). */
-    public static final int ID_DETONATOR = 2006;
+    public static final int ID_DETONATOR = 8;
     /** Маска без фильтра (аналог ID_FILTER в 1.7.10). */
-    public static final int ID_FILTER = 2007;
+    public static final int ID_FILTER = 1;
 
     // Стиль оригинала: один общий фон 0.25/0.5.
     private static final int BG_COLOR = 0x7F3F3F3F;
@@ -46,6 +46,7 @@ public class OverlayInfoToast {
         public int durationTicks;
         public int rgb;
         public int id;
+        public long startMs = System.currentTimeMillis();
 
         public Entry(Component text, int ticks, int id, int rgb) {
             this.text = text;
@@ -61,11 +62,12 @@ public class OverlayInfoToast {
         if (text == null) return;
 
         // id < 0 = всегда новая запись (если вдруг понадобится).
-        if (id >= 0) {
+        if (id > 0) { // Original: id 0 = immer neuer Eintrag (push ohne ID)
             for (Entry e : ENTRIES) {
                 if (e.id == id) {
                     e.text = text;
                     e.ticksLeft = ticks;
+                    e.startMs = System.currentTimeMillis();
                     e.durationTicks = Math.max(1, ticks);
                     e.rgb = rgb & 0xFFFFFF;
                     return;
@@ -74,6 +76,12 @@ public class OverlayInfoToast {
         }
 
         ENTRIES.add(new Entry(text, ticks, id, rgb));
+        // Original: Sortierung nach Dauer aufsteigend (InfoEntry.compareTo), stabil.
+        ENTRIES.sort(java.util.Comparator.comparingInt(x -> x.durationTicks));
+    }
+
+    public static void dismiss(int id) {
+        ENTRIES.removeIf(e -> e.id == id);
     }
 
     public static void show(Component text, int ticks, int id) {
@@ -81,16 +89,7 @@ public class OverlayInfoToast {
     }
 
     public static int rgbFromFormatting(ChatFormatting formatting) {
-        if (formatting == null) {
-            return 0xFFFFFF;
-        }
-        return switch (formatting) {
-            case RED -> 0xFF5555;
-            case YELLOW -> 0xFFFF55;
-            case GREEN -> 0x55FF55;
-            case GOLD -> 0xFFAA00;
-            default -> 0xFFFFFF;
-        };
+        return com.hbm_m.network.InfoToastPacket.rgbFromFormatting(formatting);
     }
 
     /** Сообщение о переключении режима инструмента (60 тиков, один слот по id). */
@@ -100,13 +99,13 @@ public class OverlayInfoToast {
 
     /** Кросс-лоадерное затухание записей; вызывается из ClientModEvents (Architectury ClientTickEvent.CLIENT_POST). */
     public static void tick() {
-        if (Minecraft.getInstance().isPaused()) return;
-
+        // Original RenderInfoSystem: Ablauf per Wanduhr (millis), auch waehrend Pause.
+        long now = System.currentTimeMillis();
         Iterator<Entry> it = ENTRIES.iterator();
         while (it.hasNext()) {
             Entry e = it.next();
             e.ticksLeft--;
-            if (e.ticksLeft <= 0) it.remove();
+            if (now - e.startMs > e.durationTicks * 50L) it.remove();
         }
     }
 
@@ -139,7 +138,7 @@ public class OverlayInfoToast {
         int top = pZ - padY;
         int right = pX + 5 + longest;
 
-        int bottom = pZ + ((ENTRIES.size() - 1) * LINE_STEP) + (font.lineHeight - 1) + padY;
+        int bottom = ENTRIES.size() * LINE_STEP + pZ + 2; // Original: messages.size() * 10 + pZ + 2
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -147,7 +146,7 @@ public class OverlayInfoToast {
 
         int off = 0;
         for (Entry e : ENTRIES) {
-            float remaining = e.ticksLeft - partialTick;
+            float remaining = e.durationTicks - (System.currentTimeMillis() - e.startMs) / 50.0f;
             if (remaining < 0) remaining = 0;
 
             // Оригинальная формула: clamp(510 * remaining / duration, 5..255).

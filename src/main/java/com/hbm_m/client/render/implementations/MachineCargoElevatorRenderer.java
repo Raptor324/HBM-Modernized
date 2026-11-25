@@ -146,6 +146,7 @@ public final class MachineCargoElevatorRenderer {
 
     private static List<BakedQuad> bakedPartQuads(CargoElevatorBlockEntity be, String partName) {
         BakedModel raw = Minecraft.getInstance().getBlockRenderer().getBlockModel(be.getBlockState());
+        raw = com.hbm_m.client.render.AbstractPartBasedRenderer.unwrapFabricForwardingModels(raw);
         if (!(raw instanceof ConfiguredMultipartBakedModel model)) return List.of();
         BakedModel part = model.getPart(partName);
         if (part == null) return List.of();

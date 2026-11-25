@@ -81,8 +81,31 @@ public class NukeFatManMenu extends AbstractContainerMenu {
         return be != null && be.stillValid(player);
     }
 
+    /** Оригинал {@code ContainerNukeMan.transferStackInSlot}: только слоты бомбы -> инвентарь. */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        return ItemStack.EMPTY;
+        ItemStack var3 = ItemStack.EMPTY;
+        Slot slot = this.slots.get(index);
+
+        if (slot.hasItem()) {
+            ItemStack var5 = slot.getItem();
+            var3 = var5.copy();
+
+            if (index <= 5) {
+                if (!this.moveItemStackTo(var5, 6, this.slots.size(), true)) {
+                    return ItemStack.EMPTY;
+                }
+            } else {
+                return ItemStack.EMPTY;
+            }
+
+            if (var5.isEmpty()) {
+                slot.set(ItemStack.EMPTY);
+            } else {
+                slot.setChanged();
+            }
+        }
+
+        return var3;
     }
 }

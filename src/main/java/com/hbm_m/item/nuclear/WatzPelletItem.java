@@ -65,9 +65,15 @@ public class WatzPelletItem extends Item implements com.hbm_m.item.ITooltipProvi
     }
 
     public static double getDouble(ItemStack stack, String key) {
-        if (StackNbt.read(stack) == null) setNBTDefaults(stack);
         CompoundTag tag = StackNbt.read(stack);
-        return tag == null ? 0D : tag.getDouble(key);
+        if (tag == null) {
+            if ("yield".equals(key)) {
+                WatzPelletType num = typeOf(stack);
+                return num != null ? num.yield : 0D;
+            }
+            return 0D;
+        }
+        return tag.getDouble(key);
     }
 
     private static void setNBTDefaults(ItemStack stack) {

@@ -15,9 +15,14 @@ public final class DuckKeyHandler {
     public static boolean ducked = false;
 
     public static void tick(Minecraft mc) {
-        if (mc.player == null) return;
+        if (mc.player == null) {
+            // Neue Sitzung/Welt: Flag zuruecksetzen.
+            ducked = false;
+            return;
+        }
         if (!ducked && InputConstants.isKeyDown(mc.getWindow().getWindow(), InputConstants.KEY_O) && mc.screen == null) {
             ducked = true;
+            com.hbm_m.client.overlay.OverlayInfoToast.dismiss(com.hbm_m.network.InfoToastPacket.ID_DUCK);
             com.hbm_m.network.DuckC2SPacket.send();
         }
     }

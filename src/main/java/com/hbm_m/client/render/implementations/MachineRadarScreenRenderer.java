@@ -69,41 +69,50 @@ public class MachineRadarScreenRenderer implements com.hbm_m.client.render.HbmBe
     public void render(MachineRadarScreenBlockEntity screen, float partialTick, PoseStack pose,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
         // 1. BODY - OBJ frame (port of ResourceManager.radar_screen.renderAll()).
+        // radar_screen.json has origin:corner rotation [0, 90, 0], which NMeshPartBakedModel.rebaseCenterToCorner
+        // wraps around (0.5, 0.5, 0.5): (x, y, z) -> (z, y, 1 - x). Translating by (0.5, 0, 0.5) centers the
+        // controller cell, and translating the body by (0, 0, -1) compensates for the +1 Z shift from rebasing
+        // so the 2x2x1 body aligns with both MultiblockStructureHelper and the overlay.
         pose.pushPose();
         pose.translate(0.5D, 0.0D, 0.5D);
         applyFacingRotation(screen.getBlockState(), pose);
-        renderBody(pose, bufferSource, packedLight, packedOverlay, screen.getBlockState());
-
-        // IMPORTANT: the body goes through the deferred cutout buffer while the overlay is
-        // immediate-mode. Without a flush the body would render AFTER the overlay and cover
-        // it. Flush the cutout buffer so the body (which writes depth) draws before the
-        // overlay (port of glDepthMask(false) in the original - the overlay was depth-tested
-        // against the already-written body).
-        if (bufferSource instanceof MultiBufferSource.BufferSource bs) {
-            bs.endBatch(RenderType.cutout());
-        }
+        // Draw body into a private immediate buffer and flush immediately so depth is ALWAYS written
+        // before the overlay draws (even when bufferSource is wrapped by Iris/OutlineBufferSource).
+        MultiBufferSource.BufferSource bodyImmediate = RenderHooks.immediateBufferSource(65536);
+        pose.pushPose();
+        pose.translate(0.0D, 0.0D, -1.0D);
+        renderBody(pose, bodyImmediate, packedLight, packedOverlay, screen.getBlockState());
+        pose.popPose();
+        bodyImmediate.endBatch();
 
         long time = screen.getLevel() != null ? screen.getLevel().getGameTime() : 0L;
 
+        // Overlay coords (x = 0.38, z = -0.375..1.375) are in unrotated radar_screen.obj space;
+        // rotate 90 deg around corner (0, 0, 0) to match radar_screen.json's baked transform.
         pose.pushPose();
-        pose.translate(0.5D, 1.0D, 0.5D);
-        pose.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(180F));
-        pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-90F));
-        pose.translate(-0.5D, -1.0D, -0.5D);
-        pose.translate(-0.8D, 0.0D, 0.0D);
+        pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(90F));
 
-        if (screen.linked || screen.showMap || !screen.entries.isEmpty()) {
-            RenderSystem.enableDepthTest();
-            RenderSystem.depthMask(true);
-            if (screen.showMap) {
-                renderHeightMap(screen, pose);
+        // 1.7.10 RenderRadarScreen disables GL_CULL_FACE because overlay quads face -X in obj space.
+        // Enable depth test unconditionally (including renderNoise) so the screen never shines through the body.
+        RenderSystem.enableDepthTest();
+        RenderSystem.disableCull();
+        try {
+            if (screen.linked || screen.showMap || !screen.entries.isEmpty()) {
+                RenderSystem.depthMask(false);
+                try {
+                    if (screen.showMap) {
+                        renderHeightMap(screen, pose);
+                    }
+                    renderSweep(pose, time, partialTick);
+                    renderBlips(screen, pose, bufferSource);
+                } finally {
+                    RenderSystem.depthMask(true);
+                }
+            } else {
+                renderNoise(pose, bufferSource, time);
             }
-            renderSweep(pose, time, partialTick);
-            renderBlips(screen, pose, bufferSource);
-            pose.popPose();
-            RenderSystem.depthMask(true);
-        } else {
-            renderNoise(pose, bufferSource, time);
+        } finally {
+            RenderSystem.enableCull();
             pose.popPose();
         }
         pose.popPose();
@@ -200,10 +209,10 @@ public class MachineRadarScreenRenderer implements com.hbm_m.client.render.HbmBe
         float zLeft = -0.375F;
         float zRight = 1.375F;
         
-        RenderHooks.vertexTexColor(buffer, matrix, x, yTop, zRight, 0F, 0F, 255, 255, 255, 255);
-        RenderHooks.vertexTexColor(buffer, matrix, x, yTop, zLeft, 1F, 0F, 255, 255, 255, 255);
-        RenderHooks.vertexTexColor(buffer, matrix, x, yBottom, zLeft, 1F, 1F, 255, 255, 255, 255);
-        RenderHooks.vertexTexColor(buffer, matrix, x, yBottom, zRight, 0F, 1F, 255, 255, 255, 255);
+        RenderHooks.vertexPosTexColor(buffer, matrix, x, yTop, zRight, 0F, 0F, 255, 255, 255, 255);
+        RenderHooks.vertexPosTexColor(buffer, matrix, x, yTop, zLeft, 1F, 0F, 255, 255, 255, 255);
+        RenderHooks.vertexPosTexColor(buffer, matrix, x, yBottom, zLeft, 1F, 1F, 255, 255, 255, 255);
+        RenderHooks.vertexPosTexColor(buffer, matrix, x, yBottom, zRight, 0F, 1F, 255, 255, 255, 255);
         
         RenderHooks.drawWithShader(buffer);
         RenderSystem.disableBlend();
@@ -216,19 +225,11 @@ public class MachineRadarScreenRenderer implements com.hbm_m.client.render.HbmBe
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         org.joml.Matrix4f matrix = pose.last().pose();
         
-        BufferBuilder buffer = RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-
         float x = 0.38F;
         float yTop = (float) (2D - offset);
         float yBottom = (float) (2D - offset - 0.125D);
 
-        RenderHooks.vertexColor(buffer, matrix, x, yTop, 1.375F, 0, 31, 0, 255);
-        RenderHooks.vertexColor(buffer, matrix, x, yTop, -0.375F, 0, 31, 0, 255);
-        RenderHooks.vertexColor(buffer, matrix, x, yBottom, -0.375F, 0, 31, 0, 255);
-        RenderHooks.vertexColor(buffer, matrix, x, yBottom, 1.375F, 0, 31, 0, 255);
-        RenderHooks.drawWithShader(buffer);
-
-        buffer = RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buffer = RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         RenderHooks.vertexColor(buffer, matrix, x, yTop, 1.375F, 0, 255, 0, 0);
         RenderHooks.vertexColor(buffer, matrix, x, yTop, -0.375F, 0, 255, 0, 0);
         RenderHooks.vertexColor(buffer, matrix, x, yBottom, -0.375F, 0, 255, 0, 50);
@@ -262,10 +263,10 @@ public class MachineRadarScreenRenderer implements com.hbm_m.client.render.HbmBe
 
             float cy = (float) (1D - sZ);
             float cz = (float) (0.5D - sX);
-            RenderHooks.vertexTexColor(buffer, matrix, x, cy + (float) size, cz + (float) size, u0, v1, 255, 255, 255, 255);
-            RenderHooks.vertexTexColor(buffer, matrix, x, cy + (float) size, cz - (float) size, u1, v1, 255, 255, 255, 255);
-            RenderHooks.vertexTexColor(buffer, matrix, x, cy - (float) size, cz - (float) size, u1, v0, 255, 255, 255, 255);
-            RenderHooks.vertexTexColor(buffer, matrix, x, cy - (float) size, cz + (float) size, u0, v0, 255, 255, 255, 255);
+            RenderHooks.vertexPosTexColor(buffer, matrix, x, cy + (float) size, cz + (float) size, u0, v1, 255, 255, 255, 255);
+            RenderHooks.vertexPosTexColor(buffer, matrix, x, cy + (float) size, cz - (float) size, u1, v1, 255, 255, 255, 255);
+            RenderHooks.vertexPosTexColor(buffer, matrix, x, cy - (float) size, cz - (float) size, u1, v0, 255, 255, 255, 255);
+            RenderHooks.vertexPosTexColor(buffer, matrix, x, cy - (float) size, cz + (float) size, u0, v0, 255, 255, 255, 255);
         }
         RenderHooks.drawWithShader(buffer);
     }
@@ -273,7 +274,7 @@ public class MachineRadarScreenRenderer implements com.hbm_m.client.render.HbmBe
     private void renderNoise(PoseStack pose, MultiBufferSource bufferSource, long time) {
         bindRadarTexture();
         org.joml.Matrix4f matrix = pose.last().pose();
-        int offset = 118 + (int) (time % 81);
+        int offset = 118 + RAND.nextInt(81);
         float u0 = 216F / 256F;
         float u1 = 256F / 256F;
         float v0 = offset / 256F;
@@ -281,10 +282,10 @@ public class MachineRadarScreenRenderer implements com.hbm_m.client.render.HbmBe
         float x = 0.38F;
         
         BufferBuilder buffer = RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-        RenderHooks.vertexTexColor(buffer, matrix, x, 1.875F, 1.375F, u0, v1, 255, 255, 255, 255);
-        RenderHooks.vertexTexColor(buffer, matrix, x, 1.875F, -0.375F, u1, v1, 255, 255, 255, 255);
-        RenderHooks.vertexTexColor(buffer, matrix, x, 0.125F, -0.375F, u1, v0, 255, 255, 255, 255);
-        RenderHooks.vertexTexColor(buffer, matrix, x, 0.125F, 1.375F, u0, v0, 255, 255, 255, 255);
+        RenderHooks.vertexPosTexColor(buffer, matrix, x, 1.875F, 1.375F, u0, v1, 255, 255, 255, 255);
+        RenderHooks.vertexPosTexColor(buffer, matrix, x, 1.875F, -0.375F, u1, v1, 255, 255, 255, 255);
+        RenderHooks.vertexPosTexColor(buffer, matrix, x, 0.125F, -0.375F, u1, v0, 255, 255, 255, 255);
+        RenderHooks.vertexPosTexColor(buffer, matrix, x, 0.125F, 1.375F, u0, v0, 255, 255, 255, 255);
         RenderHooks.drawWithShader(buffer);
     }
 

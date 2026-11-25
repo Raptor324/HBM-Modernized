@@ -17,6 +17,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -120,4 +121,19 @@ public class MachineHephaestusBlock extends DummyableMachineBlock implements com
     /*public static final com.mojang.serialization.MapCodec<MachineHephaestusBlock> CODEC = simpleCodec(MachineHephaestusBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
+
+    // Verbatim port of the original MachineHephaestus.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {1, 0, 0, Direction.EAST.get3DDataValue()},
+            {-1, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, 1, Direction.SOUTH.get3DDataValue()},
+            {0, 0, -1, Direction.NORTH.get3DDataValue()},
+            {1, 11, 0, Direction.EAST.get3DDataValue()},
+            {-1, 11, 0, Direction.WEST.get3DDataValue()},
+            {0, 11, 1, Direction.SOUTH.get3DDataValue()},
+            {0, 11, -1, Direction.NORTH.get3DDataValue()}
+        }, facing);
+    }
 }

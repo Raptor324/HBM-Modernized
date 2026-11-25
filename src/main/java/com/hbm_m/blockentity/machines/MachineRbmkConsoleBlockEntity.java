@@ -16,6 +16,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -107,7 +108,10 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineRbmkConsoleBlockEntity be) {
         if (level.isClientSide) return;
-        if (++be.scanTimer < 20) return;
+        // 1:1 with TileEntityRBMKConsole.updateEntity: rescan + full sync every 10 ticks
+        // (TotalWorldTime % 10 == 0), not 20. The original's light screen-type-only packet on the
+        // odd ticks is [GLUE] transport and not replicated - the port ships the full state here.
+        if (++be.scanTimer < 10) return;
         be.scanTimer = 0;
         be.scanReactor(level);
         level.sendBlockUpdated(pos, state, state, 3);
@@ -173,7 +177,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
                 int      ri    = x - GRID_HALF, rj = z - GRID_HALF;
                 BlockPos cPos  = reactorOrigin.offset(rotatedX(ri, rj), 0, rotatedZ(ri, rj));
 
-                if (Compat.getTileStandard(level, cPos) instanceof RBMKColumnBlockEntity col) {
+                if (Compat.getTileStandard(level, cPos) instanceof RBMKColumnBlockEntity col && col.participatesInHeatNetwork()) {
                     CompoundTag d = col.getNBTForConsole();
                     d.putDouble("heat",      col.heat);
                     d.putDouble("maxHeat",   col.maxHeat());
@@ -226,7 +230,9 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
                 RBMKColumnData col = columns[idx];
                 if (col == null) continue;
 
-                boolean hasFuel = col.type == ColumnType.FUEL;
+                // ReaSim channels report ColumnType.FUEL_SIM and share the fuel stat lines with
+                // FUEL, exactly like the original's stats switch (TileEntityRBMKConsole :462-468).
+                boolean hasFuel = col.type == ColumnType.FUEL || col.type == ColumnType.FUEL_SIM;
 
                 switch (type) {
                     case COL_TEMP -> {
@@ -261,11 +267,10 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
                 }
             }
 
-            if (count == 0) {
-                screenText[s] = "";
-                continue;
-            }
-
+            // 1:1 with the original's unguarded value / count: with zero contributing columns
+            // 0.0/0 -> NaN -> (int)NaN*10 = 0 -> 0/10D = 0.0, so the screen still shows its
+            // labelled readout ("Temp: 0.0°C") instead of going blank. Java reproduces this
+            // exactly - do not add a zero guard.
             String text = ((int) (value / count * 10)) / 10D + "";
             // 1:1 with CE's prepareScreenInfo: the readout is stored as "<lang key>=<value>" and
             // resolved at draw time, so a screen reads "Temp: 123.4°C" rather than a bare
@@ -286,10 +291,15 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
 
     public void handleControl(ServerLevel level, int action, double dVal, int iVal, int[] selected) {
         switch (action) {
+            // Cases 0/1/2 are gated on the MANUAL rod class, 1:1 with the original's
+            // `instanceof TileEntityRBMKControlManual` checks in TileEntityRBMKConsole
+            // .receiveControl/pressAZ5 - auto rods report the CONTROL column type in this port
+            // (see RBMKControlAutoBlockEntity.getNBTForConsole) but are never driven or colored
+            // from the console, exactly like the original's CONTROL_AUTO columns.
             case 0 -> { // set control rod level
                 for (int idx : selected) {
                     BlockPos cPos = idxToPos(idx);
-                    if (cPos != null && Compat.getTileStandard(level, cPos) instanceof RBMKControlBlockEntity rod)
+                    if (cPos != null && Compat.getTileStandard(level, cPos) instanceof RBMKControlManualBlockEntity rod)
                         rod.setTarget(dVal);
                 }
             }
@@ -301,7 +311,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
                 // rods to actually move through their range) could never fire.
                 for (int i = 0; i < AREA; i++) {
                     BlockPos cPos = idxToPos(i);
-                    if (cPos != null && Compat.getTileStandard(level, cPos) instanceof RBMKControlBlockEntity rod) {
+                    if (cPos != null && Compat.getTileStandard(level, cPos) instanceof RBMKControlManualBlockEntity rod) {
                         rod.setTarget(0);
                         rod.setChanged();
                     }
@@ -310,8 +320,10 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
             case 2 -> { // assign color group
                 for (int idx : selected) {
                     BlockPos cPos = idxToPos(idx);
-                    if (cPos != null && Compat.getTileStandard(level, cPos) instanceof RBMKControlBlockEntity rod) {
-                        rod.color = (short) iVal;
+                    if (cPos != null && Compat.getTileStandard(level, cPos) instanceof RBMKControlManualBlockEntity rod) {
+                        // EnumUtil.grabEnumSafely equivalent: out-of-range colors resolve into the
+                        // 0..4 band instead of being stored raw.
+                        rod.color = (short) Mth.clamp(iVal, 0, 4);
                         rod.setChanged();
                     }
                 }
@@ -323,10 +335,8 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
                     setChanged();
                 }
             }
-            case 4 -> { // set reactor origin
-                if (selected.length >= 3)
-                    reactorOrigin = new BlockPos(selected[0], selected[1], selected[2]);
-                setChanged();
+            case 4 -> { // set reactor origin — rejected from C2S; linking is server-side via RBMKToolItem
+                return;
             }
             case 5 -> { // assign the current grid selection to screen `iVal` (CE: the "id" key)
                 if (iVal >= 0 && iVal < SCREENS) {
@@ -441,7 +451,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
     }
 
     @Override
-    protected void applyClientUpdate(@NotNull CompoundTag tag) {
+    protected void applyClientUpdate(@NotNull CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
         readNbtData(tag, null);
     }
 

@@ -10,6 +10,7 @@ import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
+import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -86,5 +87,16 @@ public class RedPylonBlock extends RedPylonCoreBlock {
     @Override
     protected int getRange() {
         return 25;
+    }
+
+    // Verbatim port of the original PylonRedWire.getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        return rotatePorts(new int[][] {
+            {0, 0, 0, Direction.EAST.get3DDataValue()},
+            {0, 0, 0, Direction.WEST.get3DDataValue()},
+            {0, 0, 0, Direction.SOUTH.get3DDataValue()},
+            {0, 0, 0, Direction.NORTH.get3DDataValue()}
+        }, facing);
     }
 }

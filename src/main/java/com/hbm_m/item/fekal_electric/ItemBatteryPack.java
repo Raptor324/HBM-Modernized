@@ -1,6 +1,6 @@
 package com.hbm_m.item.fekal_electric;
 
-import com.hbm_m.platform.StackNbt;
+import com.hbm_m.api.energy.ItemEnergyAccess;
 
 import java.util.List;
 import java.util.Locale;
@@ -94,13 +94,16 @@ public class ItemBatteryPack extends ModBatteryItem {
         long maxCharge = pack.capacity;
         long chargeRate = pack.chargeRate;
         long dischargeRate = pack.dischargeRate;
-        long charge = maxCharge;
-        if (StackNbt.has(itemstack)) charge = getEnergy(itemstack);
+        long charge = ItemEnergyAccess.getHbmProvider(itemstack).map(e -> e.getEnergyStored())
+                .orElseGet(() -> ItemEnergyAccess.getHbmReceiver(itemstack).map(e -> e.getEnergyStored()).orElse(getEnergy(itemstack)));
 
-        list.add(Component.literal("Energy stored: " + EnergyFormatter.format(charge) + "/" + EnergyFormatter.format(maxCharge) + "HE (" + (charge * 1000 / maxCharge / 10D) + "%)").withStyle(ChatFormatting.GREEN));
+        double pct = maxCharge > 0 ? (charge * 1000L / maxCharge) / 10.0 : 0.0;
+        list.add(Component.literal("Energy stored: " + EnergyFormatter.format(charge) + "/" + EnergyFormatter.format(maxCharge) + "HE (" + pct + "%)").withStyle(ChatFormatting.GREEN));
         list.add(Component.literal("Charge rate: " + EnergyFormatter.format(chargeRate) + "HE/t").withStyle(ChatFormatting.YELLOW));
         list.add(Component.literal("Discharge rate: " + EnergyFormatter.format(dischargeRate) + "HE/t").withStyle(ChatFormatting.YELLOW));
-        list.add(Component.literal("Time for full charge: " + (maxCharge / chargeRate / 20 / 60D) + "min").withStyle(ChatFormatting.GOLD));
-        list.add(Component.literal("Charge lasts for: " + (maxCharge / dischargeRate / 20 / 60D) + "min").withStyle(ChatFormatting.GOLD));
+        String chargeTime = EnergyFormatter.formatTooltipNumber((double) maxCharge / chargeRate / 1200.0);
+        String dischargeTime = EnergyFormatter.formatTooltipNumber((double) maxCharge / dischargeRate / 1200.0);
+        list.add(Component.translatable("tooltip.hbm_m.battery_pack.time_for_full_charge", chargeTime).withStyle(ChatFormatting.GOLD));
+        list.add(Component.translatable("tooltip.hbm_m.battery_pack.charge_lasts_for", dischargeTime).withStyle(ChatFormatting.GOLD));
     }
 }

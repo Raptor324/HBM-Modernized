@@ -1,6 +1,6 @@
 {
- "parent": "minecraft:block/cube_all",
- "textures": {
-  "all": "hbm_m:block/bomb/volcano_rad_core"
- }
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "hbm_m:block/volcano_rad_core"
+  }
 }

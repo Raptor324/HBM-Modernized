@@ -89,39 +89,50 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity
     }
 
     /**
-     * Cold coolant is subscribed from directly underneath the column; the warm coolant leaves
-     * through the top, plus the sides and bottom of a loader sitting under the column - the same
-     * output geometry the boiler channel uses.
+     * The original's unified port shape (same as the boiler channel): {@code ModulePortManFluidAdaptive}
+     * combines the raw shapes with {@code PortDef.combine} into ONE position set and binds BOTH the
+     * input and the output ports to it (L83-99), with the shapes from {@code TileEntityRBMKBase.getPorts*}:
+     * the top of the column (y+h, POS_Y), the bottom (y, NEG_Y), plus - with a classic loader at y-2 -
+     * all six faces around y-2, or with a close loader at y-1 all six faces around y-1 (replacing the
+     * plain bottom). So in 1.7.10 cold coolant can enter via the roof port and warm coolant can leave
+     * via the bottom port; the tanks are not split by face. Each entry is the neighbouring position
+     * paired with the direction pointing from this column towards it.
      */
-    private void exchangeFluids(Level level) {
-        BlockPos pos = getBlockPos();
-        trySubscribe(coldTank, level, pos.below(), Direction.DOWN);
-
-        if (hotTank.getFill() <= 0) return;
-        for (com.mojang.datafixers.util.Pair<BlockPos, Direction> target : getOutputPos(level)) {
-            tryProvide(hotTank, level, target.getFirst(), target.getSecond());
-        }
-    }
-
     private java.util.List<com.mojang.datafixers.util.Pair<BlockPos, Direction>> getOutputPos(Level level) {
         BlockPos pos = getBlockPos();
         int h = RBMKDials.getColumnHeight(level);
         java.util.List<com.mojang.datafixers.util.Pair<BlockPos, Direction>> out = new java.util.ArrayList<>();
         out.add(com.mojang.datafixers.util.Pair.of(pos.above(h + 1), Direction.UP));
 
-        BlockPos loader = null;
-        if (level.getBlockState(pos.below()).is(com.hbm_m.block.ModBlocks.RBMK_LOADER.get())) {
-            loader = pos.below();
-        } else if (level.getBlockState(pos.below(2)).is(com.hbm_m.block.ModBlocks.RBMK_LOADER.get())) {
-            loader = pos.below(2);
-        }
-        if (loader != null) {
-            for (Direction dir : Direction.values()) {
-                if (dir == Direction.UP) continue;
-                out.add(com.mojang.datafixers.util.Pair.of(loader.relative(dir), dir));
-            }
+        // Original precedence in TileEntityRBMKBoiler.updateEntity: the classic loader (y-2) wins
+        if (level.getBlockState(pos.below(2)).is(com.hbm_m.block.ModBlocks.RBMK_LOADER.get())) {
+            out.add(com.mojang.datafixers.util.Pair.of(pos.below(), Direction.DOWN));
+            addAllSides(out, pos.below(2));
+        } else if (level.getBlockState(pos.below()).is(com.hbm_m.block.ModBlocks.RBMK_LOADER.get())) {
+            addAllSides(out, pos.below());
+        } else {
+            out.add(com.mojang.datafixers.util.Pair.of(pos.below(), Direction.DOWN));
         }
         return out;
+    }
+
+    private static void addAllSides(java.util.List<com.mojang.datafixers.util.Pair<BlockPos, Direction>> out, BlockPos around) {
+        for (Direction dir : Direction.values()) {
+            out.add(com.mojang.datafixers.util.Pair.of(around.relative(dir), dir));
+        }
+    }
+
+    /**
+     * The original binds the cold-coolant input AND the warm-coolant output to every position of
+     * the unified shape and calls checkSubscribe/checkProvide on all ports every tick, regardless
+     * of fill - so both operations run on every position here too (tryProvide handles an empty
+     * tank by simply offering nothing).
+     */
+    private void exchangeFluids(Level level) {
+        for (com.mojang.datafixers.util.Pair<BlockPos, Direction> target : getOutputPos(level)) {
+            trySubscribe(coldTank, level, target.getFirst(), target.getSecond());
+            tryProvide(hotTank, level, target.getFirst(), target.getSecond());
+        }
     }
 
     // ─── MK2 fluid network ───────────────────────────────────────────────────

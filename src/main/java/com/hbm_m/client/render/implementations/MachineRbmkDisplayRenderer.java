@@ -107,7 +107,9 @@ public final class MachineRbmkDisplayRenderer {
                         // payload (see RBMKControlAutoBlockEntity#getNBTForConsole), so the dot color is
                         // chosen from that flag instead - same yellow-vs-purple result as the original.
                         switch (col.type) {
-                            case FUEL -> dot(vc, ps, kx + 0.01f, ky, kz, 0f,
+                            // The original's display renderer shares the fuel dot between FUEL and
+                            // FUEL_SIM (RenderRBMKDisplay :69-70).
+                            case FUEL, FUEL_SIM -> dot(vc, ps, kx + 0.01f, ky, kz, 0f,
                                     (float) (0.25D + d.getDouble("enrichment") * 0.75D), 0f, overlay);
                             case CONTROL -> {
                                 float level = (float) d.getDouble("level");

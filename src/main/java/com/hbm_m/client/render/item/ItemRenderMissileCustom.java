@@ -30,25 +30,24 @@ public class ItemRenderMissileCustom extends BlockEntityWithoutLevelRenderer {
         // Non-null blueprint check; empty parts list indicates unconfigured missile
         if (missile == null || (missile.warhead == null && missile.fuselage == null && missile.fins == null && missile.thruster == null)) {
             // Original handleRenderType == false without blueprint -> renders flat icon "missile_custom"
-            if (ctx == ItemDisplayContext.GUI) renderFlatIcon(ps, buffers);
+            renderFlatIcon(ps, buffers);
             return;
         }
 
         ps.pushPose();
-        ps.translate(0.5, 0, 0.5);
 
         if (ctx == ItemDisplayContext.GUI) {
             double height = MissilePronter.guiHeight(missile);
             if (height == 0D) height = 4D;
-            float scale = (float) (1.4 / height);
-            ps.translate(0, -0.2, 0);
-            ps.mulPose(Axis.YN.rotationDegrees(225));
-            ps.mulPose(Axis.XN.rotationDegrees(30));
+            float scale = (float) (1.25 / height);
+            ps.translate(0.5, 0.5, 0.5);
             ps.mulPose(Axis.ZP.rotationDegrees(-45));
-            ps.translate(0, -0.7, 0);
+            ps.mulPose(Axis.XP.rotationDegrees(20));
             ps.scale(scale, scale, scale);
-            ps.mulPose(Axis.YN.rotationDegrees(System.currentTimeMillis() / 25 % 360));
+            ps.translate(0, -height * 0.5, 0);
+            ps.mulPose(Axis.YP.rotationDegrees(System.currentTimeMillis() / 25 % 360));
         } else {
+            ps.translate(0.5, 0, 0.5);
             float s = 0.2F;
             ps.scale(s, s, s);
             ps.translate(2, 0, 0);

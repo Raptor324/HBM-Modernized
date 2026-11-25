@@ -557,7 +557,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
     /** Original: {@code deserialize} liest die gemeinsamen Tanks in die eigenen Tanks. */
     @Override
-    protected void applyClientUpdate(@NotNull CompoundTag nbt) {
+    protected void applyClientUpdate(@NotNull CompoundTag nbt, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
         readNbtData(nbt, null);
         this.isOn = nbt.getBoolean("isOn");
         this.fluxDisplay = nbt.getDouble("fluxDisplay");

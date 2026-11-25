@@ -4,7 +4,94 @@
   "model": "hbm_m:models/item/dud_conventional_item.obj",
   "flip_v": true,
   "textures": {
-    "texture": "hbm_m:block/bomb/dud_conventional_model",
-    "particle": "hbm_m:block/bomb/dud_conventional_model"
+    "texture": "hbm_m:block/dud_conventional",
+    "particle": "hbm_m:block/dud_conventional"
+  },
+  "display": {
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        90
+      ],
+      "translation": [
+        0.0,
+        0.282,
+        1.317
+      ],
+      "scale": [
+        1.016846,
+        1.016846,
+        1.016846
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.1794,
+        0.1794,
+        0.1794
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.1196,
+        0.1196,
+        0.1196
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.1196,
+        0.1196,
+        0.1196
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        90,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.1196,
+        0.1196,
+        0.1196
+      ]
+    }
   }
 }

@@ -12,6 +12,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -139,4 +140,25 @@ public class MachineCompressorBlock extends DummyableMachineBlock {
     /*public static final com.mojang.serialization.MapCodec<MachineCompressorBlock> CODEC = simpleCodec(MachineCompressorBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
+
+    // Verbatim port of the original MachineCompressor.getAllPorts (large) and MachineCompressorCompact.getAllPorts (compact).
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        if (compact) {
+            return rotatePorts(new int[][] {
+                {3, 1, 0, Direction.EAST.get3DDataValue()},
+                {-3, 1, 0, Direction.WEST.get3DDataValue()},
+                {1, 1, 1, Direction.SOUTH.get3DDataValue()},
+                {-1, 1, 1, Direction.SOUTH.get3DDataValue()},
+                {1, 1, -1, Direction.NORTH.get3DDataValue()},
+                {-1, 1, -1, Direction.NORTH.get3DDataValue()}
+            }, facing);
+        } else {
+            return rotatePorts(new int[][] {
+                {0, 0, -1, Direction.NORTH.get3DDataValue()},
+                {1, 0, 0, Direction.EAST.get3DDataValue()},
+                {-1, 0, 0, Direction.WEST.get3DDataValue()}
+            }, facing);
+        }
+    }
 }

@@ -62,7 +62,8 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity implements 
     public static final int MODE_CARGO = 1;
 
     private static final long MAX_POWER = 1_000_000L;
-    private static final long MAX_RECEIVE = 10_000L;
+    /** Original {@code IEnergyReceiverMK2}: Verbindung pusht bis {@code maxPower - power} pro Tick (kein Eigenlimit). */
+    private static final long MAX_RECEIVE = MAX_POWER;
     private static final int TANK_CAPACITY_MB = 128_000;
     public static final int MAX_COUNTDOWN = 600;
 
@@ -303,9 +304,9 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity implements 
     }
 
     public boolean canLaunch() {
-        // hasOxy was only wired to the GUI lamp, so a launch drained tanks[1] whether or not it held
-        // any oxidiser. Upstream canLaunch requires hasAllFuel() = jet fuel AND oxidiser.
-        return hasRocket() && hasFuel() && hasOxy() && hasPower()
+        // Original TileEntitySoyuzLauncher.canLaunch (TE:250) prueft nur hasRocket/hasFuel/hasPower
+        // (hasOxy existiert nur fuer die GUI-Lampe, das doppelte hasRocket ist der Original-Bug).
+        return hasRocket() && hasFuel() && hasPower()
                 && designator() != 1 && orbital() != 1 && satellite() != 1;
     }
 
@@ -434,9 +435,9 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity implements 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
+        // Original speichert nur mode/tanks/power/items (TE:355-395) - starting/countdown
+        // resettet beim Neuladen bewusst (wie im Original).
         tag.putInt("soyuz_mode", mode);
-        tag.putBoolean("soyuz_starting", starting);
-        tag.putInt("soyuz_countdown", countdown);
         tanks[0].writeToNBT(tag, "fuel");
         tanks[1].writeToNBT(tag, "oxidizer");
     }
@@ -445,10 +446,20 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity implements 
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         mode = tag.getInt("soyuz_mode");
-        starting = tag.getBoolean("soyuz_starting");
-        countdown = tag.getInt("soyuz_countdown");
         tanks[0].readFromNBT(tag, "fuel");
         tanks[1].readFromNBT(tag, "oxidizer");
+    }
+
+    /** Original {@code getAccessibleSlotsFromSide} gibt {} zurueck (TE-MachineBase:136) - keine Automatisierung. */
+    @Override
+    protected com.hbm_m.platform.ModItemStackHandler getAutomationItemHandler() {
+        return new com.hbm_m.platform.ModItemStackHandler(0) {
+            @Override public int getSlots() { return 0; }
+            @Override public net.minecraft.world.item.ItemStack getStackInSlot(int slot) { return net.minecraft.world.item.ItemStack.EMPTY; }
+            @Override public boolean isItemValid(int slot, net.minecraft.world.item.ItemStack stack) { return false; }
+            @Override public net.minecraft.world.item.ItemStack extractItem(int slot, int amount, boolean simulate) { return net.minecraft.world.item.ItemStack.EMPTY; }
+            @Override public net.minecraft.world.item.ItemStack insertItem(int slot, net.minecraft.world.item.ItemStack stack, boolean simulate) { return stack; }
+        };
     }
 
     private java.util.List<Object[]> conPos;

@@ -193,6 +193,7 @@ public class EngineHandler {
         if (!com.hbm_m.client.compat.dh.DhClientState.isActive() && !hasParticles && !hasTracks) {
             return;
         }
+        com.hbm_m.client.render.shader.NukeCloudMask.beginFrame();
 
         // Честный блендинг перед нашими кастомными отрисовками: страхуемся от
         // залипших факторов кеша (см. ShaderBindResync.forceHonestBlendState).
@@ -326,6 +327,7 @@ public class EngineHandler {
                     ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, true);
                 });
                 buffer.endBatch();
+                com.hbm_m.client.render.shader.NukeCloudMask.capturePass(event.getCamera(), partialTick, splitSq, true, true);
             } finally {
                 // Сброс Sampler1 сразу после флаша: RenderSystem.shaderTextures —
                 // глобальное состояние, следующее чужое дро не должно получить
@@ -347,6 +349,7 @@ public class EngineHandler {
                 ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, false);
             });
             buffer.endBatch();
+            com.hbm_m.client.render.shader.NukeCloudMask.capturePass(event.getCamera(), partialTick, splitSq, true, false);
             com.hbm_m.client.compat.dh.DhClientCompat.endVanillaExtendedPass();
 
             // 3. Вспышка — оверлей поверх всего.
@@ -366,6 +369,7 @@ public class EngineHandler {
                 ParticleEngineNT.INSTANCE.render(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
             });
             buffer.endBatch();
+            com.hbm_m.client.render.shader.NukeCloudMask.capturePass(event.getCamera(), partialTick, Double.NaN, false, false);
             // ФИКС «чёрного экрана» при совместном рендере меш+частицы:
             // диаг fsp показала, что после флаша NT-батчей физические бинды
             // TU1/TU2 уезжают в ноль ([0/0/0]), а кеш GlStateManager продолжает

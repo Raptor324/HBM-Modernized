@@ -38,7 +38,6 @@ public class BombDefuser {
     private static final List<RegistrySupplier<Block>> BOMBS = List.of(
             ModBlocks.MINE_AP,
             ModBlocks.NAVAL_MINE,
-            ModBlocks.MINE_FAT,
             ModBlocks.DUD_CONVENTIONAL,
             ModBlocks.DUD_SALTED,
             ModBlocks.DUD_NUKE
@@ -52,11 +51,6 @@ public class BombDefuser {
 
     // Supplier'ы разрешаем лениво: класс инициализируется на CONSTRUCT, реестр ещё пуст.
     private static final Map<RegistrySupplier<Block>, List<DropAmount>> BOMB_DROPS = Map.of(
-            ModBlocks.MINE_FAT, List.of(
-                    new DropAmount(ModMaterialItems.get(ModMaterials.PLUTONIUM, MaterialShape.BILLET), 1),
-                    new DropAmount(ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.PLATE), 3),
-                    new DropAmount(ModItems.BALL_TNT, 1)
-            ),
             ModBlocks.MINE_AP, List.of(
                     new DropAmount(ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.PLATE), 3),
                     new DropAmount(ModItems.BALL_TNT, 2)

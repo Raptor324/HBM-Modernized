@@ -4,8 +4,8 @@
 
 ## ENG Version 🇺🇸 | [RU Версия 🇷🇺](/README.ru.md)
 
-**Status:** Pre-Alpha \
-**Minecraft Version:** 1.20.1 \
+**Status:** Beta \
+**Minecraft Version:** 1.20.1 Forge & 1.21.1 NeoForge \
 **Mod ID:** `hbm_m` \
 **License:** GPL-3.0-only (with retained LGPL-3.0 for upstream 1.7.10 material - see [License](#-license))
 
@@ -19,7 +19,7 @@
 </div>
 
 > [!WARNING]
-> **This mod is in pre-alpha stage.**
+> **This mod is in beta stage.**
 > **DO NOT use it in your important worlds!**
 > Bugs, crashes, and mod incompatibilities are possible.
 > Report issues at [GitHub Issues](../../issues)
@@ -28,7 +28,7 @@
 
 ## About
 
-HBM-Modernized is a modernized rework of [Hbm's Nuclear Tech Mod](https://github.com/HbmMods/Hbm-s-Nuclear-Tech-GIT) for Minecraft 1.20.1: nuclear technology, radiation, advanced weaponry, and industrial automation, rebuilt on a modern codebase and rendering architecture.
+HBM-Modernized is a modernized rework of [Hbm's Nuclear Tech Mod](https://github.com/HbmMods/Hbm-s-Nuclear-Tech-GIT) for Minecraft 1.20.1 & 1.21.1: nuclear technology, radiation, advanced weaponry, and industrial automation, rebuilt on a modern codebase and rendering architecture.
 
 The project is an independent port and is not an official release of HBM/NTM.
 
@@ -38,7 +38,7 @@ The project is an independent port and is not an official release of HBM/NTM.
 
 This project is a modified and modernized work derived from **[Hbm's Nuclear Tech Mod](https://github.com/HbmMods/Hbm-s-Nuclear-Tech-GIT)** for Minecraft 1.7.10. **The Bobcat and the original HBM/NTM contributors retain credit and copyright** in the original code, assets, gameplay design, and documentation.
 
-All modernization work - the 1.20.1 codebase, build system, rendering architecture, and cross-version platform layer - is authored by the HBM-Modernized team (see [gradle.properties](gradle.properties) for the contributor list).
+All modernization work - the 1.20.1 & 1.21.1 codebase, build system, rendering architecture, and cross-version platform layer - is authored by the HBM-Modernized team (see [gradle.properties](gradle.properties) for the contributor list).
 
 Detailed attribution is in [NOTICE.md](NOTICE.md).
 
@@ -84,7 +84,7 @@ The same applies to `1.21.1-neoforge`. The Gradle compiler is the only build aut
 
 ## 📦 Installation
 
-1. Install **Forge 1.20.1**
+1. Install **Forge 1.20.1** or **NeoForge 1.21.1**
 2. Download the latest version from [Releases](../../releases)
 3. Place the `.jar` in your `mods` folder
 
@@ -98,8 +98,8 @@ Pull requests, suggestions, and bug reports are welcome. Fork the repository and
 
 ## 💝 Acknowledgments
 
-**The Bobcat** - author of the original HBM's Nuclear Tech Mod
+**The Bobcat** and other contributors - author of the original HBM's Nuclear Tech Mod
 
 **RaptorDev / Raptor324** and other contributors - modernization and rework
 
-The Forge and Mojang teams for development tools
+The Forge, NeoForge, Architectury, Stonecutter and Mojang teams for development tools

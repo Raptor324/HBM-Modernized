@@ -11,6 +11,7 @@ import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -93,4 +94,24 @@ public class MachineChimneyBlock extends DummyableMachineBlock {
         return simpleCodec(p -> new MachineChimneyBlock(p, this.height));
     }
     *///?}
+
+    // Verbatim port of the original MachineChimneyIndustrial / MachineChimneyBrick getAllPorts.
+    @Override
+    public int[][] getAllPorts(Direction facing) {
+        if (isIndustrial()) {
+            return rotatePorts(new int[][] {
+                {1, 0, 0, Direction.EAST.get3DDataValue()},
+                {-1, 0, 0, Direction.WEST.get3DDataValue()},
+                {0, 0, 1, Direction.SOUTH.get3DDataValue()},
+                {0, 0, -1, Direction.NORTH.get3DDataValue()}
+            }, facing);
+        } else {
+            return rotatePorts(new int[][] {
+                {1, 0, 0, Direction.EAST.get3DDataValue()},
+                {-1, 0, 0, Direction.WEST.get3DDataValue()},
+                {0, 0, 1, Direction.SOUTH.get3DDataValue()},
+                {0, 0, -1, Direction.NORTH.get3DDataValue()}
+            }, facing);
+        }
+    }
 }

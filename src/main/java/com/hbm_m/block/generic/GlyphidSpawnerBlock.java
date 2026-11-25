@@ -26,8 +26,12 @@ public class GlyphidSpawnerBlock extends BaseEntityBlock {
     public static final IntegerProperty TYPE = GlyphidBlock.TYPE;
 
     public GlyphidSpawnerBlock(Properties properties) {
+        this(properties, 0);
+    }
+
+    public GlyphidSpawnerBlock(Properties properties, int defaultType) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(TYPE, 0));
+        this.registerDefaultState(this.stateDefinition.any().setValue(TYPE, Math.max(0, Math.min(2, defaultType))));
     }
 
     @Override

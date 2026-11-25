@@ -28,6 +28,12 @@ public class ItemRenderCrucible extends ItemRenderWeaponBase {
 
     @Override public boolean customFirstPerson() { return false; }
 
+    /** Original {@code ItemSword.isFull3D}. */
+    @Override public boolean isFull3D() { return true; }
+
+    /** Original: {@code player.isSwingInProgress = false} — Vanilla-Schwungbasis unterdrueckt (s. GunItemRenderer). */
+    @Override public boolean suppressVanillaSwing() { return true; }
+
     @Override
     public void renderFirstPerson(ItemStack stack) { }
 
@@ -48,6 +54,8 @@ public class ItemRenderCrucible extends ItemRenderWeaponBase {
                 if (blocking) {
                     GunGL.translate(-0.125, -0.25, 0);
                 }
+
+                if (player != null) player.swinging = false;
 
                 GunGL.scale(0.3, 0.3, 0.3);
 

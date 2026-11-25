@@ -246,6 +246,25 @@ All 11 new client mixin registrations in `mixins.hbm_m.json` and modified mixins
   `TeardownTrace` provides an in-code tracing switch (`TeardownTrace.TRACE`) logging teardown cascades with `[HBM-M Teardown]` tags without requiring JVM system properties. `MultiblockStructureHelper` logs the demolishing player's identity and traces individual part clearance sequences through `TeardownTrace`.
 - **Door Animation State Cleanup**:
   `DoorAnimationDelayHelper` ensures door open/close animation progress and sound delays are cleanly wiped when a door skin changes or the door is demolished.
+- **Placement-Ghost Centralized Fix (2026-11-14)**:
+  The placement-ghost class (a torn-down machine's model resurrecting at its old position when a
+  new machine is placed there) is killed centrally in `NucleusDispatcherBypass`, replacing the
+  per-block workarounds:
+  1. **Evict-by-position** — `POS_TO_BE` (posKey → BE) maintained alongside `BE_TO_BUCKET`;
+     `addMachine` evicts the previous machine at the position first (`removeMachine(previous)`),
+     across every spec. Placement is the one event guaranteed to mean "position changed owners",
+     so a teardown lost to any dead channel (null-level gate, unmanaged type, unresolved
+     controller) is repaired at placement time — the cross-type case (cargo elevator → radar) included.
+  2. **All-specs slot free** — `dropMachineCaches` frees GPU instance slots for EVERY spec at the
+     posKey, not just the removed type; the previous machine's per-dynKey holders (elevator
+     `"h"+height`) die with it.
+  3. **Per-frame presence validation** — `collectMain` checks `level.getBlockEntity(pos) == be`
+     per machine per frame; any still-missed removal self-heals within one frame, before the dead
+     machine's records reach a flush.
+  Layered protections for OTHER ghost classes stay: the per-draw presence invariant in
+  `AbstractPartBasedRenderer.render` (vanilla stale compiled-section/globalBlockEntities lists),
+  demolition tombstones (resurrection races during cascade), and the `shouldBypass` veils
+  (one-frame Embeddium listings).
 
 ---
 

@@ -243,9 +243,9 @@ public class PileLoaderBlockEntity extends LoadedMachineBlockEntity
 
     /** Original deserialize: aendert sich der Sync-Wert, wird ueber zwei Ticks nachgezogen. */
     @Override
-    protected void applyClientUpdate(CompoundTag tag) {
+    protected void applyClientUpdate(CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
         double lastSync = this.level_;
-        super.applyClientUpdate(tag);
+        super.applyClientUpdate(tag, registries);
         if (this.level_ != lastSync) this.turnProgress = 2;
     }
     @Override
