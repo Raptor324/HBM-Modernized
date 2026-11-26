@@ -102,6 +102,14 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 		configureJarTask(modId, loader)
 		configureIdea()
 		configureProcessResources(isFabric, isNeoForge, isForge, modId, "$modVersion$channelTag", mcVersion, extension, extension.requiredJava.get())
+		if (isForge || isNeoForge) {
+			registerNucleusMeshCompiler(stonecutter.current.version)
+			registerDevRuntimeSupport(stonecutter.current.version)
+		}
+		if (isNeoForge) {
+			registerNeoForgeResourceNormalizer()
+		}
+		registerShaderValidator()
 		configureJava(stonecutter, extension.requiredJava.get())
 		registerBuildAndCollectTask(extension, "$modVersion$channelTag")
 		registerCompiledClassesGuard(extension.jarTask.get())

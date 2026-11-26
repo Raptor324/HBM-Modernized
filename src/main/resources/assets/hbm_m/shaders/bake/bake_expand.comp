@@ -59,8 +59,8 @@ shared vec2 s_light[8];
 shared vec3 s_bmin;
 shared vec3 s_bsize;
 shared vec4 s_uvRect;
-shared mat3 s_jointRot;
-shared vec3 s_jointTrans;
+shared mat3 s_jointRot[8];
+shared vec3 s_jointTrans[8];
 shared uint s_hasJoint;
 
 uint ldWord(uint base, int byteOff) {
@@ -220,16 +220,6 @@ void evaluateJointChainForBone(uint iBase, int boneOffset, out mat3 outRot, out 
     outTrans = chain[3].xyz;
 }
 
-void evaluateInstanceJointChain(uint iBase) {
-    float gradW = instData[iBase + INST_GRAD_WORD + 3u];
-    if (gradW < 0.0) {
-        s_hasJoint = 0u;
-        return;
-    }
-    s_hasJoint = 1u;
-    evaluateJointChainForBone(iBase, 0, s_jointRot, s_jointTrans);
-}
-
 void main() {
     // Instance selection: dirty-list mode maps y through the compacted
     // dirty-index list (one workgroup row per DIRTY instance; the count
@@ -269,8 +259,16 @@ void main() {
                         instData[iBase + INST_UVRECT_WORD + 1u],
                         instData[iBase + INST_UVRECT_WORD + 2u],
                         instData[iBase + INST_UVRECT_WORD + 3u]);
-    } else if (lid == 10u) {
-        evaluateInstanceJointChain(iBase);
+    } else if (lid == 10u || (uOffBoneId >= 0 && lid > 10u && lid < 18u)) {
+        float gradW = instData[iBase + INST_GRAD_WORD + 3u];
+        if (gradW >= 0.0) {
+            if (lid == 10u) {
+                s_hasJoint = 1u;
+            }
+            evaluateJointChainForBone(iBase, int(lid - 10u), s_jointRot[lid - 10u], s_jointTrans[lid - 10u]);
+        } else if (lid == 10u) {
+            s_hasJoint = 0u;
+        }
     }
     barrier();
 
@@ -329,10 +327,10 @@ void main() {
     // Parametric joint chain animation (evaluated once per workgroup into shared memory;
     // vertices with vBoneId < 0 are static hull vertices and bypass the joint transform)
     if (s_hasJoint != 0u && vBoneId >= 0) {
-        if (vBoneId == 0) {
-            pos = s_jointRot * pos + s_jointTrans;
-            nrm = s_jointRot * nrm;
-            tng = s_jointRot * tng;
+        if (vBoneId < 8) {
+            pos = s_jointRot[vBoneId] * pos + s_jointTrans[vBoneId];
+            nrm = s_jointRot[vBoneId] * nrm;
+            tng = s_jointRot[vBoneId] * tng;
         } else {
             mat3 bRot;
             vec3 bTrans;

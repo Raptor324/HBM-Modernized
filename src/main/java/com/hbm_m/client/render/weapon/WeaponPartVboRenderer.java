@@ -56,16 +56,25 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
     @Nullable
     private final List<BakedQuad> normalizedQuads;
     @Nullable
+    private final com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmeshModel;
+    @Nullable
     private IrisCompanionMesh irisCompanion;
     private boolean irisCompanionAttempted;
 
     public WeaponPartVboRenderer(SingleMeshVboRenderer.VboData data) {
-        this(data, null);
+        this(data, null, null);
     }
 
     public WeaponPartVboRenderer(SingleMeshVboRenderer.VboData data, @Nullable List<BakedQuad> normalizedQuads) {
+        this(data, normalizedQuads, null);
+    }
+
+    public WeaponPartVboRenderer(SingleMeshVboRenderer.VboData data,
+                                 @Nullable List<BakedQuad> normalizedQuads,
+                                 @Nullable com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmeshModel) {
         this.pendingData = data;
         this.normalizedQuads = normalizedQuads;
+        this.nmeshModel = nmeshModel;
     }
 
     @Nullable
@@ -73,12 +82,16 @@ public class WeaponPartVboRenderer extends AbstractGpuMesh {
         if (irisCompanion != null && irisCompanion.isBuilt()) return irisCompanion;
         if (irisCompanion != null && irisCompanion.isFailed()) return null;
         if (irisCompanionAttempted && irisCompanion == null) return null;
-        if (normalizedQuads == null || normalizedQuads.isEmpty()) {
+        if ((normalizedQuads == null || normalizedQuads.isEmpty()) && (nmeshModel == null || nmeshModel.isEmpty())) {
             irisCompanionAttempted = true;
             return null;
         }
         if (irisCompanion == null) {
-            irisCompanion = new IrisCompanionMesh(normalizedQuads);
+            if (nmeshModel != null) {
+                irisCompanion = new IrisCompanionMesh(nmeshModel, normalizedQuads, true);
+            } else {
+                irisCompanion = new IrisCompanionMesh(normalizedQuads);
+            }
             irisCompanion.setDebugName("WeaponPart");
             irisCompanionAttempted = true;
         }

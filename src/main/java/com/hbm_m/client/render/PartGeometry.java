@@ -62,6 +62,10 @@ public record PartGeometry(List<BakedQuad> solidQuads, boolean standalone, com.h
         return solidQuads;
     }
 
+    public List<BakedQuad> solidQuadsRaw() {
+        return solidQuads;
+    }
+
     public boolean isEmpty() {
         return (nmeshModel == null || nmeshModel.isEmpty()) && solidQuads.isEmpty();
     }

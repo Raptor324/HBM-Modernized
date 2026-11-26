@@ -191,8 +191,9 @@ public final class InstancedRenderFrame {
         }
     }
 
-    /** {@code AFTER_LEVEL}: Iris persistent batch cleanup only. */
+    /** {@code AFTER_LEVEL}: Iris persistent batch cleanup and debug overlay. */
     public static void onRenderSliceEnd() {
+        com.hbm_m.client.render.NucleusGpuBaker.renderDebugCulledOverlay(null);
         IrisRenderBatch.closePersistentIfActive();
     }
 

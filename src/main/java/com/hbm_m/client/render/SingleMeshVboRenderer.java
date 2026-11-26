@@ -212,6 +212,14 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         return null;
     }
 
+    /**
+     * Optional NMeshPartBakedModel backing this renderer, for direct Iris companion mesh creation.
+     */
+    @Nullable
+    protected com.hbm_m.client.model.nmesh.NMeshPartBakedModel getNMeshModelForIrisPath() {
+        return null;
+    }
+
     static final class TextureBinder {
         static void bindForModelIfNeeded(ShaderInstance shader) {
             var minecraft = Minecraft.getInstance();
@@ -577,12 +585,13 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         if (irisCompanionAttempted && irisCompanion == null) return null;
 
         List<BakedQuad> quads = getQuadsForIrisPath();
-        if (quads == null || quads.isEmpty()) {
+        com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmesh = getNMeshModelForIrisPath();
+        if ((quads == null || quads.isEmpty()) && (nmesh == null || nmesh.isEmpty())) {
             irisCompanionAttempted = true;
             return null;
         }
         if (irisCompanion == null) {
-            irisCompanion = new IrisCompanionMesh(quads);
+            irisCompanion = new IrisCompanionMesh(nmesh, quads);
             irisCompanion.setDebugName(getClass().getSimpleName());
             irisCompanionAttempted = true;
         }
@@ -1141,6 +1150,8 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         public final float minX, minY, minZ, maxX, maxY, maxZ;
         /** Vertex stride in byteBuffer: pos(12) + normal(12) + uv(8) + boneId(int32) = 36 bytes. */
         public final int bytesPerVertex;
+        /** Optional default material tint [r, g, b, fakeLight/a] from MTL diffuse / ambient. */
+        @Nullable public final float[] defaultTint;
         
         private final java.util.concurrent.atomic.AtomicBoolean consumed = new java.util.concurrent.atomic.AtomicBoolean(false);
         private final java.lang.ref.Cleaner.Cleanable cleanable;
@@ -1173,11 +1184,19 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                        float minX, float minY, float minZ,
                        float maxX, float maxY, float maxZ,
                        int bytesPerVertex) {
+            this(byteBuffer, indices, minX, minY, minZ, maxX, maxY, maxZ, bytesPerVertex, null);
+        }
+
+        public VboData(ByteBuffer byteBuffer, IntBuffer indices,
+                       float minX, float minY, float minZ,
+                       float maxX, float maxY, float maxZ,
+                       int bytesPerVertex, @Nullable float[] defaultTint) {
             this.byteBuffer = byteBuffer;
             this.indices = indices;
             this.minX = minX; this.minY = minY; this.minZ = minZ;
             this.maxX = maxX; this.maxY = maxY; this.maxZ = maxZ;
             this.bytesPerVertex = bytesPerVertex;
+            this.defaultTint = (defaultTint != null && defaultTint.length >= 4) ? defaultTint.clone() : null;
 
             long bbAddr = byteBuffer != null ? MemoryUtil.memAddress(byteBuffer) : 0L;
             long ibAddr = indices != null ? MemoryUtil.memAddress(indices) : 0L;

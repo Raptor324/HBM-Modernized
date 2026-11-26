@@ -33,6 +33,8 @@ public final class RawScreenSpaceLight {
     private static final boolean SOLID_ADD = Boolean.getBoolean("hbm.screenSpaceLight.solidAdd");
 
     private static int program = -1, fbo = -1;
+    private static int nearestSampler = -1;
+    private static int lastBoundColorTex = -1;
     private static int uDepthTex0Loc = -1, uDhDepthTexLoc = -1, uDhReverseZLoc = -1, uDhPresentLoc = -1;
     private static int uDhNearLoc = -1, uDhFarLoc = -1, uDhFadeDistLoc = -1, uProjLoc = -1;
     private static int uModelViewLoc = -1, uModelViewInvLoc = -1, uCamPosLoc = -1, uSourcesLoc = -1;
@@ -340,21 +342,25 @@ public final class RawScreenSpaceLight {
         if (!ensureFbo(in.colorTexture())) { GlStateManager._activeTexture(prevActiveTex); return; }
 
         boolean depthBindingsActive = false;
-        int[] savedFilters0 = new int[2], savedFilters1 = new int[2];
         try {
             RenderSystem.disableCull();
             RenderSystem.disableDepthTest();
             RenderSystem.colorMask(true, true, true, true);
             if (DEBUG_REPLACE || sceneActive) {
-                GL11.glDisable(GL11.GL_BLEND);
+                RenderSystem.disableBlend();
             } else {
-                GL11.glEnable(GL11.GL_BLEND);
-                GL14.glBlendFuncSeparate(GL11.GL_ONE, GL11.GL_ONE, GL11.GL_ZERO, GL11.GL_ONE);
-                GL20.glBlendEquation(GL20.GL_FUNC_ADD);
+                RenderSystem.enableBlend();
+                GlStateManager._blendFuncSeparate(GL11.GL_ONE, GL11.GL_ONE, GL11.GL_ZERO, GL11.GL_ONE);
+                RenderSystem.blendEquation(GL20.GL_FUNC_ADD);
             }
 
             RenderSystem.viewport(0, 0, in.width(), in.height());
-            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fbo); GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, in.colorTexture(), 0); GL20.glDrawBuffers(FBO_DRAW_BUFFERS);
+            GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fbo);
+            if (lastBoundColorTex != in.colorTexture()) {
+                GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, in.colorTexture(), 0);
+                GL20.glDrawBuffers(FBO_DRAW_BUFFERS);
+                lastBoundColorTex = in.colorTexture();
+            }
 
             GlStateManager._glUseProgram(program);
             GL20.glUniform1i(uDepthTex0Loc, 0); GL20.glUniform1i(uDhDepthTexLoc, 1); GL20.glUniform1i(uSceneColorLoc, 2);
@@ -398,18 +404,15 @@ public final class RawScreenSpaceLight {
                 GL20.glUniform1f(uDhNearLoc, 0.05F); GL20.glUniform1f(uDhFarLoc, 4096.0F); GL20.glUniform1f(uDhFadeDistLoc, 0.0F);
             }
 
-            GlStateManager._activeTexture(GL13.GL_TEXTURE0); GlStateManager._bindTexture(in.depthTexture());
-            savedFilters0[0] = GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER);
-            savedFilters0[1] = GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+            int sampler = ensureNearestSampler();
+            GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+            GlStateManager._bindTexture(in.depthTexture());
+            GL33.glBindSampler(0, sampler);
 
             if (in.dhTexture() > 0) {
-                GlStateManager._activeTexture(GL13.GL_TEXTURE1); GlStateManager._bindTexture(in.dhTexture());
-                savedFilters1[0] = GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER);
-                savedFilters1[1] = GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                GlStateManager._activeTexture(GL13.GL_TEXTURE1);
+                GlStateManager._bindTexture(in.dhTexture());
+                GL33.glBindSampler(1, sampler);
             }
 
             if (sceneActive) {
@@ -421,15 +424,9 @@ public final class RawScreenSpaceLight {
             RawFullscreenQuad.render();
         } finally {
             if (depthBindingsActive) {
-                GlStateManager._activeTexture(GL13.GL_TEXTURE0);
-                GlStateManager._bindTexture(in.depthTexture());
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, savedFilters0[0]);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, savedFilters0[1]);
+                GL33.glBindSampler(0, 0);
                 if (in.dhTexture() > 0) {
-                    GlStateManager._activeTexture(GL13.GL_TEXTURE1);
-                    GlStateManager._bindTexture(in.dhTexture());
-                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, savedFilters1[0]);
-                    GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, savedFilters1[1]);
+                    GL33.glBindSampler(1, 0);
                 }
             }
             GlStateManager._activeTexture(GL13.GL_TEXTURE0); GlStateManager._bindTexture(prevUnit0Tex);
@@ -446,11 +443,11 @@ public final class RawScreenSpaceLight {
             if (depthTestWasEnabled) RenderSystem.enableDepthTest();
             RenderSystem.depthMask(prevDepthMask); RenderSystem.depthFunc(prevDepthFunc);
             if (blendWasEnabled) {
-                GL11.glEnable(GL11.GL_BLEND);
-                GL20.glBlendFuncSeparate(prevBlendSrcRgb, prevBlendDstRgb, prevBlendSrcAlpha, prevBlendDstAlpha);
-                GL20.glBlendEquation(prevBlendEquation);
+                RenderSystem.enableBlend();
+                GlStateManager._blendFuncSeparate(prevBlendSrcRgb, prevBlendDstRgb, prevBlendSrcAlpha, prevBlendDstAlpha);
+                RenderSystem.blendEquation(prevBlendEquation);
             } else {
-                GL11.glDisable(GL11.GL_BLEND);
+                RenderSystem.disableBlend();
             }
 
             GlVaoSafety.bindVertexArray(prevVao);
@@ -508,8 +505,22 @@ public final class RawScreenSpaceLight {
     }
 
     private static boolean ensureFbo(int colorTexture) {
-        if (fbo == -1) fbo = GL30.glGenFramebuffers();
+        if (fbo == -1) {
+            fbo = GL30.glGenFramebuffers();
+            lastBoundColorTex = -1;
+        }
         return fbo > 0;
+    }
+
+    private static int ensureNearestSampler() {
+        if (nearestSampler == -1) {
+            nearestSampler = GL33.glGenSamplers();
+            GL33.glSamplerParameteri(nearestSampler, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            GL33.glSamplerParameteri(nearestSampler, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+            GL33.glSamplerParameteri(nearestSampler, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+            GL33.glSamplerParameteri(nearestSampler, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+        }
+        return nearestSampler;
     }
 
     private static boolean ensureProgram() {
@@ -566,6 +577,10 @@ public final class RawScreenSpaceLight {
     }
 
     public static void destroy() {
+        if (nearestSampler != -1) {
+            GL33.glDeleteSamplers(nearestSampler);
+            nearestSampler = -1;
+        }
         if (program != -1) {
             GL20.glDeleteProgram(program);
             program = -1;
@@ -573,6 +588,7 @@ public final class RawScreenSpaceLight {
         if (fbo != -1) {
             GL30.glDeleteFramebuffers(fbo);
             fbo = -1;
+            lastBoundColorTex = -1;
         }
         if (sceneTex != -1) {
             GL11.glDeleteTextures(sceneTex);

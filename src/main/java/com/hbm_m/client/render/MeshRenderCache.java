@@ -253,6 +253,11 @@ public class MeshRenderCache {
                 // Deferred: BakedQuads are only built when an Iris/Oculus path asks.
                 return geo.solidQuads();
             }
+
+            @Override
+            protected @org.jetbrains.annotations.Nullable com.hbm_m.client.model.nmesh.NMeshPartBakedModel getNMeshModelForIrisPath() {
+                return geo.nmeshModel();
+            }
         };
     }
 
@@ -264,6 +269,11 @@ public class MeshRenderCache {
     public static IrisCompanionMesh getOrCreateIrisCompanion(String cacheKey, BakedModel modelPart) {
         if (modelPart == null) return null;
         return IRIS_COMPANION_MESHES.computeIfAbsent(cacheKey, k -> {
+            BakedModel unwrapped = AbstractPartBasedRenderer.unwrapFabricForwardingModels(modelPart);
+            if (unwrapped instanceof com.hbm_m.client.model.nmesh.NMeshPartBakedModel nmesh) {
+                if (nmesh.isEmpty()) return null;
+                return new IrisCompanionMesh(nmesh, List.of());
+            }
             List<BakedQuad> quads = getOrCompile(k, modelPart);
             if (quads == null || quads.isEmpty()) return null;
             return new IrisCompanionMesh(quads);

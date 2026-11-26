@@ -25,6 +25,7 @@ public final class ModeCache {
     public long lastUseFrame = 0L;
     // Instance-granularity cull result of the last cull run for THIS cache
     public long lastVisibleCount = 0L;
+    public long lastCulledCount = 0L;
     public boolean countsDirty = false;
     public int stagingSlot = -1;
     public int cmdGenStamp = -1;

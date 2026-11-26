@@ -19,6 +19,7 @@
         { "name": "uAnimFadeEnd", "type": "float", "count": 1, "values": [ 1000000001.0 ] },
         { "name": "uDitherFade", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "uAnimTicks", "type": "float", "count": 1, "values": [ 0.0 ] },
-        { "name": "uPartialTick", "type": "float", "count": 1, "values": [ 0.0 ] }
+        { "name": "uPartialTick", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "uDebugColor", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] }
     ]
 }

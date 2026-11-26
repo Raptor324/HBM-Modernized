@@ -983,7 +983,8 @@ public final class MdiBatchCoordinator {
             atlasHoleTotalInstances = 0;
             atlasWatermark = base;
         }
-        if (!atlas.ensureInstanceCapacity(atlasWatermark)) {
+        int requiredCapacity = ModClothConfig.isDebugCullRender() ? atlasWatermark * 2 : atlasWatermark;
+        if (!atlas.ensureInstanceCapacity(requiredCapacity)) {
             freeDrawListInstanceBuffers(drawList);
             dropAllRetained();
             return null;
@@ -1210,9 +1211,11 @@ public final class MdiBatchCoordinator {
 
         int nCmd = opaqueSubs.size();
         int totalInstances = 0;
+        boolean debugCull = ModClothConfig.isDebugCullRender() && gpuCullActive;
+        int numCmdsTotal = debugCull ? nCmd * 2 : nCmd;
         // Persistent growing buffer: memAlloc/memFree per dispatch would mean an extra
         // trip to the allocator and malloc churn on weak CPUs.
-        int needed = nCmd * INDIRECT_CMD_STRIDE_BYTES;
+        int needed = numCmdsTotal * INDIRECT_CMD_STRIDE_BYTES;
         ByteBuffer cmdBuf = cmdBufScratch;
         if (cmdBuf == null || cmdBuf.capacity() < needed) {
             if (cmdBuf != null) {
@@ -1242,6 +1245,24 @@ public final class MdiBatchCoordinator {
             globalOffset += sub.count;
             totalInstances += sub.count;
         }
+        if (debugCull) {
+            for (int i = 0; i < opaqueSubs.size(); i++) {
+                SubDraw sub = opaqueSubs.get(i);
+                Pending p = sub.owner;
+                int rowStart = cmdBuf.position();
+                cmdBuf.putInt(p.indexCount);
+                cmdBuf.putInt(0); // instanceCount written by cull compute shader
+                cmdBuf.putInt(p.firstIndexBytes >>> 2);
+                cmdBuf.putInt(p.baseVertex);
+                cmdBuf.putInt(atlasWatermark + sub.baseInstance); // culled instance storage offset
+                cmdBuf.putInt(sub.count);
+                cmdBuf.putInt(0);
+                cmdBuf.putInt(0);
+                while (cmdBuf.position() < rowStart + INDIRECT_CMD_STRIDE_BYTES) {
+                    cmdBuf.putInt(0);
+                }
+            }
+        }
         cmdBuf.flip();
 
         // Adaptive occlusion gate (the CrankShaft OCCLUSION_VERTICES pattern with hysteresis):
@@ -1252,7 +1273,10 @@ public final class MdiBatchCoordinator {
         // -Dhbm.gpuCull.minInstances=0 - occlusion always active (the old behavior).
         boolean occlusionEnabled = gpuCullActive;
         int occlusionMin = occlusionMinInstances();
-        if (occlusionEnabled && occlusionMin > 0) {
+        if (debugCull) {
+            // Debug cull render forces occlusion testing active unconditionally to test Hi-Z on any scene size
+            occlusionEnabled = true;
+        } else if (occlusionEnabled && occlusionMin > 0) {
             if (!occlusionLatch) {
                 if (totalInstances >= occlusionMin) {
                     occlusionLatch = true;
@@ -1333,7 +1357,7 @@ public final class MdiBatchCoordinator {
                 // REGRESSION-FIX: capacity must accommodate ALL commands (nCmd =
                 // opaque sub-draws + 1-instance fading slots), not just renderer count —
                 // otherwise growing fading instances under-ensured buffer and glBufferSubData truncated with GL_INVALID_VALUE.
-                int cmdByteLen = nCmd * INDIRECT_CMD_STRIDE_BYTES;
+                int cmdByteLen = numCmdsTotal * INDIRECT_CMD_STRIDE_BYTES;
                 GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, atlas.getIndirectBufferId());
                 atlas.ensureIndirectCommandByteCapacity(cmdByteLen);
                 GL15.glBufferSubData(GL40.GL_DRAW_INDIRECT_BUFFER, 0, cmdBuf);
@@ -1366,7 +1390,8 @@ public final class MdiBatchCoordinator {
                                 zFar,
                                 target.width,
                                 target.height,
-                                !occlusionEnabled
+                                !occlusionEnabled,
+                                debugCull
                         );
                     } catch (Exception t) {
                         MainRegistry.LOGGER.warn("[HBM-M MDI] GPU occlusion culling failed, falling back to full batch: {}", t.getMessage());
@@ -1555,6 +1580,48 @@ public final class MdiBatchCoordinator {
                                 "[HBM-M MDI] Neither glDrawElementsIndirect nor glMultiDrawElementsIndirect available — skipping atlas draw");
                         dispatchDrawMode = "NONE";
                         HardwareTierManager.triggerRuntimeDegradation("MdiBatchCoordinator.executeMdiGlDraw (no indirect entrypoint)", null);
+                    }
+
+                    if (debugCull && gpuCulled) {
+                        // Debug render for culled instances: render bright green on top of everything without depth test
+                        com.mojang.blaze3d.shaders.Uniform uDebugColor = shader.getUniform("uDebugColor");
+                        if (uDebugColor != null) {
+                            uDebugColor.set(0.0f, 1.0f, 0.0f, 0.85f);
+                            uDebugColor.upload();
+                        }
+
+                        com.mojang.blaze3d.systems.RenderSystem.depthMask(false);
+                        com.mojang.blaze3d.systems.RenderSystem.disableDepthTest();
+                        com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+                        com.mojang.blaze3d.systems.RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+                        long culledCmdOffset = (long) nCmd * INDIRECT_CMD_STRIDE_BYTES;
+                        if (canMulti) {
+                            if (caps2.glMultiDrawElementsIndirect != 0L) {
+                                GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES,
+                                        GL11.GL_UNSIGNED_INT, culledCmdOffset, nCmd, INDIRECT_CMD_STRIDE_BYTES);
+                            } else {
+                                ARBMultiDrawIndirect.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES,
+                                        GL11.GL_UNSIGNED_INT, culledCmdOffset, nCmd, INDIRECT_CMD_STRIDE_BYTES);
+                            }
+                        } else if (canSingle) {
+                            for (int i = 0; i < nCmd; i++) {
+                                long cmdOff = culledCmdOffset + (long) i * INDIRECT_CMD_STRIDE_BYTES;
+                                if (caps2.glDrawElementsIndirect != 0L) {
+                                    GL40.glDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, cmdOff);
+                                } else {
+                                    ARBDrawIndirect.glDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, cmdOff);
+                                }
+                            }
+                        }
+
+                        if (uDebugColor != null) {
+                            uDebugColor.set(0.0f, 0.0f, 0.0f, 0.0f);
+                            uDebugColor.upload();
+                        }
+                        com.mojang.blaze3d.systems.RenderSystem.enableDepthTest();
+                        com.mojang.blaze3d.systems.RenderSystem.depthMask(true);
+                        com.mojang.blaze3d.systems.RenderSystem.disableBlend();
                     }
                 } catch (Throwable t) {
                     MainRegistry.LOGGER.error("[HBM-M MDI] Draw dispatch failed - triggering runtime degradation", t);

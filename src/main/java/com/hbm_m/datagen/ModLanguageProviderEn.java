@@ -361,6 +361,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("entity.hbm_m.ka52", "Ka-52 Attack Helicopter");
         add("entity.hbm_m.ka52.controls", "W/A/S/D: fly - Jump: climb - Sprint: descend - LMB: cannon - RMB: rockets - Sneak: exit");
         add("block.hbm_m.pantsir_s1", "Pantsir-S1");
+        add("entity.hbm_m.pantsir_s1", "Pantsir-S1");
+        add("entity.hbm_m.pantsir_s1.controls", "W/S drive, A/D steer, secondary fire: radar on/off, sneak: leave");
         add("item.hbm_m.pantsir_s1", "Pantsir-S1");
         add("message.hbm_m.pantsir.on", "Pantsir-S1 active, missiles: %s/%s, 30 mm: %s/%s");
         add("message.hbm_m.pantsir.off", "Pantsir-S1 off, missiles: %s/%s, 30 mm: %s/%s");

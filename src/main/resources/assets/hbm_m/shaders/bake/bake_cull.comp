@@ -57,6 +57,7 @@ uniform int uHasMainView;      // 1 = main-camera frustum & clip matrix availabl
 uniform vec4 uMainPlane[6];    // main-camera frustum planes in anchor-relative world space
 uniform mat4 uMainClipMat;     // main-camera worldToClip matrix
 uniform vec3 uShadowDir;       // world-space light ray direction (away from sun towards ground)
+uniform int uDebugCullMode;     // 1 = debug cull (save culled instances)
 layout(binding = 10) uniform sampler2D uDepthPyramid;
 
 vec3 quatRotate(vec4 q, vec3 v) {
@@ -89,11 +90,11 @@ vec4 instQuat(uint base) {
 // near depth here culled legitimate distant instances in the MDI cull).
 float hizOccluder(vec4 aabb) {
     vec4 uv = clamp(vec4(min(aabb.xy, aabb.zw), max(aabb.xy, aabb.zw)), 0.0, 1.0);
-    ivec4 rect = ivec4(uv * uMip0Size.xyxy + vec4(0.5, 0.5, -0.5, -0.5));
+    ivec4 rect = ivec4(uv * uMip0Size.xyxy);
     if (any(lessThan(rect.zw, rect.xy))) {
         return 1.0;
     }
-    rect = min(rect, ivec4(uMip0Size.xyxy) - 1);
+    rect = clamp(rect, ivec4(0), ivec4(uMip0Size.xyxy) - 1);
 
     ivec2 extent = rect.zw - rect.xy;
     int level = max(findMSB(max(extent.x, extent.y)), 0);
@@ -140,113 +141,149 @@ bool projectAabbWithMat(mat4 clipMat, vec3 center, vec3 he, out vec4 aabb, out f
     return true;
 }
 
-void main() {
-    uint gid = gl_GlobalInvocationID.x;
-    if (uPass == 0) {
-        if (gid >= uint(uInstCount)) return;
-        uint ib = gid * uint(uInstStride);
-        // FADE_MODE_INVISIBLE (-1.0): the instance must not cast or
-        // exist at all - drop it before the frustum planes so it never
-        // lands in the compacted draw list (the vanilla MDI path
-        // discards instFade <= 0 in the vsh; this is the bake mirror).
-        if (instData[ib + INST_FADE_WORD] < 0.0) return;
-        vec3 center = vec3(instData[ib + INST_POS_WORD], instData[ib + INST_POS_WORD + 1u], instData[ib + INST_POS_WORD + 2u]);
-        vec4 q = instQuat(ib);
-        vec3 bmin = vec3(instData[ib + INST_BMIN_WORD], instData[ib + INST_BMIN_WORD + 1u], instData[ib + INST_BMIN_WORD + 2u]);
-        vec3 ext = vec3(instData[ib + INST_BSIZE_WORD], instData[ib + INST_BSIZE_WORD + 1u], instData[ib + INST_BSIZE_WORD + 2u]) * 0.5;
-        float unpaddedRadius = length(ext);
-        bool isAnimOrParam = (instData[ib + INST_FADE_WORD] < 0.99985) || (instData[ib + INST_GRAD_WORD + 3u] >= 0.0);
-        // Conservative record-space AABB: rotate the model-space center and
-        // take the abs-rotation rows times the model-space half extent.
-        center += quatRotate(q, bmin + ext);
-        float xx = q.x * q.x, yy = q.y * q.y, zz = q.z * q.z;
-        float xy = q.x * q.y, xz = q.x * q.z, yz = q.y * q.z;
-        float wx = q.w * q.x, wy = q.w * q.y, wz = q.w * q.z;
-        vec3 he;
-        he.x = abs(1.0 - 2.0 * (yy + zz)) * ext.x + abs(2.0 * (xy - wz)) * ext.y + abs(2.0 * (xz + wy)) * ext.z;
-        he.y = abs(2.0 * (xy + wz)) * ext.x + abs(1.0 - 2.0 * (xx + zz)) * ext.y + abs(2.0 * (yz - wx)) * ext.z;
-        he.z = abs(2.0 * (xz - wy)) * ext.x + abs(2.0 * (yz + wx)) * ext.y + abs(1.0 - 2.0 * (xx + yy)) * ext.z;
-        if (instData[ib + INST_GRAD_WORD + 3u] >= 0.0) {
-            he += vec3(0.15);
+bool testBakeInstanceVisibility(uint gid) {
+    if (gid >= uint(uInstCount)) return false;
+    uint ib = gid * uint(uInstStride);
+    // FADE_MODE_INVISIBLE (-1.0): the instance must not cast or
+    // exist at all - drop it before the frustum planes so it never
+    // lands in the compacted draw list (the vanilla MDI path
+    // discards instFade <= 0 in the vsh; this is the bake mirror).
+    if (instData[ib + INST_FADE_WORD] < 0.0) return false;
+    vec3 center = vec3(instData[ib + INST_POS_WORD], instData[ib + INST_POS_WORD + 1u], instData[ib + INST_POS_WORD + 2u]);
+    vec4 q = instQuat(ib);
+    vec3 bmin = vec3(instData[ib + INST_BMIN_WORD], instData[ib + INST_BMIN_WORD + 1u], instData[ib + INST_BMIN_WORD + 2u]);
+    vec3 ext = vec3(instData[ib + INST_BSIZE_WORD], instData[ib + INST_BSIZE_WORD + 1u], instData[ib + INST_BSIZE_WORD + 2u]) * 0.5;
+    float unpaddedRadius = length(ext);
+    bool isAnimOrParam = (instData[ib + INST_FADE_WORD] < 0.99985) || (instData[ib + INST_GRAD_WORD + 3u] >= 0.0);
+    // Conservative record-space AABB: rotate the model-space center and
+    // take the abs-rotation rows times the model-space half extent.
+    center += quatRotate(q, bmin + ext);
+    float xx = q.x * q.x, yy = q.y * q.y, zz = q.z * q.z;
+    float xy = q.x * q.y, xz = q.x * q.z, yz = q.y * q.z;
+    float wx = q.w * q.x, wy = q.w * q.y, wz = q.w * q.z;
+    vec3 he;
+    he.x = abs(1.0 - 2.0 * (yy + zz)) * ext.x + abs(2.0 * (xy - wz)) * ext.y + abs(2.0 * (xz + wy)) * ext.z;
+    he.y = abs(2.0 * (xy + wz)) * ext.x + abs(1.0 - 2.0 * (xx + zz)) * ext.y + abs(2.0 * (yz - wx)) * ext.z;
+    he.z = abs(2.0 * (xz - wy)) * ext.x + abs(2.0 * (yz + wx)) * ext.y + abs(1.0 - 2.0 * (xx + yy)) * ext.z;
+    if (instData[ib + INST_GRAD_WORD + 3u] >= 0.0) {
+        he += vec3(0.15);
+    }
+    for (int i = 0; i < 6; i++) {
+        vec3 n = uPlane[i].xyz;
+        float d = dot(n, center) + uPlane[i].w;
+        float r = dot(abs(n), he);
+        if (d + r < 0.0) return false; // fully outside this plane
+    }
+    // Subpixel / Sub-texel Culling (Main Pass & Shadow Pass):
+    if (uSubpixelMinNdc > 0.0) {
+        vec4 clipCenter = uClipMat * vec4(center, 1.0);
+        float w = clipCenter.w;
+        bool validW = (uIsShadowPass != 0) ? (w > 1e-4) : (w > unpaddedRadius + 0.05);
+        if (validW) {
+            float projScale = max(length(uClipMat[0].xyz), length(uClipMat[1].xyz));
+            float ndcDiameter = (2.0 * unpaddedRadius * projScale) / w;
+            if (uIsShadowPass != 0 && uShadowDistortMode > 0) {
+                vec2 ndcPos = clipCenter.xy / w;
+                float d = uShadowDistort;
+                float distortFactor;
+                if (uShadowDistortMode == 1) {
+                    vec2 p2 = ndcPos * ndcPos;
+                    distortFactor = sqrt(sqrt(p2.x * p2.x + p2.y * p2.y)) * d + (1.0 - d);
+                } else {
+                    distortFactor = length(ndcPos) * d + (1.0 - d);
+                }
+                ndcDiameter /= max(distortFactor, 0.10);
+            }
+            float minNdc = (unpaddedRadius < 0.75 || isAnimOrParam) ? (uSubpixelMinNdc * 1.5) : uSubpixelMinNdc;
+            if (ndcDiameter < minNdc) return false;
         }
+    }
+    // Shadow-pass swept volume culling against main camera frustum:
+    // Extrudes the caster AABB along the light ray (uShadowDir) using the
+    // true top elevation of the part so tall towers and low-sun shadows
+    // stretching across the ground in front of the player are never clipped
+    // when the player turns away from the caster.
+    if (uIsShadowPass != 0 && uHasMainView != 0) {
+        float topElevation = max(bmin.y + ext.y * 2.0, max(he.x, max(he.y, he.z)) * 2.0);
+        float shadowReach = clamp(max(topElevation * 6.0, 64.0), 64.0, 160.0);
+        vec3 shadowShift = uShadowDir * shadowReach;
+        vec3 sweptCenter = center + shadowShift * 0.5;
+        vec3 sweptHe = he + abs(shadowShift) * 0.5;
         for (int i = 0; i < 6; i++) {
-            vec3 n = uPlane[i].xyz;
-            float d = dot(n, center) + uPlane[i].w;
-            float r = dot(abs(n), he);
-            if (d + r < 0.0) return; // fully outside this plane
+            vec3 n = uMainPlane[i].xyz;
+            float d = dot(n, sweptCenter) + uMainPlane[i].w;
+            float r = dot(abs(n), sweptHe);
+            if (d + r < 0.0) return false;
         }
-        // Subpixel / Sub-texel Culling (Main Pass & Shadow Pass):
-        if (uSubpixelMinNdc > 0.0) {
-            vec4 clipCenter = uClipMat * vec4(center, 1.0);
-            float w = clipCenter.w;
-            bool validW = (uIsShadowPass != 0) ? (w > 1e-4) : (w > unpaddedRadius + 0.05);
-            if (validW) {
-                float projScale = max(length(uClipMat[0].xyz), length(uClipMat[1].xyz));
-                float ndcDiameter = (2.0 * unpaddedRadius * projScale) / w;
-                if (uIsShadowPass != 0 && uShadowDistortMode > 0) {
-                    vec2 ndcPos = clipCenter.xy / w;
-                    float d = uShadowDistort;
-                    float distortFactor;
-                    if (uShadowDistortMode == 1) {
-                        vec2 p2 = ndcPos * ndcPos;
-                        distortFactor = sqrt(sqrt(p2.x * p2.x + p2.y * p2.y)) * d + (1.0 - d);
-                    } else {
-                        distortFactor = length(ndcPos) * d + (1.0 - d);
-                    }
-                    ndcDiameter /= max(distortFactor, 0.10);
-                }
-                float minNdc = (unpaddedRadius < 0.75 || isAnimOrParam) ? (uSubpixelMinNdc * 1.5) : uSubpixelMinNdc;
-                if (ndcDiameter < minNdc) return;
+    } else if (uIsShadowPass == 0 && uHiZMode == 1) {
+        vec4 aabb;
+        float minDepth;
+        if (projectAabbWithMat(uClipMat, center, he, aabb, minDepth)) {
+            if (minDepth >= hizOccluder(aabb)) {
+                atomicAdd(ctl[15u], 1u); // F3: culled-by-occlusion counter (pad word)
+                return false;
             }
         }
-        // Shadow-pass swept volume culling against main camera frustum:
-        // Extrudes the caster AABB along the light ray (uShadowDir) using the
-        // true top elevation of the part so tall towers and low-sun shadows
-        // stretching across the ground in front of the player are never clipped
-        // when the player turns away from the caster.
-        if (uIsShadowPass != 0 && uHasMainView != 0) {
-            float topElevation = max(bmin.y + ext.y * 2.0, max(he.x, max(he.y, he.z)) * 2.0);
-            float shadowReach = clamp(max(topElevation * 6.0, 64.0), 64.0, 160.0);
-            vec3 shadowShift = uShadowDir * shadowReach;
-            vec3 sweptCenter = center + shadowShift * 0.5;
-            vec3 sweptHe = he + abs(shadowShift) * 0.5;
-            for (int i = 0; i < 6; i++) {
-                vec3 n = uMainPlane[i].xyz;
-                float d = dot(n, sweptCenter) + uMainPlane[i].w;
-                float r = dot(abs(n), sweptHe);
-                if (d + r < 0.0) return;
+    }
+    return true;
+}
+
+void main() {
+    uint gid = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * (gl_NumWorkGroups.x * 64u);
+    if (uPass == 0) {
+        bool isVisible = testBakeInstanceVisibility(gid);
+#if defined(NUCLEUS_BALLOT)
+        uvec4 ballot = subgroupBallot(isVisible);
+        uint visCount = subgroupBallotBitCount(ballot);
+        uint scanBase = 0u;
+        if (visCount != 0u && gl_SubgroupInvocationID == 0u) {
+            scanBase = atomicAdd(ctl[0u], visCount);
+        }
+        scanBase = subgroupBroadcastFirst(scanBase);
+        if (isVisible) {
+            uint slot = scanBase + subgroupBallotExclusiveBitCount(ballot);
+            ctl[16u + slot] = gid;
+        }
+
+        if (uDebugCullMode != 0) {
+            uvec4 culledBallot = subgroupBallot(!isVisible);
+            uint culledCount = subgroupBallotBitCount(culledBallot);
+            uint culledScanBase = 0u;
+            if (culledCount != 0u && gl_SubgroupInvocationID == 0u) {
+                culledScanBase = atomicAdd(ctl[1u], culledCount);
             }
-        } else if (uIsShadowPass == 0 && uHiZMode == 1) {
-            vec4 aabb;
-            float minDepth;
-            if (projectAabbWithMat(uClipMat, center, he, aabb, minDepth)) {
-                if (minDepth >= hizOccluder(aabb)) {
-                    atomicAdd(ctl[15u], 1u); // F3: culled-by-occlusion counter (pad word)
-                    return;
-                }
+            culledScanBase = subgroupBroadcastFirst(culledScanBase);
+            if (!isVisible) {
+                uint slot = culledScanBase + subgroupBallotExclusiveBitCount(culledBallot);
+                ctl[16u + uint(uInstCount) - 1u - slot] = gid;
             }
         }
-        uint slot = atomicAdd(ctl[0u], 1u);
-        ctl[16u + slot] = gid;
+#else
+        if (isVisible) {
+            uint slot = atomicAdd(ctl[0u], 1u);
+            ctl[16u + slot] = gid;
+        } else if (uDebugCullMode != 0) {
+            uint slot = atomicAdd(ctl[1u], 1u);
+            ctl[16u + uint(uInstCount) - 1u - slot] = gid;
+        }
+#endif
     } else if (uPass == 1) {
-        uint n;
-        uint k;
-        uint slot;
-        uint inst;
-        if (uIdentity != 0) {
-            n = uint(uInstCount);
-            k = gid % uint(uIdxCount);
-            slot = gid / uint(uIdxCount);
-            if (k >= uint(uIdxCount) || slot >= n) return;
-            inst = slot;
-        } else {
-            n = ctl[0u];
-            k = gid;
-            slot = gl_GlobalInvocationID.y + gl_GlobalInvocationID.z * gl_NumWorkGroups.y;
-            if (k >= uint(uIdxCount) || slot >= n) return;
-            inst = ctl[16u + slot];
-        }
+        uint n = (uIdentity != 0) ? uint(uInstCount) : ctl[0u];
+        uint total = uint(uIdxCount) * n;
+        if (gid >= total) return;
+        uint k = gid % uint(uIdxCount);
+        uint slot = gid / uint(uIdxCount);
+        uint inst = (uIdentity != 0) ? slot : ctl[16u + slot];
         uint outIdx = uint(uEboBase) + slot * uint(uIdxCount) + k;
+        ebo[outIdx] = uint(uVertBase) + inst * uint(uVertCount) + baseIdx[k];
+    } else if (uPass == 3) {
+        uint n = ctl[1u];
+        uint total = uint(uIdxCount) * n;
+        if (gid >= total) return;
+        uint k = gid % uint(uIdxCount);
+        uint slot = gid / uint(uIdxCount);
+        uint inst = ctl[16u + uint(uInstCount) - 1u - slot];
+        uint outIdx = uint(uEboBase) + (ctl[0u] + slot) * uint(uIdxCount) + k;
         ebo[outIdx] = uint(uVertBase) + inst * uint(uVertCount) + baseIdx[k];
     } else {
         if (gid != 0u) return;
@@ -273,10 +310,11 @@ void main() {
             cmdWords[w + 3u] = 0u;
             cmdWords[w + 4u] = 0u;
         }
-        // EBO-build dispatch triplet (words 9..11) - the dispatcher
-        // reads a full (x,y,z) triple: X = index groups, Y = visible instance count, Z = 1.
-        ctl[9u]  = (uint(uIdxCount) + 63u) / 64u;
-        ctl[10u] = min(n, 65535u);
-        ctl[11u] = (n + 65534u) / 65535u;
+        // EBO-build dispatch triplet (words 9..11) - 2D grid up to 65535 along X to avoid exceeding GL_MAX_COMPUTE_WORK_GROUP_COUNT[0]
+        uint total = uint(uIdxCount) * n;
+        uint groups = (total + 63u) / 64u;
+        ctl[9u]  = min(groups, 65535u);
+        ctl[10u] = (groups + 65534u) / 65535u;
+        ctl[11u] = 1u;
     }
 }

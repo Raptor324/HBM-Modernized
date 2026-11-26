@@ -106,12 +106,12 @@ final class IrisInstancedBatchRenderer {
         if (irisCompanion != null && irisCompanion.isFailed()) return null;
         if (irisCompanionAttempted && irisCompanion == null) return null;
 
-        if (parent.quadsForIris == null || parent.quadsForIris.isEmpty()) {
+        if ((parent.quadsForIris == null || parent.quadsForIris.isEmpty()) && parent.nmeshModel == null) {
             irisCompanionAttempted = true;
             return null;
         }
         if (irisCompanion == null) {
-            irisCompanion = new IrisCompanionMesh(parent.quadsForIris);
+            irisCompanion = new IrisCompanionMesh(parent.nmeshModel, parent.quadsForIris);
             String tag = parent.getMdiTraceTag();
             if (tag == null || tag.isEmpty()) {
                 tag = parent.getClass().getSimpleName();
@@ -626,6 +626,7 @@ final class IrisInstancedBatchRenderer {
             if (companion != null && perVertexLight) {
                 companion.restoreConstantLightmap();
             }
+            IrisBakeBridge.setMatrices(shader, RenderSystem.getProjectionMatrix(), RenderSystem.getModelViewMatrix());
             shader.clear();
             NucleusDebug.recordDraw(parent.instanceCount, parent.instanceCount, "Iris batch");
         } catch (Exception e) {

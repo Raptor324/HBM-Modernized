@@ -905,8 +905,6 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.TAPE_DRIVE_BE.get(), com.hbm_m.client.render.implementations.TapeDriveRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.MISSILE_ASSEMBLY_BE.get(), com.hbm_m.client.render.implementations.MissileAssemblyRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.MOBILE_LAUNCH_PAD_BE.get(), com.hbm_m.client.render.implementations.MobileLaunchPadMissileRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.PANTSIR_S1_BE.get(), com.hbm_m.client.render.implementations.PantsirRenderer::new);
-        if (!Boolean.getBoolean("hbm_m.legacyMachineRender")) com.hbm_m.client.render.implementations.PantsirRenderer.registerRaptorPath();
         BlockEntityRenderers.register(ModBlockEntities.NUKE_FSTBMB_BE.get(), com.hbm_m.client.render.implementations.NukeFstbmbRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.OBJ_TESTER.get(), com.hbm_m.client.render.implementations.ObjTesterRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.PIPE_ANCHOR.get(), com.hbm_m.client.render.implementations.PipeAnchorRenderer::new);
@@ -1613,6 +1611,7 @@ public class ClientSetup {
         EntityRendererRegistry.register(ModEntities.MISSILE_9M723_BUSTER, MissileEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.MISSILE_PANTSIR, MissileEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.KA52, com.hbm_m.client.render.entity.Ka52Renderer::new);
+        EntityRendererRegistry.register(ModEntities.PANTSIR, com.hbm_m.client.render.entity.PantsirRenderer::new);
         EntityRendererRegistry.register(ModEntities.MISSILE_TOPOL, MissileEntityRenderer::new);
         EntityRendererRegistry.register(ModEntities.CHLORINE_FX, ctx -> new com.hbm_m.client.render.entity.MultiCloudRenderer<>(ctx, "chlorine"));
         EntityRendererRegistry.register(ModEntities.ORANGE_FX, ctx -> new com.hbm_m.client.render.entity.MultiCloudRenderer<>(ctx, "orange"));

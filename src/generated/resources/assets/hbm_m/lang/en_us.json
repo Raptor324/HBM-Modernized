@@ -2605,6 +2605,8 @@
   "entity.hbm_m.ka52": "Ka-52 Attack Helicopter",
   "entity.hbm_m.ka52.controls": "W/A/S/D: fly - Jump: climb - Sprint: descend - LMB: cannon - RMB: rockets - Sneak: exit",
   "entity.hbm_m.maskman": "Maskman",
+  "entity.hbm_m.pantsir_s1": "Pantsir-S1",
+  "entity.hbm_m.pantsir_s1.controls": "W/S drive, A/D steer, secondary fire: radar on/off, sneak: leave",
   "entity.hbm_m.parasite_maggot": "Parasitic Maggot",
   "entity.hbm_m.rad_beast": "RAD Beast",
   "entity.hbm_m.ufo": "UFO",

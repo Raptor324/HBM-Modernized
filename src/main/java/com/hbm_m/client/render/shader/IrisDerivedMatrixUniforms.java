@@ -2,9 +2,12 @@ package com.hbm_m.client.render.shader;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL31;
 import org.lwjgl.system.MemoryStack;
 
 import com.mojang.blaze3d.shaders.Uniform;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.renderer.ShaderInstance;
 
 /**
@@ -22,6 +25,9 @@ public final class IrisDerivedMatrixUniforms {
     private static final int GL_FLOAT_MAT3 = 0x8B5B;
     private static final int GL_FLOAT_MAT4 = 0x8B5C;
 
+    private static long cachedPipelineGeneration = -1L;
+    private static final Int2ObjectMap<Locations> LOCATIONS_CACHE = new Int2ObjectOpenHashMap<>();
+
     private IrisDerivedMatrixUniforms() {}
 
     public record Locations(int modelView, int modelViewInverse, int normalMat) {
@@ -33,12 +39,38 @@ public final class IrisDerivedMatrixUniforms {
         int programId = shader.getId();
         if (programId <= 0) return Locations.NONE;
 
+        long currentGen = IrisExtendedShaderAccess.getPipelineGeneration();
+        synchronized (LOCATIONS_CACHE) {
+            if (currentGen != cachedPipelineGeneration) {
+                LOCATIONS_CACHE.clear();
+                cachedPipelineGeneration = currentGen;
+            }
+            Locations cached = LOCATIONS_CACHE.get(programId);
+            if (cached != null) {
+                return cached;
+            }
+            Locations resolved = resolveInternal(shader, programId);
+            LOCATIONS_CACHE.put(programId, resolved);
+            return resolved;
+        }
+    }
+
+    public static void clearCache() {
+        synchronized (LOCATIONS_CACHE) {
+            LOCATIONS_CACHE.clear();
+            cachedPipelineGeneration = -1L;
+        }
+    }
+
+    private static Locations resolveInternal(ShaderInstance shader, int programId) {
         int locModelView = firstMat4(programId, "ModelViewMat", "iris_ModelViewMat");
         if (locModelView < 0) {
             Uniform u = shader.getUniform("ModelViewMat");
             if (u != null) {
                 int loc = u.getLocation();
-                if (isMat4(programId, loc)) locModelView = loc;
+                if (loc >= 0 && getUniformType(programId, "ModelViewMat") == GL_FLOAT_MAT4) {
+                    locModelView = loc;
+                }
             }
         }
 
@@ -50,7 +82,7 @@ public final class IrisDerivedMatrixUniforms {
     private static int firstMat4(int programId, String... names) {
         for (String name : names) {
             int loc = GL20.glGetUniformLocation(programId, name);
-            if (isMat4(programId, loc)) return loc;
+            if (loc >= 0 && getUniformType(programId, name) == GL_FLOAT_MAT4) return loc;
         }
         return -1;
     }
@@ -58,35 +90,24 @@ public final class IrisDerivedMatrixUniforms {
     private static int firstMat3(int programId, String... names) {
         for (String name : names) {
             int loc = GL20.glGetUniformLocation(programId, name);
-            if (isMat3(programId, loc)) return loc;
+            if (loc >= 0 && getUniformType(programId, name) == GL_FLOAT_MAT3) return loc;
         }
         return -1;
     }
 
-    private static boolean isMat4(int programId, int location) {
-        return location >= 0 && uniformType(programId, location) == GL_FLOAT_MAT4;
-    }
-
-    private static boolean isMat3(int programId, int location) {
-        return location >= 0 && uniformType(programId, location) == GL_FLOAT_MAT3;
-    }
-
-    private static int uniformType(int programId, int location) {
+    private static int getUniformType(int programId, String name) {
         if (GL20.glGetProgrami(programId, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
             return -1;
         }
-        int count = GL20.glGetProgrami(programId, GL20.GL_ACTIVE_UNIFORMS);
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            var size = stack.mallocInt(1);
-            var type = stack.mallocInt(1);
-            for (int i = 0; i < count; i++) {
-                String name = GL20.glGetActiveUniform(programId, i, size, type);
-                if (name != null && GL20.glGetUniformLocation(programId, name) == location) {
-                    return type.get(0);
-                }
+            var indices = stack.mallocInt(1);
+            GL31.glGetUniformIndices(programId, new CharSequence[]{name}, indices);
+            int index = indices.get(0);
+            if (index == -1 || index == GL31.GL_INVALID_INDEX) {
+                return -1;
             }
+            return GL31.glGetActiveUniformsi(programId, index, GL31.GL_UNIFORM_TYPE);
         }
-        return -1;
     }
 
     // Shared zero-allocation scratch buffers (guaranteed render-thread only)

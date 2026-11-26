@@ -80,6 +80,7 @@ public final class PackAdditiveQueue {
         final int depthMode;
         final float[] data;
         final int floats;
+        int firstVert;
 
         Batch(int texId, int glMode, Matrix4f mvp, int depthMode, float[] data, int floats) {
             this.texId = texId;
@@ -333,6 +334,31 @@ public final class PackAdditiveQueue {
             while (GL11.glGetError() != GL11.GL_NO_ERROR) {
                 sweptStaleErrors++;
             }
+            int maxBatchQuads = 0;
+            int totalFloats = 0;
+            for (Batch b : batches) {
+                b.firstVert = totalFloats / FLOATS_PER_VERT;
+                totalFloats += b.floats;
+                if (b.glMode == GL11.GL_QUADS) {
+                    int q = (b.floats / FLOATS_PER_VERT) / 4;
+                    if (q > maxBatchQuads) maxBatchQuads = q;
+                }
+            }
+            if (maxBatchQuads > 0) {
+                ensureQuadIndices(maxBatchQuads);
+            }
+            int totalBytes = totalFloats * 4;
+            if (vboBuf.capacity() < totalBytes) {
+                vboBuf = java.nio.ByteBuffer.allocateDirect(Math.max(totalBytes * 2, 4096)).order(java.nio.ByteOrder.nativeOrder());
+            }
+            vboBuf.clear();
+            var floatView = vboBuf.asFloatBuffer();
+            for (Batch b : batches) {
+                floatView.put(b.data, 0, b.floats);
+            }
+            ((java.nio.Buffer) vboBuf).limit(totalBytes);
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vboBuf, GL15.GL_STREAM_DRAW);
+
             int lastDepthMode = -1;
             for (Batch b : batches) {
                 if (depthMode && b.depthMode != lastDepthMode) {
@@ -345,14 +371,6 @@ public final class PackAdditiveQueue {
                         GL11.glDepthRange(0.0, 1.0);
                     }
                 }
-                int bytes = b.floats * 4;
-                if (vboBuf.capacity() < bytes) {
-                    vboBuf = java.nio.ByteBuffer.allocateDirect(bytes * 2).order(java.nio.ByteOrder.nativeOrder());
-                }
-                vboBuf.clear();
-                vboBuf.asFloatBuffer().put(b.data, 0, b.floats);
-                ((java.nio.Buffer) vboBuf).limit(bytes);
-                GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vboBuf, GL15.GL_STREAM_DRAW);
                 com.mojang.blaze3d.platform.GlStateManager._bindTexture(b.texId);
                 matBuf.clear();
                 b.mvp.get(matBuf);
@@ -360,10 +378,9 @@ public final class PackAdditiveQueue {
                 GL20.glUniformMatrix4fv(uMvpLoc, false, matBuf);
                 int verts = b.floats / FLOATS_PER_VERT;
                 if (b.glMode == GL11.GL_QUADS) {
-                    ensureQuadIndices(verts / 4);
-                    GL11.glDrawElements(GL11.GL_TRIANGLES, (verts / 4) * 6, GL20.GL_UNSIGNED_INT, 0L);
+                    org.lwjgl.opengl.GL32.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, (verts / 4) * 6, GL11.GL_UNSIGNED_INT, 0L, b.firstVert);
                 } else {
-                    GL11.glDrawArrays(b.glMode, 0, verts);
+                    GL11.glDrawArrays(b.glMode, b.firstVert, verts);
                 }
             }
             if (loggedFirstDraw) {

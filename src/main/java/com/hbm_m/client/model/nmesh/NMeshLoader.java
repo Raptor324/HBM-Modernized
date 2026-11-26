@@ -332,6 +332,10 @@ public final class NMeshLoader {
         return idx < 0 ? size + idx : idx - 1;
     }
 
+    private static int floatBits(float val) {
+        return Float.floatToRawIntBits(val == 0.0f ? 0.0f : val);
+    }
+
     private static NMeshData.SubMesh weldSubMesh(String obj, String grp, String mat, String mapKd,
                                                  float kdR, float kdG, float kdB,
                                                  float kaR, float kaG, float kaB,
@@ -351,24 +355,30 @@ public final class NMeshLoader {
 
         for (int i = 0; i < rawCount; i++) {
             float[] v = triVerts.get(i);
-            float x = v[0], y = v[1], z = v[2];
+            float x = v[0] == 0.0f ? 0.0f : v[0];
+            float y = v[1] == 0.0f ? 0.0f : v[1];
+            float z = v[2] == 0.0f ? 0.0f : v[2];
             float nx = v[3], ny = v[4], nz = v[5];
             float nLen = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
             if (nLen > 1e-6f) { nx /= nLen; ny /= nLen; nz /= nLen; }
-            float u = v[6], vt = v[7];
+            nx = nx == 0.0f ? 0.0f : nx;
+            ny = ny == 0.0f ? 0.0f : ny;
+            nz = nz == 0.0f ? 0.0f : nz;
+            float u = v[6] == 0.0f ? 0.0f : v[6];
+            float vt = v[7] == 0.0f ? 0.0f : v[7];
 
             if (x < minX) minX = x; if (x > maxX) maxX = x;
             if (y < minY) minY = y; if (y > maxY) maxY = y;
             if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
 
-            int w0 = Float.floatToRawIntBits(x);
-            int w1 = Float.floatToRawIntBits(y);
-            int w2 = Float.floatToRawIntBits(z);
-            int w3 = Float.floatToRawIntBits(nx);
-            int w4 = Float.floatToRawIntBits(ny);
-            int w5 = Float.floatToRawIntBits(nz);
-            int w6 = Float.floatToRawIntBits(u);
-            int w7 = Float.floatToRawIntBits(vt);
+            int w0 = floatBits(x);
+            int w1 = floatBits(y);
+            int w2 = floatBits(z);
+            int w3 = floatBits(nx);
+            int w4 = floatBits(ny);
+            int w5 = floatBits(nz);
+            int w6 = floatBits(u);
+            int w7 = floatBits(vt);
 
             int h = w0 * 31 + w1;
             h = h * 31 + w2;
@@ -398,14 +408,14 @@ public final class NMeshLoader {
                     break;
                 }
                 int b = cand * 8;
-                if (Float.floatToRawIntBits(uniqueVerts[b]) == w0
-                        && Float.floatToRawIntBits(uniqueVerts[b + 1]) == w1
-                        && Float.floatToRawIntBits(uniqueVerts[b + 2]) == w2
-                        && Float.floatToRawIntBits(uniqueVerts[b + 3]) == w3
-                        && Float.floatToRawIntBits(uniqueVerts[b + 4]) == w4
-                        && Float.floatToRawIntBits(uniqueVerts[b + 5]) == w5
-                        && Float.floatToRawIntBits(uniqueVerts[b + 6]) == w6
-                        && Float.floatToRawIntBits(uniqueVerts[b + 7]) == w7) {
+                if (floatBits(uniqueVerts[b]) == w0
+                        && floatBits(uniqueVerts[b + 1]) == w1
+                        && floatBits(uniqueVerts[b + 2]) == w2
+                        && floatBits(uniqueVerts[b + 3]) == w3
+                        && floatBits(uniqueVerts[b + 4]) == w4
+                        && floatBits(uniqueVerts[b + 5]) == w5
+                        && floatBits(uniqueVerts[b + 6]) == w6
+                        && floatBits(uniqueVerts[b + 7]) == w7) {
                     found = cand;
                     break;
                 }
@@ -434,8 +444,11 @@ public final class NMeshLoader {
             int b0 = i0 * 8, b1 = i1 * 8, b2 = i2 * 8;
             float dx1 = verts[b1] - verts[b0], dy1 = verts[b1 + 1] - verts[b0 + 1], dz1 = verts[b1 + 2] - verts[b0 + 2];
             float dx2 = verts[b2] - verts[b0], dy2 = verts[b2 + 1] - verts[b0 + 1], dz2 = verts[b2 + 2] - verts[b0 + 2];
-            float du1 = verts[b1 + 6] - verts[b0 + 6], dv1 = verts[b1 + 7] - verts[b0 + 7];
-            float du2 = verts[b2 + 6] - verts[b0 + 6], dv2 = verts[b2 + 7] - verts[b0 + 7];
+            float du1 = verts[b1 + 6] - verts[b0 + 6];
+            // Minecraft uses flipped V (1.0 - V) at render time, so dv -> -dv
+            float dv1 = -(verts[b1 + 7] - verts[b0 + 7]);
+            float du2 = verts[b2 + 6] - verts[b0 + 6];
+            float dv2 = -(verts[b2 + 7] - verts[b0 + 7]);
             float det = du1 * dv2 - du2 * dv1;
             if (Math.abs(det) < 1e-8f) continue;
             float r = 1.0f / det;

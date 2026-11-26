@@ -934,6 +934,16 @@ public class ModEntities {
                     .build("nolo"));
 
     /** 1:1 port of {@code EntityBomber}: the plane a bomb caller brings in. */
+    /** Pantsir-S1, fahrbar, siehe EntityPantsir. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.logic.EntityPantsir>> PANTSIR =
+            ENTITY_TYPES.register("pantsir_s1",
+                    () -> EntityType.Builder.<com.hbm_m.entity.logic.EntityPantsir>of(
+                                    com.hbm_m.entity.logic.EntityPantsir::new, MobCategory.MISC)
+                            .sized(3.2F, 3.0F)
+                            .clientTrackingRange(128)
+                            .updateInterval(1)
+                            .build("pantsir_s1"));
+
     /** Ka-52 Kampfhubschrauber, siehe EntityKa52. */
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.logic.EntityKa52>> KA52 =
             ENTITY_TYPES.register("ka52",
