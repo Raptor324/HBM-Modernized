@@ -1,0 +1,5 @@
+{
+  "net/minecraft/world/level/block/state/BlockBehaviour": [
+    "com/hbm_m/platform/legacy/LegacyBlockRemoval"
+  ]
+}

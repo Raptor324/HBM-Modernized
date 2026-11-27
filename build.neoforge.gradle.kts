@@ -28,6 +28,10 @@ platform {
 neoForge {
 	version = property("deps.neoforge") as String
 	accessTransformers.from(rootProject.file("src/main/resources/aw/${stonecutter.current.version}.cfg"))
+	// 26.x: entfernte Vanilla-Methoden (z. B. Block#onRemove) als Interface-Default zurückholen,
+	// siehe com.hbm_m.platform.legacy.LegacyBlockRemoval.
+	val interfaceData = rootProject.file("src/main/resources/aw/${stonecutter.current.version}.interfaces.json")
+	if (interfaceData.exists()) interfaceInjectionData.from(interfaceData)
 	validateAccessTransformers = true
 
 	if (hasProperty("deps.parchment")) parchment {
@@ -118,41 +122,43 @@ dependencies {
 	jarJar("dev.architectury:architectury-neoforge:${prop("deps.architectury")}")
 
 	val mcVer = stonecutter.current.version
-	"compileOnly"("com.simibubi.create:create-$mcVer:${prop("deps.create")}:slim") {
-		isTransitive = false
-	}
-	// Sable (экосистема Create Aeronautics): compileOnly только для валидации
-	// строковых таргетов миксинов (@Mixin(targets = "...")) на этапе компиляции.
-	// В рантайм не пакуется; в отсутствие Sable миксины просто не применяются.
-	"compileOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
-	// The modrinth artifact does not expose BoundingBox3ic - it lives in sable-companion,
-	// which SubLevelAssembleExpansionMixin has to name in its handler signature.
-	// compileOnly: nothing is packed into the mod.
-	if (stonecutter.current.version == "1.21.1") {
+	// 26.x: Create/Flywheel/Sable/Distant Horizons gibt es (noch) nicht -> nur 1.21.1.
+	val is1211 = mcVer == "1.21.1"
+	if (is1211) {
+		"compileOnly"("com.simibubi.create:create-$mcVer:${prop("deps.create")}:slim") {
+			isTransitive = false
+		}
+		// Sable (экосистема Create Aeronautics): compileOnly только для валидации
+		// строковых таргетов миксинов (@Mixin(targets = "...")) на этапе компиляции.
+		// В рантайм не пакуется; в отсутствие Sable миксины просто не применяются.
+		"compileOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
+		// The modrinth artifact does not expose BoundingBox3ic - it lives in sable-companion,
+		// which SubLevelAssembleExpansionMixin has to name in its handler signature.
+		// compileOnly: nothing is packed into the mod.
 		"compileOnly"("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:1.6.0") {
 			isTransitive = false
 		}
-	}
 
-	// Рантайм-зависимости для ручного тестирования интеграции с Create
-	// Aeronautics / Sable в runClient (только 1.21.1 - на других версиях
-	// этих модов нет). Create 6.x тащит Flywheel/Ponder внутри себя (jarJar).
-	// noClientMods (runData / gameTestServer) их выключает: на геймтест-сервере
-	// Sable в отсутствие игроков всё равно тикает свою физику и зависает
-	// навечно в нативном степе Rapier (SubLevelPhysicsSystem.tickPipelinePhysics
-	// -> Rapier3D.step, CPU 100% на Server thread, см. thread dump 2026-10-01).
-	if (stonecutter.current.version == "1.21.1" && !project.hasProperty("noClientMods")) {
-		"runtimeOnly"("maven.modrinth:create:6.0.10+mc1.21.1")
-		"runtimeOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
-		"runtimeOnly"("maven.modrinth:create-aeronautics:1.3.1+mc1.21.1") // bundled: simulated + offroad внутри
-	}
-	// В NeoForge артефакт называется flywheel-neoforge-api
-	"compileOnly"("dev.engine-room.flywheel:flywheel-neoforge-api-$mcVer:${prop("deps.flywheel")}")
-	// Distant Horizons: compileOnly для официального API (см. DhRenderBridge).
-	// Класс моста грузится только при установленном DH.
-	"compileOnly"("maven.modrinth:distanthorizons:3.3.3-1.21.1") // 3.3.3-1.21.1
-	if (!project.hasProperty("noClientMods")) {
-		"runtimeOnly"("maven.modrinth:distanthorizons:3.3.3-1.21.1")
+		// Рантайм-зависимости для ручного тестирования интеграции с Create
+		// Aeronautics / Sable в runClient (только 1.21.1 - на других версиях
+		// этих модов нет). Create 6.x тащит Flywheel/Ponder внутри себя (jarJar).
+		// noClientMods (runData / gameTestServer) их выключает: на геймтест-сервере
+		// Sable в отсутствие игроков всё равно тикает свою физику и зависает
+		// навечно в нативном степе Rapier (SubLevelPhysicsSystem.tickPipelinePhysics
+		// -> Rapier3D.step, CPU 100% на Server thread, см. thread dump 2026-10-01).
+		if (!project.hasProperty("noClientMods")) {
+			"runtimeOnly"("maven.modrinth:create:6.0.10+mc1.21.1")
+			"runtimeOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
+			"runtimeOnly"("maven.modrinth:create-aeronautics:1.3.1+mc1.21.1") // bundled: simulated + offroad внутри
+		}
+		// В NeoForge артефакт называется flywheel-neoforge-api
+		"compileOnly"("dev.engine-room.flywheel:flywheel-neoforge-api-$mcVer:${prop("deps.flywheel")}")
+		// Distant Horizons: compileOnly для официального API (см. DhRenderBridge).
+		// Класс моста грузится только при установленном DH.
+		"compileOnly"("maven.modrinth:distanthorizons:3.3.3-1.21.1") // 3.3.3-1.21.1
+		if (!project.hasProperty("noClientMods")) {
+			"runtimeOnly"("maven.modrinth:distanthorizons:3.3.3-1.21.1")
+		}
 	}
 
 	"compileOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")
@@ -161,25 +167,89 @@ dependencies {
 	// Jade (WAILA fork): плагин com.hbm_m.compat.jade (см. комментарий в build.forge.gradle.kts).
 	// Классы плагина грузит только сканер @WailaPlugin самого Jade — без Jade в рантайме
 	// они никогда не загружаются, поэтому compileOnly-зависимость в прод безопасна.
-	"compileOnly"("maven.modrinth:jade:15.10.6+neoforge")
-	"runtimeOnly"("maven.modrinth:jade:15.10.6+neoforge")
+	if (is1211) {
+		"compileOnly"("maven.modrinth:jade:15.10.6+neoforge")
+		"runtimeOnly"("maven.modrinth:jade:15.10.6+neoforge")
+	} else {
+		"compileOnly"("maven.modrinth:jade:26.3.5+neoforge")
+	}
 
 	// Curios (опционально): API для компиляции, сам мод — в рантайм для тестов.
-	"compileOnly"("top.theillusivec4.curios:curios-neoforge:9.5.1+1.21.1:api")
-	"runtimeOnly"("top.theillusivec4.curios:curios-neoforge:9.5.1+1.21.1")
-	"runtimeOnly"("maven.modrinth:l6YH9Als:v5qtqRQi") // spark
-	"runtimeOnly"("maven.modrinth:1bokaNcj:JXvcT1hp") // xaeros minimap
-	"runtimeOnly"("maven.modrinth:NcUtCpym:fOv9QzLO") // xaeros world map
+	if (is1211) {
+		"compileOnly"("top.theillusivec4.curios:curios-neoforge:9.5.1+1.21.1:api")
+		"runtimeOnly"("top.theillusivec4.curios:curios-neoforge:9.5.1+1.21.1")
+		"runtimeOnly"("maven.modrinth:l6YH9Als:v5qtqRQi") // spark
+		"runtimeOnly"("maven.modrinth:1bokaNcj:JXvcT1hp") // xaeros minimap
+		"runtimeOnly"("maven.modrinth:NcUtCpym:fOv9QzLO") // xaeros world map
+	}
 }
 
 tasks.named("createMinecraftArtifacts") {
 	dependsOn(tasks.named("stonecutterGenerate"))
 }
 
+// Compat-Code für Mods ohne 26.x-Version (Create, Sable, Distant Horizons, Curios).
+// Die Fassaden (CreateCompat, SableCompat, DhCompat, CuriosCompat) bleiben drin und
+// verzweigen per //? if <26.1 nicht mehr in diese Klassen.
+val mc26CompatExcludes = listOf(
+	"com/hbm_m/client/compat/create/**",
+	"com/hbm_m/client/compat/dh/DhRenderBridge.java",
+	"com/hbm_m/compat/create/CreateDoorRegistrar.java",
+	"com/hbm_m/compat/create/HbmDoor*.java",
+	"com/hbm_m/compat/create/HbmMultiblockMovementChecks.java",
+	"com/hbm_m/compat/curios/CuriosAccess.java",
+	"com/hbm_m/compat/curios/CuriosForgeEvents.java",
+	"com/hbm_m/compat/curios/CuriosNeoForgeEvents.java",
+	"com/hbm_m/compat/curios/GasMaskCurio.java",
+	"com/hbm_m/mixin/compat/**",
+	"com/hbm_m/mixin/client/SuperGlueSelectionOutlineMixin.java",
+	// Zielt auf BlockState#onRemove (gibt es in 26.x nicht); der Contraption-Schutz ist ohne Create/Sable
+	// ohnehin unnötig. TODO(26.x): clearAllBlockEntities-Snapshot (CME-Schutz) separat nachziehen.
+	"com/hbm_m/mixin/LevelChunkSilentRemovalMixin.java",
+	// GameTests: 26.x hat ein neues, datengetriebenes GameTest-System -> später portieren.
+	"com/hbm_m/test/**",
+	// Modellsystem „nur NMesh" (26.x): die alten IGeometryLoader/BakedModel-Klassen entfallen,
+	// alle hbm_m-Loader-IDs laufen über platform/legacy/client/model/NMeshModelLoader26.
+	"com/hbm_m/client/loader/**",
+	"com/hbm_m/client/model/*BakedModel.java",
+	"com/hbm_m/client/model/MeteorSwordGlintModel.java",
+	"com/hbm_m/client/render/weapon/WeaponMultipartBakedModel.java",
+	"com/hbm_m/item/hazmat/render/HazmatArmorModelLoader.java",
+	"com/hbm_m/powerarmor/render/*ArmorModelLoader.java",
+	"com/hbm_m/powerarmor/render/*BakedModel.java",
+	"com/hbm_m/item/hazmat/render/*BakedModel.java",
+	"com/hbm_m/client/compat/itemtransformhelper/**",
+)
+val isMc26 = stonecutter.eval(stonecutter.current.version, ">=26.1")
+
 sourceSets {
 	main {
 		java {
 			exclude("com/hbm_m/datagen/**")
+			if (isMc26) mc26CompatExcludes.forEach { exclude(it) }
+			// Ersatz für die in NeoForge 26.x entfernten Handler-APIs (items/fluids.capability/energy).
+			else exclude("com/hbm_m/platform/legacy/**")
+		}
+	}
+}
+
+// Ausgeschlossene Mixins auch aus der Mixin-Config entfernen (sonst "mixin class not found").
+// Dazu die 26.x-Brücken-Mixins (mixins.hbm_m.mc26.json) als zweite [[mixins]]-Config anmelden.
+if (!isMc26) tasks.named<ProcessResources>("processResources") {
+	exclude("mixins.hbm_m.mc26.json", "aw/*.interfaces.json")
+}
+if (isMc26) tasks.named<ProcessResources>("processResources") {
+	doLast {
+		val toml = File(destinationDir, "META-INF/neoforge.mods.toml")
+		if (toml.exists() && !toml.readText().contains("mixins.hbm_m.mc26.json")) {
+			toml.appendText("\n[[mixins]]\nconfig = \"mixins.hbm_m.mc26.json\"\n")
+		}
+	}
+	filesMatching("mixins.hbm_m.json") {
+		filter { line ->
+			if (line.contains("\"compat.create.") || line.contains("\"compat.sable.")
+				|| line.contains("\"client.SuperGlueSelectionOutlineMixin\"")
+				|| line.contains("\"LevelChunkSilentRemovalMixin\"")) "" else line
 		}
 	}
 }
@@ -191,7 +261,7 @@ tasks.named<Jar>("jar") {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-	options.compilerArgs.addAll(listOf("-Xmaxerrs", "10000"))
+	options.compilerArgs.addAll(listOf("-Xmaxerrs", if (stonecutter.eval(stonecutter.current.version, ">=26.1")) "60000" else "10000"))
 	options.encoding = "UTF-8"
 	// The forked compiler worker defaults to -Xmx512m, which the mixin annotation
 	// processor can exhaust on large merges (javac OOM "Java heap space").

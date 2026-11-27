@@ -1,5 +1,7 @@
 package com.hbm_m.client.render.weapon;
 
+
+import com.hbm_m.client.render.weapon.WeaponMultipartBakedModel;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;

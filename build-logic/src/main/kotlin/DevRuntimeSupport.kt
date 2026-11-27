@@ -50,7 +50,11 @@ fun Project.registerDevRuntimeSupport(mcVersion: String) {
 	val sourceSets = the<SourceSetContainer>()
 
 	tasks.withType<JavaExec>().matching { it.name == "runClient" }.configureEach {
-		val targetJava = if (mcVersion == "1.20.1") 17 else 21
+		val targetJava = when {
+			mcVersion == "1.20.1" -> 17
+			mcVersion.startsWith("26.") -> 25
+			else -> 21
+		}
 		val jbrLauncher = javaToolchains.launcherFor {
 			languageVersion.set(JavaLanguageVersion.of(targetJava))
 			vendor.set(JvmVendorSpec.JETBRAINS)

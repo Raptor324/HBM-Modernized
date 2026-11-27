@@ -1383,6 +1383,20 @@ public class ClientSetup {
         MainRegistry.LOGGER.debug("Registered door and missile variant models for loading");
     }
 
+    //? if >=26.1 {
+    /*// 26.x: Nucleus lädt Modelle nur noch über den NMesh-Pfad; alle hbm_m-Loader-IDs zeigen auf
+    // NMeshModelLoader26, die alten IGeometryLoader-Klassen sind auf 26.x nicht im Build.
+    @SubscribeEvent
+    public static void onModelRegister(net.neoforged.neoforge.client.event.ModelEvent.RegisterLoaders event) {
+        MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
+        com.hbm_m.platform.legacy.client.model.NMeshModelLoader26.register(event);
+        event.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("forge", "composite"),
+                net.neoforged.neoforge.client.model.CompositeUnbakedModel.Loader.INSTANCE);
+        event.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("forge", "obj"),
+                net.neoforged.neoforge.client.model.obj.ObjLoader.INSTANCE);
+        MainRegistry.LOGGER.info("Registered NMesh model loaders (26.x)");
+    }
+    *///?} else {
     @SubscribeEvent
     public static void onModelRegister(ModelEvent.RegisterGeometryLoaders event) {
         MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
@@ -1408,10 +1422,7 @@ public class ClientSetup {
         LoaderHooks.registerGeometryLoader(event, "weapon_obj_parts", weaponLoader);
         LoaderHooks.registerGeometryLoader(event, "weapon_parts_loader", weaponLoader);
 
-        //? if neoforge {
-        /*event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "composite"), net.neoforged.neoforge.client.model.CompositeModel.Loader.INSTANCE);
-        event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "obj"), net.minecraftforge.client.model.obj.ObjLoader.INSTANCE);
-        *///?}
+        registerNeoBuiltinAliases(event);
         
         LoaderHooks.registerGeometryLoader(event, "soyuz_rocket_loader", new com.hbm_m.client.loader.SoyuzRocketModelLoader());
 
@@ -1424,6 +1435,18 @@ public class ClientSetup {
 
         MainRegistry.LOGGER.info("Registered geometry loaders successfully");
     }
+    //?}
+
+    // Ausgelagert, damit oben keine verschachtelten Stonecutter-Blöcke entstehen.
+    //? if neoforge && <26.1 {
+    /*private static void registerNeoBuiltinAliases(ModelEvent.RegisterGeometryLoaders event) {
+        event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "composite"), net.neoforged.neoforge.client.model.CompositeModel.Loader.INSTANCE);
+        event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "obj"), net.minecraftforge.client.model.obj.ObjLoader.INSTANCE);
+    }
+    *///?} else if <26.1 {
+    private static void registerNeoBuiltinAliases(ModelEvent.RegisterGeometryLoaders event) {
+    }
+    //?}
 
     // 1.21.1: тинт применяется как полный ARGB (альфа тоже умножается), а HBM-тинты хранятся
     // как RGB без альфы → 0x00RRGGBB делал иконку полностью прозрачной. Форсируем непрозрачную альфу.

@@ -4,18 +4,20 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.function.Function;
 
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.resources.ResourceLocation;
+//? if <26.1 {
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.client.resources.model.ModelBaker;
 import net.minecraft.client.resources.model.ModelState;
-import net.minecraft.resources.ResourceLocation;
 
 import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
 import net.minecraftforge.client.model.obj.ObjLoader;
 import net.minecraftforge.client.model.obj.ObjModel;
+//?}
 
 @OnlyIn(Dist.CLIENT)
 public final class LoaderHooks {
@@ -28,6 +30,7 @@ public final class LoaderHooks {
     /** Локации, для которых уже предупреждали, что сырой .obj недоступен (чтобы не спамить лог каждый кадр/запекание). */
     private static final java.util.Set<String> RAW_OBJ_WARNED = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
+    //? if <26.1 {
     /**
      * Кросс-версионная загрузка OBJ модели.
      * Исправляет баг 1.20.1 Forge, где flipV ошибочно передавался вместо automaticCulling.
@@ -71,25 +74,30 @@ public final class LoaderHooks {
      * Кросс-версионное запекание OBJ модели.
      * Сглаживает удаление ResourceLocation из сигнатуры bake() в 1.21.1.
      */
+    //?}
+    //? if < 1.21.1 {
     public static BakedModel bakeObjModel(ObjModel model, IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
-        //? if < 1.21.1 {
         return model.bake(context, baker, spriteGetter, modelState, overrides, modelName);
-        //?} else {
-        /*return model.bake(context, baker, spriteGetter, modelState, overrides);
-        *///?}
     }
+    //?} else if <26.1 {
+    /*public static BakedModel bakeObjModel(ObjModel model, IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
+        return model.bake(context, baker, spriteGetter, modelState, overrides);
+    }
+    *///?}
 
     /**
      * Кросс-версионное запекание ванильной BlockModel.
      * В 1.21.1 из метода bake() вырезали параметр ResourceLocation modelLocation.
      */
+    //? if < 1.21.1 {
     public static BakedModel bakeBlockModel(BlockModel blockModel, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ResourceLocation modelLocation, boolean guiLight3d) {
-        //? if < 1.21.1 {
         return blockModel.bake(baker, blockModel, spriteGetter, modelState, modelLocation, guiLight3d);
-        //?} else {
-        /*return blockModel.bake(baker, blockModel, spriteGetter, modelState, guiLight3d);
-        *///?}
     }
+    //?} else if <26.1 {
+    /*public static BakedModel bakeBlockModel(BlockModel blockModel, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ResourceLocation modelLocation, boolean guiLight3d) {
+        return blockModel.bake(baker, blockModel, spriteGetter, modelState, guiLight3d);
+    }
+    *///?}
 
     // =====================================================================================
     //  Model Registration & Handling Bridge (бывшие PlatformHooks-методы).
@@ -127,9 +135,11 @@ public final class LoaderHooks {
     public static void registerAdditionalModel(Object event, ResourceLocation loc) {
         //? if < 1.21.1 {
         ((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(loc);
-        //?} else {
+        //?} else if <26.1 {
         /*((net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional) event).register(
                 new net.minecraft.client.resources.model.ModelResourceLocation(loc, "standalone"));
+        *///?} else {
+        /*// 26.x: Modelle kommen über NMeshModelLoader26 / NMeshPartRegistry, keine Registrierung nötig.
         *///?}
     }
 
@@ -141,8 +151,10 @@ public final class LoaderHooks {
         //? if < 1.21.1 {
         ((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(
                 (net.minecraft.client.resources.model.ModelResourceLocation) itemModelLocation(id));
-        //?} else {
+        //?} else if <26.1 {
         /*((net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional) event).register(itemModelLocation(id));
+        *///?} else {
+        /*// 26.x: Modelle kommen über NMeshModelLoader26 / NMeshPartRegistry, keine Registrierung nötig.
         *///?}
     }
 
@@ -150,7 +162,12 @@ public final class LoaderHooks {
     public static BakedModel getItemModel(net.minecraft.client.resources.model.ModelManager manager, ResourceLocation id) {
         // ModelManager.getModel(ModelResourceLocation) одинаков на обеих версиях,
         // itemModelLocation() уже возвращает ModelResourceLocation — гейт и каст избыточны.
+        //? if >=26.1 {
+        /*return com.hbm_m.platform.legacy.client.model.NMeshPartRegistry.model(
+                ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "item/" + id.getPath()));
+        *///?} else {
         return manager.getModel(itemModelLocation(id));
+        //?}
     }
 
     /** Регистрация Geometry Loader. */
@@ -158,10 +175,12 @@ public final class LoaderHooks {
         //? if < 1.21.1 {
         ((net.minecraftforge.client.event.ModelEvent.RegisterGeometryLoaders) event).register(
                 name, (net.minecraftforge.client.model.geometry.IGeometryLoader<?>) loader);
-        //?} else {
+        //?} else if <26.1 {
         /*((net.neoforged.neoforge.client.event.ModelEvent.RegisterGeometryLoaders) event).register(
                 ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, name),
                 (net.minecraftforge.client.model.geometry.IGeometryLoader<?>) loader);
+        *///?} else {
+        /*// 26.x: Modelle kommen über NMeshModelLoader26 / NMeshPartRegistry, keine Registrierung nötig.
         *///?}
     }
 
@@ -169,8 +188,10 @@ public final class LoaderHooks {
     public static BakedModel getModel(net.minecraft.client.resources.model.ModelManager manager, ResourceLocation loc) {
         //? if < 1.21.1 {
         return manager.getModel(loc);
-        //?} else {
+        //?} else if <26.1 {
         /*return manager.getModel(new net.minecraft.client.resources.model.ModelResourceLocation(loc, "standalone"));
+        *///?} else {
+        /*return com.hbm_m.platform.legacy.client.model.NMeshPartRegistry.model(loc);
         *///?}
     }
 }

@@ -3,13 +3,17 @@ package com.hbm_m.client.model.nmesh;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.mojang.math.Transformation;
 import net.minecraft.client.Minecraft;
+//? if <26.1 {
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
+//?}
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+//? if <26.1 {
 import net.minecraft.client.renderer.block.model.ItemOverrides;
+//?}
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
@@ -17,9 +21,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+//? if <26.1 {
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.RenderTypeHelper;
 import net.minecraftforge.client.model.data.ModelData;
+//?}
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3f;
@@ -210,8 +216,8 @@ public final class NMeshPartBakedModel implements BakedModel {
         float[] weldedPositions = new float[totalVerts * 3];
 
         boolean hasTransform = !rootTransform.isIdentity();
-        Matrix4f posMat = hasTransform ? rootTransform.getMatrix() : null;
-        Matrix3f nrmMat = hasTransform ? rootTransform.getNormalMatrix() : null;
+        Matrix4f posMat = hasTransform ? new Matrix4f(rootTransform.getMatrix()) : null;
+        Matrix3f nrmMat = hasTransform ? new Matrix3f(rootTransform.getNormalMatrix()) : null;
         Vector4f posTmp = new Vector4f();
         Vector3f nrmTmp = new Vector3f();
         Vector3f tanTmp = new Vector3f();
@@ -462,8 +468,8 @@ public final class NMeshPartBakedModel implements BakedModel {
         IntBuffer vbInts = vb.asIntBuffer();
 
         boolean hasTransform = !rootTransform.isIdentity();
-        Matrix4f posMat = hasTransform ? rootTransform.getMatrix() : null;
-        Matrix3f nrmMat = hasTransform ? rootTransform.getNormalMatrix() : null;
+        Matrix4f posMat = hasTransform ? new Matrix4f(rootTransform.getMatrix()) : null;
+        Matrix3f nrmMat = hasTransform ? new Matrix3f(rootTransform.getNormalMatrix()) : null;
         Vector4f posTmp = new Vector4f();
         Vector3f nrmTmp = new Vector3f();
 
@@ -579,8 +585,8 @@ public final class NMeshPartBakedModel implements BakedModel {
             Map<Direction, List<BakedQuad>> bySide = cullFaces ? new EnumMap<>(Direction.class) : null;
             List<BakedQuad> unculled = cullFaces ? new ArrayList<>() : null;
             boolean hasTransform = !rootTransform.isIdentity();
-            Matrix4f posMat = hasTransform ? rootTransform.getMatrix() : null;
-            Matrix3f nrmMat = hasTransform ? rootTransform.getNormalMatrix() : null;
+            Matrix4f posMat = hasTransform ? new Matrix4f(rootTransform.getMatrix()) : null;
+            Matrix3f nrmMat = hasTransform ? new Matrix3f(rootTransform.getNormalMatrix()) : null;
             Vector4f posTmp = new Vector4f();
             Vector3f nrmTmp = new Vector3f();
 
@@ -743,15 +749,19 @@ public final class NMeshPartBakedModel implements BakedModel {
         return getOrBuildQuads();
     }
 
+    //? if <26.1 {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand,
                                     ModelData extraData, @Nullable RenderType renderType) {
         return getQuads(state, side, rand);
     }
 
+    //?}
+
     @Override
     public boolean useAmbientOcclusion() { return ambientOcclusion; }
 
+    //? if <26.1 {
     /** Honours the model JSON "render_type" hint for chunk rendering (e.g. minecraft:cutout). */
     @Override
     public @NotNull ChunkRenderTypeSet getRenderTypes(@NotNull BlockState state, @NotNull RandomSource rand,
@@ -772,6 +782,7 @@ public final class NMeshPartBakedModel implements BakedModel {
         // IForgeBakedModel default (see above).
         return List.of(RenderTypeHelper.getFallbackItemRenderType(itemStack, this, fabulous));
     }
+    //?}
 
     @Override
     public boolean isGui3d() { return true; }
@@ -787,17 +798,23 @@ public final class NMeshPartBakedModel implements BakedModel {
         if (particleSprite != null) {
             return particleSprite;
         }
+        //? if <26.1 {
         // getMissingModel() is null while the bake event (ModifyBakingResult) is still running.
         try {
             return Minecraft.getInstance().getModelManager().getMissingModel().getParticleIcon();
         } catch (NullPointerException | IllegalStateException e) {
             return null;
         }
+        //?} else {
+        /*return null;
+        *///?}
     }
 
     @Override
     public ItemTransforms getTransforms() { return transforms; }
 
+    //? if <26.1 {
     @Override
     public ItemOverrides getOverrides() { return ItemOverrides.EMPTY; }
+    //?}
 }

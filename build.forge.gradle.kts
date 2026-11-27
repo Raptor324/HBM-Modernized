@@ -180,6 +180,8 @@ dependencies {
 sourceSets {
 	main {
 		resources.srcDir(rootProject.file("src/generated/resources"))
+		// Ersatz für die in NeoForge 26.x entfernten Handler-APIs, nur für 26.x.
+		java.exclude("com/hbm_m/platform/legacy/**")
 	}
 	test {
 		compileClasspath += configurations["compileClasspath"]
