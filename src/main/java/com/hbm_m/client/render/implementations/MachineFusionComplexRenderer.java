@@ -140,35 +140,43 @@ public final class MachineFusionComplexRenderer {
 
                     // Additional 90 degree rotation relative to facing in original
                     ps.pushPose();
-                    ps.mulPose(Axis.YP.rotationDegrees(90F));
+                    try {
+                        ps.mulPose(Axis.YP.rotationDegrees(90F));
 
-                    // Connected feed-side bolt ring
-                    if (be.connected) {
-                        Map<String, List<float[]>> torusObj = RBMKColumnRenderer.getObj(TORUS_OBJ);
-                        TextureAtlasSprite torusSprite = RBMKColumnRenderer.sprite(RefStrings.MODID, "block/machine/torus");
+                        // Connected feed-side bolt ring
+                        if (be.connected) {
+                            Map<String, List<float[]>> torusObj = RBMKColumnRenderer.getObj(TORUS_OBJ);
+                            TextureAtlasSprite torusSprite = RBMKColumnRenderer.sprite(RefStrings.MODID, "block/machine/torus");
+                            ps.pushPose();
+                            try {
+                                ps.translate(-2D, 0D, 0D);
+                                RBMKColumnRenderer.renderObjGroup(vc, ps.last().pose(), torusObj.get("Bolts1"), torusSprite,
+                                        1F, 1F, 1F, light, overlay);
+                            } finally {
+                                ps.popPose();
+                            }
+                        }
+
+                        renderPlasma(be, vc, ps, buf, obj, sprite, light, overlay);
+                        renderRecipeItem(be, ps, buf, pt, light);
+                        renderBeam(be, ps, buf, pt);
+
+                        double[] striker = be.armStriker.getPositions(pt);
+                        double[] jet = be.armJet.getPositions(pt);
+                        double rotor = be.prevRing + (be.ring - be.prevRing) * pt;
+
                         ps.pushPose();
-                        ps.translate(-2D, 0D, 0D);
-                        RBMKColumnRenderer.renderObjGroup(vc, ps.last().pose(), torusObj.get("Bolts1"), torusSprite,
-                                1F, 1F, 1F, light, overlay);
+                        try {
+                            ps.mulPose(Axis.YP.rotationDegrees((float) rotor));
+
+                            renderStrikerArm(vc, ps, obj, sprite, striker, light, overlay);
+                            renderJetArm(be, vc, ps, obj, sprite, jet, buf, light, overlay);
+                        } finally {
+                            ps.popPose();
+                        }
+                    } finally {
                         ps.popPose();
                     }
-
-                    renderPlasma(be, vc, ps, buf, obj, sprite, light, overlay);
-                    renderRecipeItem(be, ps, buf, pt, light);
-                    renderBeam(be, ps, buf, pt);
-
-                    double[] striker = be.armStriker.getPositions(pt);
-                    double[] jet = be.armJet.getPositions(pt);
-                    double rotor = be.prevRing + (be.ring - be.prevRing) * pt;
-
-                    ps.pushPose();
-                    ps.mulPose(Axis.YP.rotationDegrees((float) rotor));
-
-                    renderStrikerArm(vc, ps, obj, sprite, striker, light, overlay);
-                    renderJetArm(be, vc, ps, obj, sprite, jet, buf, light, overlay);
-
-                    ps.popPose();
-                    ps.popPose();
                 }
 
                 @Override
@@ -190,7 +198,8 @@ public final class MachineFusionComplexRenderer {
         if (plasma == null) return;
 
         if (be.plasmaEnergySync <= 0) {
-            RBMKColumnRenderer.renderObjGroup(vc, ps.last().pose(), plasma, sprite, 0F, 0F, 0F, light, overlay);
+            drawScrolledGroup(buffer.getBuffer(RenderType.entitySolid(PLASMA_TEX)), ps, plasma,
+                    0D, 0D, 0F, 0F, 0F, 1F, light);
             return;
         }
 
@@ -224,7 +233,7 @@ public final class MachineFusionComplexRenderer {
         var recipe = be.getRecipe(be.getLevel());
         if (recipe == null) return;
 
-        ItemStack stack = recipe.getOutput();
+        ItemStack stack = recipe.getOutput().copy();
         if (stack.isEmpty()) return;
         stack.setCount(1);
 
@@ -232,13 +241,21 @@ public final class MachineFusionComplexRenderer {
         ps.mulPose(Axis.YP.rotationDegrees(90F));
         ps.translate(0D, 1.75D, 0D);
 
+        if (stack.getItem() instanceof net.minecraft.world.item.BlockItem) {
+            ps.translate(0D, -0.0625D, 0D);
+        } else {
+            ps.mulPose(Axis.YP.rotationDegrees(90F));
+        }
+
         float bob = (float) (Math.sin((mc.player.tickCount + pt) * 0.1) * 0.0625);
         ps.translate(0D, bob, 0D);
         ps.scale(1.5F, 1.5F, 1.5F);
 
+        var itemBuf = RenderHooks.immediateBufferSource(65536);
         mc.getItemRenderer().renderStatic(stack, ItemDisplayContext.FIXED,
                 light, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY,
-                ps, buffer, be.getLevel(), 0);
+                ps, itemBuf, be.getLevel(), 0);
+        itemBuf.endBatch();
 
         ps.popPose();
     }
@@ -252,8 +269,9 @@ public final class MachineFusionComplexRenderer {
 
         if (be.getRecipe(be.getLevel()) == null) return;
 
-        VertexConsumer vc = buffer.getBuffer(RenderType.eyes(BEAM_TEX));
-        org.joml.Matrix4f m = ps.last().pose();
+        var beamBuf = RenderHooks.immediateBufferSource(16384);
+        VertexConsumer vc = beamBuf.getBuffer(RenderType.entityTranslucentEmissive(BEAM_TEX));
+        PoseStack.Pose pose = ps.last();
 
         float offset = (float) (((mc.player.tickCount + pt) / 15D) % 1D);
         float in = 0.4375F;
@@ -261,26 +279,29 @@ public final class MachineFusionComplexRenderer {
         float t = 1.5F;
         float h = b + t;
 
-        beamQuad(vc, m, -in, b, in, offset + t, 0, -in, h, in, offset, 0,
+        beamQuad(vc, pose, -in, b, in, offset + t, 0, -in, h, in, offset, 0,
                 -in, h, -in, offset, 1, -in, b, -in, offset + t, 1);
-        beamQuad(vc, m, in, h, in, offset, 0, in, b, in, offset + t, 0,
+        beamQuad(vc, pose, in, h, in, offset, 0, in, b, in, offset + t, 0,
                 in, b, -in, offset + t, 1, in, h, -in, offset, 1);
-        beamQuad(vc, m, in, b, in, offset + t, 0, in, h, in, offset, 0,
+        beamQuad(vc, pose, in, b, in, offset + t, 0, in, h, in, offset, 0,
                 -in, h, in, offset, 1, -in, b, in, offset + t, 1);
-        beamQuad(vc, m, in, h, -in, offset, 0, in, b, -in, offset + t, 0,
+        beamQuad(vc, pose, in, h, -in, offset, 0, in, b, -in, offset + t, 0,
                 -in, b, -in, offset + t, 1, -in, h, -in, offset, 1);
+        beamBuf.endBatch();
     }
 
-    private static void beamQuad(VertexConsumer vc, org.joml.Matrix4f m,
+    private static void beamQuad(VertexConsumer vc, PoseStack.Pose pose,
                                  float x0, float y0, float z0, float u0, float v0,
                                  float x1, float y1, float z1, float u1, float v1,
                                  float x2, float y2, float z2, float u2, float v2,
                                  float x3, float y3, float z3, float u3, float v3) {
         float base = 1F;
-        RenderHooks.vertexTexColor(vc, m, x0, y0, z0, u0, v0, 255, 255, 255, y0 <= base ? 255 : 0);
-        RenderHooks.vertexTexColor(vc, m, x1, y1, z1, u1, v1, 255, 255, 255, y1 <= base ? 255 : 0);
-        RenderHooks.vertexTexColor(vc, m, x2, y2, z2, u2, v2, 255, 255, 255, y2 <= base ? 255 : 0);
-        RenderHooks.vertexTexColor(vc, m, x3, y3, z3, u3, v3, 255, 255, 255, y3 <= base ? 255 : 0);
+        int overlay = net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY;
+        int fullBright = LightTexture.FULL_BRIGHT;
+        RenderHooks.vertexFull(vc, pose, x0, y0, z0, 255, 255, 255, y0 <= base ? 255 : 0, u0, v0, overlay, fullBright, 0F, 1F, 0F);
+        RenderHooks.vertexFull(vc, pose, x1, y1, z1, 255, 255, 255, y1 <= base ? 255 : 0, u1, v1, overlay, fullBright, 0F, 1F, 0F);
+        RenderHooks.vertexFull(vc, pose, x2, y2, z2, 255, 255, 255, y2 <= base ? 255 : 0, u2, v2, overlay, fullBright, 0F, 1F, 0F);
+        RenderHooks.vertexFull(vc, pose, x3, y3, z3, 255, 255, 255, y3 <= base ? 255 : 0, u3, v3, overlay, fullBright, 0F, 1F, 0F);
     }
 
     private static void renderStrikerArm(VertexConsumer vc, PoseStack ps,
@@ -377,6 +398,18 @@ public final class MachineFusionComplexRenderer {
                 near + narrow, 3 - outerLen, -side + narrow, near + narrow, 3 - outerLen, side - narrow);
         flameQuad(vc, matrix, r, g, b, far, 3, side, far, 3, -side,
                 far - narrow, 3 - outerLen, -side + narrow, far - narrow, 3 - outerLen, side - narrow);
+
+        narrow = 0.0625 * 1.5;
+        outerLen *= 1.5;
+
+        flameQuad(vc, matrix, r, g, b, near, 3, side, far, 3, side,
+                far - narrow, 3 - outerLen, side - narrow, near + narrow, 3 - outerLen, side - narrow);
+        flameQuad(vc, matrix, r, g, b, near, 3, -side, far, 3, -side,
+                far - narrow, 3 - outerLen, -side + narrow, near + narrow, 3 - outerLen, -side + narrow);
+        flameQuad(vc, matrix, r, g, b, near, 3, side, near, 3, -side,
+                near + narrow, 3 - outerLen, -side + narrow, near + narrow, 3 - outerLen, side - narrow);
+        flameQuad(vc, matrix, r, g, b, far, 3, side, far, 3, -side,
+                far - narrow, 3 - outerLen, -side + narrow, far - narrow, 3 - outerLen, side - narrow);
     }
 
     private static void flameQuad(VertexConsumer vc, org.joml.Matrix4f m, float r, float g, float b,
@@ -402,8 +435,8 @@ public final class MachineFusionComplexRenderer {
         float ca = Mth.clamp(a, 0F, 1F);
 
         for (float[] tri : triangles) {
-            for (int i = 0; i < 3; i++) {
-                int base = i * 8;
+            for (int pass = 0; pass < 4; pass++) {
+                int base = Math.min(pass, 2) * 8;
                 float u = (float) (tri[base + 3] + du);
                 float v = (float) (tri[base + 4] + dv);
                 RenderHooks.vertexFull(vc, pose.last(), tri[base], tri[base + 1], tri[base + 2],

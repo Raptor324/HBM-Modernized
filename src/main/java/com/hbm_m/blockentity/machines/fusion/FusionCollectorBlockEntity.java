@@ -24,7 +24,13 @@ import net.minecraft.world.phys.AABB;
  * und erhoeht dafuer die Bonusgeschwindigkeit des Rezepts
  * (siehe {@code TileEntityFusionTorus.updateEntity}, {@code collectors * 0.5D}).</p>
  */
-public class FusionCollectorBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
+public class FusionCollectorBlockEntity extends BlockEntity
+        implements com.hbm_m.api.render.RenderBoundsProvider, com.hbm_m.api.network.NodeNet.ILoadedEntry {
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
 
     private GenNode<PlasmaNetwork> plasmaNode;
 

@@ -110,6 +110,23 @@ public class GUIMachineFusionPlasmaForge extends GuiInfoScreen<MachineFusionPlas
                 guiGraphics.renderItem(ghost, this.leftPos + slot.x, this.topPos + slot.y);
                 guiGraphics.renderItemDecorations(this.font, ghost, this.leftPos + slot.x, this.topPos + slot.y);
             }
+
+            // Original: 50% translucent slot overlay over ghost items so they look dimmed
+            RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.5F);
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(0.0F, 0.0F, 300.0F);
+            for (int i = 0; i < Math.min(inputs.size(), FusionPlasmaForgeBlockEntity.SLOT_INPUT_COUNT); i++) {
+                Slot slot = this.menu.slots.get(FusionPlasmaForgeBlockEntity.SLOT_INPUT_FIRST + i);
+                if (!slot.hasItem()) {
+                    guiGraphics.blit(TEXTURE, this.leftPos + slot.x, this.topPos + slot.y,
+                            slot.x, slot.y, 16, 16);
+                }
+            }
+            guiGraphics.pose().popPose();
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+            RenderSystem.disableBlend();
         }
 
         be.inputTank.renderTank(guiGraphics, this.leftPos + 80, this.topPos + 18, 16, 52);
@@ -144,10 +161,29 @@ public class GUIMachineFusionPlasmaForge extends GuiInfoScreen<MachineFusionPlas
                     Component.literal("0TU / 0TU"));
         }
 
-        if (isPointInRect(7, 80, 18, 18, mouseX, mouseY) && recipe == null) {
-            guiGraphics.renderTooltip(this.font,
-                    Component.translatable("gui.hbm_m.recipe.set_recipe").withStyle(ChatFormatting.YELLOW),
-                    mouseX, mouseY);
+        if (isPointInRect(7, 80, 18, 18, mouseX, mouseY)) {
+            if (recipe != null) {
+                com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(guiGraphics, this.font,
+                        GUIScreenRecipeSelector.buildTooltip(recipe, recipe.getOutput(), be.getSelectedRecipeId()),
+                        mouseX, mouseY);
+            } else {
+                guiGraphics.renderTooltip(this.font,
+                        Component.translatable("gui.hbm_m.recipe.set_recipe").withStyle(ChatFormatting.YELLOW),
+                        mouseX, mouseY);
+            }
+        }
+
+        if (this.hoveredSlot != null && this.hoveredSlot.index == FusionPlasmaForgeBlockEntity.SLOT_BOOSTER
+                && !this.hoveredSlot.hasItem() && this.menu.getCarried().isEmpty()) {
+            List<FusionPlasmaForgeBlockEntity.Booster> boosters = FusionPlasmaForgeBlockEntity.getBoosters();
+            if (!boosters.isEmpty()) {
+                int cycle = (int) ((System.currentTimeMillis() % (1000L * boosters.size())) / 1000L);
+                ItemStack selected = new ItemStack(boosters.get(cycle).item());
+                List<Component> lines = new java.util.ArrayList<>();
+                lines.add(Component.literal("Booster Isotope:").withStyle(ChatFormatting.YELLOW));
+                lines.add(selected.getHoverName().copy().withStyle(ChatFormatting.WHITE));
+                guiGraphics.renderTooltip(this.font, lines, java.util.Optional.empty(), mouseX, mouseY);
+            }
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);

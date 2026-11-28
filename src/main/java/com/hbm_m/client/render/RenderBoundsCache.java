@@ -140,17 +140,16 @@ public final class RenderBoundsCache {
             }
             return e;
         }
-        // Tracker BEs (every HBM machine/multiblock) recompute ONLY on an actual
-        // dirty event - the old unconditional 40-tick TTL threw away and rebuilt
-        // every machine's three AABBs every 2 seconds (1.13 ms/frame in spark)
-        // although bounds never change without RenderDirtyTracker. Non-tracker
-        // BEs keep the TTL as their only staleness guard.
-        boolean hasTracker = be instanceof com.hbm_m.api.render.RenderDirtyTracker;
+        // Tracker BEs (every HBM machine/multiblock) recompute immediately on a dirty event;
+        // a dirty state alone is not sufficient as the only staleness guard, though: bounds that
+        // change WITHOUT markRenderDirty (e.g. the cargo elevator's height arriving via a plain
+        // client update) would otherwise pin a first-frame box forever. The 600-tick TTL acts as
+        // a periodic revalidation for all BEs - one AABB rebuild per machine per 30s, versus the
+        // per-frame rebuild the cache exists to avoid (1.13 ms/frame in spark at the old 40-tick TTL).
         boolean needsRecompute = (e == null)
                 || (e.worldGen != (int) wg)
-                || (hasTracker
-                        ? ((com.hbm_m.api.render.RenderDirtyTracker) be).isRenderDirty()
-                        : (tick - e.stampTick > TTL_TICKS));
+                || (tick - e.stampTick > TTL_TICKS)
+                || (be instanceof com.hbm_m.api.render.RenderDirtyTracker tracker && tracker.isRenderDirty());
         if (needsRecompute) {
             net.minecraft.world.phys.AABB oldBox = e != null ? e.box : null;
             if (e == null) {

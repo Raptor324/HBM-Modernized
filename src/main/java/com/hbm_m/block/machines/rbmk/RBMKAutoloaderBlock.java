@@ -21,6 +21,11 @@ public class RBMKAutoloaderBlock extends RBMKColumnBlock {
         return new RBMKAutoloaderBlockEntity(pos, state);
     }
 
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        // 1:1 with 1.7.10 RBMKAutoloader: extends BlockDummyable (not RBMKBase), so no DODD overlay.
+    }
+
     @Nullable @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.RBMK_AUTOLOADER_BE.get(), RBMKAutoloaderBlockEntity::tick);

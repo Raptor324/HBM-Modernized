@@ -269,7 +269,7 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
 
     private static void addTexturedVertex(BufferBuilder buffer, Matrix4f matrix, Vec3 vec, double scale,
                                           int[] color, double uvScale) {
-        com.hbm_m.platform.RenderHooks.vertexTexColor(buffer, matrix, (float) (vec.x * scale), 0, (float) (vec.z * scale),
+        com.hbm_m.platform.RenderHooks.vertexPosTexColor(buffer, matrix, (float) (vec.x * scale), 0, (float) (vec.z * scale),
                 (float) (0.5 + vec.x * uvScale), (float) (0.5 + vec.z * uvScale),
                 color[0], color[1], color[2], color[3]);
     }

@@ -258,6 +258,12 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
     // channels their own 10px console icon (offset 90) and the shared FUEL stat lines.
     @Override public ColumnType getConsoleType()   { return isReaSim() ? ColumnType.FUEL_SIM : ColumnType.FUEL; }
 
+    @Override
+    public String getRenderTexturePrefix() {
+        if (reaSim) return moderated ? "rbmk_element_reasim_mod" : "rbmk_element_reasim";
+        return moderated ? "rbmk_element_mod" : "rbmk_element";
+    }
+
     // ─── DODD diagnostic ────────────────────────────────────────────────────────
 
     /**

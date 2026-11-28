@@ -14,18 +14,18 @@ public final class CraneTextures {
     public record Set(String top, String side, String in, String sideIn, String out, String sideOut, String prefix, boolean extractorRotation) {
 
         public String directional() { return prefix + "_top"; }
-        public String directionalUp() { return prefix + "_side_up"; }
-        public String directionalDown() { return prefix + "_side_down"; }
-        public String turnLeft() { return prefix + "_top_left"; }
-        public String turnRight() { return prefix + "_top_right"; }
-        public String sideLeftTurnUp() { return prefix + "_side_left_turn_up"; }
-        public String sideRightTurnUp() { return prefix + "_side_right_turn_up"; }
-        public String sideLeftTurnDown() { return prefix + "_side_left_turn_down"; }
-        public String sideRightTurnDown() { return prefix + "_side_right_turn_down"; }
-        public String sideUpTurnLeft() { return prefix + "_side_up_turn_left"; }
-        public String sideUpTurnRight() { return prefix + "_side_up_turn_right"; }
-        public String sideDownTurnLeft() { return prefix + "_side_down_turn_left"; }
-        public String sideDownTurnRight() { return prefix + "_side_down_turn_right"; }
+        public String directionalUp() { return prefix + (extractorRotation ? "_side_down" : "_side_up"); }
+        public String directionalDown() { return prefix + (extractorRotation ? "_side_up" : "_side_down"); }
+        public String turnLeft() { return prefix + (extractorRotation ? "_top_right" : "_top_left"); }
+        public String turnRight() { return prefix + (extractorRotation ? "_top_left" : "_top_right"); }
+        public String sideLeftTurnUp() { return prefix + (extractorRotation ? "_side_up_turn_left" : "_side_left_turn_up"); }
+        public String sideRightTurnUp() { return prefix + (extractorRotation ? "_side_up_turn_right" : "_side_right_turn_up"); }
+        public String sideLeftTurnDown() { return prefix + (extractorRotation ? "_side_down_turn_left" : "_side_left_turn_down"); }
+        public String sideRightTurnDown() { return prefix + (extractorRotation ? "_side_down_turn_right" : "_side_right_turn_down"); }
+        public String sideUpTurnLeft() { return prefix + (extractorRotation ? "_side_left_turn_up" : "_side_up_turn_left"); }
+        public String sideUpTurnRight() { return prefix + (extractorRotation ? "_side_right_turn_up" : "_side_up_turn_right"); }
+        public String sideDownTurnLeft() { return prefix + (extractorRotation ? "_side_left_turn_down" : "_side_down_turn_left"); }
+        public String sideDownTurnRight() { return prefix + (extractorRotation ? "_side_right_turn_down" : "_side_down_turn_right"); }
     }
 
     public static Set standard(String prefix, boolean extractorRotation) {

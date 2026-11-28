@@ -293,11 +293,19 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        if (!inputSlot.isEmpty())  tag.put("inputSlot",  safeItemSave(inputSlot));
-        if (!outputSlot.isEmpty()) tag.put("outputSlot", safeItemSave(outputSlot));
-        gasTank.writeToNBT(tag, "gas");
+        if (!diag) {
+            // Slots and flux bookkeeping are port persistence keys - the original dump carried
+            // none of them (slots went through the excluded "items" key).
+            if (!inputSlot.isEmpty())  tag.put("inputSlot",  safeItemSave(inputSlot));
+            if (!outputSlot.isEmpty()) tag.put("outputSlot", safeItemSave(outputSlot));
+            tag.putDouble("lastUsedFlux", lastUsedFlux);
+            gasTank.writeToNBT(tag, "gas");
+        } else {
+            // DODD dump, 1:1 with TileEntityRBMKOutgasser.writeToNBT: progress + gas flat
+            // FluidTank series (tile.rbmk.dodd.gas*/progress).
+            gasTank.writeToNBTFlat(tag, "gas");
+        }
         tag.putDouble("progress", progress);
-        tag.putDouble("lastUsedFlux", lastUsedFlux);
     }
 
     @Override

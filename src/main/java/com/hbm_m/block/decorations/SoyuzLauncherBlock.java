@@ -68,6 +68,15 @@ public class SoyuzLauncherBlock extends BaseEntityBlock implements IMultiblockCo
                 .box(0, 4, 2, 2, 9, -5)
                 .placementOffset(0);
 
+        for (int fwd = -6; fwd <= 6; fwd++) {
+            for (int side = -6; side <= 6; side++) {
+                if (Math.abs(fwd) == 6 || Math.abs(side) == 6) {
+                    b.extra(fwd, 0, side);
+                    b.extra(fwd, -1, side);
+                }
+            }
+        }
+
         this.structureHelper = b.build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
@@ -157,6 +166,10 @@ public class SoyuzLauncherBlock extends BaseEntityBlock implements IMultiblockCo
     }
 
     private static final ThreadLocal<Boolean> SUPPRESS_CREATIVE_DROPS = ThreadLocal.withInitial(() -> false);
+
+    public static void setSuppressCreativeDrops(boolean suppress) {
+        SUPPRESS_CREATIVE_DROPS.set(suppress);
+    }
 
     //? if < 1.21.1 {
     @Override

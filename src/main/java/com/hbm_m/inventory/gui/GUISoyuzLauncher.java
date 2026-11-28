@@ -78,6 +78,8 @@ public class GUISoyuzLauncher extends AbstractContainerScreen<SoyuzLauncherMenu>
         // Оригинал: renderTank(x, y НИЗ бака) рисует вверх; порт принимает ВЕРХ области.
         be.getTanks()[0].renderTank(guiGraphics, leftPos + 152, topPos + 44, 16, 52);
         be.getTanks()[1].renderTank(guiGraphics, leftPos + 170, topPos + 44, 16, 52);
+
+        guiGraphics.blit(TEXTURE, leftPos - 16, topPos + 53, 210, 62, 16, 16);
     }
 
     private void blitLed(GuiGraphics guiGraphics, int x, int y, boolean on) {
@@ -112,7 +114,14 @@ public class GUISoyuzLauncher extends AbstractContainerScreen<SoyuzLauncherMenu>
                     Component.literal(menu.getEnergyStored() + " / " + menu.getMaxEnergyStored() + " HE"));
         }
 
-        renderAreaTooltip(guiGraphics, mouseX, mouseY, -16, 53, 16, 16, Component.translatable("desc.gui.soyuz.desc"));
+        if (mouseX >= leftPos - 16 && mouseX < leftPos && mouseY >= topPos + 53 && mouseY < topPos + 69) {
+            String raw = Component.translatable("desc.gui.soyuz.desc").getString();
+            java.util.List<Component> lines = new java.util.ArrayList<>();
+            for (String line : raw.split("\\$")) {
+                lines.add(Component.literal(line));
+            }
+            guiGraphics.renderTooltip(this.font, lines, java.util.Optional.empty(), mouseX, mouseY);
+        }
         renderAreaTooltip(guiGraphics, mouseX, mouseY, 79, 52, 18, 18, Component.translatable("desc.gui.soyuz.cargo"));
         renderAreaTooltip(guiGraphics, mouseX, mouseY, 97, 52, 18, 18, Component.translatable("desc.gui.soyuz.satellite"));
 

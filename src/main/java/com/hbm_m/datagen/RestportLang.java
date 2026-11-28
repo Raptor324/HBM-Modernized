@@ -2741,10 +2741,10 @@ public final class RestportLang {
         e("item.hbm_m.fuse", "Fuse", "Предохранитель");
         e("item.hbm_m.fusion_core", "Fusion Core", "Ядерный блок");
         e("item.hbm_m.fusion_core_infinite", "Infinite Fusion Core", "Бесконечный ядерный блок");
-        e("item.hbm_m.fusion_shield_chlorophyte", "Chlorophyte-Metallized Fusion Reactor Blanket", "Chlorophyte-Metallized Fusion Reactor Blanket");
-        e("item.hbm_m.fusion_shield_desh", "Desh Fusion Reactor Blanket", "Desh Fusion Reactor Blanket");
-        e("item.hbm_m.fusion_shield_tungsten", "Tungsten Fusion Reactor Blanket", "Tungsten Fusion Reactor Blanket");
-        e("item.hbm_m.fusion_shield_vaporwave", "Vaporwave Fusion Reactor Blanket", "Vaporwave Fusion Reactor Blanket");
+        e("item.hbm_m.fusion_shield_chlorophyte", "Chlorophyte-Metallized Fusion Reactor Blanket", "Хлорофитово-металлизированный бланкет термоядерного реактора");
+        e("item.hbm_m.fusion_shield_desh", "Desh Fusion Reactor Blanket", "Дешевый бланкет термоядерного реактора");
+        e("item.hbm_m.fusion_shield_tungsten", "Tungsten Fusion Reactor Blanket", "Вольфрамовый бланкет термоядерного реактора");
+        e("item.hbm_m.fusion_shield_vaporwave", "Vaporwave Fusion Reactor Blanket", "Вейпорвейв-бланкет термоядерного реактора");
         e("item.hbm_m.gadget_core", "Large Plutonium Core", "Плутониевое ядро");
         e("item.hbm_m.gadget_kit", "The Gadget Kit", "Комплект Гаджета");
         e("item.hbm_m.gadget_wireing", "Wiring", "Провода");

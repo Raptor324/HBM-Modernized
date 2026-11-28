@@ -80,6 +80,7 @@ public class MachineConveyorPressBlockEntity extends BaseMachineBlockEntity {
     private void serverTick(Level level, BlockPos pos) {
         ensureNetworkInitialized();
         double prev = press;
+        long prevEnergy = getEnergyStored();
 
         if (delay <= 0) {
             if (isRetracting) {
@@ -108,7 +109,7 @@ public class MachineConveyorPressBlockEntity extends BaseMachineBlockEntity {
             delay--;
         }
 
-        if (prev != press) {
+        if (prev != press || prevEnergy != getEnergyStored()) {
             setChanged();
             sendUpdateToClient();
         }
@@ -212,6 +213,7 @@ public class MachineConveyorPressBlockEntity extends BaseMachineBlockEntity {
     /** Rechtsklick mit Stempel installiert ihn (Original: {@code onBlockActivated}, kein GUI). */
     public boolean tryInsertStamp(Player player, ItemStack held) {
         if (!inventory.getStackInSlot(SLOT_STAMP).isEmpty() || held.isEmpty()) return false;
+        if (!(held.getItem() instanceof com.hbm_m.item.industrial.ItemStamp)) return false;
         inventory.setStackInSlot(SLOT_STAMP, held.split(1));
         // Original MachineConveyorPress.onBlockActivated: Steckgeraeusch beim Einsetzen des Stempels
         if (level != null && !level.isClientSide) {
@@ -250,7 +252,17 @@ public class MachineConveyorPressBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        return slot == SLOT_STAMP && stack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp;
+    }
+
+    @Override
+    protected boolean isCriticalSlot(int slot) {
         return slot == SLOT_STAMP;
+    }
+
+    @Override
+    public boolean canConnectEnergy(net.minecraft.core.Direction side) {
+        return side != net.minecraft.core.Direction.DOWN;
     }
 
     @Nullable

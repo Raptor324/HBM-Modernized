@@ -56,12 +56,12 @@ public class MachineSatLinkBlockEntity extends BaseHbmBlockEntity implements IRO
         if (level instanceof ServerLevel server) {
             this.connected = false;
 
-            boolean canConnect = server.getHeight(Heightmap.Types.MOTION_BLOCKING, worldPosition.getX(), worldPosition.getZ()) <= worldPosition.getY();
+            boolean canConnect = server.getHeight(Heightmap.Types.MOTION_BLOCKING, worldPosition.getX(), worldPosition.getZ()) <= worldPosition.getY() + 7;
             if (canConnect) {
-                this.connected = SatelliteManager.get(server).isFreqTaken(freq);
+                this.connected = SatelliteManager.get(server, worldPosition.getX(), worldPosition.getZ()).isFreqTaken(freq);
             }
 
-            this.updateInfo(server, canConnect);
+            this.updateInfo(server, this.connected);
             this.networkPackNT(server, 150);
         } else {
             this.prevRot = this.rot;
@@ -89,7 +89,7 @@ public class MachineSatLinkBlockEntity extends BaseHbmBlockEntity implements IRO
             this.info = java.util.List.of();
             return;
         }
-        Satellite sat = SatelliteManager.get(server).getSatFromFreq(freq);
+        Satellite sat = SatelliteManager.get(server, worldPosition.getX(), worldPosition.getZ()).getSatFromFreq(freq);
         if (sat != null) this.info = sat.getInfo(server);
     }
 
@@ -186,7 +186,7 @@ public class MachineSatLinkBlockEntity extends BaseHbmBlockEntity implements IRO
             this.setChanged();
         }
 
-        if (name.equals(PREFIX_FUNCTION + "tx") && level instanceof ServerLevel server) {
+        if (name.equals(PREFIX_FUNCTION + "tx") && params.length > 0 && level instanceof ServerLevel server) {
             Satellite sat = SatelliteManager.get(server).getSatFromFreq(this.freq);
             String[] cmd = String.join(IRORInteractive.PARAM_SEPARATOR, params).split(" ");
             if (sat != null) {

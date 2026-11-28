@@ -218,7 +218,13 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 ModBlocks.RBMK_DEBRIS.get(),
                 ModBlocks.RBMK_DEBRIS_BURNING.get(),
                 ModBlocks.RBMK_DEBRIS_DIGAMMA.get(),
-                ModBlocks.RBMK_DEBRIS_RADIATING.get()
+                ModBlocks.RBMK_DEBRIS_RADIATING.get(),
+                ModBlocks.CONVEYOR.get(),
+                ModBlocks.CONVEYOR_DOUBLE.get(),
+                ModBlocks.CONVEYOR_EXPRESS.get(),
+                ModBlocks.CONVEYOR_TRIPLE.get(),
+                ModBlocks.CONVEYOR_LIFT.get(),
+                ModBlocks.CONVEYOR_CHUTE.get()
         );
 
         // audit4: Werkzeugtyp nach Original-Material (rock/iron/anvil -> Spitzhacke, wood -> Axt,
@@ -367,7 +373,9 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(Blocks.GREEN_STAINED_GLASS_PANE)
                 .add(Blocks.RED_STAINED_GLASS_PANE)
                 .add(Blocks.BLACK_STAINED_GLASS_PANE)
-                .add(ModBlocks.REINFORCED_GLASS_PANE.get());
+                .add(ModBlocks.REINFORCED_GLASS_PANE.get())
+                .add(ModBlocks.FENCE_METAL.get())
+                .add(ModBlocks.FENCE_METAL_POST.get());
 
         // ============ CP-1 PILE NEUTRON TAGS (hbm_m namespace, port of NEXT data/hbm/tags/block/pile) =====
 

@@ -8,6 +8,9 @@
       "loader": "hbm_m:nmesh_obj",
       "model": "hbm_m:models/block/machines/pa_detector.obj",
       "flip_v": true,
+      "smooth_shade": true,
+      "ao": false,
+      "render_type": "minecraft:cutout",
       "textures": {
         "default": "hbm_m:block/machine/detector"
       }

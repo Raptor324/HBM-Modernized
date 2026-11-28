@@ -1567,7 +1567,7 @@ public class ModItems {
 	public static final RegistrySupplier<Item> MACHINE_BATTERY_REDD = ITEMS.register("machine_battery_redd",
         () -> new MultiblockBlockItem(ModBlocks.FENSU2.get(), new Item.Properties()));
 	/** Original soyuz_launcher (Startrampe, Kern 4 Bloecke ueber dem Setzpunkt). */
-	public static final RegistrySupplier<Item> SOYUZ_LAUNCHER = ITEMS.register("soyuz_launcher",
+	public static final RegistrySupplier<Item> SOYUZ_LAUNCHER = registerItem("soyuz_launcher", CompletionStatus.COMPLETE,
         () -> new MultiblockBlockItem(ModBlocks.SOYUZ_LAUNCHER.get(), new Item.Properties()));
 	public static final RegistrySupplier<Item> DERRICK = ITEMS.register("derrick",
         () -> new MultiblockBlockItem(ModBlocks.DERRICK.get(), new Item.Properties()));
@@ -1739,10 +1739,10 @@ public class ModItems {
 
     public static final RegistrySupplier<Item> REFINERY = ITEMS.register("refinery",
         () -> new MultiblockBlockItem(ModBlocks.REFINERY.get(), new Item.Properties()));
-	public static final RegistrySupplier<Item> LAUNCH_PAD = ITEMS.register("launch_pad",
+	public static final RegistrySupplier<Item> LAUNCH_PAD = registerItem("launch_pad", CompletionStatus.COMPLETE,
         () -> new MultiblockBlockItem(ModBlocks.LAUNCH_PAD.get(), new Item.Properties()));
 
-	public static final RegistrySupplier<Item> LAUNCH_PAD_RUSTED = ITEMS.register("launch_pad_rusted",
+	public static final RegistrySupplier<Item> LAUNCH_PAD_RUSTED = registerItem("launch_pad_rusted", CompletionStatus.COMPLETE,
         () -> new MultiblockBlockItem(ModBlocks.LAUNCH_PAD_RUSTED.get(), new Item.Properties()));
 
     public static final RegistrySupplier<Item> MOBILE_LAUNCH_PAD = ITEMS.register("mobile_launch_pad",
@@ -1868,16 +1868,16 @@ public class ModItems {
             () -> new com.hbm_m.block.machines.custom.ItemCustomMachine(com.hbm_m.block.ModBlocks.CUSTOM_MACHINE.get(), new Item.Properties()));
     public static final RegistrySupplier<Item> MISSILE_CUSTOM = ITEMS.register("missile_custom",
             () -> new com.hbm_m.item.missile.ItemCustomMissile(new Item.Properties()));
-    public static final RegistrySupplier<Item> MISSILE_SOYUZ = ITEMS.register("missile_soyuz",
+    public static final RegistrySupplier<Item> MISSILE_SOYUZ = registerItem("missile_soyuz", CompletionStatus.COMPLETE,
             () -> new com.hbm_m.item.special.ItemSoyuz(0, new Item.Properties()));
-    public static final RegistrySupplier<Item> MISSILE_SOYUZ_LUNA = ITEMS.register("missile_soyuz_luna",
+    public static final RegistrySupplier<Item> MISSILE_SOYUZ_LUNA = registerItem("missile_soyuz_luna", CompletionStatus.COMPLETE,
             () -> new com.hbm_m.item.special.ItemSoyuz(1, new Item.Properties()));
-    public static final RegistrySupplier<Item> MISSILE_SOYUZ_POSTWAR = ITEMS.register("missile_soyuz_postwar",
+    public static final RegistrySupplier<Item> MISSILE_SOYUZ_POSTWAR = registerItem("missile_soyuz_postwar", CompletionStatus.COMPLETE,
             () -> new com.hbm_m.item.special.ItemSoyuz(2, new Item.Properties()));
-    public static final RegistrySupplier<Item> MISSILE_SOYUZ_LANDER = ITEMS.register("missile_soyuz_lander",
+    public static final RegistrySupplier<Item> MISSILE_SOYUZ_LANDER = registerItem("missile_soyuz_lander", CompletionStatus.COMPLETE,
             () -> new com.hbm_m.item.ItemCustomLore(new Item.Properties().stacksTo(1)));
     /** 1:1 {@code missile_lambda}: Lambda-Rakete fuer die Lambda-Startrampe. */
-    public static final RegistrySupplier<Item> MISSILE_LAMBDA = ITEMS.register("missile_lambda",
+    public static final RegistrySupplier<Item> MISSILE_LAMBDA = registerItem("missile_lambda", CompletionStatus.COMPLETE,
             () -> new Item(new Item.Properties().stacksTo(1)));
 
 
@@ -2305,23 +2305,23 @@ public class ModItems {
     public static final RegistrySupplier<Item> WIRE_FINE = ITEMS.register("wire_fine",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistrySupplier<Item> SAT_HEAD_LASER = ITEMS.register("sat_head_laser",
+    public static final RegistrySupplier<Item> SAT_HEAD_LASER = registerItem("sat_head_laser", CompletionStatus.COMPLETE,
             () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_BASE = ITEMS.register("sat_base",
+    public static final RegistrySupplier<Item> SAT_BASE = registerItem("sat_base", CompletionStatus.COMPLETE,
             () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_LASER = ITEMS.register("sat_laser",
+    public static final RegistrySupplier<Item> SAT_LASER = registerItem("sat_laser", CompletionStatus.COMPLETE,
             () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_HEAD_RADAR = ITEMS.register("sat_head_radar",
+    public static final RegistrySupplier<Item> SAT_HEAD_RADAR = registerItem("sat_head_radar", CompletionStatus.COMPLETE,
             () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_RADAR = ITEMS.register("sat_radar",
+    public static final RegistrySupplier<Item> SAT_RADAR = registerItem("sat_radar", CompletionStatus.COMPLETE,
             () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_HEAD_MAPPER = ITEMS.register("sat_head_mapper",
+    public static final RegistrySupplier<Item> SAT_HEAD_MAPPER = registerItem("sat_head_mapper", CompletionStatus.COMPLETE,
             () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_MAPPER = ITEMS.register("sat_mapper",
+    public static final RegistrySupplier<Item> SAT_MAPPER = registerItem("sat_mapper", CompletionStatus.COMPLETE,
             () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_HEAD_RESONATOR = ITEMS.register("sat_head_resonator",
+    public static final RegistrySupplier<Item> SAT_HEAD_RESONATOR = registerItem("sat_head_resonator", CompletionStatus.COMPLETE,
             () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_RESONATOR = ITEMS.register("sat_resonator",
+    public static final RegistrySupplier<Item> SAT_RESONATOR = registerItem("sat_resonator", CompletionStatus.COMPLETE,
             () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
 
     public static final RegistrySupplier<Item> THRUSTER_LARGE         = ITEMS.register("thruster_large",         () -> new Item(new Item.Properties()));
@@ -3475,9 +3475,9 @@ public class ModItems {
     public static final RegistrySupplier<Item> LASER_CRYSTAL_CO2 = ITEMS.register("laser_crystal_co2", () -> new com.hbm_m.item.machine.ItemFELCrystal(com.hbm_m.item.machine.ItemFELCrystal.EnumWavelengths.IR, new Item.Properties()));
     public static final RegistrySupplier<Item> LASER_CRYSTAL_DIGAMMA = ITEMS.register("laser_crystal_digamma", () -> new com.hbm_m.item.machine.ItemFELCrystal(com.hbm_m.item.machine.ItemFELCrystal.EnumWavelengths.DRX, new Item.Properties()));
     public static final RegistrySupplier<Item> LASER_CRYSTAL_DNT = ITEMS.register("laser_crystal_dnt", () -> new com.hbm_m.item.machine.ItemFELCrystal(com.hbm_m.item.machine.ItemFELCrystal.EnumWavelengths.GAMMA, new Item.Properties()));
-    public static final RegistrySupplier<Item> LAUNCH_CODE = ITEMS.register("launch_code", () -> new Item(new Item.Properties().stacksTo(1)));
+    public static final RegistrySupplier<Item> LAUNCH_CODE = registerItem("launch_code", CompletionStatus.COMPLETE, () -> new Item(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> LAUNCH_CODE_PIECE = ITEMS.register("launch_code_piece", () -> new Item(new Item.Properties().stacksTo(1)));
-    public static final RegistrySupplier<Item> LAUNCH_KEY = ITEMS.register("launch_key", () -> new Item(new Item.Properties().stacksTo(1)));
+    public static final RegistrySupplier<Item> LAUNCH_KEY = registerItem("launch_key", CompletionStatus.COMPLETE, () -> new Item(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> LEAD_GAVEL = ITEMS.register("lead_gavel", () -> new com.hbm_m.item.tool.WeaponSpecial(com.hbm_m.item.tool.HbmToolMaterial.STEEL, new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> LEMON = ITEMS.register("lemon",
             () -> com.hbm_m.item.food.HbmFoodItem.of(3, 0.5F, false).build());
@@ -4117,23 +4117,23 @@ public class ModItems {
     public static final RegistrySupplier<Item> RUNE_THURISAZ = ITEMS.register("rune_thurisaz", () -> new FoilItem(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> SAFETY_FUSE = ITEMS.register("safety_fuse", () -> new Item(new Item.Properties()));
     /** Original {@code satellite} (ItemSatellite, Meta = EnumSatType) als Einzelgegenstaende. */
-    public static final RegistrySupplier<Item> SATELLITE_SPY = ITEMS.register("satellite_spy", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
-    public static final RegistrySupplier<Item> SATELLITE_SCANNER = ITEMS.register("satellite_scanner", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
-    public static final RegistrySupplier<Item> SATELLITE_RADAR = ITEMS.register("satellite_radar", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
-    public static final RegistrySupplier<Item> SATELLITE_MINER_ASTRO = ITEMS.register("satellite_miner_astro", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
-    public static final RegistrySupplier<Item> SATELLITE_MINER_LUNAR = ITEMS.register("satellite_miner_lunar", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
-    public static final RegistrySupplier<Item> SATELLITE_PRECISION_LASER = ITEMS.register("satellite_precision_laser", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
-    public static final RegistrySupplier<Item> SATELLITE_DEATH_RAY = ITEMS.register("satellite_death_ray", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
-    public static final RegistrySupplier<Item> SATELLITE_XENIUM_RESONATOR = ITEMS.register("satellite_xenium_resonator", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
-    public static final RegistrySupplier<Item> SATELLITE_RELAY = ITEMS.register("satellite_relay", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
-    public static final RegistrySupplier<Item> SATELLITE_DETECTOR = ITEMS.register("satellite_detector", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
-    public static final RegistrySupplier<Item> SATELLITE_RAY_SCAN = ITEMS.register("satellite_ray_scan", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_SPY = registerItem("satellite_spy", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_SCANNER = registerItem("satellite_scanner", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_RADAR = registerItem("satellite_radar", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_MINER_ASTRO = registerItem("satellite_miner_astro", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_MINER_LUNAR = registerItem("satellite_miner_lunar", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_PRECISION_LASER = registerItem("satellite_precision_laser", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_DEATH_RAY = registerItem("satellite_death_ray", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_XENIUM_RESONATOR = registerItem("satellite_xenium_resonator", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_RELAY = registerItem("satellite_relay", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_DETECTOR = registerItem("satellite_detector", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_RAY_SCAN = registerItem("satellite_ray_scan", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
     /** Original {@code satellite} Meta SCIENCE / SCIENCE_ASSEMBLER / SCIENCE_SENSOR: Weltraumlabor und seine Erweiterungen. */
-    public static final RegistrySupplier<Item> SATELLITE_SCIENCE = ITEMS.register("satellite_science", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
-    public static final RegistrySupplier<Item> SATELLITE_SCIENCE_ASSEMBLER = ITEMS.register("satellite_science_assembler", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
-    public static final RegistrySupplier<Item> SATELLITE_SCIENCE_SENSOR = ITEMS.register("satellite_science_sensor", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_SCIENCE = registerItem("satellite_science", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_SCIENCE_ASSEMBLER = registerItem("satellite_science_assembler", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_SCIENCE_SENSOR = registerItem("satellite_science_sensor", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
     /** Original {@code orbital_assembly} Meta CRYSTAL_CIRCUIT: wird per Lambda-Rakete zur 0G-Fabrik geschickt. */
-    public static final RegistrySupplier<Item> ORBITAL_ASSEMBLY_CRYSTAL_CIRCUIT = ITEMS.register("orbital_assembly_crystal_circuit", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> ORBITAL_ASSEMBLY_CRYSTAL_CIRCUIT = registerItem("orbital_assembly_crystal_circuit", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
     /** Original {@code circuit} Meta CRYSTAL. */
     public static final RegistrySupplier<Item> CIRCUIT_CRYSTAL = ITEMS.register("circuit_crystal", () -> new Item(new Item.Properties()));
     // ---- R4: fehlende einfache Items (1:1 aus ModItems 1.7.10) ----
@@ -4269,19 +4269,19 @@ public class ModItems {
     public static final RegistrySupplier<Item> RECORD_GLASS = ITEMS.register("record_glass", () -> new com.hbm_m.item.special.ItemModRecord(1, () -> com.hbm_m.sound.HbmSoundsNT.get("hbm:music.transmission"), new Item.Properties(), 1244));
     public static final RegistrySupplier<Item> RECORD_VC = ITEMS.register("record_vc", () -> new com.hbm_m.item.special.ItemModRecord(1, () -> com.hbm_m.sound.HbmSoundsNT.get("hbm:music.recordvortalcombat"), new Item.Properties(), 3895));
     public static final RegistrySupplier<Item> WAND_K = ITEMS.register("wand_k", () -> new com.hbm_m.item.tool.ItemWand(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_CHIP = ITEMS.register("sat_chip", () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_COORD = ITEMS.register("sat_coord", () -> new com.hbm_m.item.satellite.ItemSatInterface(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_DESIGNATOR = ITEMS.register("sat_designator",
+    public static final RegistrySupplier<Item> SAT_CHIP = registerItem("sat_chip", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_COORD = registerItem("sat_coord", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatInterface(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_DESIGNATOR = registerItem("sat_designator", CompletionStatus.COMPLETE,
             () -> new com.hbm_m.item.designator.ItemSatDesignator(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_GERALD = ITEMS.register("sat_gerald",
+    public static final RegistrySupplier<Item> SAT_GERALD = registerItem("sat_gerald", CompletionStatus.COMPLETE,
             () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_FOEQ = ITEMS.register("sat_foeq", () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_SCANNER = ITEMS.register("sat_scanner", () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_HEAD_SCANNER = ITEMS.register("sat_head_scanner", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_INTERFACE = ITEMS.register("sat_interface", () -> new com.hbm_m.item.satellite.ItemSatInterface(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_LUNAR_MINER = ITEMS.register("sat_lunar_miner", () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_MINER = ITEMS.register("sat_miner", () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_RELAY = ITEMS.register("sat_relay", () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_FOEQ = registerItem("sat_foeq", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_SCANNER = registerItem("sat_scanner", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_HEAD_SCANNER = registerItem("sat_head_scanner", CompletionStatus.COMPLETE, () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_INTERFACE = registerItem("sat_interface", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatInterface(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_LUNAR_MINER = registerItem("sat_lunar_miner", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_MINER = registerItem("sat_miner", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_RELAY = registerItem("sat_relay", CompletionStatus.COMPLETE, () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
     public static final RegistrySupplier<Item> SAWBLADE = ITEMS.register("sawblade", () -> new com.hbm_m.item.AnimatedPartItem(new Item.Properties())); // vI: drehendes Inventar-Icon wie Original
     public static final RegistrySupplier<Item> SCHNITZEL_VEGAN = ITEMS.register("schnitzel_vegan",
             () -> com.hbm_m.item.food.HbmFoodItem.of(0, 0.6F, true).noDesc().onEaten(com.hbm_m.item.food.FoodBehaviors::schnitzelVegan).build());

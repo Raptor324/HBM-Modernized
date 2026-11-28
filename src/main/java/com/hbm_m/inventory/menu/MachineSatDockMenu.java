@@ -71,6 +71,8 @@ public class MachineSatDockMenu extends AbstractContainerMenu {
 
             if (index <= 15) {
                 if (!this.moveItemStackTo(stack, 16, this.slots.size(), true)) return ItemStack.EMPTY;
+            } else if (stack.getItem() instanceof com.hbm_m.item.ISatChip) {
+                if (!this.moveItemStackTo(stack, 15, 16, false)) return ItemStack.EMPTY;
             } else if (!this.moveItemStackTo(stack, 0, 15, false)) {
                 return ItemStack.EMPTY;
             }
@@ -84,6 +86,6 @@ public class MachineSatDockMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(@NotNull Player player) {
-        return stillValid(ContainerLevelAccess.create(dock.getLevel(), dock.getBlockPos()), player, ModBlocks.SAT_DOCK.get());
+        return com.hbm_m.inventory.menu.MenuReach.stillValid(player, dock);
     }
 }

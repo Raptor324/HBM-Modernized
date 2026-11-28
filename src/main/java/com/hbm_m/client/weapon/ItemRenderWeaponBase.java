@@ -146,11 +146,6 @@ public abstract class ItemRenderWeaponBase {
             }
             com.hbm_m.platform.RenderHooks.popHandModelView();
             RenderSystem.setProjectionMatrix(oldProjection, oldSorting);
-            mc.gameRenderer.lightTexture().turnOffLightLayer();
-            com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE2);
-            com.mojang.blaze3d.platform.GlStateManager._bindTexture(0);
-            com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE1);
-            com.mojang.blaze3d.platform.GlStateManager._bindTexture(0);
             com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
         }
     }

@@ -32,7 +32,7 @@ public class BlockMetalFence extends FenceBlock {
     public BlockMetalFence(Properties properties, boolean forcePost) {
         super(properties);
         this.forcePost = forcePost;
-        this.registerDefaultState(this.defaultBlockState().setValue(POST, forcePost));
+        this.registerDefaultState(this.defaultBlockState().setValue(POST, true));
     }
 
     public boolean isForcePost() {

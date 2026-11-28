@@ -382,6 +382,22 @@ public final class LightSampleCache {
         lastFastTick = Long.MIN_VALUE;
     }
 
+    /** Evicts cached light entries for a single machine position (e.g. on place/remove/replace). */
+    public static void invalidatePosition(long posKey) {
+        CACHE.remove(posKey);
+        PACKED_CACHE.remove(posKey);
+        LongArrayList keys = machine2Cache8Keys.remove(posKey);
+        if (keys != null) {
+            for (int i = 0; i < keys.size(); i++) {
+                CACHE8.remove(keys.getLong(i));
+            }
+        }
+        if (lastQueriedBE != null && lastQueriedBE.getBlockPos().asLong() == posKey) {
+            lastQueriedBE = null;
+            lastFastTick = Long.MIN_VALUE;
+        }
+    }
+
     // ========================================================================
     // 8-corner trilinear sampling (for per-vertex gradient inside machine mesh)
     // ========================================================================
@@ -771,6 +787,7 @@ public final class LightSampleCache {
             int wx = bpx + Mth.floor(CORNER_TMP.x);
             int wy = bpy + Mth.floor(CORNER_TMP.y);
             int wz = bpz + Mth.floor(CORNER_TMP.z);
+            int sampledY = wy;
             SAMPLE_POS_8.set(wx, wy, wz);
 
             int packed = -1;
@@ -786,24 +803,29 @@ public final class LightSampleCache {
                         state = level.getBlockState(SAMPLE_POS_8);
                         if (!state.isSolidRender(level, SAMPLE_POS_8)) {
                             packed = LevelRenderer.getLightColor(level, SAMPLE_POS_8);
+                            sampledY = bpy;
                         }
                     }
                     // Candidate 3: relax X axis 1 block towards machine interior
                     if (packed < 0) {
                         int rx = wx + (CORNER_TMP.x > 0.0f ? -1 : 1);
-                        SAMPLE_POS_8.set(rx, (!isMaxY || wy < bpy) ? bpy : wy, wz);
+                        int ry = (!isMaxY || wy < bpy) ? bpy : wy;
+                        SAMPLE_POS_8.set(rx, ry, wz);
                         state = level.getBlockState(SAMPLE_POS_8);
                         if (!state.isSolidRender(level, SAMPLE_POS_8)) {
                             packed = LevelRenderer.getLightColor(level, SAMPLE_POS_8);
+                            sampledY = ry;
                         }
                     }
                     // Candidate 4: relax Z axis 1 block towards machine interior
                     if (packed < 0) {
                         int rz = wz + (CORNER_TMP.z > 0.0f ? -1 : 1);
-                        SAMPLE_POS_8.set(wx, (!isMaxY || wy < bpy) ? bpy : wy, rz);
+                        int ry = (!isMaxY || wy < bpy) ? bpy : wy;
+                        SAMPLE_POS_8.set(wx, ry, rz);
                         state = level.getBlockState(SAMPLE_POS_8);
                         if (!state.isSolidRender(level, SAMPLE_POS_8)) {
                             packed = LevelRenderer.getLightColor(level, SAMPLE_POS_8);
+                            sampledY = ry;
                         }
                     }
                     // Candidate 5: probe the machine's actual corner block cell (e.g. UniversalMachinePart or DoorBlock)
@@ -813,19 +835,23 @@ public final class LightSampleCache {
                         float cz = isMaxZ ? (maxZ - 0.5f) : (minZ + 0.5f);
                         CORNER_TMP.set(cx, cy, cz, 1.0f);
                         localPose.transform(CORNER_TMP);
-                        SAMPLE_POS_8.set(bpx + Mth.floor(CORNER_TMP.x), bpy + Mth.floor(CORNER_TMP.y), bpz + Mth.floor(CORNER_TMP.z));
+                        int cyCell = bpy + Mth.floor(CORNER_TMP.y);
+                        SAMPLE_POS_8.set(bpx + Mth.floor(CORNER_TMP.x), cyCell, bpz + Mth.floor(CORNER_TMP.z));
                         state = level.getBlockState(SAMPLE_POS_8);
                         if (!state.isSolidRender(level, SAMPLE_POS_8)) {
                             packed = LevelRenderer.getLightColor(level, SAMPLE_POS_8);
+                            sampledY = cyCell;
                         }
                     }
                 }
             } catch (Throwable t) {
                 packed = packedLightFallback;
+                sampledY = bpy;
             }
 
             if (packed < 0) {
                 packed = packedLightFallback;
+                sampledY = bpy;
             }
 
             int blockU = packed & 0xFFFF;
@@ -834,7 +860,7 @@ public final class LightSampleCache {
             // Non-darkening invariant: sky light must never collapse below fallback sky light
             // when the machine is exposed to sky
             int fallbackSky = (packedLightFallback >>> 16) & 0xFFFF;
-            if (fallbackSky > 0 && skyV < fallbackSky && (isMaxY || wy >= bpy)) {
+            if (fallbackSky > 0 && skyV < fallbackSky && (isMaxY || sampledY >= bpy)) {
                 skyV = Math.max(skyV, fallbackSky);
             }
 

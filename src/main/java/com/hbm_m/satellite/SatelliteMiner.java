@@ -15,20 +15,49 @@ public class SatelliteMiner extends Satellite {
 
     private static final HashMap<Class<? extends SatelliteMiner>, String> CARGO = new HashMap<>();
 
-    public long lastOp;
+    public double progress;
+    public static final double SPEED = 1D / (15 * 60 * 20);
 
     public SatelliteMiner() { }
 
     @Override public String getType() { return "ASTEROID_MINER"; }
 
     @Override
+    public java.util.List<net.minecraft.network.chat.Component> getInfo(net.minecraft.server.level.ServerLevel world) {
+        int pct = (int) Math.round(this.progress * 100);
+        return java.util.List.of(
+                net.minecraft.network.chat.Component.translatable(com.hbm_m.item.ModItems.SATELLITE_MINER_ASTRO.get().getDescriptionId()),
+                net.minecraft.network.chat.Component.translatable("satellite.minerprogress", pct + "%")
+        );
+    }
+
+    @Override
+    public void onUpdateTick(net.minecraft.server.level.ServerLevel world) {
+        if (this.requestableSlots.length <= 0) {
+            this.progress += SPEED;
+            if (this.progress >= 1D) {
+                this.progress = 0D;
+                int itemAmount = 10 + world.random.nextInt(6);
+                this.requestableSlots = new ItemStack[itemAmount];
+                for (int i = 0; i < itemAmount; i++) {
+                    this.requestableSlots[i] = SatellitePools.getStack(getCargo(), world.random);
+                }
+                this.markDirty();
+            }
+            if (world.getGameTime() % 1200 == 0) this.markDirty();
+        }
+    }
+
+    @Override
     public void writeToNBT(CompoundTag nbt) {
-        nbt.putLong("lastOp", lastOp);
+        super.writeToNBT(nbt);
+        nbt.putDouble("progress", progress);
     }
 
     @Override
     public void readFromNBT(CompoundTag nbt) {
-        lastOp = nbt.getLong("lastOp");
+        super.readFromNBT(nbt);
+        this.progress = nbt.getDouble("progress");
     }
 
     public static void registerCargo(Class<? extends SatelliteMiner> minerSatelliteClass, String cargo) {

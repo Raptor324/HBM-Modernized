@@ -59,15 +59,13 @@ public final class HbmFluidStorageProvider {
     private HbmFluidStorageProvider() {}
 
     /**
-     * Serializes one tank the way Jade's own bridge does. On 1.21.1 the two-arg overload is
-     * deprecated in favour of the ops variant; NbtOps.INSTANCE is exactly what it delegates to.
+     * Serializes one tank the way Jade's own bridge does. Uses the two-arg overload on both
+     * 1.20.1 and 1.21.1: Jade 15.10.5+neoforge lacks the 3-arg DynamicOps overload added in
+     * 15.10.6+neoforge, and 15.10.6+ simply delegates the two-arg call to NbtOps.INSTANCE.
      */
+    @SuppressWarnings("deprecation")
     private static CompoundTag writeFluidView(JadeFluidObject fluid, long capacity) {
-        //? if < 1.21.1 {
         return FluidView.writeDefault(fluid, capacity);
-        //?} else {
-        /*return FluidView.writeDefault(fluid, capacity, net.minecraft.nbt.NbtOps.INSTANCE);
-        *///?}
     }
 
     //? if < 1.21.1 {

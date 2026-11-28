@@ -201,7 +201,7 @@ public final class MachineAdvancedAssemblerRenderer {
     private static long animationEpoch(MachineAdvancedAssemblerBlockEntity be) {
         AdvancedAssemblerClientTicker ticker = ticker(be);
         if (ticker == null) {
-            return 0L;
+            return Long.MIN_VALUE;
         }
         long h = 0x9E3779B97F4A7C15L;
         h = h * 31 + Float.floatToRawIntBits(ticker.getRingAngle());
@@ -256,7 +256,10 @@ public final class MachineAdvancedAssemblerRenderer {
             int armIndex, int joint, float angleSign) {
         return (be, pt, gt, out, off) -> {
             AdvancedAssemblerClientTicker.AssemblerArm arm = arm(be, armIndex);
-            if (arm == null) return false;
+            if (arm == null) {
+                out[off] = 0f;
+                return true;
+            }
             out[off] = angleSign * Mth.lerp(pt, arm.prevAngles[joint], arm.angles[joint]);
             return true;
         };

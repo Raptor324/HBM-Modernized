@@ -112,9 +112,9 @@ public class MovingConveyorPackageEntity extends Entity implements ItemSupplier 
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        // Same as MovingConveyorItemEntity: only a player knocks a package off the belt.
-        if (this.level().isClientSide || this.isRemoved()
-                || !(source.getEntity() instanceof net.minecraft.world.entity.player.Player)) {
+        if (this.level().isClientSide || this.isRemoved()) return false;
+        if (!(source.getEntity() instanceof net.minecraft.world.entity.player.Player)
+                && !source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION)) {
             return false;
         }
         dropAll();
@@ -151,11 +151,35 @@ public class MovingConveyorPackageEntity extends Entity implements ItemSupplier 
         return InteractionResult.PASS;
     }
 
+    private int lerpSteps;
+    private double lerpX, lerpY, lerpZ;
+
+    @Override
+    //? if < 1.21.1 {
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps, boolean teleport) {
+    //?} else {
+    /*public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
+    *///?}
+        this.lerpX = x;
+        this.lerpY = y;
+        this.lerpZ = z;
+        this.lerpSteps = 5;
+    }
+
     @Override
     public void tick() {
         super.tick();
 
-        if (this.level().isClientSide) return;
+        if (this.level().isClientSide) {
+            if (this.lerpSteps > 0) {
+                double nx = this.getX() + (this.lerpX - this.getX()) / (double) this.lerpSteps;
+                double ny = this.getY() + (this.lerpY - this.getY()) / (double) this.lerpSteps;
+                double nz = this.getZ() + (this.lerpZ - this.getZ()) / (double) this.lerpSteps;
+                this.lerpSteps--;
+                this.setPos(nx, ny, nz);
+            }
+            return;
+        }
         if (this.tickCount <= 5) return;
 
         // Staupruefung alle 20 s
@@ -166,7 +190,10 @@ public class MovingConveyorPackageEntity extends Entity implements ItemSupplier 
                 for (Entity obj : objs) obj.discard();
                 this.level().explode(this, getX(), getY() + 0.125, getZ(), 1.0F, Level.ExplosionInteraction.BLOCK);
                 BlockPos p = BlockPos.containing(getX(), getY(), getZ());
-                if (this.level().getBlockState(p).getBlock() instanceof IConveyorBelt) this.level().destroyBlock(p, false);
+                if (this.tickCount > 400 && this.level().getBlockState(p).getBlock() instanceof IConveyorBelt) {
+                    this.level().destroyBlock(p, false);
+                }
+                return;
             }
         }
 

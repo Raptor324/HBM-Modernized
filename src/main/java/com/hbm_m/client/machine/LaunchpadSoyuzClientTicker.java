@@ -136,7 +136,7 @@ public class LaunchpadSoyuzClientTicker implements IClientTicker {
     private static void playAt(SoundEvent sound, Vec3 pos, float volume, float pitch) {
         Level level = Minecraft.getInstance().level;
         if (sound == null || level == null) return;
-        level.playSound(null, pos.x, pos.y, pos.z, sound, SoundSource.BLOCKS, volume, pitch);
+        level.playLocalSound(pos.x, pos.y, pos.z, sound, SoundSource.BLOCKS, volume, pitch, false);
     }
 
     @Override

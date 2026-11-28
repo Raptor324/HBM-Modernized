@@ -685,6 +685,17 @@ public class GUIScreenRecipeSelector extends Screen {
         }
     }
 
+    /** Строит полный тултип рецепта (заголовок + параметры/входы/выходы) для экранов машин. */
+    public static List<Component> buildTooltip(net.minecraft.world.item.crafting.Recipe<?> recipe,
+                                             ItemStack icon, @Nullable ResourceLocation recipeId) {
+        List<Component> tooltip = new ArrayList<>();
+        Component title = !icon.isEmpty() ? icon.getHoverName()
+                : Component.literal(recipeId != null ? recipeId.getPath() : "Recipe");
+        tooltip.add(title.copy().withStyle(ChatFormatting.YELLOW));
+        appendRecipeTooltipLines(recipe, tooltip);
+        return tooltip;
+    }
+
     private static void appendRecipeTooltipLines(@Nullable net.minecraft.world.item.crafting.Recipe<?> recipe, List<Component> tooltip) {
         if (recipe == null) return;
 
@@ -869,6 +880,97 @@ public class GUIScreenRecipeSelector extends Screen {
                         .append(out.getHoverName()));
             }
             for (var out : chemicalRecipe.getFluidOutputs()) {
+                if (out.isEmpty()) continue;
+                tooltip.add(Component.literal("  " + out.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
+                        .append(FluidStackHooks.getName(out)));
+            }
+            return;
+        }
+
+        if (recipe instanceof PlasmaForgeRecipe plasmaRecipe) {
+            String pool = plasmaRecipe.getBlueprintPool();
+            if (pool != null && !pool.isEmpty()) {
+                tooltip.add(Component.empty());
+                tooltip.add(Component.translatable("gui.hbm_m.recipe_from_group").withStyle(ChatFormatting.AQUA));
+                tooltip.add(Component.literal("  " + pool).withStyle(ChatFormatting.GOLD));
+            }
+            tooltip.add(Component.empty());
+            if (plasmaRecipe.getDuration() > 0) {
+                tooltip.add(Component.translatable("gui.recipe.duration").append(": ")
+                        .append(Component.literal(String.format(java.util.Locale.ROOT, "%.1fs", plasmaRecipe.getDuration() / 20.0)))
+                        .withStyle(ChatFormatting.RED));
+            }
+            if (plasmaRecipe.getPower() > 0) {
+                tooltip.add(Component.translatable("gui.recipe.consumption").append(": ")
+                        .append(Component.literal(com.hbm_m.util.EnergyFormatter.format(plasmaRecipe.getPower()) + "HE/t"))
+                        .withStyle(ChatFormatting.RED));
+            }
+            tooltip.add(Component.translatable("gui.recipe.plasmaIn").append(": ")
+                    .append(Component.literal(com.hbm_m.util.EnergyFormatter.format(plasmaRecipe.getIgnitionTemp()) + "TU/t"))
+                    .withStyle(ChatFormatting.LIGHT_PURPLE));
+
+            tooltip.add(Component.empty());
+            tooltip.add(Component.translatable("gui.recipe.input").withStyle(ChatFormatting.BOLD));
+            for (var in : plasmaRecipe.getItemInputs()) {
+                ItemStack[] variants = in.ingredient().getItems();
+                String name = variants.length == 0 ? "?" : variants[0].getHoverName().getString();
+                tooltip.add(Component.literal("  " + in.count() + "x " + name).withStyle(ChatFormatting.GRAY));
+            }
+            for (var fin : plasmaRecipe.getFluidInputs()) {
+                tooltip.add(Component.literal("  " + fin.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
+                        .append(FluidLocalization.nameFromFluidId(BuiltInRegistries.FLUID.getKey(fin.getFluid())).copy().withStyle(ChatFormatting.GRAY)));
+            }
+
+            tooltip.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));
+            ItemStack outItem = plasmaRecipe.getOutput();
+            if (!outItem.isEmpty()) {
+                tooltip.add(Component.literal("  " + outItem.getCount() + "x ").withStyle(ChatFormatting.GRAY)
+                        .append(outItem.getHoverName()));
+            }
+            for (var out : plasmaRecipe.getFluidOutputs()) {
+                if (out.isEmpty()) continue;
+                tooltip.add(Component.literal("  " + out.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
+                        .append(FluidStackHooks.getName(out)));
+            }
+            return;
+        }
+
+        if (recipe instanceof FusionRecipe fusionRecipe) {
+            tooltip.add(Component.empty());
+            if (fusionRecipe.getDuration() > 0) {
+                tooltip.add(Component.translatable("gui.recipe.duration").append(": ")
+                        .append(Component.literal(String.format(java.util.Locale.ROOT, "%.1fs", fusionRecipe.getDuration() / 20.0)))
+                        .withStyle(ChatFormatting.RED));
+            }
+            if (fusionRecipe.getPower() > 0) {
+                tooltip.add(Component.translatable("gui.recipe.consumption").append(": ")
+                        .append(Component.literal(com.hbm_m.util.EnergyFormatter.format(fusionRecipe.getPower()) + "HE/t"))
+                        .withStyle(ChatFormatting.RED));
+            }
+            tooltip.add(Component.translatable("gui.recipe.fusionIn").append(": ")
+                    .append(Component.literal(com.hbm_m.util.EnergyFormatter.format(fusionRecipe.getIgnitionTemp()) + "KyU/t"))
+                    .withStyle(ChatFormatting.LIGHT_PURPLE));
+            tooltip.add(Component.translatable("gui.recipe.fusionOut").append(": ")
+                    .append(Component.literal(com.hbm_m.util.EnergyFormatter.format(fusionRecipe.getOutputTemp()) + "TU/t"))
+                    .withStyle(ChatFormatting.LIGHT_PURPLE));
+            tooltip.add(Component.translatable("gui.recipe.fusionFlux").append(": ")
+                    .append(Component.literal(((int) (fusionRecipe.getNeutronFlux() * 10)) / 10D + " flux/t"))
+                    .withStyle(ChatFormatting.LIGHT_PURPLE));
+
+            tooltip.add(Component.empty());
+            tooltip.add(Component.translatable("gui.recipe.input").withStyle(ChatFormatting.BOLD));
+            for (var fin : fusionRecipe.getFluidInputs()) {
+                tooltip.add(Component.literal("  " + fin.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
+                        .append(FluidLocalization.nameFromFluidId(BuiltInRegistries.FLUID.getKey(fin.getFluid())).copy().withStyle(ChatFormatting.GRAY)));
+            }
+
+            tooltip.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));
+            for (ItemStack out : fusionRecipe.getItemOutputs()) {
+                if (out.isEmpty()) continue;
+                tooltip.add(Component.literal("  " + out.getCount() + "x ").withStyle(ChatFormatting.GRAY)
+                        .append(out.getHoverName()));
+            }
+            for (var out : fusionRecipe.getFluidOutputs()) {
                 if (out.isEmpty()) continue;
                 tooltip.add(Component.literal("  " + out.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
                         .append(FluidStackHooks.getName(out)));

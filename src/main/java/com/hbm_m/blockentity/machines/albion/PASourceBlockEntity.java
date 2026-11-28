@@ -47,10 +47,9 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
     /** Original {@code getMaxPower() = 10_000_000}. */
     private static final long MAX_POWER = 10_000_000L;
     /**
-     * Kettenbetrieb: das Teilchen startet auf dem Bauteil direkt neben der Quelle. Im Original
-     * sind es fuenf Bloecke, weil die Quelle dort ein Multiblock ist - siehe die Bauteilklassen.
+     * Multiblock: das Teilchen startet 5 Bloecke vor dem Kern (Original: {@code offset * 5}).
      */
-    private static final int SPAWN_OFFSET = 1;
+    private static final int SPAWN_OFFSET = 5;
     /** Original: {@code 1 + clamp(momentum / 1000, 0, 9)}. */
     private static final int MOMENTUM_PER_STEP = 1_000;
     private static final int MAX_STEPS = 10;
@@ -60,6 +59,7 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
     private PAState state = PAState.IDLE;
     /** Original: {@code lastSpeed} - zuletzt gemessener Impuls, nur zur Anzeige. */
     private int lastSpeed;
+    private int syncedDefocus;
 
     protected final ContainerData data = new ContainerData() {
         @Override
@@ -112,8 +112,7 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
             }
         }
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        be.syncIfChanged(be.state.ordinal() * 31 + be.lastSpeed * 17 + be.getDefocus());
     }
 
     /**
@@ -242,7 +241,7 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
 
     public PAState getState()   { return state; }
     public int getLastSpeed()   { return lastSpeed; }
-    public int getDefocus()     { return particle != null ? particle.defocus : 0; }
+    public int getDefocus()     { return particle != null ? particle.defocus : syncedDefocus; }
     public boolean isRunning()  { return particle != null; }
 
     public ContainerData getContainerData() {
@@ -251,7 +250,7 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (slot == SLOT_BATTERY) return isEnergyReceiverItem(stack);
+        if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack);
         return slot == SLOT_INPUT_A || slot == SLOT_INPUT_B;
     }
 
@@ -260,6 +259,20 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
         super.writeNbtData(tag, registries);
         tag.putInt("state", state.ordinal());
         tag.putInt("lastSpeed", lastSpeed);
+        tag.putInt("defocus", particle != null ? particle.defocus : 0);
+        if (particle != null) {
+            CompoundTag pt = new CompoundTag();
+            pt.putInt("x", particle.x);
+            pt.putInt("y", particle.y);
+            pt.putInt("z", particle.z);
+            pt.putInt("dir", particle.dir.get3DDataValue());
+            pt.putInt("momentum", particle.momentum);
+            pt.putInt("defocus", particle.defocus);
+            pt.putInt("dist", particle.distanceTraveled);
+            pt.put("input1", com.hbm_m.platform.StackNbt.saveNew(particle.input1, registries));
+            pt.put("input2", com.hbm_m.platform.StackNbt.saveNew(particle.input2, registries));
+            tag.put("particle", pt);
+        }
     }
 
     @Override
@@ -270,6 +283,20 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
         int ordinal = tag.getInt("state");
         state = ordinal >= 0 && ordinal < values.length ? values[ordinal] : PAState.IDLE;
         lastSpeed = tag.getInt("lastSpeed");
+        syncedDefocus = tag.getInt("defocus");
+        if (tag.contains("particle")) {
+            CompoundTag pt = tag.getCompound("particle");
+            ItemStack in1 = com.hbm_m.platform.StackNbt.parse(pt.getCompound("input1"), registries);
+            ItemStack in2 = com.hbm_m.platform.StackNbt.parse(pt.getCompound("input2"), registries);
+            Particle loaded = new Particle(this, pt.getInt("x"), pt.getInt("y"), pt.getInt("z"),
+                    Direction.from3DDataValue(pt.getInt("dir")), in1, in2);
+            loaded.momentum = pt.getInt("momentum");
+            loaded.defocus = pt.getInt("defocus");
+            loaded.distanceTraveled = pt.getInt("dist");
+            particle = loaded;
+        } else {
+            particle = null;
+        }
     }
 
     @Override

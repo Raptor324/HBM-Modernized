@@ -636,11 +636,11 @@ public class ModBlocks {
 	public static final RegistrySupplier<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
             () -> new MachineFluidTankBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(4.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));
 
-	public static final RegistrySupplier<Block> LAUNCH_PAD = registerBlockWithoutItem("launch_pad",
+	public static final RegistrySupplier<Block> LAUNCH_PAD = registerBlockWithoutItem("launch_pad", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new LaunchPadBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().sound(SoundType.STONE)));
 
     /** 1:1 LaunchPadLarge (grosse Startrampe 9x9 mit Aufrichter) - Gegenstand automatisch MultiblockBlockItem. */
-    public static final RegistrySupplier<Block> LAUNCH_PAD_LARGE = registerBlock("launch_pad_large",
+    public static final RegistrySupplier<Block> LAUNCH_PAD_LARGE = registerBlock("launch_pad_large", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new com.hbm_m.block.machines.LaunchPadLargeBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(5.0F, 10.0F).noOcclusion().sound(SoundType.METAL)));
 
     /** Mobile Startrampe (Iskander-M TEL), 15x5-Grundriss - siehe MobileLaunchPadBlock. */
@@ -651,7 +651,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> TOPOL_LAUNCH_PAD = registerBlockWithoutItem("topol_launch_pad",
             () -> new com.hbm_m.block.machines.TopolLaunchPadBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
-    public static final RegistrySupplier<Block> LAUNCH_PAD_RUSTED = registerBlockWithoutItem("launch_pad_rusted",
+    public static final RegistrySupplier<Block> LAUNCH_PAD_RUSTED = registerBlockWithoutItem("launch_pad_rusted", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new LaunchPadRustedBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().sound(SoundType.STONE)));
 
     public static final RegistrySupplier<Block> MACHINE_BATTERY_SOCKET = registerBlockWithoutItem("machine_battery_socket",
@@ -2647,7 +2647,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> CMB_BRICK_REINFORCED = registerBlock("cmb_brick_reinforced",
             () -> new Block(BlockHooks.copy(Blocks.STONE).strength(25F, 30000.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
     /** 1:1 CompactLauncher: 3x3-Werfer fuer Baukastenraketen (1.0er-Spitze). */
-    public static final RegistrySupplier<Block> COMPACT_LAUNCHER = registerBlock("compact_launcher",
+    public static final RegistrySupplier<Block> COMPACT_LAUNCHER = registerBlock("compact_launcher", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new com.hbm_m.block.machines.CompactLauncherBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> CONVEYOR = registerBlockWithoutItem("conveyor",
             () -> new com.hbm_m.block.network.ConveyorBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(2.0F, 1.2F).noOcclusion().sound(SoundType.STONE)));
@@ -3042,9 +3042,9 @@ public class ModBlocks {
                     BlockHooks.copy(Blocks.IRON_BLOCK).requiresCorrectToolForDrops().strength(5.0F, 6.0F).sound(SoundType.STONE).noOcclusion()));
 
     /** Original machine_satlink (Satelliten-Bodenstation), Haerte 5, Widerstand 10. */
-    public static final RegistrySupplier<Block> MACHINE_SATLINK = registerBlock("machine_satlink",
+    public static final RegistrySupplier<Block> MACHINE_SATLINK = registerBlock("machine_satlink", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new com.hbm_m.block.machines.MachineSatLinkBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).requiresCorrectToolForDrops().noOcclusion().sound(SoundType.STONE)));
-    public static final RegistrySupplier<Block> MACHINE_SATLINKER = registerBlock("machine_satlinker",
+    public static final RegistrySupplier<Block> MACHINE_SATLINKER = registerBlock("machine_satlinker", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new com.hbm_m.block.machines.MachineSatLinkerBlock(BlockHooks.copy(Blocks.STONE).strength(5.0F, 6.0F)));
     public static final RegistrySupplier<Block> MACHINE_STORAGE_DRUM = registerBlock("machine_storage_drum",
             () -> new com.hbm_m.block.machines.MachineStorageDrumBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE)));
@@ -3291,7 +3291,7 @@ public class ModBlocks {
     /** R6d: 1:1 BlockSandbags. */
     public static final RegistrySupplier<Block> SANDBAGS = registerBlock("sandbags",
             () -> new com.hbm_m.block.generic.R6dBlocks.Sandbags(BlockHooks.copy(Blocks.DIRT).strength(5.0F, 18.0F).sound(SoundType.STONE).noOcclusion()));
-    public static final RegistrySupplier<Block> SAT_DOCK = registerBlock("sat_dock", () -> new com.hbm_m.block.machines.MachineSatDockBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).requiresCorrectToolForDrops().noOcclusion().sound(SoundType.STONE)));
+    public static final RegistrySupplier<Block> SAT_DOCK = registerBlock("sat_dock", com.hbm_m.util.CompletionStatus.COMPLETE, () -> new com.hbm_m.block.machines.MachineSatDockBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).requiresCorrectToolForDrops().noOcclusion().sound(SoundType.STONE)));
     // tile.sat_foeq / tile.sat_scanner deco blocks removed: in 1.7.10 they are ignoreMappings
     // legacy leftovers (MainRegistry.java:1491-1493), never usable blocks.
     /** R7o: 1:1 BlockSeal. */
@@ -3312,15 +3312,15 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> TNT_NTM = registerBlock("tnt_ntm",
             () -> new com.hbm_m.block.bomb.TNTBlocks.TNT(BlockHooks.copy(Blocks.TNT).instabreak().sound(SoundType.GRASS)));
     /** Original soyuz_capsule (SoyuzCapsule): Eisen, Haerte 5, Widerstand 10. */
-    public static final RegistrySupplier<Block> SOYUZ_CAPSULE = registerBlock("soyuz_capsule",
+    public static final RegistrySupplier<Block> SOYUZ_CAPSULE = registerBlock("soyuz_capsule", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new com.hbm_m.block.machines.SoyuzCapsuleBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE)));
     /** Dekorative Soyuz-Startrampe (6 OBJ-Teile, siehe models/block/soyuz_launcher.json) - platzierbar, ohne Spiellogik.
      *  Rendert ueber BlockEntityRenderer (SoyuzLauncherRenderer), da die Tuerme ueber 60 Bloecke hoch sind
      *  und damit die 16-Bit-Chunk-Mesh-Grenze eines normalen Block-Modells sprengen wuerden. */
-    public static final RegistrySupplier<Block> SOYUZ_LAUNCHER = registerBlockWithoutItem("soyuz_launcher",
+    public static final RegistrySupplier<Block> SOYUZ_LAUNCHER = registerBlockWithoutItem("soyuz_launcher", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new com.hbm_m.block.decorations.SoyuzLauncherBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().noLootTable().isSuffocating((st, w, p) -> false).strength(5.0F, 6.0F).sound(SoundType.STONE)));
     /** 1:1 LaunchpadSoyuz (1.7.10): funktionale Soyuz-Startrampe. */
-    public static final RegistrySupplier<Block> LAUNCHPAD_SOYUZ = registerBlock("launchpad_soyuz",
+    public static final RegistrySupplier<Block> LAUNCHPAD_SOYUZ = registerBlock("launchpad_soyuz", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new com.hbm_m.block.machines.LaunchpadSoyuzBlock(BlockHooks.copy(Blocks.IRON_BLOCK).strength(5.0F, 10.0F).noOcclusion().sound(SoundType.METAL)));
     /** Dekorative Soyuz-Rakete (soyuz.obj, Multi-Material) - platzierbar, ohne Spiellogik.
      *  Rendert ueber BlockEntityRenderer (SoyuzRocketRenderer), da das Modell ueber 50 Bloecke hoch ist
@@ -3391,17 +3391,17 @@ public class ModBlocks {
             () -> new com.hbm_m.block.generic.NTMPlants.ResourceStone(BlockHooks.copy(Blocks.STONE).strength(5.0F, 6.0F).sound(SoundType.STONE).requiresCorrectToolForDrops(), com.hbm_m.block.generic.NTMPlants.StoneType.SULFUR));
     public static final RegistrySupplier<Block> STRUCT_ICF_CORE = registerBlock("struct_icf_core",
             () -> new com.hbm_m.block.machines.icf.ICFStructBlock(BlockHooks.copy(Blocks.IRON_BLOCK).lightLevel(s -> 15).strength(5.0F, 6.0F).sound(SoundType.STONE)));
-    public static final RegistrySupplier<Block> STRUCT_LAUNCHER = registerBlock("struct_launcher",
+    public static final RegistrySupplier<Block> STRUCT_LAUNCHER = registerBlock("struct_launcher", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new Block(BlockHooks.copy(Blocks.IRON_BLOCK).strength(5F, 6.0F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
     /** 1:1 BlockStruct + TileEntityMultiblock: Bauplankern Kompaktwerfer / Starttisch. */
-    public static final RegistrySupplier<Block> STRUCT_LAUNCHER_CORE = registerBlock("struct_launcher_core",
+    public static final RegistrySupplier<Block> STRUCT_LAUNCHER_CORE = registerBlock("struct_launcher_core", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new com.hbm_m.block.machines.StructLauncherCoreBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE), false));
-    public static final RegistrySupplier<Block> STRUCT_LAUNCHER_CORE_LARGE = registerBlock("struct_launcher_core_large",
+    public static final RegistrySupplier<Block> STRUCT_LAUNCHER_CORE_LARGE = registerBlock("struct_launcher_core_large", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new com.hbm_m.block.machines.StructLauncherCoreBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE), true));
-    public static final RegistrySupplier<Block> STRUCT_SCAFFOLD = registerBlock("struct_scaffold",
+    public static final RegistrySupplier<Block> STRUCT_SCAFFOLD = registerBlock("struct_scaffold", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new Block(BlockHooks.copy(Blocks.IRON_BLOCK).strength(5F, 6.0F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
     /** 1:1 BlockSoyuzStruct: errichtet die Startrampe, sobald der Bauplan steht. */
-    public static final RegistrySupplier<Block> STRUCT_SOYUZ_CORE = registerBlock("struct_soyuz_core",
+    public static final RegistrySupplier<Block> STRUCT_SOYUZ_CORE = registerBlock("struct_soyuz_core", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new com.hbm_m.block.machines.SoyuzStructBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE)));
     /** 1:1-Port von {@code BlockFusionTorusStruct} (1.7.10): wird zum Torus, sobald die Form steht. */
     public static final RegistrySupplier<Block> STRUCT_TORUS_CORE = registerBlock("struct_torus_core",
@@ -3619,7 +3619,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> MACHINE_SUPERCOMPUTER = registerBlock("machine_supercomputer",
             () -> new com.hbm_m.block.machines.MachineSuperComputerBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((st, w, p) -> false).strength(5.0F, 30.0F).sound(SoundType.METAL)));
     /** 1:1 LaunchpadLambda (Original: Haerte 5, Widerstand 10). */
-    public static final RegistrySupplier<Block> LAUNCHPAD_LAMBDA = registerBlock("launchpad_lambda",
+    public static final RegistrySupplier<Block> LAUNCHPAD_LAMBDA = registerBlock("launchpad_lambda", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new com.hbm_m.block.machines.LaunchpadLambdaBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((st, w, p) -> false).strength(5.0F, 10.0F).sound(SoundType.METAL)));
     /** 1:1 MachineTapeDrive (Original: Haerte 5, Widerstand 10). */
     public static final RegistrySupplier<Block> MACHINE_TAPE_DRIVE = registerBlock("machine_tape_drive",
@@ -4028,7 +4028,7 @@ public class ModBlocks {
             () -> new com.hbm_m.block.machines.icf.ICFPhantomBlock(
                     BlockHooks.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.STONE)));
     /** 1:1 LaunchTable: 9x9-Starttisch fuer Baukastenraketen aller Groessen. */
-    public static final RegistrySupplier<Block> LAUNCH_TABLE = registerBlock("launch_table",
+    public static final RegistrySupplier<Block> LAUNCH_TABLE = registerBlock("launch_table", com.hbm_m.util.CompletionStatus.COMPLETE,
             () -> new com.hbm_m.block.machines.LaunchTableBlock(BlockHooks.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 6.0F).sound(SoundType.STONE)));
     /** 1:1 LogicBlock / LogicBlockInvis (ohne Haerte wie im Original). */
     public static final RegistrySupplier<Block> LOGIC_BLOCK = registerBlock("logic_block",

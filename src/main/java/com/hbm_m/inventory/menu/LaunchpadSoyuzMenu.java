@@ -72,20 +72,45 @@ public class LaunchpadSoyuzMenu extends AbstractContainerMenu {
             }
         });
         // Satellite payload
-        addSlot(new Slot(container, LaunchpadSoyuzBlockEntity.SLOT_SATELLITE, 98, 26));
+        addSlot(new Slot(container, LaunchpadSoyuzBlockEntity.SLOT_SATELLITE, 98, 26) {
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return blockEntity != null && blockEntity.isItemValidForSlot(LaunchpadSoyuzBlockEntity.SLOT_SATELLITE, stack);
+            }
+        });
         // Landing module
         addSlot(new Slot(container, LaunchpadSoyuzBlockEntity.SLOT_LANDER, 80, 26) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return stack.is(ModItems.MISSILE_SOYUZ_LANDER.get());
+                return blockEntity != null && blockEntity.isItemValidForSlot(LaunchpadSoyuzBlockEntity.SLOT_LANDER, stack);
             }
         });
         // Kerosene in/out
-        addSlot(new Slot(container, LaunchpadSoyuzBlockEntity.SLOT_FUEL_IN, 152, 98));
-        addSlot(new Slot(container, LaunchpadSoyuzBlockEntity.SLOT_FUEL_OUT, 152, 116));
+        addSlot(new Slot(container, LaunchpadSoyuzBlockEntity.SLOT_FUEL_IN, 152, 98) {
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return blockEntity != null && blockEntity.isItemValidForSlot(LaunchpadSoyuzBlockEntity.SLOT_FUEL_IN, stack);
+            }
+        });
+        addSlot(new Slot(container, LaunchpadSoyuzBlockEntity.SLOT_FUEL_OUT, 152, 116) {
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return false;
+            }
+        });
         // Oxygen in/out
-        addSlot(new Slot(container, LaunchpadSoyuzBlockEntity.SLOT_OXIDIZER_IN, 170, 98));
-        addSlot(new Slot(container, LaunchpadSoyuzBlockEntity.SLOT_OXIDIZER_OUT, 170, 116));
+        addSlot(new Slot(container, LaunchpadSoyuzBlockEntity.SLOT_OXIDIZER_IN, 170, 98) {
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return blockEntity != null && blockEntity.isItemValidForSlot(LaunchpadSoyuzBlockEntity.SLOT_OXIDIZER_IN, stack);
+            }
+        });
+        addSlot(new Slot(container, LaunchpadSoyuzBlockEntity.SLOT_OXIDIZER_OUT, 170, 116) {
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return false;
+            }
+        });
         // Battery
         addSlot(new Slot(container, LaunchpadSoyuzBlockEntity.SLOT_BATTERY, 134, 98) {
             @Override
@@ -96,7 +121,13 @@ public class LaunchpadSoyuzMenu extends AbstractContainerMenu {
         // Fracht: drei Spalten zu sechs, von rechts nach links (Original ContainerLaunchpadSoyuz)
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 6; j++) {
-                addSlot(new Slot(container, j + i * 6 + LaunchpadSoyuzBlockEntity.CARGO_START, 44 - i * 18, 26 + j * 18));
+                final int cargoSlot = j + i * 6 + LaunchpadSoyuzBlockEntity.CARGO_START;
+                addSlot(new Slot(container, cargoSlot, 44 - i * 18, 26 + j * 18) {
+                    @Override
+                    public boolean mayPlace(@NotNull ItemStack stack) {
+                        return blockEntity != null && blockEntity.isItemValidForSlot(cargoSlot, stack);
+                    }
+                });
             }
         }
 

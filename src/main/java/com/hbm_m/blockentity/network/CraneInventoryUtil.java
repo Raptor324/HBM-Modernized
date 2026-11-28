@@ -35,9 +35,16 @@ public final class CraneInventoryUtil {
      */
     @Nullable
     public static IItemHandler inventoryAt(Level level, BlockPos pos, Direction side) {
+        return inventoryAt(level, pos, side, false);
+    }
+
+    @Nullable
+    public static IItemHandler inventoryAt(Level level, BlockPos pos, Direction side, boolean forExtractor) {
         BlockEntity te = level.getBlockEntity(pos);
         if (te == null) return null;
-        if (te instanceof AbstractFurnaceBlockEntity furnace) return new SlotView(new InvWrapper(furnace), new int[] { 1, 0 });
+        if (te instanceof AbstractFurnaceBlockEntity furnace) {
+            return new SlotView(new InvWrapper(furnace), forExtractor ? new int[] { 2 } : new int[] { 1, 0 });
+        }
         return te.getCapability(ForgeCapabilities.ITEM_HANDLER, side).orElse(null);
     }
 
@@ -97,9 +104,16 @@ public final class CraneInventoryUtil {
      ^/
     @Nullable
     public static net.minecraftforge.items.IItemHandler inventoryAt(Level level, BlockPos pos, Direction side) {
+        return inventoryAt(level, pos, side, false);
+    }
+
+    @Nullable
+    public static net.minecraftforge.items.IItemHandler inventoryAt(Level level, BlockPos pos, Direction side, boolean forExtractor) {
         BlockEntity te = level.getBlockEntity(pos);
         if (te == null) return null;
-        if (te instanceof AbstractFurnaceBlockEntity furnace) return new SlotView(new net.neoforged.neoforge.items.wrapper.InvWrapper(furnace), new int[] { 1, 0 });
+        if (te instanceof AbstractFurnaceBlockEntity furnace) {
+            return new SlotView(new net.neoforged.neoforge.items.wrapper.InvWrapper(furnace), forExtractor ? new int[] { 2 } : new int[] { 1, 0 });
+        }
         return com.hbm_m.platform.HbmCaps.get(te, com.hbm_m.platform.HbmCap.ITEM_HANDLER, side).orElse(null);
     }
 

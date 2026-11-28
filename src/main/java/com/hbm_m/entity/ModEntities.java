@@ -79,12 +79,16 @@ public class ModEntities {
             ENTITY_TYPES.register("airstrike",
                     () -> EntityType.Builder.<AirstrikeEntity>of(AirstrikeEntity::new, MobCategory.MISC)
                             .sized(2.0F, 1.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
                             .build("airstrike")
             );
     public static final RegistrySupplier<EntityType<AirstrikeNukeEntity>> AIRSTRIKE_NUKE_ENTITY =
             ENTITY_TYPES.register("airstrikenuke",
                     () -> EntityType.Builder.<AirstrikeNukeEntity>of(AirstrikeNukeEntity::new, MobCategory.MISC)
                             .sized(2.0F, 1.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
                             .build("airstrikenuke"));
 
     // Both heavy and agent used to be constructed with AIRSTRIKE_ENTITY: after a reload the game
@@ -93,12 +97,16 @@ public class ModEntities {
             ENTITY_TYPES.register("airstrikeheavy",
                     () -> EntityType.Builder.<AirstrikeHeavyEntity>of(AirstrikeHeavyEntity::new, MobCategory.MISC)
                             .sized(2.0F, 1.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
                             .build("airstrikeheavy"));
 
     public static final RegistrySupplier<EntityType<AirstrikeAgentEntity>> AIRSTRIKE_AGENT_ENTITY =
             ENTITY_TYPES.register("airstrikeagent",
                     () -> EntityType.Builder.<AirstrikeAgentEntity>of(AirstrikeAgentEntity::new, MobCategory.MISC)
                             .sized(2.0F, 1.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
                             .build("airstrikeagent"));
 
     public static final RegistrySupplier<EntityType<AirBombProjectileEntity>> AIRBOMB_PROJECTILE =

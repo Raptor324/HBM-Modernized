@@ -27,6 +27,14 @@ public class SatelliteHorizons extends Satellite {
     @Override public String getType() { return "PAYLOAD_UNKNOWN"; }
 
     @Override
+    public java.util.List<Component> getInfo(ServerLevel world) {
+        return java.util.List.of(
+                Component.translatable(com.hbm_m.item.ModItems.SAT_GERALD.get().getDescriptionId()),
+                Component.translatable(used ? "satellite.spent" : "satellite.ready")
+        );
+    }
+
+    @Override
     public void onOrbit(ServerLevel world, double x, double y, double z) {
         super.onOrbit(world, x, y, z);
         com.hbm_m.advancement.ModAdvancements.grantAll(world, com.hbm_m.advancement.ModAdvancements.HORIZONS_START);
@@ -72,8 +80,7 @@ public class SatelliteHorizons extends Satellite {
         if (tom == null) return;
         tom.setPos(x + 0.5, 600, z + 0.5);
 
-        world.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED,
-                new net.minecraft.world.level.ChunkPos(x >> 4, z >> 4), 2, net.minecraft.world.level.ChunkPos.ZERO);
+        world.getChunk(x >> 4, z >> 4);
 
         world.addFreshEntity(tom);
         com.hbm_m.advancement.ModAdvancements.grantAll(world, com.hbm_m.advancement.ModAdvancements.HORIZONS_END);

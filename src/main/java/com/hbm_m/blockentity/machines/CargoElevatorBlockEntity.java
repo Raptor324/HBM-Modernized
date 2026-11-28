@@ -279,11 +279,19 @@ public class CargoElevatorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
 
     @Override
     protected void applyClientUpdate(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        int oldHeight = this.height;
         double current = this.extension;
         readNbtData(tag, registries);
         this.syncExtension = this.extension;
         this.extension = current;
         this.prevExtension = current;
+        // getRenderBoundingBox scales with height, and RenderBoundsCache recomputes tracker BEs
+        // only on an actual dirty flag. Without this, a shaft grown/merged/dismantled in-session
+        // keeps its first-frame culling box (~2.25 blocks) forever, and the whole elevator is
+        // frustum-culled the moment the player looks up past the core cell.
+        if (this.height != oldHeight) {
+            markRenderDirty();
+        }
     }
 
     /** 1:1 TileEntityCargoElevator.getRenderBoundingBox (Render-Migration: Raptors Pfad cullt nach dieser Box, der alte BER zeichnete immer). */

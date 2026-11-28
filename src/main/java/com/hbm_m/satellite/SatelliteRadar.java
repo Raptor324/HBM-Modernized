@@ -32,6 +32,13 @@ public class SatelliteRadar extends Satellite {
 
     @Override public String getType() { return "LEO_RADAR"; }
 
+    @Override
+    public List<net.minecraft.network.chat.Component> getInfo(ServerLevel world) {
+        return List.of(
+                net.minecraft.network.chat.Component.translatable(com.hbm_m.item.ModItems.SATELLITE_RADAR.get().getDescriptionId())
+        );
+    }
+
     private static boolean isRadarVisible(Entity e) {
         return e instanceof api.hbm_m.entity.IRadarDetectable || e instanceof Player;
     }

@@ -308,6 +308,17 @@ public final class RenderHooks {
     }
 
     /**
+     * Vertex for DefaultVertexFormat.POSITION_TEX_COLOR without matrix (element order Position -> UV -> Color on 1.20.1).
+     */
+    public static void vertexPosTexColor(VertexConsumer consumer, float x, float y, float z, float u, float v, int r, int g, int b, int a) {
+        //? if < 1.21.1 {
+        consumer.vertex(x, y, z).uv(u, v).color(r, g, b, a).endVertex();
+        //?} else {
+        /*consumer.addVertex(x, y, z).setUv(u, v).setColor(r, g, b, a);
+        *///?}
+    }
+
+    /**
      * Добавляет вершину с позицией, текстурными координатами и цветом (без матрицы).
      * Формат POSITION_COLOR_TEX (1.20.1) требует строгий порядок: Position -> Color -> UV.
      */

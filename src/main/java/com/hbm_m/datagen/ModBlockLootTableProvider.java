@@ -3,9 +3,10 @@ package com.hbm_m.datagen;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.machines.pile.BlockGraphiteDrilledBase;
+import com.hbm_m.block.machines.pile.GraphitePileBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
@@ -31,8 +32,10 @@ import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount;
 import net.minecraft.world.level.storage.loot.functions.CopyNbtFunction;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
+import net.minecraft.world.level.storage.loot.predicates.AnyOfCondition;
 import net.minecraft.world.level.storage.loot.predicates.ExplosionCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemBlockStatePropertyCondition;
+import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
 import net.minecraft.world.level.storage.loot.predicates.MatchTool;
 import net.minecraft.world.level.storage.loot.providers.nbt.ContextNbtProvider;
@@ -679,6 +682,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         // shrouded; the inserted rod) - dropPileChannel reproduces exactly.
         dropPileChannel(ModBlocks.BLOCK_GRAPHITE_SOURCE.get(), ModItems.PILE_ROD_SOURCE.get());
         dropPileChannel(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get(), ModItems.PILE_ROD_PLUTONIUM.get());
+        dropPileChannel(ModBlocks.BLOCK_GRAPHITE_TRITIUM.get(), ModItems.CELL_TRITIUM.get());
 
         // zirnox#7) Original ZirnoxDestroyed.getDrops: mining the wreck is a deliberate salvage
         // mechanic — six fixed stacks (concrete_smooth x6, steel pipe x4, steel_grate x2,
@@ -708,11 +712,18 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
     }
 
     /**
-     * CP-1 pile channel loot, 1:1 mit NEXT block_graphite_*.json:
-     * Pool 1: 8x Graphitbarren (survives_explosion), Pool 2: 1x Aluminiumschale wenn
-     * shrouded=true, Pool 3 (nur rod/detector): der eingesetzte Stab.
+     * CP-1 pile channel loot, matching 1.7.10 {@code BlockGraphiteDrilledBase.getDrops}:
+     * Pool 1: 8x graphite ingots (survives_explosion), Pool 2: 1x aluminum shell when
+     * {@code (meta & 4) != 0} (shrouded), Pool 3 (when {@code inserted != null}): the inserted item.
      */
     private void dropPileChannel(Block block, Item inserted) {
+        LootItemCondition.Builder[] shroudedConditions = IntStream.range(0, 16)
+                .filter(m -> (m & 4) != 0)
+                .mapToObj(m -> LootItemBlockStatePropertyCondition.hasBlockStateProperties(block)
+                        .setProperties(StatePropertiesPredicate.Builder.properties()
+                                .hasProperty(GraphitePileBlocks.META, m)))
+                .toArray(LootItemCondition.Builder[]::new);
+
         LootTable.Builder table = LootTable.lootTable()
                 .withPool(LootPool.lootPool()
                         .setRolls(ConstantValue.exactly(1.0f))
@@ -724,9 +735,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                         .setRolls(ConstantValue.exactly(1.0f))
                         .setBonusRolls(ConstantValue.exactly(0.0f))
                         .when(ExplosionCondition.survivesExplosion())
-                        .when(LootItemBlockStatePropertyCondition.hasBlockStateProperties(block)
-                                .setProperties(StatePropertiesPredicate.Builder.properties()
-                                        .hasProperty(BlockGraphiteDrilledBase.SHROUDED, true)))
+                        .when(AnyOfCondition.anyOf(shroudedConditions))
                         .add(LootItem.lootTableItem(ModItems.SHELL_ALUMINUM.get())));
         if (inserted != null) {
             table.withPool(LootPool.lootPool()

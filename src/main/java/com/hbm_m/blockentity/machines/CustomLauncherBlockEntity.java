@@ -50,7 +50,9 @@ import net.minecraft.world.phys.Vec3;
  * startet sie zum Ziel des Zielgebers, die Streuung ergibt sich aus Chip und Leitwerk.
  */
 public abstract class CustomLauncherBlockEntity extends BaseMachineBlockEntity
-        implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2, IRadarCommandReceiver, com.hbm_m.api.tile.IControlReceiver {
+        implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2, IRadarCommandReceiver, com.hbm_m.api.tile.IControlReceiver,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider,
+        com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     public static final int SLOT_MISSILE = 0;
     public static final int SLOT_DESIGNATOR = 1;
@@ -181,7 +183,7 @@ public abstract class CustomLauncherBlockEntity extends BaseMachineBlockEntity
     }
 
     public boolean canLaunch() {
-        return getEnergyStored() >= maxPower * 0.75 && isMissileValid() && (!needsDesignator() || hasDesignator()) && hasFuel();
+        return getEnergyStored() >= maxPower * 0.75 && isMissileValid() && hasFuel();
     }
 
     @Override
@@ -199,7 +201,7 @@ public abstract class CustomLauncherBlockEntity extends BaseMachineBlockEntity
 
     /** {@code IBomb.explode}: Start ueber Zuender bzw. Fernzuender. */
     public BombReturnCode triggerLaunch() {
-        if (canLaunch()) {
+        if (canLaunch() && (!needsDesignator() || hasDesignator())) {
             launchFromDesignator();
             return BombReturnCode.LAUNCHED;
         }
@@ -436,5 +438,47 @@ public abstract class CustomLauncherBlockEntity extends BaseMachineBlockEntity
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "power",
+                PREFIX_VALUE + "solid",
+                PREFIX_VALUE + "fuel",
+                PREFIX_VALUE + "oxidizer",
+                PREFIX_VALUE + "canlaunch",
+                PREFIX_FUNCTION + "launch",
+                PREFIX_FUNCTION + "launch" + NAME_SEPARATOR + "entity",
+                PREFIX_FUNCTION + "launch" + NAME_SEPARATOR + "x" + PARAM_SEPARATOR + "z"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "power").equals(name)) return "" + getEnergyStored();
+        if ((PREFIX_VALUE + "solid").equals(name)) return "" + solid;
+        if ((PREFIX_VALUE + "fuel").equals(name)) return "" + tanks[0].getFill();
+        if ((PREFIX_VALUE + "oxidizer").equals(name)) return "" + tanks[1].getFill();
+        if ((PREFIX_VALUE + "canlaunch").equals(name)) return canLaunch() ? "1" : "0";
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        if ((PREFIX_FUNCTION + "launch").equals(name) && this.canLaunch()) {
+            if (params.length == 0) {
+                if (!needsDesignator() || hasDesignator()) this.launchFromDesignator();
+            } else if (params.length == 1 && level != null) {
+                Entity e = level.getEntity(com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0]));
+                if (e != null && e.isAlive()) this.launchTo((int) Math.floor(e.getX()), (int) Math.floor(e.getZ()));
+            } else if (params.length == 2) {
+                this.launchTo(
+                        com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0]),
+                        com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[1]));
+            }
+            return null;
+        }
+        return null;
     }
 }

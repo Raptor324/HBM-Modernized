@@ -266,8 +266,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 entity.clientTicker = com.hbm_m.util.ClientTickerRegistry.create(entity);
                 if (entity.clientTicker == null) {
                     // Клиентский сетап ещё не добежал (или тип без тикера) —
-                    // NOOP, следующий тик повторит попытку.
-                    entity.clientTicker = IClientTicker.NOOP;
+                    // следующий тик повторит попытку.
                     return;
                 }
             }

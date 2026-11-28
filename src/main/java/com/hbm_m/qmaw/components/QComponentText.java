@@ -39,7 +39,7 @@ public class QComponentText extends ManualElement {
     }
 
     @Override
-    public void render(GuiGraphics gfx, boolean isMouseOver, int x, int y, int mouseX, int mouseY) {
+    public void render(GuiQMAW parent, GuiGraphics gfx, boolean isMouseOver, int x, int y, int mouseX, int mouseY) {
         gfx.drawString(font, text, x, y, color, false);
     }
 

@@ -255,6 +255,7 @@ public final class NucleusDispatcherBypass {
         if (BE_TO_BUCKET.containsKey(be)) return;
         BlockPos pos = be.getBlockPos();
         long posKey = pos.asLong();
+        LightSampleCache.invalidatePosition(posKey);
 
         // Evict any previous machine at the same position first
         BlockEntity previous = POS_TO_BE.get(posKey);
@@ -290,6 +291,7 @@ public final class NucleusDispatcherBypass {
         }
         long posKey = be.getBlockPos().asLong();
         POS_TO_BE.remove(posKey, be);
+        LightSampleCache.invalidatePosition(posKey);
         dropMachineCaches(be.getType(), posKey, be);
     }
 

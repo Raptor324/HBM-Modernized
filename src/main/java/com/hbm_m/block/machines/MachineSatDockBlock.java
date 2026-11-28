@@ -68,7 +68,7 @@ public class MachineSatDockBlock extends DummyableMachineBlock {
         roles.put('O', PartRole.UNIVERSAL_CONNECTOR);
         roles.put('C', PartRole.CONTROLLER);
 
-        return new MultiblockStructureHelper(structure, part, roles, symbols, shapes, shapes, BlockPos.ZERO).withPlacementOffset(0);
+        return new MultiblockStructureHelper(structure, part, roles, symbols, shapes, shapes, BlockPos.ZERO).withPlacementOffset(1);
     }
 
     @Nullable

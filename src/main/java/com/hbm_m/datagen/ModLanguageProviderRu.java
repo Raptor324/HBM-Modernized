@@ -2134,8 +2134,17 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.ORBUS.get(), "Орбус (WIP)");
         add(ModBlocks.ORE_SLOPPER.get(), "Рудный шлаппер");
         add("container.hbm_m.ore_slopper", "Рудный шлаппер");
-        add(ModBlocks.PLASMA_FORGE.get(), "Плазменная кузница (WIP)");
-        add("container.hbm_m.plasma_forge", "Плазменная кузница (WIP)");
+        add(ModBlocks.PLASMA_FORGE.get(), "Плазменная кузница");
+        add("container.hbm_m.plasma_forge", "Плазменная кузница");
+        add("container.hbm_m.fusion_breeder", "Термоядерный бридер");
+        add("container.hbm_m.fusion_klystron", "Клистрон");
+        add("gui.hbm_m.recipe.set_recipe", "Нажмите, чтобы выбрать рецепт");
+        add("gui.recipe.plasmaIn", "Энергия ввода плазмы");
+        add("gui.recipe.fusionIn", "Входная энергия клистрона");
+        add("gui.recipe.fusionOut", "Выходная энергия плазмы");
+        add("gui.recipe.fusionFlux", "Выходной нейтронный поток");
+        add("sounds.hbm_m.subtitle.fel", "Гудение клистрона");
+        add("sounds.hbm_m.subtitle.fusion_reactor_spin", "Вращение термоядерного реактора");
         add(ModBlocks.PYROOVEN.get(), "Пиролизная печь");
         add(ModBlocks.QUADRUPOLE.get(), "Квадрупольный магнит (WIP)");
         add(ModBlocks.RADIOLYSIS.get(), "Камера радиолиза");
@@ -2174,8 +2183,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("container.hbm_m.funnel", "Воронка-комбинатор");
         add(ModBlocks.PUREX.get(), "PUREX");
         add("container.hbm_m.purex", "PUREX");
-        add(ModBlocks.TORUS.get(), "Тор (WIP)");
-        add("container.hbm_m.fusion_torus", "Основная камера (Термоядерный реактор)");
+        add(ModBlocks.TORUS.get(), "Тор");
+        add("container.hbm_m.fusion_torus", "Термоядерный реактор");
         add(ModBlocks.TURBINEGAS.get(), "Газовая турбина");
         add(ModBlocks.WATZ_PUMP.get(), "Насос WATZ (WIP)");
         add(ModBlocks.MACHINE_SUPERCOMPUTER.get(), "Суперкомпьютер");
@@ -2238,6 +2247,12 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("satellite.progress", "Процесс сборки: %s");
         add("satellite.queue", "Очередь рецептов: %s");
         add("satellite.ready", "ГОТОВ");
+        add("satellite.minerprogress", "Прогресс добычи: %s");
+        add("satellite.spent", "ИЗРАСХОДОВАН");
+        add("tile.machine_satlink.freq", "Частота");
+        add("tile.machine_satlink.connected", "Подключён");
+        add("tile.machine_satlink.yes", "Да");
+        add("tile.machine_satlink.no", "Нет");
         add("satellite.sensors", "Установлено ретрансляторов: %s");
         add(ModBlocks.MACHINE_ROCKMILL.get(), "Жерновая мельница");
         add("container.hbm_m.machine_rockmill", "Жерновая мельница");
@@ -3927,6 +3942,10 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("config.hbm_m.field.doorClipDebug.tooltip", "Одноразовый дамп в лог ([HBM-M][DoorClipDebug]): какой гейт выключил клип и какие спрайты/UV реально доходят до клип-тира. Для диагностики артефактов скрытия створок.");
         add("text.autoconfig.hbm_m.option.doorClipDebug", "Дебаг-дамп клипа дверей");
         add("text.autoconfig.hbm_m.option.doorClipDebug.@Tooltip", "Одноразовый дамп клип-пайплайна дверей в лог. Для диагностики артефактов скрытия створок.");
+        add("config.hbm_m.field.doddRbmkDiagnostic", "Диагностика DODD (RBMK)");
+        add("config.hbm_m.field.doddRbmkDiagnostic.tooltip", "Зелёный оверлей «Dump of Ordered Data Diagnostic» (DODD) при взгляде на колонку RBMK. Как в 1.7.10, этот переключатель гейтит и всю систему прицельных подсказок (ILookOverlay).");
+        add("text.autoconfig.hbm_m.option.doddRbmkDiagnostic", "Диагностика DODD (RBMK)");
+        add("text.autoconfig.hbm_m.option.doddRbmkDiagnostic.@Tooltip", "Зелёный оверлей «Dump of Ordered Data Diagnostic» (DODD) при взгляде на колонку RBMK. Как в 1.7.10, этот переключатель гейтит и всю систему прицельных подсказок (ILookOverlay).");
         add("config.hbm_m.group.graphicEffects", "Графические эффекты");
         add("text.autoconfig.hbm_m.option.graphicEffects", "Графические эффекты");
         add("config.hbm_m.field.graphicEffects.screenSpaceLightFill", "Свет ядерного взрыва");
@@ -4291,8 +4310,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tile.rbmk.dodd.t1_max", "Максимально перфторометан");
         add("tile.rbmk.dodd.t1_type", "Тип перфторометан(ID)");
         add("tile.rbmk.dodd.t1_p", "Давление перфторометан");
-        add("tile.rbmk.dodd.lidState", "Состояние крышки");
-        add("tile.rbmk.dodd.explodeOnBroken", "Взрывается при разрушении");
 
         // Автоген-имена материалов: добавляем последними, только если ключ не занят явным add(...)
         for (Map.Entry<String, String> e : new java.util.LinkedHashMap<>(deferredLangKeys).entrySet()) {
@@ -4386,6 +4403,140 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("cannery.cargo_elevator.ror.1", "Установите у шахты Radio Torch Controller для приёма беспроводных команд Редстоун-по-радио (ROR).");
         add("cannery.cargo_elevator.ror.2", "Команда 'setextension!5' отправляет платформу на 2-й этаж, останавливая её вровень с промежуточной площадкой!");
         add("cannery.cargo_elevator.ror.3", "Команда 'setextension!10' поднимает платформу на 3-й этаж. ROR позволяет создавать полноценные многоэтажные системы вызова!");
+
+        add("cannery.pa_basics", "Ускоритель частиц: Основы и GUI");
+        add("cannery.pa_coils", "Ускоритель частиц: Катушки и Краши");
+        add("cannery.pa_synchrotron", "Ускоритель частиц: Кольцо и Диполи");
+        add("cannery.pa_cascade", "Ускоритель частиц: Каскад колец и Апгрейд");
+
+        add("item.hbm_m.pa_coil.quad_range", "Рабочий диапазон квадруполя");
+        add("item.hbm_m.pa_coil.dipole_range", "Рабочий диапазон диполя");
+        add("item.hbm_m.pa_coil.min_side", "Мин. длина стороны диполя");
+        add("item.hbm_m.pa_coil.warn_penalty", "Несоблюдение минимума увеличивает расход энергии в 10 раз!");
+        add("item.hbm_m.pa_coil.warn_max", "Превышение максимума уничтожает частицу!");
+        add("item.hbm_m.pa_coil.warn_double", "Частица разрушится в диполе при срабатывании обоих штрафов!");
+
+        add("gui.hbm_m.pa.last_momentum", "Последний импульс");
+        add("gui.hbm_m.pa.cancel", "Отменить цикл");
+        add("gui.hbm_m.pa.player_orientation", "Ориентация игрока");
+        add("gui.hbm_m.pa.output_orientation", "Направление выхода");
+        add("gui.hbm_m.pa.momentum", "Импульс");
+
+        add("cannery.pa.hud.momentum", "Импульс");
+        add("cannery.pa.hud.defocus", "Расфокус");
+        add("cannery.pa.hud.crash", "КРАШ");
+
+        add("cannery.pa.intro.source", "§bИсточник частиц§r: запускает §e2 реагента§r в пучок и возвращает пустые капсулы.");
+        add("cannery.pa.intro.beamline", "§eЛучепровод§r: вакуумная труба (3 блока) на уровне оси §bY+1§r. Не требует §eэлектричества§r и охлаждения.");
+        add("cannery.pa.intro.rfc", "§bРФ-резонатор§r: разгоняет частицу (§a+100 Импульса§r), но добавляет §c+100 Расфокуса§r.");
+        add("cannery.pa.intro.quadrupole", "§aКвадруполь§r: с установленной катушкой снимает §a-100 Расфокуса§r, сохраняя Импульс.");
+        add("cannery.pa.intro.dipole", "§eДиполь§r: поворачивает пучок под углом §b90°§r и маршрутизирует его по порогу Импульса.");
+        add("cannery.pa.intro.detector", "§aДетектор частиц§r: принимает пучок при §aРасфокусе = 0§r и выдаёт готовый продукт.");
+
+        add("cannery.pa.0.intro", "§bМодульный ускоритель§r состоит из §eИсточника§r, §eЛучепроводов§r, §eРФ-резонаторов§r, §eКвадруполей§r, §eДиполей§r и §eДетектора§r.");
+        add("cannery.pa.0.beamline_height", "Ось пучка идёт на §e1 блок ВЫШЕ§r пола! §bЛучепровод§r (длина 3) ставится в воздухе на уровне оси и не требует §eэлектричества§r или охлаждения.");
+        add("cannery.pa.0.rfc", "§bРФ-резонатор§r (длина 9) даёт §a+100 Импульса§r и §e+100 Расфокуса§r. При §c1 000 Расфокуса§r частица разрушится!");
+        add("cannery.pa.0.quadrupole", "§aКвадруполь§r (с катушкой внутри) снимает §a-100 Расфокуса§r, сохраняя Импульс. Детектор принимает частицы §cТОЛЬКО§r с §aРасфокусом = 0§r!");
+        add("cannery.pa.0.detector_mismatch", "§cВнимание!§r Детектор высотой §e5 блоков§r, поэтому на одном полу с ускорителем его вход оказывается на §c1 блок ВЫШЕ§r оси!");
+        add("cannery.pa.0.detector_pit", "Выкопайте под Детектор углубление §a9x5x1 блок§r (или поднимите остальной ускоритель на 1 блок) — теперь §aоси совпали§r!");
+        add("cannery.pa.1.linear_run", "Линейный цикл: Источник (0) -> РФ (§a+100 Имп.§r, §e+100 Расф.§r) -> Квадруполь (§a-100 Расф.§r) -> Детектор (§aРасф.=0, успех!§r).");
+        add("cannery.pa.1.linear_limit", "Для простых рецептов (§e300 Имп.§r) хватит 3 РФ и 3 Квадруполей в ряд. Для тяжёлых частиц (§b2 500–70 000§r) замкните трассу в §aкольцо Диполями§r!");
+        add("cannery.pa.2.coolant_chain", "Хладагент — §bХолодный перфторметил (-150°C)§r. База делается в §eПромышленном миксере§r и сжимается в §b2 Компрессорах§r подряд (0 PU -> 1 PU -> -150°C).");
+        add("cannery.pa.2.ports_and_draw", "Каждый активный модуль тратит §e5 mB/тик§r (100 mB/с) §cПОСТОЯННО§r! Возвращайте тёплый Перфторметил в Компрессор №1. Подключайте 3 линии: §bХолод§r, §7Возврат§r и §eэлектричество§r.");
+        add("cannery.pa.3.cooling_leds", "Дождитесь охлаждения §aВСЕХ модулей§r с §c293K§r до §b123K§r и подачи §eэлектричества§r — индикаторы температуры и энергии должны гореть §aЗЕЛЁНЫМ§r.");
+        add("cannery.pa.3.source_slots", "В верхние слоты Источника кладутся §e2 реагента§r. В нижние сразу возвращаются §bпустые капсулы§r — выгружайте их!");
+        add("cannery.pa.3.source_buttons", "§bСиняя кнопка§r справа показывает текущий импульс и статус. §cКрасная кнопка 'X'§r принудительно отменяет зависший запуск.");
+        add("cannery.pa.3.detector_capsules", "§cКРИТИЧНО!§r Загрузите §eПустые капсулы частиц§r в верхние слоты Детектора — без них реагенты и результат просто пропадут!");
+
+        add("cannery.pa.coils.tier.gold", "§eЗолотая: §f0–2 200 | Сторона ≥ 15");
+        add("cannery.pa.coils.tier.nbti", "§dNbTi: §f1 500–8 400 | Сторона ≥ 21");
+        add("cannery.pa.coils.tier.bscco", "§bBSCCO: §f7 500–15 000 | Сторона ≥ 27");
+        add("cannery.pa.coils.tier.chlorophyte", "§aХлорофитовая: §f14 500–75 000 | Сторона ≥ 51");
+
+        add("cannery.pa.coils.penalty_length", "§eШтраф длины:§r сторона короче минимума катушки (§c9 < 15§r для Gold) увеличивает расход §eэлектричества§r Диполя в §c10 раз§r!");
+        add("cannery.pa.coils.penalty_momentum", "§eШтраф низкого импульса:§r вход ниже минимума катушки (§c400 < 1 500§r для NbTi) также даёт §c×10§r к расходу §eэлектричества§r!");
+        add("cannery.pa.coils.crash_double", "Если в Диполе нарушены §cОБА минимума§r (и длина стороны, и мин. импульс), штраф §c×100§r перегружает буфер -> §cКРАШ частицы!§r");
+        add("cannery.pa.coils.crash_max", "§cПотолок катушки жёсткий:§r превышение макс. импульса (§c> 2 200§r для Gold) §cВСЕГДА§r мгновенно уничтожает частицу!");
+        add("cannery.pa.coils.crash_defocus", "§cРасфокусировка ≥ 1 000§r в пути (или §c> 0§r на входе в Детектор) также уничтожает частицу — ставьте §aКвадруполи§r!");
+
+        add("cannery.pa.sync.0.ring_math", "§bКольцо №1 (Gold, мин. сторона 15)§r: РФ(9)+2×Луч = 15; Квадр(3)+4×Луч = 15; пустые стороны по 5×Луч = 15. Ставьте Детектор строго §aПОСЛЕ Квадруполя§r!");
+        add("cannery.pa.sync.1.dipole_compass", "§eНюанс GUI Диполя:§r стрелки поворачиваются §bОТНОСИТЕЛЬНО взгляда игрока§r! Наведите на кнопку, чтобы проверить сторону света.");
+        add("cannery.pa.sync.1.dipole_threshold", "§aВыходной Диполь №3 (порог 400):§r верхняя стрелка (< 400) — обратно в кольцо; средняя (>= 400) — в §aДетектор§r! В остальных углах оставьте порог 0.");
+        add("cannery.pa.sync.2.four_laps", "За 4 круга импульс вырастает до §a400§r, и Диполь №3 направляет пучок в Детектор. Рецепт требует §eНЕ МЕНЬШЕ§r указанного импульса (>=).");
+        add("cannery.pa.sync.2.threshold_tip", "Порог §a400§r покроет и Антиматерию (300), и Антишрабидий (400). При пороге 300 Антишрабидий не скрафтится — ставьте порог по §eстаршему рецепту§r!");
+
+        add("cannery.pa.cascade.0.redstone_switch", "Подведите §cRedstone-over-Radio§r СНИЗУ к Диполям #3 и #4. При §aРычаг=ВКЛ§r Диполь #3 (400) пускает пучок дальше, а Диполь #4 на §b1 500§r переводит его в Кольцо №2!");
+        add("cannery.pa.cascade.1.lever_on", "§dКольцо №2 на NbTi:§r стороны ровно по §e21 блоку§r, выходной порог §a6 500§r (Мюон, Тахион, Бозон Хиггса). Один рычаг переключает оба режима!");
+        add("cannery.pa.cascade.2.upgrade_3x", "§aУскоряем цикл в 3 раза:§r ставим §b3 РФ-резонатора§r (+300 Имп./круг) и ровно §a3 Квадруполя§r (-300 Расф.) строго ПЕРЕД выходным Диполем!");
+        add("cannery.pa.cascade.2.checklist", "§eЧек-лист:§r\n1) Все блоки §b123K§r + §eэлектричество§r;\n2) Капсулы в Детекторе;\n3) Детектор в яме;\n4) Катушки и стороны 15/21/27/51;\n5) Зависло? Жмите 'X' в Источнике!");
+
+        add("cannery.pa.note.src_to_rfc", "Источник -> РФ-резонатор");
+        add("cannery.pa.note.rfc_gain", "РФ-резонатор: +100 Имп., +100 Расф.");
+        add("cannery.pa.note.quad_focus", "Квадруполь: -100 Расф. (Сфокусирован!)");
+        add("cannery.pa.note.det_success", "Детектор: Расфокус = 0 -> УСПЕХ!");
+        add("cannery.pa.note.dipole3_loop", "Диполь #3: < 400 -> На новый круг!");
+        add("cannery.pa.note.dipole3_det", "Диполь #3: 400 >= 400 -> ДЕТЕКТОР! (Успех)");
+        add("cannery.pa.note.cascade_enter", "Диполь #4 (Рычаг ВКЛ): 1 500 -> В Кольцо №2!");
+        add("cannery.pa.note.cascade_det2", "Диполь #7: 6 500 >= 6 500 -> ДЕТЕКТОР #2!");
+        add("cannery.pa.note.penalty_len", "Длина 9 < 15 -> ×10 расход электричества!");
+        add("cannery.pa.note.penalty_mom", "NbTi: Имп. 400 < 1 500 -> ×10 расход!");
+        add("cannery.pa.note.crash_double", "ДВОЙНОЙ ШТРАФ -> КРАШ В ДИПОЛЕ!");
+
+        add("cannery.rbmk_intro", "РБМК: Знакомство с колоннами");
+        add("cannery.rbmk_basics", "РБМК: Основы и физика");
+        add("cannery.rbmk_starter", "РБМК: Первый реактор (4 стержня)");
+        add("cannery.rbmk_advanced", "РБМК: 16-стержневой MEP и переработка");
+
+        add("cannery.rbmk.intro.fuel", "§eТопливный канал§r: вмещает §aтопливный стержень§r и испускает §6быстрые нейтроны§r на §b5 блоков§r в 4 стороны. Накрывайте §bстеклянной крышкой§r!");
+        add("cannery.rbmk.intro.fuel_mod", "§eЗамедленный топливный канал§r: встроенный §bграфит§r сразу замедляет выходящие нейтроны, экономя место в активной зоне.");
+        add("cannery.rbmk.intro.moderator", "§bГрафитовый замедлитель§r: превращает §6быстрые нейтроны§r в §bмедленные (тепловые)§r, нужные большинству урановых и плутониевых топлив.");
+        add("cannery.rbmk.intro.reflector", "§eОтражатель нейтронов§r: возвращает вылетающие нейтроны §aобратно в ядро§r, повышая КПД. Ставится по периметру (кроме Дигаммы!).");
+        add("cannery.rbmk.intro.absorber", "§cБорный поглотитель§r: полностью §cгасит нейтронный поток§r без нагрева. Нужен для экранирования и разделения секций.");
+        add("cannery.rbmk.intro.control", "§eРучной рег. стержень§r: регулирует поток от §c0%% (закрыт)§r до §a100%% (открыт)§r. §bЦветовые группы§r позволяют управлять банками с Консоли.");
+        add("cannery.rbmk.intro.control_auto", "§bАвто-регулятор§r: сам поднимает или опускает стержень по §eтемпературе§r. Не забывайте нажимать §a«Сохранить»§r!");
+        add("cannery.rbmk.intro.boiler", "§dПаровой канал (Бойлер)§r: забирает тепло у соседей и кипятит §9воду§r в §dпар§r. Подключается снизу через воду и §eSteam Connector§r.");
+        add("cannery.rbmk.intro.outgasser", "§dКанал облучения§r: использует проходящий поток нейтронов для §aоблучения предметов§r (например, Золото -> Золото-198).");
+        add("cannery.rbmk.intro.cooler", "§bОхладитель РБМК§r: активно сбрасывает лишнее тепло с помощью §9хладагента§r, защищая мощные сборки от §cперегрева§r.");
+        add("cannery.rbmk.intro.blank", "§7Структурная колонна§r: пустой блок-заглушка, который §aпередаёт тепло§r между соседними колоннами и пропускает нейтроны.");
+
+        add("cannery.rbmk.hud.flux", "Поток");
+        add("cannery.rbmk.note.mod_refl", "§bЗамедлитель§r тормозит нейтроны, §eотражатель§r возвращает их в топливо!");
+        add("cannery.rbmk.note.meltdown", "§cРАСПЛАВЛЕНИЕ!§r Колонна §c> 1500°C§r или перегрев оболочки!");
+        add("cannery.rbmk.note.need_source", "§cПоток = 0!§r Вставьте источник §aRa-226-Be§r для пуска!");
+        add("cannery.rbmk.note.running", "§aЦепная реакция запущена§r — можно вернуть рабочий стержень!");
+
+        add("cannery.rbmk.gui.control", "Рег. стержень");
+        add("cannery.rbmk.gui.auto", "Авто-регулятор");
+        add("cannery.rbmk.gui.save", "СОХРАНИТЬ!");
+        add("cannery.rbmk.gui.console", "Консоль РБМК");
+        add("cannery.rbmk.gui.funcs", "Функции топлива");
+        add("cannery.rbmk.gui.cycle", "Переработка топлива");
+
+        add("cannery.rbmk.basics.0.neutrons", "§eТопливная колонна§r испускает §6быстрые нейтроны§r в §b4 стороны (N/S/E/W)§r на дистанцию до §a5 блоков§r. Без окружения они улетают впустую.");
+        add("cannery.rbmk.basics.1.mod_refl_abs", "§bГрафит§r замедляет нейтроны (нужно большинству топлив), §eОтражатель§r возвращает их в ядро, §cПоглотитель§r гасит луч, а §dКанал облучения§r создаёт редкие изотопы.");
+        add("cannery.rbmk.basics.2.control_manual", "§eРегулирующий стержень§r: §c0%%§r — полностью блокирует нейтроны, §a100%%§r — пропускает поток. §bЦвета§r объединяют стержни в группы для §eКонсоли§r.");
+        add("cannery.rbmk.basics.2.control_auto", "§bАвто-регулятор§r сам опускает стержень при росте температуры. §cВАЖНО:§r после ввода min/max обязательно нажмите кнопку §a«Сохранить»§r!");
+        add("cannery.rbmk.basics.2.covers", "Всегда накрывайте колонны §eкрышками§r (обычными или §bрадиационно-безопасными стеклянными§r), иначе нейтронный поток вырвется вверх и §cзаразит базу§r!");
+        add("cannery.rbmk.basics.3.functions", "Смотрите на §eфункцию топлива§r в описании: §aСигмоида/Эйлер (Торий)§r — безопасны, §eЛогарифм/Корень§r — средний риск, §cЛинейная§r — опасна, §dДигамма§r — ненавидит отражатели!");
+        add("cannery.rbmk.basics.3.meltdown", "Если температура оболочки превысит предел или колонна нагреется выше §c1500°C§r — произойдёт §cмелтдаун§r и разлёт кориума. Держите рядом §aПоглотитель радиации§r!");
+
+        add("cannery.rbmk.starter.0.core_layout", "Базовый §eРБМК на 4 стержня§r: топливо на расстоянии §b3 блоков§r, между ними §eРегулятор + Замедлитель + Бойлер§r. Снаружи — §bЗамедлители§r, §eОтражатели§r и §aКрышки§r.");
+        add("cannery.rbmk.starter.1.steam_connector", "§bОбвязка снизу§r: под бойлером §9синяя труба Воды§r, ещё на блок ниже — §eПаровой проводник (Steam Connector)§r, и под ним §dтруба Пара§r. §aКрышки сверху остаются свободны!§r");
+        add("cannery.rbmk.starter.2.turbine_loop", "Ставьте §eтурбины вплотную§r каскадом (§dUltra-Dense -> Super-Dense -> Dense -> Steam§r) — пар переходит напрямую. НД-пар идёт в §bГрадирню§r, а §9вода возвращается§r в реактор!");
+        add("cannery.rbmk.starter.3.console_link", "Привяжите §eКонсоль§r через §bСвязыватель (Linker)§r (§eShift+ПКМ§r по центру ядра -> §eПКМ§r по консоли, лимит §a15×15§r). Здесь же переключается §dсжатие пара§r и находится кнопка §cАЗ-5§r!");
+        add("cannery.rbmk.starter.3.kickstart", "Многие стержни (уран/плутоний) §cне стартуют сами§r. Временно поставьте источник нейтронов §aRa-226-Be§r, поднимите регуляторы на §e20%%§r — как пойдёт поток, верните §bтопливо§r!");
+
+        add("cannery.rbmk.adv.0.mep16", "Симметричный §eРБМК на 16 стержней MEP-239§r (§bромб 11×11§r): §d12 бойлеров§r по диагоналям, замедлители и замкнутый §eконтур отражателей§r. §a~1000°C (безопасно)§r, выход до §a~30 MHE/s§r!");
+        add("cannery.rbmk.adv.1.spent_pool", "Горячие отработанные стержни (§c>25%%§r) извлекайте §eКраном§r и охлаждайте в §bБарабане выдержки§r, окружённом §9водой со всех 4 сторон§r. Затем разбирайте на §eпеллеты§r и в §aSILEX (ИК-лазер)§r!");
+        add("cannery.rbmk.adv.2.checklist", "§eЧЕК-ЛИСТ ПЕРЕД ПУСКОМ:§r\n1. §aКрышки§r на всех колоннах.\n2. §9Вода§r зациклена через §bГрадирню§r.\n3. §dСжатие пара§r совпадает с 1-й турбиной.\n4. Регуляторы в §c0%%§r при загрузке.\n5. Источник §aRa-226-Be§r готов для старта.\n6. §eКонсоль (АЗ-5)§r и §aПоглотитель радиации§r на месте.");
+        add("cannery.pa.note.crash_max", "ПРЕВЫШЕН МАКСИМУМ -> МГНОВЕННЫЙ КРАШ!");
+        add("cannery.pa.note.crash_defocus", "РАСФОКУС 1 000 -> ПУЧОК ПОТЕРЯН!");
+
+        add("cannery.pa.tip.last_momentum_300", "Последний импульс: 300 (Работает)");
+        add("cannery.pa.tip.player_s", "Игрок: ЮГ -> Выход: СЕВЕР");
+        add("cannery.pa.tip.player_e", "Игрок: ВОСТОК -> Выход: СЕВЕР");
+        add("cannery.pa.tip.dipole_400", ">= 400 -> Выход: ЮГ (Детектор)");
+        add("cannery.pa.tip.cascade_1500", ">= 1 500 + Редстоун -> Кольцо 2 (NbTi)!");
 
         add("gui.hbm_m.radio_autocal.docs", String.join("\n", new String[] {
                 "# AUTOCAL — Автоматический калькулятор",
@@ -4718,6 +4869,23 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.reactor_research.info.submerged.3", "соседним реакторам-размножителям.");
         add("gui.hbm_m.reactor_research.info.fuel.0", "В реакторе используется пластинчатое топливо.");
         add("gui.hbm_m.reactor_research.info.fuel.1", "Для запуска реакции нужен источник нейтронов.");
+
+        add("cannery.conveyor", "Конвейеры и логистика");
+        add("cannery.conveyor.0.tiers", "4 типа лент: обычная (1 полоса), двойная (2), тройная (3) и скоростная Express (в 3 раза быстрее и дальше сбрасывает предметы).");
+        add("cannery.conveyor.1.wand_route", "Клик Отвёрткой поворачивает и изгибает ленту на 90°, а Жезл конвейеров автоматически прокладывает весь маршрут.");
+        add("cannery.conveyor.1.wand_upgrade", "Используйте улучшенный Жезл (Express / Double / Triple) для автопрокладки скоростных или многополосных линий.");
+        add("cannery.conveyor.2.vertical", "Вертикальная логистика: цепной подъёмник (Lift) поднимает грузы наверх, а жёлоб (Chute) сбрасывает их на нижнюю ленту.");
+        add("cannery.conveyor.3.io_splitter", "Выбрасыватель (красная стрелка) забирает предметы из ящиков и машин, Загрузчик (зелёная) — кладёт внутрь. Разделитель поровну делит поток на 2 ветки.");
+        add("cannery.conveyor.4.boxer", "Чтобы одиночные предметы не забивали завод, Упаковщик (Boxer) собирает стаки в одну коробку, а Распаковщик (Unboxer) раскрывает её на месте.");
+        add("cannery.conveyor.5.sorter", "Сортировщик распределяет предметы по цветным граням (белый список и OreDict), позволяя вести одну общую шину на весь цех.");
+        add("cannery.conveyor.sorter_gui.title", "Фильтры граней");
+
+        add("cannery.conveyor_press", "Конвейерный пресс");
+        add("cannery.conveyor_press.0", "Конвейерный пресс — это автоматический пресс высотой 3 блока, который встраивается прямо в линию конвейера.");
+        add("cannery.conveyor_press.1", "Его средняя часть работает как активная конвейерная лента — предметы проходят насквозь без воронок и загрузчиков.");
+        add("cannery.conveyor_press.2", "Нажмите ПКМ любым штампом по прессу, чтобы установить его. Подайте энергию HE к основанию (с любой стороны, кроме низа).");
+        add("cannery.conveyor_press.3", "Нажмите ПКМ Отвёрткой, чтобы извлечь установленный штамп.");
+        add("cannery.conveyor_press.4", "Одиночные предметы, проходящие через пресс, автоматически штампуются на лету!");
     }
 }
 //?}

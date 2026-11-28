@@ -317,7 +317,9 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     }
 
     protected void setupFluidCapability() {
-        // Переопределяется в подклассах при необходимости
+        if (this instanceof com.hbm_m.api.fluids.IFluidUserMK2 mk2) {
+            setFluidHandler(new com.hbm_m.api.fluids.NeoForgeFluidHandlerMK2(mk2));
+        }
     }
 
     // --- NBT ---

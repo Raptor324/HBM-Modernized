@@ -903,7 +903,7 @@
   "weapon.flamethrower_shoot": {
     "category": "player",
     "sounds": [
-      "hbm_m:weapon/flamethrower_shoot"
+      "hbm_m:weapon/flamethrowershoot"
     ]
   },
   "weapon.d_flash": {
@@ -920,7 +920,7 @@
     "category": "block",
     "sounds": [
       {
-        "name": "block/electric_hum",
+        "name": "hbm_m:block/electric_hum",
         "stream": false
       }
     ]

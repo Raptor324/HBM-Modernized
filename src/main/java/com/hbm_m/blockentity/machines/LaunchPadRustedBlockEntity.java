@@ -86,7 +86,8 @@ public class LaunchPadRustedBlockEntity extends LaunchPadBaseBlockEntity impleme
 
                     MissileTier4.MissileDoomsdayRusted missile = ModEntities.MISSILE_DOOMSDAY_RUSTED.get().create(level);
                     if (missile == null) return BombReturnCode.ERROR_MISSING_COMPONENT;
-                    missile.initLaunch(x + 0.5F, y + 1F, z + 0.5F, targetX, targetZ);
+                    net.minecraft.world.phys.Vec3 lp = launchPosInWorld();
+                    missile.initLaunch((float) lp.x, (float) lp.y, (float) lp.z, targetX, targetZ);
                     BlockState padState = getBlockState();
                     if (padState.hasProperty(HorizontalDirectionalBlock.FACING)) {
                         missile.setLaunchFacing(padState.getValue(HorizontalDirectionalBlock.FACING));
@@ -107,9 +108,63 @@ public class LaunchPadRustedBlockEntity extends LaunchPadBaseBlockEntity impleme
     }
 
     @Override
+    public boolean joinsEnergyNetwork() {
+        return false;
+    }
+
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        return new BlockPos[0];
+    }
+
+    @Override
+    protected void setupFluidCapability() {
+    }
+
+    @Override
+    protected boolean isFluidSideAllowed(@Nullable Direction side) {
+        return false;
+    }
+
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() {
+        return com.hbm_m.inventory.fluid.tank.FluidTank.EMPTY_ARRAY;
+    }
+
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getReceivingTanks() {
+        return com.hbm_m.inventory.fluid.tank.FluidTank.EMPTY_ARRAY;
+    }
+
+    @Override
+    protected com.hbm_m.platform.ModItemStackHandler getAutomationItemHandler() {
+        return new com.hbm_m.platform.ModItemStackHandler(0) {
+            @Override public int getSlots() { return 0; }
+            @Override public ItemStack getStackInSlot(int slot) { return ItemStack.EMPTY; }
+            @Override public boolean isItemValid(int slot, @org.jetbrains.annotations.NotNull ItemStack stack) { return false; }
+            @Override public ItemStack extractItem(int slot, int amount, boolean simulate) { return ItemStack.EMPTY; }
+            @Override public ItemStack insertItem(int slot, @org.jetbrains.annotations.NotNull ItemStack stack, boolean simulate) { return stack; }
+        };
+    }
+
+    @Override
+    public boolean sendCommandPosition(BlockPos pos) {
+        return false;
+    }
+
+    @Override
+    public boolean sendCommandEntity(net.minecraft.world.entity.Entity target) {
+        return false;
+    }
+
+    @Override
     public BombReturnCode triggerLaunch() {
         return launch();
     }
+
+    @Override public String[] getFunctionInfo() { return new String[0]; }
+    @Override public String provideRORValue(String name) { return null; }
+    @Override public String runRORFunction(String name, String[] params) { return null; }
 
     /** Das Modell auf der Rampe (BER) zeigt die eingebaute Rakete, nicht den Ausgabeslot. */
     @Override

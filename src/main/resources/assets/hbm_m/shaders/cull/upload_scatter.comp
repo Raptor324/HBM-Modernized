@@ -16,7 +16,8 @@
 #define OPS_PER_WG 4u
 #define LANES_PER_OP 16u
 
-layout(local_size_x = OPS_PER_WG * LANES_PER_OP) in;
+// Literal 64 (= OPS_PER_WG * LANES_PER_OP) required by strict GLSL 4.30 compilers (e.g. Mesa).
+layout(local_size_x = 64) in;
 
 struct CopyOp {
     uint srcWord;   // word offset in the staging ring

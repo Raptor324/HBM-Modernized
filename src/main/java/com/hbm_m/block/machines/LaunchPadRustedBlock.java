@@ -206,7 +206,7 @@ public class LaunchPadRustedBlock extends BaseEntityBlock implements IMultiblock
         // ВАЖНО: роль CONTROLLER ОБЯЗАТЕЛЬНА и должен быть ровно ОДИН контроллер!
         Map<Character, PartRole> roleMap = Map.of(
             'A', PartRole.DEFAULT,              // Обычная часть структуры
-            'B', PartRole.UNIVERSAL_CONNECTOR, // Универсальный коннектор
+            'B', PartRole.DEFAULT,              // Углы без портов (как в оригинале LaunchPadRusted)
             'C', PartRole.CONTROLLER           // Контроллер (ОБЯЗАТЕЛЬНО!)
         );
         

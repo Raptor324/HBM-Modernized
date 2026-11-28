@@ -53,8 +53,8 @@ public final class DetectorEvents {
             case HIGH -> INACCURACY_HIGH;
         };
 
-        int bx = (int) (Math.floor(x) + level.getRandom().nextGaussian() * inaccuracy);
-        int bz = (int) (Math.floor(z) + level.getRandom().nextGaussian() * inaccuracy);
+        int bx = (int) (Math.floor(x) + net.minecraft.util.Mth.clamp(level.getRandom().nextGaussian(), -1.0, 1.0) * inaccuracy);
+        int bz = (int) (Math.floor(z) + net.minecraft.util.Mth.clamp(level.getRandom().nextGaussian(), -1.0, 1.0) * inaccuracy);
 
         BURSTS.add(new RadiationBurst(level.dimension(), level.getGameTime() + lifetime,
                 intensity, bx, bz));

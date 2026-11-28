@@ -63,7 +63,8 @@ public class MachineCraneRouterBlock extends BaseEntityBlock implements IEnterab
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        return activate(level, pos, player, player.getMainHandItem());
+        ItemStack held = player.getMainHandItem().isEmpty() ? player.getOffhandItem() : player.getMainHandItem();
+        return activate(level, pos, player, held);
     }
     *///?}
 

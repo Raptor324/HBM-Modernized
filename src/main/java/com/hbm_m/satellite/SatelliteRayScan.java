@@ -25,6 +25,13 @@ public class SatelliteRayScan extends Satellite {
     @Override public String getType() { return "NB_RAY_SCANNER"; }
 
     @Override
+    public java.util.List<net.minecraft.network.chat.Component> getInfo(ServerLevel world) {
+        return java.util.List.of(
+                net.minecraft.network.chat.Component.translatable(com.hbm_m.item.ModItems.SATELLITE_RAY_SCAN.get().getDescriptionId())
+        );
+    }
+
+    @Override
     public void onCommandImpl(ServerLevel world, String... cmd) {
         if (cmd.length <= 0) return;
 

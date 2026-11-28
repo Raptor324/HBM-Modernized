@@ -183,12 +183,17 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
+        // 1:1 with TileEntityRBMKControl.writeToNBT: level and targetLevel are always included
+        // in DODD; lastLevel, power, hasPower, and short color are port/sync-only (manual rods
+        // write int color in diag mode).
         tag.putDouble("level", level);
-        tag.putDouble("lastLevel", lastLevel);
         tag.putDouble("targetLevel", targetLevel);
-        tag.putShort("color", color);
-        tag.putLong("power", power);
-        tag.putBoolean("hasPower", hasPower);
+        if (!diag) {
+            tag.putDouble("lastLevel", lastLevel);
+            tag.putShort("color", color);
+            tag.putLong("power", power);
+            tag.putBoolean("hasPower", hasPower);
+        }
     }
 
     @Override

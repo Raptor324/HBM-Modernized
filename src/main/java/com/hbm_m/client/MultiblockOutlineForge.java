@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -65,7 +66,29 @@ public final class MultiblockOutlineForge {
             corePos = part.getControllerPos();
         } else if (state.getBlock() instanceof IMultiblockController) {
             corePos = pos;
+        } else if (state.getBlock() instanceof com.hbm_m.block.machines.rbmk.RBMKColumnBlock) {
+            corePos = pos;
+        } else if (state.getBlock() instanceof com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock) {
+            corePos = com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock.findBase(level, pos);
+            if (corePos == null) return;
         } else {
+            return;
+        }
+
+        // RBMK column: outline the whole column (base + filler stack, plus the 0.25 lid
+        // plate) instead of the vanilla per-segment 1x1x1 boxes - the filler resolves to
+        // the same box via findBase, exactly like the original's findCore routing.
+        if (state.getBlock() instanceof com.hbm_m.block.machines.rbmk.RBMKColumnBlock
+                || state.getBlock() instanceof com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock) {
+            if (!(level.getBlockEntity(corePos) instanceof com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity col)) return;
+            double top = com.hbm_m.client.render.implementations.RBMKColumnRenderer.columnHeight(col);
+            if (col.hasLid() && !col.hasOwnLid()) top += 0.25; // the lid plate, as in SHAPE_WITH_LID
+            event.setCanceled(true);
+            Vec3 cam = event.getCamera().getPosition();
+            VertexConsumer consumer = event.getMultiBufferSource().getBuffer(RenderType.lines());
+            VoxelShape column = Shapes.box(0.0D, 0.0D, 0.0D, 1.0D, top, 1.0D);
+            renderShape(event.getPoseStack(), consumer, column,
+                    corePos.getX() - cam.x, corePos.getY() - cam.y, corePos.getZ() - cam.z);
             return;
         }
 

@@ -48,6 +48,7 @@ public class FusionKlystronRenderer implements com.hbm_m.client.render.HbmBerBou
         pose.pushPose();
         pose.translate(0.5D, 0D, 0.5D);
         MachineFusionComplexRenderer.applyFacing(be.getBlockState(), pose);
+        pose.mulPose(Axis.YP.rotationDegrees(90.0F));
         // Original: glTranslated(-1, 0, 0) following orientation rotation.
         pose.translate(-1D, 0D, 0D);
 

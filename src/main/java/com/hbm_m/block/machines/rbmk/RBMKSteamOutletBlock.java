@@ -18,6 +18,11 @@ public class RBMKSteamOutletBlock extends RBMKColumnBlock {
 
     @Override public RenderShape getRenderShape(BlockState s) { return RenderShape.MODEL; }
 
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        // 1:1 with 1.7.10 RBMKOutlet: extends BlockContainer (not RBMKBase), so no DODD overlay.
+    }
+
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new RBMKSteamOutletBlockEntity(pos, state);

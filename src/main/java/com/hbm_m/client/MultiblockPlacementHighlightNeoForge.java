@@ -37,7 +37,29 @@ public final class MultiblockPlacementHighlightNeoForge {
             hand = InteractionHand.OFF_HAND;
             item = offItem;
         }
-        if (item == null) return;
+        if (item == null) {
+            // RBMK column: same placement-preview treatment (whole-column frame, pulsing
+            // green/red). Only real column blocks - the console/crane-console items share
+            // RBMKColumnBlockItem but place a machine, not a filler stack.
+            com.hbm_m.item.rbmk.RBMKColumnBlockItem rbmkItem = null;
+            if (mc.player.getMainHandItem().getItem() instanceof com.hbm_m.item.rbmk.RBMKColumnBlockItem mainRbmk
+                    && mainRbmk.getBlock() instanceof com.hbm_m.block.machines.rbmk.RBMKColumnBlock) {
+                hand = InteractionHand.MAIN_HAND;
+                rbmkItem = mainRbmk;
+            } else if (mc.player.getOffhandItem().getItem() instanceof com.hbm_m.item.rbmk.RBMKColumnBlockItem offRbmk
+                    && offRbmk.getBlock() instanceof com.hbm_m.block.machines.rbmk.RBMKColumnBlock) {
+                hand = InteractionHand.OFF_HAND;
+                rbmkItem = offRbmk;
+            }
+            if (rbmkItem == null) return;
+
+            BlockHitResult rbmkTarget = event.getTarget();
+            if (rbmkTarget.getType() == BlockHitResult.Type.MISS) return;
+
+            event.setCanceled(true);
+            MultiblockPlacementHighlight.renderRbmkColumn(mc.level, mc.player, hand, rbmkTarget, event.getPoseStack());
+            return;
+        }
 
         BlockHitResult target = event.getTarget();
         if (target.getType() == BlockHitResult.Type.MISS) return;

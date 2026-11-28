@@ -664,7 +664,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             ModBlocks.RBMK_AUTOLOADER, ModBlocks.RBMK_CRANE_CONSOLE
         );
         for (var rb : rbmkCustomItemBlocks) {
-            getBuilder(rb.getId().getPath()).parent(new ModelFile.UncheckedModelFile("minecraft:builtin/entity"));
+            builtinEntityItem(rb.getId().getPath());
         }
 
         // Static 3D RBMK blocks (cubes & nmesh debris): item model inherits from block/rbmk/<name>

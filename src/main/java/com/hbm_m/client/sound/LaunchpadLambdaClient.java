@@ -102,6 +102,9 @@ public final class LaunchpadLambdaClient {
 
     /** Original {@code playSoundClient(x, y, z, sound, volume, pitch)}; die Lautstaerke steht dort fuer die Reichweite. */
     private static void play(Level world, double x, double y, double z, String sound, float volume, float pitch) {
-        world.playLocalSound(x, y, z, HbmSoundsNT.get(sound), SoundSource.BLOCKS, volume, pitch, false);
+        net.minecraft.sounds.SoundEvent ev = HbmSoundsNT.get(sound);
+        if (ev != null) {
+            world.playLocalSound(x, y, z, ev, SoundSource.BLOCKS, volume, pitch, false);
+        }
     }
 }

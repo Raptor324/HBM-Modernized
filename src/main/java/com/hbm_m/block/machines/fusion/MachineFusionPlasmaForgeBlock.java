@@ -74,6 +74,14 @@ public class MachineFusionPlasmaForgeBlock extends FusionMultiblockBlock {
     }
     *///?}
 
+    @Override
+    public double[][] getAABBExtras() {
+        return new double[][] {
+            {1.5, 3.5, 1, -1, 5.5, 5.5},
+            {1.5, 3.5, 1, -1, -5.5, -5.5}
+        };
+    }
+
     // Verbatim port of the original MachineFusionPlasmaForge.getAllPorts.
     @Override
     public int[][] getAllPorts(Direction facing) {

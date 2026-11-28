@@ -94,9 +94,6 @@ public class ModWorldGen {
     public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> OILCLASTER_SURROUNDED =
             FEATURES.register("oilclaster_surrounded", () -> new OilClasterSurroundedFeature(NoneFeatureConfiguration.CODEC));
 
-    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> BEDROCK_OIL_ORE =
-            FEATURES.register("bedrock_oil_ore", () -> new BedrockOilOreFeature(NoneFeatureConfiguration.CODEC));
-
     public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> BEDROCK_ORE =
             FEATURES.register("ore_bedrock_mineral", () -> new BedrockOreFeature(NoneFeatureConfiguration.CODEC));
 
@@ -126,14 +123,6 @@ public class ModWorldGen {
 
     public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> LANTERN_BEHEMOTH =
             FEATURES.register("lantern_behemoth", () -> new LanternBehemothFeature(NoneFeatureConfiguration.CODEC));
-
-    /** Порт MapGenBubble (каменные нефтяные месторождения). */
-    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> OIL_DEPOSIT =
-            FEATURES.register("oil_deposit", () -> OilDepositFeature.stone(NoneFeatureConfiguration.CODEC));
-
-    /** Порт песчаных нефтяных месторождения (sandOilBubble). */
-    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> SAND_OIL_DEPOSIT =
-            FEATURES.register("sand_oil_deposit", () -> OilDepositFeature.sand(NoneFeatureConfiguration.CODEC));
 
     // ===================================================================================== //
     // Пластовые руды (порты SchistStratum / OreCave / OreLayer3D из 1.7.10)
@@ -194,12 +183,6 @@ public class ModWorldGen {
 
     public static final ResourceKey<PlacedFeature> BEDROCK_ORE_PLACED_KEY =
             ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_bedrock_mineral_placed"));
-
-    public static final ResourceKey<ConfiguredFeature<?, ?>> BEDROCK_OIL_ORE_CONFIGURED_KEY =
-            ResourceKey.create(Registries.CONFIGURED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_bedrock_oil"));
-
-    public static final ResourceKey<PlacedFeature> BEDROCK_OIL_ORE_PLACED_KEY =
-            ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_bedrock_oil_placed"));
 
     public static final ResourceKey<PlacedFeature> URANIUM_ORE_PLACED_KEY =
             ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_uranium_placed"));

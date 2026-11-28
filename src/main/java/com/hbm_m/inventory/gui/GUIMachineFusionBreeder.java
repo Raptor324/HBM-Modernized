@@ -69,8 +69,8 @@ public class GUIMachineFusionBreeder extends GuiInfoScreen<MachineFusionBreederM
                                 .withStyle(ChatFormatting.WHITE)));
 
         drawCustomInfoStat(guiGraphics, mouseX, mouseY, 67, 46, 42, 14, mouseX, mouseY,
-                Component.literal((int) Math.ceil(be.progress) + " / "
-                        + (int) Math.ceil(FusionBreederBlockEntity.CAPACITY) + " flux"));
+                Component.literal(String.format(java.util.Locale.US, "%,d / %,d flux",
+                        (int) Math.ceil(be.progress), (int) Math.ceil(FusionBreederBlockEntity.CAPACITY))));
 
         be.tanks[0].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 26, this.topPos + 18, 16, 52);
         be.tanks[1].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 134, this.topPos + 18, 16, 52);

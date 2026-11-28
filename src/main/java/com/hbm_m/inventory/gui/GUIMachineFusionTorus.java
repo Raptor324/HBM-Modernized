@@ -192,10 +192,16 @@ public class GUIMachineFusionTorus extends GuiInfoScreen<MachineFusionTorusMenu>
                     Component.literal("0TU / 0TU"));
         }
 
-        if (isPointInRect(43, 80, 18, 18, mouseX, mouseY) && recipe == null) {
-            guiGraphics.renderTooltip(this.font,
-                    Component.translatable("gui.hbm_m.recipe.set_recipe").withStyle(ChatFormatting.YELLOW),
-                    mouseX, mouseY);
+        if (isPointInRect(43, 80, 18, 18, mouseX, mouseY)) {
+            if (recipe != null) {
+                com.hbm_m.inventory.gui.element.GUIElements.drawHoveringTextRecipe(guiGraphics, this.font,
+                        GUIScreenRecipeSelector.buildTooltip(recipe, recipe.getResultItemSafe(), be.getSelectedRecipeId()),
+                        mouseX, mouseY);
+            } else {
+                guiGraphics.renderTooltip(this.font,
+                        Component.translatable("gui.hbm_m.recipe.set_recipe").withStyle(ChatFormatting.YELLOW),
+                        mouseX, mouseY);
+            }
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);

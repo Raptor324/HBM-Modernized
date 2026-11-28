@@ -21,6 +21,7 @@ public class QComponentLink extends ManualElement {
     protected Font font;
     protected int color = 0x0094FF;
     protected int hoverColor = 0xFFD800;
+    protected int occupiedColor = 0xA0A0A0;
 
     public QComponentLink(String link, String text) {
         this.text = text;
@@ -53,7 +54,7 @@ public class QComponentLink extends ManualElement {
     }
 
     @Override
-    public void render(GuiGraphics gfx, boolean isMouseOver, int x, int y, int mouseX, int mouseY) {
+    public void render(GuiQMAW parent, GuiGraphics gfx, boolean isMouseOver, int x, int y, int mouseX, int mouseY) {
 
         if (this.icon != null) {
             gfx.renderItem(this.icon, x, y - 1);
@@ -63,10 +64,16 @@ public class QComponentLink extends ManualElement {
             y += (16 - font.lineHeight) / 2;
         }
 
-        gfx.drawString(font, text, x, y, isMouseOver ? hoverColor : color, false);
+        int color = this.color;
+        if (isMouseOver) color = this.hoverColor;
+        if (parent.qmawID.equals(link)) color = this.occupiedColor;
+
+        gfx.drawString(font, text, x, y, color, false);
     }
 
     @Override public void onClick(GuiQMAW gui) {
+        if (gui.qmawID.equals(link)) return;
+
         QuickManualAndWiki qmaw = QMAWLoader.qmaw.get(link);
         if (qmaw != null) {
             Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));

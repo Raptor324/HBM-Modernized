@@ -75,7 +75,10 @@ public class PABeamlineBlockEntity extends BaseMachineBlockEntity implements IPa
     public static void tick(net.minecraft.world.level.Level level, BlockPos pos, BlockState state, PABeamlineBlockEntity be) {
         if (level.isClientSide()) {
             be.prevLight = be.light;
-            if (be.light > 0) be.light -= 0.25F;
+            if (be.light > 0) {
+                be.light = Math.max(0F, be.light - 0.25F);
+                be.markRenderDirty();
+            }
             if (be.light > be.prevLight) be.prevLight = be.light;
             return;
         }
@@ -92,7 +95,10 @@ public class PABeamlineBlockEntity extends BaseMachineBlockEntity implements IPa
     @Override
     protected void applyClientUpdate(CompoundTag tag, @org.jetbrains.annotations.Nullable net.minecraft.core.HolderLookup.Provider registries) {
         super.applyClientUpdate(tag, registries);
-        if (tag.getBoolean("didPass")) this.light = 2F;
+        if (tag.getBoolean("didPass")) {
+            this.light = 2F;
+            markRenderDirty();
+        }
     }
 
     public boolean hasWindow() {

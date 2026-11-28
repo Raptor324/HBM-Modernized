@@ -152,6 +152,7 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
 
     /** Kran-Ladeanimation (Himars, Original: {@code crane}-Fortschritt vor jedem Schuss). */
     public float himarsCraneProgress, prevHimarsCraneProgress;
+    private float syncYaw, syncPitch, syncHimarsCraneProgress;
     private static final float HIMARS_FIXED_PITCH = 45.0F;
 
     /** Feuermodus (aktuell nur Arty: 0=Artillerie/indirekt, 1=Kanone/direkt+LOS, 2=Manuell/vereinfacht=Artillerie). */
@@ -1386,6 +1387,15 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
     private boolean clientSynced;
 
     private void clientTick() {
+        if (clientSynced) {
+            this.prevYaw = this.yaw;
+            this.prevPitch = this.pitch;
+            this.prevHimarsCraneProgress = this.himarsCraneProgress;
+            this.yaw = this.syncYaw;
+            this.pitch = this.syncPitch;
+            this.himarsCraneProgress = this.syncHimarsCraneProgress;
+        }
+
         if (stats != TurretStats.TAUON && stats != TurretStats.MAXWELL) return;
 
         if (this.tPos != null) {
@@ -2112,6 +2122,7 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
         tag.putInt("reload", reload);
         tag.putInt("loaded", loaded);
         tag.putFloat("himars_crane_progress", himarsCraneProgress);
+        tag.putFloat("prev_himars_crane_progress", prevHimarsCraneProgress);
         tag.putInt("fire_mode", fireMode);
         tag.putInt("himars_type", himarsTypeLoaded);
         tag.putInt("himars_ammo", himarsAmmo);
@@ -2132,10 +2143,34 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         cooldown = tag.getInt("cooldown");
-        yaw = tag.getFloat("yaw");
-        prevYaw = tag.getFloat("prev_yaw");
-        pitch = tag.getFloat("pitch");
-        prevPitch = tag.getFloat("prev_pitch");
+        float netYaw = tag.getFloat("yaw");
+        float netPrevYaw = tag.getFloat("prev_yaw");
+        float netPitch = tag.getFloat("pitch");
+        float netPrevPitch = tag.getFloat("prev_pitch");
+        float netCrane = tag.getFloat("himars_crane_progress");
+        float netPrevCrane = tag.contains("prev_himars_crane_progress")
+                ? tag.getFloat("prev_himars_crane_progress")
+                : netCrane;
+        if (level != null && level.isClientSide()) {
+            syncYaw = netYaw;
+            syncPitch = netPitch;
+            syncHimarsCraneProgress = netCrane;
+            if (!clientSynced) {
+                yaw = netYaw;
+                prevYaw = netYaw;
+                pitch = netPitch;
+                prevPitch = netPitch;
+                himarsCraneProgress = netCrane;
+                prevHimarsCraneProgress = netCrane;
+            }
+        } else {
+            yaw = netYaw;
+            prevYaw = netPrevYaw;
+            pitch = netPitch;
+            prevPitch = netPrevPitch;
+            himarsCraneProgress = netCrane;
+            prevHimarsCraneProgress = netPrevCrane;
+        }
         isOn = !tag.contains("is_on") || tag.getBoolean("is_on");
         targetPlayers = tag.getBoolean("target_players");
         targetAnimals = tag.getBoolean("target_animals");
@@ -2147,8 +2182,6 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
         timer = tag.getInt("timer");
         reload = tag.getInt("reload");
         loaded = tag.getInt("loaded");
-        himarsCraneProgress = tag.getFloat("himars_crane_progress");
-        prevHimarsCraneProgress = himarsCraneProgress;
         fireMode = tag.getInt("fire_mode");
         himarsTypeLoaded = tag.contains("himars_type") ? tag.getInt("himars_type") : -1;
         himarsAmmo = tag.getInt("himars_ammo");

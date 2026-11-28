@@ -77,6 +77,10 @@ public class FusionKlystronCreativeBlockEntity extends FusionSyncedBlockEntity {
             this.fan -= 360F;
             this.prevFan -= 360F;
         }
+
+        com.hbm_m.sound.ClientSoundBootstrap.updateMachineLoop(this, this.fanSpeed > 0F,
+                com.hbm_m.sound.ModSounds.FEL_LOOP.get(), 2.5D, 30D,
+                be -> ((FusionKlystronCreativeBlockEntity) be).fanSpeed / 5F);
     }
 
     @Override

@@ -439,6 +439,32 @@ public class HbmAutoHotswapAgent {
         }
     }
 
+    private static void redefineDivideAndConquer(
+            Instrumentation inst,
+            List<ClassDefinition> defs,
+            List<String> ok,
+            List<String> failed) {
+        if (defs.isEmpty()) return;
+        try {
+            inst.redefineClasses(defs.toArray(new ClassDefinition[0]));
+            for (ClassDefinition def : defs) {
+                String n = def.getDefinitionClass().getName();
+                if (!ok.contains(n)) ok.add(n);
+            }
+        } catch (Throwable err) {
+            if (defs.size() == 1) {
+                String n = defs.get(0).getDefinitionClass().getName();
+                if (!failed.contains(n)) failed.add(n);
+                System.err.println("[HBM-HotSwap] Redefine failed for " + n + ": " + err);
+                postChat("\u00a7c[HBM-HotSwap] Redefine failed: " + n);
+            } else {
+                int mid = defs.size() / 2;
+                redefineDivideAndConquer(inst, defs.subList(0, mid), ok, failed);
+                redefineDivideAndConquer(inst, defs.subList(mid, defs.size()), ok, failed);
+            }
+        }
+    }
+
     private static void loop(List<Path> roots, Instrumentation inst) {
         while (true) {
             try {
@@ -506,21 +532,18 @@ public class HbmAutoHotswapAgent {
                         for (String n : names) chatMsg.append("\n  \u00a77\u2022\u00a7r ").append(n);
                         postChat(chatMsg.toString());
                     } catch (Throwable batchErr) {
+                        System.err.println("[HBM-HotSwap] Batch redefine failed (" + defs.size() + " defs): " + batchErr);
                         List<String> ok = new ArrayList<>();
-                        for (ClassDefinition def : defs) {
-                            try {
-                                inst.redefineClasses(def);
-                                ok.add(def.getDefinitionClass().getName());
-                                System.out.println("[HBM-HotSwap] Reloaded: " + def.getDefinitionClass().getName());
-                            } catch (Throwable singleErr) {
-                                System.err.println("[HBM-HotSwap] Redefine failed for " + def.getDefinitionClass().getName() + ": " + singleErr);
-                                postChat("\u00a7c[HBM-HotSwap] Redefine failed: " + def.getDefinitionClass().getName());
-                            }
-                        }
+                        List<String> failed = new ArrayList<>();
+                        redefineDivideAndConquer(inst, defs, ok, failed);
+                        long dt = System.currentTimeMillis() - t0;
                         if (!ok.isEmpty()) {
+                            System.out.println("[HBM-HotSwap] Reloaded " + ok.size() + " class(es) in " + dt + " ms (fallback mode)");
                             StringBuilder chatMsg = new StringBuilder("\u00a76\u00a7l[HBM-HotSwap]\u00a7r \u00a7aReloaded \u00a7e"
-                                    + ok.size() + " class(es)\u00a7r \u00a77(fallback mode)");
-                            for (String n : ok) chatMsg.append("\n  \u00a77\u2022\u00a7r ").append(n);
+                                    + ok.size() + " class(es)\u00a7r \u00a77in " + dt + " ms (fallback mode)");
+                            int limit = Math.min(ok.size(), 15);
+                            for (int i = 0; i < limit; i++) chatMsg.append("\n  \u00a77\u2022\u00a7r ").append(ok.get(i));
+                            if (ok.size() > limit) chatMsg.append("\n  \u00a77...and ").append(ok.size() - limit).append(" more");
                             postChat(chatMsg.toString());
                         }
                     }

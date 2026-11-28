@@ -67,8 +67,9 @@ public class PADipoleBlockEntity extends CooledMachineBlockEntity implements IPa
         be.chargeFromBatterySlot(SLOT_BATTERY);
         be.tickCooling(level, pos);
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        int extraHash = be.dirLower.ordinal() * 1000 + be.dirUpper.ordinal() * 100
+                + be.dirRedstone.ordinal() * 10 + be.threshold;
+        be.syncIfChanged(extraHash);
     }
 
     /**
@@ -89,7 +90,12 @@ public class PADipoleBlockEntity extends CooledMachineBlockEntity implements IPa
     }
 
     private boolean hasRedstoneSignal() {
-        return level != null && level.hasNeighborSignal(worldPosition);
+        if (level == null) return false;
+        if (level.hasNeighborSignal(worldPosition)) return true;
+        for (BlockPos port : getCachedExtraPorts()) {
+            if (level.hasNeighborSignal(port)) return true;
+        }
+        return false;
     }
 
     @Override
@@ -164,9 +170,27 @@ public class PADipoleBlockEntity extends CooledMachineBlockEntity implements IPa
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_COIL) return stack.getItem() instanceof ItemPACoil;
-        if (slot == SLOT_BATTERY) return isEnergyReceiverItem(stack);
+        if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack);
         return false;
     }
+
+    //? if forge {
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) {
+            return net.minecraftforge.common.util.LazyOptional.empty();
+        }
+        return super.getCapability(cap, side);
+    }
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            return com.hbm_m.platform.LazyCap.empty();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
@@ -181,9 +205,9 @@ public class PADipoleBlockEntity extends CooledMachineBlockEntity implements IPa
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         setEnergyCapacity(MAX_POWER); // alte Welten: frueherer Speicherwert
-        dirLower = Direction.from2DDataValue(tag.getInt("dirLower"));
-        dirUpper = Direction.from2DDataValue(tag.getInt("dirUpper"));
-        dirRedstone = Direction.from2DDataValue(tag.getInt("dirRedstone"));
+        dirLower = tag.contains("dirLower") ? Direction.from2DDataValue(tag.getInt("dirLower")) : Direction.NORTH;
+        dirUpper = tag.contains("dirUpper") ? Direction.from2DDataValue(tag.getInt("dirUpper")) : Direction.NORTH;
+        dirRedstone = tag.contains("dirRedstone") ? Direction.from2DDataValue(tag.getInt("dirRedstone")) : Direction.NORTH;
         threshold = tag.getInt("threshold");
     }
 

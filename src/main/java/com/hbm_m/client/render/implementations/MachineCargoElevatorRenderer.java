@@ -60,7 +60,7 @@ public final class MachineCargoElevatorRenderer {
             .animationEpoch(MachineCargoElevatorRenderer::epoch)
             .chunkRenderTypes(RenderType.cutoutMipped())
             .itemParts("Base", "Guides", "Piston", "Platform")
-            .viewDistance(96)
+            .viewDistance(256)
             .register();
     }
 

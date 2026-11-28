@@ -25,8 +25,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -36,7 +38,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class AnvilBlock extends FallingBlock {
+public class AnvilBlock extends FallingBlock implements EntityBlock {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     private static final VoxelShape SHAPE_X = Shapes.box(4 / 16.0D, 0, 0, 12 / 16.0D, 12 / 16.0D, 1);
@@ -89,11 +91,28 @@ public class AnvilBlock extends FallingBlock {
         builder.add(FACING);
     }
 
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
+        return new com.hbm_m.blockentity.machines.AnvilBlockEntity(pos, state);
+    }
+
+    @Override
+    public void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.machines.AnvilBlockEntity be) {
+            be.drops();
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
+
     /** {@code NTMAnvil.onBlockActivated}: ohne Schleichen oeffnet sich das Amboss-Fenster der Stufe dieses Blocks. */
     private InteractionResult openAnvil(Level level, BlockPos pos, Player player) {
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         } else if (!player.isShiftKeyDown()) {
+            if (!(level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.machines.AnvilBlockEntity)) {
+                level.setBlockEntity(new com.hbm_m.blockentity.machines.AnvilBlockEntity(pos, level.getBlockState(pos)));
+            }
             MenuRegistry.openExtendedMenu((ServerPlayer) player,
                     new SimpleMenuProvider((id, inv, p) -> new AnvilMenu(id, inv, pos, tier),
                             Component.translatable("container.hbm_m.anvil", tier.getLegacyId())),

@@ -1,5 +1,6 @@
 package com.hbm_m.entity.grenades;
 
+import java.util.Comparator;
 import java.util.Random;
 import java.util.UUID;
 
@@ -16,10 +17,13 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -39,9 +43,10 @@ public class AirstrikeHeavyEntity extends Entity {
     private int bombTimer = 0;
     private int bombsDropped = 0;                          // 🆕 Счётчик сброшенных бомб
     private int despawnTimer = -1;
-    private int chunkRetryTimer = 0;
+    private static final TicketType<UUID> CHUNK_TICKET = TicketType.create("hbm_m_airstrike", Comparator.comparing(UUID::toString));
+    private ChunkPos loadedChunk;
+    private ChunkPos anchorChunk;
     private boolean hasFinishedAttack = false;
-    private boolean isWaitingForChunk = false;
     private static final int AMBIENT_SOUND_INTERVAL = 60;
 
     private Vec3 direction = Vec3.ZERO;
@@ -71,50 +76,9 @@ public class AirstrikeHeavyEntity extends Entity {
         this.entityData.set(TARGET_POS, targetPos);
         this.entityData.set(OWNER_UUID_ACCESSOR, owner.getUUID().toString());
 
-        if (trySpawnInLoadedChunk(targetPos)) {
-            initializePath();
-        } else {
-            isWaitingForChunk = true;
-        }
-    }
-
-    private boolean trySpawnInLoadedChunk(BlockPos targetPos) {
-        ServerLevel serverLevel = (ServerLevel) this.level();
-        Vec3 startPos = calculateStartPos(targetPos);
-        if (isChunkLoaded(serverLevel, startPos)) {
-            this.setPos(startPos);
-            return true;
-        }
-
-        // Поиск ближайшего загруженного чанка
-        for (int chunkDist = 1; chunkDist <= 24; chunkDist++) {  // 🆕 Больше попыток
-            for (int chunkX = -chunkDist; chunkX <= chunkDist; chunkX++) {
-                for (int chunkZ = -chunkDist; chunkZ <= chunkDist; chunkZ++) {
-                    if (Math.abs(chunkX) == chunkDist || Math.abs(chunkZ) == chunkDist) {
-                        BlockPos candidatePos = targetPos.offset(chunkX * 16, 0, chunkZ * 16);
-                        Vec3 candidateStart = calculateStartPos(candidatePos);
-                        if (isChunkLoaded(serverLevel, candidateStart)) {
-                            this.setPos(candidateStart);
-                            this.entityData.set(TARGET_POS, candidatePos);
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    private Vec3 calculateStartPos(BlockPos target) {
-        int directionIndex = RANDOM.nextInt(8);
-        double angle = DIRECTION_ANGLES[directionIndex];
-        Vec3 dir = new Vec3(Math.cos(angle), 0, Math.sin(angle)).normalize();
-        // 🆕 Спавним Гораздо ДАЛЕЕ от цели (150 блоков вместо 75)
-        return Vec3.atCenterOf(target).subtract(dir.scale(SPAWN_DISTANCE)).add(0, AIRSTRIKE_HEIGHT, 0);
-    }
-
-    private boolean isChunkLoaded(ServerLevel level, Vec3 pos) {
-        return level.hasChunkAt(BlockPos.containing(pos));
+        initializePath();
+        anchorChunk(targetPos.getX() >> 4, targetPos.getZ() >> 4);
+        loadNeighboringChunks(Mth.floor(this.getX() / 16D), Mth.floor(this.getZ() / 16D));
     }
 
     private void initializePath() {
@@ -153,19 +117,7 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
         super.tick();
 
         if (!this.level().isClientSide) {
-            if (isWaitingForChunk) {
-                chunkRetryTimer++;
-                if (chunkRetryTimer >= CHUNK_RETRY_DELAY) {
-                    BlockPos targetPos = getTargetPos();
-                    if (trySpawnInLoadedChunk(targetPos)) {
-                        isWaitingForChunk = false;
-                        initializePath();
-                    } else {
-                        chunkRetryTimer = 0;
-                    }
-                }
-                return;
-            }
+            loadNeighboringChunks(Mth.floor(this.getX() / 16D), Mth.floor(this.getZ() / 16D));
 
             Vec3 motion = this.getDeltaMovement();
             this.setPos(this.position().add(motion));
@@ -186,11 +138,9 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
             BlockPos target = getTargetPos();
             Vec3 targetCenter = Vec3.atCenterOf(target);
             Vec3 relativePos = this.position().subtract(targetCenter);
-            double distanceToCenterSq = relativePos.horizontalDistanceSqr();
-
-            // 🆕 Логика: сбрасываем РОВНО 3 бомбы в радиусе атаки
-            if (!hasFinishedAttack && bombsDropped < TOTAL_BOMBS &&
-                    distanceToCenterSq <= ATTACK_RADIUS * ATTACK_RADIUS) {
+            double along = relativePos.x * this.direction.x + relativePos.z * this.direction.z;
+            double halfSalvo = (TOTAL_BOMBS * BOMB_INTERVAL * PLANE_SPEED) * 0.5;
+            if (!hasFinishedAttack && bombsDropped < TOTAL_BOMBS && along >= -halfSalvo) {
                 bombTimer++;
                 if (bombTimer >= BOMB_INTERVAL) {
                     dropAirBomb(target);  // 🆕 НОВЫЙ метод для авиабомб
@@ -200,9 +150,8 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
                 // 🆕 Завершаем атаку после 3 бомб
                 hasFinishedAttack = true;
                 despawnTimer = 0;
-            } else if (!hasFinishedAttack && distanceToCenterSq > ATTACK_RADIUS * ATTACK_RADIUS) {
-                Vec3 toTarget = targetCenter.subtract(this.position());
-                if (toTarget.dot(this.direction) < 0) {
+            } else if (!hasFinishedAttack && along > halfSalvo + ATTACK_RADIUS) {
+                if (true) {
                     hasFinishedAttack = true;
                     despawnTimer = 0;
                 }
@@ -213,6 +162,46 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
                 if (despawnTimer > DESPAWN_DELAY) {
                     this.discard();
                 }
+            }
+        }
+    }
+
+
+    @Override
+    public void remove(@NotNull RemovalReason reason) {
+        super.remove(reason);
+        clearChunkLoader();
+    }
+
+    private void anchorChunk(int chunkX, int chunkZ) {
+        if (this.level() instanceof ServerLevel server) {
+            ChunkPos pos = new ChunkPos(chunkX, chunkZ);
+            if (pos.equals(anchorChunk)) return;
+            if (anchorChunk != null) server.getChunkSource().removeRegionTicket(CHUNK_TICKET, anchorChunk, 2, getUUID());
+            server.getChunkSource().addRegionTicket(CHUNK_TICKET, pos, 2, getUUID());
+            anchorChunk = pos;
+        }
+    }
+
+    private void loadNeighboringChunks(int newChunkX, int newChunkZ) {
+        if (this.level() instanceof ServerLevel server) {
+            ChunkPos pos = new ChunkPos(newChunkX, newChunkZ);
+            if (pos.equals(loadedChunk)) return;
+            if (loadedChunk != null) server.getChunkSource().removeRegionTicket(CHUNK_TICKET, loadedChunk, 2, getUUID());
+            server.getChunkSource().addRegionTicket(CHUNK_TICKET, pos, 2, getUUID());
+            loadedChunk = pos;
+        }
+    }
+
+    private void clearChunkLoader() {
+        if (this.level() instanceof ServerLevel server) {
+            if (loadedChunk != null) {
+                server.getChunkSource().removeRegionTicket(CHUNK_TICKET, loadedChunk, 2, getUUID());
+                loadedChunk = null;
+            }
+            if (anchorChunk != null) {
+                server.getChunkSource().removeRegionTicket(CHUNK_TICKET, anchorChunk, 2, getUUID());
+                anchorChunk = null;
             }
         }
     }
@@ -303,8 +292,6 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
         if (tag.contains("OwnerUUID")) {
             this.entityData.set(OWNER_UUID_ACCESSOR, tag.getString("OwnerUUID"));
         }
-        this.isWaitingForChunk = tag.getBoolean("WaitingForChunk");
-        this.chunkRetryTimer = tag.getInt("ChunkRetryTimer");
         this.bombsDropped = tag.getInt("BombsDropped");
         this.hasFinishedAttack = tag.getBoolean("HasFinishedAttack");
         this.direction = new Vec3(tag.getDouble("DirX"), 0, tag.getDouble("DirZ"));
@@ -317,8 +304,6 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
         tag.putInt("TargetY", target.getY());
         tag.putInt("TargetZ", target.getZ());
         tag.putString("OwnerUUID", this.entityData.get(OWNER_UUID_ACCESSOR));
-        tag.putBoolean("WaitingForChunk", isWaitingForChunk);
-        tag.putInt("ChunkRetryTimer", chunkRetryTimer);
         tag.putInt("BombsDropped", bombsDropped);
         // Both were missing: without them a reloaded plane that had already passed its target had
         // direction = ZERO, so the dot product below never went negative, hasFinishedAttack never

@@ -74,9 +74,15 @@ public class ItemModSensor extends ItemArmorMod {
         }
 
         if (explosive) {
-            world.playSound(null, entity.getX(), entity.getY(), entity.getZ(), com.hbm_m.sound.HbmSoundsNT.get("hbm:weapon.follyAquired"), net.minecraft.sounds.SoundSource.PLAYERS, 0.5F, 1.0F);
+            net.minecraft.sounds.SoundEvent ev = com.hbm_m.sound.HbmSoundsNT.get("hbm:weapon.follyAquired");
+            if (ev != null) {
+                world.playSound(null, entity.getX(), entity.getY(), entity.getZ(), ev, net.minecraft.sounds.SoundSource.PLAYERS, 0.5F, 1.0F);
+            }
         } else if (poison) {
-            world.playSound(null, entity.getX(), entity.getY(), entity.getZ(), com.hbm_m.sound.HbmSoundsNT.get("hbm:item.techBoop"), net.minecraft.sounds.SoundSource.PLAYERS, 2F, 1.5F);
+            net.minecraft.sounds.SoundEvent ev = com.hbm_m.sound.HbmSoundsNT.get("hbm:item.techBoop");
+            if (ev != null) {
+                world.playSound(null, entity.getX(), entity.getY(), entity.getZ(), ev, net.minecraft.sounds.SoundSource.PLAYERS, 2F, 1.5F);
+            }
         }
     }
 }

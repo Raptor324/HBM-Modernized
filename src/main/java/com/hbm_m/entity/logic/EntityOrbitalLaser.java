@@ -47,8 +47,8 @@ public class EntityOrbitalLaser extends Entity {
         ExplosionVNT vnt = new ExplosionVNT(level(), getX(), getY(), getZ(), 5F);
         vnt.setBlockAllocator(new BlockAllocatorStandard());
         vnt.setBlockProcessor(new BlockProcessorStandard());
-        // Original: .setDamageClass(DamageClass.LASER) - die Port-Variante kennt keine Schadensklassen
-        vnt.setEntityProcessor(new EntityProcessorCrossSmooth(1, 1_000F).setupPiercing(50F, 0.5F));
+        vnt.setEntityProcessor(new EntityProcessorCrossSmooth(1, 1_000F).setupPiercing(50F, 0.5F)
+                .setDamageClass(com.hbm_m.powerarmor.resist.DamageResistanceHandler.DamageClass.LASER));
         vnt.setPlayerProcessor(new PlayerProcessorStandard());
         vnt.setSFX(new ExplosionEffectWeapon(15, 3.5F, 1.25F));
         vnt.explode();

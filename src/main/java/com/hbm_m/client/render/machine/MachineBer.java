@@ -430,6 +430,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             }
         }
         boolean throttled = isAnimationThrottled(blockEntity);
+        boolean anyHidden = false;
         java.util.List<MachineSpec.PartDef<T>> parts = spec.parts();
         float[] pr = paramScratch;
         float[] enc = encodedScratch;
@@ -457,6 +458,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                 drawP = false;
             }
             if (!drawP) {
+                anyHidden = true;
                 inst.updateCleanSlotAnimParams(slot, 0f, 0f, 0f, 0f,
                         InstancedStaticPartRenderer.FADE_MODE_INVISIBLE);
                 continue;
@@ -467,7 +469,9 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                     : InstancedStaticPartRenderer.FADE_MODE_MIN_ANIM;
             inst.updateCleanSlotAnimParams(slot, enc[0], enc[1], enc[2], enc[3], fadeMode);
         }
-        epochStoreAfterFullAnim(blockEntity, gameTime, rosterKey);
+        if (!anyHidden) {
+            epochStoreAfterFullAnim(blockEntity, gameTime, rosterKey);
+        }
         com.hbm_m.client.render.NucleusDebug.recordMachineRendered();
         return true;
     }
@@ -1561,7 +1565,7 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                 sharedLightBbox[4] = 1f;
                 sharedLightBbox[5] = 1f;
             }
-            machineBasePoseScratch.invert(sharedLightPose).mul(poseStack.last().pose());
+            com.hbm_m.client.render.LightSampleCache.computeLocalPose(poseStack.last().pose(), blockPos, sharedLightPose);
             com.hbm_m.client.render.LightSampleCache.getOrSample8Lod(blockEntity, spec.lightSampleKey,
                     sharedLightBbox, blockPos, sharedLightPose, packedLight, sharedLight8,
                     frameDistSq(blockEntity));
@@ -1859,6 +1863,13 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                             poseStack.last().pose().set(partPoseScratch);
                             poseStack.last().normal().set(partNormalScratch);
                         }
+                    }
+                } else {
+                    if (renderer.instanced() != null && renderer.instanced().hasSlot(rosterKey)) {
+                        renderer.instanced().freeSlot(rosterKey);
+                    }
+                    if (buildRoster) {
+                        state.rosterCategory[partIdx] = MachineRenderState.REBUILD;
                     }
                 }
                 continue;

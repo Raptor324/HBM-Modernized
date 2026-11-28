@@ -94,7 +94,9 @@ public final class MachineSeparationRenderer {
                 MachineMicrowaveBlockEntity.class)
             .part("mainbody_Cube.001")
             .part("window_Cube.002")
-            .rotatingPart("plate_Cylinder", 0f, 1f, 0f, 0.575f, 0f, -0.45f, 0f, 0f, 0f,
+            // microwave.json bakes a (+0.5, 0, +0.5) root translation into all OBJ vertices;
+            // shift the plate pivot from raw OBJ (0.575, 0, -0.45) to baked (1.075, 0, 0.05).
+            .rotatingPart("plate_Cylinder", 0f, 1f, 0f, 1.075f, 0f, 0.05f, 0f, 0f, 0f,
                     (mic, pt) -> mic.time > 0 ? (System.currentTimeMillis() * mic.speed / 10.0) % 360.0 : 0.0)
             .blockTransform(MachineSeparationRenderer::applyMicrowaveTransform)
             .itemParts("mainbody_Cube.001", "window_Cube.002", "plate_Cylinder")
@@ -136,6 +138,10 @@ public final class MachineSeparationRenderer {
             .blockTransform((be, animator) -> {
                 animator.translate(0.5, 0.0, 0.5);
                 animator.rotate(180, 0, 1, 0);
+                // Cancel chimney_brick/industrial.json baked root translation (+0.5, 0, +0.5), like the
+                // compressor transforms; without it the stack lands at corner + R*v instead of
+                // center + R*v — a half-block diagonal offset (compressor pattern).
+                animator.translate(-0.5, 0.0, -0.5);
             })
             .register();
     }
@@ -161,7 +167,8 @@ public final class MachineSeparationRenderer {
             case 5 -> animator.rotate(270, 0, 1, 0);
             default -> {}
         }
-        animator.translate(-0.5, 0.0, 0.65);
+        // Cancel microwave.json root translation (+0.5, 0, +0.5) on top of original (-0.5, 0, 0.65).
+        animator.translate(-1.0, 0.0, 0.15);
     }
 
     private static void applyCompressorTransform(MachineCompressorBlockEntity compressor, LegacyAnimator animator) {

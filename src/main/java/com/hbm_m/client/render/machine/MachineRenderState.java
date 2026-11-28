@@ -64,14 +64,15 @@ final class MachineRenderState {
         boolean ep = true;
         for (int i = 0; i < rosterCategory.length; i++) {
             byte cat = rosterCategory[i];
+            int slot = rosterSlots != null ? rosterSlots[i] : -1;
             if (cat == ASSERT) {
-                if (rosterRenderers[i] == null) {
+                if (rosterRenderers[i] == null || slot == -1) {
                     stat = false;
                     ep = false;
                     break;
                 }
             } else if (cat == ASSERT_EPOCH) {
-                if (rosterRenderers[i] == null) {
+                if (rosterRenderers[i] == null || slot == -1) {
                     ep = false;
                 }
             } else {

@@ -14,6 +14,13 @@ public class SatelliteResonator extends Satellite {
 
     @Override public String getType() { return "XEN_RELAY"; }
 
+    @Override
+    public java.util.List<net.minecraft.network.chat.Component> getInfo(ServerLevel world) {
+        return java.util.List.of(
+                net.minecraft.network.chat.Component.translatable(com.hbm_m.item.ModItems.SATELLITE_XENIUM_RESONATOR.get().getDescriptionId())
+        );
+    }
+
     private long lastUse = 0L;
 
     @Override

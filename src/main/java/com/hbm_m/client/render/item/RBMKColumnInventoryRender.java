@@ -54,9 +54,13 @@ public final class RBMKColumnInventoryRender {
     private static final Matrix4f BASE_POSE = new Matrix4f();
     private static final Matrix3f BASE_NORMAL = new Matrix3f();
 
-    public static void applyGuiBlockTransform(PoseStack ps) {
+    public static void captureBasePose(PoseStack ps) {
         BASE_POSE.set(ps.last().pose());
         BASE_NORMAL.set(ps.last().normal());
+    }
+
+    public static void applyGuiBlockTransform(PoseStack ps) {
+        captureBasePose(ps);
         ps.translate(0.5F, 0.5F, 0.5F);
         ps.scale(1F / 16F, -1F / 16F, 1F / 16F);
         ps.translate(-8F, -8F, 0F);

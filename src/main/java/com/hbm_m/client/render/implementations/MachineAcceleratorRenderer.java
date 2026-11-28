@@ -106,27 +106,11 @@ public final class MachineAcceleratorRenderer {
             .blockTransform(ObjBerHelper::setupBakedBlockTransform)
             .conditionalPart("Beamline", be -> !be.hasWindow())
             .conditionalPart("BeamlineWindow", be -> be.hasWindow())
-            .conditionalPart("BeamlineGlass", be -> be.hasWindow())
-            .lightOverride("BeamlineGlass", be -> 0x00F000F0)
-            .hook(new MachineRenderHook<PABeamlineBlockEntity>() {
-                @Override
-                public void render(PABeamlineBlockEntity be, float pt, PoseStack ps,
-                                   MultiBufferSource buf, int light, int overlay, MachineRenderApi api) {
-                    ps.pushPose();
-                    ps.translate(0.5, 0.5, 0.5);
-                    long t = System.currentTimeMillis();
-                    BeamPronter.prontBeam(ps, buf, new Vec3(0, 0, 1.0),
-                            BeamPronter.EnumWaveType.RANDOM, BeamPronter.EnumBeamType.LINE,
-                            0x00e1ff, 0xffffff, (int) (t % 1000), 2, 0.04F, 0, 0,
-                            BeamPronter.forkAlpha());
-                    ps.popPose();
-                }
-
-                @Override
-                public boolean mayDrawContent(PABeamlineBlockEntity be) {
-                    return be.hasWindow();
-                }
+            .tintOverride("BeamlineGlass", be -> {
+                float f = Math.max(0F, Math.min(1F, be.light));
+                return new float[] { 0.9F * f, 0.9F * f, 1.0F * f, f };
             })
+            .conditionalPart("BeamlineGlass", be -> be.hasWindow())
             .itemParts("Beamline")
             .register();
     }

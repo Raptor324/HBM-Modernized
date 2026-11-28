@@ -47,16 +47,23 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
         if (!(state.getBlock() instanceof net.minecraft.world.level.block.EntityBlock entityBlock)) return;
         BlockEntity be = cache.computeIfAbsent(state, s -> entityBlock.newBlockEntity(BlockPos.ZERO, s));
 
-        // Autoloader in inventory 1:1 RenderRBMKAutoloader#getRenderer (ItemRenderBase):
-        // renderInventory T(0,-6,0) S(1.75); renderCommon Ry(180), Base + Piston.
-        if (displayContext == ItemDisplayContext.GUI && be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKAutoloaderBlockEntity) {
+        // Autoloader: direct OBJ render for both GUI (1:1 ItemRenderBase) and in-hand/world
+        // contexts. Nucleus MachineBer skips throwaway BEs without a live client level, so
+        // BlockEntityRenderDispatcher.renderItem draws nothing.
+        if (be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKAutoloaderBlockEntity) {
             java.util.Map<String, java.util.List<float[]>> obj = com.hbm_m.client.render.implementations.RBMKColumnRenderer.getObj("models/rbmk/models/autoloader.obj");
             net.minecraft.client.renderer.texture.TextureAtlasSprite sprite = com.hbm_m.client.render.implementations.RBMKColumnRenderer.sprite(com.hbm_m.lib.RefStrings.MODID, "block/rbmk/model_rbmk_autoloader");
-            com.mojang.blaze3d.vertex.VertexConsumer vc = buffer.getBuffer(net.minecraft.client.renderer.RenderType.solid());
+            com.mojang.blaze3d.vertex.VertexConsumer vc = buffer.getBuffer(net.minecraft.client.renderer.RenderType.entityCutoutNoCull(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS));
             poseStack.pushPose();
-            OrigInventoryTransform.apply(poseStack);
-            poseStack.translate(0, -6, 0);
-            poseStack.scale(1.75F, 1.75F, 1.75F);
+            if (displayContext == ItemDisplayContext.GUI) {
+                OrigInventoryTransform.apply(poseStack);
+                poseStack.translate(0, -6, 0);
+                poseStack.scale(1.75F, 1.75F, 1.75F);
+            } else {
+                applyDisplayOrBlockDefault(stack, displayContext, poseStack);
+                poseStack.translate(0.5F, 0.0F, 0.5F);
+                poseStack.scale(0.25F, 0.25F, 0.25F);
+            }
             poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180));
             for (String part : new String[] {"Base", "Piston"}) {
                 java.util.List<float[]> g = obj.get(part);
@@ -66,16 +73,22 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
             return;
         }
 
-        // Crane Console in inventory 1:1 ItemRenderLibrary (rbmk_crane_console):
-        // renderInventory T(0,-3,0) S(3.5); renderCommon Console_Coonsole, Joystick, Meter1, Meter2.
-        if (displayContext == ItemDisplayContext.GUI && be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKCraneConsoleBlockEntity) {
+        // Crane Console: direct OBJ render for both GUI (1:1 ItemRenderLibrary) and in-hand/world
+        // contexts (same Nucleus throwaway-BE reason as autoloader above).
+        if (be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKCraneConsoleBlockEntity) {
             java.util.Map<String, java.util.List<float[]>> obj = com.hbm_m.client.render.implementations.RBMKColumnRenderer.getObj("models/rbmk/models/crane_console.obj");
             net.minecraft.client.renderer.texture.TextureAtlasSprite sprite = com.hbm_m.client.render.implementations.RBMKColumnRenderer.sprite(com.hbm_m.lib.RefStrings.MODID, "block/machine/crane_console");
-            com.mojang.blaze3d.vertex.VertexConsumer vc = buffer.getBuffer(net.minecraft.client.renderer.RenderType.solid());
+            com.mojang.blaze3d.vertex.VertexConsumer vc = buffer.getBuffer(net.minecraft.client.renderer.RenderType.entityCutoutNoCull(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS));
             poseStack.pushPose();
-            OrigInventoryTransform.apply(poseStack);
-            poseStack.translate(0, -3, 0);
-            poseStack.scale(3.5F, 3.5F, 3.5F);
+            if (displayContext == ItemDisplayContext.GUI) {
+                OrigInventoryTransform.apply(poseStack);
+                poseStack.translate(0, -3, 0);
+                poseStack.scale(3.5F, 3.5F, 3.5F);
+            } else {
+                applyDisplayOrBlockDefault(stack, displayContext, poseStack);
+                poseStack.translate(0.5F, 0.0F, 0.5F);
+                poseStack.scale(0.35F, 0.35F, 0.35F);
+            }
             for (String part : new String[] {"Console_Coonsole", "Joystick", "Meter1", "Meter2"}) {
                 java.util.List<float[]> g = obj.get(part);
                 if (g != null) com.hbm_m.client.render.implementations.RBMKColumnRenderer.renderObjGroup(vc, poseStack.last().pose(), g, sprite, 1f, 1f, 1f, packedLight, packedOverlay);
@@ -84,17 +97,23 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
             return;
         }
 
-        boolean isSpecialMachine = be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKAutoloaderBlockEntity
-                || be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKCraneConsoleBlockEntity
-                || be instanceof com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity;
+        boolean isSpecialMachine = be instanceof com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity;
         boolean column = be instanceof RBMKColumnBlockEntity && !isSpecialMachine;
-        // Inventory matches original renderInventoryBlock (dedicated path instead of in-world BER)
-        if (displayContext == ItemDisplayContext.GUI && column) {
+        // RBMK columns: render directly via RBMKColumnInventoryRender in ALL contexts (GUI, hand,
+        // ground, fixed, head). In-world columns moved to Nucleus MachineBer, whose AbstractPartBasedRenderer
+        // skips non-world throwaway BEs (level == null), so BlockEntityRenderDispatcher.renderItem drew nothing.
+        if (column) {
             String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
             RBMKColumnInventoryRender.Kind kind = RBMKColumnInventoryRender.kind(id);
             if (kind != null) {
                 poseStack.pushPose();
-                RBMKColumnInventoryRender.applyGuiBlockTransform(poseStack);
+                if (displayContext == ItemDisplayContext.GUI) {
+                    RBMKColumnInventoryRender.applyGuiBlockTransform(poseStack);
+                } else {
+                    applyDisplayOrBlockDefault(stack, displayContext, poseStack);
+                    poseStack.translate(0.5F, 0.5F, 0.5F);
+                    RBMKColumnInventoryRender.captureBasePose(poseStack);
+                }
                 RBMKColumnInventoryRender.render(id, kind, poseStack, buffer, packedLight);
                 poseStack.popPose();
                 return;
@@ -104,36 +123,65 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
             // Steam inlet/outlet are simple blocks (RBMKInlet/RBMKOutlet) in original without column renderer ->
             // render block model.
             poseStack.pushPose();
-            applyDisplay(stack, displayContext, poseStack);
+            applyDisplayOrBlockDefault(stack, displayContext, poseStack);
             Minecraft.getInstance().getBlockRenderer().renderSingleBlock(state, poseStack, buffer, packedLight, packedOverlay);
             poseStack.popPose();
             return;
         }
 
         poseStack.pushPose();
-        // Display wrapper suppresses display values of builtin/entity model -> apply here to ensure proper orientation.
-        if (column || be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKCraneConsoleBlockEntity) {
-            applyDisplay(stack, displayContext, poseStack);
-        }
-        // RBMKColumnRenderer draws the column at its true in-world size: RBMKDials.COLUMN_HEIGHT+1
-        // blocks tall, plus a 0.25 lid plate on top. Handed to the item renderer unscaled that is
-        // four times the height of an item slot, so it would render as a single cube's worth of
-        // column with the rest cut off above the slot. Shrink the whole thing to fit the unit cube
-        // the item transforms expect, keeping it centred in X/Z and standing on the bottom face -
-        // the icon then shows the complete column instead of its lowest block.
-        if (column) {
-            // 1:1 original renderInventoryBlock (RenderRBMKRod/-Reflector: T(0,-0.675,0), RenderRBMKControl
-            // for other columns: T(0,-0.75,0); scale 0.35 each), block center as origin.
-            Object b = state.getBlock();
-            float dy = b instanceof com.hbm_m.block.machines.rbmk.RBMKRodBlock
-                    || b instanceof com.hbm_m.block.machines.rbmk.RBMKReflectorBlock ? -0.675F : -0.75F;
-            poseStack.translate(0.5F, 0.5F + dy, 0.5F);
-            poseStack.scale(0.35F, 0.35F, 0.35F);
-            poseStack.translate(-0.5F, 0.0F, -0.5F);
-        }
         Minecraft.getInstance().getBlockEntityRenderDispatcher()
                 .renderItem(be, poseStack, buffer, packedLight, packedOverlay);
         poseStack.popPose();
+    }
+
+    /** Vanilla minecraft:block/block display fallbacks when a builtin/entity item JSON omits "display". */
+    private static final net.minecraft.client.renderer.block.model.ItemTransform BLOCK_GROUND =
+            new net.minecraft.client.renderer.block.model.ItemTransform(
+                    new org.joml.Vector3f(0F, 0F, 0F),
+                    new org.joml.Vector3f(0F, 3F / 16F, 0F),
+                    new org.joml.Vector3f(0.25F, 0.25F, 0.25F));
+    private static final net.minecraft.client.renderer.block.model.ItemTransform BLOCK_FIXED =
+            new net.minecraft.client.renderer.block.model.ItemTransform(
+                    new org.joml.Vector3f(0F, 0F, 0F),
+                    new org.joml.Vector3f(0F, 0F, 0F),
+                    new org.joml.Vector3f(0.5F, 0.5F, 0.5F));
+    private static final net.minecraft.client.renderer.block.model.ItemTransform BLOCK_THIRD_PERSON =
+            new net.minecraft.client.renderer.block.model.ItemTransform(
+                    new org.joml.Vector3f(75F, 45F, 0F),
+                    new org.joml.Vector3f(0F, 2.5F / 16F, 0F),
+                    new org.joml.Vector3f(0.375F, 0.375F, 0.375F));
+    private static final net.minecraft.client.renderer.block.model.ItemTransform BLOCK_FIRST_PERSON_RIGHT =
+            new net.minecraft.client.renderer.block.model.ItemTransform(
+                    new org.joml.Vector3f(0F, 45F, 0F),
+                    new org.joml.Vector3f(0F, 0F, 0F),
+                    new org.joml.Vector3f(0.4F, 0.4F, 0.4F));
+    private static final net.minecraft.client.renderer.block.model.ItemTransform BLOCK_FIRST_PERSON_LEFT =
+            new net.minecraft.client.renderer.block.model.ItemTransform(
+                    new org.joml.Vector3f(0F, 225F, 0F),
+                    new org.joml.Vector3f(0F, 0F, 0F),
+                    new org.joml.Vector3f(0.4F, 0.4F, 0.4F));
+
+    private static void applyDisplayOrBlockDefault(ItemStack stack, ItemDisplayContext ctx, PoseStack ps) {
+        net.minecraft.client.resources.model.BakedModel displayModel = Minecraft.getInstance().getItemRenderer().getModel(stack, null, null, 0);
+        boolean leftHand = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND || ctx == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
+        net.minecraft.client.renderer.block.model.ItemTransform transform =
+                com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.resolveDisplayTransforms(displayModel,
+                        com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapToDelegate(displayModel))
+                        .getTransform(ctx);
+        if (transform == net.minecraft.client.renderer.block.model.ItemTransform.NO_TRANSFORM) {
+            transform = switch (ctx) {
+                case GROUND -> BLOCK_GROUND;
+                case FIXED -> BLOCK_FIXED;
+                case THIRD_PERSON_RIGHT_HAND, THIRD_PERSON_LEFT_HAND -> BLOCK_THIRD_PERSON;
+                case FIRST_PERSON_RIGHT_HAND -> BLOCK_FIRST_PERSON_RIGHT;
+                case FIRST_PERSON_LEFT_HAND -> BLOCK_FIRST_PERSON_LEFT;
+                default -> net.minecraft.client.renderer.block.model.ItemTransform.NO_TRANSFORM;
+            };
+        }
+        ps.translate(0.5F, 0.5F, 0.5F);
+        transform.apply(leftHand, ps);
+        ps.translate(-0.5F, -0.5F, -0.5F);
     }
 
     /** Standard ItemRenderer transform: T(.5) * display(ctx) * T(-.5). */

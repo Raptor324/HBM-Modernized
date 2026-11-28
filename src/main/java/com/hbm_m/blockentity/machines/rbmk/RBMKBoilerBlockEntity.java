@@ -411,9 +411,16 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        waterTank.writeToNBT(tag, "water"); // kept as "water" (not the original's "feed") so existing saves keep their contents
-        steamTank.writeToNBT(tag, "steam");
-        tag.putInt("ventDelay", ventDelay);
+        if (diag) {
+            // DODD dump, 1:1 with TileEntityRBMKBoiler.writeToNBT: feed/steam flat FluidTank
+            // series (feed, feed_max, feed_type, feed_p, ...) that tile.rbmk.dodd.* localizes.
+            waterTank.writeToNBTFlat(tag, "feed");
+            steamTank.writeToNBTFlat(tag, "steam");
+        } else {
+            waterTank.writeToNBT(tag, "water"); // kept as "water" (not the original's "feed") so existing saves keep their contents
+            steamTank.writeToNBT(tag, "steam");
+            tag.putInt("ventDelay", ventDelay);
+        }
     }
 
     @Override

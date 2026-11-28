@@ -2,7 +2,8 @@
 	"name": "Fluid Identification",
 	"icon": ["hbm:item.fluid_icon", 1, 1],
 	"title": {
-		"en_US": "Concept: Fluid Handling"
+		"en_US": "Concept: Fluid Handling",
+		"ru_RU": "Концепция: Работа с жидкостями"
 	},
 	"content": {
 		"en_US": ""

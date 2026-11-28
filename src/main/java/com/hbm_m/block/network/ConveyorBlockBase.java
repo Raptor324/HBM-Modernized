@@ -33,9 +33,9 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * conveyor movement, 1/4-block-tall collision shape, and the item-pickup-on-touch mechanic that
  * turns a dropped {@link ItemEntity} into a smoothly-moving {@link MovingConveyorItemEntity}.
  * <p>
- * FACING here matches the original's metadata semantics 1:1: it's the direction items TRAVEL
- * (not the input side), set on placement from the player's look direction exactly like the
- * original's {@code onBlockPlacedBy}.
+ * FACING here matches the original's metadata semantics 1:1: it's the INPUT side
+ * (opposite of the direction items TRAVEL), set on placement from the player's look direction
+ * exactly like the original's {@code onBlockPlacedBy}. Items travel toward {@code FACING.getOpposite()}.
  */
 public class ConveyorBlockBase extends Block implements IConveyorBelt, com.hbm_m.api.block.IToolable {
 
@@ -120,7 +120,7 @@ public class ConveyorBlockBase extends Block implements IConveyorBelt, com.hbm_m
     //?} else {
     /*public net.minecraft.world.item.ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
     *///?}
-        return new net.minecraft.world.item.ItemStack(this);
+        return new net.minecraft.world.item.ItemStack(getWandItem());
     }
 
     public Direction getTravelDirection(Level level, BlockPos pos, Vec3 itemPos) {
@@ -173,26 +173,6 @@ public class ConveyorBlockBase extends Block implements IConveyorBelt, com.hbm_m
             return true;
         }
         return false;
-    }
-
-    //? if < 1.21.1 {
-    @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
-        ItemStack held = player.getItemInHand(hand);
-    //?} else {
-    /*@Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.phys.BlockHitResult hit) {
-        ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
-    *///?}
-        if (held.getItem() != ModItems.SCREWDRIVER.get() && held.getItem() != ModItems.SCREWDRIVER_DESH.get()) return InteractionResult.PASS;
-
-        if (level.isClientSide) return InteractionResult.SUCCESS;
-
-        BlockState newState = onScrew(level, pos, state, player);
-        if (newState != null && newState != state) {
-            level.setBlock(pos, newState, 3);
-        }
-        return InteractionResult.CONSUME;
     }
 
     /** Port of {@code IToolable.onScrew}: non-sneak = rotate 90° clockwise, sneak = subclass-defined. */

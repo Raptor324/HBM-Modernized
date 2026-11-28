@@ -27,7 +27,7 @@ public class GUISatDock extends GuiInfoScreen<MachineSatDockMenu> {
         String[] lines = Component.translatable("desc.gui.satdock.desc").getString().split("\\$");
         Component[] text = new Component[lines.length];
         for (int i = 0; i < lines.length; i++) text[i] = Component.literal(lines[i]);
-        this.drawCustomInfoStat(g, mouseX, mouseY, -7, 36, 16, 16, leftPos - 7, topPos + 36 + 16, text);
+        this.drawCustomInfoStat(g, mouseX, mouseY, -7, 36, 16, 16, leftPos + 1, topPos + 36 + 16, text);
         this.renderTooltip(g, mouseX, mouseY);
     }
 

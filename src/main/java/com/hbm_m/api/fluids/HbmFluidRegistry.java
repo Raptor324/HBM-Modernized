@@ -182,28 +182,39 @@ public final class HbmFluidRegistry {
     }
 
     /**
-     * Filter fluids by search substring (case-insensitive). Matches fluid internal name.
-     * {@link ModFluids#NONE} is prepended when the query is empty or when the internal name {@code none} matches.
+     * Filter fluids by search substring (case-insensitive). Matches localized display name or internal name,
+     * excluding fluids with {@code FT_NoID}. {@link ModFluids#NONE} is prepended when the query is empty/blank
+     * or when it matches.
      */
     public static List<ModFluids.FluidEntry> search(String query) {
-        if (query == null || query.isEmpty()) {
+        if (query == null || query.trim().isEmpty()) {
             List<ModFluids.FluidEntry> result = new ArrayList<>(ORDERED_FLUIDS.size() + 1);
             result.add(ModFluids.NONE);
-            result.addAll(ORDERED_FLUIDS);
+            for (ModFluids.FluidEntry e : ORDERED_FLUIDS) {
+                if (!FluidType.forFluid(e.getSource()).hasNoID()) {
+                    result.add(e);
+                }
+            }
             return result;
         }
-        String lower = query.toLowerCase(Locale.US);
+        String lower = query.trim().toLowerCase(Locale.ROOT);
         List<ModFluids.FluidEntry> result = new ArrayList<>();
-        String noneName = getFluidName(ModFluids.NONE.getSource());
-        if (noneName.toLowerCase(Locale.US).contains(lower)) {
+        if (matchesQuery(ModFluids.NONE, lower)) {
             result.add(ModFluids.NONE);
         }
         for (ModFluids.FluidEntry e : ORDERED_FLUIDS) {
-            String name = getFluidName(e.getSource());
-            if (name.toLowerCase(Locale.US).contains(lower)) {
+            if (!FluidType.forFluid(e.getSource()).hasNoID() && matchesQuery(e, lower)) {
                 result.add(e);
             }
         }
         return result;
+    }
+
+    private static boolean matchesQuery(ModFluids.FluidEntry entry, String lowerQuery) {
+        FluidType type = FluidType.forFluid(entry.getSource());
+        if (type.getLocalizedName().getString().toLowerCase(Locale.ROOT).contains(lowerQuery)) {
+            return true;
+        }
+        return type.getName().toLowerCase(Locale.ROOT).contains(lowerQuery);
     }
 }

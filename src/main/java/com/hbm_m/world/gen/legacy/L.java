@@ -64,7 +64,11 @@ public final class L {
         BlockPos pos = new BlockPos(x, y, z);
         if (y < world.getMinBuildHeight() || y >= world.getMaxBuildHeight()) return false;
         if (!writable(world, pos)) return false;
-        return world.setBlock(pos, state, (world instanceof WorldGenLevel && !(world instanceof net.minecraft.world.level.Level)) ? 2 : (flag == 3 ? 3 : 2));
+        boolean placed = world.setBlock(pos, state, (world instanceof WorldGenLevel && !(world instanceof net.minecraft.world.level.Level)) ? 2 : (flag == 3 ? 3 : 2));
+        if (placed && state.getBlock() instanceof net.minecraft.world.level.block.CrossCollisionBlock) {
+            com.hbm_m.worldgen.StructureConnectionFixProcessor.enqueue(world, pos);
+        }
+        return placed;
     }
 
     public static boolean setBlockToAir(LevelAccessor world, int x, int y, int z) {

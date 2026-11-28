@@ -79,7 +79,7 @@ public class ParticleAcceleratorJeiCategory extends JeiUniversalRecipeCategory<P
         // Original drawExtras (ParticleAcceleratorHandler.java:24-36): "Momentum: %,d" bei (8, 52),
         // Farbe 0x404040, hardcoded Englisch mit US-Zifferngruppierung - wie beim Crystallizer
         // wird der Originaltext 1:1 uebernommen statt ihn zu uebersetzen.
-        String momentum = "Momentum: " + String.format(Locale.US, "%,d", recipe.getMomentum());
+        String momentum = Component.translatable("gui.hbm_m.pa.momentum", String.format(Locale.US, "%,d", recipe.getMomentum())).getString();
         guiGraphics.drawString(Minecraft.getInstance().font, momentum, 8, 52, 0x404040, false);
     }
 }

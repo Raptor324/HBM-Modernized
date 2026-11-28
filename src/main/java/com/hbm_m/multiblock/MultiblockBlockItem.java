@@ -147,13 +147,13 @@ public class MultiblockBlockItem extends BlockItem implements com.hbm_m.item.ITo
 
         CorePlaceContext(BlockPlaceContext parent, BlockPos corePos) {
             super(parent.getLevel(), parent.getPlayer(), parent.getHand(), parent.getItemInHand(),
-                    new BlockHitResult(Vec3.atCenterOf(corePos), parent.getClickedFace(), corePos, parent.isInside()));
+                    new BlockHitResult(Vec3.atCenterOf(corePos), parent.getClickedFace(), corePos.immutable(), parent.isInside()));
             this.corePos = corePos.immutable();
         }
 
         @Override
         public BlockPos getClickedPos() {
-            return this.corePos;
+            return this.corePos != null ? this.corePos : this.getHitResult().getBlockPos();
         }
     }
 

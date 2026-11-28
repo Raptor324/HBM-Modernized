@@ -112,7 +112,8 @@ public class SoyuzLauncherMenu extends AbstractContainerMenu {
     }
 
     private static boolean isEnergyProviderItem(ItemStack stack) {
-        return com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent();
+        return com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
+                || com.hbm_m.api.energy.ItemEnergyAccess.canForgeExtract(stack);
     }
 
     public SoyuzLauncherBlockEntity getBlockEntity() {

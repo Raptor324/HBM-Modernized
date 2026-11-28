@@ -8,7 +8,6 @@ import com.hbm_m.entity.conveyor.MovingConveyorPackageEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -49,10 +48,10 @@ public final class MovingConveyorRenderers {
             BakedModel model = itemRenderer.getModel(stack, entity.level(), null, entity.getId());
             if (!model.isGui3d()) {
                 pose.mulPose(Axis.XP.rotationDegrees(90F));
-                pose.translate(0.0, -0.1875, 0.0);
-                if (Minecraft.getInstance().options.graphicsMode().get() == net.minecraft.client.GraphicsStatus.FAST) {
-                    pose.mulPose(Axis.YP.rotationDegrees(180F));
-                }
+                pose.scale(0.5F, 0.5F, 0.5F);
+            } else {
+                pose.translate(0.0, 0.125, 0.0);
+                pose.scale(0.5F, 0.5F, 0.5F);
             }
 
             itemRenderer.render(stack, ItemDisplayContext.FIXED, false, pose, buffer, light, OverlayTexture.NO_OVERLAY, model);
@@ -79,9 +78,7 @@ public final class MovingConveyorRenderers {
             if (dummy == null) dummy = new ItemStack(ModBlocks.CRATE.get());
 
             pose.pushPose();
-            pose.translate(0, -0.0125, 0);
-            float scale = 2F;
-            pose.scale(scale, scale, scale);
+            pose.translate(0, 0.2375, 0);
             BakedModel model = itemRenderer.getModel(dummy, entity.level(), null, entity.getId());
             itemRenderer.render(dummy, ItemDisplayContext.FIXED, false, pose, buffer, light, OverlayTexture.NO_OVERLAY, model);
             pose.popPose();

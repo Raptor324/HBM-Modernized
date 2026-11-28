@@ -58,8 +58,7 @@ public class PADetectorBlockEntity extends CooledMachineBlockEntity implements I
         be.chargeFromBatterySlot(SLOT_BATTERY);
         be.tickCooling(level, pos);
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        be.syncIfChanged(0);
     }
 
     private Direction beamAxis() {
@@ -173,7 +172,7 @@ public class PADetectorBlockEntity extends CooledMachineBlockEntity implements I
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return slot == SLOT_CONTAINER_A || slot == SLOT_CONTAINER_B || (slot == SLOT_BATTERY && isEnergyReceiverItem(stack));
+        return slot == SLOT_CONTAINER_A || slot == SLOT_CONTAINER_B || (slot == SLOT_BATTERY && isEnergyProviderItem(stack));
     }
 
     //? if forge {

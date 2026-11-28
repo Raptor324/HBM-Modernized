@@ -8,7 +8,7 @@
     "default": "hbm_m:block/machine/wood_burner"
   },
   "transform": {
-    "translation": [-1, 0, -1],
+    "translation": [0, 0, 0],
     "rotation": [0, 180, 0],
     "scale": 1.0
   },

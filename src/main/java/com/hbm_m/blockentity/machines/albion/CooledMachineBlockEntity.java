@@ -46,6 +46,12 @@ public abstract class CooledMachineBlockEntity extends BaseMachineBlockEntity
 
     protected float temperature = TEMPERATURE_AMBIENT;
 
+    private long lastSyncEnergy = Long.MIN_VALUE;
+    private int lastSyncTempTenths = Integer.MIN_VALUE;
+    private int lastSyncCold = Integer.MIN_VALUE;
+    private int lastSyncHot = Integer.MIN_VALUE;
+    private int lastSyncExtra = Integer.MIN_VALUE;
+
     protected CooledMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state,
                                        int inventorySize, long capacity, long maxReceive) {
         super(type, pos, state, inventorySize, capacity, maxReceive, 0L);
@@ -93,6 +99,42 @@ public abstract class CooledMachineBlockEntity extends BaseMachineBlockEntity
 
     public FluidTank[] getCoolantTanks() {
         return coolantTanks;
+    }
+
+    protected void syncIfChanged(int extraHash) {
+        long energy = getEnergyStored();
+        int tempTenths = (int) (temperature * 10F);
+        int cold = coolantTanks[0].getFill();
+        int hot = coolantTanks[1].getFill();
+        if (energy != lastSyncEnergy || tempTenths != lastSyncTempTenths
+                || cold != lastSyncCold || hot != lastSyncHot || extraHash != lastSyncExtra) {
+            lastSyncEnergy = energy;
+            lastSyncTempTenths = tempTenths;
+            lastSyncCold = cold;
+            lastSyncHot = hot;
+            lastSyncExtra = extraHash;
+            setChanged();
+            sendUpdateToClient();
+        }
+    }
+
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.interfaces.IMultiblockController controller)) {
+            return new BlockPos[0];
+        }
+        var helper = controller.getStructureHelper();
+        if (helper == null) return new BlockPos[0];
+        Direction facing = PAOrientation.facingOf(getBlockState());
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos local : helper.getStructureMap().keySet()) {
+            var role = helper.resolvePartRole(local, controller);
+            if (role.canReceiveEnergy() || role.canSendEnergy()) {
+                ports.add(helper.getRotatedPos(worldPosition, local, facing));
+            }
+        }
+        return ports.toArray(new BlockPos[0]);
     }
 
     // ── IFluidStandardTransceiverMK2 ────────────────────────────────────────

@@ -254,13 +254,20 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        inputTank.writeToNBT(tag, "input");
-        outputTank.writeToNBT(tag, "output");
-        //? if < 1.21.1 {
-        tag.put("inventory", inventory.serializeNBT());
-        //?} else {
-        /*tag.put("inventory", inventory.serializeNBT(registries));
-        *///?}
+        if (diag) {
+            // DODD dump, 1:1 with TileEntityRBMKHeater.writeToNBT: feed/steam flat FluidTank
+            // series (tile.rbmk.dodd.feed*/steam*), no inventory and no slot lines.
+            inputTank.writeToNBTFlat(tag, "feed");
+            outputTank.writeToNBTFlat(tag, "steam");
+        } else {
+            inputTank.writeToNBT(tag, "input");
+            outputTank.writeToNBT(tag, "output");
+            //? if < 1.21.1 {
+            tag.put("inventory", inventory.serializeNBT());
+            //?} else {
+            /*tag.put("inventory", inventory.serializeNBT(registries));
+            *///?}
+        }
     }
 
     @Override

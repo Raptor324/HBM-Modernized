@@ -166,15 +166,12 @@ public final class ModWorldGenProvider {
 
         // --- кастомные фичи (раньше — рукописные JSON) ---
         ctx.register(cf("ore_bedrock_mineral"), new ConfiguredFeature<>(ModWorldGen.BEDROCK_ORE.get(), new NoneFeatureConfiguration()));
-        ctx.register(cf("ore_bedrock_oil"), new ConfiguredFeature<>(ModWorldGen.BEDROCK_OIL_ORE.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("nether_bedrock_ore"), new ConfiguredFeature<>(ModWorldGen.NETHER_BEDROCK_ORE.get(), new NoneFeatureConfiguration()));
-        ctx.register(cf("oil_deposit"), new ConfiguredFeature<>(ModWorldGen.OIL_DEPOSIT.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("coltan_deposit"), new ConfiguredFeature<>(ModWorldGen.COLTAN_DEPOSIT.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("glyphid_hive"), new ConfiguredFeature<>(ModWorldGen.GLYPHID_HIVE.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("lantern_behemoth"), new ConfiguredFeature<>(ModWorldGen.LANTERN_BEHEMOTH.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("no_mans_land_spots"), new ConfiguredFeature<>(ModWorldGen.NO_MANS_LAND_SPOTS.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("soyuz_capsule"), new ConfiguredFeature<>(ModWorldGen.SOYUZ_CAPSULE.get(), new NoneFeatureConfiguration()));
-        ctx.register(cf("sand_oil_deposit"), new ConfiguredFeature<>(ModWorldGen.SAND_OIL_DEPOSIT.get(), new NoneFeatureConfiguration()));
         // FFA: 1:1-Weltgenerierung des Originals (HbmWorldGen + Ereignis-Generatoren)
         ctx.register(cf("hbm_strata"), new ConfiguredFeature<>(ModWorldGen.HBM_STRATA.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("hbm_worldgen"), new ConfiguredFeature<>(ModWorldGen.HBM_WORLDGEN.get(), new NoneFeatureConfiguration()));
@@ -186,7 +183,7 @@ public final class ModWorldGenProvider {
 
         // Земляничный куст (random_patch, как в оригинальном strawberry.json)
         ctx.register(cf("strawberry_bush_configured"), new ConfiguredFeature<>(Feature.RANDOM_PATCH, new RandomPatchConfiguration(
-                64, 7, 3, PlacementUtils.inlinePlaced(Feature.SIMPLE_BLOCK,
+                64, 7, 3, PlacementUtils.onlyWhenEmpty(Feature.SIMPLE_BLOCK,
                         new SimpleBlockConfiguration(BlockStateProvider.simple(ModBlocks.STRAWBERRY_BUSH.get()))))));
     }
 
@@ -263,11 +260,9 @@ public final class ModWorldGenProvider {
                 RarityFilter.onAverageOnceEvery(12), InSquarePlacement.spread(),
                 HeightRangePlacement.uniform(VerticalAnchor.absolute(-64), VerticalAnchor.absolute(-64)),
                 BiomeFilter.biome()));
-        placed(ctx, features, "ore_bedrock_oil", List.of(
-                RarityFilter.onAverageOnceEvery(200), InSquarePlacement.spread(),
-                HeightRangePlacement.uniform(VerticalAnchor.absolute(-64), VerticalAnchor.absolute(-63)),
-                BiomeFilter.biome()));
-        // Нефтяные месторождения (MapGenBubble oilSpawn=100: 1/100 чанков, y 15..40 → -48..-8)
+        // Нефть генерируется 1:1 портами MapGenBubble/MapGenBedrockOil через карверы
+        // (configured_carver/oil_bubble|sand_oil_bubble|bedrock_oil.json, подключены в
+        // biome_modifier/add_ntm_terrain.json), поэтому feature-путь здесь не нужен.
         placed(ctx, features, "coltan_deposit", List.of(BiomeFilter.biome()));
         placed(ctx, features, "glyphid_hive", List.of(BiomeFilter.biome()));
         placed(ctx, features, "lantern_behemoth", List.of(BiomeFilter.biome()));
@@ -275,15 +270,6 @@ public final class ModWorldGenProvider {
         placed(ctx, features, "soyuz_capsule", List.of(BiomeFilter.biome()));
         placed(ctx, features, "hbm_strata", List.of(BiomeFilter.biome()));
         placed(ctx, features, "hbm_worldgen", List.of(BiomeFilter.biome()));
-        placed(ctx, features, "oil_deposit", List.of(
-                RarityFilter.onAverageOnceEvery(100), InSquarePlacement.spread(),
-                HeightRangePlacement.uniform(VerticalAnchor.absolute(-48), VerticalAnchor.absolute(-8)),
-                BiomeFilter.biome()));
-        // Песчаные месторождения (sandBubbleSpawn=200, пустынные биомы)
-        placed(ctx, features, "sand_oil_deposit", List.of(
-                RarityFilter.onAverageOnceEvery(200), InSquarePlacement.spread(),
-                HeightRangePlacement.uniform(VerticalAnchor.absolute(20), VerticalAnchor.absolute(60)),
-                BiomeFilter.biome()));
         // Руда Энда (ore_tikite: 6 жил, y 0..127 → 5..120)
         placed(ctx, features, "tikite_ore", List.of(
                 CountPlacement.of(6), InSquarePlacement.spread(),
@@ -340,7 +326,7 @@ public final class ModWorldGenProvider {
                 // Глубинные залежи (DepthDeposit оригинала)
                 "depth_cinnabar", "depth_zirconium", "depth_borax",
                 "cluster_depth_iron", "cluster_depth_titanium", "cluster_depth_tungsten",
-                "ore_bedrock_mineral", "ore_bedrock_oil", "oil_deposit", "stone_keyhole",
+                "ore_bedrock_mineral", "stone_keyhole",
                 // FFA: 1:1 HbmWorldGen
                 "coltan_deposit", "hbm_worldgen");
         addModifier(ctx, biomes, placed, "add_overworld_ores", BiomeTags.IS_OVERWORLD, overworldOres,
@@ -379,18 +365,6 @@ public final class ModWorldGenProvider {
         // End: тикит (endOre оригинала)
         addModifier(ctx, biomes, placed, "add_end_ores", BiomeTags.IS_END,
                 List.of("tikite_ore"), GenerationStep.Decoration.UNDERGROUND_ORES);
-
-        // Пустынные биомы: песчаные нефтяные месторождения (canSpawn: !rain && t>=1.5)
-        addModifierForBiomes(ctx, biomes, placed, "add_sand_oil",
-                List.of(net.minecraft.world.level.biome.Biomes.DESERT,
-                        net.minecraft.world.level.biome.Biomes.BADLANDS,
-                        net.minecraft.world.level.biome.Biomes.WOODED_BADLANDS,
-                        net.minecraft.world.level.biome.Biomes.ERODED_BADLANDS,
-                        net.minecraft.world.level.biome.Biomes.SAVANNA,
-                        net.minecraft.world.level.biome.Biomes.SAVANNA_PLATEAU,
-                        net.minecraft.world.level.biome.Biomes.WINDSWEPT_SAVANNA,
-                        net.minecraft.world.level.biome.Biomes.BEACH),
-                List.of("sand_oil_deposit"), GenerationStep.Decoration.UNDERGROUND_ORES);
 
         // Natural mob spawns. The port registered SpawnPlacement predicates for the three creepers
         // but no biome ever carried a spawn entry, so they only ever came from spawn eggs. Upstream

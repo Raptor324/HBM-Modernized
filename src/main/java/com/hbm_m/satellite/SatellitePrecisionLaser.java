@@ -28,6 +28,17 @@ public class SatellitePrecisionLaser extends Satellite {
     @Override public String getType() { return "ORBITAL_TATOO_REMOVER"; }
 
     @Override
+    public java.util.List<net.minecraft.network.chat.Component> getInfo(ServerLevel world) {
+        boolean canFire = lastShot + CHARGE_TIME < world.getGameTime();
+        int cooldown = (int) ((lastShot + CHARGE_TIME) - world.getGameTime());
+        return java.util.List.of(
+                net.minecraft.network.chat.Component.translatable(com.hbm_m.item.ModItems.SATELLITE_PRECISION_LASER.get().getDescriptionId()),
+                canFire ? net.minecraft.network.chat.Component.translatable("satellite.ready")
+                        : net.minecraft.network.chat.Component.translatable("satellite.cooldown", (cooldown / 20) + "s")
+        );
+    }
+
+    @Override
     public void writeToNBT(CompoundTag nbt) {
         super.writeToNBT(nbt);
         nbt.putLong("lastShot", lastShot);
@@ -57,7 +68,10 @@ public class SatellitePrecisionLaser extends Satellite {
                 double dX = x - targetX;
                 double dZ = z - targetZ;
                 if (dX * dX + dZ * dZ <= MAX_TARGET_RANGE * MAX_TARGET_RANGE) {
-                    this.deathBlast(world, e.getX(), e.getY(), e.getZ());
+                    double offX = world.random.nextDouble() * 0.05 - 0.025;
+                    double offY = world.random.nextDouble() * 0.05 - 0.025;
+                    double offZ = world.random.nextDouble() * 0.05 - 0.025;
+                    this.deathBlast(world, e.getX() + offX, e.getY() + offY, e.getZ() + offZ);
                     return;
                 }
             }
@@ -72,7 +86,7 @@ public class SatellitePrecisionLaser extends Satellite {
             return;
         }
 
-        if (cmd[0].equals(CMD_SETENTITYTARGET)) {
+        if (cmd[0].equals(CMD_SETENTITYTARGET) && cmd.length == 2) {
             this.targetedEntity = IRORInteractive.parseInt(cmd[1]);
         }
     }
@@ -93,7 +107,7 @@ public class SatellitePrecisionLaser extends Satellite {
     public void deathBlast(ServerLevel world, double x, double y, double z) {
         if (lastShot + CHARGE_TIME < world.getGameTime()) {
             lastShot = world.getGameTime();
-            SatelliteManager.get(world).setDirty();
+            this.markDirty();
             EntityOrbitalLaser blast = new EntityOrbitalLaser(world);
             blast.setPos(x, y, z);
             blast.explode();

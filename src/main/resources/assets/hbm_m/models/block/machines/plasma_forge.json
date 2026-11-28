@@ -8,6 +8,7 @@
 			"loader": "hbm_m:nmesh_obj",
 			"model": "hbm_m:models/block/machines/plasma_forge_static.obj",
 			"flip_v": true,
+			"automatic_culling": false,
 			"render_type": "minecraft:cutout",
 			"textures": {
 				"default": "hbm_m:block/machine/plasma_forge"

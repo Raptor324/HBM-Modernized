@@ -376,9 +376,7 @@ public class EngineHandler {
             // считать свет/оверлей живыми — следующий управляемый бинд но-опится,
             // террейн следующих кадров сэмплирует пустоту (чёрный экран).
             // Восстанавливаем управляемо лайтмап и оверлей, возвращаем active TU0.
-            Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
-            Minecraft.getInstance().gameRenderer.overlayTexture().setupOverlayColor();
-            com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
+            com.hbm_m.client.render.shader.ShaderBindResync.restoreVanillaTextureBindings();
             com.hbm_m.client.render.shader.NtDirectPass.run(() -> {
                 ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
             });
@@ -394,9 +392,7 @@ public class EngineHandler {
         // (аддитив/альфа из JSON) — следующий ванильный opaque-шейдер молча
         // выключит блендинг (чёрная виньетка/солнце/GUI). Сбрасываем кеш.
         com.hbm_m.client.render.shader.ShaderBindResync.invalidateBlendModeCache();
-        Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
-        Minecraft.getInstance().gameRenderer.overlayTexture().setupOverlayColor();
-        com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
+        com.hbm_m.client.render.shader.ShaderBindResync.restoreVanillaTextureBindings();
         // ГЛАВНЫЙ фикс-кандидат «чёрного экрана»: если Oculus-миксин пометил
         // кадр маскировкой depth/color на apply() наших кастомных шейдеров,
         // презент кадра уйдёт через пустой композит Iris при полностью

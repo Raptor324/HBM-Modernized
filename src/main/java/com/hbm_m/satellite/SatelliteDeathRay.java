@@ -23,6 +23,17 @@ public class SatelliteDeathRay extends Satellite {
     @Override public String getType() { return "ORBITAL_FUN_PLATFORM_:)"; }
 
     @Override
+    public java.util.List<net.minecraft.network.chat.Component> getInfo(ServerLevel world) {
+        boolean canFire = lastShot + CHARGE_TIME < world.getGameTime();
+        int cooldown = (int) ((lastShot + CHARGE_TIME) - world.getGameTime());
+        return java.util.List.of(
+                net.minecraft.network.chat.Component.translatable(com.hbm_m.item.ModItems.SATELLITE_DEATH_RAY.get().getDescriptionId()),
+                canFire ? net.minecraft.network.chat.Component.translatable("satellite.ready")
+                        : net.minecraft.network.chat.Component.translatable("satellite.cooldown", (cooldown / 20) + "s")
+        );
+    }
+
+    @Override
     public void writeToNBT(CompoundTag nbt) {
         super.writeToNBT(nbt);
         nbt.putLong("lastShot", lastShot);
@@ -58,7 +69,7 @@ public class SatelliteDeathRay extends Satellite {
     public void deathBlast(ServerLevel world, int x, int z) {
         if (lastShot + CHARGE_TIME < world.getGameTime()) {
             lastShot = world.getGameTime();
-            SatelliteManager.get(world).setDirty();
+            this.markDirty();
             int y = world.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
             EntityDeathBlast blast = new EntityDeathBlast(world);
             blast.setPos(x, y, z);

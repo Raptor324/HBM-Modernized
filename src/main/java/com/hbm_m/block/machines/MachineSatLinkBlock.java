@@ -78,6 +78,14 @@ public class MachineSatLinkBlock extends DummyableMachineBlock implements ILookO
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
     //?} else {
     /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!stack.isEmpty() && stack.getItem() instanceof ISatChip) {
+            InteractionResult res = hbmUse(state, world, pos, player, hand, hit);
+            return res.consumesAction() ? net.minecraft.world.ItemInteractionResult.sidedSuccess(world.isClientSide) : net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        }
+        return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+    }
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
         return hbmUse(state, world, pos, player, InteractionHand.MAIN_HAND, hit);
     }
@@ -108,8 +116,10 @@ public class MachineSatLinkBlock extends DummyableMachineBlock implements ILookO
         if (!(be instanceof MachineSatLinkBlockEntity link)) return;
 
         List<Component> text = new ArrayList<>();
-        text.add(Component.literal("Freq: " + link.freq));
-        text.add(Component.literal("Connected: " + (link.connected ? (ChatFormatting.GREEN + "Yes") : (ChatFormatting.RED + "No"))));
+        text.add(Component.translatable("tile.machine_satlink.freq").append(": " + link.freq));
+        text.add(Component.translatable("tile.machine_satlink.connected").append(": ")
+                .append(Component.translatable(link.connected ? "tile.machine_satlink.yes" : "tile.machine_satlink.no")
+                        .withStyle(link.connected ? ChatFormatting.GREEN : ChatFormatting.RED)));
         if (link.connected) text.addAll(link.info);
         ILookOverlay.printGeneric(guiGraphics, Component.translatable(this.getDescriptionId()), 0xffff00, 0x404000, text);
     }

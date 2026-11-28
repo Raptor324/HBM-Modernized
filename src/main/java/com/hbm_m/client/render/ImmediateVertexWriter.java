@@ -147,9 +147,9 @@ public final class ImmediateVertexWriter {
             return;
         }
         if (matrix != null) {
-            com.hbm_m.platform.RenderHooks.vertexTexColor(consumer, matrix, x, y, z, u, v, r, g, b, a);
+            com.hbm_m.platform.RenderHooks.vertexPosTexColor(consumer, matrix, x, y, z, u, v, r, g, b, a);
         } else {
-            com.hbm_m.platform.RenderHooks.vertexTexColor(consumer, x, y, z, u, v, r, g, b, a);
+            com.hbm_m.platform.RenderHooks.vertexPosTexColor(consumer, x, y, z, u, v, r, g, b, a);
         }
     }
 

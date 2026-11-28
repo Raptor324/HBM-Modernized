@@ -81,12 +81,23 @@ public class StructureConnectionFixProcessor extends StructureProcessor {
         if (!info2.state().is(CONNECTABLES)) {
             return info2;
         }
-        ResourceKey<Level> dim = level instanceof ServerLevel sl ? sl.dimension() : Level.OVERWORLD;
+        ResourceKey<Level> dim = level instanceof net.minecraft.world.level.ServerLevelAccessor sla
+                ? sla.getLevel().dimension()
+                : Level.OVERWORLD;
         // processBlock вызывается из воркеров генерации чанков, tick — из серверного
         // потока: только конкурентная очередь, никаких ArrayList под общий мутекс
         PENDING.computeIfAbsent(dim, k -> new ConcurrentLinkedQueue<>())
                 .add(new PendingPos(info2.pos().immutable(), 0));
         return info2;
+    }
+
+    /** Enqueues a placed connectable block for deferred neighbor-shape connection fix on server tick. */
+    public static void enqueue(net.minecraft.world.level.LevelAccessor level, BlockPos pos) {
+        ResourceKey<Level> dim = level instanceof net.minecraft.world.level.ServerLevelAccessor sla
+                ? sla.getLevel().dimension()
+                : Level.OVERWORLD;
+        PENDING.computeIfAbsent(dim, k -> new ConcurrentLinkedQueue<>())
+                .add(new PendingPos(pos.immutable(), 0));
     }
 
     /**

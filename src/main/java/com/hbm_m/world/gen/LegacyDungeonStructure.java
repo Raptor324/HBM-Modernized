@@ -272,6 +272,9 @@ public class LegacyDungeonStructure extends Structure {
 
                 BlockState state = vw.blocks.get(key);
                 level.setBlock(pos, state, 2);
+                if (state.getBlock() instanceof net.minecraft.world.level.block.CrossCollisionBlock) {
+                    com.hbm_m.worldgen.StructureConnectionFixProcessor.enqueue(level, pos);
+                }
 
                 BlockEntity virtual = vw.blockEntities.get(key);
                 if (virtual != null) {

@@ -234,7 +234,8 @@ public class MachineConveyorPressBlock extends com.hbm_m.block.machines.Dummyabl
 
         if (held.getItem() == ModItems.SCREWDRIVER.get()) {
             ItemStack removed = press.removeStamp();
-            if (!removed.isEmpty() && !player.getInventory().add(removed)) {
+            if (removed.isEmpty()) return InteractionResult.PASS;
+            if (!player.getInventory().add(removed)) {
                 player.drop(removed, false);
             }
             return InteractionResult.CONSUME;
@@ -259,7 +260,8 @@ public class MachineConveyorPressBlock extends com.hbm_m.block.machines.Dummyabl
 
         if (held.getItem() == ModItems.SCREWDRIVER.get()) {
             ItemStack removed = press.removeStamp();
-            if (!removed.isEmpty() && !player.getInventory().add(removed)) {
+            if (removed.isEmpty()) return InteractionResult.PASS;
+            if (!player.getInventory().add(removed)) {
                 player.drop(removed, false);
             }
             return InteractionResult.CONSUME;

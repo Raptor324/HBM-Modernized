@@ -194,9 +194,16 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        coldTank.writeToNBT(tag, "t0");
-        hotTank.writeToNBT(tag, "t1");
-        tag.putInt("lastCooled", lastCooled);
+        if (diag) {
+            // DODD dump, 1:1 with TileEntityRBMKCooler.writeToNBT: t0/t1 flat FluidTank series
+            // (tile.rbmk.dodd.t0*/t1*); no "cooled" line - the original never wrote one.
+            coldTank.writeToNBTFlat(tag, "t0");
+            hotTank.writeToNBTFlat(tag, "t1");
+        } else {
+            coldTank.writeToNBT(tag, "t0");
+            hotTank.writeToNBT(tag, "t1");
+            tag.putInt("lastCooled", lastCooled);
+        }
     }
 
     @Override

@@ -29,6 +29,6 @@ public class ItemSatellite extends Item implements ISatChip, ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(ItemStack stack, Level level, List<Component> list, TooltipFlag flag) {
-        list.add(Component.translatable("satchip.frequency").append(": " + getFreq(stack)));
+        list.add(Component.translatable("satchip.frequency").append(": " + getFreq(stack)).withStyle(net.minecraft.ChatFormatting.AQUA));
     }
 }

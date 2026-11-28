@@ -100,8 +100,6 @@ public final class MachineTurretRenderer {
                     if (type == null) return;
 
                     ps.pushPose();
-                    Vec3 off = be.getHorizontalOffset();
-                    ps.translate(off.x, off.y, off.z);
                     animatePitchPart(stats, "himars_crane", be, pt, ps);
 
                     VertexConsumer vc = buf.getBuffer(RenderType.entityCutoutNoCull(type.texture));

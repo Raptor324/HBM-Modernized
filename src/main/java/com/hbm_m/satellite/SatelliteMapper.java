@@ -18,12 +18,20 @@ public class SatelliteMapper extends Satellite {
     public static final String CMD_TARGET_LOADED = "targetloaded";
     public static final String CMD_GETSMOG = "getsmog";
     public static final String CMD_SPOT_PLAYER = "spotplayers";
+    public static final String CMD_FIND_PLAYER = "findplayer";
 
     public static final int SPOT_PLAYER_MAX_RANGE = 250;
 
     public SatelliteMapper() { }
 
     @Override public String getType() { return "NOT_A_SPY_SATELLITE_:)"; }
+
+    @Override
+    public List<net.minecraft.network.chat.Component> getInfo(ServerLevel world) {
+        return List.of(
+                net.minecraft.network.chat.Component.translatable(com.hbm_m.item.ModItems.SATELLITE_SPY.get().getDescriptionId())
+        );
+    }
 
     @Override
     public void onCommandImpl(ServerLevel world, String... cmd) {
@@ -63,6 +71,26 @@ public class SatelliteMapper extends Satellite {
             }
 
             this.tx = String.join(";", names);
+            return;
+        }
+
+        if (cmd[0].equals(CMD_FIND_PLAYER) && cmd.length == 2) {
+            String lookingFor = cmd[1].toLowerCase(Locale.US);
+            for (Player player : world.players()) {
+                int x = (int) Math.floor(player.getX());
+                int z = (int) Math.floor(player.getZ());
+                double dX = x - targetX;
+                double dZ = z - targetZ;
+                if (dX * dX + dZ * dZ <= SPOT_PLAYER_MAX_RANGE * SPOT_PLAYER_MAX_RANGE
+                        && player.getGameProfile().getName().toLowerCase(Locale.US).equals(lookingFor)) {
+                    int height = world.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
+                    if (height < player.getY() + 2) {
+                        this.tx = x + ";" + z;
+                        return;
+                    }
+                }
+            }
+            this.tx = "NOT FOUND";
         }
     }
 }

@@ -886,9 +886,10 @@ public class ClientSetup {
         MachineFoundryChannelRenderer.register();
         MachineFoundryTankRenderer.register(); // tank melt, Nucleus factory
         // ─── RBMK column renderers ─────
-        // Nucleus: 13 specs (one per column BE type), all sharing the MachineRBMKColumnRenderer
-        // hook that draws the procedural column geometry (flat sides, lid plate, rod cap, OBJ
-        // fuel-channel internals, Cherenkov glow).
+        // Nucleus: 12 column specs (one per column BE type) in MachineRBMKColumnRenderer, with
+        // the geometry as dynamic parts (body quads, OBJ fuel-channel internals, rod cap joint,
+        // per-instance rod tint); the Cherenkov haze stays the one immediate hook. The
+        // rbmk_autoloader spec lives in MachineRbmkControlRenderer (baked parts).
         MachineRBMKColumnRenderer.register();
         // The 7 RTTY panel devices each get their own renderer, ported 1:1 from the original's
         // RenderRBMK* tile entity special renderers.
@@ -1313,6 +1314,8 @@ public class ClientSetup {
         LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/arc_furnace_electrodes_hot"));
 
         LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/soyuz_rocket_luna"));
+        LoaderHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/soyuz_rocket_authentic"));
 
         for (String part : new String[] {
                 "chekhov_base", "chekhov_base_friendly", "chekhov_base_rusted", "chekhov_connectors",

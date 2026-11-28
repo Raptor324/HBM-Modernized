@@ -78,6 +78,7 @@ public final class HeldCrate {
         BlockPos fake = new BlockPos(0, player.level().getMinBuildHeight() - 1, 0);
         BlockEntity be = entityBlock.newBlockEntity(fake, block.defaultBlockState());
         if (!(be instanceof BaseCrateBlockEntity crate)) return;
+        crate.setLevel(player.level());
 
         CompoundTag beTag = readBlockEntityTag(stack);
         if (beTag != null) BlockHooks.loadCustomOnly(crate, beTag, player.level().registryAccess());
@@ -182,23 +183,19 @@ public final class HeldCrate {
     // ---- Versionshuellen fuer BlockEntityTag ----
 
     public static @Nullable CompoundTag readBlockEntityTag(ItemStack stack) {
-        //? if < 1.21.1 {
-        CompoundTag root = stack.getTag();
-        return root != null && root.contains("BlockEntityTag") ? root.getCompound("BlockEntityTag") : null;
-        //?} else {
-        /*net.minecraft.world.item.component.CustomData data = stack.get(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA);
-        return data == null ? null : data.copyTag();
-        *///?}
+        return com.hbm_m.platform.BlockEntityItemData.read(stack);
     }
 
     private static void writeBlockEntityTag(ItemStack stack, CompoundTag tag) {
-        //? if < 1.21.1 {
-        if (tag.isEmpty()) stack.removeTagKey("BlockEntityTag");
-        else stack.addTagElement("BlockEntityTag", tag);
-        //?} else {
-        /*if (tag.isEmpty()) stack.remove(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA);
-        else stack.set(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA, net.minecraft.world.item.component.CustomData.of(tag));
-        *///?}
+        if (tag.isEmpty()) {
+            clearBlockEntityTag(stack);
+        } else {
+            //? if < 1.21.1 {
+            stack.addTagElement("BlockEntityTag", tag);
+            //?} else {
+            /*com.hbm_m.platform.BlockEntityItemData.writeBack(stack, tag);
+            *///?}
+        }
     }
 
     private static void clearBlockEntityTag(ItemStack stack) {

@@ -521,64 +521,6 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 6)
                 .addIngredient(ModItems.CRT_DISPLAY.get(), 1)
                 .save(writer, "lpw2");
-
-        registerParticleAccelerator(writer);
-    }
-
-    /** Bauteile und Spulen des Teilchenbeschleunigers. Das Original hat dafuer keine Rezepte. */
-    private static void registerParticleAccelerator(java.util.function.Consumer<FinishedRecipe> writer) {
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.BEAMLINE.get(), 1), 100, 100)
-                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4)
-                .addIngredient(ModItems.PIPE_STEEL.get(), 2)
-                .save(writer, "pa_beamline");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.QUADRUPOLE.get(), 1), 300, 100)
-                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 4)
-                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
-                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 2)
-                .save(writer, "pa_quadrupole");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.DIPOLE.get(), 1), 300, 100)
-                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 4)
-                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
-                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 3)
-                .save(writer, "pa_dipole");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.RFC.get(), 1), 400, 100)
-                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 8)
-                .addIngredient(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE), 24)
-                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 4)
-                .save(writer, "pa_rfc");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.PA_SOURCE.get(), 1), 500, 100)
-                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 8)
-                .addIngredient(ModItems.PIPE_STEEL.get(), 6)
-                .addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 1)
-                .save(writer, "pa_source");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.PA_DETECTOR.get(), 1), 500, 100)
-                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 8)
-                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 4)
-                .addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 1)
-                .save(writer, "pa_detector");
-
-        // Spulen: die Materialstufe bestimmt, wie schnell der Strahl werden darf.
-        // Gold gibt es als einfachen Draht, die hoeheren Stufen nur als dichten - was zur
-        // Wertigkeit passt.
-        coil(writer, ModItems.PA_COIL_GOLD.get(), ModMaterials.GOLD, MaterialShape.WIRE);
-        coil(writer, ModItems.PA_COIL_NIOBIUM.get(), ModMaterials.NIOBIUM, MaterialShape.WIRE_DENSE);
-        coil(writer, ModItems.PA_COIL_BSCCO.get(), ModMaterials.BSCCO, MaterialShape.WIRE_DENSE);
-    }
-
-    private static void coil(java.util.function.Consumer<FinishedRecipe> writer,
-                             net.minecraft.world.item.Item result, ModMaterials material,
-                             MaterialShape wireShape) {
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(result, 1), 200, 100)
-                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 2)
-                .addIngredient(ModMaterialItems.item(material, wireShape),
-                        wireShape == MaterialShape.WIRE ? 16 : 8)
-                .save(writer, "pa_coil_" + material.name().toLowerCase(java.util.Locale.ROOT));
     }
 
     /** Cloth / small parts — port of 1.7.10 ass.platemixed, ass.hazcloth, ass.firecloth, ass.filtercoal. */

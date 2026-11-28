@@ -1,13 +1,12 @@
 package com.hbm_m.api.fluids;
 
-//? if neoforge {
-/*import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.NotNull;
 
-/// Универсальный outward NeoForge `IFluidHandler` для BlockEntity, реализующих
+/// Универсальный outward `IFluidHandler` для BlockEntity, реализующих
 /// `IFluidStandardTransceiverMK2` (или один из его родителей: `IFluidStandardSenderMK2` /
 /// `IFluidStandardReceiverMK2`). Один класс покрывает все HBM-машины с флюидами.
 ///
@@ -127,4 +126,3 @@ public final class NeoForgeFluidHandlerMK2 implements IFluidHandler {
                 : FluidStack.EMPTY;
     }
 }
-*///?}

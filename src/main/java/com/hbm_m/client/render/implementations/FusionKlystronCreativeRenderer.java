@@ -48,6 +48,7 @@ public class FusionKlystronCreativeRenderer implements com.hbm_m.client.render.H
         pose.pushPose();
         pose.translate(0.5D, 0D, 0.5D);
         MachineFusionComplexRenderer.applyFacing(be.getBlockState(), pose);
+        pose.mulPose(Axis.YP.rotationDegrees(90.0F));
         pose.translate(-1D, 0D, 0D);
 
         float rot = Mth.lerp(partialTick, be.prevFan, be.fan);

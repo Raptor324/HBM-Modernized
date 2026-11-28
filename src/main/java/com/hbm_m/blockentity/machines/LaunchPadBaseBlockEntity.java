@@ -60,7 +60,9 @@ import net.minecraft.world.level.material.Fluids;
  * на энерго-/жидкостные сети через {@link #getConPos()} (угловые коннекторы мультиблока).
  */
 public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
-        implements IRadarCommandReceiver, IFluidStandardReceiverMK2 {
+        implements IRadarCommandReceiver, IFluidStandardReceiverMK2,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider,
+        com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     public static final int TANK_CAPACITY_MB = 24_000;
 
@@ -902,4 +904,46 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         sidedItems.invalidate();
     }
     *///?}
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "state",
+                PREFIX_VALUE + "power",
+                PREFIX_VALUE + "fuel",
+                PREFIX_VALUE + "oxidizer",
+                PREFIX_VALUE + "canlaunch",
+                PREFIX_FUNCTION + "launch",
+                PREFIX_FUNCTION + "launch" + NAME_SEPARATOR + "entity",
+                PREFIX_FUNCTION + "launch" + NAME_SEPARATOR + "x" + PARAM_SEPARATOR + "z"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "state").equals(name)) return "" + state;
+        if ((PREFIX_VALUE + "power").equals(name)) return "" + getEnergyStored();
+        if ((PREFIX_VALUE + "fuel").equals(name)) return "" + tanks[0].getFill();
+        if ((PREFIX_VALUE + "oxidizer").equals(name)) return "" + tanks[1].getFill();
+        if ((PREFIX_VALUE + "canlaunch").equals(name)) return canLaunch() ? "1" : "0";
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        if ((PREFIX_FUNCTION + "launch").equals(name)) {
+            if (params.length == 0) {
+                this.launchFromDesignator();
+            } else if (params.length == 1 && level != null) {
+                Entity e = level.getEntity(com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0]));
+                if (e != null && e.isAlive()) this.launchToEntity(e);
+            } else if (params.length == 2) {
+                this.launchToCoordinate(
+                        com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0]),
+                        com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[1]));
+            }
+            return null;
+        }
+        return null;
+    }
 }

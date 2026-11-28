@@ -55,8 +55,7 @@ public class PAQuadrupoleBlockEntity extends CooledMachineBlockEntity implements
         be.chargeFromBatterySlot(SLOT_BATTERY);
         be.tickCooling(level, pos);
 
-        be.setChanged();
-        be.sendUpdateToClient();
+        be.syncIfChanged(0);
     }
 
     private Direction beamAxis() {
@@ -97,9 +96,27 @@ public class PAQuadrupoleBlockEntity extends CooledMachineBlockEntity implements
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_COIL) return stack.getItem() instanceof ItemPACoil;
-        if (slot == SLOT_BATTERY) return isEnergyReceiverItem(stack);
+        if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack);
         return false;
     }
+
+    //? if forge {
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) {
+            return net.minecraftforge.common.util.LazyOptional.empty();
+        }
+        return super.getCapability(cap, side);
+    }
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            return com.hbm_m.platform.LazyCap.empty();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     @Override
     protected Component getDefaultName() {

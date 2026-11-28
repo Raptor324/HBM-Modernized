@@ -108,7 +108,7 @@ public class MachineCraneExtractorBlockEntity extends CraneBaseBlockEntity imple
             boolean hasSent = false;
 
             //? if forge {
-            IItemHandler inv = CraneInventoryUtil.inventoryAt(level, pos.relative(inputSide), inputSide.getOpposite());
+            IItemHandler inv = CraneInventoryUtil.inventoryAt(level, pos.relative(inputSide), inputSide.getOpposite(), true);
 
             /* aus einem angeschlossenen Inventar senden */
             if (inv != null) {
@@ -140,7 +140,7 @@ public class MachineCraneExtractorBlockEntity extends CraneBaseBlockEntity imple
                 }
             }
             //?} elif neoforge {
-            /*net.minecraftforge.items.IItemHandler inv = CraneInventoryUtil.inventoryAt(level, pos.relative(inputSide), inputSide.getOpposite());
+            /*net.minecraftforge.items.IItemHandler inv = CraneInventoryUtil.inventoryAt(level, pos.relative(inputSide), inputSide.getOpposite(), true);
 
             /^ aus einem angeschlossenen Inventar senden ^/
             if (inv != null) {
@@ -267,7 +267,9 @@ public class MachineCraneExtractorBlockEntity extends CraneBaseBlockEntity imple
     /** Original: {@code isItemValidForSlot} - nur Puffer (9-17) fuer Automatisierung. */
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return slot > 8 && slot < 18;
+        if (slot <= 8 || slot >= 18) return false;
+        boolean match = matchesFilter(stack);
+        return (isWhitelist && match) || (!isWhitelist && !match);
     }
 
     @Override protected boolean canExtractItem(int slot, ItemStack stack) { return slot > 8 && slot < 18; }

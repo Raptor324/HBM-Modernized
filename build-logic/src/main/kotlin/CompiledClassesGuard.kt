@@ -354,7 +354,12 @@ private fun collectAllJavaSources(compileTask: JavaCompile, sourceSetFiles: Set<
  * Компилирует все исходники начисто во временную staging-папку и атомарно синхронизирует
  * .class-файлы в основную директорию, чтобы запущенный runClient не падал во время починки.
  */
-private fun autoHealCompilation(project: Project, compileTask: JavaCompile, sources: Set<File>): Boolean {
+private fun autoHealCompilation(
+	project: Project,
+	compileTask: JavaCompile,
+	sources: Set<File>,
+	overwriteHealthy: Boolean = false
+): Boolean {
 	val compiler = ToolProvider.getSystemJavaCompiler() ?: return false
 	val stagingDir = project.layout.buildDirectory.dir("tmp/auto-heal-classes").get().asFile
 	stagingDir.deleteRecursively()
@@ -388,12 +393,19 @@ private fun autoHealCompilation(project: Project, compileTask: JavaCompile, sour
 	val rc = compiler.run(null, null, null, "@${argFile.absolutePath}")
 	if (rc != 0) return false
 
-	// Атомарно копируем свежескомпилированные .class поверх targetDir (без предварительного deleteRecursively!)
+	// Атомарно копируем только отсутствующие или повреждённые .class поверх targetDir,
+	// чтобы не перезаписывать здоровые классы от compileJava и не триггерить массовый HotSwap.
 	val newRelPaths = mutableSetOf<String>()
 	stagingDir.walkTopDown().filter { it.isFile && it.name.endsWith(".class") }.forEach { srcFile ->
 		val rel = stagingDir.toPath().relativize(srcFile.toPath()).toString()
 		newRelPaths += rel
 		val dstFile = File(targetDir, rel)
+		if (!overwriteHealthy && dstFile.isFile && dstFile.length() >= 24) {
+			val existingBytes = runCatching { dstFile.readBytes() }.getOrNull()
+			if (existingBytes != null && parseConstantPoolModRefs(existingBytes) != null) {
+				return@forEach
+			}
+		}
 		dstFile.parentFile.mkdirs()
 		val tmpFile = File(targetDir, "$rel.tmp")
 		Files.copy(srcFile.toPath(), tmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
@@ -499,6 +511,12 @@ fun Project.registerCompiledClassesGuard(jarTaskName: String) {
 					return@doLast
 				}
 
+				if (compileJavaTask.state.upToDate && lkgDir.isDirectory) {
+					// compileJava.outputs.upToDateWhen already ran analyzeCompiledClasses() and confirmed
+					// everything is intact; no classes changed, so skip redundant re-verification & snapshot sync.
+					return@doLast
+				}
+
 				verifyAndHeal(compileJavaTask)
 			} finally {
 				mutexProvider.get().release()
@@ -551,7 +569,7 @@ fun Project.registerCompiledClassesGuard(jarTaskName: String) {
 			val compileJavaTask = tasks.named<JavaCompile>("compileJava").get()
 			val allSources = collectAllJavaSources(compileJavaTask, sources.get().files)
 			logger.lifecycle("[CompiledClassesGuard] repairCompiledClasses: performing atomic clean compilation...")
-			if (!autoHealCompilation(project, compileJavaTask, allSources)) {
+			if (!autoHealCompilation(project, compileJavaTask, allSources, overwriteHealthy = true)) {
 				classDirs.get().forEach { it.deleteRecursively() }
 				file("build/tmp/compileJava").deleteRecursively()
 				file("build/tmp/compileKotlin").deleteRecursively()

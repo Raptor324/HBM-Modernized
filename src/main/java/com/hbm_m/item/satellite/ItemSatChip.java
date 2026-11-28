@@ -26,7 +26,7 @@ public class ItemSatChip extends Item implements ISatChip, ITooltipProvider {
     @Override
     public void appendHbmTooltip(ItemStack itemstack, Level level, List<Component> list, TooltipFlag flag) {
 
-        list.add(Component.translatable("satchip.frequency").append(": " + getFreq(itemstack)));
+        list.add(Component.translatable("satchip.frequency").append(": " + getFreq(itemstack)).withStyle(net.minecraft.ChatFormatting.AQUA));
 
         // W-R6C-4: Addon (NTM Space ItemSatellite) kann die Typbeschreibung durch eigene Zeilen ersetzen
         if (!com.hbm_m.api.space.SpaceApi.satellites().showHbmChipDescription(itemstack)) return;

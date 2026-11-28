@@ -23,6 +23,13 @@ public class SatelliteDetector extends Satellite {
     @Override public String getType() { return "UWB_EMISSION_DETECTOR"; }
 
     @Override
+    public java.util.List<net.minecraft.network.chat.Component> getInfo(ServerLevel world) {
+        return java.util.List.of(
+                net.minecraft.network.chat.Component.translatable(com.hbm_m.item.ModItems.SATELLITE_DETECTOR.get().getDescriptionId())
+        );
+    }
+
+    @Override
     public void onCommandImpl(ServerLevel world, String... cmd) {
         if (cmd.length <= 0) return;
 

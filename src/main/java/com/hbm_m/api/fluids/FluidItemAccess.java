@@ -44,6 +44,23 @@ public final class FluidItemAccess {
         return hasFluidHandler(stack);
     }
 
+    public static boolean isFluidContainer(ItemStack stack, net.minecraft.world.level.material.Fluid expected) {
+        if (stack.isEmpty() || expected == null) return false;
+        if (stack.getItem() instanceof com.hbm_m.item.liquids.InfiniteFluidItem) return true;
+        if (com.hbm_m.inventory.FluidContainerRegistry.getFluidContent(stack, expected) > 0) return true;
+        var handlerOpt = getFluidHandler(stack);
+        if (handlerOpt.isPresent()) {
+            var handler = handlerOpt.get();
+            for (int i = 0; i < handler.getTanks(); i++) {
+                var fs = handler.getFluidInTank(i);
+                if (!fs.isEmpty() && VanillaFluidEquivalence.sameSubstance(fs.getFluid(), expected)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public static boolean hasFluidHandler(ItemStack stack) {
         if (stack.isEmpty()) return false;
         //? if forge {

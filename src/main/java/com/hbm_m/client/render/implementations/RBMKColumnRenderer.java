@@ -395,6 +395,129 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
         }
     }
 
+    // ─── BakedQuad synthesis (Nucleus dynamic parts) ──────────────────────────
+
+    /**
+     * Canonical 3-byte normal packing for the BLOCK vertex format (the same
+     * convention as DaeQuadBaker/PartGeometry read it back).
+     */
+    public static int packNormal(float nx, float ny, float nz) {
+        return ((int) (nx * 127) & 0xFF) | (((int) (ny * 127) & 0xFF) << 8) | (((int) (nz * 127) & 0xFF) << 16);
+    }
+
+    /** {@link #packNormal(float, float, float)} for a cardinal direction. */
+    public static int packNormal(net.minecraft.core.Direction dir) {
+        return packNormal(dir.getStepX(), dir.getStepY(), dir.getStepZ());
+    }
+
+    /**
+     * One BLOCK-format quad over four explicit corners, with the flat-quad UV
+     * convention the legacy renderer used for every hand-emitted quad
+     * (v0→[u0,v1], v1→[u1,v1], v2→[u1,v0], v3→[u0,v0]). Per-vertex color and
+     * light are not carried by the part VBO layout (pos/normal/uv/bone only) -
+     * lighting travels per instance in the record, so they are zeroed here.
+     */
+    public static net.minecraft.client.renderer.block.model.BakedQuad flatQuad(
+            TextureAtlasSprite s, net.minecraft.core.Direction dir,
+            float x0, float y0, float z0, float x1, float y1, float z1,
+            float x2, float y2, float z2, float x3, float y3, float z3) {
+        float u0 = s.getU0(), u1 = s.getU1(), v0 = s.getV0(), v1 = s.getV1();
+        int n = packNormal(dir);
+        int[] data = new int[32];
+        putQuadVertex(data, 0, x0, y0, z0, u0, v1, n);
+        putQuadVertex(data, 1, x1, y1, z1, u1, v1, n);
+        putQuadVertex(data, 2, x2, y2, z2, u1, v0, n);
+        putQuadVertex(data, 3, x3, y3, z3, u0, v0, n);
+        return new net.minecraft.client.renderer.block.model.BakedQuad(data, -1, dir, s, false);
+    }
+
+    /** Sub-region variant of {@link #flatQuad} with normalized sprite UV bounds in [0, 1]. */
+    public static net.minecraft.client.renderer.block.model.BakedQuad flatSubQuad(
+            TextureAtlasSprite s, net.minecraft.core.Direction dir,
+            float x0, float y0, float z0, float x1, float y1, float z1,
+            float x2, float y2, float z2, float x3, float y3, float z3,
+            float u0Frac, float v0Frac, float u1Frac, float v1Frac) {
+        float u0 = s.getU0() + u0Frac * (s.getU1() - s.getU0());
+        float u1 = s.getU0() + u1Frac * (s.getU1() - s.getU0());
+        float v0 = s.getV0() + v0Frac * (s.getV1() - s.getV0());
+        float v1 = s.getV0() + v1Frac * (s.getV1() - s.getV0());
+        int n = packNormal(dir);
+        int[] data = new int[32];
+        putQuadVertex(data, 0, x0, y0, z0, u0, v1, n);
+        putQuadVertex(data, 1, x1, y1, z1, u1, v1, n);
+        putQuadVertex(data, 2, x2, y2, z2, u1, v0, n);
+        putQuadVertex(data, 3, x3, y3, z3, u0, v0, n);
+        return new net.minecraft.client.renderer.block.model.BakedQuad(data, -1, dir, s, false);
+    }
+
+    /** Up-facing sub-region quad matching 1.7.10 RenderBlocks.renderFaceYPos UV mapping (x -> u, z -> v). */
+    public static net.minecraft.client.renderer.block.model.BakedQuad flatTopSubQuad(
+            TextureAtlasSprite s, float x0, float y, float z0, float x1, float z1) {
+        float u0 = s.getU0() + x0 * (s.getU1() - s.getU0());
+        float u1 = s.getU0() + x1 * (s.getU1() - s.getU0());
+        float v0 = s.getV0() + z0 * (s.getV1() - s.getV0());
+        float v1 = s.getV0() + z1 * (s.getV1() - s.getV0());
+        int n = packNormal(net.minecraft.core.Direction.UP);
+        int[] data = new int[32];
+        putQuadVertex(data, 0, x0, y, z0, u0, v0, n);
+        putQuadVertex(data, 1, x0, y, z1, u0, v1, n);
+        putQuadVertex(data, 2, x1, y, z1, u1, v1, n);
+        putQuadVertex(data, 3, x1, y, z0, u1, v0, n);
+        return new net.minecraft.client.renderer.block.model.BakedQuad(data, -1, net.minecraft.core.Direction.UP, s, false);
+    }
+
+    private static void putQuadVertex(int[] data, int i, float x, float y, float z,
+                                      float u, float v, int normalPacked) {
+        int off = i * 8;
+        data[off]     = Float.floatToRawIntBits(x);
+        data[off + 1] = Float.floatToRawIntBits(y);
+        data[off + 2] = Float.floatToRawIntBits(z);
+        data[off + 3] = 0xFFFFFFFF;
+        data[off + 4] = Float.floatToRawIntBits(u);
+        data[off + 5] = Float.floatToRawIntBits(v);
+        data[off + 6] = 0;
+        data[off + 7] = normalPacked;
+    }
+
+    /**
+     * {@code getObj} triangles (the raw {@code [x,y,z, u,v, nx,ny,nz] * 3}
+     * submesh format) converted to BLOCK-format quads for a Nucleus dynamic
+     * part: atlas UV with the V flip {@code renderObjGroup} applies, real
+     * per-vertex normals (the part VBO path shades from them), and a nearest
+     * cardinal quad direction for the immediate fallback's terrain shade.
+     * One quad per triangle with the 4th vertex duplicating the 3rd (the VBO
+     * builder drops that degenerate second triangle, exactly like the legacy
+     * path's pass-3 duplicate). Positions are offset by (ox, oy, oz).
+     */
+    public static List<net.minecraft.client.renderer.block.model.BakedQuad> objGroupQuads(
+            List<float[]> triangles, TextureAtlasSprite sprite, float ox, float oy, float oz) {
+        if (triangles == null || triangles.isEmpty() || sprite == null) return List.of();
+        float u0 = sprite.getU0(), u1 = sprite.getU1();
+        float v0 = sprite.getV0(), v1 = sprite.getV1();
+        List<net.minecraft.client.renderer.block.model.BakedQuad> out = new ArrayList<>(triangles.size());
+        for (float[] tri : triangles) {
+            int[] data = new int[32];
+            net.minecraft.core.Direction dir = null;
+            for (int pass = 0; pass < 4; pass++) {
+                int base = Math.min(pass, 2) * 8;
+                float x = tri[base] + ox, y = tri[base + 1] + oy, z = tri[base + 2] + oz;
+                float au = u0 + tri[base + 3] * (u1 - u0);
+                float av = v0 + (1f - tri[base + 4]) * (v1 - v0); // V flipped
+                float nx = tri[base + 5], ny = tri[base + 6], nz = tri[base + 7];
+                if (pass == 0) {
+                    // Nearest cardinal only as the quad's Direction (the immediate
+                    // fallback shades by it); the vertices themselves carry the real
+                    // per-vertex normals, so the part VBO path shades slanted faces
+                    // (octagonal channel facets) like the original's ObjUtil did.
+                    dir = net.minecraft.core.Direction.getNearest(nx, ny, nz);
+                }
+                putQuadVertex(data, pass, x, y, z, au, av, packNormal(nx, ny, nz));
+            }
+            out.add(new net.minecraft.client.renderer.block.model.BakedQuad(data, -1, dir, sprite, false));
+        }
+        return out;
+    }
+
     // ─── Culling ─────────────────────────────────────────────────────────────
 
     // RBMKColumnBlockEntity.getRenderBoundingBox() already expands the AABB to cover the

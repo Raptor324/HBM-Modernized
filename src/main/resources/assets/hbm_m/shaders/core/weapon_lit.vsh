@@ -34,7 +34,9 @@ void main() {
     vec4 viewPos = ModelViewMat * vec4(Position, 1.0);
     gl_Position = ProjMat * viewPos;
 
-    vec3 viewNormal = normalize(mat3(ModelViewMat) * Normal);
+    vec3 nRaw = mat3(ModelViewMat) * Normal;
+    float nLenSq = dot(nRaw, nRaw);
+    vec3 viewNormal = nLenSq > 1e-8 ? nRaw * inversesqrt(nLenSq) : vec3(0.0, 1.0, 0.0);
     float diff0 = max(dot(normalize(uLight0), viewNormal), 0.0);
     float diff1 = max(dot(normalize(uLight1), viewNormal), 0.0);
     float diffuse = clamp(0.4 + diff0 * 0.6 + diff1 * 0.6, 0.0, 1.0);

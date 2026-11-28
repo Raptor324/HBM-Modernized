@@ -1,5 +1,6 @@
 package com.hbm_m.client.render.implementations;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -28,12 +29,14 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.level.Level;
 
 /**
  * Nucleus renderers for RBMK Control Systems:
@@ -181,82 +184,38 @@ public final class MachineRbmkControlRenderer {
                 animator.translate(-0.5, 0, -0.5);
             })
             .part("Console_Coonsole")
-            // Dynamic Joystick tilting with movement inputs
-            .rotatingPart("Joystick", new Vector3f(0f, 0f, 1f), new Vector3f(0.75f, 1f, 0f),
-                    (be, pt) -> Mth.lerp(pt, be.lastTiltFront, be.tiltFront))
-            .part("Meter1")
-            .part("Meter2")
-            .hook(new MachineRenderHook<RBMKCraneConsoleBlockEntity>() {
-                @Override
-                public void render(RBMKCraneConsoleBlockEntity be, float pt, PoseStack ps,
-                                   MultiBufferSource buf, int light, int overlay, MachineRenderApi api) {
-                    if (!be.setUpCrane) return;
-
-                    Map<String, List<float[]>> craneObj = RBMKColumnRenderer.getObj("models/rbmk/models/crane.obj");
-                    TextureAtlasSprite craneTex = RBMKColumnRenderer.sprite(RefStrings.MODID, "block/machine/rbmk_crane");
-
-                    ps.pushPose();
-                    ps.translate(0.5, -1, 0.5);
-                    var pos = be.getBlockPos();
-                    ps.translate(be.center.getX() - pos.getX(),
-                                 be.center.getY() - pos.getY() + 1,
-                                 be.center.getZ() - pos.getZ());
-
-                    double posX = Mth.lerp(pt, be.lastPosFront, be.posFront);
-                    double posZ = Mth.lerp(pt, be.lastPosLeft, be.posLeft);
-                    ps.translate(-posX, 0, posZ);
-                    ps.mulPose(Axis.YP.rotationDegrees(be.craneRotationOffset));
-
-                    // Girder bridge
-                    ps.pushPose();
-                    ps.mulPose(Axis.YP.rotationDegrees(-be.craneRotationOffset));
-                    int girderSpan = switch (be.craneRotationOffset) {
-                        case 90 -> {
-                            ps.translate(0, 0, -posZ - be.spanR);
-                            yield be.spanL + be.spanR + 1;
-                        }
-                        case 180 -> {
-                            ps.translate(posX - be.spanF, 0, 0);
-                            yield be.spanF + be.spanB + 1;
-                        }
-                        case 270 -> {
-                            ps.translate(0, 0, -posZ + be.spanL);
-                            yield be.spanL + be.spanR + 1;
-                        }
-                        default -> {
-                            ps.translate(posX + be.spanB, 0, 0);
-                            yield be.spanF + be.spanB + 1;
-                        }
-                    };
-                    ps.mulPose(Axis.YP.rotationDegrees(be.craneRotationOffset));
-                    for (int i = 0; i < girderSpan; i++) {
-                        renderCranePart(ps, buf, craneObj, "Girder", craneTex, light, overlay);
-                        ps.translate(-1, 0, 0);
-                    }
-                    ps.popPose();
-
-                    renderCranePart(ps, buf, craneObj, "Main", craneTex, light, overlay);
-
-                    ps.pushPose();
-                    for (int i = 0; i < be.height - 6; i++) {
-                        renderCranePart(ps, buf, craneObj, "Tube", craneTex, light, overlay);
-                        ps.translate(0, 1, 0);
-                    }
-                    ps.translate(0, -1, 0);
-                    renderCranePart(ps, buf, craneObj, "Carriage", craneTex, light, overlay);
-                    ps.popPose();
-
-                    ps.translate(0, -3.25 * (1 - Mth.lerp(pt, be.lastProgress, be.progress)), 0);
-                    renderCranePart(ps, buf, craneObj, "Lift", craneTex, light, overlay);
-
-                    ps.popPose();
-                }
-
-                @Override
-                public boolean mayDrawContent(RBMKCraneConsoleBlockEntity be) {
-                    return be.setUpCrane;
-                }
-            })
+            // Desk widgets moved off baked parts onto OBJ-quad dynamic parts so their
+            // animator chains can replicate the original exactly (all groups of the same
+            // crane_console.obj the baked body uses, so coordinates line up):
+            // - Joystick: two-axis tilt T(0.75,1,0)·Rz(tiltFront)·Rx(tiltLeft)·T(-0.75,-1.015,0)
+            //   (the baked rotatingPart only had the Z axis and dropped the tail nudge);
+            // - Meter1/2: needle at wobble + 135 - 270*loadedHeat/loadedEnrichment;
+            // - Lamp1/2: untextured state lamps - white sprite + per-instance tint with
+            //   full emission (the original drew them with lighting disabled, lightmap 240/240).
+            .dynamicPart("Joystick", MachineRbmkControlRenderer::joystickAnim,
+                    MachineRbmkControlRenderer::joystickQuads, be -> "joy")
+            .dynamicPart("Meter1", MachineRbmkControlRenderer::meter1Anim,
+                    MachineRbmkControlRenderer::meter1Quads, be -> "m1")
+            .dynamicPart("Meter2", MachineRbmkControlRenderer::meter2Anim,
+                    MachineRbmkControlRenderer::meter2Quads, be -> "m2")
+            .tintOverride("Lamp1", MachineRbmkControlRenderer::lamp1Tint)
+            .dynamicPart("Lamp1", MachineRbmkControlRenderer::identityAnim,
+                    MachineRbmkControlRenderer::lamp1Quads, be -> "l1")
+            .tintOverride("Lamp2", MachineRbmkControlRenderer::lamp2Tint)
+            .dynamicPart("Lamp2", MachineRbmkControlRenderer::identityAnim,
+                    MachineRbmkControlRenderer::lamp2Quads, be -> "l2")
+            // The gantry hoist crane traversing the reactor hall, migrated off the immediate
+            // hook onto dynamic parts: the girder repetitions / tube stack / carriage compile
+            // into cached VBOs keyed by crane size, and the per-frame transforms (hall anchor,
+            // gantry travel, hall rotation, hoist progress) ride the animators - the exact
+            // coordinate chain of the hook they replace, split across three parts because the
+            // girder sits one counter-rotate + offset deeper than the rest of the assembly.
+            .dynamicPart("CraneGirder", MachineRbmkControlRenderer::craneGirder,
+                    MachineRbmkControlRenderer::craneGirderQuads, MachineRbmkControlRenderer::craneGirderKey)
+            .dynamicPart("CraneFrame", MachineRbmkControlRenderer::craneFrame,
+                    MachineRbmkControlRenderer::craneFrameQuads, MachineRbmkControlRenderer::craneFrameKey)
+            .dynamicPart("CraneLift", MachineRbmkControlRenderer::craneLift,
+                    MachineRbmkControlRenderer::craneLiftQuads, MachineRbmkControlRenderer::craneLiftKey)
             .viewDistance(128)
             .itemParts("Console_Coonsole")
             .register();
@@ -270,16 +229,207 @@ public final class MachineRbmkControlRenderer {
             // Fuel transfer piston/sleeve traveling 4 blocks down into channel
             .translatingPart("Piston", new Vector3f(0f, 1f, 0f),
                     (be, pt) -> (float) (4.0 - (be.lastPiston + (be.piston - be.lastPiston) * pt) * 4.0))
+            // Sole rbmk_autoloader spec now: an uncommitted working-tree state had a second
+            // hook spec in MachineRBMKColumnRenderer, which (registered later) overwrote this
+            // one in MachineRenderRegistry.BY_TYPE; removed in the MDI migration. 64 matches
+            // the legacy BER default that overwritten spec ran at.
+            .viewDistance(64)
             .itemParts("Base", "Piston")
             .register();
     }
 
-    private static void renderCranePart(PoseStack ps, MultiBufferSource buf, Map<String, List<float[]>> obj,
-                                        String group, TextureAtlasSprite sprite, int light, int overlay) {
-        List<float[]> mesh = obj.get(group);
-        if (mesh == null) return;
-        RBMKColumnRenderer.renderObjGroup(buf.getBuffer(RenderType.solid()),
-                ps.last().pose(), mesh, sprite, 1f, 1f, 1f, light, overlay);
+    // ─── Crane console desk widgets (1:1 with RenderCraneConsole) ────────────
+
+    private static final String CRANE_CONSOLE_OBJ = "models/rbmk/models/crane_console.obj";
+    private static final String CRANE_CONSOLE_TEX = "block/machine/crane_console";
+
+    /**
+     * Two-axis joystick tilt, 1:1 with the original's transform chain
+     * {@code T(0.75,1,0)·Rz(tiltFront)·Rx(tiltLeft)·T(-0.75,-1.015,0)}. Tilt state
+     * (incl. tiltLeft) is ticked and synced by the BE - the previous baked
+     * rotatingPart could only ever express the Z axis.
+     */
+    private static boolean joystickAnim(RBMKCraneConsoleBlockEntity be, float pt, long gt, PoseStack ps) {
+        ps.translate(0.75, 1, 0);
+        ps.mulPose(Axis.ZP.rotationDegrees((float) Mth.lerp(pt, be.lastTiltFront, be.tiltFront)));
+        ps.mulPose(Axis.XP.rotationDegrees((float) Mth.lerp(pt, be.lastTiltLeft, be.tiltLeft)));
+        ps.translate(-0.75, -1.015, 0);
+        return true;
+    }
+
+    /** Idle needle jitter, 1:1 with the original's {@code sin(now*0.01 % 360)·180/PI·0.05}. */
+    private static double meterWobble() {
+        return Math.sin(System.currentTimeMillis() * 0.01 % 360) * 180 / Math.PI * 0.05;
+    }
+
+    /** Heat gauge needle: {@code wobble + 135 - 270*loadedHeat} around X at (0, 1.25, 0.75). */
+    private static boolean meter1Anim(RBMKCraneConsoleBlockEntity be, float pt, long gt, PoseStack ps) {
+        ps.translate(0, 1.25, 0.75);
+        ps.mulPose(Axis.XP.rotationDegrees((float) (meterWobble() + 135 - 270 * be.loadedHeat)));
+        ps.translate(0, -1.25, -0.75);
+        return true;
+    }
+
+    /** Enrichment gauge needle: same formula over {@code loadedEnrichment} at (0, 1.25, 0.25). */
+    private static boolean meter2Anim(RBMKCraneConsoleBlockEntity be, float pt, long gt, PoseStack ps) {
+        ps.translate(0, 1.25, 0.25);
+        ps.mulPose(Axis.XP.rotationDegrees((float) (meterWobble() + 135 - 270 * be.loadedEnrichment)));
+        ps.translate(0, -1.25, -0.25);
+        return true;
+    }
+
+    /**
+     * Lamps draw untransformed; the animator exists purely so the part counts as
+     * animated and its {@code tintOverride} refreshes every frame (static parts
+     * only refresh tint on a full VBO rebuild).
+     */
+    private static boolean identityAnim(RBMKCraneConsoleBlockEntity be, float pt, long gt, PoseStack ps) {
+        return true;
+    }
+
+    private static List<BakedQuad> deskPartQuads(RBMKCraneConsoleBlockEntity be, String group,
+                                                 TextureAtlasSprite sprite) {
+        Map<String, List<float[]>> obj = RBMKColumnRenderer.getObj(CRANE_CONSOLE_OBJ);
+        return RBMKColumnRenderer.objGroupQuads(obj.get(group), sprite, 0, 0, 0);
+    }
+
+    private static List<BakedQuad> joystickQuads(RBMKCraneConsoleBlockEntity be) {
+        return deskPartQuads(be, "Joystick", RBMKColumnRenderer.sprite(RefStrings.MODID, CRANE_CONSOLE_TEX));
+    }
+
+    private static List<BakedQuad> meter1Quads(RBMKCraneConsoleBlockEntity be) {
+        return deskPartQuads(be, "Meter1", RBMKColumnRenderer.sprite(RefStrings.MODID, CRANE_CONSOLE_TEX));
+    }
+
+    private static List<BakedQuad> meter2Quads(RBMKCraneConsoleBlockEntity be) {
+        return deskPartQuads(be, "Meter2", RBMKColumnRenderer.sprite(RefStrings.MODID, CRANE_CONSOLE_TEX));
+    }
+
+    private static List<BakedQuad> lamp1Quads(RBMKCraneConsoleBlockEntity be) {
+        return deskPartQuads(be, "Lamp1", whiteSprite());
+    }
+
+    private static List<BakedQuad> lamp2Quads(RBMKCraneConsoleBlockEntity be) {
+        return deskPartQuads(be, "Lamp2", whiteSprite());
+    }
+
+    /** Loading indicator: crane busy yellow / rod loaded green / unloaded dark. */
+    private static float[] lamp1Tint(RBMKCraneConsoleBlockEntity be) {
+        if (be.isCraneLoading()) return new float[] {0.8f, 0.8f, 0f, 1f};
+        if (be.hasItemLoaded())  return new float[] {0f, 1f, 0f, 1f};
+        return new float[] {0f, 0.1f, 0f, 1f};
+    }
+
+    /** Target indicator: valid load/unload column under the claw green, otherwise red. */
+    private static float[] lamp2Tint(RBMKCraneConsoleBlockEntity be) {
+        Level level = be.getLevel();
+        boolean valid = level != null && be.getLoadableAtPos(level) != null;
+        return valid ? new float[] {0f, 1f, 0f, 1f} : new float[] {1f, 0f, 0f, 1f};
+    }
+
+    // ─── Crane console: dynamic parts (former immediate hook) ────────────────
+
+    private static final String CRANE_OBJ = "models/rbmk/models/crane.obj";
+    private static final String CRANE_TEX = "block/machine/rbmk_crane";
+
+    /**
+     * Shared frame transform: hall anchor (center of the crane grid), gantry
+     * travel and hall rotation - the head of the legacy hook's transform chain,
+     * identical for every crane part.
+     */
+    private static boolean craneFrame(RBMKCraneConsoleBlockEntity be, float pt, long gt, PoseStack ps) {
+        if (!be.setUpCrane) return false;
+        var pos = be.getBlockPos();
+        ps.translate(0.5, -1, 0.5);
+        ps.translate(be.center.getX() - pos.getX(),
+                     be.center.getY() - pos.getY() + 1,
+                     be.center.getZ() - pos.getZ());
+        double posX = Mth.lerp(pt, be.lastPosFront, be.posFront);
+        double posZ = Mth.lerp(pt, be.lastPosLeft, be.posLeft);
+        ps.translate(-posX, 0, posZ);
+        ps.mulPose(Axis.YP.rotationDegrees(be.craneRotationOffset));
+        return true;
+    }
+
+    /** Girder copy count from the rotation-facing switch of the legacy hook. */
+    private static int girderSpan(RBMKCraneConsoleBlockEntity be) {
+        return switch (be.craneRotationOffset) {
+            case 90, 270 -> be.spanL + be.spanR + 1;
+            default      -> be.spanF + be.spanB + 1;
+        };
+    }
+
+    /**
+     * Girder bridge: the hook's counter-rotate → offset-switch → re-rotate
+     * sandwich (the offset itself travels with the gantry, hence per-frame),
+     * with the span repetitions baked into the cached VBO at 1-block spacing.
+     */
+    private static boolean craneGirder(RBMKCraneConsoleBlockEntity be, float pt, long gt, PoseStack ps) {
+        if (!craneFrame(be, pt, gt, ps)) return false;
+        double posX = Mth.lerp(pt, be.lastPosFront, be.posFront);
+        double posZ = Mth.lerp(pt, be.lastPosLeft, be.posLeft);
+        ps.mulPose(Axis.YP.rotationDegrees(-be.craneRotationOffset));
+        switch (be.craneRotationOffset) {
+            case 90  -> ps.translate(0, 0, -posZ - be.spanR);
+            case 180 -> ps.translate(posX - be.spanF, 0, 0);
+            case 270 -> ps.translate(0, 0, -posZ + be.spanL);
+            default  -> ps.translate(posX + be.spanB, 0, 0);
+        }
+        ps.mulPose(Axis.YP.rotationDegrees(be.craneRotationOffset));
+        return true;
+    }
+
+    private static List<BakedQuad> craneGirderQuads(RBMKCraneConsoleBlockEntity be) {
+        if (!be.setUpCrane) return List.of();
+        Map<String, List<float[]>> obj = RBMKColumnRenderer.getObj(CRANE_OBJ);
+        TextureAtlasSprite tex = RBMKColumnRenderer.sprite(RefStrings.MODID, CRANE_TEX);
+        List<BakedQuad> quads = new ArrayList<>();
+        for (int i = 0; i < girderSpan(be); i++)
+            quads.addAll(RBMKColumnRenderer.objGroupQuads(obj.get("Girder"), tex, -i, 0, 0));
+        return quads;
+    }
+
+    private static String craneGirderKey(RBMKCraneConsoleBlockEntity be) {
+        // setUpCrane in the key: the resolver runs once per key, a VBO built while the
+        // crane was unset would stay empty forever.
+        return be.setUpCrane ? "g" + be.craneRotationOffset + "|" + girderSpan(be) : "off";
+    }
+
+    /** Main mast + tube stack up the hall height + carriage (static within the crane frame). */
+    private static List<BakedQuad> craneFrameQuads(RBMKCraneConsoleBlockEntity be) {
+        if (!be.setUpCrane) return List.of();
+        Map<String, List<float[]>> obj = RBMKColumnRenderer.getObj(CRANE_OBJ);
+        TextureAtlasSprite tex = RBMKColumnRenderer.sprite(RefStrings.MODID, CRANE_TEX);
+        List<BakedQuad> quads = new ArrayList<>();
+        quads.addAll(RBMKColumnRenderer.objGroupQuads(obj.get("Main"), tex, 0, 0, 0));
+        // The hook's arithmetic: N tubes at y = 0..N-1, then the stack translates +N and
+        // back -1, so the carriage sits at y = height - 7, co-located with the top tube.
+        for (int i = 0; i < be.height - 6; i++)
+            quads.addAll(RBMKColumnRenderer.objGroupQuads(obj.get("Tube"), tex, 0, i, 0));
+        quads.addAll(RBMKColumnRenderer.objGroupQuads(obj.get("Carriage"), tex, 0, be.height - 7, 0));
+        return quads;
+    }
+
+    private static String craneFrameKey(RBMKCraneConsoleBlockEntity be) {
+        return be.setUpCrane ? "f" + be.height : "off";
+    }
+
+    /** Hoist hook, riding the crane frame plus the progress-driven vertical travel. */
+    private static boolean craneLift(RBMKCraneConsoleBlockEntity be, float pt, long gt, PoseStack ps) {
+        if (!craneFrame(be, pt, gt, ps)) return false;
+        ps.translate(0, -3.25 * (1 - Mth.lerp(pt, be.lastProgress, be.progress)), 0);
+        return true;
+    }
+
+    private static List<BakedQuad> craneLiftQuads(RBMKCraneConsoleBlockEntity be) {
+        if (!be.setUpCrane) return List.of();
+        Map<String, List<float[]>> obj = RBMKColumnRenderer.getObj(CRANE_OBJ);
+        TextureAtlasSprite tex = RBMKColumnRenderer.sprite(RefStrings.MODID, CRANE_TEX);
+        return RBMKColumnRenderer.objGroupQuads(obj.get("Lift"), tex, 0, 0, 0);
+    }
+
+    private static String craneLiftKey(RBMKCraneConsoleBlockEntity be) {
+        return be.setUpCrane ? "lift" : "off";
     }
 
     private static void drawDot(VertexConsumer vc, Matrix4f m, double x, double y, double z,

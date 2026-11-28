@@ -65,7 +65,7 @@ public class SoyuzEntity extends Entity {
 
     public void setPayload(List<ItemStack> items) {
         for (int i = 0; i < items.size() && i < payload.size(); i++) {
-            payload.set(i, items.get(i));
+            payload.set(i, items.get(i).copy());
         }
     }
 
@@ -190,7 +190,7 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
 var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     *///?}
 
-        // No synced fields needed - mode/skin only matter server-side and for our own render pose.
+        defs.define(SKIN, 0);
 
     }
 

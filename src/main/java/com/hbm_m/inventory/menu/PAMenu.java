@@ -58,7 +58,7 @@ public class PAMenu extends AbstractContainerMenu {
             this.addSlot(new Slot(container, spec.index(), spec.x(), spec.y()) {
                 @Override
                 public boolean mayPlace(ItemStack stack) {
-                    return spec.insertable() && super.mayPlace(stack);
+                    return spec.insertable() && container.canPlaceItem(spec.index(), stack);
                 }
             });
         }

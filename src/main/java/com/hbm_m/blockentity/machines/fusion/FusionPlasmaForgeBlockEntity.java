@@ -184,7 +184,7 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
             }
         }
 
-        Direction rot = state.getValue(FusionMultiblockBlock.FACING).getOpposite().getClockWise();
+        Direction rot = state.getValue(FusionMultiblockBlock.FACING).getClockWise();
         if (receiverNode == null || receiverNode.expired) receiverNode = createNode(level, pos, rot);
         if (providerNode == null || providerNode.expired) providerNode = createNode(level, pos, rot.getOpposite());
 
@@ -193,8 +193,8 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
         if (providerNode != null && providerNode.hasValidNet()) providerNode.net.addProvider(this);
 
         PlasmaForgeRecipe recipe = getRecipe(level);
-        if (recipe != null) setEnergyCapacity(Math.max(recipe.getPower() * 100, 100_000L));
-        else setEnergyCapacity(Math.max(DEFAULT_MAX_POWER, 100_000L));
+        if (recipe != null) setEnergyCapacity(Math.max(getEnergyStored(), Math.max(recipe.getPower() * 100, 100_000L)));
+        else setEnergyCapacity(Math.max(getEnergyStored(), Math.max(DEFAULT_MAX_POWER, 100_000L)));
 
         chargeFromBatterySlot(SLOT_BATTERY);
 
@@ -391,6 +391,17 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
     }
 
     private void moduleUpdate(@Nullable PlasmaForgeRecipe recipe, double speed, boolean ignition) {
+        if (recipe != null && recipe.requiresBlueprint()) {
+            String currentPool = com.hbm_m.item.industrial.ItemBlueprints.getBlueprintPool(
+                    getInventory().getStackInSlot(SLOT_BLUEPRINT));
+            if (!recipe.getBlueprintPool().equals(currentPool)) {
+                this.didProcess = false;
+                this.progress = 0D;
+                this.selectedRecipeId = null;
+                setChanged();
+                return;
+            }
+        }
         setupTank(recipe);
         this.didProcess = false;
 

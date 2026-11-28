@@ -53,8 +53,8 @@ public final class MachinePressRenderer {
      * keep the head exactly on the last reached keyframe.
      */
     private static final MachineSpec.Track HEAD_TRACK = MachineSpec.Track.hermite(
-            new float[] {0.0F, 0.5F, 1.0F},
-            new float[] {0.0F, EFFECTIVE_TRAVEL, 0.0F},
+            new float[] {0.0F, 1.0F},
+            new float[] {0.0F, EFFECTIVE_TRAVEL},
             false);
 
     public static void register() {
@@ -188,7 +188,7 @@ public final class MachinePressRenderer {
                 return new PressSeg(SEG_RETRACT, now - elapsed, 0.5F,
                         (2F * MAX_PRESS) / stampSpeed);
             }
-            return new PressSeg(SEG_FROZEN_UP, press, 0.5F + 0.5F * press / MAX_PRESS, 0F);
+            return new PressSeg(SEG_FROZEN_UP, press, 1.0F - 0.5F * press / MAX_PRESS, 0F);
         }
         if (press > 0) {
             if (stampSpeed > 0) {
@@ -253,15 +253,13 @@ public final class MachinePressRenderer {
 
         var mc = Minecraft.getInstance();
 
-        // Stamp height from the BE state directly (same formula as animateHead) -
-        // NOT from MachineRenderApi.partTransform: that pose lives in the BER's
-        // view space (L * T(rel) * ...), so its translation component is rotated by
-        // the camera basis and the stamp floated up/down with camera pitch/yaw.
-        // Rest offset / travel mirror the retired press_loader JSON
-        // (head_transform: translation T(0, 0.8, 0), travel 0.8) as constants -
-        // see HEAD_REST_Y / EFFECTIVE_TRAVEL above.
+        // Stamp height from the same tracked curve + segment classifier as Head
+        // (MachineSpec.sampleTracked mirrors the VSH's trackedValue with identical
+        // half-float rounding and FrameViewState clock), NOT from
+        // MachineRenderApi.partTransform (view space) or BE's lagging client lerp.
+        PressSeg seg = classifyPress(blockEntity);
         float offsetY = HEAD_REST_Y
-                - (blockEntity.getPressAnimationProgress(partialTick) * EFFECTIVE_TRAVEL);
+                - MachineSpec.sampleTracked(HEAD_TRACK, (float) seg.t0, seg.u0, seg.dur);
 
         poseStack.pushPose();
         // Block center on X/Z, at the head height plus a small offset

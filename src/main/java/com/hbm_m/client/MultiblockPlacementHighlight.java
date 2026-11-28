@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -216,6 +217,42 @@ public final class MultiblockPlacementHighlight {
 
         Minecraft.getInstance().renderBuffers().bufferSource().endBatch(RenderType.lines());
         poseStack.popPose();
+    }
+
+    /**
+     * RBMK column placement preview: the column self-fills with filler blocks up to the
+     * world's {@code RBMKDials} height on placement, so the frame shows the whole future
+     * column standing on the clicked face - pulsing green when the filler stack fits,
+     * pulsing red when blocked. Same convention as {@link #render}: vertices as
+     * world − camera, {@code RenderType.lines()} batched and flushed here.
+     */
+    public static void renderRbmkColumn(Level level, Player player, InteractionHand hand,
+                                        BlockHitResult target, PoseStack poseStack) {
+        if (target.getType() != BlockHitResult.Type.BLOCK) return;
+        if (!(player.getItemInHand(hand).getItem() instanceof BlockItem item)
+                || !(item.getBlock() instanceof com.hbm_m.block.machines.rbmk.RBMKColumnBlock)) return;
+
+        BlockPos basePos = target.getBlockPos().relative(target.getDirection());
+        int segments = com.hbm_m.handler.rbmk.RBMKDials.getColumnHeight(level) + 1; // base + fillers
+
+        boolean canPlace = true;
+        for (int i = 0; i < segments && canPlace; i++) {
+            canPlace = level.getBlockState(basePos.above(i)).canBeReplaced();
+        }
+
+        // Пульсация цвета как в оригинале 1.7.10 (та же формула, что и у мультиблочного превью).
+        float pulse = (float) (Math.sin((System.currentTimeMillis() % 3141.59) / 250.0) * 0.25 + 0.75);
+        float r = canPlace ? 0.0F : pulse;
+        float g = canPlace ? pulse : 0.0F;
+
+        AABB frame = new AABB(basePos.getX(), basePos.getY(), basePos.getZ(),
+                basePos.getX() + 1.0D, basePos.getY() + segments, basePos.getZ() + 1.0D).inflate(0.002D);
+
+        Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+        frame = frame.move(-cam.x, -cam.y, -cam.z);
+        VertexConsumer consumer = Minecraft.getInstance().renderBuffers().bufferSource().getBuffer(RenderType.lines());
+        LevelRenderer.renderLineBox(poseStack, consumer, frame, r, g, 0.0F, 1.0F);
+        Minecraft.getInstance().renderBuffers().bufferSource().endBatch(RenderType.lines());
     }
 
     private static void line(VertexConsumer buf, Matrix4f m, float x0, float y0, float z0,

@@ -738,14 +738,14 @@ public final class NucleusFrameCapture {
                 f.setAccessible(true);
                 if (Modifier.isStatic(f.getModifiers()) && f.getType() == BlendMode.class) {
                     fBlendLastApplied = f;
-                } else if (f.getType() == boolean.class && ("opaque".equals(f.getName()) || "f_85519_".equals(f.getName()))) {
+                } else if (f.getType() == boolean.class && ("opaque".equals(f.getName()) || "f_85506_".equals(f.getName()))) {
                     fBlendOpaque = f;
                 } else if (f.getType() == int.class) {
                     String n = f.getName();
-                    if ("srcColorFactor".equals(n) || "f_85515_".equals(n)) fBlendSrcColor = f;
-                    else if ("dstColorFactor".equals(n) || "f_85516_".equals(n)) fBlendDstColor = f;
-                    else if ("srcAlphaFactor".equals(n) || "f_85517_".equals(n)) fBlendSrcAlpha = f;
-                    else if ("dstAlphaFactor".equals(n) || "f_85518_".equals(n)) fBlendDstAlpha = f;
+                    if ("srcColorFactor".equals(n) || "f_85500_".equals(n)) fBlendSrcColor = f;
+                    else if ("dstColorFactor".equals(n) || "f_85502_".equals(n)) fBlendDstColor = f;
+                    else if ("srcAlphaFactor".equals(n) || "f_85501_".equals(n)) fBlendSrcAlpha = f;
+                    else if ("dstAlphaFactor".equals(n) || "f_85503_".equals(n)) fBlendDstAlpha = f;
                 }
             }
             for (Field f : ShaderInstance.class.getDeclaredFields()) {

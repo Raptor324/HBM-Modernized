@@ -146,8 +146,15 @@ public class LaunchpadLambdaBlockEntity extends BaseMachineBlockEntity implement
             }
         }
 
-        setChanged();
-        sendUpdateToClient();
+        long stateSig = com.hbm_m.recipe.index.CachedRecipeResolver.sign(1L,
+                this.erected ? 1L : 0L, this.erecting ? 1L : 0L, this.autolaunch ? 1L : 0L,
+                this.countdown, this.energy, this.tanks[0].getFill(), this.tanks[1].getFill());
+        long stacks = com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_ROCKET))
+                ^ com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_SATELLITE))
+                ^ com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_FUEL_IN))
+                ^ com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_OXIDIZER_IN))
+                ^ com.hbm_m.platform.StackNbt.fingerprint(inventory.getStackInSlot(SLOT_BATTERY));
+        syncIfStateChanged(stateSig, stacks);
     }
 
     private void clientTick(Level world) {
@@ -337,6 +344,8 @@ public class LaunchpadLambdaBlockEntity extends BaseMachineBlockEntity implement
     protected boolean isItemValidForSlot(int slot, @NotNull ItemStack stack) {
         if (slot == SLOT_ROCKET) return stack.is(ModItems.MISSILE_LAMBDA.get());
         if (slot == SLOT_SATELLITE) return stack.getItem() instanceof ISatChip && !needsOrbiter(stack);
+        if (slot == SLOT_FUEL_IN) return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack, tanks[0].getTankType());
+        if (slot == SLOT_OXIDIZER_IN) return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack, tanks[1].getTankType());
         if (slot == SLOT_FUEL_OUT || slot == SLOT_OXIDIZER_OUT) return false;
         if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack);
         return true;

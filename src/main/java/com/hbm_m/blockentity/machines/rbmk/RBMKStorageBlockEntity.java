@@ -98,6 +98,7 @@ public class RBMKStorageBlockEntity extends RBMKColumnBlockEntity
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
+        if (diag) return; // DODD dump: the original inventory went through the excluded "items" key, so the dump shows the base columns only.
         ListTag list = new ListTag();
         for (int i = 0; i < SLOTS; i++) {
             if (!slots_empty(slots[i])) {

@@ -301,7 +301,7 @@ public final class ShaderBindResync {
                             && !java.lang.reflect.Modifier.isFinal(f.getModifiers())
                             && !f.isSynthetic()) {
                         String n = f.getName();
-                        if ("lastProgramId".equals(n) || "f_173313_".equals(n)) {
+                        if ("lastProgramId".equals(n) || "f_173327_".equals(n)) {
                             f.setAccessible(true);
                             lastProgramIdField = f;
                             break;
@@ -344,12 +344,15 @@ public final class ShaderBindResync {
     public static void restoreVanillaTextureBindings() {
         try {
             var mc = net.minecraft.client.Minecraft.getInstance();
-            mc.getTextureManager().getTexture(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS)
-                    .bind(); // managed: TU0 + cache
+            // Switch active unit BEFORE each managed bind: turnOnLightLayer() / setupOverlayColor()
+            // bind onto whichever unit is currently active in GlStateManager.
+            com.mojang.blaze3d.platform.GlStateManager._activeTexture(GL13.GL_TEXTURE1);
             mc.gameRenderer.overlayTexture().setupOverlayColor(); // TU1 managed
+            com.mojang.blaze3d.platform.GlStateManager._activeTexture(GL13.GL_TEXTURE2);
             mc.gameRenderer.lightTexture().turnOnLightLayer();    // TU2 managed
-            // Managed: a raw glActiveTexture would desync the unit cache
             com.mojang.blaze3d.platform.GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+            mc.getTextureManager().getTexture(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS)
+                    .bind(); // TU0 managed
         } catch (Exception ignored) {
         }
     }
@@ -422,8 +425,9 @@ public final class ShaderBindResync {
     private static java.lang.reflect.Field blendModeLastAppliedField;
 
     /**
-     * Directly writes Mojang's static {@code BlendMode.lastApplied} (blaze3d is
-     * unobfuscated, so the "lastApplied" name works in production too).
+     * Directly writes Mojang's static {@code BlendMode.lastApplied} (supports both
+     * Mojang names on 1.21.1/dev and 1.20.1 prod SRG {@code f_85499_}, with a
+     * static-{@code BlendMode}-type fallback).
      *
      * <p>Why direct reflection instead of {@code apply()}: BlendMode.apply() assigns
      * {@code lastApplied = this} ONLY when {@code lastApplied == null} or the opaque
@@ -437,8 +441,29 @@ public final class ShaderBindResync {
     private static boolean forceBlendModeLastApplied(com.mojang.blaze3d.shaders.BlendMode value) {
         try {
             if (blendModeLastAppliedField == null) {
-                blendModeLastAppliedField = com.mojang.blaze3d.shaders.BlendMode.class.getDeclaredField("lastApplied");
-                blendModeLastAppliedField.setAccessible(true);
+                java.lang.reflect.Field fallback = null;
+                for (java.lang.reflect.Field f : com.mojang.blaze3d.shaders.BlendMode.class.getDeclaredFields()) {
+                    if (java.lang.reflect.Modifier.isStatic(f.getModifiers())
+                            && f.getType() == com.mojang.blaze3d.shaders.BlendMode.class
+                            && !f.isSynthetic()) {
+                        String n = f.getName();
+                        if ("lastApplied".equals(n) || "f_85499_".equals(n)) {
+                            f.setAccessible(true);
+                            blendModeLastAppliedField = f;
+                            break;
+                        }
+                        if (fallback == null) {
+                            fallback = f;
+                        }
+                    }
+                }
+                if (blendModeLastAppliedField == null && fallback != null) {
+                    fallback.setAccessible(true);
+                    blendModeLastAppliedField = fallback;
+                }
+            }
+            if (blendModeLastAppliedField == null) {
+                return false;
             }
             blendModeLastAppliedField.set(null, value);
             return true;

@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.interfaces.ILookOverlay;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -988,13 +987,6 @@ public class ModEventHandlerClient {
     // ===== TODO ЗАГЛУШКИ ДЛЯ НЕРЕАЛИЗОВАННЫХ ФУНКЦИЙ =====
     // Эти функции требуют дополнительных зависимостей или инфраструктуры,
     // которая еще не портирована на 1.20.1
-
-    /**
-     * TODO: Dodd RBMK диагностика
-     * Оригинальный код: onOverlayRender - DODD RBMK DIAGNOSTIC HOOK
-     * Требует: расширение {@link ILookOverlay}, RBMK система
-     * Сложность: Высокая - требует полной RBMK системы
-     */
 
     /**
      * TODO: Рельсовая система (IRailNTM)

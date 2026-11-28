@@ -83,13 +83,13 @@ public class SoyuzCapsuleEntity extends Entity {
 
         if (getY() > 600) setPos(getX(), 600, getZ());
 
-        BlockPos at = new BlockPos((int) getX(), (int) getY(), (int) getZ());
+        BlockPos at = BlockPos.containing(getX(), getY(), getZ());
         if (!level().getBlockState(at).isAir()) {
 
             this.discard();
 
             if (!level().isClientSide) {
-                BlockPos pos = new BlockPos((int) getX(), (int) (getY() + 1), (int) getZ());
+                BlockPos pos = BlockPos.containing(getX(), getY() + 1, getZ());
                 level().setBlockAndUpdate(pos, ModBlocks.SOYUZ_CAPSULE.get().defaultBlockState());
 
                 if (level().getBlockEntity(pos) instanceof SoyuzCapsuleBlockEntity capsule) {

@@ -94,7 +94,13 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity impleme
         // positive-scram surge) feeds the DODD diagnostic overlay. The original only wrote it to
         // disk/diag NBT (auto rods, which inherit the base writeToNBT, never carry it) - the
         // `diag` flag is set only by getDiagData, so the per-tick sync tag stays lean as before.
-        if (diag) tag.putDouble("mult", getMult());
+        if (diag) {
+            tag.putDouble("mult", getMult());
+            // Same original writeToNBT wrote the rod color as an int ordinal, skipped when null;
+            // the port stores -1 for "no color" and keeps the lean sync tag, so it lands in the
+            // DODD dump only. (tile.rbmk.dodd.color localizes the line.)
+            if (color >= 0) tag.putInt("color", color);
+        }
     }
 
     @Override

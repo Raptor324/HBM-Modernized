@@ -1,0 +1,45 @@
+{
+	"render_type": "minecraft:cutout",
+	"textures": {
+		"particle": "hbm_m:block/conveyor",
+		"post": "hbm_m:block/concrete",
+		"belt": "hbm_m:block/conveyor",
+		"side": "hbm_m:block/conveyor_side"
+	},
+	"elements": [
+		{
+			"from": [0, 0, 0],
+			"to": [4, 8, 16],
+			"faces": {
+				"down": { "uv": [0, 0, 4, 16], "texture": "#post", "cullface": "down" },
+				"up": { "uv": [0, 0, 4, 16], "texture": "#post" },
+				"north": { "uv": [12, 8, 16, 16], "texture": "#post", "cullface": "north" },
+				"south": { "uv": [0, 8, 4, 16], "texture": "#post", "cullface": "south" },
+				"west": { "uv": [0, 8, 16, 16], "texture": "#post", "cullface": "west" },
+				"east": { "uv": [0, 8, 16, 16], "texture": "#post" }
+			}
+		},
+		{
+			"from": [12, 0, 0],
+			"to": [16, 8, 16],
+			"faces": {
+				"down": { "uv": [12, 0, 16, 16], "texture": "#post", "cullface": "down" },
+				"up": { "uv": [12, 0, 16, 16], "texture": "#post" },
+				"north": { "uv": [0, 8, 4, 16], "texture": "#post", "cullface": "north" },
+				"south": { "uv": [12, 8, 16, 16], "texture": "#post", "cullface": "south" },
+				"west": { "uv": [0, 8, 16, 16], "texture": "#post" },
+				"east": { "uv": [0, 8, 16, 16], "texture": "#post", "cullface": "east" }
+			}
+		},
+		{
+			"from": [4, 0, 10],
+			"to": [12, 4, 16],
+			"faces": {
+				"down": { "uv": [4, 10, 12, 16], "texture": "#side", "cullface": "down" },
+				"up": { "uv": [4, 10, 12, 16], "rotation": 180, "texture": "#belt" },
+				"north": { "uv": [4, 12, 12, 16], "texture": "#side" },
+				"south": { "uv": [4, 12, 12, 16], "texture": "#side", "cullface": "south" }
+			}
+		}
+	]
+}

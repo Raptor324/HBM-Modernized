@@ -376,6 +376,7 @@ public class NBTStructure {
                 blockArray[pos[0]][pos[1]][pos[2]] = blockState;
             }
 
+            normalizeDoors();
             expandMultiblocks();
 
             // VERBINDUNGEN + PRIORITAETEN
@@ -436,6 +437,36 @@ public class NBTStructure {
      * erweitert (alte Strukturen ohne {@code universal_machine_part} bleiben unveraendert). Uebrige Teile ohne
      * Steuerblock werden Luft.
      */
+    private void normalizeDoors() {
+        for (int x = 0; x < sizeX; x++) {
+            for (int y = 0; y < sizeY - 1; y++) {
+                for (int z = 0; z < sizeZ; z++) {
+                    StructBlockState low = blockArray[x][y][z];
+                    StructBlockState up = blockArray[x][y + 1][z];
+                    if (low == null || up == null || low.definition == null || up.definition == null) continue;
+                    if (!(low.definition.getBlock() instanceof net.minecraft.world.level.block.DoorBlock)) continue;
+                    if (!up.definition.is(low.definition.getBlock())) continue;
+                    var Half = net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER;
+                    if (low.definition.getValue(net.minecraft.world.level.block.DoorBlock.HALF) != Half
+                            || up.definition.getValue(net.minecraft.world.level.block.DoorBlock.HALF) != net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER) {
+                        continue;
+                    }
+                    var facing = low.definition.getValue(net.minecraft.world.level.block.DoorBlock.FACING);
+                    var open = low.definition.getValue(net.minecraft.world.level.block.DoorBlock.OPEN);
+                    var powered = low.definition.getValue(net.minecraft.world.level.block.DoorBlock.POWERED);
+                    var hinge = up.definition.getValue(net.minecraft.world.level.block.DoorBlock.HINGE);
+                    blockArray[x][y][z] = new StructBlockState(
+                            low.definition.setValue(net.minecraft.world.level.block.DoorBlock.HINGE, hinge));
+                    blockArray[x][y + 1][z] = new StructBlockState(
+                            up.definition
+                                    .setValue(net.minecraft.world.level.block.DoorBlock.FACING, facing)
+                                    .setValue(net.minecraft.world.level.block.DoorBlock.OPEN, open)
+                                    .setValue(net.minecraft.world.level.block.DoorBlock.POWERED, powered));
+                }
+            }
+        }
+    }
+
     private void expandMultiblocks() {
         mbControllers = mbParts = mbAdded = mbDropped = mbBlocked = 0;
         boolean any = false;
@@ -618,6 +649,9 @@ public class NBTStructure {
                     BlockState block = coordBaseMode == 0 ? state.definition : rotateState(state.definition, rotation);
 
                     world.setBlock(pos, block, 2);
+                    if (block.getBlock() instanceof net.minecraft.world.level.block.CrossCollisionBlock) {
+                        com.hbm_m.worldgen.StructureConnectionFixProcessor.enqueue(world, pos);
+                    }
 
                     if (state.nbt != null) {
                         buildTileEntity(world, pos, state.nbt, coordBaseMode, null);
@@ -712,6 +746,9 @@ public class NBTStructure {
 
                     BlockPos pos = new BlockPos(rx, ry, rz);
                     world.setBlock(pos, block, 2);
+                    if (block.getBlock() instanceof net.minecraft.world.level.block.CrossCollisionBlock) {
+                        com.hbm_m.worldgen.StructureConnectionFixProcessor.enqueue(world, pos);
+                    }
 
                     if (state.nbt != null) {
                         buildTileEntity(world, pos, state.nbt, coordBaseMode, structureName);

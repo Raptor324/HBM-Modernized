@@ -68,25 +68,28 @@ public class ActorFancyPanel implements ISpecialActor {
 		}
 	}
 
-	/** Port of {@code I18nUtil.autoBreak} (1.7.10): greedy word wrap on the space character. */
+	/** Port of {@code I18nUtil.autoBreak} (1.7.10): greedy word wrap on space, preserving explicit newlines. */
 	public static List<String> autoBreak(Font font, String text, int width) {
 		List<String> lines = new ArrayList<>();
-		String[] words = text.split(" ");
-		StringBuilder current = new StringBuilder();
+		for(String paragraph : text.split("\n", -1)) {
+			String[] words = paragraph.split(" ");
+			StringBuilder current = new StringBuilder();
 
-		for(String word : words) {
-			if(current.length() == 0) {
-				current.append(word);
-			} else if(font.width(current + " " + word) <= width) {
-				current.append(" ").append(word);
-			} else {
-				lines.add(current.toString());
-				current = new StringBuilder(word);
+			for(String word : words) {
+				if(current.length() == 0) {
+					current.append(word);
+				} else if(font.width(current + " " + word) <= width) {
+					current.append(" ").append(word);
+				} else {
+					lines.add(current.toString());
+					current = new StringBuilder(word);
+				}
 			}
+
+			lines.add(current.toString());
 		}
 
-		// the original always yields at least one (possibly empty) line
-		if(current.length() > 0 || lines.isEmpty()) lines.add(current.toString());
+		if(lines.isEmpty()) lines.add("");
 		return lines;
 	}
 

@@ -167,6 +167,10 @@ public class ItemConveyorWand extends Item implements ILookOverlay {
                         count += inventoryStack.getCount();
                     }
                 }
+                ItemStack offhand = player.getOffhandItem();
+                if (!offhand.isEmpty() && offhand.getItem() == this) {
+                    count += offhand.getCount();
+                }
             }
 
             nbt.putInt("count", count);
@@ -188,14 +192,18 @@ public class ItemConveyorWand extends Item implements ILookOverlay {
                     int toRemove = construct(world, (p, s) -> world.setBlock(p, s, 3), type, player, start, sSide, pos, side, count);
 
                     if (!player.getAbilities().instabuild) {
+                        if (ctx.getHand() == net.minecraft.world.InteractionHand.OFF_HAND) {
+                            int removing = Math.min(toRemove, stack.getCount());
+                            stack.shrink(removing);
+                            toRemove -= removing;
+                        }
                         for (ItemStack inventoryStack : player.getInventory().items) {
+                            if (toRemove <= 0) break;
                             if (!inventoryStack.isEmpty() && inventoryStack.getItem() == this) {
                                 int removing = Math.min(toRemove, inventoryStack.getCount());
                                 inventoryStack.shrink(removing);
                                 toRemove -= removing;
                             }
-
-                            if (toRemove <= 0) break;
                         }
 
                         player.inventoryMenu.broadcastChanges();
@@ -222,7 +230,8 @@ public class ItemConveyorWand extends Item implements ILookOverlay {
         if (!(entity instanceof Player player)) return;
 
         boolean isHeld = player.getMainHandItem() == stack || player.getOffhandItem() == stack;
-        if (!isHeld && StackNbt.has(stack)) {
+        boolean sameTypeHeld = player.getMainHandItem().getItem() == this || player.getOffhandItem().getItem() == this;
+        if (!isHeld && !sameTypeHeld && StackNbt.has(stack)) {
             StackNbt.set(stack, null);
             if (world.isClientSide) com.hbm_m.client.render.ConveyorWandPreview.clear();
         }

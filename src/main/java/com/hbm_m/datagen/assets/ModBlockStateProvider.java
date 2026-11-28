@@ -1980,13 +1980,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 models().getBuilder("compact_launcher_particle")
                         .texture("particle", modLoc("block/compact_launcher"))
         );
-        // Конвейеры: blockstate/модели остаются ручными (свойства facing+bend, element-модели network/)
-        simpleBlockWithItem(ModBlocks.CRANE_PARTITIONER.get(),
-                models().cubeAll(
-                        ModBlocks.CRANE_PARTITIONER.getId().getPath(),
-                        modLoc("block/crane_partitioner_back")
-                )
-        );
+        customObjBlockRotated(ModBlocks.CRANE_PARTITIONER, Map.of(
+                Direction.EAST, 0,
+                Direction.SOUTH, 90,
+                Direction.WEST, 180,
+                Direction.NORTH, 270
+        ));
         {
             var routerModel = models().getBuilder(ModBlocks.CRANE_ROUTER.getId().getPath())
                     .parent(models().getExistingFile(mcLoc("block/block")))
@@ -1998,17 +1997,28 @@ public class ModBlockStateProvider extends BlockStateProvider {
                     .element().from(0, 0, 0).to(16, 16, 16).allFaces((d, f) -> f.texture("#overlay").cullface(d).tintindex(d.get3DDataValue())).end();
             simpleBlockWithItem(ModBlocks.CRANE_ROUTER.get(), routerModel);
         }
-        // FFA merge loss restore: генерация block-модели сплиттера потеряна при мердже.
-        horizontalBlock(ModBlocks.CRANE_SPLITTER.get(),
-                models().cubeBottomTop(
-                        ModBlocks.CRANE_SPLITTER.getId().getPath(),
-                        modLoc("block/crane_splitter_inner_side"),
-                        modLoc("block/crane_splitter_inner"),
-                        modLoc("block/crane_splitter_belt")
-                )
-        );
-        simpleBlockItem(ModBlocks.CRANE_SPLITTER.get(),
-                models().getExistingFile(modLoc(ModBlocks.CRANE_SPLITTER.getId().getPath())));
+        {
+            ModelFile splitterLeft = models().getExistingFile(modLoc("block/crane_splitter_left"));
+            ModelFile splitterRight = models().getExistingFile(modLoc("block/crane_splitter_right"));
+            var splitterBuilder = getVariantBuilder(ModBlocks.CRANE_SPLITTER.get());
+            Map<Direction, Integer> splitterRot = Map.of(
+                    Direction.EAST, 0,
+                    Direction.SOUTH, 90,
+                    Direction.WEST, 180,
+                    Direction.NORTH, 270
+            );
+            for (Direction facing : Direction.Plane.HORIZONTAL) {
+                int rotY = splitterRot.get(facing);
+                splitterBuilder.partialState()
+                        .with(com.hbm_m.block.machines.MachineCraneSplitterBlock.FACING, facing)
+                        .with(com.hbm_m.block.machines.MachineCraneSplitterBlock.HALF, com.hbm_m.block.machines.MachineCraneSplitterBlock.Half.LEFT)
+                        .modelForState().modelFile(splitterLeft).rotationY(rotY).addModel();
+                splitterBuilder.partialState()
+                        .with(com.hbm_m.block.machines.MachineCraneSplitterBlock.FACING, facing)
+                        .with(com.hbm_m.block.machines.MachineCraneSplitterBlock.HALF, com.hbm_m.block.machines.MachineCraneSplitterBlock.Half.RIGHT)
+                        .modelForState().modelFile(splitterRight).rotationY(rotY).addModel();
+            }
+        }
         simpleBlockWithItem(ModBlocks.CRATE_AMMO.get(),
                 models().cubeBottomTop(
                         ModBlocks.CRATE_AMMO.getId().getPath(),
@@ -3408,68 +3418,66 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlockNoFacing(ModBlocks.BROADCASTER);
         // cargo_elevator.json — CargoElevatorBlock has horizontal facing variants
         customObjBlock(ModBlocks.CARGO_ELEVATOR);
-        // conveyor.json — ConveyorBlock (ConveyorBlockBase.FACING + ConveyorBendableBlock.BEND), 12 variants
-        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor"))).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_left"))).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_right"))).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor"))).rotationY(90).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_left"))).rotationY(90).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_right"))).rotationY(90).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor"))).rotationY(180).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_left"))).rotationY(180).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_right"))).rotationY(180).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor"))).rotationY(270).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_left"))).rotationY(270).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_curve_right"))).rotationY(270).addModel();
+        // Bendable conveyors: 1.7.10 RenderConveyor uvRotateTop (meta 2=N->180, 3=S->0, 4=W->90, 5=E->270)
+        {
+            Map<Direction, Integer> conveyorRot = Map.of(
+                    Direction.NORTH, 180,
+                    Direction.EAST, 270,
+                    Direction.SOUTH, 0,
+                    Direction.WEST, 90
+            );
+            Map<RegistrySupplier<Block>, String> bendableBelts = Map.of(
+                    ModBlocks.CONVEYOR, "conveyor",
+                    ModBlocks.CONVEYOR_DOUBLE, "conveyor_double",
+                    ModBlocks.CONVEYOR_EXPRESS, "conveyor_express",
+                    ModBlocks.CONVEYOR_TRIPLE, "conveyor_triple"
+            );
+            for (var entry : bendableBelts.entrySet()) {
+                var builder = getVariantBuilder(entry.getKey().get());
+                String base = entry.getValue();
+                ModelFile straight = models().getExistingFile(modLoc("block/network/" + base));
+                ModelFile left = models().getExistingFile(modLoc("block/network/" + base + "_curve_left"));
+                ModelFile right = models().getExistingFile(modLoc("block/network/" + base + "_curve_right"));
+                for (Direction facing : Direction.Plane.HORIZONTAL) {
+                    int rotY = conveyorRot.get(facing);
+                    builder.partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, facing).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(straight).rotationY(rotY).addModel();
+                    builder.partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, facing).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(left).rotationY(rotY).addModel();
+                    builder.partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, facing).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(right).rotationY(rotY).addModel();
+                }
+            }
+        }
         // conveyor_chute.json — ConveyorChuteBlock (ConveyorBlockBase.FACING only), single model
         getVariantBuilder(ModBlocks.CONVEYOR_CHUTE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_chute"))).addModel();
         getVariantBuilder(ModBlocks.CONVEYOR_CHUTE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_chute"))).rotationY(90).addModel();
         getVariantBuilder(ModBlocks.CONVEYOR_CHUTE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_chute"))).rotationY(180).addModel();
         getVariantBuilder(ModBlocks.CONVEYOR_CHUTE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_chute"))).rotationY(270).addModel();
-        // conveyor_double.json — ConveyorDoubleBlock, 12 variants
-        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double"))).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_left"))).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_right"))).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double"))).rotationY(90).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_left"))).rotationY(90).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_right"))).rotationY(90).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double"))).rotationY(180).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_left"))).rotationY(180).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_right"))).rotationY(180).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double"))).rotationY(270).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_left"))).rotationY(270).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_DOUBLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_double_curve_right"))).rotationY(270).addModel();
-        // conveyor_express.json — ConveyorExpressBlock, 12 variants
-        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express"))).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_left"))).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_right"))).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express"))).rotationY(90).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_left"))).rotationY(90).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_right"))).rotationY(90).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express"))).rotationY(180).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_left"))).rotationY(180).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_right"))).rotationY(180).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express"))).rotationY(270).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_left"))).rotationY(270).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_EXPRESS.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_express_curve_right"))).rotationY(270).addModel();
-        // conveyor_lift.json — ConveyorLiftBlock (ConveyorBlockBase.FACING only), single model
-        getVariantBuilder(ModBlocks.CONVEYOR_LIFT.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_lift"))).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_LIFT.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_lift"))).rotationY(90).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_LIFT.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_lift"))).rotationY(180).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_LIFT.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_lift"))).rotationY(270).addModel();
-        // conveyor_triple.json — ConveyorTripleBlock, 12 variants
-        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple"))).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_left"))).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.NORTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_right"))).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple"))).rotationY(90).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_left"))).rotationY(90).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.EAST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_right"))).rotationY(90).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple"))).rotationY(180).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_left"))).rotationY(180).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.SOUTH).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_right"))).rotationY(180).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.STRAIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple"))).rotationY(270).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.LEFT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_left"))).rotationY(270).addModel();
-        getVariantBuilder(ModBlocks.CONVEYOR_TRIPLE.get()).partialState().with(com.hbm_m.block.network.ConveyorBlockBase.FACING, Direction.WEST).with(com.hbm_m.block.network.ConveyorBendableBlock.BEND, com.hbm_m.block.network.ConveyorBend.RIGHT).modelForState().modelFile(models().getExistingFile(modLoc("block/network/conveyor_triple_curve_right"))).rotationY(270).addModel();
+        // conveyor_lift — ConveyorLiftBlock (FACING + SEGMENT: bottom/middle/top, 1:1 with RenderConveyorLift)
+        {
+            var liftBuilder = getVariantBuilder(ModBlocks.CONVEYOR_LIFT.get());
+            ModelFile liftBottom = models().getExistingFile(modLoc("block/network/conveyor_lift_bottom"));
+            ModelFile liftMiddle = models().getExistingFile(modLoc("block/network/conveyor_lift"));
+            ModelFile liftTop = models().getExistingFile(modLoc("block/network/conveyor_lift_top"));
+            for (Direction facing : Direction.Plane.HORIZONTAL) {
+                int rotY = switch (facing) {
+                    case EAST -> 90;
+                    case SOUTH -> 180;
+                    case WEST -> 270;
+                    default -> 0;
+                };
+                liftBuilder.partialState()
+                        .with(com.hbm_m.block.network.ConveyorBlockBase.FACING, facing)
+                        .with(com.hbm_m.block.network.ConveyorLiftBlock.SEGMENT, com.hbm_m.block.network.ConveyorLiftBlock.LiftSegment.BOTTOM)
+                        .modelForState().modelFile(liftBottom).rotationY(rotY).addModel();
+                liftBuilder.partialState()
+                        .with(com.hbm_m.block.network.ConveyorBlockBase.FACING, facing)
+                        .with(com.hbm_m.block.network.ConveyorLiftBlock.SEGMENT, com.hbm_m.block.network.ConveyorLiftBlock.LiftSegment.MIDDLE)
+                        .modelForState().modelFile(liftMiddle).rotationY(rotY).addModel();
+                liftBuilder.partialState()
+                        .with(com.hbm_m.block.network.ConveyorBlockBase.FACING, facing)
+                        .with(com.hbm_m.block.network.ConveyorLiftBlock.SEGMENT, com.hbm_m.block.network.ConveyorLiftBlock.LiftSegment.TOP)
+                        .modelForState().modelFile(liftTop).rotationY(rotY).addModel();
+            }
+        }
         // crt_blinking.json — DecoObjBlock (HORIZONTAL_FACING); json rotation map: south=270, west=0, north=90, east=180
         getVariantBuilder(ModBlocks.CRT_BLINKING.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.SOUTH).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_blinking"))).rotationY(270).addModel();
         getVariantBuilder(ModBlocks.CRT_BLINKING.get()).partialState().with(com.hbm_m.block.decorations.DecoObjBlock.FACING, Direction.WEST).modelForState().modelFile(models().getExistingFile(modLoc("block/deco/crt_blinking"))).addModel();

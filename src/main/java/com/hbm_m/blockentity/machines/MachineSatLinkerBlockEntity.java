@@ -133,7 +133,7 @@ public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements M
     private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
             new com.hbm_m.blockentity.SidedItemAccess.Rules() {
                 @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 1 }; }
-                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == SLOT_COPY_TARGET && stack.getItem() instanceof ISatChip; }
                 @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return ISatChip.getFreqS(inventory.getStackInSlot(SLOT_COPY_SOURCE)) == ISatChip.getFreqS(inventory.getStackInSlot(SLOT_COPY_TARGET)); }
             });
 
@@ -153,7 +153,7 @@ public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements M
     private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
             new com.hbm_m.blockentity.SidedItemAccess.Rules() {
                 @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 1 }; }
-                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == SLOT_COPY_TARGET && stack.getItem() instanceof ISatChip; }
                 @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return ISatChip.getFreqS(inventory.getStackInSlot(SLOT_COPY_SOURCE)) == ISatChip.getFreqS(inventory.getStackInSlot(SLOT_COPY_TARGET)); }
             });
 

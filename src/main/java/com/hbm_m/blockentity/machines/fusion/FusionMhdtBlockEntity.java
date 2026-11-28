@@ -32,7 +32,21 @@ import net.minecraft.world.phys.AABB;
  * ohne Kuehlung faellt er komplett aus.</p>
  */
 public class FusionMhdtBlockEntity extends FusionSyncedBlockEntity
-        implements IEnergyProvider, IFluidStandardTransceiverMK2, IFusionPowerReceiver {
+        implements IEnergyProvider, IFluidStandardTransceiverMK2, IFusionPowerReceiver,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider {
+
+    private static final String[] ROR = new String[] { PREFIX_VALUE + "output" };
+
+    @Override
+    public String[] getFunctionInfo() {
+        return ROR;
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "output").equals(name)) return "" + this.power;
+        return null;
+    }
 
     private GenNode<PlasmaNetwork> plasmaNode;
 

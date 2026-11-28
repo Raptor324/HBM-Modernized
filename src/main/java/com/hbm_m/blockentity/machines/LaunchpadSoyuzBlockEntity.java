@@ -43,7 +43,9 @@ import net.minecraft.world.phys.Vec3;
  * beide Treibstoffleitungen. Persistiert Positionen/Geschwindigkeiten/Ziele wie im Original
  * ({@code p/s/t0..7}); der Abschuss spawnt {@link SoyuzEntity} (Port von {@code EntityRocketSoyuz}).
  */
-public class LaunchpadSoyuzBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2 {
+public class LaunchpadSoyuzBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider,
+        com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     public static final int SLOT_ROCKET = 0;
     public static final int SLOT_DESIGNATOR = 1;
@@ -185,8 +187,8 @@ public class LaunchpadSoyuzBlockEntity extends BaseMachineBlockEntity implements
         // 4 Ports seitlich (rot*-10), Richtung rot.getOpposite()
         ports.add(new Object[] { pos(x, y, z, facing, rot, 1, -10), rot.getOpposite() });
         ports.add(new Object[] { pos(x, y, z, facing, rot, -1, -10), rot.getOpposite() });
-        ports.add(new Object[] { pos(x, y, z, facing, rot, 7, -10), rot.getOpposite() });
-        ports.add(new Object[] { pos(x, y, z, facing, rot, 9, -10), rot.getOpposite() });
+        ports.add(new Object[] { pos(x, y, z, facing, rot, -7, -10), rot.getOpposite() });
+        ports.add(new Object[] { pos(x, y, z, facing, rot, -9, -10), rot.getOpposite() });
 
         cachedPorts = ports;
         cachedPortFacing = facing;
@@ -213,9 +215,10 @@ public class LaunchpadSoyuzBlockEntity extends BaseMachineBlockEntity implements
             for (Object[] port : be.getPorts()) {
                 BlockPos at = (BlockPos) port[0];
                 Direction dir = (Direction) port[1];
-                be.trySubscribe(server, at.getX(), at.getY(), at.getZ(), dir);
-                be.trySubscribe(be.tanks[0].getTankType(), server, at, dir);
-                be.trySubscribe(be.tanks[1].getTankType(), server, at, dir);
+                BlockPos adj = at.relative(dir);
+                be.trySubscribe(server, adj.getX(), adj.getY(), adj.getZ(), dir);
+                be.trySubscribe(be.tanks[0].getTankType(), server, adj, dir);
+                be.trySubscribe(be.tanks[1].getTankType(), server, adj, dir);
             }
         }
 
@@ -232,6 +235,16 @@ public class LaunchpadSoyuzBlockEntity extends BaseMachineBlockEntity implements
 
         if (!be.hasRocketLoaded()) {
             be.loadedType = -1;
+            boolean isMoving = false;
+            for (int i = 0; i < POSITION_COUNT; i++) {
+                if (!be.finishedMoving(i)) {
+                    isMoving = true;
+                    break;
+                }
+            }
+            if (!isMoving) {
+                be.soyuzStatus = SoyuzStatus.ABSENT;
+            }
         } else {
             be.loadedType = be.getRocketType();
         }
@@ -670,7 +683,6 @@ public class LaunchpadSoyuzBlockEntity extends BaseMachineBlockEntity implements
         soyuz.initLaunch(x, y, z, cargoMode ? 1 : 0);
         soyuz.setSkin(loadedType);
         level.addFreshEntity(soyuz);
-        level.playSound(null, worldPosition, HbmSoundsNT.get("hbm:entity.soyuzTakeoff"), SoundSource.BLOCKS, 100F, 1.1F);
 
         tanks[0].drainMb(100_000);
         tanks[1].drainMb(100_000);
@@ -683,9 +695,13 @@ public class LaunchpadSoyuzBlockEntity extends BaseMachineBlockEntity implements
             }
             soyuz.setPayload(payload);
 
-            if (confirmTarget() && targetX != null && targetZ != null) {
+            if (rorTargetX != null && rorTargetZ != null) {
+                soyuz.setTarget(rorTargetX, rorTargetZ);
+            } else if (confirmTarget() && targetX != null && targetZ != null) {
                 soyuz.setTarget(targetX, targetZ);
             }
+            this.rorTargetX = null;
+            this.rorTargetZ = null;
             this.targetX = null;
             this.targetZ = null;
         } else {
@@ -724,11 +740,15 @@ public class LaunchpadSoyuzBlockEntity extends BaseMachineBlockEntity implements
     // ─── Slots (Original isItemValidForSlot/getAccessibleSlotsFromSide) ─────────
 
     @Override
-    protected boolean isItemValidForSlot(int slot, @NotNull ItemStack stack) {
+    public boolean isItemValidForSlot(int slot, @NotNull ItemStack stack) {
         if (slot == SLOT_ROCKET) return stack.getItem() instanceof com.hbm_m.item.special.ItemSoyuz;
         if (slot == SLOT_DESIGNATOR) return stack.getItem() instanceof IDesignatorItem;
         if (slot == SLOT_SATELLITE) return stack.getItem() instanceof com.hbm_m.item.ISatChip && !cargoMode;
         if (slot == SLOT_LANDER) return stack.is(ModItems.MISSILE_SOYUZ_LANDER.get()) && !cargoMode;
+        if (slot == SLOT_FUEL_IN) return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack, tanks[0].getTankType());
+        if (slot == SLOT_FUEL_OUT) return false;
+        if (slot == SLOT_OXIDIZER_IN) return com.hbm_m.api.fluids.FluidItemAccess.isFluidContainer(stack, tanks[1].getTankType());
+        if (slot == SLOT_OXIDIZER_OUT) return false;
         if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack) || stack.getItem() instanceof ItemCreativeBattery;
         if (slot > SLOT_BATTERY) {
             if (!cargoMode) return false;
@@ -839,11 +859,12 @@ public class LaunchpadSoyuzBlockEntity extends BaseMachineBlockEntity implements
         tag.putInt("fuelCountdown", fuelCountdown);
         tag.putInt("countdown", countdown);
         tag.putInt("loadedType", loadedType);
+        tanks[0].writeToNBT(tag, "tank0");
+        tanks[1].writeToNBT(tag, "tank1");
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, @Nullable Provider registries) {
-        super.readNbtData(tag, registries);
         readMachineState(tag, registries, false);
     }
 
@@ -883,6 +904,78 @@ public class LaunchpadSoyuzBlockEntity extends BaseMachineBlockEntity implements
         fuelCountdown = tag.getInt("fuelCountdown");
         countdown = tag.getInt("countdown");
         loadedType = tag.getInt("loadedType");
+        tanks[0].readFromNBT(tag, "tank0");
+        tanks[1].readFromNBT(tag, "tank1");
+    }
+
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        var ports = getPorts();
+        BlockPos[] out = new BlockPos[ports.size()];
+        for (int i = 0; i < ports.size(); i++) {
+            out[i] = (BlockPos) ports.get(i)[0];
+        }
+        return out;
+    }
+
+    @Nullable
+    private Integer rorTargetX;
+    @Nullable
+    private Integer rorTargetZ;
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "state",
+                PREFIX_VALUE + "countdown",
+                PREFIX_VALUE + "power",
+                PREFIX_VALUE + "fuel",
+                PREFIX_VALUE + "oxidizer",
+                PREFIX_VALUE + "canlaunch",
+                PREFIX_VALUE + "cargomode",
+                PREFIX_FUNCTION + "launch",
+                PREFIX_FUNCTION + "launch" + NAME_SEPARATOR + "x" + PARAM_SEPARATOR + "z",
+                PREFIX_FUNCTION + "setcargomode" + NAME_SEPARATOR + "on/off"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "state").equals(name)) return soyuzStatus.name();
+        if ((PREFIX_VALUE + "countdown").equals(name)) return "" + countdown;
+        if ((PREFIX_VALUE + "power").equals(name)) return "" + getEnergyStored();
+        if ((PREFIX_VALUE + "fuel").equals(name)) return "" + tanks[0].getFill();
+        if ((PREFIX_VALUE + "oxidizer").equals(name)) return "" + tanks[1].getFill();
+        if ((PREFIX_VALUE + "canlaunch").equals(name)) return canLaunch() ? "1" : "0";
+        if ((PREFIX_VALUE + "cargomode").equals(name)) return cargoMode ? "1" : "0";
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        if ((PREFIX_FUNCTION + "launch").equals(name)) {
+            if (params.length == 2 && cargoMode && soyuzStatus == SoyuzStatus.READY) {
+                this.rorTargetX = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0]);
+                this.rorTargetZ = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[1]);
+                this.soyuzStatus = SoyuzStatus.LAUNCHING;
+                this.countdown = COUNTDOWN_DURATION;
+                this.setChanged();
+                return null;
+            }
+            if (canLaunch() && soyuzStatus == SoyuzStatus.READY) {
+                this.soyuzStatus = SoyuzStatus.LAUNCHING;
+                this.countdown = COUNTDOWN_DURATION;
+                this.setChanged();
+            }
+            return null;
+        }
+        if ((PREFIX_FUNCTION + "setcargomode").equals(name) && params.length == 1) {
+            this.cargoMode = "1".equals(params[0]) || Boolean.parseBoolean(params[0]) || "on".equalsIgnoreCase(params[0]);
+            this.setChanged();
+            return null;
+        }
+        return null;
     }
 
     /** Original {@code EnumUtil.grabEnumSafely} - kleinste Glue, da die Util-Klasse nicht mitportiert wurde. */

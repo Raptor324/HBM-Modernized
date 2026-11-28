@@ -96,7 +96,14 @@ public class GUIPADipole extends GUIPABase<PADipoleMenu> {
     protected void renderIndicators(GuiGraphics g, int mouseX, int mouseY) {
         if (heatOk()) g.blit(texture, leftPos + 93, topPos + 54, 176, 8, 8, 8);
         ItemStack coil = be().getInventory().getStackInSlot(PADipoleBlockEntity.SLOT_COIL);
-        if (!coil.isEmpty() && coil.getItem() instanceof ItemPACoil) g.blit(texture, leftPos + 103, topPos + 54, 176, 8, 8, 8);
+        if (!coil.isEmpty() && coil.getItem() instanceof ItemPACoil) {
+            g.blit(texture, leftPos + 103, topPos + 54, 176, 8, 8, 8);
+            ItemPACoil.CoilType type = ItemPACoil.typeOf(coil);
+            if (type == ItemPACoil.CoilType.GOLD) g.blit(texture, leftPos + 83, topPos + 20, 200, 96, 28, 28);
+            else if (type == ItemPACoil.CoilType.NIOBIUM) g.blit(texture, leftPos + 83, topPos + 20, 228, 96, 28, 28);
+            else if (type == ItemPACoil.CoilType.BSCCO) g.blit(texture, leftPos + 83, topPos + 20, 200, 124, 28, 28);
+            else if (type == ItemPACoil.CoilType.CHLOROPHYTE) g.blit(texture, leftPos + 83, topPos + 20, 228, 124, 28, 28);
+        }
         if (be().getEnergyStored() >= PADipoleBlockEntity.getUsage()) g.blit(texture, leftPos + 83, topPos + 54, 176, 8, 8, 8);
 
         // Original: Kompassnadeln, 6 Pixel lang, 3 Pixel breit
@@ -113,14 +120,14 @@ public class GUIPADipole extends GUIPABase<PADipoleMenu> {
     private void addLine(GuiGraphics g, int x, int y, int color, float yaw) {
         g.pose().pushPose();
         g.pose().translate(leftPos + x, topPos + y, 0);
-        g.pose().mulPose(Axis.ZP.rotationDegrees(yaw));
+        g.pose().mulPose(Axis.ZN.rotationDegrees(yaw));
         g.fill(-1, 0, 2, 6, color);
         g.pose().popPose();
     }
 
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        drawTitle(g, -9, 6, 4210752);
+        drawTitle(g, -9, 6, 0xffffff);
         super.renderLabels(g, mouseX, mouseY);
     }
 
@@ -129,8 +136,8 @@ public class GUIPADipole extends GUIPABase<PADipoleMenu> {
         Direction[] dirs = { dipole().getDirLower(), dipole().getDirUpper(), dipole().getDirRedstone() };
         for (int i = 0; i < 3; i++) {
             this.drawCustomInfoStat(g, mouseX, mouseY, 62, 29 + i * 14, 12, 12, mouseX, mouseY,
-                    Component.literal(ChatFormatting.BLUE + "Player orientation"),
-                    Component.literal(ChatFormatting.RED + "Output orientation:"),
+                    Component.literal(ChatFormatting.BLUE + Component.translatable("gui.hbm_m.pa.player_orientation").getString()),
+                    Component.literal(ChatFormatting.RED + Component.translatable("gui.hbm_m.pa.output_orientation").getString() + ":"),
                     Component.literal(dirs[i].name()));
         }
     }

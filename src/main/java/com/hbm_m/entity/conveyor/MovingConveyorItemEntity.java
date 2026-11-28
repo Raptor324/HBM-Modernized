@@ -130,11 +130,35 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
         return InteractionResult.PASS;
     }
 
+    private int lerpSteps;
+    private double lerpX, lerpY, lerpZ;
+
+    @Override
+    //? if < 1.21.1 {
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps, boolean teleport) {
+    //?} else {
+    /*public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
+    *///?}
+        this.lerpX = x;
+        this.lerpY = y;
+        this.lerpZ = z;
+        this.lerpSteps = 5;
+    }
+
     @Override
     public void tick() {
         super.tick();
 
-        if (this.level().isClientSide) return;
+        if (this.level().isClientSide) {
+            if (this.lerpSteps > 0) {
+                double nx = this.getX() + (this.lerpX - this.getX()) / (double) this.lerpSteps;
+                double ny = this.getY() + (this.lerpY - this.getY()) / (double) this.lerpSteps;
+                double nz = this.getZ() + (this.lerpZ - this.getZ()) / (double) this.lerpSteps;
+                this.lerpSteps--;
+                this.setPos(nx, ny, nz);
+            }
+            return;
+        }
         if (this.tickCount <= 5) return;
 
         // Jam safety net: if too many conveyor items pile up in one spot, blow the belt (1:1 w/ original).

@@ -4,11 +4,17 @@ import com.hbm_m.block.ModBlocks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.Vec3;
@@ -24,17 +30,76 @@ import net.minecraft.world.phys.Vec3;
  */
 public class ConveyorLiftBlock extends ConveyorBlockBase {
 
+    public enum LiftSegment implements StringRepresentable {
+        BOTTOM("bottom"),
+        MIDDLE("middle"),
+        TOP("top");
+
+        private final String name;
+
+        LiftSegment(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String getSerializedName() {
+            return name;
+        }
+    }
+
+    public static final EnumProperty<LiftSegment> SEGMENT = EnumProperty.create("segment", LiftSegment.class);
+
     private static final VoxelShape SHAPE_FULL = net.minecraft.world.level.block.Block.box(0, 0, 0, 16, 16, 16);
     private static final VoxelShape SHAPE_HALF = net.minecraft.world.level.block.Block.box(0, 0, 0, 16, 8, 16);
 
     public ConveyorLiftBlock(BlockBehaviour.Properties properties) {
         super(properties);
+        this.registerDefaultState(this.defaultBlockState().setValue(SEGMENT, LiftSegment.MIDDLE));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
+        builder.add(SEGMENT);
+    }
+
+    public static LiftSegment computeSegment(BlockGetter level, BlockPos pos) {
+        boolean bottom = !(level.getBlockState(pos.below()).getBlock() instanceof IConveyorBelt);
+        if (bottom) return LiftSegment.BOTTOM;
+        boolean top = !(level.getBlockState(pos.above()).getBlock() instanceof IConveyorBelt)
+                && !(level.getBlockState(pos.above()).getBlock() instanceof IEnterableBlock);
+        return top ? LiftSegment.TOP : LiftSegment.MIDDLE;
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        BlockState base = super.getStateForPlacement(context);
+        if (base == null) return null;
+        return base.setValue(SEGMENT, computeSegment(context.getLevel(), context.getClickedPos()));
+    }
+
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        if (!level.isClientSide() && !state.is(oldState.getBlock())) {
+            LiftSegment desired = computeSegment(level, pos);
+            if (state.getValue(SEGMENT) != desired) {
+                level.setBlock(pos, state.setValue(SEGMENT, desired), 3);
+            }
+        }
+    }
+
+    @Override
+    public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
+            LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+        if (direction == Direction.UP || direction == Direction.DOWN) {
+            return state.setValue(SEGMENT, computeSegment(level, pos));
+        }
+        return state;
     }
 
     private boolean isTop(BlockGetter level, BlockPos pos) {
-        boolean bottom = !(level.getBlockState(pos.below()).getBlock() instanceof IConveyorBelt);
-        return !(level.getBlockState(pos.above()).getBlock() instanceof IConveyorBelt) && !bottom
-                && !(level.getBlockState(pos.above()).getBlock() instanceof IEnterableBlock);
+        return computeSegment(level, pos) == LiftSegment.TOP;
     }
 
     @Override

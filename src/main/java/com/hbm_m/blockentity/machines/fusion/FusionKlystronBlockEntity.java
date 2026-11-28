@@ -39,7 +39,37 @@ import net.minecraft.world.phys.AABB;
  * ({@link #outputTarget}); der Energiepuffer wird daraus abgeleitet
  * ({@code max(1.000.000, outputTarget * 100)}).</p>
  */
-public class FusionKlystronBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2 {
+public class FusionKlystronBlockEntity extends BaseMachineBlockEntity
+        implements IFluidStandardReceiverMK2, com.hbm_m.api.redstoneoverradio.IRORValueProvider,
+        com.hbm_m.api.redstoneoverradio.IRORInteractive {
+
+    private static final String[] ROR = new String[] {
+        PREFIX_VALUE + "output",
+        PREFIX_VALUE + "target",
+        PREFIX_FUNCTION + "settarget" + NAME_SEPARATOR + "target"
+    };
+
+    @Override
+    public String[] getFunctionInfo() {
+        return ROR;
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "output").equals(name)) return "" + this.output;
+        if ((PREFIX_VALUE + "target").equals(name)) return "" + this.outputTarget;
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        if ((PREFIX_FUNCTION + "settarget").equals(name) && params.length > 0) {
+            int target = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, (int) MAX_OUTPUT);
+            this.outputTarget = target;
+            setChanged();
+        }
+        return null;
+    }
 
     public static final int SLOT_BATTERY = 0;
     public static final int INVENTORY_SIZE = 1;
@@ -226,6 +256,7 @@ public class FusionKlystronBlockEntity extends BaseMachineBlockEntity implements
     @Override
     protected void writeNbtData(CompoundTag tag, HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
+        tag.putLong("maxPower", getMaxEnergyStored());
         tag.putLong("outputTarget", outputTarget);
         tag.putLong("output", output);
         tag.put("compair", compair.writeNBT(new CompoundTag()));
@@ -233,6 +264,7 @@ public class FusionKlystronBlockEntity extends BaseMachineBlockEntity implements
 
     @Override
     protected void readNbtData(CompoundTag tag, HolderLookup.Provider registries) {
+        if (tag.contains("maxPower")) setEnergyCapacity(tag.getLong("maxPower"));
         super.readNbtData(tag, registries);
         this.outputTarget = tag.getLong("outputTarget");
         this.output = tag.getLong("output");

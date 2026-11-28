@@ -435,9 +435,9 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity implements 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        // Original speichert nur mode/tanks/power/items (TE:355-395) - starting/countdown
-        // resettet beim Neuladen bewusst (wie im Original).
         tag.putInt("soyuz_mode", mode);
+        tag.putBoolean("starting", starting);
+        tag.putInt("countdown", countdown);
         tanks[0].writeToNBT(tag, "fuel");
         tanks[1].writeToNBT(tag, "oxidizer");
     }
@@ -446,8 +446,25 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity implements 
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         mode = tag.getInt("soyuz_mode");
+        starting = tag.getBoolean("starting");
+        countdown = tag.contains("countdown") ? tag.getInt("countdown") : MAX_COUNTDOWN;
         tanks[0].readFromNBT(tag, "fuel");
         tanks[1].readFromNBT(tag, "oxidizer");
+    }
+
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (int fwd = -6; fwd <= 6; fwd++) {
+            for (int side = -6; side <= 6; side++) {
+                if (Math.abs(fwd) == 6 || Math.abs(side) == 6) {
+                    ports.add(worldPosition.offset(fwd, 0, side));
+                    ports.add(worldPosition.offset(fwd, -1, side));
+                }
+            }
+        }
+        return ports.toArray(new BlockPos[0]);
     }
 
     /** Original {@code getAccessibleSlotsFromSide} gibt {} zurueck (TE-MachineBase:136) - keine Automatisierung. */

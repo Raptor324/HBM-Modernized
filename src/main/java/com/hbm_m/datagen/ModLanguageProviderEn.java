@@ -3067,6 +3067,10 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.recipe.input", "Input");
         add("gui.recipe.output", "Output");
         add("gui.recipe.atPressure", "at");
+        add("gui.recipe.plasmaIn", "Plasma Input Energy");
+        add("gui.recipe.fusionIn", "Klystron Input Energy");
+        add("gui.recipe.fusionOut", "Plasma Output Energy");
+        add("gui.recipe.fusionFlux", "Output Neutron Flux");
         add("gui.hbm_m.fluid.empty", "Empty");
 
         add("tooltip.hbm_m.battery.stored", "Stored energy:");
@@ -3413,6 +3417,10 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("config.hbm_m.field.doorClipDebug.tooltip", "One-shot per-part log dump ([HBM-M][DoorClipDebug]) of the door clip pipeline: which gate disabled the clip and which sprites/UVs actually reach the clipped tier. For diagnosing door culling artifacts.");
         add("text.autoconfig.hbm_m.option.doorClipDebug", "Door Clip Debug Dump");
         add("text.autoconfig.hbm_m.option.doorClipDebug.@Tooltip", "One-shot per-part log dump of the door clip pipeline. For diagnosing door culling artifacts.");
+        add("config.hbm_m.field.doddRbmkDiagnostic", "RBMK DODD Diagnostic");
+        add("config.hbm_m.field.doddRbmkDiagnostic.tooltip", "The green Dump of Ordered Data Diagnostic (DODD) overlay when looking at an RBMK column. As in 1.7.10, this toggle also gates the whole crosshair look-overlay system (ILookOverlay).");
+        add("text.autoconfig.hbm_m.option.doddRbmkDiagnostic", "RBMK DODD Diagnostic");
+        add("text.autoconfig.hbm_m.option.doddRbmkDiagnostic.@Tooltip", "The green Dump of Ordered Data Diagnostic (DODD) overlay when looking at an RBMK column. As in 1.7.10, this toggle also gates the whole crosshair look-overlay system (ILookOverlay).");
         add("config.hbm_m.group.graphicEffects", "Graphic Effects");
         add("text.autoconfig.hbm_m.option.graphicEffects", "Graphic Effects");
         add("config.hbm_m.field.graphicEffects.screenSpaceLightFill", "Nuke Explosion Light");
@@ -4025,6 +4033,12 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("satellite.progress", "Assembly progress: %s");
         add("satellite.queue", "Recipes queued: %s");
         add("satellite.ready", "READY");
+        add("satellite.minerprogress", "Mining progress: %s");
+        add("satellite.spent", "SPENT");
+        add("tile.machine_satlink.freq", "Freq");
+        add("tile.machine_satlink.connected", "Connected");
+        add("tile.machine_satlink.yes", "Yes");
+        add("tile.machine_satlink.no", "No");
         add("satellite.sensors", "Sensor Relays installed: %s");
         add(ModBlocks.MACHINE_ROCKMILL.get(), "Rock Mill");
         add("container.hbm_m.machine_rockmill", "Rock Mill");
@@ -5790,8 +5804,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("tile.rbmk.dodd.t1_max", "PFM Capacity");
         add("tile.rbmk.dodd.t1_type", "PFM Type");
         add("tile.rbmk.dodd.t1_p", "PFM Pressure");
-        add("tile.rbmk.dodd.lidState", "Lid State");
-        add("tile.rbmk.dodd.explodeOnBroken", "Explodes when broken");
 
         // Material auto-names: added last, only if the key is not already claimed by an explicit add(...)
         for (Map.Entry<String, String> e : new java.util.LinkedHashMap<>(deferredLangKeys).entrySet()) {
@@ -5886,6 +5898,140 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("cannery.cargo_elevator.ror.2", "Command 'setextension!5' sends the platform to the 2nd floor, stopping flush with the intermediate mezzanine deck!");
         add("cannery.cargo_elevator.ror.3", "Next, 'setextension!10' sends the platform up to the 3rd floor. ROR enables full multi-floor call station systems!");
 
+        add("cannery.pa_basics", "Particle Accelerator: Basics & GUI");
+        add("cannery.pa_coils", "Particle Accelerator: Coils & Crashes");
+        add("cannery.pa_synchrotron", "Particle Accelerator: Ring & Dipoles");
+        add("cannery.pa_cascade", "Particle Accelerator: Dual-Ring Cascade & Upgrade");
+
+        add("item.hbm_m.pa_coil.quad_range", "Quadrupole operational range");
+        add("item.hbm_m.pa_coil.dipole_range", "Dipole operational range");
+        add("item.hbm_m.pa_coil.min_side", "Dipole minimum side length");
+        add("item.hbm_m.pa_coil.warn_penalty", "Minimums not met result in a power draw penalty!");
+        add("item.hbm_m.pa_coil.warn_max", "Maximums exceeded result in the particle crashing!");
+        add("item.hbm_m.pa_coil.warn_double", "Particles will crash in dipoles if both penalties take effect!");
+
+        add("gui.hbm_m.pa.last_momentum", "Last momentum");
+        add("gui.hbm_m.pa.cancel", "Cancel operation");
+        add("gui.hbm_m.pa.player_orientation", "Player orientation");
+        add("gui.hbm_m.pa.output_orientation", "Output orientation");
+        add("gui.hbm_m.pa.momentum", "Momentum");
+
+        add("cannery.pa.hud.momentum", "Momentum");
+        add("cannery.pa.hud.defocus", "Defocus");
+        add("cannery.pa.hud.crash", "CRASH");
+
+        add("cannery.pa.intro.source", "§bParticle Source§r: fires §e2 reactants§r into the beam and returns empty capsules.");
+        add("cannery.pa.intro.beamline", "§eBeamline§r: vacuum pipe (length 3) at axis §bY+1§r. Needs no §epower§r or cooling.");
+        add("cannery.pa.intro.rfc", "§bRF Cavity§r: accelerates the particle (§a+100 Momentum§r), but adds §c+100 Defocus§r.");
+        add("cannery.pa.intro.quadrupole", "§aQuadrupole§r: with a coil installed, removes §a-100 Defocus§r while keeping Momentum.");
+        add("cannery.pa.intro.dipole", "§eDipole§r: bends the beam §b90°§r and routes it by Momentum threshold.");
+        add("cannery.pa.intro.detector", "§aParticle Detector§r: accepts the beam at §aDefocus = 0§r and outputs the result.");
+
+        add("cannery.pa.0.intro", "The §bmodular accelerator§r consists of a §eSource§r, §eBeamlines§r, §eRF Cavities§r, §eQuadrupoles§r, §eDipoles§r, and a §eDetector§r.");
+        add("cannery.pa.0.beamline_height", "The beam axis runs §e1 block ABOVE§r the floor! §bBeamlines§r (length 3) sit in mid-air at axis level and need no §epower§r or cooling.");
+        add("cannery.pa.0.rfc", "The §bRF Cavity§r (length 9) adds §a+100 Momentum§r and §e+100 Defocus§r. At §c1,000 Defocus§r, the particle will crash!");
+        add("cannery.pa.0.quadrupole", "The §aQuadrupole§r (with a coil) removes §a-100 Defocus§r while keeping Momentum. The Detector §cONLY§r accepts particles with §aDefocus = 0§r!");
+        add("cannery.pa.0.detector_mismatch", "§cWatch out!§r The Detector is §e5 blocks tall§r, so on the same floor its intake sits §c1 block ABOVE§r the beam axis!");
+        add("cannery.pa.0.detector_pit", "Dig a §a9x5x1 pit§r under the Detector (or raise the rest of the accelerator by 1 block) — now the §aaxes align§r!");
+        add("cannery.pa.1.linear_run", "Linear cycle: Source (0) -> RF (§a+100 M§r, §e+100 D§r) -> Quadrupole (§a-100 D§r) -> Detector (§aD=0, success!§r).");
+        add("cannery.pa.1.linear_limit", "Simple recipes (§e300 M§r) only need 3 RF Cavities and 3 Quadrupoles in a line. For high energies (§b2,500–70,000 M§r), close the track into a §aring with Dipoles§r!");
+        add("cannery.pa.2.coolant_chain", "Coolant is §bCold Perfluoromethyl (-150°C)§r. Base fluid is made in an §eIndustrial Mixer§r and compressed in §b2 Compressors§r in series (0 PU -> 1 PU -> -150°C).");
+        add("cannery.pa.2.ports_and_draw", "Each active module draws §e5 mB/tick§r (100 mB/s) §cCONSTANTLY§r! Return warm Perfluoromethyl to Compressor #1. Connect 3 lines: §bCold§r, §7Return§r, and §ePower§r.");
+        add("cannery.pa.3.cooling_leds", "Wait for §aALL modules§r to cool from §c293K§r to §b123K§r and receive §epower§r — both temperature and power LEDs must turn §aGREEN§r.");
+        add("cannery.pa.3.source_slots", "Place §e2 reactants§r in the top Source slots. §bEmpty capsules§r are returned to the bottom slots — extract them!");
+        add("cannery.pa.3.source_buttons", "The §bblue button§r shows current momentum and status. The §cred 'X' button§r force-cancels a stuck run.");
+        add("cannery.pa.3.detector_capsules", "§cCRITICAL!§r Load §eEmpty Particle Capsules§r into the top Detector slots — without them, reactants and output will be lost!");
+
+        add("cannery.pa.coils.tier.gold", "§eGold: §f0–2,200 | Side ≥ 15");
+        add("cannery.pa.coils.tier.nbti", "§dNbTi: §f1,500–8,400 | Side ≥ 21");
+        add("cannery.pa.coils.tier.bscco", "§bBSCCO: §f7,500–15,000 | Side ≥ 27");
+        add("cannery.pa.coils.tier.chlorophyte", "§aChlorophyte: §f14,500–75,000 | Side ≥ 51");
+
+        add("cannery.pa.coils.penalty_length", "§eLength penalty:§r a side shorter than the coil's minimum (§c9 < 15§r for Gold) multiplies Dipole §epower§r draw by §c10x§r!");
+        add("cannery.pa.coils.penalty_momentum", "§eLow momentum penalty:§r entering below the coil's minimum (§c400 < 1,500§r for NbTi) also applies a §c10x power§r draw penalty!");
+        add("cannery.pa.coils.crash_double", "If §cBOTH minimums§r are violated in a Dipole (short side AND low momentum), the §c100x§r draw overloads the buffer -> §cparticle CRASH!§r");
+        add("cannery.pa.coils.crash_max", "§cThe coil ceiling is strict:§r exceeding max momentum (§c> 2,200§r for Gold) §cALWAYS§r crashes the particle immediately!");
+        add("cannery.pa.coils.crash_defocus", "§cDefocus >= 1,000§r in flight (or §c> 0§r entering the Detector) also destroys the particle — use §aQuadrupoles§r!");
+
+        add("cannery.pa.sync.0.ring_math", "§bRing #1 (Gold, min side 15)§r: RF(9)+2xBeam = 15; Quad(3)+4xBeam = 15; empty sides 5xBeam = 15. Always place the Detector §aAFTER the Quadrupole§r!");
+        add("cannery.pa.sync.1.dipole_compass", "§eDipole GUI quirk:§r arrows rotate §bRELATIVE to the player's view§r! Hover over a button to check the exact cardinal direction.");
+        add("cannery.pa.sync.1.dipole_threshold", "§aExit Dipole #3 (threshold 400):§r top arrow (< 400) loops back; middle arrow (>= 400) exits to §aDetector§r! Keep threshold 0 on other corners.");
+        add("cannery.pa.sync.2.four_laps", "Over 4 laps momentum reaches §a400§r, and Dipole #3 routes the beam into the Detector. Recipes require §eAT LEAST§r the listed momentum (>=).");
+        add("cannery.pa.sync.2.threshold_tip", "Threshold §a400§r covers both Antimatter (300) and Antischrabidium (400). At threshold 300, Antischrabidium fails — set threshold to the §ehighest recipe§r!");
+
+        add("cannery.pa.cascade.0.redstone_switch", "Route §cRedstone-over-Radio§r UNDER Dipoles #3 and #4. With §aLever=ON§r, Dipole #3 (400) bypasses the Detector, and Dipole #4 at §b1,500§r switches into Ring #2!");
+        add("cannery.pa.cascade.1.lever_on", "§dRing #2 with NbTi:§r §e21-block§r sides, exit threshold §a6,500§r (Muon, Tachyon, Higgs Boson). One lever toggles both modes!");
+        add("cannery.pa.cascade.2.upgrade_3x", "§aTriple the speed:§r place §b3 RF Cavities§r (+300 M/lap) and §a3 Quadrupoles§r (-300 D) right BEFORE the exit Dipole!");
+        add("cannery.pa.cascade.2.checklist", "§eChecklist:§r\n1) All blocks §b123K§r + §epower§r;\n2) Empty capsules in Detector;\n3) Detector in pit;\n4) Coils & sides 15/21/27/51;\n5) Stuck? Press 'X' in Source!");
+
+        add("cannery.pa.note.src_to_rfc", "Source -> RF Cavity");
+        add("cannery.pa.note.rfc_gain", "RF Cavity: +100 M, +100 D");
+        add("cannery.pa.note.quad_focus", "Quadrupole: -100 D (Focused!)");
+        add("cannery.pa.note.det_success", "Detector: D == 0 -> SUCCESS!");
+        add("cannery.pa.note.dipole3_loop", "Dipole #3: < 400 -> Loop!");
+        add("cannery.pa.note.dipole3_det", "Dipole #3: 400 >= 400 -> DETECTOR! (Success)");
+        add("cannery.pa.note.cascade_enter", "Dipole #4 (Lever ON): 1,500 -> Ring #2!");
+        add("cannery.pa.note.cascade_det2", "Dipole #7: 6,500 >= 6,500 -> DETECTOR #2!");
+        add("cannery.pa.note.penalty_len", "Length 9 < 15 -> x10 power draw!");
+        add("cannery.pa.note.penalty_mom", "NbTi: M 400 < 1,500 -> x10 power!");
+        add("cannery.pa.note.crash_double", "DOUBLE PENALTY -> CRASH IN DIPOLE!");
+
+        add("cannery.rbmk_intro", "RBMK: Column Guide");
+        add("cannery.rbmk_basics", "RBMK: Basics & Physics");
+        add("cannery.rbmk_starter", "RBMK: First Reactor (4 Rods)");
+        add("cannery.rbmk_advanced", "RBMK: 16-Rod MEP & Reprocessing");
+
+        add("cannery.rbmk.intro.fuel", "§eFuel Channel§r: holds §afuel rods§r and emits §6fast neutrons§r up to §b5 blocks§r in 4 directions. Use a §bglass lid§r to watch Cherenkov glow!");
+        add("cannery.rbmk.intro.fuel_mod", "§eModerated Fuel Channel§r: built-in §bgraphite moderator§r slows outgoing neutrons right inside the channel, saving core space.");
+        add("cannery.rbmk.intro.moderator", "§bGraphite Moderator§r: slows §6fast neutrons§r into §bthermal (slow) neutrons§r required by most uranium and plutonium fuels.");
+        add("cannery.rbmk.intro.reflector", "§eNeutron Reflector§r: bounces escaping neutrons §aback into the core§r, boosting efficiency. Place around the perimeter (except for Digamma!).");
+        add("cannery.rbmk.intro.absorber", "§cBoron Neutron Absorber§r: completely §cblocks neutron flux§r without generating heat. Used as shielding or to isolate fuel zones.");
+        add("cannery.rbmk.intro.control", "§eManual Control Rod§r: throttles neutrons between §c0%% (blocked)§r and §a100%% (full pass)§r. Assign §bcolor groups§r to control banks from the Console.");
+        add("cannery.rbmk.intro.control_auto", "§bAuto Control Rod§r: automatically lowers or raises based on §ecore temperature§r. Always click §aSAVE§r after editing thresholds!");
+        add("cannery.rbmk.intro.boiler", "§dSteam Channel (Boiler)§r: absorbs heat from neighbors and boils §9water§r into §dsteam§r. Connect water + §eSteam Connector§r underneath.");
+        add("cannery.rbmk.intro.outgasser", "§dIrradiation Channel§r: uses passing neutrons to §atransmute items§r (e.g. Gold -> Gold-198). Consumes a share of reactor flux.");
+        add("cannery.rbmk.intro.cooler", "§bRBMK Cooler§r: actively vents excess heat using §9cryogel/water§r to prevent §coverheating§r in high-power cores.");
+        add("cannery.rbmk.intro.blank", "§7Structural Column§r: inert placeholder column that §aconducts heat§r between neighbors without blocking neutrons.");
+
+        add("cannery.rbmk.hud.flux", "Flux");
+        add("cannery.rbmk.note.mod_refl", "§bModerator§r slows neutrons, §eReflector§r bounces them back into fuel!");
+        add("cannery.rbmk.note.meltdown", "§cMELTDOWN!§r Column §c> 1500°C§r or fuel skin overheat!");
+        add("cannery.rbmk.note.need_source", "§cFlux = 0!§r Insert a §aRa-226-Be§r neutron source to kickstart!");
+        add("cannery.rbmk.note.running", "§aChain reaction active§r — swap back to your working fuel rod!");
+
+        add("cannery.rbmk.gui.control", "Control Rod");
+        add("cannery.rbmk.gui.auto", "Auto Control");
+        add("cannery.rbmk.gui.save", "SAVE!");
+        add("cannery.rbmk.gui.console", "RBMK Console");
+        add("cannery.rbmk.gui.funcs", "Fuel Functions");
+        add("cannery.rbmk.gui.cycle", "Fuel Reprocessing");
+
+        add("cannery.rbmk.basics.0.neutrons", "A §eFuel Column§r emits §6fast neutrons§r in §b4 cardinal directions (N/S/E/W)§r up to §a5 blocks§r. Without neighbors, they fly off into empty space.");
+        add("cannery.rbmk.basics.1.mod_refl_abs", "§bGraphite§r moderates neutrons (needed by most fuels), §eReflectors§r bounce them back, §cAbsorbers§r block the beam, and §dOutgassers§r breed rare isotopes.");
+        add("cannery.rbmk.basics.2.control_manual", "§eManual Control Rod§r: §c0%%§r blocks neutrons completely, §a100%%§r lets flux pass. §bColors§r group rods together for the §eRBMK Console§r.");
+        add("cannery.rbmk.basics.2.control_auto", "§bAuto Control Rod§r lowers itself as temperature rises. §cIMPORTANT:§r after entering min/max values, always click §aSAVE!§r");
+        add("cannery.rbmk.basics.2.covers", "Always cap every column with §elids§r (concrete or §bradiation-safe glass§r), otherwise neutron flux escapes upward and §cirradiates your base§r!");
+        add("cannery.rbmk.basics.3.functions", "Check the §efuel reactivity curve§r: §aSigmoid/Euler (Thorium)§r are safe, §eLog/Sqrt§r are medium risk, §cLinear§r is dangerous, §dDigamma§r hates reflectors!");
+        add("cannery.rbmk.basics.3.meltdown", "If fuel skin exceeds its melting point or a column exceeds §c1500°C§r, §cmeltdown§r occurs and scatters corium. Keep a §aRadiation Absorber§r nearby!");
+
+        add("cannery.rbmk.starter.0.core_layout", "Starter §e4-rod RBMK§r: fuel channels spaced §b3 blocks§r apart, with §eControl Rod + Moderator + Boiler§r between them. Outer §bModerators§r, §eReflectors§r, and §aLids§r complete the core.");
+        add("cannery.rbmk.starter.1.steam_connector", "§bBottom plumbing§r: §9Water duct§r right under the boiler, §eSteam Connector (RBMK Loader)§r one block below, and §dSteam duct§r underneath. §aTop lids stay clear!§r");
+        add("cannery.rbmk.starter.2.turbine_loop", "Place §eturbines side-by-side§r in cascade (§dUltra-Dense -> Super-Dense -> Dense -> Steam§r) — exhaust passes directly. Spent steam goes to §bCooling Tower§r, §9water loops back§r!");
+        add("cannery.rbmk.starter.3.console_link", "Link the §eConsole§r with §bLinker§r (§eShift+RMB§r on core center -> §eRMB§r on console, §a15x15 max§r). Here you switch §dsteam density§r and hit §cAZ-5§r!");
+        add("cannery.rbmk.starter.3.kickstart", "Most uranium/plutonium rods §cwon't self-start§r. Temporarily insert a §aRa-226-Be neutron source§r, raise rods to §e20%%§r — once flux rises, swap your §bfuel rod§r back in!");
+
+        add("cannery.rbmk.adv.0.mep16", "Symmetric §e16-rod MEP-239 RBMK§r (§b11x11 diamond§r): §d12 diagonal boilers§r, moderators, and a sealed §ereflector perimeter§r. §a~1000°C (safe)§r, up to §a~30 MHE/s§r!");
+        add("cannery.rbmk.adv.1.spent_pool", "Extract hot depleted rods (§c>25%%§r) with the §eCrane§r and cool them in a §bSpent Fuel Pool Drum§r surrounded by §9water on all 4 sides§r. Craft into §epellets§r and run in §aSILEX (IR)§r!");
+        add("cannery.rbmk.adv.2.checklist", "§ePRE-STARTUP CHECKLIST:§r\n1. §aLids§r on all columns.\n2. §9Water§r filled & looped via §bCooling Tower§r.\n3. Boiler §dsteam density§r matches 1st turbine.\n4. Control rods at §c0%%§r before loading fuel.\n5. §aRa-226-Be§r source ready for kickstart.\n6. §eConsole (AZ-5)§r & §aRadiation Absorber§r placed.");
+        add("cannery.pa.note.crash_max", "EXCEEDED MAX RANGE -> INSTANT CRASH!");
+        add("cannery.pa.note.crash_defocus", "DEFOCUS 1,000 -> BEAM LOST!");
+
+        add("cannery.pa.tip.last_momentum_300", "Last momentum: 300 (Running)");
+        add("cannery.pa.tip.player_s", "Player: S -> Output: NORTH");
+        add("cannery.pa.tip.player_e", "Player: E -> Output: NORTH");
+        add("cannery.pa.tip.dipole_400", ">= 400 -> Output: SOUTH (Detector)");
+        add("cannery.pa.tip.cascade_1500", ">= 1,500 + Redstone -> Loop 2 (NbTi)!");
+
         add("gui.hbm_m.radio_autocal.docs", String.join("\n", com.hbm_m.inventory.gui.radio.GUIRadioAutocal.DOCS));
         add("gui.hbm_m.reactor_research.flux", "Flux");
         add("gui.hbm_m.reactor_research.heat", "Heat");
@@ -5896,6 +6042,23 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.hbm_m.reactor_research.info.submerged.3", "adjacent breeding reactors.");
         add("gui.hbm_m.reactor_research.info.fuel.0", "This reactor is fueled with plate fuel.");
         add("gui.hbm_m.reactor_research.info.fuel.1", "The reaction needs a neutron source to start.");
+
+        add("cannery.conveyor", "Conveyors & Item Logistics");
+        add("cannery.conveyor.0.tiers", "Four belt tiers: Regular (1 lane), Double (2 lanes), Triple (3 lanes), and Express (3x speed - launches items farther off the end).");
+        add("cannery.conveyor.1.wand_route", "Right-click belts with a Screwdriver to rotate or bend them 90°, or use a Conveyor Wand to auto-route a full line.");
+        add("cannery.conveyor.1.wand_upgrade", "Use an Express, Double, or Triple Wand to auto-route high-speed or multi-lane conveyor lines.");
+        add("cannery.conveyor.2.vertical", "Move items vertically without slopes: Chain Lifts carry items upward, while Chutes drop them straight onto a lower belt.");
+        add("cannery.conveyor.3.io_splitter", "Ejectors (red arrow) pull items from chests and machines; Inserters (green arrow) push them in. Splitters alternate items evenly across two belts.");
+        add("cannery.conveyor.4.boxer", "Heavy item streams can clog large factories. Boxers pack full stacks into a single crate, and Unboxers unpack them at the destination.");
+        add("cannery.conveyor.5.sorter", "Conveyor Sorters filter items by color-coded faces (whitelist & OreDict), letting one main bus feed multiple machines.");
+        add("cannery.conveyor.sorter_gui.title", "Sorter Filters");
+
+        add("cannery.conveyor_press", "Conveyor Press");
+        add("cannery.conveyor_press.0", "The Conveyor Press is a 3-block-tall automated press that mounts directly into a conveyor line.");
+        add("cannery.conveyor_press.1", "Its middle section acts as an active conveyor belt, so items pass straight through without hoppers or inserters.");
+        add("cannery.conveyor_press.2", "Right-click the press with any Stamp to install it. Supply HE power to the base block (any side except the bottom).");
+        add("cannery.conveyor_press.3", "Right-click with a Screwdriver to remove the installed stamp.");
+        add("cannery.conveyor_press.4", "Single items passing through the press are automatically stamped on the fly!");
     }
 }
 //?}

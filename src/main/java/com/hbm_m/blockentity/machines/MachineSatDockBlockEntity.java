@@ -59,57 +59,6 @@ public class MachineSatDockBlockEntity extends BaseMachineBlockEntity {
             Satellite sat = data.getSatFromFreq(ISatChip.getFreqS(slot(SLOT_CHIP)));
             if (sat != null && sat.tryRequestItems(world, x, y, z)) data.setDirty();
         }
-
-        if (!slot(SLOT_CHIP).isEmpty()) {
-            int freq = ISatChip.getFreqS(slot(SLOT_CHIP));
-
-            Satellite sat = data.getSatFromFreq(freq);
-
-            int delay = 10 * 60 * 1000;
-
-            if (sat instanceof SatelliteMiner miner) {
-                if (miner.lastOp + delay < System.currentTimeMillis()) {
-                    EntityMinerRocket rocket = new EntityMinerRocket(world);
-                    rocket.setPos(x + 0.5, 300, z + 0.5);
-                    rocket.setSat(freq);
-                    world.addFreshEntity(rocket);
-                    miner.lastOp = System.currentTimeMillis();
-                    data.setDirty();
-                }
-            }
-        }
-
-        List<EntityMinerRocket> list = world.getEntitiesOfClass(EntityMinerRocket.class,
-                new AABB(x - 0.25 + 0.5, y + 0.75, z - 0.25 + 0.5, x + 0.25 + 0.5, y + 2, z + 0.25 + 0.5));
-
-        for (EntityMinerRocket rocket : list) {
-
-            if (!slot(SLOT_CHIP).isEmpty() && ISatChip.getFreqS(slot(SLOT_CHIP)) != rocket.getSat()) {
-                rocket.discard();
-                ExplosionNukeSmall.explode(world, x + 0.5, y + 0.5, z + 0.5, ExplosionNukeSmall.PARAMS_TOTS);
-                break;
-            }
-
-            if (rocket.getMode() == 1 && rocket.timer == 50) {
-                Satellite sat = data.getSatFromFreq(ISatChip.getFreqS(slot(SLOT_CHIP)));
-                if (sat instanceof SatelliteMiner miner) unloadCargo(world, miner);
-            }
-        }
-
-        ejectInto(x + 2, y, z);
-        ejectInto(x - 2, y, z);
-        ejectInto(x, y, z + 2);
-        ejectInto(x, y, z - 2);
-    }
-
-    private void unloadCargo(ServerLevel world, SatelliteMiner satellite) {
-        int itemAmount = world.random.nextInt(6) + 10;
-
-        for (int i = 0; i < itemAmount; i++) {
-            ItemStack stack = SatellitePools.getStack(satellite.getCargo(), world.random);
-            if (!stack.isEmpty()) addToInv(stack);
-        }
-        setChanged();
     }
 
     /**
@@ -134,69 +83,6 @@ public class MachineSatDockBlockEntity extends BaseMachineBlockEntity {
         }
         setChanged();
         return rest;
-    }
-
-    /** Original addToInv: fuellt gleiche Stapel auf, sonst legt es in den ersten freien Platz nur EIN Stueck. */
-    private void addToInv(ItemStack stack) {
-
-        for (int i = 0; i < 15; i++) {
-            ItemStack s = slot(i);
-            if (!s.isEmpty() && ItemStack.isSameItem(s, stack) && s.getCount() < s.getMaxStackSize()) {
-                int toAdd = Math.min(s.getMaxStackSize() - s.getCount(), stack.getCount());
-                s.grow(toAdd);
-                stack.shrink(toAdd);
-
-                if (stack.getCount() <= 0)
-                    return;
-            }
-        }
-
-        for (int i = 0; i < 15; i++) {
-            if (slot(i).isEmpty()) {
-                inventory.setStackInSlot(i, stack.copyWithCount(1));
-                return;
-            }
-        }
-    }
-
-    private void ejectInto(int x, int y, int z) {
-        BlockEntity te = level.getBlockEntity(new BlockPos(x, y, z));
-
-        if (te instanceof Container chest) {
-
-            for (int i = 0; i < 15; i++) {
-                ItemStack s = slot(i);
-                if (!s.isEmpty()) {
-                    for (int j = 0; j < chest.getContainerSize(); j++) {
-                        ItemStack c = chest.getItem(j);
-                        if (!c.isEmpty() && StackNbt.sameItemSameTags(c, s) && c.getCount() < c.getMaxStackSize()) {
-                            s.shrink(1);
-                            if (s.isEmpty()) inventory.setStackInSlot(i, ItemStack.EMPTY);
-                            c.grow(1);
-                            chest.setChanged();
-                            setChanged();
-                            return;
-                        }
-                    }
-                }
-            }
-
-            for (int i = 0; i < 15; i++) {
-                ItemStack s = slot(i);
-                if (!s.isEmpty()) {
-                    for (int j = 0; j < chest.getContainerSize(); j++) {
-                        ItemStack sta = s.copyWithCount(1);
-                        if (chest.getItem(j).isEmpty() && chest.canPlaceItem(j, sta)) {
-                            s.shrink(1);
-                            if (s.isEmpty()) inventory.setStackInSlot(i, ItemStack.EMPTY);
-                            chest.setItem(j, sta);
-                            setChanged();
-                            return;
-                        }
-                    }
-                }
-            }
-        }
     }
 
     @Override

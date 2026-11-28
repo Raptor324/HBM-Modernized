@@ -308,6 +308,24 @@ public class FluidTank implements Cloneable {
         return tag;
     }
 
+    /**
+     * Плоская NBT-схема, 1:1 с оригинальным {@code FluidTank.writeToNBT(NBTTagCompound, String)}
+     * (1.7.10): ключи {@code s}, {@code s_max}, {@code s_type}, {@code s_p} поверх тега. Нужна
+     * RBMK-оверлею DODD ({@code RBMKColumnBlock#printHook}), который локализует ключи дампа как
+     * {@code tile.rbmk.dodd.<key>} — вложенный сабтаг из writeToNBT(CompoundTag, String) выше в
+     * дамп не годится. Давление в порте не моделируется (сорта пара — отдельные флюиды), поэтому
+     * {@code _p} пишется как 0 — оригинал для нереасимовских баков показывал то же значение.
+     */
+    public CompoundTag writeToNBTFlat(CompoundTag tag, String prefix) {
+        tag.putInt(prefix, getFill());
+        tag.putInt(prefix + "_max", getMaxFill());
+        Fluid type = getConfiguredFluid();
+        tag.putString(prefix + "_type", type == Fluids.EMPTY
+                ? "" : BuiltInRegistries.FLUID.getKey(type).toString());
+        tag.putShort(prefix + "_p", (short) 0);
+        return tag;
+    }
+
     public void readFromNBT(CompoundTag tag, String key) {
         if (tag.contains(key)) {
             this.readNBT(tag.getCompound(key));

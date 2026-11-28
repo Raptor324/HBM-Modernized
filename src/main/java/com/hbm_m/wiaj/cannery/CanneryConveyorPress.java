@@ -25,7 +25,8 @@ import com.hbm_m.wiaj.actor.ActorFancyPanel;
 import com.hbm_m.wiaj.actor.ActorFancyPanel.Orientation;
 import com.hbm_m.wiaj.actor.ActorTileEntity;
 import com.hbm_m.wiaj.actor.ITileActorRenderer;
-import com.hbm_m.wiaj.cannery.CanneryConveyor.ActorMovingItem;
+import com.hbm_m.wiaj.cannery.conveyor.CanneryConveyor;
+import com.hbm_m.wiaj.cannery.conveyor.ConveyorWiajActors.ActorMovingItem;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -93,34 +94,38 @@ public class CanneryConveyorPress extends CanneryBase {
 		}
 		scene0.add(new ActionWait(4));
 
-		// Incoming conveyor line heading towards +X (FACING = WEST)
-		scene0.add(new ActionSetBlock(1, 1, 3, conveyor(Direction.WEST)));
-		scene0.add(new ActionSetBlock(2, 1, 3, conveyor(Direction.WEST)));
+		// Conveyor line elevated at y = 2 on concrete supports, with Conveyor Press standing on the y = 0 floor at y = 1..3
+		scene0.add(new ActionSetBlock(1, 1, 3, ModBlocks.CONCRETE_SMOOTH.get()));
+		scene0.add(new ActionSetBlock(2, 1, 3, ModBlocks.CONCRETE_SMOOTH.get()));
+		scene0.add(new ActionSetBlock(4, 1, 3, ModBlocks.CONCRETE_SMOOTH.get()));
+		scene0.add(new ActionSetBlock(5, 1, 3, ModBlocks.CONCRETE_SMOOTH.get()));
+		scene0.add(new ActionSetBlock(6, 1, 3, ModBlocks.CONCRETE_SMOOTH.get()));
 
-		// Conveyor Press multiblock placed at x = 3, z = 3
-		// Controller at y = 0, machine dummy parts at y = 1 and y = 2
-		scene0.add(new ActionSetBlock(3, 0, 3, ModBlocks.CONVEYOR_PRESS.get().defaultBlockState()
-				.setValue(DummyableMachineBlock.FACING, Direction.NORTH)));
-		scene0.add(new ActionSetBlock(3, 1, 3, ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()));
-		scene0.add(new ActionSetBlock(3, 2, 3, ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()));
+		// Incoming conveyor line heading towards +X (FACING = WEST)
+		scene0.add(new ActionSetBlock(1, 2, 3, conveyor(Direction.WEST)));
+		scene0.add(new ActionSetBlock(2, 2, 3, conveyor(Direction.WEST)));
 
 		// Outgoing conveyor line continuing towards +X
-		scene0.add(new ActionSetBlock(4, 1, 3, conveyor(Direction.WEST)));
-		scene0.add(new ActionSetBlock(5, 1, 3, conveyor(Direction.WEST)));
-		scene0.add(new ActionSetBlock(6, 1, 3, ModBlocks.CRATE.get().defaultBlockState()));
+		scene0.add(new ActionSetBlock(4, 2, 3, conveyor(Direction.WEST)));
+		scene0.add(new ActionSetBlock(5, 2, 3, conveyor(Direction.WEST)));
+		scene0.add(new ActionSetBlock(6, 2, 3, ModBlocks.CRATE.get().defaultBlockState()));
 
-		// Heavy red cable power supply into controller base
-		scene0.add(new ActionSetBlock(3, 0, 2, cable(false, true, false, false, false, false)));
-		scene0.add(new ActionSetBlock(3, 0, 1, cable(false, true, false, false, false, false)));
+		// Heavy red cable power supply into controller base at y = 1
+		scene0.add(new ActionSetBlock(3, 1, 2, cable(true, true, false, false, false, false)));
+		scene0.add(new ActionSetBlock(3, 1, 1, cable(false, true, false, false, false, false)));
+		scene0.add(new ActionWait(4));
 
-		// Register Conveyor Press BER Actor
+		// Register Conveyor Press BER Actor (do NOT also ActionSetBlock CONVEYOR_PRESS —
+		// GuiWorldInAJar renders VirtualWorld blocks directly, which would draw a static duplicate).
+		// FACING = SOUTH so belt travels towards +X (matching FACING = WEST conveyors).
 		CompoundTag pressData0 = new CompoundTag();
 		pressData0.putDouble("x", 3D);
-		pressData0.putDouble("y", 0D);
+		pressData0.putDouble("y", 1D);
 		pressData0.putDouble("z", 3D);
 		pressData0.putBoolean("hasStamp", false);
 		pressData0.putDouble("press", 0D);
-		scene0.add(new ActionCreateActor(0, new ActorTileEntity(new ActorConveyorPress(Direction.NORTH), pressData0).smoothPlace()));
+		scene0.add(new ActionCreateActor(0, new ActorTileEntity(new ActorConveyorPress(Direction.SOUTH), pressData0).smoothPlace()));
+		scene0.add(new ActionWait(10));
 
 		// Panel 0: Multiblock introduction
 		scene0.add(new ActionCreateActor(10, new ActorFancyPanel(
@@ -145,35 +150,9 @@ public class CanneryConveyorPress extends CanneryBase {
 
 		// ====================================================================
 		// Scene 1: Stamps, Screwdriver & In-Line Stamping
+		// (Inherits floor, conveyors, cables, and press actor 0 from scene0)
 		// ====================================================================
 		WiajScene scene1 = new WiajScene(script);
-
-		// Retain foundation, tracks, and press
-		for (int x = world.sizeX - 1; x >= 0; x--) {
-			for (int z = 0; z < world.sizeZ; z++) {
-				scene1.add(new ActionSetBlock(x, 0, z, ModBlocks.CONCRETE_SMOOTH.get()));
-			}
-		}
-		scene1.add(new ActionSetBlock(1, 1, 3, conveyor(Direction.WEST)));
-		scene1.add(new ActionSetBlock(2, 1, 3, conveyor(Direction.WEST)));
-		scene1.add(new ActionSetBlock(3, 0, 3, ModBlocks.CONVEYOR_PRESS.get().defaultBlockState()
-				.setValue(DummyableMachineBlock.FACING, Direction.NORTH)));
-		scene1.add(new ActionSetBlock(3, 1, 3, ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()));
-		scene1.add(new ActionSetBlock(3, 2, 3, ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()));
-		scene1.add(new ActionSetBlock(4, 1, 3, conveyor(Direction.WEST)));
-		scene1.add(new ActionSetBlock(5, 1, 3, conveyor(Direction.WEST)));
-		scene1.add(new ActionSetBlock(6, 1, 3, ModBlocks.CRATE.get().defaultBlockState()));
-		scene1.add(new ActionSetBlock(3, 0, 2, cable(false, true, false, false, false, false)));
-		scene1.add(new ActionSetBlock(3, 0, 1, cable(false, true, false, false, false, false)));
-
-		// Recreate press actor in active state
-		CompoundTag pressData1 = new CompoundTag();
-		pressData1.putDouble("x", 3D);
-		pressData1.putDouble("y", 0D);
-		pressData1.putDouble("z", 3D);
-		pressData1.putBoolean("hasStamp", false);
-		pressData1.putDouble("press", 0D);
-		scene1.add(new ActionCreateActor(0, new ActorTileEntity(new ActorConveyorPress(Direction.NORTH), pressData1).smoothPlace()));
 
 		// Panel 2: Installing stamp
 		scene1.add(new ActionCreateActor(10, new ActorFancyPanel(
@@ -217,9 +196,9 @@ public class CanneryConveyorPress extends CanneryBase {
 			// Spawn Iron Ingot at conveyor start
 			scene1.add(new ActionCreateActor(actorId, new ActorTileEntity(
 					new ActorMovingItem(new ItemStack(Items.IRON_INGOT), 0.08, false,
-							new double[] {1.2, 1.25, 3.5},
-							new double[] {3.5, 1.25, 3.5},
-							new double[] {5.8, 1.25, 3.5}), ingotTag)));
+							new double[] {1.2, 2.25, 3.5},
+							new double[] {3.5, 2.25, 3.5},
+							new double[] {5.8, 2.25, 3.5}), ingotTag)));
 
 			// Ingot arrives at the center of the press at tick ~28
 			scene1.add(new ActionWait(28));
@@ -240,7 +219,6 @@ public class CanneryConveyorPress extends CanneryBase {
 
 		scene1.add(new ActionWait(40));
 		scene1.add(new ActionRemoveActor(12));
-		scene1.add(new ActionRemoveActor(0));
 
 		script.addScene(scene0).addScene(scene1);
 		return script;
@@ -253,7 +231,7 @@ public class CanneryConveyorPress extends CanneryBase {
 	}
 
 	private static BlockState cable(boolean north, boolean south, boolean east, boolean west, boolean up, boolean down) {
-		return ModBlocks.RED_WIRE_COATED.get().defaultBlockState()
+		return ModBlocks.RED_CABLE.get().defaultBlockState()
 				.setValue(WireBlock.NORTH, north)
 				.setValue(WireBlock.SOUTH, south)
 				.setValue(WireBlock.EAST, east)

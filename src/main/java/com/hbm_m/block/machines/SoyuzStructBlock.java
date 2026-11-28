@@ -111,9 +111,17 @@ public class SoyuzStructBlock extends BaseEntityBlock {
                 if (!is(w, x, y + j, z - 7, scaffold)) return;
             /// CHECKS COMPLETE ///
 
-            /// DELETE SCAFFOLDING ///
+            /// DELETE SCAFFOLDING & STRUCTURE ///
+            for (int i = -6; i <= 6; i++) for (int j = 3; j <= 4; j++) for (int k = -6; k <= 6; k++) air(w, x + i, y + j, z + k);
+            for (int i = -1; i <= 1; i++) for (int j = 3; j <= 4; j++) for (int k = -8; k <= -7; k++) air(w, x + i, y + j, z + k);
+            for (int i = -2; i <= 2; i++) for (int j = 3; j <= 4; j++) for (int k = 7; k <= 9; k++) air(w, x + i, y + j, z + k);
             for (int i = -2; i <= 2; i++) for (int k = 5; k <= 9; k++) air(w, x + i, y + 51, z + k);
             for (int i = -1; i <= 1; i++) for (int k = -8; k <= -6; k++) air(w, x + i, y + 38, z + k);
+            for (int i = 3; i <= 6; i++) for (int j = 0; j <= 2; j++) for (int k = 3; k <= 6; k++) air(w, x + i, y + j, z + k);
+            for (int i = -6; i <= -3; i++) for (int j = 0; j <= 2; j++) for (int k = 3; k <= 6; k++) air(w, x + i, y + j, z + k);
+            for (int i = -6; i <= -3; i++) for (int j = 0; j <= 2; j++) for (int k = -6; k <= -3; k++) air(w, x + i, y + j, z + k);
+            for (int i = 3; i <= 6; i++) for (int j = 0; j <= 2; j++) for (int k = -6; k <= -3; k++) air(w, x + i, y + j, z + k);
+            for (int i = -1; i <= 1; i++) for (int j = 0; j <= 2; j++) for (int k = -8; k <= -6; k++) air(w, x + i, y + j, z + k);
             for (int i = -2; i <= 2; i++) for (int j = 0; j <= 2; j++) for (int k = 5; k <= 9; k++) air(w, x + i, y + j, z + k);
             for (int i = -1; i <= 1; i++) for (int j = 5; j <= 50; j++) for (int k = 6; k <= 8; k++) air(w, x + i, y + j, z + k);
             for (int j = 5; j <= 37; j++) air(w, x, y + j, z - 7);

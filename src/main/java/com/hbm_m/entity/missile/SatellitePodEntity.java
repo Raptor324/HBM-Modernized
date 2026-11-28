@@ -43,6 +43,7 @@ public class SatellitePodEntity extends Entity {
     public double speed = 0.75D;
 
     public float legs = 0F;
+    private double lastClientY = Double.NaN;
     public float prevLegs = 0F;
     public static final float LEG_SPEED = 1F / 20F;
 
@@ -115,9 +116,10 @@ public class SatellitePodEntity extends Entity {
             this.legs += doesDeployLegs() ? LEG_SPEED : -LEG_SPEED;
             this.legs = Mth.clamp(this.legs, 0F, 1F);
 
-            // Client: Bewegung kommt per Positionsabgleich, die Geschwindigkeit des Originals ist dort nie gesetzt (0,75)
-            double dy = getY() - this.yo;
-            if (this.legs > 0 && dy < 0 || dy > 0) {
+            // Client: Bewegung kommt per Positionsabgleich, die Geschwindigkeit des Originals ist dort nie gesetzt
+            double dy = Double.isNaN(lastClientY) ? 0.0 : (getY() - lastClientY);
+            lastClientY = getY();
+            if ((this.legs > 0 && dy < 0) || dy > 0) {
                 ParticleUtil.spawnGasFlame(level(), getX(), getY() + 0.5, getZ(), 0, this.speed - 1, 0);
             }
         }

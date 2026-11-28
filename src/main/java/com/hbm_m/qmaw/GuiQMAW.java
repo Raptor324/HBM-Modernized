@@ -65,6 +65,33 @@ public class GuiQMAW extends Screen {
         return us < 0 ? code : code.substring(0, us) + "_" + code.substring(us + 1).toUpperCase(Locale.ROOT);
     }
 
+    /** Preprocessor before actual parsing begins, imports contents from other QMAWs using curly bracket notation */
+    protected String compose(String contents) {
+        String lang = langCode();
+        int recursionBrake = 100;
+
+        while (contents.contains("{{") && recursionBrake > 0) {
+
+            int begin = contents.indexOf("{{");
+            int end = contents.indexOf("}}");
+            if (end < begin) break;
+
+            String composeTag = contents.substring(begin + 2, end);
+            QuickManualAndWiki qmaw = QMAWLoader.qmaw.get(composeTag);
+            String substitute = composeTag;
+
+            if (qmaw != null) {
+                if (qmaw.contents.containsKey(lang)) substitute = qmaw.contents.get(lang);
+                else if (qmaw.contents.containsKey(EN_US)) substitute = qmaw.contents.get(EN_US);
+            }
+
+            contents = contents.replace("{{" + composeTag + "}}", substitute);
+            recursionBrake--;
+        }
+
+        return contents;
+    }
+
     protected void parseQMAW(QuickManualAndWiki qmaw) {
         String lang = langCode();
 
@@ -77,6 +104,8 @@ public class GuiQMAW extends Screen {
         String toParse = qmaw.contents.get(lang);
         if (toParse == null) toParse = qmaw.contents.get(EN_US);
         if (toParse == null) toParse = "Missing Localization!";
+
+        toParse = compose(toParse);
 
         int maxLineLength = xSize - 29;
         String prevToParse = toParse;
@@ -248,6 +277,10 @@ public class GuiQMAW extends Screen {
         return GLFW.glfwGetMouseButton(Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
     }
 
+    private static boolean rightDown() {
+        return GLFW.glfwGetMouseButton(Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_MOUSE_BUTTON_RIGHT) == GLFW.GLFW_PRESS;
+    }
+
     @Override
     public void render(GuiGraphics gfx, int mouseX, int mouseY, float f) {
 
@@ -283,7 +316,7 @@ public class GuiQMAW extends Screen {
     /*@Override
     public boolean mouseScrolled(double x, double y, double scrollX, double scroll) {
     *///?}
-        if (!leftDown()) {
+        if (!leftDown() && !rightDown()) {
             if (scroll > 0 && this.scrollProgress > 0) this.scrollProgress--;
             if (scroll < 0 && this.scrollProgress < this.lines.size() - 1) this.scrollProgress++;
         }
@@ -348,7 +381,7 @@ public class GuiQMAW extends Screen {
                 int elementX = x + inset;
                 int elementY = y + (maxHeight - element.getHeight()) / 2;
                 boolean mouseOver = (elementX <= mouseX && elementX + element.getWidth() > mouseX && elementY < mouseY && elementY + element.getHeight() >= mouseY);
-                element.render(gfx, mouseOver, elementX, elementY, mouseX, mouseY);
+                element.render(this, gfx, mouseOver, elementX, elementY, mouseX, mouseY);
                 if (elementX <= lastClickX && elementX + element.getWidth() > lastClickX && elementY < lastClickY && elementY + element.getHeight() >= lastClickY)
                     element.onClick(this);
                 inset += element.getWidth();

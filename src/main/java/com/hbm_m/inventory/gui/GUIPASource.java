@@ -76,12 +76,12 @@ public class GUIPASource extends GUIPABase<PASourceMenu> {
     @Override
     protected void renderExtraTooltips(GuiGraphics g, int mouseX, int mouseY) {
         List<Component> info = new ArrayList<>();
-        info.add(Component.literal(ChatFormatting.BLUE + "Last momentum: " + ChatFormatting.RESET + String.format(Locale.US, "%,d", menu.getLastSpeed())));
+        info.add(Component.literal(ChatFormatting.BLUE + Component.translatable("gui.hbm_m.pa.last_momentum").getString() + ": " + ChatFormatting.RESET + String.format(Locale.US, "%,d", menu.getLastSpeed())));
         for (Component line : resolveKeyArray("pa." + state().name().toLowerCase(Locale.US) + ".desc")) {
             info.add(Component.literal(ChatFormatting.YELLOW + line.getString()));
         }
         this.drawCustomInfoStat(g, mouseX, mouseY, 105, 16, 10, 10, mouseX, mouseY, info.toArray(new Component[0]));
         this.drawCustomInfoStat(g, mouseX, mouseY, 105, 28, 10, 10, mouseX, mouseY,
-                Component.literal(ChatFormatting.RED + "Cancel operation"));
+                Component.literal(ChatFormatting.RED + Component.translatable("gui.hbm_m.pa.cancel").getString()));
     }
 }

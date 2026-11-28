@@ -5,7 +5,8 @@
   "render_type": "minecraft:cutout",
   "textures": {
     "particle": "hbm_m:block/machine/conveyor_press",
-    "default": "hbm_m:block/machine/conveyor_press"
+    "default": "hbm_m:block/machine/conveyor_press",
+    "belt": "hbm_m:block/machine/conveyor_press_belt"
   },
   "transform": {
     "translation": [

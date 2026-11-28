@@ -194,23 +194,10 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
     *///?}
 
     public void saveToItem(ItemStack stack) {
-        //? if < 1.21.1 {
-        CompoundTag tag = new CompoundTag();
-        this.saveAdditional(tag);
+        CompoundTag tag = com.hbm_m.platform.BlockHooks.saveWithoutMetadata(this);
         if (!tag.isEmpty()) {
-            stack.addTagElement("BlockEntityTag", tag);
+            com.hbm_m.platform.BlockEntityItemData.write(stack, this.getType(), tag);
         }
-        //?} else {
-        /*// 1.21.1: addTagElement/saveAdditional(CompoundTag) удалены — сохраняем через DataComponents.
-        // level.holderLookup() без аргументов и HolderLookup.direct() удалены в 1.21.1 —
-        // берём registryAccess() из level (this.level всегда доступен у размещённого BE).
-        net.minecraft.core.HolderLookup.Provider registries = this.level.registryAccess();
-        CompoundTag tag = this.saveWithoutMetadata(registries);
-        if (!tag.isEmpty()) {
-            stack.set(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA,
-                    net.minecraft.world.item.component.CustomData.of(tag));
-        }
-        *///?}
     }
 
     // Upstream TileEntityCrateBase is an ISidedInventory open on every side; the port dropped the

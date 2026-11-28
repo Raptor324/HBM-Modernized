@@ -699,6 +699,9 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                 if (cbe instanceof CargoElevatorBlockEntity elevator) {
                     elevator.dropped = true;
                 }
+                if (controllerState.getBlock() instanceof com.hbm_m.block.decorations.SoyuzLauncherBlock) {
+                    com.hbm_m.block.decorations.SoyuzLauncherBlock.setSuppressCreativeDrops(true);
+                }
             }
             level.destroyBlock(controllerPos, !player.getAbilities().instabuild);
         }
